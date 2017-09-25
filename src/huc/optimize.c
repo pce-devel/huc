@@ -1033,10 +1033,12 @@ lv1_loop:
 			 (p[1]->type == T_SYMBOL)) {
 				/* replace code */
 				if (p[0]->data != 0) {
+					char oldsym_name[NAMEALLOC - 16];
 					SYMBOL * oldsym = (SYMBOL *)p[1]->data;
 					SYMBOL * newsym = copysym(oldsym);
+					strncpy(oldsym_name, oldsym->name, NAMEALLOC - 16);
 					if (NAMEALLOC <=
-						sprintf(newsym->name, "%s+%ld", oldsym->name, p[0]->data))
+						sprintf(newsym->name, "%s+%ld", oldsym_name, p[0]->data))
 						error("optimized symbol+offset name too long");
 					p[1]->data = (long)newsym;
 				}

@@ -189,7 +189,7 @@
 
 #define NAMESIZE	26
 #define NAMEMAX		25
-#define NAMEALLOC	40
+#define NAMEALLOC	64
 
 struct symbol {
 	char name[NAMEALLOC];
