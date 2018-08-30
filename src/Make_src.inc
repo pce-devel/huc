@@ -23,6 +23,13 @@ endif
 ifeq "$(shell uname -o)" "Cygwin"
 CFLAGS += -Wno-char-subscripts
 endif
+ifeq "$(shell uname -o)" "FreeBSD"
+CFLAGS += -Wno-non-literal-null-conversion
+CFLAGS += -Wno-parentheses-equality
+CFLAGS += -Wno-uninitialized
+CFLAGS += -Wno-empty-body
+CFLAGS += -Wno-format-security
+endif
 
 ifeq "$(origin DJGPP)" "undefined"
 
