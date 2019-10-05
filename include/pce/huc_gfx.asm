@@ -210,7 +210,12 @@ _load_font.3:
 	asl	A
 	rol	<ch
 	sta	<cl
-	jmp	load_vram
+	stb _font_color+1,<_ah
+	lda _font_color
+	bne .l3
+	inc A
+	.l3: sta <_al
+	jmp load_font
 
 ; put_digit(char digit, int offset)
 ; put_digit(char digit, char x, char y)
