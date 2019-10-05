@@ -1334,8 +1334,8 @@ lib2_set_xres:
 
 .vce_tab:	.db	0, 1, 2
 .hsw_tab:	.db	2, 3, 5
-.hds_tab:	.db	18,25,42
-.hde_tab:	.db	38,51,82
+.hds_tab:	.db	18,25,44
+.hde_tab:	.db	38,51,84
 
 	.bank	LIB1_BANK	; restore bank context
 
