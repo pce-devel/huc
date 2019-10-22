@@ -350,26 +350,35 @@ proc_reloc(void)
 					minbanks++;
 					if (minbanks > bank_limit) 
 					{
-						int total = 0;
+						int total = 0, totfree = 0;
+						struct t_proc *current = NULL;
 		
+						current = proc_ptr;
+						
 						fatal_error("Not enough ROM space for procs!");
 		
 						for(i = bank_base; i < bank; i++)
 						{
-							printf("Bank %d: %d free\n", i, bankleft[i]);
-							total += bankleft[i];
+							printf("BANK %02X: %d bytes free\n", i, bankleft[i]);
+							totfree += bankleft[i];
 						}
-						printf("Total free space in all banks %d\n", total);
+						printf("Total free space in all banks %d\n", totfree);
 		
 						total = 0;
 						proc_ptr = proc_first;
 						while (proc_ptr) {
-							printf("Proc: %s Bank: 0x%X Size: %d\n", proc_ptr->name, proc_ptr->bank == 241 ? 0 : proc_ptr->bank, proc_ptr->size);
+							printf("Proc: %s Bank: 0x%02X Size: %d %s\n", 
+								proc_ptr->name, proc_ptr->bank == 241 ? 0 : proc_ptr->bank, proc_ptr->size, 
+								proc_ptr->bank == 241 && proc_ptr == current ? " ** too big **" : proc_ptr->bank == 241 ? "** unassigned **" : "");
 							if(proc_ptr->bank == 241)
 								total += proc_ptr->size;
 							proc_ptr = proc_ptr->link;
 						}
-						printf("Total bytes that didn't fit in ROM %d\n", total);
+						printf("\nTotal bytes that didn't fit in ROM: %d\n", total);
+						if(totfree > total && current)
+							printf("Try segmenting the %s procedure into smaller chunks\n", current->name);
+						else
+							printf("There are %d bytes that won't fit into the currently available BANK space\n", total - totfree);
 						errcnt++;
 						return;
 					}
