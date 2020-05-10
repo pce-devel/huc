@@ -508,9 +508,82 @@ void dopsdinc (void)
 	if (amatch("tile_ex", 7))
 		do_inc_ex(16);
 	else
+	if (amatch("asmlabel", 8)) {
+		if (!match("("))
+			error("missing (");
+
+		// .data first!
+		nl();
+		ol(".data");
+
+		// Get the label, but save it for later.
+		readstr();
+		strcpy(str_buf, litq2);
+		addglb_far(litq2, CUCHAR);
+
+		if (!match(",")) {
+			error("asmlabel missing ,");
+			kill();
+			return;
+		}
+
+		// Get the file name
+		if (readqstr() == 0) {
+			error("bad filename in incasm");
+			kill();
+			return;
+		}
+
+		// If page argument, then get it. Else default it.
+		if (match(",")) {
+			if (number(&dummy) != 0) {
+				ot(".page ");
+				if (dummy > 8)
+					outdec(dummy / 0x2000);
+				else
+					outdec(dummy);
+				nl();
+			}
+			else {
+				error("missing page number/address");
+				kill();
+				return;
+			}
+		} 
+		else {
+			ol("page 3");
+		}
+
+		// Output the label name:
+		prefix();
+		outstr(str_buf);
+		outstr(":\n");
+
+		ot(".include \"");
+		outstr(litq2);
+		outstr("\"");
+		nl();
+
+
+		// Reset everything back.
+		ol(".page 3");	/* assumes data bank is mapped at 0x6000 */
+
+		if (!match(")"))
+			error("missing )");
+		ol(".code");
+		nl();
+		kill();
+	}		
+	else
 	if (amatch("asm", 3)) {
 		if (!match("("))
 			error("missing (");
+
+		readstr();	/* read the label name */
+		prefix();
+		outstr(litq2);
+		outstr(":\n");
+		addglb_far(litq2, CINT);
 
 		ol(".data");
 
