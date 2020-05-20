@@ -43,6 +43,7 @@ set(ARCHIVE_OUTPUT_PATH    "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}")
 
 check_symbol_exists(strcasecmp "strings.h" HAVE_STRCASECMP)
 check_symbol_exists(strcat_s "string.h" HAVE_STRCAT_S)
+check_symbol_exists(strcpy_s "string.h" HAVE_STRCPY_S)
 check_include_file("getopt.h" HAVE_GETOPT_H)
 
 if(NOT HAVE_GETOPT_H)
@@ -56,6 +57,10 @@ endif()
 
 if(HAVE_STRCAT_S)
     add_definitions(-DHAVE_STRCAT_S)
+endif()
+
+if(HAVE_STRCPY_S)
+    add_definitions(-DHAVE_STRCPY_S)
 endif()
 
 add_subdirectory(huc)

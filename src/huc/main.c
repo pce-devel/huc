@@ -70,6 +70,24 @@ static int strcat_s(char* dst, size_t len, const char* src) {
 }
 #endif // !HAVE_STRCAT_S
 
+#ifndef HAVE_STRCPY_S
+static int strcpy_s(char* dst, size_t len, const char* src) {
+	if (!dst || !len) {
+		return EINVAL;
+	}
+	if (src) {
+		size_t i;
+		for (i = 0; i < len; i++) {
+			if ((dst[i] = src[i]) == '\0') {
+				return 0;
+			}
+		}
+	}
+	dst[0] = '\0';
+	return EINVAL;
+}
+#endif // !HAVE_STRCPY_S
+
 static char *lib_to_file (char *lib)
 {
 	int i;

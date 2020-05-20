@@ -1,7 +1,12 @@
 #ifndef PCEAS_VERSION_H
 #define PCEAS_VERSION_H
 
-#define GIT_VERSION "@GIT_VERSION@"
-#define GIT_DATE @GIT_DATE@
+#ifndef GIT_VERSION
+#	define GIT_VERSION "@GIT_VERSION@"
+#endif /* !GIT_VERSION */
+
+#ifndef GIT_DATE
+#	define GIT_DATE @GIT_DATE@
+#endif /* !GIT_DATE */
 
 #endif /* PCEAS_VERSION_H */
