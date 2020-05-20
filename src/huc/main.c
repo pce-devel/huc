@@ -56,8 +56,8 @@ static int strcat_s(char* dst, size_t len, const char* src) {
 		for (i = 0; i < len; i++) {
 			if (dst[i] == '\0') {
 				size_t j;
-				for (j = 0; i < len; j++) {
-					if ((dst[i] = src[j]) == '\0') {
+				for (j = 0; (i+j) < len; j++) {
+					if ((dst[i+j] = src[j]) == '\0') {
 						return 0;
 					}
 				}
