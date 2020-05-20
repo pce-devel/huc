@@ -2,6 +2,7 @@
 *.pce
 *.sym
 *.s
+version.h
 /huc/bin
 /huc/tgemu/tgemu*
 /huc/src/huc/huc
@@ -13,6 +14,7 @@
 /huc/src/tools/mml/mml.exe
 /huc/src/tools/mod2mml/mod2mml.exe
 /huc/src/tools/pcxtool/pcxtool.exe
+/huc/src/version.h
 
 
 
