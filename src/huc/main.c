@@ -19,6 +19,7 @@
 #include <ctype.h>
 #include <sys/stat.h>
 #include <getopt.h>
+#include <errno.h>
 #include "defs.h"
 #include "data.h"
 #include "code.h"
