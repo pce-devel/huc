@@ -26,10 +26,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <strings.h>
 #include <string.h>
-#include <ctype.h>
 #include <getopt.h>
+#include <ctype.h>
 #include "defs.h"
 #include "externs.h"
 #include "protos.h"
@@ -249,13 +248,23 @@ main(int argc, char **argv)
 		*p = '\0';
 
 	/* machine detection */
-	if (!strncasecmp(prg_name, "PCE", 3))
+	if (
+		((prg_name[0] == 'P') || (prg_name[0] == 'p')) &&
+		((prg_name[1] == 'C') || (prg_name[1] == 'c')) &&
+		((prg_name[2] == 'E') || (prg_name[2] == 'e'))
+		) {
 		machine = &pce;
-	else
-	if (!strncasecmp(prg_name, "NES", 3))
+	}
+	else if(
+			((prg_name[0] == 'N') || (prg_name[0] == 'n')) &&
+			((prg_name[1] == 'E') || (prg_name[1] == 'e')) &&
+			((prg_name[2] == 'S') || (prg_name[2] == 's'))
+			) {
 		machine = &nes;
-	else
+	}
+	else {
 		machine = &fuji;
+	}
 
 	/* init assembler options */
 	list_level = 2;

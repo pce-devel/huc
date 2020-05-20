@@ -6,8 +6,6 @@ set(LIBRARY_OUTPUT_PATH    "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}")
 set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}")
 set(ARCHIVE_OUTPUT_PATH    "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}")
 
-set(PROJECT_NAME pceas)
-
 add_subdirectory(pngread)
 
 set( pceas_SRC
@@ -21,8 +19,12 @@ configure_file(
     ${PROJECT_SOURCE_DIR}/version.h
 )
 
-add_executable( ${PROJECT_NAME} ${pceas_SRC} )
-target_include_directories(${PROJECT_NAME} PRIVATE pngread)
-target_link_libraries(${PROJECT_NAME} pngread)
+add_executable(pceas ${pceas_SRC} )
+target_include_directories(pceas PRIVATE pngread)
+target_link_libraries(pceas pngread)
+if(NOT HAVE_GETOPT_H)
+    target_link_libraries(pceas getopt)
+endif()
+target_compile_definitions(pceas PRIVATE _CRT_SECURE_NO_WARNINGS)
 
-install( TARGETS ${PROJECT_NAME} DESTINATION bin )
+install( TARGETS pceas DESTINATION bin )

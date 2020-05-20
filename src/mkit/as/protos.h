@@ -1,3 +1,7 @@
+#ifndef HAVE_STRCASECMP
+#	define strcasecmp _stricmp
+#endif // !HAVE_STRCASECMP
+
 /* ASSEMBLE.C */
 void assemble(int do_label);
 int  oplook(int *idx);

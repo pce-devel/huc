@@ -1,5 +1,10 @@
 cmake_minimum_required (VERSION 3.1)
 
+project(mkit)
+
+include(CheckIncludeFile)
+include(CheckSymbolExists)
+
 # Force build type to Debug if none was specified.
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Debug")
@@ -35,6 +40,18 @@ message( STATUS "GIT_DATE: ${GIT_DATE}")
 set(LIBRARY_OUTPUT_PATH    "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}")
 set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}")
 set(ARCHIVE_OUTPUT_PATH    "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}")
+
+check_symbol_exists(strcasecmp "strings.h" HAVE_STRCASECMP)
+check_include_file("getopt.h" HAVE_GETOPT_H)
+
+if(NOT HAVE_GETOPT_H)
+    add_library(getopt STATIC externals/getopt/getopt.c externals/getopt/getopt1.c externals/getopt/getopt.h)
+    target_include_directories(getopt PUBLIC externals/getopt/)
+endif()
+
+if(HAVE_STRCASECMP)
+    add_definitions(-DHAVE_STRCASECMP)
+endif()
 
 add_subdirectory(huc)
 add_subdirectory(mkit/as)

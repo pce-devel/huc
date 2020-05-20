@@ -18,5 +18,8 @@ configure_file(
 )
 
 add_executable( huc ${huc_SRC} )
-
+target_compile_definitions(huc PRIVATE _CRT_SECURE_NO_WARNINGS)
+if(NOT HAVE_GETOPT_H)
+    target_link_libraries(huc getopt)
+endif()
 install( TARGETS huc DESTINATION bin )
