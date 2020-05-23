@@ -1765,3 +1765,7 @@ _exit:
 
 _dump_screen:
 	.db 0x33
+
+	.include "libslot1.asm"
+	.include "libslot2.asm"
+	.include "libslot3.asm"

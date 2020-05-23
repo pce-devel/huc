@@ -2,10 +2,10 @@
 # Check if norecurse model actually yields smaller code.
 for i in "$@"
 do
-	../src/huc/huc "$i" >/dev/null
+	../bin/huc "$i" >/dev/null
 	s="${i%.c}.s"
 	large=`wc -l <"$s"`
-	../src/huc/huc -fno-recursive "$i" >/dev/null
+	../bin/huc -fno-recursive "$i" >/dev/null
 	norec=`wc -l <"$s"`
 	cut=`grep "_lend:" "$s"|wc -l`
 	norec=$((norec - cut * 5))
@@ -17,7 +17,7 @@ do
 		echo -n "BAD "
 		mkdir -p rbad
 		cp "$s" rbad/"${s##*/}.norec"
-		../src/huc/huc "$i" >/dev/null
+		../bin/huc "$i" >/dev/null
 		cp "$s" rbad/"${s##*/}.large"
 	else
 		echo -n "ok  "
