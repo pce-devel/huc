@@ -13,8 +13,6 @@
 #ifndef _MAIN_H
 #define _MAIN_H
 
-#include "version.h"
-
 #define HUC_VERSION     "HuC (v3.99-" GIT_VERSION ", " GIT_DATE ")"
 
 void FEvers (void);

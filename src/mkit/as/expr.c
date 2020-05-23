@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <strings.h>
 #include <string.h>
 #include <ctype.h>
 #include "defs.h"
@@ -87,7 +88,7 @@ cont:
 
 		/* symbol */
 		else
-		if (isalpha(c) || c == '_' || c == '.' || c == '@') {
+		if (isalpha(c) || c == '_' || c == '.') {
 			if (need_operator)
 				goto error;
 			if (!push_val(T_SYMBOL))
@@ -546,20 +547,20 @@ getsym(void)
 
 	/* get the symbol, stop to the first 'non symbol' char */
 	local_check = *expr;
-    while (valid) {
-        c = *expr;
-        if (isalpha(c) || c == '_' || c == '.' || c == '@' || (isdigit(c) && i >= 1)) {
-            symbol[++i] = c;
-            expr++;
-        }
-    /*    else if((local_check=='.') && ((c=='-') || (c=='+'))) {
-            symbol[++i] = c;
-            expr++;
-        }*/
-        else {
-            valid = 0;
-        }
-    }
+	while (valid) {
+		c = *expr;
+		if (isalpha(c) || c == '_' || c == '.' || (isdigit(c) && i >= 1)) {
+			symbol[++i] = c;
+			expr++;
+		}
+		else if ((local_check == '.') && ((c == '-') || (c == '+'))) {
+			symbol[++i] = c;
+			expr++;
+		}
+		else {
+			valid = 0;
+		}
+	}
 
 	/* is it a reserved symbol? */
 	if (i == 1) {
@@ -607,12 +608,12 @@ getsym_op(void)
 	local_check = *expr;
 	while (valid) {
 		c = *expr;
-		if (isalpha(c) || c == '_' || c == '.' || c == '@' || (isdigit(c) && i >= 1)) {
+		if (isalpha(c) || c == '_' || c == '.' || (isdigit(c) && i >= 1)) {
 			if (i < SBOLSZ - 1)
 				symbol[++i] = c;
 			expr++;
 		}
-		else if ((local_check == '.' || local_check=='@') && ((c == '-') || (c == '+'))) {
+		else if ((local_check == '.') && ((c == '-') || (c == '+'))) {
 			if (i < SBOLSZ - 1)
 				symbol[++i] = c;
 			expr++;

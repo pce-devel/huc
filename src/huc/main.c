@@ -16,10 +16,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <ctype.h>
 #include <sys/stat.h>
-#include <getopt.h>
-#include <errno.h>
 #include "defs.h"
 #include "data.h"
 #include "code.h"
@@ -46,47 +45,6 @@ static char **infiles = 0;
 static int infile_ptr;
 
 static int user_norecurse = 0;
-
-#ifndef HAVE_STRCAT_S
-static int strcat_s(char* dst, size_t len, const char* src) {
-	size_t i;
-	if (!dst || !len) {
-		return EINVAL;
-	}
-	if (src) {
-		for (i = 0; i < len; i++) {
-			if (dst[i] == '\0') {
-				size_t j;
-				for (j = 0; (i+j) < len; j++) {
-					if ((dst[i+j] = src[j]) == '\0') {
-						return 0;
-					}
-				}
-			}
-		}
-	}
-	dst[0] = '\0';
-	return EINVAL;
-}
-#endif // !HAVE_STRCAT_S
-
-#ifndef HAVE_STRCPY_S
-static int strcpy_s(char* dst, size_t len, const char* src) {
-	if (!dst || !len) {
-		return EINVAL;
-	}
-	if (src) {
-		size_t i;
-		for (i = 0; i < len; i++) {
-			if ((dst[i] = src[i]) == '\0') {
-				return 0;
-			}
-		}
-	}
-	dst[0] = '\0';
-	return EINVAL;
-}
-#endif // !HAVE_STRCPY_S
 
 static char *lib_to_file (char *lib)
 {
@@ -1034,7 +992,6 @@ intptr_t assemble (char *s)
 
 	char *exe;
 	char buf[512];
-	char* p;
 
 	exe = getenv("PCE_PCEAS");
 	if (!exe) {
@@ -1043,7 +1000,7 @@ intptr_t assemble (char *s)
 
 	strcpy_s(buf, sizeof(buf), exe);
 	strcat_s(buf, sizeof(buf), " ");
-	for (p = buf; (p = strchr(p, '/')) != NULL; *p++ = '\\');
+	for (char *p = buf; (p = strchr(p, '/')) != NULL; *p++ = '\\');
 
 	switch (cdflag) {
 	case 1:
