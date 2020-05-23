@@ -6,9 +6,9 @@
 // #define DEBUG_OPTIMIZER
 
 #ifdef DEBUG_OPTIMIZER
-#define ODEBUG(x, ...) printf(x ...)
+#define ODEBUG(x ...) printf(x ...)
 #else
-#define ODEBUG(x, ...)
+#define ODEBUG(x ...)
 #endif
 
 #include <stdint.h>
@@ -22,12 +22,6 @@
 #include "function.h"
 #include "io.h"
 #include "error.h"
-
-#ifdef _MSC_VER
-#  include <intrin.h>
-#  define __builtin_popcount __popcnt
-#  define __builtin_ctz __lzcnt
-#endif
 
 /* defines */
 #define Q_SIZE          16

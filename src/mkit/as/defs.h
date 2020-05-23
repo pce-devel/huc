@@ -1,8 +1,3 @@
-#ifndef DEFS_H
-#define DEFS_H
-
-#include "version.h"
-
 #define NES_ASM_VERSION ("NES Assembler (v 3.24-" GIT_VERSION " Beta, " GIT_DATE ")")
 #define PCE_ASM_VERSION ("PC Engine Assembler (v 3.24-" GIT_VERSION ", " GIT_DATE ")")
 #define FUJI_ASM_VERSION ("Fuji Assembler for Atari (v 3.24-" GIT_VERSION " Beta, " GIT_DATE ")")
@@ -247,4 +242,3 @@ typedef struct t_machine {
 	void (*write_header)(FILE *, int);
 } MACHINE;
 
-#endif // DEFS_H
