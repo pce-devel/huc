@@ -53,10 +53,10 @@ colsym(int *ip)
 		c = prlnbuf[*ip];
 		if (isdigit(c) && (i == 0))
 			break;
-		if (!isalnum(c) && (c != '_') && (c != '.')) {
-			if ((local_check == '.') && ((c == '-') || (c == '+'))) {
-			}
-			else break;
+		if (!isalnum(c) && (c != '_') && (c != '.') && (c != '@'))
+		{ if((local_check=='.' || local_check=='@') && ((c=='-') || (c=='+')))
+            { }
+          else { break;}
 		}
 		if (i < (SBOLSZ - 1))
 			symbol[++i] = c;
@@ -108,7 +108,7 @@ stlook(int flag)
 	int hash;
 
 	/* local symbol */
-	if (symbol[1] == '.') {
+	if (symbol[1] == '.' || symbol[1] == '@') {
 		if (glablptr) {
 			/* search the symbol in the local list */
 			sym = glablptr->local;
@@ -298,7 +298,7 @@ labldef(int lval, int flag)
 
 		/* check if it's a local or global symbol */
 		c = lablptr->name[1];
-		if (c == '.')
+		if (c == '.' || c == '@')
 			/* local */
 			lastlabl = NULL;
 		else {
