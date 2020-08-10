@@ -1,7 +1,9 @@
 *.o
 *.pce
+*.sgx
 *.sym
 *.s
+/huc/huc
 /huc/bin
 /huc/tgemu/tgemu*
 /huc/src/huc/huc
@@ -13,15 +15,16 @@
 /huc/src/tools/mml/mml.exe
 /huc/src/tools/mod2mml/mod2mml.exe
 /huc/src/tools/pcxtool/pcxtool.exe
+*.lst
 
-
-bin/
+bin
 examples/acd/ac_test.iso
 examples/sgx/sgx_test.iso
 examples/sgx/sgx_test.sgx
 examples/shmup/bgm.asm
 examples/shmup/mod2mml.log
 examples/shmup/shmup.iso
+src/huc/huc
 src/huc/huc.exe
 src/isolink/isolink.exe
 src/mkit/as/fujias.exe
@@ -31,8 +34,5 @@ src/mkit/as/pngread/pngread.a
 src/tools/mml/mml.exe
 src/tools/mod2mml/mod2mml.exe
 src/tools/pcxtool/pcxtool.exe
-test/tests/20200414.lst
-tgemu/tgemu.exe
-
-
-
+tgemu/tgemu*
+src/version.h

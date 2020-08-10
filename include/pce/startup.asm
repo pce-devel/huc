@@ -3,6 +3,8 @@
 ;
 .list
 
+.include "lib_exclude.asm"
+
 .ifdef _SGX
 HAVE_LIB3 = 1
 .endif

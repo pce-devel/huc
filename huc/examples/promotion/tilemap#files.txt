@@ -1,0 +1,3 @@
+tilemap#tiles.png
+tilemap.tlc
+.\tilemap.pmp#layer~Layer 1#map001.stm

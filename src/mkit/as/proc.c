@@ -173,7 +173,7 @@ do_proc(int *ip)
 	}
 
 	/* check symbol */
-	if (symbol[1] == '.') {
+	if (symbol[1] == '.' || symbol[1] == '@') {
 		fatal_error("Proc/group name can not be local!");
 		return;
 	}

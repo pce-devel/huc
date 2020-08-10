@@ -149,10 +149,10 @@ assemble(int do_label)
 		c = prlnbuf[i + j];
 		if (isdigit(c) && (j == 0))
 			break;
-		if (!isalnum(c) && (c != '_') && (c != '.')) {
-			if ((local_check == '.') && ((c == '-') || (c == '+'))) {
-			}
-			else break;
+		if (!isalnum(c) && (c != '_') && (c != '.') && (c != '@'))
+		{ if((local_check=='.' || local_check=='@') && ((c=='-') || (c=='+')))
+            { }
+          else { break;}
 		}
 
 		j++;
@@ -278,7 +278,7 @@ oplook(int *idx)
 		c = toupper(prlnbuf[*idx]);
 		if (c == ' ' || c == '\t' || c == '\0' || c == ';')
 			break;
-		if (!isalnum(c) && c != '.' && c != '*' && c != '=')
+		if (!isalnum(c) && c != '.' && c != '@' && c != '*' && c != '=')
 			return (-1);
 		if (i == 15)
 			return (-1);
