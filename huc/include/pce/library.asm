@@ -1710,20 +1710,21 @@ lib2____builtin_ffs.1:
 	rts
 	.bank LIB1_BANK
 
-_mem_mapdatabanks:
-	tay		; y = new upper bank
-	tma #DATA_BANK+1; a = old upper bank
-	say		; y = old upper bank, a = new upper bank
-	tam #DATA_BANK+1
-do_mapdatabank:
-	tma #DATA_BANK	; a = old lower bank
-	sax		; x = old lower bank, a = new lower bank
-	tam #DATA_BANK
-	tya		; a = old upper bank
-	rts
-_mem_mapdatabank:
-	cly
-	bra do_mapdatabank
+; TurboXray (7/18/21): Wth is this?? Banks and pages are two different things. Why are they mixed like this?! This is part of SimpleTracker. Removing this..
+; _mem_mapdatabanks:
+; 	tay		; y = new upper bank
+; 	tma #DATA_BANK+1; a = old upper bank
+; 	say		; y = old upper bank, a = new upper bank
+; 	tam #DATA_BANK+1
+; do_mapdatabank:
+; 	tma #DATA_BANK	; a = old lower bank
+; 	sax		; x = old lower bank, a = new lower bank
+; 	tam #DATA_BANK
+; 	tya		; a = old upper bank
+; 	rts
+; _mem_mapdatabank:
+; 	cly
+; 	bra do_mapdatabank
 
 _timer_set:
 	stx	timer_cnt
