@@ -125,8 +125,9 @@ void __fastcall set_map_pals(char far *pal<__bl:__si>);
 void set_map_tile_type(unsigned char);
 void set_map_tile_base(unsigned int vaddr);
 
-unsigned char mem_mapdatabank(unsigned char new_bank);
-unsigned int mem_mapdatabanks(unsigned int new_banks);
+// TurboXray (7/18/21): This is part of SimpleTracker. Removing this..
+// unsigned char mem_mapdatabank(unsigned char new_bank);
+// unsigned int mem_mapdatabanks(unsigned int new_banks);
 
 void timer_set(unsigned char cnt);
 void timer_start(void);
