@@ -415,7 +415,7 @@ _rand:
 
 
 ; random(char limit)
-; --- 
+; ---
 ; get a random number where 0 <= n < limit
 ; (and limit < 128)
 

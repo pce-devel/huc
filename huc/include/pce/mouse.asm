@@ -11,6 +11,8 @@
 ;  PCE mouse driver source
 ;
 
+.ifdef NO_MOUSE
+
 	.bss
 msflag:	.ds 1
 msvert:	.ds 1
@@ -22,6 +24,30 @@ mshorz:	.ds 1
 ; These stub interfaces are available from LIB1_BANK
 ; But the real guts are in LIB2_BANK
 ;
+
+
+
+mousinit:
+	rts
+
+mousread:
+	rts
+
+.else
+
+
+	.bss
+msflag:	.ds 1
+msvert:	.ds 1
+mshorz:	.ds 1
+
+	.code
+
+;
+; These stub interfaces are available from LIB1_BANK
+; But the real guts are in LIB2_BANK
+;
+
 mousinit:
 	maplibfunc	lib2_mousinit
 	rts
@@ -217,4 +243,7 @@ msbutt:
 	sta	joytrg	; put them into 'delta'
 	rts
 
+
 	.bank	LIB1_BANK	; restore bank-context
+
+.endif
