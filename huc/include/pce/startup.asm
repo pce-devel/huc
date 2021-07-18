@@ -155,7 +155,7 @@ SOUND_BANK	.rs	1
 FONT_BANK	.equ	LIB2_BANK
 CONST_BANK	.rs	1
 .ifdef HUC_RESERVE_BANKS
-HUC_USER_RESERVED = .rs HUC_RESERVE_BANKS
+HUC_USER_RESERVED .rs HUC_RESERVE_BANKS
 .endif
 DATA_BANK	.rs	1
 .else ; HUC
@@ -196,6 +196,12 @@ MAIN_BANK	.rs	1
 	.data
 	.bank CONST_BANK,"Constants"
 	.org  $4000
+
+.ifdef HUC_RESERVE_BANKS
+	.code
+	.bank HUC_USER_RESERVED,"Huc User Reserved Banks"
+	.org  $4000
+.endif
 
 	.data
 	.bank DATA_BANK,"User Program"
