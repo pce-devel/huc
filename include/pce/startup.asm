@@ -154,6 +154,9 @@ SOUND_BANK	.rs	1
 .ifdef HUC
 FONT_BANK	.equ	LIB2_BANK
 CONST_BANK	.rs	1
+.ifdef HUC_RESERVE_BANKS
+HUC_USER_RESERVED = .rs HUC_RESERVE_BANKS
+.endif
 DATA_BANK	.rs	1
 .else ; HUC
 ; HuC (because of .proc/.endp) does not use MAIN_BANK
