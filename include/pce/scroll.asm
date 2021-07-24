@@ -3,15 +3,23 @@
 ;
 ;
 
+ifndef HUC_NUM_SCROLLS
+HUC_NUM_SCROLLS = 4
+endif
+
+if (HUC_NUM_SCROLLS>8)
+  .fail Number of defined scrolls cannot exceed 8
+endif
+
 ; [ 28] user scrolling vars
 	.bss
-scroll_xl:	.ds 4	; x       |
-scroll_xh:	.ds 4	;         |
-scroll_yl:	.ds 4	; y       |
-scroll_yh:	.ds 4	;         | scrolling table
-scroll_top:	.ds 4	; top     |
-scroll_bottom:	.ds 4	; bottom  |
-scroll_cr:	.ds 4	; control |
+scroll_xl:	.ds HUC_NUM_SCROLLS	; x       |
+scroll_xh:	.ds HUC_NUM_SCROLLS	;         |
+scroll_yl:	.ds HUC_NUM_SCROLLS	; y       |
+scroll_yh:	.ds HUC_NUM_SCROLLS	;         | scrolling table
+scroll_top:	.ds HUC_NUM_SCROLLS	; top     |
+scroll_bottom:	.ds HUC_NUM_SCROLLS	; bottom  |
+scroll_cr:	.ds HUC_NUM_SCROLLS	; control |
 
 ; [ 69] display list
 	.bss
@@ -33,26 +41,30 @@ s_work		.ds 3
 ; ----
 
 build_disp_list:
+
+  ; Turboxray (7/24/21): This check doesn't bother taking into account whether all entries have valid values or not. Disabling this "quick test". It's also redundant.
 	; ----
 	; quick test
 	;
-	lda	scroll_cr
-	ora	scroll_cr+1
-	ora	scroll_cr+2
-	ora	scroll_cr+3
-	and	#$01
-	bne	.l0
-	; --
-	clc
-	rts
+	; lda	scroll_cr
+	; ora	scroll_cr+1
+	; ora	scroll_cr+2
+	; ora	scroll_cr+3
+	; and	#$01
+	; bne	.l0
+	; ; --
+	; clc
+	; rts
 
 	; ----
 	; parse user scroll list
 	;
-.l0:	clx
+.l0:
+  clx
 	cly
 	; --
-.l1:	lda	scroll_cr,Y
+.l1:
+  lda	scroll_cr,Y
 	and	#$01
 	beq	.l2
 	lda	scroll_top,Y
@@ -81,7 +93,7 @@ build_disp_list:
 	inx
 .l2:
 	iny
-	cpy	#4
+	cpy	#HUC_NUM_SCROLLS
 	blo	.l1
 
 	; ----
@@ -95,7 +107,8 @@ build_disp_list:
 	; --
 	cly
 	cla
-.l3:	sta	s_list,Y
+.l3:
+  sta	s_list,Y
 	inc a
 	iny
 	dex
