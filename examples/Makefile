@@ -2,7 +2,8 @@
 # Makefile for examples
 #
 
-SUBDIRS = acd designer promotion scroll sgx shmup
+# SUBDIRS = acd designer promotion scroll sgx shmup
+SUBDIRS = acd promotion scroll sgx
 
 all clean:
 	@$(MAKE) $(SUBDIRS) "COMMAND=$@"
