@@ -209,6 +209,47 @@ putword(int offset, int data)
 
 
 /* ----
+ * putdword()
+ * ----
+ * store a double word in the rom
+ */
+
+void
+putdword(int offset, int data)
+{
+	int addr;
+
+	if (bank >= RESERVED_BANK)
+		return;
+
+	addr = offset + 4 + (bank << 13);
+	if (addr > rom_limit) {
+		fatal_error("ROM overflow!");
+		return;
+	}
+
+	/* low byte */
+	rom[bank][offset] = (data) & 0xFF;
+	map[bank][offset] = section + (page << 5);
+
+	/* high byte */
+	rom[bank][offset + 1] = (data >> 8) & 0xFF;
+	map[bank][offset + 1] = section + (page << 5);
+
+	rom[bank][offset + 2] = (data>>16) & 0xFF;
+	map[bank][offset + 2] = section + (page << 5);
+
+	/* high byte */
+	rom[bank][offset + 3] = (data >> 24) & 0xFF;
+	map[bank][offset + 3] = section + (page << 5);
+
+	/* update rom size */
+	if (((addr - 1) >> 13) > max_bank)
+		max_bank = ((addr - 1) >> 13);
+}
+
+
+/* ----
  * putbuffer()
  * ----
  * copy a buffer at the current location

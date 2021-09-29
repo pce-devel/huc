@@ -237,6 +237,15 @@ void gcall (char *sname, intptr_t nargs)
 }
 
 /*
+ *	call the specified macro name
+ *
+ */
+void gmacro (char *sname, intptr_t nargs)
+{
+	out_ins_ex(I_MACRO, T_SYMBOL, (intptr_t)sname, T_VALUE, nargs);
+}
+
+/*
  *         generate a bank pseudo instruction
  *
  */

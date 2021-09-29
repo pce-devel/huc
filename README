@@ -101,3 +101,9 @@ C. Tools
 - pceas updated to version 3.22
 - pceas symbol table rearranged to allow easier sorting by address
 - Develo tool ported to Linux (UNTESTED)
+
+
+NEW: 
+  added 8bpp uncompressed .BMP support
+  
+  

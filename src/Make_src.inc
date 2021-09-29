@@ -9,7 +9,7 @@
 # general stuff
 #
 CDEFS =
-CFLAGS = -Werror -Wall -g -O2
+CFLAGS = -Wall -g -O2
 CFLAGS += -DGIT_VERSION="\"$(shell git describe --long --tags --dirty --always)\""
 CFLAGS += -DGIT_DATE="\"$(shell git show -s --format=%ci|cut -d" " -f1)\""
 LDFLAGS = -g
@@ -29,3 +29,4 @@ MAKETARG=$(ROOTDIR)/src/Maketarg.inc
 EXESUFFIX = 
 CP = cp
 RM = rm -f
+CC = gcc

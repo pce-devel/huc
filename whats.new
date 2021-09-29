@@ -42,6 +42,11 @@ New in version 3.99:
 - Add new example project that shows using ProMotion to create HuC maps.
 - Update PCEAS documentation with latest features.
 
+2020-4-14
+- Added support for "macro" append option for pragma fastcalls. The output
+  of the corresponding macro name is used in place of "call". It equates
+  to in-lining the asm code. Note: arguments are not passed to the macro.
+
 
 New in version 3.21:
 --------------------

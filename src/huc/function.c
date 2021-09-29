@@ -100,6 +100,8 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 			fc->flags = 0;
 			if (match("__nop"))
 				fc->flags = 0x01;
+			if (match("__macro"))
+				fc->flags = 0x04;
 		}
 		else {
 			/* No explicit return type. */
@@ -784,16 +786,22 @@ void callfunction (char *ptr)
 	if (ptr == NULL)
 		callstk(nargs);
 	else {
-		if (fast) {
-			if (fast->flags & 0x01)
-				goto l1;
+		if (fast && ((fast->flags & FASTCALL_NOP) || (fast->flags & FASTCALL_MACRO))) {
+
+			// Only macro fastcalls get a name generated
+			if (fast->flags & FASTCALL_MACRO)
+				if (nb)
+					gmacro(ptr, cnt);
+				else
+					gmacro(ptr, 0);
 		}
-		if (nb)
+		// Else not a NOP or MACRO fastcall
+		else if (nb)
 			gcall(ptr, cnt);
 		else
 			gcall(ptr, 0);
 	}
-l1:
+
 	/* adjust stack */
 	if (nargs > INTSIZE) {
 		nargs = nargs - INTSIZE;

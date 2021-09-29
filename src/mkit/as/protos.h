@@ -1,3 +1,7 @@
+#if defined(_MSC_VER)
+#	define strcasecmp _stricmp
+#endif
+
 /* ASSEMBLE.C */
 void assemble(int do_label);
 int  oplook(int *idx);
@@ -30,6 +34,7 @@ void do_nolist(int *ip);
 void do_nomlist(int *ip);
 void do_db(int *ip);
 void do_dw(int *ip);
+void do_dd(int *ip);
 void do_dwl(int *ip);
 void do_dwh(int *ip);
 void do_equ(int *ip);
@@ -69,7 +74,9 @@ int  func_extract(int ip);
 int  func_getargs(void);
 
 /* INPUT.C */
-void  init_path(void);
+int   add_path(char*, int);
+void  cleanup_path(void);
+int   init_path(void);
 int   readline(void);
 int   open_input(char *name);
 int   close_input(void);
@@ -100,6 +107,7 @@ void loadlc(int offset, int f);
 void hexcon(int digit, int num);
 void putbyte(int offset, int data);
 void putword(int offset, int data);
+void putdword(int offset, int data);
 void putbuffer(void *data, int size);
 void write_srec(char *fname, char *ext, int base);
 void error(char *stptr);
@@ -118,6 +126,7 @@ int  pcx_load(char *name);
 void decode_256(FILE *fp, int w, int h);
 void decode_16(FILE *fp, int w, int h);
 int  png_load(char *name);
+int  bmp_load(char *name);
 
 /* PROC.C */
 void do_call(int *ip);

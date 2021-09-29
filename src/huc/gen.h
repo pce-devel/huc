@@ -18,6 +18,7 @@ void gpusharg (intptr_t size);
 void gpop (void);
 void swapstk (void);
 void gcall (char *sname, intptr_t nargs);
+void gmacro (char *sname, intptr_t nargs);
 void gbank (unsigned char bank, unsigned short offset);
 void gret (void);
 void callstk (intptr_t nargs);

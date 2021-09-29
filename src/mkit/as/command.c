@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <strings.h>
 #include <string.h>
 #include <ctype.h>
 #include "defs.h"
@@ -442,6 +441,77 @@ do_dwh(int *ip)
 
 			/* store word */
 			putbyte(loccnt - 1, ((value >> 8) & 0xff));
+		}
+
+		/* check if there's another word */
+		c = prlnbuf[(*ip)++];
+
+		if (c != ',')
+			break;
+	}
+
+	/* check error */
+	if (c != ';' && c != '\0') {
+		error("Syntax error!");
+		return;
+	}
+
+	/* size */
+	if (lablptr) {
+		lablptr->data_type = P_DB;
+		lablptr->data_size = loccnt - data_loccnt;
+	}
+	else {
+		if (lastlabl) {
+			if (lastlabl->data_type == P_DB)
+				lastlabl->data_size += loccnt - data_loccnt;
+		}
+	}
+
+	/* output line */
+	if (pass == LAST_PASS)
+		println();
+}
+
+
+/* ----
+ * do_dw()
+ * ----
+ * .dw pseudo
+ */
+
+void
+do_dd(int *ip)
+{
+	char c;
+
+	/* define label */
+	labldef(loccnt, 1);
+
+	/* output infos */
+	data_loccnt = loccnt;
+	data_size = 4;
+	data_level = 2;
+
+	/* get data */
+	for (;;) {
+		/* get a word */
+		if (!evaluate(ip, 0))
+			return;
+
+		/* update location counter */
+		loccnt += 4;
+
+		/* store dword on last pass */
+		if (pass == LAST_PASS) {
+			/* check for overflow */
+			if ((value > 0xFFFF) && (value > 0xffffffff)) {
+				error("Overflow error!");
+				return;
+			}
+
+			/* store word */
+			putdword(loccnt - 4, value);
 		}
 
 		/* check if there's another word */

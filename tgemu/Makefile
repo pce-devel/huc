@@ -26,3 +26,5 @@ $(TARGET):	$(OBJS)
 	$(CC) -o tgemu $(OBJS)
 clean:
 	rm -f $(OBJS) tgemu
+
+CC = gcc

@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <strings.h>
 #include <string.h>
 #include <ctype.h>
 #include "defs.h"
@@ -379,6 +378,10 @@ pcx_load(char *name)
 	if (((l = strlen(name)) > 4) && (strcasecmp(".png", (name + l - 4)) == 0))
 		return (png_load(name));
 
+	/* do we want to load a bmp file instead of a pcx file? */
+	if (((l = strlen(name)) > 4) && (strcasecmp(".bmp", (name + l - 4)) == 0))
+		return (bmp_load(name));
+
 	/* no it's a new file - ok let's prepare loading */
 	if (pcx_buf)
 		free(pcx_buf);
@@ -599,6 +602,135 @@ decode_16(FILE *f, int w, int h)
 
 	/* number of colors */
 	pcx_nb_colors = 16;
+}
+
+#include <stdint.h>
+#pragma pack(1)
+typedef struct
+{
+	uint16_t magic;
+	uint32_t fileSize;
+	uint32_t reserved0;
+	uint32_t bitmapDataOffset;
+	uint32_t bitmapHeaderSize;
+	uint32_t width;
+	uint32_t height;
+	uint16_t planes;
+	uint16_t bitsPerPixel;
+	uint32_t compression;
+	uint32_t bitmapDataSize;
+	uint32_t hRes;
+	uint32_t vRes;
+	uint32_t colors;
+	uint32_t importantColors;
+} BMPHeader_t;
+
+int
+bmp_load(char *name)
+{
+	BMPHeader_t header;
+	int i;
+	FILE *      pFile      = NULL;
+	/* no it's a new file - ok let's prepare loading */
+	if (pcx_buf)
+		free(pcx_buf);
+	pcx_buf = NULL;
+	pcx_name[0] = '\0';
+
+	/* open the file */
+	if ((pFile = open_file(name, "rb")) == NULL) {
+		error("Can not open file!");
+		goto errorCleanup;
+	}
+
+	fread(&header,1,sizeof(BMPHeader_t),pFile);
+
+	/* adjust picture size to 8-pixel character boundaries */
+	pcx_w = (header.width + 7) & ~7;
+	pcx_h = (header.height + 7) & ~7;
+
+	/* check size range */
+	if ((pcx_w > 16384) || (pcx_h > 4096)) {
+		error("Picture size too big, max. 16384x4096!");
+		goto errorCleanup;
+	}
+	if ((pcx_w < 16) || (pcx_h < 16)) {
+		error("Picture size too small, min. 16x16!");
+		goto errorCleanup;
+	}
+
+	/* malloc a buffer */
+	pcx_buf = malloc(pcx_w * pcx_h);
+	if (pcx_buf == NULL) {
+		error("Can not load file, not enough memory!");
+		goto errorCleanup;
+	}
+	for (i=0;i<header.colors;i++)
+	{
+		fread(&pcx_pal[i][2],1,1,pFile);
+		fread(&pcx_pal[i][1],1,1,pFile);
+		fread(&pcx_pal[i][0],1,1,pFile);
+		fseek(pFile,1,SEEK_CUR);
+	}
+	for (i = header.colors; i < 256; i += 1) {
+		pcx_pal[i][0] = 0;
+		pcx_pal[i][1] = 0;
+		pcx_pal[i][2] = 0;
+	}
+	pcx_nb_colors = 256;
+
+	if (header.bitsPerPixel==4)
+	{
+		for (uint32_t y=0;y<pcx_h;y++)
+		{
+			for (uint32_t x=0;x<pcx_w;x+=2)
+			{
+				uint8_t byte;
+				fread(&byte,1,1,pFile);
+				pcx_buf[x+(((header.height-1-y))*header.width)]=byte>>4;
+				pcx_buf[1+x+(((header.height-1-y))*header.width)]=byte&0xf;
+			}
+		}
+	}
+	else 
+	{
+//					uint8_t *src = &buffer[bmp_header->bitmapDataOffset];
+		fseek(pFile,header.bitmapDataOffset,SEEK_SET);
+		for (uint32_t y=0;y<pcx_h;y++)
+		{
+
+			for (uint32_t x=0;x<pcx_w;x++)
+			{
+				uint8_t byte;
+				fread(&byte,1,1,pFile);
+				pcx_buf[x+(((header.height-1-y))*header.width)]=byte;
+			}
+		}
+	}
+
+/*
+	aImageRows = (png_byte **) malloc(uHeight * sizeof(png_byte *));
+	if (aImageRows == NULL) {
+		error("Can not load file, not enough memory!");
+		goto errorCleanup;
+	}
+	for (i = 0; i < uHeight; i++)
+		aImageRows[i] = (png_byte *) (pcx_buf + pcx_w * i);
+	png_read_image(pPngStruct, aImageRows);
+	png_read_end(pPngStruct, NULL);
+	png_destroy_read_struct(&pPngStruct, &pPngInfo, NULL);
+	free(aImageRows);
+*/
+	fclose(pFile);
+	strcpy(pcx_name, name);
+	return (1);
+
+	/* error handlers (reached via the dreaded goto) */
+	errorCleanup:
+	if (pFile)
+		fclose(pFile);
+
+	return (0);
 }
 
 

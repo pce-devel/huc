@@ -641,6 +641,24 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case I_MACRO:
+		switch (type) {
+		case T_SYMBOL:
+			ot("  \t");
+			outsymbol((char *)data);
+			if (imm_data) {
+				outstr(".");
+				outdec(imm_data);
+			}
+			break;
+		case T_LIB:
+			ot("  \t");
+			outstr((char *)data);
+			break;
+		}
+		nl();
+		break;
+
 	case I_MAPCBANK:
 		ot("__map_callbank\t");
 		outsymbol((char *)data);

@@ -122,6 +122,7 @@
 #define I_CLI        92
 #define I_MAPCBANK   93
 #define I_UNMAPCBANK 94
+#define I_MACRO      95			// Used to fastcall macro calling support
 
 /* optimized pseudo instructions */
 #define X_MASK          0xFFFF0
@@ -359,6 +360,8 @@ struct const_array {
 /* fastcall func struct */
 
 #define MAX_FASTCALL_ARGS 8
+#define FASTCALL_NOP      0x01  // bitmask values
+#define FASTCALL_MACRO    0x04	// bitmask values
 
 struct fastcall {
 	struct fastcall *next;

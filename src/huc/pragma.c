@@ -370,7 +370,9 @@ void new_fastcall (void)
 	}
 	if (symget(sname)) {
 		if (strcmp(sname, "nop") == 0)
-			ptr->flags |= 0x01;
+			ptr->flags |= FASTCALL_NOP;
+		if (strcmp(sname, "macro") == 0)
+			ptr->flags |= FASTCALL_MACRO;
 	}
 
 	/* check arg number */
