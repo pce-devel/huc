@@ -27,15 +27,15 @@
 /*************/
 
 #define OVERLAY_SUFFIX  "ovl"
-#define MAX_FILES 256
+#define MAX_FILES 255
 
 
 /*************/
 /* GLOBALS   */
 /*************/
 
-int sector_array[MAX_FILES];
-int file_count;
+int sector_array[MAX_FILES + 1];
+int file_count = 0;
 int cderr_flag = 0;
 int cderr_ovl = 0;
 static char incpath[10][256];
@@ -379,7 +379,7 @@ ipl_write(FILE *outfile)
    }
 
    /* store directory information in the last 512 bytes of the 1st sector */
-   for (i = 0; i < 256; i++) {
+   for (i = 0; i <= MAX_FILES; i++) {
 
       /* sector_array[0] is ipl.bin which is a segment    */
       /* but not an addressable one - still, it is stored */
@@ -393,6 +393,12 @@ ipl_write(FILE *outfile)
 
    /* store which is the first file beyond the 128Mbyte ISO boundary */
    ipl_buffer[0x5FF] = beyond128mb;
+
+   /* store which is the cd error overlay file */
+   ipl_buffer[0x5FE] = cderr_ovl;
+
+   /* store the count of directory entries */
+   ipl_buffer[0x5FD] = file_count;
 
    /* write out the ipl data */
    fwrite(ipl_buffer, 1, 2048 * sectors, outfile);
@@ -471,6 +477,7 @@ main(int argc, char *argv[])
    }
 
    for (i = 2; i < argc; i++) {
+      /* is this an option? */
       if (argv[i][0] == '-') {
          if ((strncmp(argv[i], "-ipl,", 5) == 0) &&
              (i == 2) &&                /* only valid for first arg */
@@ -492,45 +499,45 @@ main(int argc, char *argv[])
                ptr = nxt + 1;
 
                /* Allow HuC developers to set *only* the program name */
-               if (*nxt == '\0') continue;
+               if (*nxt != '\0') {
+                  ipl_flag = -1;
 
-               ipl_flag = -1;
+                  val = strtol(ptr, &nxt, 0);
+                  if (nxt != ptr) ipl_load = val;
+                  if (*nxt != ',') break;
+                  ptr = nxt + 1;
 
-               val = strtol(ptr, &nxt, 0);
-               if (nxt != ptr) ipl_load = val;
-               if (*nxt != ',') break;
-               ptr = nxt + 1;
+                  val = strtol(ptr, &nxt, 0);
+                  if (nxt != ptr) ipl_exec = val;
+                  if (*nxt != ',') break;
+                  ptr = nxt + 1;
 
-               val = strtol(ptr, &nxt, 0);
-               if (nxt != ptr) ipl_exec = val;
-               if (*nxt != ',') break;
-               ptr = nxt + 1;
+                  val = strtol(ptr, &nxt, 0);
+                  if (nxt != ptr) ipl_mpr2 = val;
+                  if (*nxt != ',') break;
+                  ptr = nxt + 1;
 
-               val = strtol(ptr, &nxt, 0);
-               if (nxt != ptr) ipl_mpr2 = val;
-               if (*nxt != ',') break;
-               ptr = nxt + 1;
+                  val = strtol(ptr, &nxt, 0);
+                  if (nxt != ptr) ipl_mpr3 = val;
+                  if (*nxt != ',') break;
+                  ptr = nxt + 1;
 
-               val = strtol(ptr, &nxt, 0);
-               if (nxt != ptr) ipl_mpr3 = val;
-               if (*nxt != ',') break;
-               ptr = nxt + 1;
+                  val = strtol(ptr, &nxt, 0);
+                  if (nxt != ptr) ipl_mpr4 = val;
+                  if (*nxt != ',') break;
+                  ptr = nxt + 1;
 
-               val = strtol(ptr, &nxt, 0);
-               if (nxt != ptr) ipl_mpr4 = val;
-               if (*nxt != ',') break;
-               ptr = nxt + 1;
+                  val = strtol(ptr, &nxt, 0);
+                  if (nxt != ptr) ipl_mpr5 = val;
+                  if (*nxt != ',') break;
+                  ptr = nxt + 1;
 
-               val = strtol(ptr, &nxt, 0);
-               if (nxt != ptr) ipl_mpr5 = val;
-               if (*nxt != ',') break;
-               ptr = nxt + 1;
+                  val = strtol(ptr, &nxt, 0);
+                  if (nxt != ptr) ipl_mpr6 = val;
+                  if (*nxt != '\0') break;
 
-               val = strtol(ptr, &nxt, 0);
-               if (nxt != ptr) ipl_mpr6 = val;
-               if (*nxt != '\0') break;
-
-               ipl_flag = 1;
+                  ipl_flag = 1;
+               }
 
                sector_array[j] = curr_sector;
                curr_sector += 2;
@@ -550,6 +557,13 @@ main(int argc, char *argv[])
             usage();
             exit(1);
          }
+      }
+
+      /* is the directory full? */
+      if (j == MAX_FILES) {
+         printf("Too many files on the CD!\nThe maximum is %d.\n", MAX_FILES);
+         printf("Operation aborted\n\n");
+         exit(1);
       }
 
       inname = argv[i];
@@ -599,7 +613,7 @@ main(int argc, char *argv[])
    file_count = j;
 
    /* fill in the rest of the directory */
-   while (j < MAX_FILES) sector_array[j++] = curr_sector;
+   while (j <= MAX_FILES) sector_array[j++] = curr_sector;
 
    /* OK, let's open them for real now   */
    /* and copy them from input to output */
