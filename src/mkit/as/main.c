@@ -600,25 +600,50 @@ main(int argc, char **argv)
 				/* initialize the ipl */
 				prepare_ipl(ipl_buffer);
 
-				memset(&ipl_buffer[0x800], 0, 32);
 				/* prg sector base */
 				ipl_buffer[0x802] = 2;
+
 				/* nb sectors */
-				ipl_buffer[0x803] = 16;
+				if (lablexists("HUC")) {
+					ipl_buffer[0x803] = 16;
+				} else {
+					ipl_buffer[0x803] = (max_bank + 1) * 8192 / 2048;
+				}
+
 				/* loading address */
 				ipl_buffer[0x804] = 0x00;
 				ipl_buffer[0x805] = 0x40;
+
 				/* starting address */
 				ipl_buffer[0x806] = BOOT_ENTRY_POINT & 0xFF;
 				ipl_buffer[0x807] = (BOOT_ENTRY_POINT >> 8) & 0xFF;
+
 				/* mpr registers */
 				ipl_buffer[0x808] = 0x00;
 				ipl_buffer[0x809] = 0x01;
 				ipl_buffer[0x80A] = 0x02;
 				ipl_buffer[0x80B] = 0x03;
 				ipl_buffer[0x80C] = 0x00;	/* boot loader @ $C000 */
+
 				/* load mode */
 				ipl_buffer[0x80D] = 0x60;
+
+				/* directory with only 2 files, the IPL and this program */
+				ipl_buffer[0x600] = (0);
+				ipl_buffer[0x700] = (0) >> 8;
+				ipl_buffer[0x601] = (2);
+				ipl_buffer[0x701] = (2) >> 8;
+				ipl_buffer[0x602] = (2 + ((max_bank + 1) * 8192 / 2048));
+				ipl_buffer[0x702] = (2 + ((max_bank + 1) * 8192 / 2048)) >> 8;
+
+				/* store which is the first file beyond the 128Mbyte ISO boundary */
+				ipl_buffer[0x5FF] = 255;
+
+				/* store which is the cd error overlay file */
+				ipl_buffer[0x5FE] = 0;
+
+				/* store the count of directory entries */
+				ipl_buffer[0x5FD] = 2;
 
 				/* write boot code */
 				fwrite(ipl_buffer, 1, 4096, fp);
