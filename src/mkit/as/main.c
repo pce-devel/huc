@@ -286,7 +286,7 @@ main(int argc, char **argv)
 	/* display assembler version message */
 	printf("%s\n\n", machine->asm_title);
 	
-	while ((opt = getopt_long_only (argc, argv, cmd_line_options, cmd_line_long_options, &i)) > 0)
+	while ((opt = getopt_long_only (argc, argv, cmd_line_options, cmd_line_long_options, NULL)) != -1)
 	{
 		switch(opt)
 		{	
@@ -319,9 +319,9 @@ main(int argc, char **argv)
 				}
 				break;
 			
-            case 'o':
-                strcpy(out_fname, optarg);
-                break;
+			case 'o':
+				strcpy(out_fname, optarg);
+				break;
 
 			case 'h':
 				help();
