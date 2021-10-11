@@ -54,6 +54,8 @@ FILE *lst_fp;		/* listing */
 char section_name[4][8] = {
 	"  ZP", " BSS", "CODE", "DATA"
 };
+int newproc_opt;
+int strip_opt;
 int dump_seg;
 int overlayflag;
 int develo_opt;
@@ -228,6 +230,8 @@ main(int argc, char **argv)
 		{"mx",		0, &mx_opt, 	 1 },
 		{"srec",	0, &srec_opt, 	 1 },
 		{"help",	0, 0,		'h'},
+		{"strip",	0, &strip_opt,	 1 },
+		{"newproc",	0, &newproc_opt, 1 },
 		{0,		0, 0,		 0 }
 	};
 
@@ -281,6 +285,8 @@ main(int argc, char **argv)
 	mx_opt = 0;
 	file = 0;
 	cd_type = 0;
+	strip_opt = 0;
+	newproc_opt = 0;
 	
     	memset(out_fname, 0, 256);
 
@@ -564,8 +570,13 @@ main(int argc, char **argv)
 		if (pass == FIRST_PASS) {
 			lablset("_bss_end", machine->ram_base + max_bss);
 			lablset("_bank_base", bank_base);
-			lablset("_call_bank", bank_base + max_bank + 1);
-			lablset("_nb_bank", max_bank + 2);
+			if (newproc_opt == 0) {
+				lablset("_call_bank", bank_base + max_bank + 1);
+				lablset("_nb_bank", max_bank + 2);
+			} else {
+				lablset("_call_bank", bank_base);
+				lablset("_nb_bank", max_bank + 1);
+			}
 		}
 
 		/* adjust the symbol table for the develo or for cd-roms */
@@ -828,9 +839,11 @@ help(void)
 		printf("-over(lay) : create an executable 'overlay' program segment\n");
 		printf("-dev       : assemble and run on the Develo Box\n");
 		printf("-mx        : create a Develo MX file\n");
+		printf("-strip     : strip unused .proc & .procgroup\n");
+		printf("-newproc   : put .proc trampolines in first bank not last\n");
 	}
-	printf("-srec  : create a Motorola S-record file\n");
-	printf("infile : file to be assembled\n");
+	printf("-srec      : create a Motorola S-record file\n");
+	printf("infile     : file to be assembled\n");
 	printf("\n");
 }
 

@@ -14,6 +14,9 @@ int proc_nb;
 int call_ptr;
 int call_bank;
 
+extern int strip_opt;
+extern int newproc_opt;
+
 /* protos */
 struct t_proc *proc_look(void);
 int            proc_install(void);
@@ -40,60 +43,88 @@ do_call(int *ip)
 	data_loccnt = loccnt;
 	loccnt += 3;
 
+	/* skip spaces */
+	while (isspace(prlnbuf[*ip]))
+		(*ip)++;
+
+	/* extract name */
+	if (!colsym(ip)) {
+		if (symbol[0] == 0)
+			fatal_error("Syntax error!");
+		return;
+	}
+
+	/* check end of line */
+	check_eol(ip);
+
+	/* increment procedure refcnt */
+	if (stlook(1) == NULL)
+		return;
+
 	/* generate code */
 	if (pass == LAST_PASS) {
-		/* skip spaces */
-		while (isspace(prlnbuf[*ip]))
-			(*ip)++;
-
-		/* extract name */
-		if (!colsym(ip)) {
-			if (symbol[0] == 0)
-				fatal_error("Syntax error!");
-			return;
-		}
-
-		/* check end of line */
-		check_eol(ip);
-
 		/* lookup proc table */
 		if((ptr = proc_look())) {
 			/* check banks */
-			if (bank == ptr->bank)
-				value = ptr->org + 0xA000;
-			else {
+			if ((newproc_opt == 0) && (bank == ptr->bank)) {
 				/* different */
-				if (ptr->call)
+				value = ptr->org + 0xA000;
+			} else {
+				/* different */
+				if (ptr->call) {
 					value = ptr->call;
-				else {
-					/* new call */
-					value = call_ptr + 0x8000;
-					ptr->call = value;
-
+				} else {
 					/* init */
 					if (call_ptr == 0) {
-						call_bank = ++max_bank;
+						if (newproc_opt == 0) {
+							call_bank = ++max_bank;
+							call_ptr  = 0x0000;
+						} else {
+							call_bank = 0;
+							call_ptr  = 0x1FD0;
+						}
 					}
 
-					/* install */
-					poke(call_ptr++, 0xA8);			// tay
-					poke(call_ptr++, 0x43);			// tma #5
-					poke(call_ptr++, 0x20);
-					poke(call_ptr++, 0x48);			// pha
-					poke(call_ptr++, 0xA9);			// lda #...
-					poke(call_ptr++, ptr->bank+bank_base);
-					poke(call_ptr++, 0x53);			// tam #5
-					poke(call_ptr++, 0x20);
-					poke(call_ptr++, 0x98);			// tya
-					poke(call_ptr++, 0x20);			// jsr ...
-					poke(call_ptr++, (ptr->org & 0xFF));
-					poke(call_ptr++, (ptr->org >> 8) + 0xA0);
-					poke(call_ptr++, 0xA8);			// tay
-					poke(call_ptr++, 0x68);			// pla
-					poke(call_ptr++, 0x53);			// tam #5
-					poke(call_ptr++, 0x20);
-					poke(call_ptr++, 0x98);			// tya
-					poke(call_ptr++, 0x60);			// rts
+					/* new call */
+					if (newproc_opt == 0) {
+						/* install HuC trampolines at start of MPR4, map code into MPR5 */
+						value = call_ptr + 0x8000;
+
+						poke(call_ptr++, 0xA8);			// tay
+						poke(call_ptr++, 0x43);			// tma #5
+						poke(call_ptr++, 0x20);
+						poke(call_ptr++, 0x48);			// pha
+						poke(call_ptr++, 0xA9);			// lda #...
+						poke(call_ptr++, ptr->bank + bank_base);
+						poke(call_ptr++, 0x53);			// tam #5
+						poke(call_ptr++, 0x20);
+						poke(call_ptr++, 0x98);			// tya
+						poke(call_ptr++, 0x20);			// jsr ...
+						poke(call_ptr++, (ptr->org + 0xA000) & 255);
+						poke(call_ptr++, (ptr->org + 0xA000) >> 8);
+						poke(call_ptr++, 0xA8);			// tay
+						poke(call_ptr++, 0x68);			// pla
+						poke(call_ptr++, 0x53);			// tam #5
+						poke(call_ptr++, 0x20);
+						poke(call_ptr++, 0x98);			// tya
+						poke(call_ptr++, 0x60);			// rts
+					} else {
+						/* install new trampolines at end of MPR7, map code into MPR6 */
+						poke(--call_ptr, (ptr->org + 0xC000) >> 8);
+						poke(--call_ptr, (ptr->org + 0xC000) & 255);
+						poke(--call_ptr, 0x4C);			// jmp ...
+						poke(--call_ptr, 0x40);
+						poke(--call_ptr, 0x53);			// tam #6
+						poke(--call_ptr, ptr->bank + bank_base);
+						poke(--call_ptr, 0xA9);			// lda #...
+						poke(--call_ptr, 0x48);			// pha
+						poke(--call_ptr, 0x40);
+						poke(--call_ptr, 0x43);			// tma #6
+
+						value = call_ptr + 0xE000;
+					}
+
+					ptr->call = value;
 				}
 			}
 		}
@@ -147,6 +178,11 @@ do_proc(int *ip)
 	if (lablptr) {
 		strcpy(&symbol[1], &lablptr->name[1]);
 		symbol[0] = strlen(&symbol[1]);
+
+		/* hack to fix double-counted reference when label is */
+		/* used in code and then defined on line before .proc */
+		if (lablptr->refcnt)
+			lablptr->refcnt--;
 	}
 	else {
 		/* skip spaces */
@@ -194,7 +230,7 @@ do_proc(int *ip)
 		return;
 	}
 
-	/* incrememte proc ref counter */
+	/* increment proc ref counter */
 	proc_ptr->refcnt++;
 
 	/* backup current bank infos */
@@ -206,7 +242,7 @@ do_proc(int *ip)
 
 	/* set new bank infos */
 	bank     = proc_ptr->bank;
-	page     = 5;
+	page     = (newproc_opt == 0) ? 5 : 6;
 	loccnt   = proc_ptr->org;
 	glablptr = lablptr;
 
@@ -322,82 +358,101 @@ proc_reloc(void)
 
 	proc_ptr = proc_first;
 
+	/* sum up each group's refcnt */
+	while (proc_ptr) {
+		/* proc within a group */
+		if (proc_ptr->group != NULL) {
+			proc_ptr->group->label->refcnt += proc_ptr->label->refcnt;
+		}
+		proc_ptr = proc_ptr->link;
+	}
+
+	proc_ptr = proc_first;
+
 	/* alloc memory */
 	while (proc_ptr) {
-		/* proc */
+
+		/* group or standalone proc */
 		if (proc_ptr->group == NULL) {
-			int check = 0;
-			int unusedspace = 0x2000;
-			int proposedbank = -1;
 
-			while(proposedbank == -1)
-			{
-				for(check = 0; check < minbanks; check++)
+			/* relocate or strip? */
+			if ((strip_opt != 0) && (proc_ptr->label->refcnt < 1)) {
+				/* strip this unused code from the ROM */
+				proc_ptr->bank = STRIPPED_BANK;
+			} else {
+				/* relocate code to any unused bank in ROM */
+				int check = 0;
+				int unusedspace = 0x2000;
+				int proposedbank = -1;
+
+				while(proposedbank == -1)
 				{
-					if(bankleft[check] > proc_ptr->size)
+					for(check = 0; check < minbanks; check++)
 					{
-						if(unusedspace > bankleft[check] - proc_ptr->size)
+						if(bankleft[check] > proc_ptr->size)
 						{
-							unusedspace = bankleft[check] - proc_ptr->size;
-							proposedbank = check;
+							if(unusedspace > bankleft[check] - proc_ptr->size)
+							{
+								unusedspace = bankleft[check] - proc_ptr->size;
+								proposedbank = check;
+							}
 						}
+					}
+
+					if(proposedbank == -1)
+					{
+						/* bank change */
+						minbanks++;
+						if (minbanks > bank_limit)
+						{
+							int total = 0, totfree = 0;
+							struct t_proc *current = NULL;
+
+							current = proc_ptr;
+
+							fatal_error("Not enough ROM space for procs!");
+
+							for(i = bank_base; i < bank; i++)
+							{
+								printf("BANK %02X: %d bytes free\n", i, bankleft[i]);
+								totfree += bankleft[i];
+							}
+							printf("Total free space in all banks %d\n", totfree);
+
+							total = 0;
+							proc_ptr = proc_first;
+							while (proc_ptr) {
+								printf("Proc: %s Bank: 0x%02X Size: %d %s\n",
+									proc_ptr->name, proc_ptr->bank == PROC_BANK ? 0 : proc_ptr->bank, proc_ptr->size,
+									proc_ptr->bank == PROC_BANK && proc_ptr == current ? " ** too big **" : proc_ptr->bank == PROC_BANK ? "** unassigned **" : "");
+								if(proc_ptr->bank == PROC_BANK)
+									total += proc_ptr->size;
+								proc_ptr = proc_ptr->link;
+							}
+							printf("\nTotal bytes that didn't fit in ROM: %d\n", total);
+							if(totfree > total && current)
+								printf("Try segmenting the %s procedure into smaller chunks\n", current->name);
+							else
+								printf("There are %d bytes that won't fit into the currently available BANK space\n", total - totfree);
+							errcnt++;
+							return;
+						}
+						proposedbank = minbanks - 1;
 					}
 				}
 
-				if(proposedbank == -1)
-				{
-					/* bank change */
-					minbanks++;
-					if (minbanks > bank_limit)
-					{
-						int total = 0, totfree = 0;
-						struct t_proc *current = NULL;
+				proc_ptr->bank = proposedbank;
+				proc_ptr->org = 0x2000 - bankleft[proposedbank];
 
-						current = proc_ptr;
-
-						fatal_error("Not enough ROM space for procs!");
-
-						for(i = bank_base; i < bank; i++)
-						{
-							printf("BANK %02X: %d bytes free\n", i, bankleft[i]);
-							totfree += bankleft[i];
-						}
-						printf("Total free space in all banks %d\n", totfree);
-
-						total = 0;
-						proc_ptr = proc_first;
-						while (proc_ptr) {
-							printf("Proc: %s Bank: 0x%02X Size: %d %s\n",
-								proc_ptr->name, proc_ptr->bank == 241 ? 0 : proc_ptr->bank, proc_ptr->size,
-								proc_ptr->bank == 241 && proc_ptr == current ? " ** too big **" : proc_ptr->bank == 241 ? "** unassigned **" : "");
-							if(proc_ptr->bank == 241)
-								total += proc_ptr->size;
-							proc_ptr = proc_ptr->link;
-						}
-						printf("\nTotal bytes that didn't fit in ROM: %d\n", total);
-						if(totfree > total && current)
-							printf("Try segmenting the %s procedure into smaller chunks\n", current->name);
-						else
-							printf("There are %d bytes that won't fit into the currently available BANK space\n", total - totfree);
-						errcnt++;
-						return;
-					}
-					proposedbank = minbanks - 1;
-				}
+				bankleft[proposedbank] -= proc_ptr->size;
 			}
-
-
-			proc_ptr->bank = proposedbank;
-			proc_ptr->org = 0x2000 - bankleft[proposedbank];
-
-			bankleft[proposedbank] -= proc_ptr->size;
 		}
 
-		/* group */
+		/* proc within a group */
 		else {
 			/* reloc proc */
 			group = proc_ptr->group;
-			proc_ptr->bank = bank;
+			proc_ptr->bank = group->bank;
 			proc_ptr->org += (group->org - group->base);
 		}
 
@@ -446,9 +501,6 @@ proc_reloc(void)
 			sym = sym->next;
 		}
 	}
-
-	/* reserve call bank */
-	lablset("_call_bank", bank_base + max_bank + 1);
 
 	/* reset */
 	proc_ptr = NULL;
@@ -513,6 +565,7 @@ proc_install(void)
 	ptr->link = NULL;
 	ptr->next = proc_tbl[hash];
 	ptr->group = proc_ptr;
+	ptr->label = lablptr;
 	ptr->type = optype;
 	proc_ptr = ptr;
 	proc_tbl[hash] = proc_ptr;
@@ -556,6 +609,7 @@ proc_sortlist(void)
 {
 	struct t_proc *unsorted_list = proc_first;
 	struct t_proc *sorted_list = NULL;
+
 	while(unsorted_list)
 	{
 		proc_ptr = unsorted_list;

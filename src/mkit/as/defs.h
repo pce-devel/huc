@@ -25,6 +25,7 @@
 #define RESERVED_BANK	0xF0
 #define PROC_BANK	0xF1
 #define GROUP_BANK	0xF2
+#define STRIPPED_BANK	0xF3
 
 /* tile format for encoder */
 #define CHUNKY_TILE	1
@@ -172,6 +173,7 @@ typedef struct t_proc {
 	struct t_proc *next;
 	struct t_proc *link;
 	struct t_proc *group;
+	struct t_symbol *label;
 	int old_bank;
 	int bank;
 	int org;
