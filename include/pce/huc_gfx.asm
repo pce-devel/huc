@@ -1298,7 +1298,7 @@ _map_calc_tile_addr:
 _scroll:
 	ldy	#8
 	lda	[__sp],Y
-	and	#$03
+	and	#$07
 	; --
 	sax
 	and	#$C0

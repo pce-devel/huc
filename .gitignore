@@ -3,8 +3,7 @@
 *.sgx
 *.sym
 *.s
-/huc/huc
-/huc/bin
+/huc/
 /huc/tgemu/tgemu*
 /huc/src/huc/huc
 /huc/src/huc/huc.exe

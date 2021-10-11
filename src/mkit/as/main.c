@@ -223,7 +223,7 @@ main(int argc, char **argv)
 		{"over",	0, &overlayflag, 1 },
 		{"overlay",	0, &overlayflag, 1 },
 		{"dev",		0, &develo_opt,  1 },
-		{"develo",	0, &develo_opt,  1 },			
+		{"develo",	0, &develo_opt,  1 },
 		{"mx",		0, &mx_opt, 	 1 },
 		{"srec",	0, &srec_opt, 	 1 },
 		{"help",	0, 0,		'h'},
@@ -232,7 +232,7 @@ main(int argc, char **argv)
 
 	/* register atexit callback */
 	atexit(cleanup);
-	
+
 	/* get program name */
 	if ((prg_name = strrchr(argv[0], '/')) != NULL)
 		prg_name++;
@@ -280,37 +280,37 @@ main(int argc, char **argv)
 	mx_opt = 0;
 	file = 0;
 	cd_type = 0;
-	
-    	memset(out_fname, 0, 256);
+
+    memset(out_fname, 0, 256);
 
 	/* display assembler version message */
 	printf("%s\n\n", machine->asm_title);
-	
+
 	while ((opt = getopt_long_only (argc, argv, cmd_line_options, cmd_line_long_options, &i)) > 0)
 	{
 		switch(opt)
-		{	
+		{
 			case 's':
 				dump_seg = 1;
 				break;
-				
+
 			case 'S':
 				dump_seg = 2;
 				break;
-			
+
 			case 'l':
 				/* get level */
 				list_level = atol(optarg);
-				
+
 				/* check range */
 				if (list_level < 0 || list_level > 3)
 					list_level = 2;
 				break;
-			
+
 			case 'm':
 				mlist_opt = 1;
 				break;
-				
+
 			case 'I':
 				if(!add_path(optarg, strlen(optarg)+1))
 				{
@@ -318,7 +318,7 @@ main(int argc, char **argv)
 					return 0;
 				}
 				break;
-			
+
             case 'o':
                 strcpy(out_fname, optarg);
                 break;
@@ -326,10 +326,10 @@ main(int argc, char **argv)
 			case 'h':
 				help();
 				return 0;
-				
+
 			default:
 				return 1;
-		}		
+		}
 	}
 
 	/* check for missing asm file */
@@ -338,7 +338,7 @@ main(int argc, char **argv)
 		fprintf(stderr, "Missing input file\n");
 		return 0;
 	}
-	
+
 	/* get file names */
 	for ( ; optind < argc; ++optind, ++file) {
 		strcpy(in_fname, argv[optind]);
@@ -348,11 +348,11 @@ main(int argc, char **argv)
 		/* Adjust cdrom type values ... */
 		switch(cd_type) {
 			case 1:
-				/* cdrom */	
+				/* cdrom */
 				cd_opt  = STANDARD_CD;
 				scd_opt = 0;
 				break;
-				
+
 			case 2:
 				/* super cdrom */
 				scd_opt = SUPER_CD;
