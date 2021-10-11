@@ -1,6 +1,7 @@
 /* simple malloc()/free() implementation
    Based on the snes-sdk implementation which has in turn been adapted
-   from http://www.flipcode.com/archives/Simple_Malloc_Free_Functions.shtml */
+   from http://www.flipcode.com/archives/Simple_Malloc_Free_Functions.shtml
+*/
 
 #include "string.h"
 
