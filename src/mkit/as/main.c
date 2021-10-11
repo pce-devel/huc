@@ -218,6 +218,7 @@ main(int argc, char **argv)
 		{"listing",	1, 0,		'l'},
 		{"macro",       0, 0, 		'm'},
 		{"raw",		0, &header_opt,  0 },
+		{"pad",		0, &padding_opt, 1 },
 		{"cd",		0, &cd_type,	 1 },
 		{"scd",		0, &cd_type,	 2 },
 		{"over",	0, &overlayflag, 1 },
@@ -327,6 +328,9 @@ main(int argc, char **argv)
 				help();
 				return 0;
 				
+			case 0:
+				break;
+
 			default:
 				return 1;
 		}		
