@@ -63,6 +63,7 @@ int header_opt;
 int padding_opt;
 int srec_opt;
 int run_opt;
+int ipl_opt;
 int scd_opt;
 int cd_opt;
 int mx_opt;
@@ -223,6 +224,7 @@ main(int argc, char **argv)
 		{"pad",		0, &padding_opt, 1 },
 		{"cd",		0, &cd_type,	 1 },
 		{"scd",		0, &cd_type,	 2 },
+		{"ipl",		0, &ipl_opt,	 1 },
 		{"over",	0, &overlayflag, 1 },
 		{"overlay",	0, &overlayflag, 1 },
 		{"dev",		0, &develo_opt,  1 },
@@ -280,6 +282,7 @@ main(int argc, char **argv)
 	mlist_opt = 0;
 	srec_opt = 0;
 	run_opt = 0;
+	ipl_opt = 0;
 	scd_opt = 0;
 	cd_opt = 0;
 	mx_opt = 0;
@@ -356,6 +359,10 @@ main(int argc, char **argv)
 
 	if (machine->type == MACHINE_PCE) {
 		/* Adjust cdrom type values ... */
+		if (ipl_opt) {
+			cd_type = 1;
+			overlayflag = 1;
+		}
 		switch(cd_type) {
 			case 1:
 				/* cdrom */	
@@ -376,7 +383,10 @@ main(int argc, char **argv)
 			help();
 			return (0);
 		}
+	} else {
+		ipl_opt = 0;
 	}
+
 	if (!file) {
 		help();
 		return (0);
@@ -397,18 +407,17 @@ main(int argc, char **argv)
 	strcat(lst_fname, ".lst");
 	strcat(sym_fname, ".sym");
 
-    if(out_fname[0]) {
-        strcpy(bin_fname, out_fname);
-    }
-    else {
-        strcpy(bin_fname, in_fname);
-        if (overlayflag == 1)
-            strcat(bin_fname, ".ovl");
-        else if (cd_opt || scd_opt)
-            strcat(bin_fname, ".iso");
-        else
-            strcat(bin_fname, machine->rom_ext);
-    }
+	if (out_fname[0]) {
+		strcpy(bin_fname, out_fname);
+	} else {
+		strcpy(bin_fname, in_fname);
+		if (overlayflag == 1)
+			strcat(bin_fname, ".ovl");
+		else if (cd_opt || scd_opt)
+			strcat(bin_fname, ".iso");
+		else
+			strcat(bin_fname, machine->rom_ext);
+	}
 
 	if (p)
 		*p = '.';
@@ -430,6 +439,13 @@ main(int argc, char **argv)
 	/* clear the ROM array */
 	memset(rom, 0xFF, 8192 * 128);
 	memset(map, 0xFF, 8192 * 128);
+
+	/* are we creating a custom PCE CDROM IPL? */
+	if (ipl_opt) {
+		/* initialize the ipl */
+		prepare_ipl(&rom[0][2048]);
+		memset(map, S_DATA + (1 << 5), 4096);
+	}
 
 	/* clear symbol hash tables */
 	for (i = 0; i < 256; i++) {
@@ -468,8 +484,13 @@ main(int argc, char **argv)
 	errcnt = 0;
 
 	if (cd_opt) {
-		rom_limit = 0x10000;	/* 64KB */
-		bank_limit = 0x07;
+		if (ipl_opt) {
+			rom_limit = 0x01800;	/* 4KB */
+			bank_limit = 0x00;
+		} else {
+			rom_limit = 0x10000;	/* 64KB */
+			bank_limit = 0x07;
+		}
 	}
 	else if (scd_opt) {
 		rom_limit = 0x40000;	/* 256KB */
@@ -665,7 +686,11 @@ main(int argc, char **argv)
 			}
 
 			/* write rom */
-			fwrite(rom, 8192, (max_bank + 1), fp);
+			if (ipl_opt) {
+				fwrite(&rom[0][2048], 4096, 1, fp);
+			} else {
+				fwrite(rom, 8192, (max_bank + 1), fp);
+			}
 
 			/* write trailing zeroes to fill */
 			/* at least 4 seconds of CDROM */
@@ -836,6 +861,7 @@ help(void)
 	if (machine->type == MACHINE_PCE) {
 		printf("-cd        : create a CD-ROM track image\n");
 		printf("-scd       : create a Super CD-ROM track image\n");
+		printf("-ipl       : create a custom CD-ROM IPL file\n");
 		printf("-over(lay) : create an executable 'overlay' program segment\n");
 		printf("-dev       : assemble and run on the Develo Box\n");
 		printf("-mx        : create a Develo MX file\n");
