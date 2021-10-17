@@ -444,7 +444,7 @@ main(int argc, char **argv)
 	if (ipl_opt) {
 		/* initialize the ipl */
 		prepare_ipl(&rom[0][2048]);
-		memset(map, S_DATA + (1 << 5), 4096);
+		memset(&map[0][2048], S_DATA + (1 << 5), 4096);
 	}
 
 	/* clear symbol hash tables */
@@ -473,6 +473,7 @@ main(int argc, char **argv)
 	lablset("_bank_base", 0);
 	lablset("_nb_bank", 1);
 	lablset("_call_bank", 0);
+	lablset("USING_NEWPROC", newproc_opt);
 
 	/* init global variables */
 	max_zp = 0x01;
