@@ -1,8 +1,8 @@
 #
-# Makefile for examples
+# Makefile for examples/asm
 #
 
-SUBDIRS = asm acd promotion scroll sgx
+SUBDIRS = elmer
 
 all clean:
 	@$(MAKE) $(SUBDIRS) "COMMAND=$@"
@@ -13,4 +13,3 @@ $(SUBDIRS):
 	@echo " "
 	@echo " -----> make $(COMMAND) in $@"
 	$(MAKE) --directory=$@ $(COMMAND)
-

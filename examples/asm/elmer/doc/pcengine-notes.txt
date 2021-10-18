@@ -1,0 +1,165 @@
+; ***************************************************************************
+; ***************************************************************************
+;
+; https://www.renesas.com/sg/en/www/doc/application-note/an1695.pdf
+;
+; 21.47727MHz clock crystal / 24 -> 0.89MHz -> Tandy Color Computer CPU
+; 21.47727MHz clock crystal / 21 -> 1.02MHz -> Commodore 64 CPU
+; 21.47727MHz clock crystal / 12 -> 1.79MHz -> Atari 800 CPU
+; 21.47727MHz clock crystal / 8 ->  2.68MHz -> SNES RAM
+; 21.47727MHz clock crystal / 6 ->  3.58MHz -> SNES CPU & NTSC Color Modulation
+; 21.47727MHz clock crystal / 3 ->  7.16MHz -> PC Engine CPU & RAM
+;
+
+; ***************************************************************************
+; PC ENGINE VCE TIMING
+; ***************************************************************************
+;
+; 21.47727MHz VCE clock crystal / 4 ->	5.36MHz VDC clock (186ns)
+; 21.47727MHz VCE clock crystal / 3 ->	7.16MHz VDC clock (140ns)
+; 21.47727MHz VCE clock crystal / 2 -> 10.74MHz VDC clock ( 93ns)
+;
+;  63.556us /hsync to /hsync total line time, i.e. 15734.2Hz NTSC
+;
+;	1365 VCE clocks @ 21.47727MHz
+;
+;	 -> 341.25 VDC cycles @	 5.36MHz (42.7 chr)
+;	 -> 455.00 VDC cycles @	 7.16MHz (56.9 chr)
+;	 -> 682.50 VDC cycles @ 10.74MHz (85.3 chr)
+;
+;  11.035us /hsync duration
+;
+;	 237 VCE clocks @ 21.47727MHz
+;
+;	 ->  59.25 VDC clocks @	 5.36MHz
+;	 ->  79.00 VDC clocks @	 7.16MHz
+;	 -> 118.50 VDC clocks @ 10.74MHz
+;
+;	 Note : In the 5.36MHz mode, the 1st cycle in the hblank
+;		has an extra 1/4 cycle added (1 clock @ 21.47MHz).
+;
+;  16.651ms /vsync to /vsync total frame time, if VCE CR bit2 is 0
+;
+;	357,630 VCE clocks @ 21.47727MHz
+;
+;	 -> 119,210 CPU clocks @ 7.16MHz
+;
+;  16.715ms /vsync to /vsync total frame time, if VCE CR bit2 is 1
+;
+;	358,995 VCE clocks @ 21.47727MHz
+;
+;	 -> 119,665 CPU clocks @ 7.16MHz
+;
+;   1.907ms /vsync duration
+;
+;	  4,095 VCE clocks @ 21.47727MHz
+;
+;	 ->   1,365 CPU clocks @ 7.16MHz
+;
+
+
+
+; ***************************************************************************
+; PC ENGINE VDC SPRITES-PER-LINE LIMITS
+; ***************************************************************************
+;
+; This is caused by the VDC running out of time to load the pixel data for
+; the next line's sprites during the blank time after it is done displaying
+; the current line's pixel data.
+;
+;
+; VDC @	 5.36MHz -> width = total # chr on line = 42 chr
+; VDC @	 7.16MHz -> width = total # chr on line = 56 chr
+; VDC @ 10.74MHz -> width = total # chr on line = 85 chr
+;
+; Sprites-per-line shown (@ 1-clk-per-access) = (width - 2 - (hdw + 1)) * 2
+; Sprites-per-line shown (@ 2-clk-per-access) = (width - 2 - (hdw + 1))
+;
+;
+; VDC @	 5.36MHz, MWR=$x0 (1-clk-per-access)
+;
+;   hds $02 hdw $1F -> 32 chr = 256 pxl -> 16 sprites
+;   hds $02 hdw $20 -> 33 chr = 264 pxl -> 14 sprites
+;   hds $02 hdw $21 -> 34 chr = 272 pxl -> 12 sprites
+;
+;
+; VDC @	 7.16MHz, MWR=$x0 (1-clk-per-access)
+;
+;   hds $06 hdw $25 -> 38 chr = 304 pxl -> 16 sprites
+;   ...
+;   hds $03 hdw $2B -> 44 chr = 352 pxl -> 16 sprites
+;   hds $03 hdw $2C -> 45 chr = 360 pxl -> 16 sprites
+;   hds $03 hdw $2D -> 46 chr = 368 pxl -> 16 sprites
+;   hds $03 hdw $2E -> 47 chr = 376 pxl -> 14 sprites
+;   hds $03 hdw $2F -> 48 chr = 384 pxl -> 12 sprites
+;
+;
+; VDC @	 7.16MHz, MWR=$xA (2-clk-per-access)
+;
+;   hds $06 hdw $25 -> 38 chr = 304 pxl -> 16 sprites
+;   hds $05 hdw $26 -> 39 chr = 312 pxl -> 15 sprites
+;   hds $05 hdw $27 -> 40 chr = 320 pxl -> 14 sprites
+;   hds $04 hdw $28 -> 41 chr = 328 pxl -> 13 sprites
+;   hds $04 hdw $29 -> 42 chr = 336 pxl -> 12 sprites
+;   hds $03 hdw $2A -> 43 chr = 344 pxl -> 11 sprites
+;   hds $03 hdw $2B -> 44 chr = 352 pxl -> 10 sprites
+;
+;
+; VDC @ 10.74MHz, MWR=$xA (2-clk-per-access)
+;
+;   hds $0B hdw $3B -> 60 chr = 480 pxl -> 16 sprites
+;   ...
+;   hds $0B hdw $3F -> 64 chr = 512 pxl -> 16 sprites
+;   hds $0B hdw $40 -> 65 chr = 520 pxl -> 16 sprites
+;   hds $0B hdw $41 -> 66 chr = 528 pxl -> 16 sprites
+;   hds $0B hdw $42 -> 67 chr = 536 pxl -> 16 sprites
+;   hds $0B hdw $43 -> 68 chr = 544 pxl -> 15 sprites
+;   hds $0B hdw $44 -> 69 chr = 552 pxl -> 14 sprites
+;
+
+
+
+; ***************************************************************************
+; PC ENGINE VDC RCR-INTERRUPT TO VDC BYR-REGISTER SHADOWED TIMING
+; ***************************************************************************
+;
+;
+;  5.36MHz (with MWR = $x0)
+;
+;   Safe to write BYR @ 100 cpu cycles if width=240 hdw=$1D
+;   Safe to write BYR @	 90 cpu cycles if width=248 hdw=$1E
+;   Safe to write BYR @	 79 cpu cycles if width=256 hdw=$1F
+;   Safe to write BYR @	 67 cpu cycles if width=264 hdw=$20
+;
+;
+;  7.16MHz (with MWR = $x0)
+;
+;   Safe to write BYR @ 106 cpu cycles if width=320 hdw=$27
+;   Safe to write BYR @	 98 cpu cycles if width=328 hdw=$28
+;   Safe to write BYR @	 90 cpu cycles if width=336 hdw=$29
+;   Safe to write BYR @	 82 cpu cycles if width=344 hdw=$2A
+;   Safe to write BYR @	 74 cpu cycles if width=352 hdw=$2B
+;
+;
+; 10.74MHz (with MWR = $xA)
+;
+;   Safe to write BYR @ 112 cpu cycles if width=480 hdw=$3B
+;   Safe to write BYR @ 107 cpu cycles if width=488 hdw=$3C
+;   Safe to write BYR @ 101 cpu cycles if width=496 hdw=$3D
+;   Safe to write BYR @	 96 cpu cycles if width=504 hdw=$3E
+;   Safe to write BYR @	 91 cpu cycles if width=512 hdw=$3F
+;   Safe to write BYR @	 85 cpu cycles if width=520 hdw=$40
+;   Safe to write BYR @	 79 cpu cycles if width=528 hdw=$41
+;   Safe to write BYR @	 75 cpu cycles if width=536 hdw=$42
+;   Safe to write BYR @	 69 cpu cycles if width=544 hdw=$43
+;
+;
+; Note: The VDC's hde,hsw, & hds settings have *NO* effect!!!
+;
+; Note: These cycle timings are to the write-cycle within the
+;	instruction, and not to the start of the instruction.
+;
+; Note: The VDC shadows/locks the BYR register a cycle before
+;       the BXR register, so write BYR first. After BXR, the
+;       CR register is shadowed/locked next.
+;
