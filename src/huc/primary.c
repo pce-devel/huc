@@ -451,7 +451,7 @@ intptr_t number (intptr_t val[])
 	if (!numeric(c = ch()))
 		return (0);
 
-	if (match("0x") || match("0X"))
+	if (match("0x") || match("0X")) {
 		while (numeric(c = ch()) ||
 		       (c >= 'a' && c <= 'f') ||
 		       (c >= 'A' && c <= 'F')) {
@@ -459,6 +459,15 @@ intptr_t number (intptr_t val[])
 			k = k * 16 +
 			    (numeric(c) ? (c - '0') : ((c & 07) + 9));
 		}
+  }
+  else if (match("0b") || match("0B")) {
+		while (numeric(c = ch()) &&
+		       ((c == '1') ||
+		       (c == '0'))) {
+			inbyte();
+			k = k * 2 + (c - '0');
+		}
+  }
 	else {
 		base = (c == '0') ? 8 : 10;
 		while (numeric(ch())) {

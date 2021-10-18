@@ -514,7 +514,7 @@ void dopsdinc (void)
 
 		// .data first!
 		nl();
-		ol(".data");
+		ol(".code");
 
 		// Get the label, but save it for later.
 		readstr();
@@ -549,9 +549,9 @@ void dopsdinc (void)
 				kill();
 				return;
 			}
-		} 
+		}
 		else {
-			ol("page 3");
+			ol(".page 2");
 		}
 
 		// Output the label name:
@@ -564,16 +564,11 @@ void dopsdinc (void)
 		outstr("\"");
 		nl();
 
-
-		// Reset everything back.
-		ol(".page 3");	/* assumes data bank is mapped at 0x6000 */
-
 		if (!match(")"))
 			error("missing )");
-		ol(".code");
 		nl();
 		kill();
-	}		
+	}
 	else
 	if (amatch("asm", 3)) {
 		if (!match("("))

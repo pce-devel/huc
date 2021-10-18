@@ -228,7 +228,7 @@ main(int argc, char **argv)
 		{"over",	0, &overlayflag, 1 },
 		{"overlay",	0, &overlayflag, 1 },
 		{"dev",		0, &develo_opt,  1 },
-		{"develo",	0, &develo_opt,  1 },			
+		{"develo",	0, &develo_opt,  1 },
 		{"mx",		0, &mx_opt, 	 1 },
 		{"srec",	0, &srec_opt, 	 1 },
 		{"help",	0, 0,		'h'},
@@ -239,7 +239,7 @@ main(int argc, char **argv)
 
 	/* register atexit callback */
 	atexit(cleanup);
-	
+
 	/* get program name */
 	if ((prg_name = strrchr(argv[0], '/')) != NULL)
 		prg_name++;
@@ -299,28 +299,28 @@ main(int argc, char **argv)
 	while ((opt = getopt_long_only (argc, argv, cmd_line_options, cmd_line_long_options, NULL)) != -1)
 	{
 		switch(opt)
-		{	
+		{
 			case 's':
 				dump_seg = 1;
 				break;
-				
+
 			case 'S':
 				dump_seg = 2;
 				break;
-			
+
 			case 'l':
 				/* get level */
 				list_level = atol(optarg);
-				
+
 				/* check range */
 				if (list_level < 0 || list_level > 3)
 					list_level = 2;
 				break;
-			
+
 			case 'm':
 				mlist_opt = 1;
 				break;
-				
+
 			case 'I':
 				if(!add_path(optarg, strlen(optarg)+1))
 				{
@@ -342,7 +342,7 @@ main(int argc, char **argv)
 
 			default:
 				return 1;
-		}		
+		}
 	}
 
 	/* check for missing asm file */
@@ -351,7 +351,7 @@ main(int argc, char **argv)
 		fprintf(stderr, "Missing input file\n");
 		return 0;
 	}
-	
+
 	/* get file names */
 	for ( ; optind < argc; ++optind, ++file) {
 		strcpy(in_fname, argv[optind]);
@@ -365,11 +365,11 @@ main(int argc, char **argv)
 		}
 		switch(cd_type) {
 			case 1:
-				/* cdrom */	
+				/* cdrom */
 				cd_opt  = STANDARD_CD;
 				scd_opt = 0;
 				break;
-				
+
 			case 2:
 				/* super cdrom */
 				scd_opt = SUPER_CD;
