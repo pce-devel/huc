@@ -1,0 +1,105 @@
+; ***************************************************************************
+; ***************************************************************************
+;
+; Hudson's Super System Card 3.0 IRQ1 handler code.
+;
+; For reference, here is a disassembly of Hudson's System Card IRQ1 handler
+; so that PCE developers can understand how it works, and how to replace it.
+;
+; ***************************************************************************
+; ***************************************************************************
+;
+; Bit settings for irq_vec  ...
+;
+;   7 : 1 to skip BIOS hsync processsing
+;   6 : 1 to call [hsync_hook]
+;   5 : 1 to skip BIOS vsync processsing
+;   4 : 1 to call [vsync_hook]
+;
+;   3 : 1 to jump [nmi_hook]
+;   2 : 1 to jump [timer_hook]
+;   1 : 1 to jump [irq1_hook]
+;   0 : 1 to jump [irq2_hook]
+;
+; ***************************************************************************
+; ***************************************************************************
+
+$E866   delay:          rts                             ; 60
+
+$E867   bbs_hsync:      jmp     [hsync_hook]            ; 6C 0A 22
+$E86A   bbs_vsync:      jmp     [vsync_hook]            ; 6C 08 22
+$E86D   bbs_irq1:       jmp     [irq1_hook]             ; 6C 02 22
+
+$E870   irq1_handler:   bbs1    <irq_vec, bbs_irq1      ; 9F F5 FA
+
+$E873                   pha                             ; 48
+$E874                   phx                             ; DA
+$E875                   phy                             ; 5A
+
+$E876                   lda     VDC_SR                  ; AD 00 00
+$E879                   sta     <vdc_sr                 ; 85 F6
+
+$E87B                   bbr5    <vdc_sr, .skip_hookv    ; 5F F6 3B
+
+                        ; VSYNC
+
+$E87E                   st0     #VDC_CR                 ; 03 05
+$E880                   lda     <vdc_crl                ; A5 F3
+$E882                   sta     VDC_DL                  ; 8D 02 00
+$E885                   lda     <vdc_crh                ; A5 F4
+$E887                   sta     VDC_DH                  ; 8D 03 00
+
+$E88A                   inc     irq_cnt                 ; EE 41 22
+
+$E88D                   bbs5    <irq_vec, .skip_biosv   ; DF F5 24
+
+$E890                   st0     #VDC_BXR                ; 03 07
+$E892                   tii     bg_x1, VDC_DL, 2        ; 73 0C 22 02 00 02 00
+$E899                   st0     #VDC_BYR                ; 03 08
+$E89B                   tii     bg_y1, VDC_DL, 2        ; 73 10 22 02 00 02 00
+
+$E8A2                   jsr     ex_colorcmd             ; 20 09 E5
+
+$E8A5                   inc     rndseed                 ; EE 49 22
+
+$E8A8                   lda     <main_sw                ; A5 E7
+$E8AA                   cmp     #1                      ; C9 01
+$E8AC                   bne     .skip_psg               ; D0 03
+
+$E8AE                   jsr     psg_driver              ; 20 CF E6
+
+$E8B1   .skip_psg:      jsr     ex_joysns               ; 20 9A E4
+
+$E8B4   .skip_biosv:    bbr4    <irq_vec, .skip_hookv   ; 4F F5 02
+
+$E8B7                   bsr     bbs_vsync               ; 44 B1
+
+                        ; END OF VSYNC HANDLER
+
+$E8B9   .skip_hookv:    bbr2    <vdc_sr, .skip_hookh    ; 2F F6 1E
+
+                        ; HSYNC
+
+$E8BC                   bbs7    <irq_vec, .skip_biosh   ; FF F5 16
+
+$E8BF                   bsr     delay                   ; 44 A5
+$E8C1                   bsr     delay                   ; 44 A3
+
+$E8C3                   st0     #VDC_BXR                ; 03 07
+$E8C5                   tii     bg_x2, VDC_DL, 2        ; 73 0E 22 02 00 02 00
+$E8CC                   st0     #VDC_BYR                ; 03 08
+$E8CE                   tii     bg_y2, VDC_DL, 2        ; 73 12 22 02 00 02 00
+
+$E8D5   .skip_biosh:    bbr6    <irq_vec, .skip_hookh   ; 6F F5 02
+
+$E8D8                   bsr     bbs_hsync               ; 44 8D
+
+                        ; END OF HSYNC HANDLER
+
+$E8DA   .skip_hookh:    lda     <vdc_reg                ; A5 F7
+$E8DC                   sta     VDC_SR                  ; 8D 00 00
+
+$E8DF                   ply                             ; 7A
+$E8E0                   plx                             ; FA
+$E8E1                   pla                             ; 68
+$E8E2                   rti                             ; 40
