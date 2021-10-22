@@ -59,6 +59,7 @@ int strip_opt;
 int dump_seg;
 int overlayflag;
 int develo_opt;
+int binary_opt;
 int header_opt;
 int padding_opt;
 int srec_opt;
@@ -222,6 +223,7 @@ main(int argc, char **argv)
 		{"macro",       0, 0, 		'm'},
 		{"raw",		0, &header_opt,  0 },
 		{"pad",		0, &padding_opt, 1 },
+		{"bin",		0, &binary_opt,	 1 },
 		{"cd",		0, &cd_type,	 1 },
 		{"scd",		0, &cd_type,	 2 },
 		{"ipl",		0, &ipl_opt,	 1 },
@@ -275,6 +277,7 @@ main(int argc, char **argv)
 
 	/* init assembler options */
 	list_level = 2;
+	binary_opt = 0;
 	header_opt = 1;
 	padding_opt = 0;
 	overlayflag = 0;
@@ -345,6 +348,20 @@ main(int argc, char **argv)
 		}
 	}
 
+	/* no exclusive options with getopt_long_only(), sanitize ipl_opt */
+	if (ipl_opt)
+	{
+		binary_opt = 1;
+	}
+
+	/* no exclusive options with getopt_long_only(), sanitize binary_opt */
+	if (binary_opt)
+	{
+		header_opt = 0;
+		padding_opt = 0;
+		overlayflag = 0;
+	}
+
 	/* check for missing asm file */
 	if(optind == argc)
 	{
@@ -359,10 +376,6 @@ main(int argc, char **argv)
 
 	if (machine->type == MACHINE_PCE) {
 		/* Adjust cdrom type values ... */
-		if (ipl_opt) {
-			cd_type = 1;
-			overlayflag = 1;
-		}
 		switch(cd_type) {
 			case 1:
 				/* cdrom */
@@ -384,6 +397,7 @@ main(int argc, char **argv)
 			return (0);
 		}
 	} else {
+		/* Force ipl_opt off if not PCEAS */
 		ipl_opt = 0;
 	}
 
@@ -411,7 +425,9 @@ main(int argc, char **argv)
 		strcpy(bin_fname, out_fname);
 	} else {
 		strcpy(bin_fname, in_fname);
-		if (overlayflag == 1)
+		if (binary_opt == 1)
+			strcat(bin_fname, ".bin");
+		else if (overlayflag == 1)
 			strcat(bin_fname, ".ovl");
 		else if (cd_opt || scd_opt)
 			strcat(bin_fname, ".iso");
@@ -484,14 +500,13 @@ main(int argc, char **argv)
 	bank_base = 0;
 	errcnt = 0;
 
-	if (cd_opt) {
-		if (ipl_opt) {
-			rom_limit = 0x01800;	/* 4KB */
-			bank_limit = 0x00;
-		} else {
-			rom_limit = 0x10000;	/* 64KB */
-			bank_limit = 0x07;
-		}
+	if (ipl_opt) {
+		rom_limit = 0x01800;	/* 4KB */
+		bank_limit = 0x00;
+	}
+	else if (cd_opt) {
+		rom_limit = 0x10000;	/* 64KB */
+		bank_limit = 0x07;
 	}
 	else if (scd_opt) {
 		rom_limit = 0x40000;	/* 256KB */
@@ -625,7 +640,7 @@ main(int argc, char **argv)
 	/* rom */
 	if (errcnt == 0) {
 		/* cd-rom */
-		if (cd_opt || scd_opt) {
+		if ((cd_opt || scd_opt) && !binary_opt) {
 			/* open output file */
 			if ((fp = fopen(bin_fname, "wb")) == NULL) {
 				printf("Can not open output file '%s'!\n", bin_fname);
@@ -687,11 +702,7 @@ main(int argc, char **argv)
 			}
 
 			/* write rom */
-			if (ipl_opt) {
-				fwrite(&rom[0][2048], 4096, 1, fp);
-			} else {
-				fwrite(rom, 8192, (max_bank + 1), fp);
-			}
+			fwrite(rom, 8192, (max_bank + 1), fp);
 
 			/* write trailing zeroes to fill */
 			/* at least 4 seconds of CDROM */
@@ -761,7 +772,44 @@ main(int argc, char **argv)
 					machine->write_header(fp, num_banks);
 
 				/* write rom */
-				fwrite(rom, 8192, num_banks, fp);
+				if (binary_opt) {
+					/* only write from start to end of used data */
+					int bank0, index0;
+					int bank1, index1;
+
+					/* find first used byte of data */
+					for (bank0 = 0; bank0 <= max_bank; ++bank0) {
+						for (index0 = 0; index0 < 8192; ++index0) {
+							if (map[bank0][index0] != 0xFF) break;
+						}
+						if (index0 < 8192) break;
+					}
+
+					if (bank0 <= max_bank) {
+						/* find last used byte of data */
+						for (bank1 = max_bank; bank1 >= 0; --bank1) {
+							for (index1 = 8191; index1 >= 0; --index1) {
+								if (map[bank1][index1] != 0xFF) break;
+							}
+							if (index1 >= 0) break;
+						}
+
+						/* output all of the used bytes between the first and last */
+						if (bank0 == bank1) {
+							fwrite(&rom[bank0][index0], 1, (index1 + 1) - index0, fp);
+						} else {
+							fwrite(&rom[bank0][index0], 1, 8192 - index0, fp);
+							while (++bank0 != bank1) {
+								fwrite(&rom[bank0][0], 1, 8192, fp);
+							}
+							fwrite(&rom[bank1][0], 1, (index1 + 1), fp);
+						}
+					}
+				} else {
+					/* write the whole rom in one go */
+					fwrite(rom, 8192, num_banks, fp);
+				}
+
 				fclose(fp);
 			}
 		}
@@ -858,12 +906,13 @@ help(void)
 	printf("-m         : force macro expansion in listing\n");
 	printf("-raw       : prevent adding a ROM header\n");
 	printf("-pad       : pad ROM size to power-of-two\n");
+	printf("-bin       : strip unused head and tail from ROM\n");
 	printf("-I         : add include path\n");
 	if (machine->type == MACHINE_PCE) {
 		printf("-cd        : create a CD-ROM track image\n");
 		printf("-scd       : create a Super CD-ROM track image\n");
-		printf("-ipl       : create a custom CD-ROM IPL file\n");
 		printf("-over(lay) : create an executable 'overlay' program segment\n");
+		printf("-ipl       : create a custom CD-ROM IPL file\n");
 		printf("-dev       : assemble and run on the Develo Box\n");
 		printf("-mx        : create a Develo MX file\n");
 		printf("-strip     : strip unused .proc & .procgroup\n");
