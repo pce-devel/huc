@@ -414,7 +414,7 @@ pce_defchr(int *ip)
 
 	/* output infos */
 	data_loccnt = loccnt;
-	data_size = 3;
+	data_size = 4;
 	data_level = 3;
 
 	/* check if there's a label */
@@ -536,7 +536,7 @@ pce_defspr(int *ip)
 
 	/* output infos */
 	data_loccnt = loccnt;
-	data_size = 3;
+	data_size = 4;
 	data_level = 3;
 
 	/* check if there's a label */

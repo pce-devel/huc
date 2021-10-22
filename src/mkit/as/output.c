@@ -39,7 +39,7 @@ println(void)
 		nb = loccnt - data_loccnt;
 
 		/* check level */
-		if ((data_level > list_level) && (nb > 3)) {
+		if ((data_level > list_level) && (nb > 4)) {
 			/* doesn't match */
 			fputs(prlnbuf, lst_fp); putc('\n', lst_fp);
 		}

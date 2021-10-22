@@ -35,7 +35,7 @@ assemble(int do_label)
 	lablptr = NULL;
 	continued_line = 0;
 	data_loccnt = -1;
-	data_size = 3;
+	data_size = 4;
 	data_level = 1;
 
 	/* macro definition */

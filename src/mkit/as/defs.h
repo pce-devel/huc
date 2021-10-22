@@ -33,7 +33,7 @@
 
 /* line buffer length */
 #define LAST_CH_POS	158
-#define SFIELD		26
+#define SFIELD		29
 #define SBOLSZ		64
 
 /* macro argument types */
