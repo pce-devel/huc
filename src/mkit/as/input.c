@@ -156,7 +156,8 @@ readline(void)
 	int temp;	/* temp used for line number conversion */
 
 start:
-	memset(prlnbuf, ' ', SFIELD);
+	memset(prlnbuf, ' ', SFIELD - 1);
+	prlnbuf[SFIELD - 1] = '\t';
 
 	/* if 'expand_macro' is set get a line from macro buffer instead */
 	if (expand_macro) {
