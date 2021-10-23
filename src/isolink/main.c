@@ -38,6 +38,7 @@ int sector_array[MAX_FILES + 1];
 int file_count = 0;
 int cderr_flag = 0;
 int cderr_ovl = 0;
+int asm_flag = 0;
 static char incpath[10][256];
 static int debug;
 
@@ -258,7 +259,8 @@ file_write(FILE *outfile, FILE *infile, char *filename, int curr_filenum)
 
 
    code = 0;
-   if (strcmp(OVERLAY_SUFFIX, &filename[strlen(filename) - 3]) == 0) {
+   if ((asm_flag == 0) &&
+       (strcmp(OVERLAY_SUFFIX, &filename[strlen(filename) - 3]) == 0)) {
       code = 1;
    }
 
@@ -423,7 +425,7 @@ void
 usage(void)
 {
    printf(ISOLINK_VERSION "\n");
-   printf("\nUsage: isolink <outfile> -ipl,<params> <infile_1> <infile_2> -cderr <infile_n> \n");
+   printf("\nUsage: isolink <outfile> -ipl,<params> -asm <infile_1> <infile_2> -cderr <infile_n> \n");
    printf("\n");
    printf("-ipl,  :  Optional, and NOT for HuC programs! \n");
    printf("          The comma is followed by either ... \n");
@@ -437,6 +439,7 @@ usage(void)
    printf("            <mpr4 value>, \n");
    printf("            <mpr5 value>, \n");
    printf("            <mpr6 value> \n\n");
+   printf("-asm   :  Do not write HuC-specific data into overlays\n");
    printf("-cderr :  Indicates that the following HuC overlay is to be used \n");
    printf("          instead of the default text message when SCD programs\n");
    printf("          are executed on plain CD systems\n\n");
@@ -552,6 +555,11 @@ main(int argc, char *argv[])
              (cderr_flag == 0)) {       /* only valid once on line */
             cderr_flag = 1;
             cderr_ovl = j;
+            continue;
+         } else
+         if ((strcmp(argv[i], "-asm") == 0) &&
+             (asm_flag == 0)) {        /* only valid once on line */
+            asm_flag = 1;
             continue;
          } else {
             usage();
