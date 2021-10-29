@@ -59,7 +59,7 @@ int strip_opt;
 int dump_seg;
 int overlayflag;
 int develo_opt;
-int binary_opt;
+int trim_opt;
 int header_opt;
 int padding_opt;
 int srec_opt;
@@ -223,7 +223,7 @@ main(int argc, char **argv)
 		{"macro",       0, 0, 		'm'},
 		{"raw",		0, &header_opt,  0 },
 		{"pad",		0, &padding_opt, 1 },
-		{"bin",		0, &binary_opt,	 1 },
+		{"trim",	0, &trim_opt,	 1 },
 		{"cd",		0, &cd_type,	 1 },
 		{"scd",		0, &cd_type,	 2 },
 		{"ipl",		0, &ipl_opt,	 1 },
@@ -277,7 +277,7 @@ main(int argc, char **argv)
 
 	/* init assembler options */
 	list_level = 2;
-	binary_opt = 0;
+	trim_opt = 0;
 	header_opt = 1;
 	padding_opt = 0;
 	overlayflag = 0;
@@ -351,11 +351,11 @@ main(int argc, char **argv)
 	/* no exclusive options with getopt_long_only(), sanitize ipl_opt */
 	if (ipl_opt)
 	{
-		binary_opt = 1;
+		trim_opt = 1;
 	}
 
-	/* no exclusive options with getopt_long_only(), sanitize binary_opt */
-	if (binary_opt)
+	/* no exclusive options with getopt_long_only(), sanitize trim_opt */
+	if (trim_opt)
 	{
 		header_opt = 0;
 		padding_opt = 0;
@@ -425,7 +425,7 @@ main(int argc, char **argv)
 		strcpy(bin_fname, out_fname);
 	} else {
 		strcpy(bin_fname, in_fname);
-		if (binary_opt == 1)
+		if (trim_opt == 1)
 			strcat(bin_fname, ".bin");
 		else if (overlayflag == 1)
 			strcat(bin_fname, ".ovl");
@@ -640,7 +640,7 @@ main(int argc, char **argv)
 	/* rom */
 	if (errcnt == 0) {
 		/* cd-rom */
-		if ((cd_opt || scd_opt) && !binary_opt) {
+		if ((cd_opt || scd_opt) && !trim_opt) {
 			/* open output file */
 			if ((fp = fopen(bin_fname, "wb")) == NULL) {
 				printf("Can not open output file '%s'!\n", bin_fname);
@@ -772,7 +772,7 @@ main(int argc, char **argv)
 					machine->write_header(fp, num_banks);
 
 				/* write rom */
-				if (binary_opt) {
+				if (trim_opt) {
 					/* only write from start to end of used data */
 					int bank0, index0;
 					int bank1, index1;
@@ -906,7 +906,7 @@ help(void)
 	printf("-m         : force macro expansion in listing\n");
 	printf("-raw       : prevent adding a ROM header\n");
 	printf("-pad       : pad ROM size to power-of-two\n");
-	printf("-bin       : strip unused head and tail from ROM\n");
+	printf("-trim      : strip unused head and tail from ROM\n");
 	printf("-I         : add include path\n");
 	if (machine->type == MACHINE_PCE) {
 		printf("-cd        : create a CD-ROM track image\n");
