@@ -511,4 +511,4 @@ write_string:	sta	<__al			; String address.
 
 		.org	$3500
 
-font_data:	incbin	"font8x8-exos-elmer-supercd.bin"
+font_data:	incbin	"font8x8-exos-supercd.dat"

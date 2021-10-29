@@ -413,6 +413,7 @@ suberrc         = $227C ; 1
 scsisns	        = $227D ; 1	*UNDOCUMENTED* SCSI "sense" return code
 subcode         = $227E ; 1
 
+reset_hook	= $2284 ; 2	*UNDOCUMENTED* joypad soft-reset hook
 colortia        = $2286 ; 8
 ;?              = $228E ; ?
  
