@@ -175,11 +175,14 @@ do_db(int *ip)
 	data_loccnt = loccnt;
 	data_level = 2;
 
-	/* skip spaces */
-	while (isspace(prlnbuf[++(*ip)])) ;
+//	/* skip spaces */
+//	while (isspace(prlnbuf[++(*ip)])) ;
 
 	/* get bytes */
 	for (;;) {
+		/* skip spaces */
+		while (isspace(prlnbuf[++(*ip)])) ;
+
 		/* ASCII string */
 		if (prlnbuf[*ip] == '\"') {
 			for (;;) {
@@ -211,7 +214,7 @@ do_db(int *ip)
 				/* update location counter */
 				loccnt++;
 			}
-			(*ip)++;
+			while (isspace(prlnbuf[++(*ip)]));
 		}
 		/* bytes */
 		else {
@@ -236,7 +239,7 @@ do_db(int *ip)
 		}
 
 		/* check if there's another byte */
-		c = prlnbuf[(*ip)++];
+		c = prlnbuf[*ip];
 
 		if (c != ',')
 			break;
@@ -340,7 +343,7 @@ do_dw(int *ip)
 /* ----
  * do_dwl()
  * ----
- * .db pseudo
+ * .dwl pseudo
  */
 
 void
@@ -408,6 +411,11 @@ do_dwl(int *ip)
 }
 
 
+/* ----
+ * do_dwh()
+ * ----
+ * .dwh pseudo
+ */
 
 void
 do_dwh(int *ip)
@@ -475,9 +483,9 @@ do_dwh(int *ip)
 
 
 /* ----
- * do_dw()
+ * do_dd()
  * ----
- * .dw pseudo
+ * .dd pseudo
  */
 
 void
