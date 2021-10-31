@@ -539,23 +539,17 @@ getsym(void)
 	int valid;
 	int i;
 	char c;
-	char local_check;
 
 	valid = 1;
 	i = 0;
 
 	/* get the symbol, stop to the first 'non symbol' char */
-	local_check = *expr;
     while (valid) {
         c = *expr;
         if (isalpha(c) || c == '_' || c == '.' || c == '@' || (isdigit(c) && i >= 1)) {
             symbol[++i] = c;
             expr++;
         }
-    /*    else if((local_check=='.') && ((c=='-') || (c=='+'))) {
-            symbol[++i] = c;
-            expr++;
-        }*/
         else {
             valid = 0;
         }
