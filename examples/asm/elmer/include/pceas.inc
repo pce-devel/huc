@@ -52,7 +52,7 @@ vreg		.macro
 		.if	USING_NEWPROC
 
 leave		.macro
-		jmp	sys_leave_proc
+		jmp	leave_proc
 		.endm
 
 		.else

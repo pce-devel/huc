@@ -2,7 +2,7 @@ all: ipl-scd.bin
 
 include ../Make_ex.inc
 
-SRC = ipl-scd.asm font8x8-exos-supercd.dat
+SRC = ipl-scd.asm ../font/font8x8-ascii-exos.dat
 
 AFLAGS ?= -raw -m -l 2 -S
 
