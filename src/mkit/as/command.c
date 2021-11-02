@@ -175,13 +175,10 @@ do_db(int *ip)
 	data_loccnt = loccnt;
 	data_level = 2;
 
-//	/* skip spaces */
-//	while (isspace(prlnbuf[++(*ip)])) ;
-
 	/* get bytes */
 	for (;;) {
 		/* skip spaces */
-		while (isspace(prlnbuf[++(*ip)])) ;
+		while (isspace(prlnbuf[++(*ip)])) {}
 
 		/* ASCII string */
 		if (prlnbuf[*ip] == '\"') {
@@ -214,7 +211,7 @@ do_db(int *ip)
 				/* update location counter */
 				loccnt++;
 			}
-			while (isspace(prlnbuf[++(*ip)]));
+			while (isspace(prlnbuf[++(*ip)])) {}
 		}
 		/* bytes */
 		else {
