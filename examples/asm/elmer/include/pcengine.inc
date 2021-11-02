@@ -19,35 +19,35 @@
 ; HuC6270 - Video Display Controller
 ;
 
-VDC_SR          = $0000		; Status Register
-VDC_AR          = $0000		; Address Register
-VDC_DL          = $0002		; Data (Read/Write) Low
-VDC_DH          = $0003		; Data (Read/Write) High
+VDC_SR		= $0000		; Status Register
+VDC_AR		= $0000		; Address Register
+VDC_DL		= $0002		; Data (Read/Write) Low
+VDC_DH		= $0003		; Data (Read/Write) High
 
-SGX_SR          = $0010		; Status Register
-SGX_AR          = $0010		; Address Register
-SGX_DL          = $0012		; Data (Read/Write) Low
-SGX_DH          = $0013		; Data (Read/Write) High
+SGX_SR		= $0010		; Status Register
+SGX_AR		= $0010		; Address Register
+SGX_DL		= $0012		; Data (Read/Write) Low
+SGX_DH		= $0013		; Data (Read/Write) High
 
-VDC_MAWR        = 0             ; Memory Address Write
-VDC_MARR        = 1             ; Memory Address Read
-VDC_VWR         = 2             ; VRAM Data Write
-VDC_VRR         = 2             ; VRAM Data Read
-VDC_CR          = 5             ; Control
-VDC_RCR         = 6             ; Raster Counter Register
-VDC_BXR         = 7             ; BGX Scroll
-VDC_BYR         = 8             ; BGY Scroll
-VDC_MWR         = 9             ; Memory Access Width
-VDC_HSR         = 10            ; Horizontal Sync
-VDC_HDR         = 11            ; Horizontal Display
-VDC_VPR         = 12            ; Vertical Sync
-VDC_VDW         = 13            ; Vertical Display
-VDC_VCR         = 14            ; Vertical Display End Position
-VDC_DCR         = 15            ; Block Transfer Control
-VDC_SOUR        = 16            ; Block Transfer Source
-VDC_DESR        = 17            ; Block Transfer Destination
-VDC_LENR        = 18            ; Block Transfer Length
-VDC_DVSSR       = 19            ; VRAM-SATB Block Transfer Source
+VDC_MAWR	= 0		; Memory Address Write
+VDC_MARR	= 1		; Memory Address Read
+VDC_VWR		= 2		; VRAM Data Write
+VDC_VRR		= 2		; VRAM Data Read
+VDC_CR		= 5		; Control
+VDC_RCR		= 6		; Raster Counter Register
+VDC_BXR		= 7		; BGX Scroll
+VDC_BYR		= 8		; BGY Scroll
+VDC_MWR		= 9		; Memory Access Width
+VDC_HSR		= 10		; Horizontal Sync
+VDC_HDR		= 11		; Horizontal Display
+VDC_VPR		= 12		; Vertical Sync
+VDC_VDW		= 13		; Vertical Display
+VDC_VCR		= 14		; Vertical Display End Position
+VDC_DCR		= 15		; Block Transfer Control
+VDC_SOUR	= 16		; Block Transfer Source
+VDC_DESR	= 17		; Block Transfer Destination
+VDC_LENR	= 18		; Block Transfer Length
+VDC_DVSSR	= 19		; VRAM-SATB Block Transfer Source
 
 
 
@@ -79,10 +79,10 @@ VPC_VDC_REDIR	= $000E
 ; Palette Data is 0000000gggrrrbbb
 ;
 
-VCE_CR          = $0400         ; Control Register
-VCE_CTA         = $0402         ; Color Table Address
-VCE_CTW         = $0404         ; Color Table Data Write
-VCE_CTR         = $0404         ; Color Table Data Read
+VCE_CR		= $0400		; Control Register
+VCE_CTA		= $0402		; Color Table Address
+VCE_CTW		= $0404		; Color Table Data Write
+VCE_CTR		= $0404		; Color Table Data Read
 
 
 
@@ -92,26 +92,26 @@ VCE_CTR         = $0404         ; Color Table Data Read
 ;
 
 PSG_R0		= $0800		; Channel Select
-PSG_R1          = $0801         ; Main Amplitude Level
-PSG_R2          = $0802         ; Frequency Low
-PSG_R3          = $0803         ; Frequency High
-PSG_R4          = $0804         ; Control & Channel Amplitude
-PSG_R5          = $0805         ; L/R Amplitude Level
-PSG_R6          = $0806         ; Waveform
-PSG_R7          = $0807         ; Noise
-PSG_R8          = $0808         ; LFO Frequency
-PSG_R9          = $0809         ; LFO Control
+PSG_R1		= $0801		; Main Amplitude Level
+PSG_R2		= $0802		; Frequency Low
+PSG_R3		= $0803		; Frequency High
+PSG_R4		= $0804		; Control & Channel Amplitude
+PSG_R5		= $0805		; L/R Amplitude Level
+PSG_R6		= $0806		; Waveform
+PSG_R7		= $0807		; Noise
+PSG_R8		= $0808		; LFO Frequency
+PSG_R9		= $0809		; LFO Control
 
 PSG_AR		= $0800		; Channel Select
-PSG_MAL         = $0801         ; Main Amplitude Level
-PSG_FL          = $0802         ; Frequency Low
-PSG_FH          = $0803         ; Frequency High
-PSG_CR          = $0804         ; Control & Channel Amplitude
-PSG_LRAL        = $0805         ; L/R Amplitude Level
-PSG_WF          = $0806         ; Waveform
-PSG_NZ          = $0807         ; Noise
-PSG_LFO_FRQ     = $0808         ; LFO Frequency
-PSG_LFO_CR      = $0809         ; LFO Control
+PSG_MAL		= $0801		; Main Amplitude Level
+PSG_FL		= $0802		; Frequency Low
+PSG_FH		= $0803		; Frequency High
+PSG_CR		= $0804		; Control & Channel Amplitude
+PSG_LRAL	= $0805		; L/R Amplitude Level
+PSG_WF		= $0806		; Waveform
+PSG_NZ		= $0807		; Noise
+PSG_LFO_FRQ	= $0808		; LFO Frequency
+PSG_LFO_CR	= $0809		; LFO Control
 
 
 
@@ -120,8 +120,8 @@ PSG_LFO_CR      = $0809         ; LFO Control
 ; HuC6280 - Timer
 ;
 
-TIMER_DR        = $0C00		; Timer Data
-TIMER_CR        = $0C01		; Timer Control
+TIMER_DR	= $0C00		; Timer Data
+TIMER_CR	= $0C01		; Timer Control
 
 
 
@@ -130,19 +130,19 @@ TIMER_CR        = $0C01		; Timer Control
 ; HuC6280 - I/O Port
 ;
 
-IO_PORT         = $1000
+IO_PORT		= $1000
 
-JOY_L           = $80
-JOY_D           = $40
-JOY_R           = $20
-JOY_U           = $10
-JOY_RUN         = $08
-JOY_SEL         = $04
-JOY_B2          = $02
-JOY_B1          = $01
+JOY_L		= $80
+JOY_D		= $40
+JOY_R		= $20
+JOY_U		= $10
+JOY_RUN		= $08
+JOY_SEL		= $04
+JOY_B2		= $02
+JOY_B1		= $01
 
-PORT_CLR        = $02
-PORT_SEL        = $01
+PORT_CLR	= $02
+PORT_SEL	= $01
 
 
 
@@ -151,9 +151,9 @@ PORT_SEL        = $01
 ; HuC6280 - Interrupt Control
 ;
 
-IRQ_MSK         = $1402		; Interrupt Disable
-IRQ_REQ         = $1403		; Interrupt Request
-IRQ_ACK         = $1403		; Interrupt Acknowledge
+IRQ_MSK		= $1402		; Interrupt Disable
+IRQ_REQ		= $1403		; Interrupt Request
+IRQ_ACK		= $1403		; Interrupt Acknowledge
 
 
 
@@ -162,27 +162,27 @@ IRQ_ACK         = $1403		; Interrupt Acknowledge
 ; CDROM/ADPCM hardware registers.
 ;
 
-IFU_SCSI_CTRL   = $1800 ; -W : SCSI control signals out.
-IFU_SCSI_FLGS   = $1800 ; R- : SCSI control signals in.
-IFU_SCSI_DATA   = $1801 ; RW : SCSI data bus.
-IFU_SCSI_ACK    = $1802
+IFU_SCSI_CTRL	= $1800 ; -W : SCSI control signals out.
+IFU_SCSI_FLGS	= $1800 ; R- : SCSI control signals in.
+IFU_SCSI_DATA	= $1801 ; RW : SCSI data bus.
+IFU_SCSI_ACK	= $1802
 
-IFU_IRQ_CTL     = $1802
-IFU_IRQ_FLG     = $1803 ; flags reporting CD/ADPCM info.
+IFU_IRQ_CTL	= $1802
+IFU_IRQ_FLG	= $1803 ; flags reporting CD/ADPCM info.
 
-IFU_HW_RESET    = $1804
+IFU_HW_RESET	= $1804
 
-IFU_SCSI_AUTO   = $1808 ; RO - SCSI auto-handshake read.
+IFU_SCSI_AUTO	= $1808 ; RO - SCSI auto-handshake read.
 
-IFU_ADPCM_LSB   = $1808
-IFU_ADPCM_MSB   = $1809
-IFU_ADPCM_DAT   = $180A
-IFU_ADPCM_DMA   = $180B
-IFU_ADPCM_FLG   = $180C
-IFU_ADPCM_CTL   = $180D
-IFU_ADPCM_SPD   = $180E
+IFU_ADPCM_LSB	= $1808
+IFU_ADPCM_MSB	= $1809
+IFU_ADPCM_DAT	= $180A
+IFU_ADPCM_DMA	= $180B
+IFU_ADPCM_FLG	= $180C
+IFU_ADPCM_CTL	= $180D
+IFU_ADPCM_SPD	= $180E
 
-IFU_AUDIO_FADE  = $180F
+IFU_AUDIO_FADE	= $180F
 
 IFU_BRAM_LOCK	= $1803
 IFU_BRAM_UNLOCK	= $1807
@@ -305,42 +305,42 @@ ACD_ID		= $51		; if ac_identflag = AC_IDENT, then AC in use
 ; System Card's Zero Page Variables.
 ;
 
-zpg_psg_top     = $20E6
-time_sw         = $20E6	        ; psg irq mutex (NZ == already running)
-main_sw         = $20E7	        ; psg driver mode ($80 == disable)
-psg_si	        = $20E8	        ;
-psg_si_l	= $20E8	        ;
-psg_si_h	= $20E9	        ;
-psg_r0	        = $20EA	        ;
-psg_r0_l	= $20EA	        ;
-psg_r0_h	= $20EB	        ;
+zpg_psg_top	= $20E6
+time_sw		= $20E6		; psg irq mutex (NZ == already running)
+main_sw		= $20E7		; psg driver mode ($80 == disable)
+psg_si		= $20E8		;
+psg_si_l	= $20E8		;
+psg_si_h	= $20E9		;
+psg_r0		= $20EA		;
+psg_r0_l	= $20EA		;
+psg_r0_h	= $20EB		;
 
-zpg_sys_top     = $20EC
-__bp	        = $20EC	        ; base pointer
-__si	        = $20EE	        ; source address
-__di	        = $20F0	        ; destination address
-cdi_b	        = $20F2	        ; ???
-vdc_crl	        = $20F3	        ; shadow of VDC control register (lo-byte)
-vdc_crh	        = $20F4	        ; shadow of VDC control register (hi-byte)
-irq_vec	        = $20F5	        ; interrupt vector control mask
-vdc_sr	        = $20F6	        ; shadow of VDC status register
-vdc_reg	        = $20F7	        ; shadow of VDC register index
+zpg_sys_top	= $20EC
+__bp		= $20EC		; base pointer
+__si		= $20EE		; source address
+__di		= $20F0		; destination address
+cdi_b		= $20F2		; ???
+vdc_crl		= $20F3		; shadow of VDC control register (lo-byte)
+vdc_crh		= $20F4		; shadow of VDC control register (hi-byte)
+irq_vec		= $20F5		; interrupt vector control mask
+vdc_sr		= $20F6		; shadow of VDC status register
+vdc_reg		= $20F7		; shadow of VDC register index
 
-__ax	        = $20F8
-__al	        = $20F8
-__ah	        = $20F9
+__ax		= $20F8
+__al		= $20F8
+__ah		= $20F9
 
-__bx	        = $20FA
-__bl	        = $20FA
-__bh	        = $20FB
+__bx		= $20FA
+__bl		= $20FA
+__bh		= $20FB
 
-__cx	        = $20FC
-__cl	        = $20FC
-__ch	        = $20FD
+__cx		= $20FC
+__cl		= $20FC
+__ch		= $20FD
 
-__dx	        = $20FE
-__dl	        = $20FE
-__dh	        = $20FF
+__dx		= $20FE
+__dl		= $20FE
+__dh		= $20FF
 
 
 
@@ -390,7 +390,7 @@ scsisend	= $224C ; 10	*UNDOCUMENTED* buffer for SCSI cmd send
 scsirecv	= $2256 ; 10	*UNDOCUMENTED* buffer for SCSI cmd recv
 paramcpy	= $2260 ; 8	*UNDOCUMENTED* stored __ax,__bx,__cx,__dx
 initialmpr	= $2268 ; 1	*UNDOCUMENTED*
-;?              = $2269 ; ?
+;?		= $2269 ; ?
 tnomin		= $226A ; 1
 tnomax		= $226B ; 1
 outmin		= $226C ; 1
@@ -407,23 +407,23 @@ recbase0_l	= $2276 ; 1
 recbase1_h	= $2277 ; 1
 recbase1_m	= $2278 ; 1
 recbase1_l	= $2279 ; 1
-scsiphs	        = $227A ; 1	*UNDOCUMENTED* SCSI command phase
-scsists         = $227B ; 1
-suberrc         = $227C ; 1
-scsisns	        = $227D ; 1	*UNDOCUMENTED* SCSI "sense" return code
-subcode         = $227E ; 1
+scsiphs		= $227A ; 1	*UNDOCUMENTED* SCSI command phase
+scsists		= $227B ; 1
+suberrc		= $227C ; 1
+scsisns		= $227D ; 1	*UNDOCUMENTED* SCSI "sense" return code
+subcode		= $227E ; 1
 
 reset_hook	= $2284 ; 2	*UNDOCUMENTED* joypad soft-reset hook
-colortia        = $2286 ; 8
-;?              = $228E ; ?
+colortia	= $2286 ; 8
+;?		= $228E ; ?
  
 ;mprsav		= $22B5 ; 8 backups of MPR when BIOS needs major bank swapping.
 
-ramend  	= $22D0 ; 1
+ramend		= $22D0 ; 1
 
 psg_work_top	= $22D0
-psg_reg         = $22ED ; 1 shadow for selected PSG register, like vdc_reg
-                        ; ...
+psg_reg		= $22ED ; 1 shadow for selected PSG register, like vdc_reg
+			; ...
 
 graph_work_top	= $2616
 key_work_top	= $2646
