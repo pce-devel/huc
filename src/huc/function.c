@@ -477,7 +477,7 @@ int getarg (intptr_t t, int syntax, int otag, int is_fastcall)
 
 		if (!(legalname = symname(n))) {
 			if (syntax == ANSI && (ch() == ',' || ch() == ')'))
-				sprintf(n, "__anon_%ld\n", (long) -argstk);
+				sprintf(n, "__anon_%d\n", (int) -argstk);
 			else {
 				illname();
 				junk();
@@ -789,11 +789,12 @@ void callfunction (char *ptr)
 		if (fast && ((fast->flags & FASTCALL_NOP) || (fast->flags & FASTCALL_MACRO))) {
 
 			// Only macro fastcalls get a name generated
-			if (fast->flags & FASTCALL_MACRO)
+			if (fast->flags & FASTCALL_MACRO) {
 				if (nb)
 					gmacro(ptr, cnt);
 				else
 					gmacro(ptr, 0);
+			}
 		}
 		// Else not a NOP or MACRO fastcall
 		else if (nb)
