@@ -377,7 +377,9 @@ close_input(void)
 		return (-1);
 	}
 	if (input_file[infile_num].if_level != if_level) {
-		fatal_error("Incomplete IF/ENDIF statement!");
+		char message[128];
+		sprintf(message, "Incomplete IF/ENDIF statement, beginning at line %d!", if_line[if_level-1]);
+		fatal_error(message);
 		return (-1);
 	}
 	if (infile_num <= 1)

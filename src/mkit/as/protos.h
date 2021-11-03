@@ -7,6 +7,7 @@ void assemble(int do_label);
 int  oplook(int *idx);
 void addinst(struct t_opcode *optbl);
 int  check_eol(int *ip);
+void save_if_expr(int *ip);
 void do_if(int *ip);
 void do_else(int *ip);
 void do_endif(int *ip);

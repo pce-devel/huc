@@ -11,6 +11,8 @@ int if_expr;		/* set when parsing an .if expression */
 int if_level;		/* level of nested .if's */
 int if_state[256];	/* status when entering the .if */
 int if_flag[256];	/* .if/.else status */
+int if_line[256];	/* .if line number */
+char if_txt[256][64];	/* .if condition text */
 int skip_lines;		/* set when lines must be skipped */
 int continued_line;	/* set when a line is the continuation of another line */
 
@@ -87,8 +89,7 @@ assemble(int do_label)
 	 */
 	if (in_if) {
 		i = SFIELD;
-		while (isspace(prlnbuf[i]))
-			i++;
+		while (isspace(prlnbuf[i])) { i++; }
 		if (oplook(&i) >= 0) {
 			if (opflg == PSEUDO) {
 				switch (opval) {
@@ -102,8 +103,17 @@ assemble(int do_label)
 					break;
 
 				case P_ELSE:		// .else
-					if (!check_eol(&i))
-						return;
+					while (isspace(prlnbuf[i])) { i++; }
+					if ((prlnbuf[i] != ';') && (prlnbuf[i] != '\0')) {
+						/* check that expression matches if_level */
+						save_if_expr(&i);
+						if (strcmp(if_txt[if_level], if_txt[if_level-1]) != 0) {
+							char message [128];
+							sprintf(message, "Condition does not match \".if %s\" at line %d!", if_txt[if_level-1], if_line[if_level-1]);
+							fatal_error(message);
+							return;
+						}
+					}
 					if (if_state[if_level]) {
 						skip_lines = !if_flag[if_level];
 						if (pass == LAST_PASS)
@@ -112,8 +122,17 @@ assemble(int do_label)
 					return;
 
 				case P_ENDIF:		// .endif
-					if (!check_eol(&i))
-						return;
+					while (isspace(prlnbuf[i])) { i++; }
+					if ((prlnbuf[i] != ';') && (prlnbuf[i] != '\0')) {
+						/* check that expression matches if_level */
+						save_if_expr(&i);
+						if (strcmp(if_txt[if_level], if_txt[if_level-1]) != 0) {
+							char message [128];
+							sprintf(message, "Condition does not match \".if %s\" at line %d!", if_txt[if_level-1], if_line[if_level-1]);
+							fatal_error(message);
+							return;
+						}
+					}
 					if (if_state[if_level] && (pass == LAST_PASS))
 						println();
 					skip_lines = !if_state[if_level];
@@ -412,12 +431,41 @@ check_eol(int *ip)
 	}
 }
 
+
+/* ----
+ * save_if_expr()
+ * ----
+ * store .if expression to check for .else/.endif mismatch
+ */
+
+void
+save_if_expr(int *ip)
+{
+	int i, j;
+	if_line[if_level] = slnum;
+	if_txt[if_level][0] = '\0';
+	i = *ip;
+	while (isspace(prlnbuf[i])) { i++; }
+	j = 0;
+	while ((prlnbuf[i] != ';') && (prlnbuf[i] != '\0') && (j < 63)) {
+		if_txt[if_level][j++] = prlnbuf[i++];
+	}
+	if (j != 0) {
+		while (isspace(if_txt[if_level][--j])) {}
+		if_txt[if_level][++j] = '\0';
+	}
+}
+
+
 /* .if pseudo */
 
 void
 do_if(int *ip)
 {
 	labldef(loccnt, 1);
+
+	/* save condition text */
+	save_if_expr(ip);
 
 	/* get expression */
 	if_expr = 1;
@@ -473,6 +521,9 @@ do_ifdef(int *ip)
 	while (isspace(prlnbuf[*ip]))
 		(*ip)++;
 
+	/* save condition text */
+	save_if_expr(ip);
+
 	/* get symbol */
 	if (!colsym(ip)) {
 		error("Syntax error!");
@@ -506,4 +557,3 @@ do_ifdef(int *ip)
 		println();
 	}
 }
-

@@ -21,6 +21,7 @@ extern int section_bank[4];		/* current bank for each section */
 extern int in_if;			/* true if in a '.if' statement */
 extern int if_expr;			/* set when parsing an .if expression */
 extern int if_level;			/* level of nested .if's */
+extern int if_line[256];		/* .if line number */
 extern int skip_lines;			/* when true skip lines */
 extern int continued_line;		/* set when a line is the continuation of another line */
 extern int pcx_w, pcx_h;		/* PCX dimensions */
