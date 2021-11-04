@@ -92,10 +92,12 @@ assemble(int do_label)
 		while (isspace(prlnbuf[i])) { i++; }
 		if (oplook(&i) >= 0) {
 			if (opflg == PSEUDO) {
+
 				switch (opval) {
 				case P_IF:		// .if
 				case P_IFDEF:		// .ifdef
 				case P_IFNDEF:		// .ifndef
+					save_if_expr(&i);
 					if (skip_lines) {
 						if_level++;
 						if_state[if_level] = 0;
