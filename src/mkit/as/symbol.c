@@ -154,7 +154,7 @@ stlook(int flag)
 		}
 	}
 
-	/* incremente symbol reference counter */
+	/* increment symbol reference counter */
 	if (sym_flag == 0) {
 		if (sym)
 			sym->refcnt++;
@@ -361,7 +361,7 @@ lablexists(char *name)
 	if (len) {
 		symbol[0] = len;
 		strcpy(&symbol[1], name);
-		lablptr = stlook(1);
+		lablptr = stlook(0);
 
 		if (lablptr) {
 			return (1);
