@@ -50,6 +50,7 @@
 #define S_BSS	1
 #define S_CODE	2
 #define S_DATA	3
+#define S_PROC	4	/* trampolines for .proc */
 
 /* assembler options */
 #define OPT_LIST	0

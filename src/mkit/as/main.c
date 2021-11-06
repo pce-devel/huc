@@ -51,8 +51,8 @@ char zeroes[2048];	/* CDROM sector full of zeores */
 char *prg_name;		/* program name */
 FILE *in_fp;		/* file pointers, input */
 FILE *lst_fp;		/* listing */
-char section_name[4][8] = {
-	"  ZP", " BSS", "CODE", "DATA"
+char section_name[5][8] = {
+	"  ZP", " BSS", "CODE", "DATA", "PROC"
 };
 int newproc_opt;
 int strip_opt;
@@ -592,7 +592,7 @@ main(int argc, char **argv)
 		if (pass == FIRST_PASS)
 			proc_reloc();
 
-		/* abord pass on errors */
+		/* abort pass on errors */
 		if (errcnt) {
 			printf("# %d error(s)\n", errcnt);
 			exit(1);
@@ -607,11 +607,10 @@ main(int argc, char **argv)
 		if (pass == FIRST_PASS) {
 			lablset("_bss_end", machine->ram_base + max_bss);
 			lablset("_bank_base", bank_base);
-			if (newproc_opt == 0) {
-				lablset("_call_bank", bank_base + max_bank + 1);
-				lablset("_nb_bank", max_bank + 2);
+			lablset("_call_bank", bank_base + call_bank);
+			if (call_bank > max_bank) {
+				lablset("_nb_bank", call_bank + 1);
 			} else {
-				lablset("_call_bank", bank_base);
 				lablset("_nb_bank", max_bank + 1);
 			}
 		}
@@ -916,7 +915,7 @@ help(void)
 		printf("-dev       : assemble and run on the Develo Box\n");
 		printf("-mx        : create a Develo MX file\n");
 		printf("-strip     : strip unused .proc & .procgroup\n");
-		printf("-newproc   : put .proc trampolines in first bank not last\n");
+		printf("-newproc   : run .proc code in MPR6, instead of MPR5\n");
 	}
 	printf("-srec      : create a Motorola S-record file\n");
 	printf("infile     : file to be assembled\n");

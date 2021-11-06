@@ -84,4 +84,4 @@ extern int xlist;				/* listing file main flag */
 extern int list_level;				/* output level */
 extern int asm_opt[8];				/* assembler option state */
 extern int opvaltab[6][16];
-
+extern int call_bank;				/* bank for .proc trampolines */

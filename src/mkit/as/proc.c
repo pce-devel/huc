@@ -75,20 +75,25 @@ do_call(int *ip)
 					value = ptr->call;
 				} else {
 					/* init */
-					if (call_ptr == 0) {
-						if (newproc_opt == 0) {
-							call_bank = ++max_bank;
-							call_ptr  = 0x0000;
-						} else {
-							call_bank = 0;
-							call_ptr  = 0x1FD0;
+					if (call_bank > max_bank) {
+						/* don't increase ROM size until we need a trampoline */
+						if (call_bank > bank_limit) {
+							fatal_error("Not enough ROM space for proc trampolines!");
+							return;
 						}
+						max_bank = call_bank;
 					}
 
 					/* new call */
 					if (newproc_opt == 0) {
+						/* check that the new trampoline won't overwrite existing data */
+						if ((map[call_bank][(call_ptr + 17) & 0x1FFF] & 0x0F) != 0x0F)	{
+							fatal_error("No more space in bank for .proc trampolines!");
+							return;
+						}
+
 						/* install HuC trampolines at start of MPR4, map code into MPR5 */
-						value = call_ptr + 0x8000;
+						value = call_ptr;
 
 						poke(call_ptr++, 0xA8);			// tay
 						poke(call_ptr++, 0x43);			// tma #5
@@ -109,6 +114,12 @@ do_call(int *ip)
 						poke(call_ptr++, 0x98);			// tya
 						poke(call_ptr++, 0x60);			// rts
 					} else {
+						/* check that the new trampoline won't overwrite existing data */
+						if ((map[call_bank][(call_ptr - 10) & 0x1FFF] & 0x0F) != 0x0F)	{
+							fatal_error("No more space in bank for .proc trampolines!");
+							return;
+						}
+
 						/* install new trampolines at end of MPR7, map code into MPR6 */
 						poke(--call_ptr, (ptr->org + 0xC000) >> 8);
 						poke(--call_ptr, (ptr->org + 0xC000) & 255);
@@ -121,7 +132,7 @@ do_call(int *ip)
 						poke(--call_ptr, 0x40);
 						poke(--call_ptr, 0x43);			// tma #6
 
-						value = call_ptr + 0xE000;
+						value = call_ptr;
 					}
 
 					ptr->call = value;
@@ -505,6 +516,22 @@ proc_reloc(void)
 	/* reset */
 	proc_ptr = NULL;
 	proc_nb = 0;
+
+	/* initialize trampoline bank/addr after relocation */
+	if (newproc_opt) {
+		call_bank = 0;
+		call_ptr  = 0xFFD0;
+	} else {
+		call_bank = max_bank + 1;
+		call_ptr  = 0x8000;
+	}
+
+	if (lablexists("__trampolinebnk")) {
+		call_bank = lablptr->value & 0x7F;
+	}
+	if (lablexists("__trampolineptr")) {
+		call_ptr  = lablptr->value & 0xFFFF;
+	}
 }
 
 
@@ -594,8 +621,8 @@ proc_install(void)
 void
 poke(int addr, int data)
 {
-	rom[call_bank][addr] = data;
-	map[call_bank][addr] = S_CODE + (4 << 5);
+	rom[call_bank][(addr & 0x1FFF)] = data;
+	map[call_bank][(addr & 0x1FFF)] = S_PROC + ((call_ptr & 0xE000) >> 8);
 }
 
 /* ----
