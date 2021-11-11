@@ -97,7 +97,7 @@ $E8D8                   bsr     bbs_hsync               ; 44 8D
                         ; END OF HSYNC HANDLER
 
 $E8DA   .skip_hookh:    lda     <vdc_reg                ; A5 F7
-$E8DC                   sta     VDC_SR                  ; 8D 00 00
+$E8DC                   sta     VDC_AR                  ; 8D 00 00
 
 $E8DF                   ply                             ; 7A
 $E8E0                   plx                             ; FA

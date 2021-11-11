@@ -16,14 +16,14 @@
 ; Define names for macro argument types (\?x).
 ;
 
-ARG_NONE	.equ	0
-ARG_REG		.equ	1
-ARG_IMMED	.equ	2
-ARG_ABS		.equ	3
-ARG_ABSOLUTE	.equ	3
-ARG_INDIRECT	.equ	4
-ARG_STRING	.equ	5
-ARG_LABEL	.equ	6
+ARG_NONE	=	0
+ARG_REG		=	1
+ARG_IMMED	=	2
+ARG_ABS		=	3
+ARG_ABSOLUTE	=	3
+ARG_INDIRECT	=	4
+ARG_STRING	=	5
+ARG_LABEL	=	6
 
 ;
 ; Macro to shadow VDC_AR writes because the register is write-only.
@@ -35,11 +35,12 @@ ARG_LABEL	.equ	6
 vreg		.macro 
 		lda	\1
 		sta	<vdc_reg
-.if (\?1 = ARG_IMMED)
+
+	.if (\?1 = ARG_IMMED)
 		st0	\1
-.else
+	.else
 		sta	VDC_AR
-.endif
+	.endif
 		.endm
 
 ;
@@ -49,54 +50,50 @@ vreg		.macro
 ; the "-newproc" option, they jump to a piece of shared code.
 ;
 
-		.if	USING_NEWPROC
+	.if	USING_NEWPROC
 
 leave		.macro
 		jmp	leave_proc
 		.endm
 
-		.else
+	.else
 
 leave		.macro
 		rts
 		.endm
 
-		.endif
+	.endif	USING_NEWPROC
 
 ;
 ; Macros to align data/code to boundaries commonly seen on the PCE.
 ;
 
-SPR_ALIGN	.macro
-		.if	(* & 127)
-		ds	128 - (* & 127)		; 128-byte align the data.
-		.endif
-		.endm
-
-CHR_ALIGN	.macro
-		.if	(* & 31)
-		ds	32 - (* & 31)		; 32-byte align the data.
-		.endif
-		.endm
-
 WORD_ALIGN	.macro
-		.if	(* & 1)
+	.if	(* & 1)
 		ds	2 - (* & 1)		; Word Align the data.
-		.endif
+	.endif
 		.endm
 
 LONG_ALIGN	.macro
-		.if	(* & 3)
+	.if	(* & 3)
 		ds	4 - (* & 3)		; Long Align the data.
-		.endif
+	.endif
+		.endm
+
+CHR_ALIGN	.macro
+	.if	(* & 31)
+		ds	32 - (* & 31)		; 32-byte align the data.
+	.endif
+		.endm
+
+SPR_ALIGN	.macro
+	.if	(* & 127)
+		ds	128 - (* & 127)		; 128-byte align the data.
+	.endif
 		.endm
 
 PAGE_ALIGN	.macro
-		.if	(* & 255)
-		ds	256 - (* & 255)		; Page Align the data.
-		.endif
+	.if	(* & 255)
+		ds	256 - (* & 255)		; 256-byte align the data.
+	.endif
 		.endm
-
-;
-;
-;

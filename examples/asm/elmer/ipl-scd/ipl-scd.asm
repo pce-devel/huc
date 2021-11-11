@@ -185,6 +185,8 @@ ipl_scd:	jsr	ex_getver		; Get System Card version.
 		cpx	#3			; Are there at-least three
 		bcc	.not_supercd		; 64KB blocks of memory?
 
+		lda	#$68			; PCEAS code assumes this!
+
 		tam2				; Map SCD RAM banks to
 		inc	a			; replace the CD RAM banks.
 		tam3
