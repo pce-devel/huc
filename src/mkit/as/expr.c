@@ -220,6 +220,8 @@ cont:
 				if (!push_op(OP_EQUAL))
 					return (0);
 				expr++;
+				if (*expr == '=')
+					expr++;
 				break;
 
 			/* one complement */
@@ -744,7 +746,7 @@ do_op(void)
 		if (!check_func_args("BANK"))
 			return (0);
 		if (pass == LAST_PASS) {
-			if (expr_lablptr->bank == RESERVED_BANK) {
+			if (expr_lablptr->bank >= RESERVED_BANK) {
 				error("No BANK index for this symbol!");
 				val[0] = 0;
 				break;
