@@ -1,6 +1,70 @@
 New in version 3.99:
 --------------------
-2017-02-21
+
+2021-11-11:
+-----------
+  HuC changes ...
+  ---------------
+- Allow the initial SCD overlay program to be larger than 192KB.
+
+  PCEAS changes ...
+  -----------------
+- Local labels can now start with a '@'.
+- Add the ability to read graphic files in ".BMP" format.
+- Add ".dd" for generating 32-bit data values.
+- Allow C-style "==" as an alternative to "=" as a comparison operator.
+- The bank/page/offset of the procedure trampolines can now be set during
+  assembly, although changing the MPR that the procedures run in can still
+  only be set on the command-line (i.e. with "-newproc").
+- Allow an optional expression after ".else" and ".endif" which, when present,
+  is checked to make sure that it matches the previous ".if".
+- Allow more data, and/or a comment, to appear after a string on a ".db" line.
+- Add "-newproc" to run ".proc" code in MPR6 instead of MPR5.
+- Add "-strip" to remove ".proc" code that is defined by not referenced.
+- Add "-ipl" option to pre-fill PCEAS memory with the 4KB of a CD-ROM IPL.
+- Add "-trim" option to strip off the unused head and tail of a ROM.
+
+  ISOlink changes ...
+  -------------------
+- Add a directory of the CD-ROM contents into the ".ISO" file's IPL sectors.
+- Add the ability to use a customized IPL file on the ".ISO", or to specify
+  new IPL boot parameters that replace HuC's normal boot parameters.
+- Add the "-asm" option to stop ISOlink from patching ".OVL" files on the CD
+  with HuC-specific data.
+
+  New tools ...
+  -------------
+- Add "sym2inc" tool so that symbol files can be parsed to make include files.
+- Add "wav2vox" tool for ADPCM compressing audio files to use on a PCE CD-ROM.
+
+
+2020-04-14:
+-----------
+- Added support for "macro" append option for pragma fastcalls. The output
+  of the corresponding macro name is used in place of "call". It equates
+  to in-lining the asm code. Note: arguments are not passed to the macro.
+
+
+2018-07-07:
+-----------
+- Fix potential buffer overrun in optimize.c that GCC7 complains about.
+- Increase switch label stack size from 100 to 256.
+- Allow a zero rows and/or columns size in .incchr, .inctile, etc to
+  autosize from the image itself.
+- When using .inctile, tile #256 now wraps around onto tile #0 (with a
+  warning message), so that ProMotion tilemaps can use all 256 tiles.
+- Add .incchrpal, .incsprpal, and .inctilepal commands to PCEAS so that
+  the user can create palette lookup tables for HuC maps directly from
+  the character, sprite and tile graphics.
+- Add #incchrpal, #incsprpal, and #inctilepal commands to HuC so that
+  the user can create palette lookup tables for HuC maps directly from
+  the character, sprite and tile graphics.
+- Add new example project that shows using ProMotion to create HuC maps.
+- Update PCEAS documentation with latest features.
+
+
+2017-02-21:
+-----------
 - Imported Uli's v3.98 version of HuC (https://github.com/uli/huc)
   See README for all the changes that Uli made
 - Applied changes from Artemio Urbina's fork of HuC
@@ -26,27 +90,6 @@ New in version 3.99:
 - Change HuC to use "-raw" and "-pad" options to avoid 384KB HuCard problem.
 - Add warning whenever a 384KB HuCard image is created to highlight problem.
 
-2018-07-07
-- Fix potential buffer overrun in optimize.c that GCC7 complains about.
-- Increase switch label stack size from 100 to 256.
-- Allow a zero rows and/or columns size in .incchr, .inctile, etc to
-  autosize from the image itself.
-- When using .inctile, tile #256 now wraps around onto tile #0 (with a
-  warning message), so that ProMotion tilemaps can use all 256 tiles.
-- Add .incchrpal, .incsprpal, and .inctilepal commands to PCEAS so that
-  the user can create palette lookup tables for HuC maps directly from
-  the character, sprite and tile graphics.
-- Add #incchrpal, #incsprpal, and #inctilepal commands to HuC so that
-  the user can create palette lookup tables for HuC maps directly from
-  the character, sprite and tile graphics.
-- Add new example project that shows using ProMotion to create HuC maps.
-- Update PCEAS documentation with latest features.
-
-2020-4-14
-- Added support for "macro" append option for pragma fastcalls. The output
-  of the corresponding macro name is used in place of "call". It equates
-  to in-lining the asm code. Note: arguments are not passed to the macro.
-
 
 New in version 3.21:
 --------------------
@@ -57,6 +100,7 @@ New in version 3.21:
 - Fixed bug to support bank boundary crossing map data (in map_calc_tile_addr)
 - Fixed bug to support bat wrapping in load_map function
 - Fixed bug in dumplits (in main.c), const bytes were and'ed by 127
+
 
 New in version 3.20:
 --------------------

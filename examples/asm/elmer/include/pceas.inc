@@ -13,6 +13,13 @@
 ; ***************************************************************************
 
 ;
+; PCEAS sets "CDROM" to one of these values, or to 0 for HuCARD.
+;
+
+STANDARD_CD	=	1
+SUPER_CD	=	2
+
+;
 ; Define names for macro argument types (\?x).
 ;
 

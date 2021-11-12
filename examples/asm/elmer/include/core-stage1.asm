@@ -96,7 +96,7 @@ USING_MPR7	=	0
 
 		.org	core_stage1
 
-	.if	(CDROM == 2)			; If SuperCDROM, then ...
+	.if	(CDROM == SUPER_CD)		; If SuperCDROM, then ...
 
 core_main:	jsr	ex_getver		; Get System Card version.
 		cpx	#3			; Need version 3 or higher.
@@ -161,7 +161,7 @@ core_main:	jsr	ex_getver		; Get System Card version.
 .hang:		jsr	ex_vsync		; Wait for vsync.
 		bra	.hang			; Wait for user to reboot.
 
-	.else	(CDROM == 2)			; If not SuperCDROM, then ...
+	.else	(CDROM == SUPER_CD)		; If not SuperCDROM, then ...
 
 core_main:	ldx	#2			; Load & run the 2nd file.
 
@@ -170,7 +170,7 @@ core_main:	ldx	#2			; Load & run the 2nd file.
 
 		jmp	exec_overlay		; Call function in RAM.
 
-	.endif	(CDROM == 2)
+	.endif	(CDROM == SUPER_CD)
 
 
 
