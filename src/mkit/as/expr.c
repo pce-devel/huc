@@ -7,6 +7,32 @@
 #include "expr.h"
 
 /* ----
+ * pc_symbol
+ * ----
+ * pre-defined symbol used for the program counter in an expression
+ */
+
+t_symbol pc_symbol = {
+	NULL, /* next */
+	NULL, /* local */
+	NULL, /* proc */
+	DEFABS, /* type */
+	0, /* value */
+	0, /* bank */
+	0, /* page */
+	0, /* nb */
+	0, /* size */
+	0, /* vram */
+	0, /* pal */
+	0, /* refcnt */
+	0, /* reserved */
+	0, /* data_type */
+	0, /* data_size */
+	"*" /* name */
+};
+
+
+/* ----
  * evaluate()
  * ----
  * evaluate an expression
@@ -277,7 +303,7 @@ cont:
 					if (c == '%')
 						type = T_BINARY;
 					else
-						type = T_PC;
+						type = T_SYMBOL;
 					if (!push_val(type))
 						return (0);
 					break;
@@ -401,14 +427,6 @@ push_val(int type)
 	c = *expr;
 
 	switch (type) {
-	/* program counter */
-	case T_PC:
-		if (data_loccnt == -1)
-			val = (loccnt + (page << 13));
-		else
-			val = (data_loccnt + (page << 13));
-		expr++;
-		break;
 
 	/* char ascii value */
 	case T_CHAR:
@@ -423,31 +441,48 @@ push_val(int type)
 
 	/* symbol */
 	case T_SYMBOL:
-		/* extract it */
-		if (!getsym())
-			return (0);
+		if (*expr == '*') {
+			/* symbol for the program counter */
+			symbol[0] = 1;
+			symbol[1] = '*';
+			symbol[2] = '\0';
+			expr++;
 
-		/* an user function? */
-		if (func_look()) {
-			if (!func_getargs())
-				return (0);
-
-			expr_stack[func_idx++] = expr;
-			expr = func_ptr->line;
-			return (1);
-		}
-
-		/* a predefined function? */
-		op = check_keyword();
-		if (op) {
-			if (!push_op(op))
-				return (0);
+			if (data_loccnt == -1)
+				pc_symbol.value = (loccnt + (page << 13));
 			else
-				return (1);
-		}
+				pc_symbol.value = (data_loccnt + (page << 13));
+			pc_symbol.bank = bank + bank_base;
+			pc_symbol.page = page;
 
-		/* search the symbol */
-		expr_lablptr = stlook(1);
+			expr_lablptr = &pc_symbol;
+		} else {
+			/* extract it */
+			if (!getsym())
+				return (0);
+
+			/* an user function? */
+			if (func_look()) {
+				if (!func_getargs())
+					return (0);
+
+				expr_stack[func_idx++] = expr;
+				expr = func_ptr->line;
+				return (1);
+			}
+
+			/* a predefined function? */
+			op = check_keyword();
+			if (op) {
+				if (!push_op(op))
+					return (0);
+				else
+					return (1);
+			}
+
+			/* search the symbol */
+			expr_lablptr = stlook(1);
+		}
 
 		/* check if undefined, if not get its value */
 		if (expr_lablptr == NULL)

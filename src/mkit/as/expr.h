@@ -4,7 +4,6 @@
 #define T_BINARY	2
 #define T_CHAR		3
 #define T_SYMBOL	4
-#define T_PC		5
 
 /* operators */
 #define OP_START	0
