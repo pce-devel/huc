@@ -321,51 +321,30 @@ proc_reloc(void)
 	struct t_symbol *local;
 	struct t_proc   *group;
 	int i;
-	int *bankleft = NULL;
-	int bank_base = 0;
-	int minbanks = 0;
-	int totalsize = 0;
-	struct t_proc *list = proc_first;
+	int *bank_free = NULL;
+	int new_bank = 0;
 
 	if (proc_nb == 0)
 		return;
 
-	/* init */
-	proc_ptr = proc_first;
-	bank = max_bank + 1;
-	bank_base = bank;
-
-	while(list)
-	{
-		totalsize += list->size;
-		list = list->link;
-	}
-
-	minbanks = totalsize / 0x2000 + bank_base;
-
-	if(minbanks > bank_limit)
-	{
-		printf("More banks needed than the output target supports, aborting\n");
-		return;
-	}
-
-	/* Bin packing, descending order sort */
+	/* sort procedures by size (largest first) for better packing */
 	proc_sortlist();
 
-	bankleft = (int*)malloc(sizeof(int)*bank_limit);
-	if(!bankleft)
-	{
+	/* init */
+	bank_free = (int*) malloc(sizeof(int) * (bank_limit+1));
+	if (!bank_free) {
 		fatal_error("Not enough RAM to allocate banks!");
 		return;
 	}
 
-	for(i = 0; i < bank_limit; i++)
-	{
-		if(i >= bank_base)
-			bankleft[i] = 0x2000;
+	for (i = 0; i <= bank_limit; i++) {
+		if (i > max_bank)
+			bank_free[i] = 0x2000;
 		else
-			bankleft[i] = 0;
+			bank_free[i] = 0;
 	}
+
+	new_bank = max_bank + 1;
 
 	proc_ptr = proc_first;
 
@@ -392,30 +371,28 @@ proc_reloc(void)
 				proc_ptr->bank = STRIPPED_BANK;
 			} else {
 				/* relocate code to any unused bank in ROM */
-				int check = 0;
-				int unusedspace = 0x2000;
-				int proposedbank = -1;
+				int reloc_bank = -1;
+				int check_bank = 0;
+				int smallest = 0x2000;
 
-				while(proposedbank == -1)
+				while (reloc_bank == -1)
 				{
-					for(check = 0; check < minbanks; check++)
+					for (check_bank = new_bank; check_bank <= max_bank; check_bank++)
 					{
-						if(bankleft[check] > proc_ptr->size)
+						if (bank_free[check_bank] >= proc_ptr->size)
 						{
-							if(unusedspace > bankleft[check] - proc_ptr->size)
+							if (smallest > (bank_free[check_bank] - proc_ptr->size))
 							{
-								unusedspace = bankleft[check] - proc_ptr->size;
-								proposedbank = check;
+								smallest = bank_free[check_bank] - proc_ptr->size;
+								reloc_bank = check_bank;
 							}
 						}
 					}
 
-					if(proposedbank == -1)
+					if (reloc_bank == -1)
 					{
-						/* bank change */
-						minbanks++;
-						if (minbanks > bank_limit)
-						{
+						/* need new bank */
+						if (++max_bank > bank_limit) {
 							int total = 0, totfree = 0;
 							struct t_proc *current = NULL;
 
@@ -423,10 +400,9 @@ proc_reloc(void)
 
 							fatal_error("Not enough ROM space for procs!");
 
-							for(i = bank_base; i < bank; i++)
-							{
-								printf("BANK %02X: %d bytes free\n", i, bankleft[i]);
-								totfree += bankleft[i];
+							for (i = new_bank; i < max_bank; i++) {
+								printf("BANK %02X: %d bytes free\n", i, bank_free[i]);
+								totfree += bank_free[i];
 							}
 							printf("Total free space in all banks %d\n", totfree);
 
@@ -436,26 +412,26 @@ proc_reloc(void)
 								printf("Proc: %s Bank: 0x%02X Size: %d %s\n",
 									proc_ptr->name, proc_ptr->bank == PROC_BANK ? 0 : proc_ptr->bank, proc_ptr->size,
 									proc_ptr->bank == PROC_BANK && proc_ptr == current ? " ** too big **" : proc_ptr->bank == PROC_BANK ? "** unassigned **" : "");
-								if(proc_ptr->bank == PROC_BANK)
+								if (proc_ptr->bank == PROC_BANK)
 									total += proc_ptr->size;
 								proc_ptr = proc_ptr->link;
 							}
 							printf("\nTotal bytes that didn't fit in ROM: %d\n", total);
-							if(totfree > total && current)
+							if (totfree > total && current)
 								printf("Try segmenting the %s procedure into smaller chunks\n", current->name);
 							else
 								printf("There are %d bytes that won't fit into the currently available BANK space\n", total - totfree);
 							errcnt++;
 							return;
 						}
-						proposedbank = minbanks - 1;
+						reloc_bank = max_bank;
 					}
 				}
 
-				proc_ptr->bank = proposedbank;
-				proc_ptr->org = 0x2000 - bankleft[proposedbank];
+				proc_ptr->bank = reloc_bank;
+				proc_ptr->org = 0x2000 - bank_free[reloc_bank];
 
-				bankleft[proposedbank] -= proc_ptr->size;
+				bank_free[reloc_bank] -= proc_ptr->size;
 			}
 		}
 
@@ -468,14 +444,12 @@ proc_reloc(void)
 		}
 
 		/* next */
-		bank = minbanks-1;
-		max_bank = bank;
 		proc_ptr->refcnt = 0;
 		proc_ptr = proc_ptr->link;
 	}
 
-	free(bankleft);
-	bankleft = NULL;
+	free(bank_free);
+	bank_free = NULL;
 
 	/* remap proc symbols */
 	for (i = 0; i < 256; i++) {
@@ -486,7 +460,7 @@ proc_reloc(void)
 
 			/* remap addr */
 			if (sym->proc) {
-				sym->bank   =  proc_ptr->bank;
+				sym->bank   =  proc_ptr->bank + bank_base;
 				sym->value += (proc_ptr->org - proc_ptr->base);
 
 				/* local symbols */
@@ -498,7 +472,7 @@ proc_reloc(void)
 
 						/* remap addr */
 						if (local->proc) {
-							local->bank   =  proc_ptr->bank;
+							local->bank   =  proc_ptr->bank + bank_base;
 							local->value += (proc_ptr->org - proc_ptr->base);
 						}
 

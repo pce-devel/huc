@@ -481,41 +481,46 @@ main(int argc, char **argv)
 		addinst(machine->plus_inst);
 	addinst(machine->pseudo_inst);
 
-	/* predefined symbols */
-	lablset("MAGICKIT", 1);
-	lablset("DEVELO", develo_opt | mx_opt);
-	lablset("CDROM", cd_opt | scd_opt);
-	lablset("_bss_end", 0);
-	lablset("_bank_base", 0);
-	lablset("_nb_bank", 1);
-	lablset("_call_bank", 0);
-	lablset("USING_NEWPROC", newproc_opt);
-
 	/* init global variables */
 	max_zp = 0x01;
 	max_bss = 0x0201;
 	max_bank = 0;
-	rom_limit = 0x100000;		/* 1MB */
-	bank_limit = 0x7F;
-	bank_base = 0;
 	errcnt = 0;
 
+	rom_limit  = 0x100000;		/* 1MB */
+	bank_base  = 0x00;
+	bank_limit = 0x7F;
+
 	if (ipl_opt) {
-		rom_limit = 0x01800;	/* 4KB */
+		rom_limit  = 0x01800;	/* 4KB */
+		bank_base  = 0x00;
 		bank_limit = 0x00;
 	}
 	else if (cd_opt) {
-		rom_limit = 0x10000;	/* 64KB */
+		rom_limit  = 0x10000;	/* 64KB */
+		bank_base  = 0x80;
 		bank_limit = 0x07;
 	}
 	else if (scd_opt) {
-		rom_limit = 0x40000;	/* 256KB */
+		rom_limit  = 0x40000;	/* 256KB */
+		bank_base  = 0x68;
 		bank_limit = 0x1F;
 	}
 	else if (develo_opt || mx_opt) {
-		rom_limit = 0x30000;	/* 192KB */
+		rom_limit  = 0x30000;	/* 192KB */
+		bank_base  = 0x68;	/* or 0x84, if small */
 		bank_limit = 0x17;
 	}
+
+	/* predefined symbols */
+	lablset("MAGICKIT", 1);
+	lablset("DEVELO", develo_opt | mx_opt);
+	lablset("CDROM", cd_opt | scd_opt);
+	lablset("USING_NEWPROC", newproc_opt);
+	lablset("_bss_end", 0);
+	lablset("_bank_base", bank_base);
+	lablset("_nb_bank", 1);
+	lablset("_call_bank", 0);
 
 	/* assemble */
 	for (pass = FIRST_PASS; pass <= LAST_PASS; pass++) {
@@ -599,26 +604,15 @@ main(int argc, char **argv)
 			// break;
 		}
 
-		/* adjust bank base */
-		if (pass == FIRST_PASS)
-			bank_base = calc_bank_base();
-
 		/* update predefined symbols */
 		if (pass == FIRST_PASS) {
 			lablset("_bss_end", machine->ram_base + max_bss);
-			lablset("_bank_base", bank_base);
 			lablset("_call_bank", bank_base + call_bank);
 			if (call_bank > max_bank) {
 				lablset("_nb_bank", call_bank + 1);
 			} else {
 				lablset("_nb_bank", max_bank + 1);
 			}
-		}
-
-		/* adjust the symbol table for the develo or for cd-roms */
-		if (pass == FIRST_PASS) {
-			if (develo_opt || mx_opt || cd_opt || scd_opt)
-				lablremap();
 		}
 
 		/* rewind input file */
@@ -846,42 +840,6 @@ main(int argc, char **argv)
 
 	/* ok */
 	return (0);
-}
-
-
-/* ----
- * calc_bank_base()
- * ----
- * calculate rom bank base
- */
-
-int
-calc_bank_base(void)
-{
-	int base;
-
-	/* cd */
-	if (cd_opt)
-		base = 0x80;
-
-	/* super cd */
-	else if (scd_opt)
-		base = 0x68;
-
-	/* develo */
-	else if (develo_opt || mx_opt) {
-		if (max_bank < 4)
-			base = 0x84;
-		else
-			base = 0x68;
-	}
-
-	/* default */
-	else {
-		base = 0;
-	}
-
-	return (base);
 }
 
 

@@ -371,6 +371,7 @@ lablexists(char *name)
 }
 
 
+#if 0
 /* ----
  * lablremap()
  * ----
@@ -410,6 +411,8 @@ lablremap(void)
 		}
 	}
 }
+#endif
+
 
 /* ----
  * dumplabl()
