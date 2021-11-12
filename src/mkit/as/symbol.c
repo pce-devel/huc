@@ -278,7 +278,7 @@ labldef(int lval, int flag)
 	else {
 		if ((lablptr->value != lval) ||
 		    ((flag) && (bank < bank_limit) && (lablptr->bank != bank_base + bank))) {
-			fatal_error("Internal error[1]!");
+			fatal_error("Symbol's bank changed in 2nd pass, was it undefined the 1st time?");
 			return (-1);
 		}
 	}
