@@ -667,6 +667,9 @@ do_org(int *ip)
 	/* set location counter */
 	loccnt = (value & 0x1FFF);
 
+	/* signal discontiguous change in loccnt */
+	discontiguous = 1;
+
 	/* set label value if there was one */
 	labldef(loccnt, 1);
 
@@ -751,6 +754,9 @@ do_bank(int *ip)
 	page = bank_page[section][bank];
 	loccnt = bank_loccnt[section][bank];
 	glablptr = bank_glabl[section][bank];
+
+	/* signal discontiguous change in loccnt */
+	discontiguous = 1;
 
 	/* update the max bank counter */
 	if (max_bank < bank)
@@ -1230,6 +1236,9 @@ do_section(int *ip)
 		page = bank_page[section][bank];
 		loccnt = bank_loccnt[section][bank];
 		glablptr = bank_glabl[section][bank];
+
+		/* signal discontiguous change in loccnt */
+		discontiguous = 1;
 	}
 
 	/* output line */

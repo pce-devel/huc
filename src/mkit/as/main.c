@@ -546,6 +546,7 @@ main(int argc, char **argv)
 		/* reset bank arrays */
 		for (i = 0; i < 4; i++) {
 			for (j = 0; j < 256; j++) {
+				bank_maxloc[j] = 0;
 				bank_loccnt[i][j] = 0;
 				bank_glabl[i][j] = NULL;
 				bank_page[i][j] = 0;
@@ -581,6 +582,9 @@ main(int argc, char **argv)
 
 		/* assemble */
 		while (readline() != -1) {
+			int old_bank = bank;
+			discontiguous = 0;
+
 			assemble(0);
 			if (loccnt > 0x2000) {
 				loccnt &= 0x1fff;
@@ -589,6 +593,16 @@ main(int argc, char **argv)
 				if (pass == FIRST_PASS)
 					printf("   (Warning. Opcode crossing page boundary $%04X, bank $%02X)\n", (page * 0x2000), bank);
 			}
+
+			if (!discontiguous) {
+				while (old_bank != bank) {
+					bank_maxloc[old_bank++] = 0x2000;
+				}
+				if (bank_maxloc[bank] < loccnt) {
+					bank_maxloc[bank] = loccnt;
+				}
+			}
+
 			if (stop_pass)
 				break;
 		}

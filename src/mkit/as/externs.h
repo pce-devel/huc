@@ -3,6 +3,8 @@ extern unsigned char map[128][8192];
 extern char bank_name[128][64];
 extern int bank_loccnt[4][256];
 extern int bank_page[4][256];
+extern int bank_maxloc[256];		/* record max location in bank */
+extern int discontiguous;		/* NZ signals a warp in loccnt */
 extern int max_zp;			/* higher used address in zero page */
 extern int max_bss;			/* higher used address in ram */
 extern int max_bank;			/* last bank used */

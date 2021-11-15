@@ -256,6 +256,9 @@ do_proc(int *ip)
 	loccnt   = proc_ptr->org;
 	glablptr = lablptr;
 
+	/* signal discontiguous change in loccnt */
+	discontiguous = 1;
+
 	/* define label */
 	labldef(loccnt, 1);
 
@@ -299,6 +302,9 @@ do_endp(int *ip)
 		page     = bank_page[section][bank];
 		loccnt   = bank_loccnt[section][bank];
 		glablptr = bank_glabl[section][bank];
+
+		/* signal discontiguous change in loccnt */
+		discontiguous = 1;
 	}
 
 	/* output */
@@ -337,10 +343,7 @@ proc_reloc(void)
 	}
 
 	for (i = 0; i <= bank_limit; i++) {
-		if (i > max_bank)
-			bank_free[i] = 0x2000;
-		else
-			bank_free[i] = 0;
+		bank_free[i] = 0x2000 - bank_maxloc[i];
 	}
 
 	new_bank = max_bank + 1;
@@ -376,7 +379,7 @@ proc_reloc(void)
 
 				while (reloc_bank == -1)
 				{
-					for (check_bank = new_bank; check_bank <= max_bank; check_bank++)
+					for (check_bank = 0; check_bank <= max_bank; check_bank++)
 					{
 						if (bank_free[check_bank] >= proc_ptr->size)
 						{
