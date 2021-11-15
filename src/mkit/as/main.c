@@ -968,7 +968,7 @@ show_seg_usage(void)
 
 			/* search section end */
 			for (; addr < 8192; addr++)
-				if ((map[i][addr] & 0x0F) != section)
+				if (map[i][addr] != map[i][start])
 					break;
 
 			/* display section infos */
