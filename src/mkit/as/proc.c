@@ -58,8 +58,7 @@ do_call(int *ip)
 	check_eol(ip);
 
 	/* increment procedure refcnt */
-	if (stlook(1) == NULL)
-		return;
+	stlook(1);
 
 	/* generate code */
 	if (pass == LAST_PASS) {
@@ -141,7 +140,7 @@ do_call(int *ip)
 		}
 		else {
 			/* lookup symbol table */
-			if ((lablptr = stlook(0)) == NULL) {
+			if (((lablptr = stlook(0)) == NULL) || (lablptr->type != DEFABS)) {
 				fatal_error("Undefined destination!");
 				return;
 			}
