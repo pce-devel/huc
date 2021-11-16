@@ -264,7 +264,7 @@ do_proc(int *ip)
 
 	/* output */
 	if (pass == LAST_PASS) {
-		loadlc((page << 13) + loccnt, 0);
+		loadlc(loccnt, 0);
 		println();
 	}
 }
