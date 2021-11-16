@@ -44,6 +44,7 @@ void do_org(int *ip);
 void do_bank(int *ip);
 void do_incbin(int *ip);
 void do_mx(char *fname);
+void forget_included_files(void);
 void do_include(int *ip);
 void do_rsset(int *ip);
 void do_rs(int *ip);

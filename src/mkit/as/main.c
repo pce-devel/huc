@@ -577,6 +577,9 @@ main(int argc, char **argv)
 		bank_page[S_DATA][0x00] = 0x07;
 		bank_loccnt[S_DATA][0x00] = 0x0000;
 
+		/* clear the list of included files from the previous pass */
+		forget_included_files();
+
 		/* pass message */
 		printf("pass %i\n", pass + 1);
 

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include "defs.h"
@@ -1017,6 +1018,31 @@ do_mx(char *fname)
 
 
 /* ----
+ * forget_included_files()
+ * ----
+ * keep a list of the .include files during each pass
+ */
+
+typedef struct t_filelist {
+	struct t_filelist * next;
+	int size;
+	char name[128];
+} t_filelist;
+
+t_filelist * included_files = NULL;
+
+void
+forget_included_files(void)
+{
+	t_filelist * list = included_files;
+	while ((list = included_files) != NULL) {
+		included_files = list->next;
+		free(list);
+	}
+}
+
+
+/* ----
  * do_include()
  * ----
  * .include pseudo
@@ -1026,6 +1052,9 @@ void
 do_include(int *ip)
 {
 	char fname[128];
+	int fsize;
+	int found_include;
+	t_filelist * list;
 
 	/* define label */
 	labldef(loccnt, 1);
@@ -1040,10 +1069,35 @@ do_include(int *ip)
 	if (!getstring(ip, fname, 127))
 		return;
 
-	/* open file */
-	if (open_input(fname) == -1) {
-		fatal_error("Can not open file!");
-		return;
+	/* have we already included this file on this pass? */
+	fsize = strlen(fname);
+	found_include = 0;
+
+	for (list = included_files; list != NULL; list = list->next) {
+		if ((list->size == fsize) && (strcasecmp(list->name, fname) == 0)) {
+			found_include = 1;
+			break;
+		}
+	}
+
+	/* do not include the file a 2nd time on this pass */
+	if (!found_include) {
+		/* remember include file name */
+		if ((list = malloc(sizeof(t_filelist) + fsize - 127)) == NULL) {
+			fatal_error("Out of memory!");
+			return;
+		}
+
+		strcpy(list->name, fname);
+		list->size = fsize;
+		list->next = included_files;
+		included_files = list;
+
+		/* open file */
+		if (open_input(fname) == -1) {
+			fatal_error("Can not open file!");
+			return;
+		}
 	}
 
 	/* output line */
