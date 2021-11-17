@@ -96,6 +96,7 @@ int  macro_getargtype(char *arg);
 int  main(int argc, char **argv);
 int  calc_bank_base(void);
 void help(void);
+void show_bnk_usage(int which_bank);
 void show_seg_usage(void);
 
 /* MAP.C */
@@ -135,6 +136,8 @@ void do_call(int *ip);
 void do_proc(int *ip);
 void do_endp(int *ip);
 void proc_reloc(void);
+void proc_reloc(void);
+int check_trampolines(void);
 
 /* SYMBOL.C */
 int  symhash(void);

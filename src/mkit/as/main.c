@@ -73,6 +73,8 @@ int xlist;		/* listing file main flag */
 int list_level;		/* output level */
 int asm_opt[8];		/* assembler options */
 int zero_need;		/* counter for trailing empty sectors on CDROM */
+int rom_used;
+int rom_free;
 
 
 /* ----
@@ -647,7 +649,19 @@ main(int argc, char **argv)
 		}
 	}
 
-	/* rom */
+	/* close listing file */
+	if (xlist && list_level)
+		fclose(lst_fp);
+
+	/* close input file */
+	fclose(in_fp);
+
+	/* check for corrupted trampolines */
+	if (check_trampolines()) {
+		exit(1);
+	}
+
+	/* dump the rom */
 	if (errcnt == 0) {
 		/* cd-rom */
 		if ((cd_opt || scd_opt) && !trim_opt) {
@@ -825,13 +839,6 @@ main(int argc, char **argv)
 		}
 	}
 
-	/* close listing file */
-	if (xlist && list_level)
-		fclose(lst_fp);
-
-	/* close input file */
-	fclose(in_fp);
-
 	/* dump the symbol table */
 	if ((fp = fopen(sym_fname, "w")) != NULL) {
 		labldump(fp);
@@ -899,6 +906,71 @@ help(void)
 
 
 /* ----
+ * show_bnk_usage()
+ * ----
+ */
+
+void
+show_bnk_usage(int which_bank)
+{
+	int addr, start, nb;
+
+	/* scan bank */
+	nb = 0;
+
+	/* count used and free bytes */
+	for (addr = 0; addr < 8192; addr++)
+		if (map[which_bank][addr] != 0xFF)
+			nb++;
+
+	/* update used/free counters */
+	rom_used += nb;
+	rom_free += 8192 - nb;
+
+	/* display bank infos */
+	if (nb)
+		printf("BANK %2X  %-23s    %4i/%4i\n",
+		       which_bank, bank_name[which_bank], nb, 8192 - nb);
+	else {
+		printf("BANK %2X  %-23s       0/8192\n", which_bank, bank_name[which_bank]);
+		return;
+	}
+
+	/* scan */
+	if (dump_seg == 1)
+		return;
+
+	for (addr = 0;;) {
+		/* search section start */
+		for (; addr < 8192; addr++)
+			if (map[which_bank][addr] != 0xFF)
+				break;
+
+		/* check for end of bank */
+		if (addr > 8191)
+			break;
+
+		/* get section type */
+		section = map[which_bank][addr] & 0x0F;
+		page = (map[which_bank][addr] & 0xE0) << 8;
+		start = addr;
+
+		/* search section end */
+		for (; addr < 8192; addr++)
+			if (map[which_bank][addr] != map[which_bank][start])
+				break;
+
+		/* display section infos */
+		printf("    %s    $%04X-$%04X  [%4i]\n",
+			section_name[section],		/* section name */
+			start + page,			/* starting address */
+			addr + page - 1,		/* end address */
+			addr - start);			/* size */
+	}
+}
+
+
+/* ----
  * show_seg_usage()
  * ----
  */
@@ -906,17 +978,14 @@ help(void)
 void
 show_seg_usage(void)
 {
-	int i, j;
-	int addr, start, stop, nb;
-	int rom_used;
-	int rom_free;
+	int i;
+	int start, stop;
 	int ram_base = machine->ram_base;
 
 	printf("segment usage:\n");
 	printf("\n");
 
-	if (max_bank)
-		printf("\t\t\t\t    USED/FREE\n");
+	printf("\t\t\t\t    USED/FREE\n");
 
 	/* zp usage */
 	if (max_zp <= 1)
@@ -929,7 +998,7 @@ show_seg_usage(void)
 
 	/* bss usage */
 	if (max_bss <= 0x201)
-		printf("     BSS    -\n");
+		printf("     BSS    -\n\n");
 	else {
 		start = ram_base + 0x200;
 		stop = ram_base + (max_bss - 1);
@@ -942,59 +1011,7 @@ show_seg_usage(void)
 
 	/* scan banks */
 	for (i = 0; i <= max_bank; i++) {
-		start = 0;
-		addr = 0;
-		nb = 0;
-
-		/* count used and free bytes */
-		for (j = 0; j < 8192; j++)
-			if (map[i][j] != 0xFF)
-				nb++;
-
-		/* update used/free counters */
-		rom_used += nb;
-		rom_free += 8192 - nb;
-
-		/* display bank infos */
-		if (nb)
-			printf("BANK %2X  %-23s    %4i/%4i\n",
-			       i, bank_name[i], nb, 8192 - nb);
-		else {
-			printf("BANK %2X  %-23s       0/8192\n", i, bank_name[i]);
-			continue;
-		}
-
-		/* scan */
-		if (dump_seg == 1)
-			continue;
-
-		for (;;) {
-			/* search section start */
-			for (; addr < 8192; addr++)
-				if (map[i][addr] != 0xFF)
-					break;
-
-			/* check for end of bank */
-			if (addr > 8191)
-				break;
-
-			/* get section type */
-			section = map[i][addr] & 0x0F;
-			page = (map[i][addr] & 0xE0) << 8;
-			start = addr;
-
-			/* search section end */
-			for (; addr < 8192; addr++)
-				if (map[i][addr] != map[i][start])
-					break;
-
-			/* display section infos */
-			printf("    %s    $%04X-$%04X  [%4i]\n",
-			       section_name[section],		/* section name */
-			       start + page,			/* starting address */
-			       addr + page - 1,			/* end address */
-			       addr - start);			/* size */
-		}
+		show_bnk_usage(i);
 	}
 
 	/* total */
@@ -1002,6 +1019,5 @@ show_seg_usage(void)
 	rom_free = (rom_free) >> 10;
 	printf("\t\t\t\t    ---- ----\n");
 	printf("\t\t\t\t    %4iK%4iK\n", rom_used, rom_free);
-	printf("\n\t\t\tTOTAL SIZE =     %4iK\n", (rom_used + rom_free));
+	printf("\n\t\t\tTOTAL SIZE =     %4iK\n\n", (rom_used + rom_free));
 }
-

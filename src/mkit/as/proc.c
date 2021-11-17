@@ -11,11 +11,13 @@ struct t_proc *proc_ptr;
 struct t_proc *proc_first;
 struct t_proc *proc_last;
 int proc_nb;
+int call_1st;
 int call_ptr;
 int call_bank;
 
 extern int strip_opt;
 extern int newproc_opt;
+extern int dump_seg;
 
 /* protos */
 struct t_proc *proc_look(void);
@@ -85,9 +87,9 @@ do_call(int *ip)
 
 					/* new call */
 					if (newproc_opt == 0) {
-						/* check that the new trampoline won't overwrite existing data */
-						if ((map[call_bank][(call_ptr + 17) & 0x1FFF] & 0x0F) != 0x0F)	{
-							fatal_error("No more space in bank for .proc trampolines!");
+						/* check that the new trampoline won't overrun the bank */
+						if (((call_ptr + 17) & 0xE000) != (call_1st & 0xE000)) {
+							error("No more space in bank for .proc trampoline!");
 							return;
 						}
 
@@ -113,25 +115,25 @@ do_call(int *ip)
 						poke(call_ptr++, 0x98);			// tya
 						poke(call_ptr++, 0x60);			// rts
 					} else {
-						/* check that the new trampoline won't overwrite existing data */
-						if ((map[call_bank][(call_ptr - 10) & 0x1FFF] & 0x0F) != 0x0F)	{
-							fatal_error("No more space in bank for .proc trampolines!");
+						/* check that the new trampoline won't overrun the bank */
+						if (((call_ptr - 9) & 0xE000) != (call_1st & 0xE000)) {
+							error("No more space in bank for .proc trampoline!");
 							return;
 						}
 
 						/* install new trampolines at end of MPR7, map code into MPR6 */
-						poke(--call_ptr, (ptr->org + 0xC000) >> 8);
-						poke(--call_ptr, (ptr->org + 0xC000) & 255);
-						poke(--call_ptr, 0x4C);			// jmp ...
-						poke(--call_ptr, 0x40);
-						poke(--call_ptr, 0x53);			// tam #6
-						poke(--call_ptr, ptr->bank + bank_base);
-						poke(--call_ptr, 0xA9);			// lda #...
-						poke(--call_ptr, 0x48);			// pha
-						poke(--call_ptr, 0x40);
-						poke(--call_ptr, 0x43);			// tma #6
+						poke(call_ptr--, (ptr->org + 0xC000) >> 8);
+						poke(call_ptr--, (ptr->org + 0xC000) & 255);
+						poke(call_ptr--, 0x4C);			// jmp ...
+						poke(call_ptr--, 0x40);
+						poke(call_ptr--, 0x53);			// tam #6
+						poke(call_ptr--, ptr->bank + bank_base);
+						poke(call_ptr--, 0xA9);			// lda #...
+						poke(call_ptr--, 0x48);			// pha
+						poke(call_ptr--, 0x40);
+						poke(call_ptr--, 0x43);			// tma #6
 
-						value = call_ptr;
+						value = call_ptr + 1;
 					}
 
 					ptr->call = value;
@@ -496,7 +498,7 @@ proc_reloc(void)
 	/* initialize trampoline bank/addr after relocation */
 	if (newproc_opt) {
 		call_bank = 0;
-		call_ptr  = 0xFFD0;
+		call_ptr  = 0xFFF5;
 	} else {
 		call_bank = max_bank + 1;
 		call_ptr  = 0x8000;
@@ -508,6 +510,8 @@ proc_reloc(void)
 	if (lablexists("__trampolineptr")) {
 		call_ptr  = lablptr->value & 0xFFFF;
 	}
+
+	call_1st = call_ptr;
 }
 
 
@@ -597,9 +601,14 @@ proc_install(void)
 void
 poke(int addr, int data)
 {
-	rom[call_bank][(addr & 0x1FFF)] = data;
-	map[call_bank][(addr & 0x1FFF)] = S_PROC + ((call_ptr & 0xE000) >> 8);
+	/* do not overwrite existing data! check_trampolines() will report */
+	/* this error later on and show a segment dump to provide help */
+	if ((map[call_bank][(addr & 0x1FFF)] & 0x0F) == 0x0F) {
+		rom[call_bank][(addr & 0x1FFF)] = data;
+		map[call_bank][(addr & 0x1FFF)] = S_PROC + ((addr & 0xE000) >> 8);
+	}
 }
+
 
 /* ----
  * proc_sortlist()
@@ -653,4 +662,46 @@ proc_sortlist(void)
 	}
 	proc_first = sorted_list;
 	return;
+}
+
+
+/* ----
+ * check_trampolines()
+ * ----
+ * were they overwritten by other code/data?
+ */
+
+int
+check_trampolines(void)
+{
+	int first_bad = -1;
+	int final_bad = -1;
+	int first_call;
+	int final_call;
+
+	if (newproc_opt == 0) {
+		first_call = call_1st;
+		final_call = call_ptr - 1;
+	} else {
+		first_call = call_ptr + 1;
+		final_call = call_1st;
+	}
+
+	for (; first_call <= final_call; ++first_call) {
+		if ((map[call_bank][first_call & 0x1FFF] & 0x1F) != S_PROC) {
+			if (first_bad < 0)
+				first_bad = first_call;
+			final_bad = first_call;
+		}
+	}
+
+	if (first_bad >= 0) {
+		printf(".proc trampolines between $%04X-$%04X are overwritten by code or data!\n\n",
+			first_bad, final_bad);
+		dump_seg = 2;
+		show_bnk_usage(call_bank);
+		printf("\n");
+		return (1);
+	}
+	return (0);
 }
