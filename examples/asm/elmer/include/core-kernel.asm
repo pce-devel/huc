@@ -19,9 +19,9 @@
 ; that is designed to be compatible with the System Card.
 ;
 ; The library uses the "irq1_hook" for its own VDC interrupt handler, and PCE
-; developers are expected to use "vsync_hook" and "hsync_hook" for their own
-; VDC interrupt functions.  Plenty of memory is available in the 1st bank for
-; the developer to put those functions.
+; developers are expected to use "vsync_hook" and "hsync_hook" for their VDC
+; interrupt functions.  Plenty of memory is available in the 1st bank for the
+; developer to put those functions.
 ;
 ; The reason for using "irq1_hook", is so that the library can work properly
 ; if either the current overlay program, or the System Card, are mapped into
@@ -79,10 +79,10 @@ bit_mask:	db	$01,$02,$04,$08,$10,$20,$40,$80
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; core_irq2	 - Minimal System Card compatible interrupt handler stub.
-; core_irq1	 - Minimal System Card compatible interrupt handler stub.
-; core_timer_irq - Minimal System Card compatible interrupt handler stub.
-; core_nmi_irq	 - Minimal System Card compatible interrupt handler stub.
+; core_irq2	 - Minimal interrupt handler compatible with System Card.
+; core_irq1	 - Minimal interrupt handler compatible with System Card.
+; core_timer_irq - Minimal interrupt handler compatible with System Card.
+; core_nmi_irq	 - Minimal interrupt handler compatible with System Card.
 ;
 ; Note that it takes 8 cycles to respond to an IRQ.
 ;
@@ -213,6 +213,11 @@ irq1_handler:	pha				; Save all registers.
 		lda	VDC_SR			; Acknowledge the VDC's IRQ.
 		sta	<vdc_sr			; Remember what caused it.
 
+;	.if	SUPPORT_SGX
+;		lda	SGX_SR			; Read SGX_SR after VDC_SR in
+;		sta	<sgx_sr			; case this is not an SGX!
+;	.endif
+
 		; HSYNC ?
 
 .check_hsync:	bbr2	<vdc_sr, .check_vsync	; Is this an HSYNC interrupt?
@@ -232,6 +237,7 @@ irq1_handler:	pha				; Save all registers.
 		sta	SGX_AR			; Register first, just in
 		lda	<sgx_crl		; case this is not an SGX!
 		sta	SGX_DL
+
 ;		lda	<sgx_crh		; Do not mess with the SGX's
 ;		sta	SGX_DH			; auto-increment!!!
 	.endif
@@ -240,6 +246,7 @@ irq1_handler:	pha				; Save all registers.
 		sta	VDC_AR			; Register.
 		lda	<vdc_crl
 		sta	VDC_DL
+
 ;		lda	<vdc_crh		; Do not mess with the VDC's
 ;		sta	VDC_DH			; auto-increment!!!
 
@@ -307,7 +314,7 @@ irq1_handler:	pha				; Save all registers.
 .user_vsync:	jmp	[vsync_hook]
 .user_sound:	jmp	[sound_hook]
 
-	.if	(* >= $E000)			; If not running in RAM, then
+	.if	(* >= $4000)			; If not running in RAM, then
 		.bss				; put the variables in RAM.
 	.endif
 
@@ -368,12 +375,14 @@ core_sw_reset:	sei				; Disable interrupts.
 ; N.B. Because the Y register is used, this cannot call "ex_setvec", so the
 ;      "setvec" macro is provided to perform the same function.
 ;
+; N.B. This is designed to work even if System Card is already in MPR7.
+;
 
 call_bios:	sty	.self_mod_func + 1	; Which System Card function?
 
 		pha				; Page System Card into MPR7.
 		tma7
-		sta	.self_mod_bank
+		sta	.self_mod_bank + 1	; Preserve caller's MPR7.
 		cla
 		tam7
 		pla

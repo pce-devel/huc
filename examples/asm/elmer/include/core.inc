@@ -25,7 +25,7 @@
 		.list
 		.mlist
 
-CORE_VERSION	=	$01
+CORE_VERSION	=	$10			; Version 1.0
 
 		; Get the user program's configuration settings, this will
 		; be read from the current directory, if it exists, or the
@@ -67,7 +67,56 @@ setvec		.macro
 sound_hook	=	nmi_hook		; Sound Driver to run in VBL.
 
 ;
-; CORE kernel code in RAM, starts above the System Card's RAM variables.
+; CORE Zero-Page variables, relative to the System Card's ZP variables.
+;
+
+	.if	USING_PSGDRIVER
+core_zpend	=	$20E6
+	.else
+core_zpend	=	$20EC
+	.endif	USING_PSGDRIVER
+
+	.if	SUPPORT_SGX
+
+		; Put some "CORE(not TM)" variables at the start of Zero Page.
+		;
+		; These are at the *start* of ZP so that the SuperGrafx shadow
+		; "sgx_" registers are at a specific offset from their System
+		; Card "vdc_" counterparts, and they MUST NOT be moved!
+		;
+		; This allows us to put SGX_VDC_OFFSET or PCE_VDC_OFFSET into
+		; the X register, and then index into either set of hardware
+		; registers and the "sgx_reg" or "vdc_reg" shadow-variables.
+
+PCE_VDC_OFFSET	=	$00			; Offset to PCE VDC hw & vars.
+SGX_VDC_OFFSET	=	$10			; Offset to SGX VDC hw & vars.
+
+__temp		=	$2000			; Use within any ASM routine.
+__bank		=	$2002			; Use within any ASM routine.
+sgx_crl		=	$2003			; SGX shadow (vdc_crl = $20F3).
+sgx_crh		=	$2004			; SGX shadow (vdc_crh = $20F4).
+core_1stbank	=	$2005			; 1st bank of library code.
+sgx_sr		=	$2006			; SGX shadow (vdc_sr  = $20F6).
+sgx_reg		=	$2007			; SGX shadow (vdc_reg = $20F7).
+
+core_zp1st	=	$2008			; 1st free user address.
+
+	.else	SUPPORT_SGX
+
+__temp		=	$2000			; Use within any ASM routine.
+__bank		=	$2002			; Use within any ASM routine.
+core_1stbank	=	$2003			; 1st bank of engine code.
+
+core_zp1st	=	$2004			; 1st free user address.
+
+	.endif	SUPPORT_SGX
+
+		.zp
+		.org	core_zp1st
+		.code
+
+;
+; The kernel code in RAM follows the System Card's RAM variables.
 ;
 
 	.if	USING_PSGDRIVER
@@ -76,42 +125,9 @@ core_ram1st     =	$2680
 core_ram1st     =	$22D0
 	.endif	USING_PSGDRIVER
 
-;
-; CORE Zero-Page variables, relative to the System Card's ZP variables.
-;
-
-	.if	USING_PSGDRIVER
-core_zpend	=	$20E6
-	.else
-
-	.if	SUPPORT_SGX
-
-		; Put some SGX ZP variables on top of the PSG variables.
-		;
-		; This allows us to put SGX_VDC_OFFSET or PCE_VDC_OFFSET into
-		; the X register, and then index into either set of hardware
-		; registers and the "sgx_reg" or "vdc_reg" shadow-variables.
-
-PCE_VDC_OFFSET	=	$00			; Offset to PCE VDC hw & vars.
-SGX_VDC_OFFSET	=	$F0			; Offset to SGX VDC hw & vars.
-
-sgx_sr		=	$20E6			; Shadow of SGX status reg.
-sgx_reg		=	$20E7			; Shadow of SGX address reg.
-
-sgx_crl		=	$20E8			; Shadow of SGX control reg.
-sgx_crh		=	$20E9			; Shadow of SGX control reg.
-
-core_zpend	=	$20E6
-	.else
-
-core_zpend	=	$20EC
-	.endif	SUPPORT_SGX
-
-	.endif	USING_PSGDRIVER
-
-		; Actual variables!
-
-core_1stbank	=	core_zpend - 1		; 1st bank of engine code.
+		.bss
+		.org	core_ram1st
+		.code
 
 ;
 ; Include the "CORE(not TM)" startup code to begin the HuCARD / Overlay.

@@ -414,8 +414,10 @@ scsisns		= $227D ; 1	*UNDOCUMENTED* SCSI "sense" return code
 subcode		= $227E ; 1
 
 reset_hook	= $2284 ; 2	*UNDOCUMENTED* joypad soft-reset hook
-colortia	= $2286 ; 8
-;?		= $228E ; ?
+color_tia	= $2286 ; 8	*UNDOCUMENTED* self-mod TIA used by ex_colorcmd
+;?		= $228E ; 3	*UNDOCUMENTED* self-mod TMA/TAM used by cd_read/ad_read/ad_write
+;?		= $2291 ; 10	*UNDOCUMENTED* copy of scsisend made by cd_read (never read)
+;?		= $229B ; ?
  
 ;mprsav		= $22B5 ; 8 backups of MPR when BIOS needs major bank swapping.
 
@@ -565,64 +567,61 @@ PSG_DCNT	= 20
 VDC_MWR_1CYCLE	= $0000
 VDC_MWR_2CYCLE	= $000A
 
-; VDC constants for 240 & 256 wide display (Set VDC_MWR_1CYCLE).
+; VDC constants for 224, 240 & 256 wide display (Set VDC_MWR_1CYCLE).
 
 VCE_CR_5MHz	= $00	   ; 43 chr (actually 42.8) -> 342 pixel slots.
 
 VDC_HSR_224	= $0402 ; HDS HSW
 VDC_HDR_224	= $061B ; HDE HDW
 
-VDC_HSR_240	= $0302 ; HDS HSW
+VDC_HSR_240	= $0302 ; HDS HSW (Reduced)
 VDC_HDR_240	= $051D ; HDE HDW
 
-VDC_HSR_256	= $0202 ; HDS HSW
+VDC_HSR_256	= $0202 ; HDS HSW (Normal)
 VDC_HDR_256	= $041F ; HDE HDW
 
-; VDC constants for 320 & 336 wide display (Set VDC_MWR_1CYCLE).
+; VDC constants for 320, 336, 344 & 352 wide display (Set VDC_MWR_1CYCLE).
 
 VCE_CR_7MHz	= $01	   ; 57 chr (actually 57.0) -> 456 pixel slots.
 
 VDC_HSR_320	= $0503 ; HDS HSW
 VDC_HDR_320	= $0627 ; HDE HDW
 
-VDC_HSR_336	= $0403 ; HDS HSW
+VDC_HSR_336	= $0403 ; HDS HSW (Reduced)
 VDC_HDR_336	= $0529 ; HDE HDW
 
-VDC_HSR_344	= $0403 ; HDS HSW
-VDC_HDR_344	= $042A ; HDE HDW
-
-VDC_HSR_352	= $0303 ; HDS HSW
+VDC_HSR_352	= $0303 ; HDS HSW (Normal)
 VDC_HDR_352	= $042B ; HDE HDW
 
 ; VDC constants for 480 & 512 wide display (Set VDC_MWR_2CYCLE).
 
 VCE_CR_10MHz	= $02	   ; 86 chr (actually 85.5) -> 684 pixel slots.
 
-VDC_HSR_480	= $0D05 ; HDS HSW
+VDC_HSR_480	= $0D05 ; HDS HSW (Reduced)
 VDC_HDR_480	= $053B ; HDE HDW
 
-VDC_HSR_512	= $0B05 ; HDS HSW
+VDC_HSR_512	= $0B05 ; HDS HSW (Normal)
 VDC_HDR_512	= $033F ; HDE HDW
 
-; VDC constants for 200, 224 & 240 high display.
+; VDC constants for 200, 208, 224 & 240 high display.
 ;
 ; N.B. 2 lines higher on the screen than the System Card.
 
 VDC_VPR_200	= $2102
 VDC_VDW_200	= $00C7
-VDC_VCR_200	= $0016 ; bios $00E2
+VDC_VCR_200	= $0016 ; bios sets $00E2
 
 VDC_VPR_208	= $1E02
 VDC_VDW_208	= $00CF
-VDC_VCR_208	= $0013 ; bios $00EE
+VDC_VCR_208	= $0013 ; bios sets $00EE
 
 VDC_VPR_224	= $1502
 VDC_VDW_224	= $00DF
-VDC_VCR_224	= $000B ; bios $00EE
+VDC_VCR_224	= $000B ; bios sets $00EE
 
 VDC_VPR_240	= $0D02
 VDC_VDW_240	= $00EF
-VDC_VCR_240	= $0003 ; bios $00F6
+VDC_VCR_240	= $0003 ; bios sets $00F6
 
 ; VDC constants for different BAT screen sizes.
 

@@ -127,10 +127,10 @@ ted2_hw_reset:	sei				; Disable interrupts.
 		lda	#$F8
 		tam1
 
-		tii	.reboot_bank, __ax, 5	; Reboot with bank 1 in MPR7.
-		lda	#1
+		tii	.reboot_bank, __ax, 7	; Reboot with bank 1 in MPR7.
 		jmp	__ax
-.reboot_bank:	tam7				; Put bank 1 in MPR7.
+.reboot_bank:	lda	#1			; Put bank 1 in MPR7.
+		tam7
 		jmp	[$FFFE]			; Call reset, just like boot.
 
 		; This string at this location tells both TEOS and Mednafen
@@ -192,7 +192,7 @@ core_version:	db	CORE_VERSION		; CORE(not TM) Version.
 	.endif	CDROM
 
 	.if	USING_NEWPROC			; If the ".proc" trampolines
-__trampolineptr =	$FFF4			; are in MPR7, tell PCEAS to
+__trampolineptr =	$FFF3			; are in MPR7, tell PCEAS to
 	.endif					; put them below the vectors.
 
 	.else	USING_MPR7
@@ -204,7 +204,7 @@ __trampolineptr =	$FFF4			; are in MPR7, tell PCEAS to
 	.endif	!CDROM
 
 	.if	USING_NEWPROC			; If the ".proc" trampolines
-__trampolineptr =	$6000			; are in MPR2, tell PCEAS to
+__trampolineptr =	$5FFF			; are in MPR2, tell PCEAS to
 	.endif					; put them right at the end.
 
 	.endif	USING_MPR7
@@ -226,6 +226,8 @@ __trampolineptr =	$6000			; are in MPR2, tell PCEAS to
 		; the overlay program, and MPR7 contains the System Card.
 
 		.org	$4000
+
+CORE_BANK	=	bank(*) - _bank_base	; It isn't always zero! ;-)
 
 core_boot:
 
@@ -256,7 +258,7 @@ core_boot:
 
 		; Copy the kernel code to its destination in MPR1.
 
-		tii	$4000 + (core_ram1st & $1FFF), core_ram1st, (core_ramend - core_ram1st)
+		tii	$4000 + (core_ram1st & $1FFF), core_ram1st, (core_ramcpy - core_ram1st)
 
 		; Copy the ISO's directory into kernel memory in MPR1.
 
@@ -274,7 +276,7 @@ core_boot:
 		; needs to be cleared.
 
 .not_first:	sei				; Disable interrupts!
-		tai	const_0000, $2000, (core_zpend - $2000)
+		tai	const_0000, core_zp1st, (core_zpend - core_zp1st)
 
 	.else	CDROM
 
@@ -407,8 +409,6 @@ core_stage1	=	*
 
 core_ramcpy	=	*
 
-		rsset	core_ramcpy
-
 		; ISOlink CD-ROM File Directory :
 		;
 		; When this program is run, the IPL has loaded the directory
@@ -432,6 +432,8 @@ core_ramcpy	=	*
 		; In order to allow for files beyond the 16-bit limit of the
 		; sector number, the directory stores the index of the first
 		; file that starts beyond that boundary.
+
+		rsset	core_ramcpy
 
 iso_count	rs	1			; # of files stored on CD-ROM
 iso_cderr	rs	1			; index # of CDERR file

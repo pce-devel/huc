@@ -109,8 +109,8 @@ FAST_RPT_UDLR	=	10
 
 		.code
 
-	.if	(* >= $E000)			; Make this a ".proc" if it
-read_joypads	.proc                           ; is assembled for MPR7.
+	.if	(* >= $4000)			; Make this a ".proc" if it
+read_joypads	.proc                           ; not running in RAM.
 	.else
 read_joypads:
 	.endif
@@ -144,8 +144,8 @@ read_joypads:
 
 		stz	port_mutex		; Release port mutex.
 
-	.if	(* >= $E000)			; This is a ".proc" if it is
-.exit:		leave                           ; assembled for MPR7.
+	.if	(* >= $4000)			; This is a ".proc" if it is
+.exit:		leave                           ; not running in RAM.
 	.else
 .exit:		rts				; All done, phew!
 	.endif
@@ -191,12 +191,9 @@ read_joypads:
 
 		rts				; Now that everything is read.
 
-	.if	(* >= $E000)			; This is a ".proc" if it is
-		.endp                           ; assembled for MPR7.
-	.endif
-
-	.if	(* >= $E000)			; If not running in RAM, then
-		.bss				; put the variables in RAM.
+	.if	(* >= $4000)			; This is a ".proc" if it is
+		.endp                           ; not running in RAM.
+		.bss				; Put the variables in RAM.
 	.endif
 
 port_mutex:	ds	1			; NZ when controller port busy.
@@ -245,8 +242,8 @@ port_mutex:	ds	1			; NZ when controller port busy.
 
 		.code
 
-	.if	(* >= $E000)			; Make this a ".proc" if it
-read_joypads	.proc                           ; is assembled for MPR7.
+	.if	(* >= $4000)			; Make this a ".proc" if it
+read_joypads	.proc                           ; not running in RAM.
 	.else
 read_joypads:
 	.endif
@@ -322,8 +319,8 @@ read_joypads:
 
 		stz	port_mutex		; Release port mutex.
 
-	.if	(* >= $E000)			; This is a ".proc" if it is
-.exit:		leave                           ; assembled for MPR7.
+	.if	(* >= $4000)			; This is a ".proc" if it is
+.exit:		leave                           ; not running in RAM.
 	.else
 .exit:		rts				; All done, phew!
 	.endif
@@ -411,12 +408,9 @@ read_joypads:
 .mouse_vectors: dw	.mouse_x_lo		; Pass 2
 		dw	.mouse_x_hi		; Pass 1
 
-	.if	(* >= $E000)			; This is a ".proc" if it is
-		.endp                           ; assembled for MPR7.
-	.endif
-
-	.if	(* >= $E000)			; If not running in RAM, then
-		.bss				; put the variables in RAM.
+	.if	(* >= $4000)			; This is a ".proc" if it is
+		.endp                           ; not running in RAM.
+		.bss				; Put the variables in RAM.
 	.endif
 
 port_mutex:	ds	1			; NZ when controller port busy.
@@ -460,8 +454,8 @@ mouse_x:	=	joy6trg			; Overload to save memory.
 
 		.code
 
-	.if	(* >= $E000)			; Make this a ".proc" if it
-read_joypads	.proc                           ; is assembled for MPR7.
+	.if	(* >= $4000)			; Make this a ".proc" if it
+read_joypads	.proc                           ; not running in RAM.
 	.else
 read_joypads:
 	.endif
@@ -527,8 +521,8 @@ read_joypads:
 
 		stz	port_mutex		; Release port mutex.
 
-	.if	(* >= $E000)			; This is a ".proc" if it is
-.exit:		leave                           ; assembled for MPR7.
+	.if	(* >= $4000)			; This is a ".proc" if it is
+.exit:		leave                           ; not running in RAM.
 	.else
 .exit:		rts				; All done, phew!
 	.endif
@@ -632,12 +626,9 @@ read_joypads:
 		dw	.mouse_x_lo		; Pass 2
 		dw	.mouse_x_hi		; Pass 1
 
-	.if	(* >= $E000)			; This is a ".proc" if it is
-		.endp                           ; assembled for MPR7.
-	.endif
-
-	.if	(* >= $E000)			; If not running in RAM, then
-		.bss				; put the variables in RAM.
+	.if	(* >= $4000)			; This is a ".proc" if it is
+		.endp                           ; not running in RAM.
+		.bss				; Put the variables in RAM.
 	.endif
 
 port_mutex:	ds	1			; NZ when controller port busy.
@@ -685,7 +676,7 @@ do_autorepeat	.proc
 
 		.endp
 
-	.if	(* >= $E000)			; If not running in RAM, then
+	.if	(* >= $4000)			; If not running in RAM, then
 		.bss				; put the variables in RAM.
 	.endif
 
