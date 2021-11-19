@@ -1,7 +1,7 @@
 New in version 3.99:
 --------------------
 
-2021-11-11:
+2021-11-16:
 -----------
   HuC changes ...
   ---------------
@@ -12,6 +12,13 @@ New in version 3.99:
 - Local labels can now start with a '@'.
 - Add the ability to read graphic files in ".BMP" format.
 - Add ".dd" for generating 32-bit data values.
+- Only include each ".include" file once per pass, no matter how many times
+  that same file is included from different source files.
+- Allow procedure relocation to use unused memory at the top of existing banks
+  and not just allocate new banks, in order to reduce overall ROM size.
+- Keep _bank_base (the ASM symbol for the starting bank) the same during
+  both assembly passes, which makes "bank(my_symbol)" work reliably.
+- Add the ability to use "bank(*)" and "page(*)" in expressions.
 - Allow C-style "==" as an alternative to "=" as a comparison operator.
 - The bank/page/offset of the procedure trampolines can now be set during
   assembly, although changing the MPR that the procedures run in can still
