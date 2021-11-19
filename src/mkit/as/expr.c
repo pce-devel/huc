@@ -491,6 +491,11 @@ push_val(int type)
 			undef++;
 		else if (expr_lablptr->type == IFUNDEF)
 			undef++;
+		else if ((expr_lablptr->bank == STRIPPED_BANK) &&
+			((proc_ptr == NULL) || (proc_ptr->bank != STRIPPED_BANK))) {
+				error("Symbol from an unused procedure that was stripped out!");
+				undef++;
+			}
 		else
 			val = expr_lablptr->value;
 
@@ -782,9 +787,12 @@ do_op(void)
 			return (0);
 		if (pass == LAST_PASS) {
 			if (expr_lablptr->bank >= RESERVED_BANK) {
-				error("No BANK index for this symbol!");
-				val[0] = 0;
-				break;
+				if ((expr_lablptr->bank != STRIPPED_BANK) ||
+					(proc_ptr == NULL) || (proc_ptr->bank != STRIPPED_BANK)) {
+					error("No BANK index for this symbol!");
+					val[0] = 0;
+					break;
+				}
 			}
 		}
 		val[0] = expr_lablptr->bank + (val[0] / 8192) - (expr_lablptr->value / 8192);

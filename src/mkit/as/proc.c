@@ -464,7 +464,10 @@ proc_reloc(void)
 
 			/* remap addr */
 			if (sym->proc) {
-				sym->bank   =  proc_ptr->bank + bank_base;
+				if (proc_ptr->bank == STRIPPED_BANK)
+					sym->bank = STRIPPED_BANK;
+				else
+					sym->bank = proc_ptr->bank + bank_base;
 				sym->value += (proc_ptr->org - proc_ptr->base);
 
 				/* local symbols */
@@ -476,7 +479,10 @@ proc_reloc(void)
 
 						/* remap addr */
 						if (local->proc) {
-							local->bank   =  proc_ptr->bank + bank_base;
+							if (proc_ptr->bank == STRIPPED_BANK)
+								local->bank = STRIPPED_BANK;
+							else
+								local->bank = proc_ptr->bank + bank_base;
 							local->value += (proc_ptr->org - proc_ptr->base);
 						}
 
