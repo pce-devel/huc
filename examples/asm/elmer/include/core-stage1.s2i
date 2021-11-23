@@ -14,11 +14,6 @@
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; The idea is that you, a PCE developer, copy this file from the ../include/
-; directory and into your project's directory, and then run SYM2INC after the
-; Stage1 Loader is built, so that a ".s" file is produced that is included in
-; all of your CD-ROM overlays.
-;
 ; This allows your CD-ROM overlays to use the code and variables that are in
 ; the "CORE(not TM)" library kernel, without having to use jump tables.
 ;

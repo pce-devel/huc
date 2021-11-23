@@ -14,16 +14,12 @@
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; The idea is that you, a PCE developer, copy this file from the ../include/
-; directory and into your project's directory, and then build it so that it
-; uses the customized values in your project's "core-config.inc".
-;
 ; Using this Stage1 loader in a project provides an alternative to including
 ; the "CORE(not TM)" kernel code in every overlay program, which saves some
 ; precious memory that you could be using for other code.
 ;
 ;
-; If you are using the "CORE(not TM)" library for a Super CD-ROM project, then
+; If you are using the "CORE(not TM)" library for a Super CD-ROM project,
 ; there are two different ways that you can build your ISO ...
 ;
 ; 1) isolink mygame.iso -ipl,"../include/ipl-scd.bin" -asm \
@@ -33,8 +29,8 @@
 ;      core-stage1.bin myoverlay1.ovl <more-files> <-cderr syscard2.ovl>
 ;
 ;
-; If you are using the "CORE(not TM)" library for an old CD-ROM project, then
-; you can build your ISO in two different ways ...
+; If you are using the "CORE(not TM)" library for an old CD-ROM project,
+; there are also two different ways that you can build your ISO ...
 ;
 ; 1) isolink mygame.iso -ipl,"Game Name",0x4000,0x4000,0,1,2,3,4 -asm \
 ;      myoverlay1.ovl <more-files>
@@ -385,7 +381,7 @@ write_string:	php				; Nasty code to set up the
 ; Include the minimal font data for the SuperCD error string.
 ;
 
-font_data:	incbin	"../font/font8x8-stage1-exos.dat"
+font_data:	incbin	"font8x8-stage1-exos.dat"
 
 
 

@@ -101,7 +101,7 @@ SUPPORT_TED2	=	0	; (0 or 1)
 ;
 ; Support development for the SuperGrafx?
 ;
-; This enables SGX harware support in certain library functions.
+; This enables SGX hardware support in certain library functions.
 ;
 
 SUPPORT_SGX	=	0	; (0 or 1)

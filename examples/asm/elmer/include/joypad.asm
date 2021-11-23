@@ -54,27 +54,6 @@ SUPPORT_MOUSE	=	0
 MAX_PADS	=	5
 	.endif
 
-;
-; Control the "slow" and "fast" delays for auto-repeating the UP and DOWN
-; button on the joypads (only if SUPPORT_6BUTTON or SUPPORT_MOUSE).
-;
-; The "slow" setting is the delay from when the direction is held to the
-; first auto-repeat.
-;
-; The "fast" setting is the delay from when the first auto-repeat to all
-; subsequent auto-repeats until the direction is released.
-;
-; Set to "0" to disable auto-repeat.
-;
-
-	.ifndef SLOW_RPT_UDLR
-SLOW_RPT_UDLR	=	30
-	.endif
-
-	.ifndef FAST_RPT_UDLR
-FAST_RPT_UDLR	=	10
-	.endif
-
 		.list
 
 ;
@@ -640,48 +619,3 @@ mouse_y:	ds	MAX_PADS
 		.code
 
 	.endif	SUPPORT_MOUSE
-
-
-	.if	SLOW_RPT_UDLR
-
-; ***************************************************************************
-; ***************************************************************************
-;
-; do_autorepeat - auto-repeat UDLR button presses, useful for menu screens.
-;
-
-
-do_autorepeat	.proc
-
-		; Do auto-repeat processing on the d-pad.
-
-		ldx	#MAX_PADS - 1
-
-.loop:		lda	joynow, x		; Auto-Repeat UDLR buttons
-		ldy	#SLOW_RPT_UDLR		; while they are held.
-		and	#$F0
-		beq	.set_delay
-		dec	joyrpt, x
-		bne	.no_repeat
-		ora	joytrg, x
-		sta	joytrg, x
-		ldy	#FAST_RPT_UDLR
-.set_delay:	tya
-		sta	joyrpt, x
-
-.no_repeat:	dex				; Check the next pad from the
-		bpl	.loop			; multitap.
-
-		leave				; All done, phew!
-
-		.endp
-
-	.if	(* >= $4000)			; If not running in RAM, then
-		.bss				; put the variables in RAM.
-	.endif
-
-joyrpt:		ds	MAX_PADS
-
-		.code
-
-	.endif	SLOW_RPT_UDLR

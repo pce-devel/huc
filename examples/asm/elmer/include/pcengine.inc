@@ -305,6 +305,15 @@ ACD_ID		= $51		; if ac_identflag = AC_IDENT, then AC in use
 ; System Card's Zero Page Variables.
 ;
 
+zpg_grp_top	= $20DC
+vi_bitpat	= $20DC
+vi_rvbitpat	= $20DD
+vi_ft_front	= $20DE
+vi_padrs	= $20DE
+vi_porg		= $20E0
+vi_ft_back	= $20E1
+vi_stack	= $20E4
+
 zpg_psg_top	= $20E6
 time_sw		= $20E6		; psg irq mutex (NZ == already running)
 main_sw		= $20E7		; psg driver mode ($80 == disable)
@@ -418,7 +427,7 @@ color_tia	= $2286 ; 8	*UNDOCUMENTED* self-mod TIA used by ex_colorcmd
 ;?		= $228E ; 3	*UNDOCUMENTED* self-mod TMA/TAM used by cd_read/ad_read/ad_write
 ;?		= $2291 ; 10	*UNDOCUMENTED* copy of scsisend made by cd_read (never read)
 ;?		= $229B ; ?
- 
+
 ;mprsav		= $22B5 ; 8 backups of MPR when BIOS needs major bank swapping.
 
 ramend		= $22D0 ; 1
@@ -554,6 +563,30 @@ PSG_MVOFF	= 17
 PSG_CONT	= 18
 PSG_FDOUT	= 19
 PSG_DCNT	= 20
+
+
+
+; ***************************************************************************
+;
+; System Card's GRP BIOS call functions.
+;
+
+VI_GINIT	= 0
+VI_CASHCLR	= 1
+VI_STRTADR	= 2
+VI_GETADRS	= 3
+VI_CLS		= 4
+VI_PSET		= 5
+VI_POINT	= 6
+VI_LINE		= 7
+VI_BOX		= 8
+VI_BOXF		= 9
+VI_FLOOD	= 10
+VI_PAINT	= 11
+VI_GWINDOW	= 12
+VI_GFONT	= 13
+VI_PUTFONT	= 14
+VI_SYMBOL	= 15
 
 
 

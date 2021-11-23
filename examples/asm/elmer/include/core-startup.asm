@@ -258,7 +258,7 @@ core_boot:
 
 		; Copy the kernel code to its destination in MPR1.
 
-		tii	$4000 + (core_ram1st & $1FFF), core_ram1st, (core_ramcpy - core_ram1st)
+		tii	(core_ram1st + $2000), core_ram1st, (core_ramcpy - core_ram1st)
 
 		; Copy the ISO's directory into kernel memory in MPR1.
 
@@ -267,7 +267,7 @@ core_boot:
 
 		; Clear the rest of the RAM bank on the 1st time through.
 
-		tai	const_0000, core_ramclr, ($4000 - core_ramclr)
+		tai	const_0000, core_ramend, ($4000 - core_ramend)
 
 	.endif	!USING_STAGE1
 
@@ -280,7 +280,12 @@ core_boot:
 
 	.else	CDROM
 
-		; Set up HuCard RAM in a compatible way to the System Card.
+		; Set up HuCARD RAM in a compatible way to the System Card.
+		;
+		; Note that the entire RAM is cleared by "core_hw_reset".
+
+		lda	#%11111			; Enable joypad soft-reset.
+		sta	joyena
 
 	.endif	CDROM
 
@@ -355,6 +360,10 @@ core_hw_reset:	sei				; Disable interrupts.
 		tam5
 		inc	a
 		tam6
+
+;		lda	#7			; Set HuC6280 interrupt mask.
+;		sta	IRQ_MSK
+;		stz	IRQ_ACK			; Clr HuC6280 timer interrupt.
 
 		jmp	core_boot		; Continue execution in MPR2.
 
@@ -440,10 +449,6 @@ iso_cderr	rs	1			; index # of CDERR file
 iso_128mb	rs	1			; index # of 1st beyond 128MB
 iso_dirlo	rs	MAX_DIRSIZE		; lo-byte of file's sector #
 iso_dirhi	rs	MAX_DIRSIZE		; hi-byte of file's sector #
-
-core_ramclr	rs	0
-
-		; Define persistant BSS variables here, before core_ramend.
 
 core_ramend	rs	0
 

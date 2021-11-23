@@ -73,7 +73,7 @@ zx0_bitbuf	=	__dl			; 1 byte.
 ; Args: __si, __si_bank = _farptr to compressed data in MPR3.
 ; Args: __di = ptr to output address in RAM.
 ;
-; Uses: __si, __di, __ax, __bx, __cx, __dh!
+; Uses: __si, __di, __ax, __bx, __cx, __dh !
 ;
 
 zx0_to_ram	.proc

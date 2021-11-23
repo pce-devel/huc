@@ -64,6 +64,31 @@ __si_to_mpr3:	lda	<__si + 1		; Remap ptr to MPR3.
 		rts
 
 ;
+; Put the __si data pointer into the VDC's MARR register.
+;
+
+	.if	SUPPORT_SGX
+__si_to_sgx:	ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		db	$E0			; Turn "clx" into a "cpx #".
+	.endif
+
+__si_to_vdc:	clx				; Offset to PCE VDC.
+
+__si_to_vram:	lda	#VDC_MARR		; Set VDC or SGX destination
+		sta	<vdc_reg, x		; address.
+
+		sta	VDC_AR, x
+		lda	<__si + 0
+		sta	VDC_DL, x
+		lda	<__si + 1
+		sta	VDC_DH, x
+
+		lda	#VDC_VRR		; Select the VRR data-read
+		sta	<vdc_reg, x		; register.
+		sta	VDC_AR, x
+		rts
+
+;
 ; Increment the hi-byte of __si and change TMA3 if necessary.
 ;
 
