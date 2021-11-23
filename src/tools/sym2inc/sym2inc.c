@@ -522,6 +522,7 @@ int main ( int argc, char* argv[] )
 {
   // Local Variables.
 
+  char *        pFilePath;
   char *        pFileName;
   char *        pFileExtn;
 
@@ -576,8 +577,16 @@ int main ( int argc, char* argv[] )
 
   // Create input filename, and locate its extension.
 
-  pFileName = malloc( strlen( argv[iArg] ) + 4 + 1 );
-  strcpy( pFileName, argv[iArg] );
+  pFilePath = malloc( strlen( argv[iArg] ) + 4 + 1 );
+  strcpy( pFilePath, argv[iArg] );
+
+  pFileName = strrchr( pFilePath, '/' );
+  if (pFileName == NULL)
+    { pFileName = strrchr( pFilePath, '\\' ); }
+  if (pFileName == NULL)
+    { pFileName = pFilePath; }
+  else
+    { ++pFileName; }
 
   pFileExtn = strrchr( pFileName, '.' );
   if ( pFileExtn == NULL ) pFileExtn = pFileName + strlen( pFileName );
@@ -586,7 +595,7 @@ int main ( int argc, char* argv[] )
   // Read in the text file with the list of symbols that we're interested in.
   //
 
-  if (!ReadBinaryFile( pFileName, (void **) &pTxtBuffer, &uTxtBufLen ))
+  if (!ReadBinaryFile( pFilePath, (void **) &pTxtBuffer, &uTxtBufLen ))
   {
     printf( "Failed to load .S2I file \"%s\" into memory!\n", pFileName );
     exit(EXIT_FAILURE);
