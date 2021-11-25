@@ -5,7 +5,7 @@
 ;
 ; HuC6280 decompressor for Einar Saukas's "classic" ZX0 format.
 ;
-; The code length is 204 bytes for RAM, 254 bytes for direct-to-VRAM, plus
+; The code length is 193 bytes for RAM, 243 bytes for direct-to-VRAM, plus
 ; some generic utility code.
 ;
 ; Copyright John Brandwood 2021.
@@ -216,28 +216,16 @@ zx0_to_ram	.proc
 		; Optimized handling of pointers crossing page-boundaries.
 		;
 
-.inc_off_src:	bsr	.next_srcpage
+.inc_off_src:	jsr	__si_inc_page
 		bra	.off_skip1
 
-.next_srcpage:	inc	<zx0_srcptr + 1		; Inc & test for bank overflow.
-		bpl	.same_srcbank
-
-		pha				; MUST preserve A,X,Y & CF!
-		lda	#>$6000
-		sta	<zx0_srcptr + 1
-		tma3
-		inc	a
-		tam3
-		pla
-.same_srcbank:	rts
-
-.inc_cp_src:	bsr	.next_srcpage
+.inc_cp_src:	jsr	__si_inc_page
 		bra	.cp_skip1
 
 .inc_cp_dst:	inc	<zx0_dstptr + 1
 		bra	.cp_skip2
 
-.gamma_page:	bsr	.next_srcpage
+.gamma_page:	jsr	__si_inc_page
 		bra	.gamma_skip1
 
 		;
@@ -442,25 +430,13 @@ zx0_to_vdc	.proc
 		; Optimized handling of pointers crossing page-boundaries.
 		;
 
-.inc_off_src:	bsr	.next_srcpage
+.inc_off_src:	jsr	__si_inc_page
 		bra	.off_skip1
-
-.next_srcpage:	inc	<zx0_srcptr + 1		; Inc & test for bank overflow.
-		bpl	.same_srcbank
-
-		pha				; MUST preserve A,X,Y & CF!
-		lda	#>$6000
-		sta	<zx0_srcptr + 1
-		tma3
-		inc	a
-		tam3
-		pla
-.same_srcbank:	rts
 
 .inc_lz_dst:	bsr	.next_dstpage
 		bra	.lz_skip2
 
-.inc_cp_src:	bsr	.next_srcpage
+.inc_cp_src:	jsr	__si_inc_page
 		bra	.cp_skip1
 
 .inc_cp_dst:	bsr	.next_dstpage
@@ -480,7 +456,7 @@ zx0_to_vdc	.proc
 		sta	<zx0_dstptr + 1
 		rts
 
-.gamma_page:	bsr	.next_srcpage
+.gamma_page:	jsr	__si_inc_page
 		bra	.gamma_skip1
 
 		;
