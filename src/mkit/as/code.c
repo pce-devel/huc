@@ -561,6 +561,10 @@ getoperand(int *ip, int flag, int last_char)
 	case '\0':
 	case ';':
 		/* no operand */
+		if (flag & ACC) {
+			mode = ACC;
+			break;
+		}
 		error("Operand missing!");
 		return (0);
 
