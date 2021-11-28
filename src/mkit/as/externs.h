@@ -81,6 +81,7 @@ extern int slnum;				/* source line number counter */
 extern char symbol[];				/* temporary symbol storage */
 extern int undef;				/* undefined symbol in expression flag */
 extern unsigned int value;			/* operand field value */
+extern int paren_opt;				/* allow () as alternative to [] flag */
 extern int mlist_opt;				/* macro listing main flag */
 extern int xlist;				/* listing file main flag */
 extern int list_level;				/* output level */

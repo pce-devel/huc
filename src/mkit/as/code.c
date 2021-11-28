@@ -543,12 +543,14 @@ getoperand(int *ip, int flag, int last_char)
 {
 	unsigned int tmp;
 	char c;
+	int paren;
 	int code;
 	int mode;
 	int pos;
 	int end;
 
 	/* init */
+	paren = 0;
 	auto_inc = 0;
 	auto_tag = 0;
 
@@ -599,6 +601,17 @@ getoperand(int *ip, int flag, int last_char)
 			(*ip)++;
 			break;
 
+		case '(':
+			/* allow () as an alternative to [] for indirect? */
+			if (paren_opt) {
+				/* indirect */
+				mode = ABS_IND | ABS_IND_X | ZP_IND | ZP_IND_X | ZP_IND_Y;
+				(*ip)++;
+				paren = 1;
+				break;
+			}
+			/* fall through */
+
 		default:
 			/* absolute */
 			mode = ABS | ABS_X | ABS_Y;
@@ -606,7 +619,7 @@ getoperand(int *ip, int flag, int last_char)
 		}
 
 		/* get value */
-		if (!evaluate(ip, 0))
+		if (!evaluate(ip, (paren == 1) ? ')' : 0))
 			return (0);
 
 		/* check addressing mode */
@@ -629,6 +642,7 @@ getoperand(int *ip, int flag, int last_char)
 				code++;
 			case '+':		/* + = 4 */
 				code++;
+			case ')':		/* ] = 3 */
 			case ']':		/* ] = 3 */
 				code++;
 				if (prlnbuf[*ip + 1] == '.') {

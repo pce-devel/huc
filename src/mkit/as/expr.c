@@ -168,8 +168,12 @@ cont:
 			case ')':
 				if (!need_operator)
 					goto error;
-				if (level == 0)
-					goto error;
+				if (level == 0) {
+					if (last_char != ')')
+						goto error;
+					end = 3;
+					break;
+				}
 				while (op_stack[op_idx] != OP_OPEN) {
 					if (!do_op())
 						return (0);

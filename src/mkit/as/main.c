@@ -56,6 +56,7 @@ char section_name[5][8] = {
 };
 int newproc_opt;
 int strip_opt;
+int paren_opt;
 int dump_seg;
 int overlayflag;
 int develo_opt;
@@ -294,13 +295,14 @@ main(int argc, char **argv)
 	file = 0;
 	cd_type = 0;
 	strip_opt = 0;
+	paren_opt = 0;
 	newproc_opt = 0;
-	
+
     	memset(out_fname, 0, 256);
 
 	/* display assembler version message */
 	printf("%s\n\n", machine->asm_title);
-	
+
 	while ((opt = getopt_long_only (argc, argv, cmd_line_options, cmd_line_long_options, NULL)) != -1)
 	{
 		switch(opt)
@@ -333,7 +335,7 @@ main(int argc, char **argv)
 					return 0;
 				}
 				break;
-			
+
 			case 'o':
 				strcpy(out_fname, optarg);
 				break;
@@ -341,7 +343,7 @@ main(int argc, char **argv)
 			case 'h':
 				help();
 				return 0;
-				
+
 			case 0:
 				break;
 
