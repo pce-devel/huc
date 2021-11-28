@@ -332,7 +332,7 @@ oplook(int *idx)
 
 	/* check extension */
 	if (flag) {
-		if ((opext != 'L') && (opext != 'H'))
+		if ((opext != 'A') && (opext != 'H') && (opext != 'L') && (opext != 'Z'))
 			return (-1);
 	}
 
@@ -358,7 +358,7 @@ oplook(int *idx)
 				if (opflg == PSEUDO)
 					return (-1);
 				/* extension valid only for these addressing modes */
-				if (!(opflg & (IMM | ZP | ZP_X | ZP_IND_Y | ABS | ABS_X | ABS_Y)))
+				if (!(opflg & (IMM | ZP | ZP_X | ZP_Y | ABS | ABS_X | ABS_Y)))
 					return (-1);
 			}
 			return (i);

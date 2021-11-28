@@ -613,8 +613,12 @@ getoperand(int *ip, int flag, int last_char)
 			/* fall through */
 
 		default:
-			/* absolute */
-			mode = ABS | ABS_X | ABS_Y;
+			if (opext == 'Z')
+				/* zero page */
+				mode = ZP | ZP_X | ZP_Y;
+			else
+				/* absolute */
+				mode = ABS | ABS_X | ABS_Y;
 			break;
 		}
 
@@ -741,6 +745,8 @@ getoperand(int *ip, int flag, int last_char)
 					value = (value & 0xFF);
 				else if (opext == 'H')
 					value = (value & 0xFF00) >> 8;
+				else if (opext != 0)
+					error("Instruction extension not supported in immediate mode!");
 				else {
 					/* check value validity */
 					if ((value > 0xFF) && (value < 0xFFFFFF00))
