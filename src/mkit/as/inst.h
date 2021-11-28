@@ -235,6 +235,8 @@ struct t_opcode base_pseudo[85] = {
 	{NULL,  "RS",      do_rs,      PSEUDO, P_RS,      0},
 	{NULL,  "WORD",    do_dw,      PSEUDO, P_DW,      0},
 	{NULL,  "ZP",      do_section, PSEUDO, P_ZP,      S_ZP},
+	{NULL,  "DWL",     do_dwl,     PSEUDO, P_DWL,     0},
+	{NULL,  "DWH",     do_dwh,     PSEUDO, P_DWH,     0},
 
 	{NULL, ".BANK",    do_bank,    PSEUDO, P_BANK,    0},
 	{NULL, ".BSS",     do_section, PSEUDO, P_BSS,     S_BSS},
@@ -275,13 +277,12 @@ struct t_opcode base_pseudo[85] = {
 	{NULL, ".RS",      do_rs,      PSEUDO, P_RS,      0},
 	{NULL, ".WORD",    do_dw,      PSEUDO, P_DW,      0},
 	{NULL, ".ZP",      do_section, PSEUDO, P_ZP,      S_ZP},
-	{NULL,  "DWL",      do_dwl,     PSEUDO, P_DWL,     0},
-	{NULL,  "DWH",      do_dwh,     PSEUDO, P_DWH,     0},
-	{NULL,  ".DWL",     do_dwl,     PSEUDO, P_DWL,     0},
-	{NULL,  ".DWH",     do_dwh,     PSEUDO, P_DWH,     0},
+	{NULL, ".DWL",     do_dwl,     PSEUDO, P_DWL,     0},
+	{NULL, ".DWH",     do_dwh,     PSEUDO, P_DWH,     0},
 	{NULL, ".ZEROPAGE", do_section, PSEUDO, P_ZP,      S_ZP},
 	{NULL, NULL, NULL, 0, 0, 0}
 
 };
 /* *INDENT-ON* */
 
+                   
