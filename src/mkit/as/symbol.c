@@ -45,26 +45,29 @@ colsym(int *ip)
 	int err = 0;
 	int i = 0;
 	char c;
-	char local_check;
 
 	/* get the symbol */
-	local_check = prlnbuf[*ip];
 	for (;;) {
 		c = prlnbuf[*ip];
-		if (isdigit(c) && (i == 0))
+		if (i == 0 && isdigit(c))
 			break;
-		if (!isalnum(c) && (c != '_') && (c != '.') && (c != '@'))
-		{ if((local_check=='.' || local_check=='@') && ((c=='-') || (c=='+')))
-            { }
-          else { break;}
+		if (isalnum(c) || (c == '_') || (c == '.') || (i == 0 && c == '@') || (i == 0 && c == '!')) {
+			if (i < (SBOLSZ - 1)) { symbol[++i] = c; }
+			(*ip)++;
+		} else {
+			break;
 		}
-		if (i < (SBOLSZ - 1))
-			symbol[++i] = c;
-		(*ip)++;
 	}
 
 	symbol[0] = i;
 	symbol[i + 1] = '\0';
+
+	if (i >= SBOLSZ - 1) {
+		char errorstr[512];
+		snprintf(errorstr, 512, "Symbol name too long ('%s' is %d chars long, max is %d)", symbol + 1, i, SBOLSZ - 2);
+		fatal_error(errorstr);
+		return (0);
+	}
 
 	/* check if it's a reserved symbol */
 	if (i == 1) {

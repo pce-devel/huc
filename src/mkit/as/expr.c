@@ -33,6 +33,33 @@ t_symbol pc_symbol = {
 
 
 /* ----
+ * is_expr_symbol()
+ * ----
+ * is the next string a symbol?
+ * this is complicated because a "multi-label" looks like a "not" or a "not-equal".
+ */
+
+inline int is_expr_symbol (char * pstr)
+{
+	unsigned char c = *pstr++;
+	if (isalpha(c) || c == '_' || c == '.' || c == '@')
+		return 1;
+	if (c != '!')
+		return 0;
+	for (;;) {
+		c = *pstr;
+		if (isalnum(c) || (c == '_') || (c == '.')) {
+			++pstr;
+		} else {
+			break;
+		}
+	}
+	c = *pstr;
+	return (c == '+' || c == '-') ? 1 : 0;
+}
+
+
+/* ----
  * evaluate()
  * ----
  * evaluate an expression
@@ -113,7 +140,8 @@ cont:
 
 		/* symbol */
 		else
-		if (isalpha(c) || c == '_' || c == '.' || c == '@') {
+//		if (isalpha(c) || c == '_' || c == '.' || c == '@') {
+		if (is_expr_symbol(expr)) {
 			if (need_operator)
 				goto error;
 			if (!push_val(T_SYMBOL))
@@ -582,83 +610,30 @@ extract:
 int
 getsym(void)
 {
-	int valid;
-	int i;
-	char c;
-
-	valid = 1;
-	i = 0;
-
-	/* get the symbol, stop to the first 'non symbol' char */
-    while (valid) {
-        c = *expr;
-        if (isalpha(c) || c == '_' || c == '.' || c == '@' || (isdigit(c) && i >= 1)) {
-            symbol[++i] = c;
-            expr++;
-        }
-        else {
-            valid = 0;
-        }
-    }
-
-	/* is it a reserved symbol? */
-	if (i == 1) {
-		switch (toupper(symbol[1])) {
-		case 'A':
-		case 'X':
-		case 'Y':
-			error("Symbol is reserved (A, X or Y)!");
-			i = 0;
-		}
-	}
-
-	/* store symbol length */
-	symbol[0] = i;
-	symbol[i + 1] = '\0';
-
-	if (i > SBOLSZ - 1) {
-		char errorstr[512];
-		snprintf(errorstr, 512, "Symbol name too long ('%s' is %d chars long, max is %d)", symbol + 1, i, SBOLSZ - 1);
-		fatal_error(errorstr);
-	}
-
-	return (i);
-}
-
-
-/* ----
- * getsym_op()
- * ----
- * extract a symbol name from the input string. Branch opcodes only.
- */
-
-int
-getsym_op(void)
-{
-	int valid;
 	int i;
 	char c;
 	char local_check;
 
-	valid = 1;
 	i = 0;
 
-	/* get the symbol, stop to the first 'non symbol' char */
+	/* get the symbol, stop at the first 'non symbol' char */
 	local_check = *expr;
-	while (valid) {
+
+	for (;;) {
 		c = *expr;
-		if (isalpha(c) || c == '_' || c == '.' || c == '@' || (isdigit(c) && i >= 1)) {
-			if (i < SBOLSZ - 1)
-				symbol[++i] = c;
+		if (i == 0 && isdigit(c))
+			break;
+		if (isalnum(c) || (c == '_') || (c == '.') || (i == 0 && c == '@') || (i == 0 && c == '!')) {
+			if (i < (SBOLSZ - 1)) { symbol[++i] = c; }
 			expr++;
+		} else {
+			break;
 		}
-		else if ((local_check == '.' || local_check=='@') && ((c == '-') || (c == '+'))) {
-			if (i < SBOLSZ - 1)
-				symbol[++i] = c;
+	}
+	if ((local_check == '.' || local_check == '@') && (c == '+' || c == '-')) {
+		while (*expr == c) {
+			if (i < (SBOLSZ - 1)) { symbol[++i] = c; }
 			expr++;
-		}
-		else {
-			valid = 0;
 		}
 	}
 
@@ -676,6 +651,13 @@ getsym_op(void)
 	/* store symbol length */
 	symbol[0] = i;
 	symbol[i + 1] = '\0';
+
+	if (i >= SBOLSZ - 1) {
+		char errorstr[512];
+		snprintf(errorstr, 512, "Symbol name too long ('%s' is %d chars long, max is %d)", symbol + 1, i, SBOLSZ - 2);
+		fatal_error(errorstr);
+	}
+
 	return (i);
 }
 

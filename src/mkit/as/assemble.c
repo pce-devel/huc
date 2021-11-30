@@ -29,7 +29,6 @@ assemble(int do_label)
 	struct t_line *ptr;
 	char *buf;
 	char c;
-	char local_check;
 	int flag;
 	int ip, i, j;			/* prlnbuf pointer */
 
@@ -165,19 +164,17 @@ assemble(int do_label)
 	j = 0;
 	while (isspace(prlnbuf[i]))
 		i++;
-	local_check = prlnbuf[i + j];
 	for (;;) {
 		c = prlnbuf[i + j];
-		if (isdigit(c) && (j == 0))
+		if (j == 0 && isdigit(c))
 			break;
-		if (!isalnum(c) && (c != '_') && (c != '.') && (c != '@'))
-		{ if((local_check=='.' || local_check=='@') && ((c=='-') || (c=='+')))
-            { }
-          else { break;}
+		if (isalnum(c) || (c == '_') || (c == '.') || (j == 0 && c == '@') || (j == 0 && c == '!')) {
+			++j;
+		} else {
+			break;
 		}
-
-		j++;
 	}
+
 	if ((j == 0) || ((i != SFIELD) && (c != ':')))
 		i = SFIELD;
 	else {
@@ -236,6 +233,7 @@ assemble(int do_label)
 			assemble(1);
 			return;
 		}
+
 		labldef(loccnt, 1);
 		if (flag == -1)
 			error("Unknown instruction!");
@@ -299,7 +297,7 @@ oplook(int *idx)
 		c = toupper(prlnbuf[*idx]);
 		if (c == ' ' || c == '\t' || c == '\0' || c == ';')
 			break;
-		if (!isalnum(c) && c != '.' && c != '@' && c != '*' && c != '=')
+		if (!isalnum(c) && c != '.' && c != '*' && c != '=')
 			return (-1);
 		if (i == 15)
 			return (-1);

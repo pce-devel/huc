@@ -397,13 +397,15 @@ macro_getargtype(char *arg)
 
 	default:
 		/* symbol */
-		c = arg[0];
-		for (i = 0; i < SBOLSZ; i++) {
+		for (i = 0;;) {
 			c = arg[i];
-			if (isdigit(c) && (i == 0))
+			if (i == 0 && isdigit(c))
 				break;
-			if ((!isalnum(c)) && (c != '_') && (c != '.') && (c != '@'))
+			if (isalnum(c) || (c == '_') || (c == '.') || (i == 0 && c == '@')) {
+				i++;
+			} else {
 				break;
+			}
 		}
 
 		if (i == 0)
@@ -412,7 +414,7 @@ macro_getargtype(char *arg)
 			if (c != '\0')
 				return (ARG_ABS);
 			else {
-				strncpy(&symbol[1], arg, i);
+				memcpy(&symbol[1], arg, i);
 				symbol[0] = i;
 				symbol[i + 1] = '\0';
 
@@ -430,4 +432,3 @@ macro_getargtype(char *arg)
 		}
 	}
 }
-

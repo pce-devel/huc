@@ -226,6 +226,12 @@ do_proc(int *ip)
 		return;
 	}
 
+	/* check symbol */
+	if (symbol[1] == '!') {
+		fatal_error("Proc/group name can not be a multi-label!");
+		return;
+	}
+
 	/* check end of line */
 	if (!check_eol(ip))
 		return;
