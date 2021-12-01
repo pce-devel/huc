@@ -222,13 +222,13 @@ do_proc(int *ip)
 
 	/* check symbol */
 	if (symbol[1] == '.' || symbol[1] == '@') {
-		fatal_error("Proc/group name can not be local!");
+		fatal_error("Proc/group name cannot be local!");
 		return;
 	}
 
 	/* check symbol */
 	if (symbol[1] == '!') {
-		fatal_error("Proc/group name can not be a multi-label!");
+		fatal_error("Proc/group name cannot be a multi-label!");
 		return;
 	}
 

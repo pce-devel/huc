@@ -30,6 +30,10 @@ do_func(int *ip)
 			error("No name for this function!");
 			return;
 		}
+		if (lablptr->name[1] == '!') {
+			fatal_error("Function name cannot be a multi-label!");
+			return;
+		}
 		if (lablptr->refcnt) {
 			switch (lablptr->type) {
 			case MACRO:

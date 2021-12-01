@@ -198,6 +198,7 @@ typedef struct t_symbol {
 	int size;
 	int vram;
 	int pal;
+	int defcnt;
 	int refcnt;
 	int reserved;
 	int data_type;

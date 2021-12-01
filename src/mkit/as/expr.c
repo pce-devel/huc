@@ -24,6 +24,7 @@ t_symbol pc_symbol = {
 	0, /* size */
 	0, /* vram */
 	0, /* pal */
+	0, /* defcnt */
 	0, /* refcnt */
 	0, /* reserved */
 	0, /* data_type */
@@ -612,13 +613,10 @@ getsym(void)
 {
 	int i;
 	char c;
-	char local_check;
 
 	i = 0;
 
 	/* get the symbol, stop at the first 'non symbol' char */
-	local_check = *expr;
-
 	for (;;) {
 		c = *expr;
 		if (i == 0 && isdigit(c))
@@ -630,12 +628,10 @@ getsym(void)
 			break;
 		}
 	}
-	if ((local_check == '.' || local_check == '@') && (c == '+' || c == '-')) {
-		while (*expr == c) {
-			if (i < (SBOLSZ - 1)) { symbol[++i] = c; }
-			expr++;
-		}
-	}
+
+	/* store symbol length */
+	symbol[0] = i;
+	symbol[i + 1] = '\0';
 
 	/* is it a reserved symbol? */
 	if (i == 1) {
@@ -648,14 +644,54 @@ getsym(void)
 		}
 	}
 
-	/* store symbol length */
-	symbol[0] = i;
-	symbol[i + 1] = '\0';
+	/* is it a multi-label? */
+	if (symbol[1] == '!') {
+		struct t_symbol * baselabl;
+		int whichlabl = 0;
+		char tail [10];
+
+		/* find the base multi-label instance */
+		if ((baselabl = stlook(1)) == NULL) {
+			fatal_error("Out of memory!");
+			return (0);
+		}
+
+		/* sanity check */
+		if (baselabl->type != UNDEF) {
+			fatal_error("How did this multi-label get defined!");
+			return (0);
+		}
+
+		/* find out how many labels +/- to jump */
+		c = *expr;
+		if (c != '+' && c != '-') {
+			fatal_error("References to a multi-label must include at least one \'+\' or \'-\'!");
+			return (0);
+		}
+		while (*expr == c) {
+			whichlabl += ((c == '+') ? 1 : -1);
+			expr++;
+		}
+		if (whichlabl < 0) { ++whichlabl; }
+
+		/* add the current multi-label instance */
+		whichlabl += baselabl->defcnt;
+		if ((whichlabl < 0) || (whichlabl > 0x7FFFF)) {
+			/* illegal value */
+			whichlabl = 0;
+		}
+
+		/* create the target multi-label name */
+		sprintf(tail, "!%d", 0x7FFFF & whichlabl);
+		strncat(symbol, tail, SBOLSZ - 1 - strlen(symbol));
+		i = symbol[0] = strlen(&symbol[1]);
+	}
 
 	if (i >= SBOLSZ - 1) {
 		char errorstr[512];
 		snprintf(errorstr, 512, "Symbol name too long ('%s' is %d chars long, max is %d)", symbol + 1, i, SBOLSZ - 2);
 		fatal_error(errorstr);
+		return (0);
 	}
 
 	return (i);

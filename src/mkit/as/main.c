@@ -636,6 +636,10 @@ main(int argc, char **argv)
 			}
 		}
 
+		/* reset multi-labels for the next pass */
+		if (pass == FIRST_PASS)
+			lablresetdefcnt();
+
 		/* rewind input file */
 		rewind(in_fp);
 

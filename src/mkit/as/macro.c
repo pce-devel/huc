@@ -46,6 +46,10 @@ do_macro(int *ip)
 			if ((lablptr = stlook(1)) == NULL)
 				return;
 		}
+		if (lablptr->name[1] == '!') {
+			fatal_error("Macro name cannot be a multi-label!");
+			return;
+		}
 		if (lablptr->refcnt) {
 			switch (lablptr->type) {
 			case MACRO:
@@ -61,6 +65,7 @@ do_macro(int *ip)
 				return;
 			}
 		}
+
 		if (!check_eol(ip))
 			return;
 

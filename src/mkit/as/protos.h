@@ -149,4 +149,4 @@ void lablset(char *name, int val);
 int  lablexists(char *name);
 void lablremap(void);
 void labldump(FILE *fp);
-
+void lablresetdefcnt(void);

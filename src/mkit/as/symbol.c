@@ -196,6 +196,7 @@ stinstall(int hash, int type)
 	sym->page = -1;
 	sym->vram = -1;
 	sym->pal = -1;
+	sym->defcnt = 0;
 	sym->refcnt = 0;
 	sym->reserved = 0;
 	sym->data_type = -1;
@@ -236,8 +237,30 @@ labldef(int lval, int flag)
 		return (0);
 
 	/* adjust symbol address */
-	if (flag)
+	if (flag) {
 		lval = (lval & 0x1FFF) | (page << 13);
+
+		/* is this a multi-label? */
+		if (lablptr->name[1] == '!') {
+			char tail [10];
+
+			/* sanity check */
+			if (lablptr->type != UNDEF) {
+				fatal_error("How did this multi-label get defined!");
+				return (-1);
+			}
+
+			/* define the next multi-label instance */
+			strcpy(symbol, lablptr->name);
+			sprintf(tail, "!%d", 0x7FFFF & ++(lablptr->defcnt));
+			strncat(symbol, tail, SBOLSZ - 1 - strlen(symbol));
+			symbol[0] = strlen(&symbol[1]);
+			if ((lablptr = stlook(1)) == NULL) {
+				fatal_error("Out of memory!");
+				return (-1);
+			}
+		}
+	}
 
 	/* first pass */
 	if (pass == FIRST_PASS) {
@@ -435,8 +458,11 @@ labldump(FILE *fp)
 
 	/* browse the symbol table */
 	for (i = 0; i < 256; i++) {
-		sym = hash_tbl[i];
-		while (sym) {
+		for (sym = hash_tbl[i]; sym != NULL; sym = sym->next) {
+			/* skip undefined multi-label base symbols */
+			if (sym->type == UNDEF)
+				continue;
+
 			/* dump the label */
 			fprintf(fp, "%2.2x\t%4.4x\t", sym->bank, sym->value);
 			fprintf(fp, "%s\t", &(sym->name[1]));
@@ -465,10 +491,45 @@ labldump(FILE *fp)
 					local = local->next;
 				}
 			}
+		}
+	}
+}
+
+
+/* ----
+ * lablresetdefcnt
+ * ----
+ * clear the defcnt on all the multi-labels
+ */
+
+void
+lablresetdefcnt(void)
+{
+	struct t_symbol *sym;
+	int i;
+
+	/* browse the symbol table */
+	for (i = 0; i < 256; i++) {
+		sym = hash_tbl[i];
+		while (sym) {
+			sym->defcnt = 0;
+
+#if 0
+			/* local symbols */
+			if (sym->local) {
+				struct t_symbol * local = sym->local;
+
+				while (local) {
+					local->defcnt = 0;
+
+					/* next */
+					local = local->next;
+				}
+			}
+#endif
 
 			/* next */
 			sym = sym->next;
 		}
 	}
 }
-
