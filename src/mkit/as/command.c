@@ -1177,13 +1177,41 @@ do_ds(int *ip)
 {
 	int limit = 0;
 	int addr;
+	unsigned int nbytes;
+	unsigned int filler = 0;
+	unsigned char c;
 
 	/* define label */
 	labldef(loccnt, 1);
 
+	/* output infos */
+	data_loccnt = loccnt;
+	data_level = 2;
+
 	/* get the number of bytes to reserve */
-	if (!evaluate(ip, ';'))
+	if (!evaluate(ip, 0))
 		return;
+
+	nbytes = value;
+
+	c = prlnbuf[(*ip)++];
+
+	/* check if there's another word */
+	if (c == ',') {
+		/* get the filler byte */
+		if (!evaluate(ip, 0))
+			return;
+
+		filler = value & 255;
+
+		c = prlnbuf[(*ip)++];
+	}
+
+	/* check error */
+	if (c != ';' && c != '\0') {
+		error("Syntax error!");
+		return;
+	}
 
 	/* section switch */
 	switch (section) {
@@ -1205,13 +1233,13 @@ do_ds(int *ip)
 	}
 
 	/* check range */
-	if ((loccnt + value) > limit) {
+	if ((loccnt + nbytes) > limit) {
 		error("Out of range!");
 		return;
 	}
 
 	/* update max counter for zp and bss sections */
-	addr = loccnt + value;
+	addr = loccnt + nbytes;
 
 	switch (section) {
 	case S_ZP:
@@ -1229,21 +1257,46 @@ do_ds(int *ip)
 
 	/* output line on last pass */
 	if (pass == LAST_PASS) {
-		switch (section) {
-		case S_CODE:
-		case S_DATA:
-			memset(&rom[bank][loccnt], 0, value);
-			memset(&map[bank][loccnt], section + (page << 5), value);
+		if (filler != 0) {
+			if (section == S_ZP)
+				error("Cannot fill .ZP section with non-zero data!");
+			else
+			if (section == S_BSS)
+				error("Cannot fill .BSS section with non-zero data!");
+		}
+
+		if (section == S_CODE || section == S_DATA) {
+			memset(&rom[bank][loccnt], filler, nbytes);
+			memset(&map[bank][loccnt], section + (page << 5), nbytes);
 			if (bank > max_bank)
 				max_bank = bank;
-			break;
 		}
-		loadlc(loccnt, 0);
-		println();
 	}
 
 	/* update location counter */
-	loccnt += value;
+	loccnt += nbytes;
+
+	/* size */
+	if (lablptr) {
+		lablptr->data_type = P_DB;
+		lablptr->data_size = loccnt - data_loccnt;
+	}
+	else {
+		if (lastlabl) {
+			if (lastlabl->data_type == P_DB)
+				lastlabl->data_size += loccnt - data_loccnt;
+		}
+	}
+
+	/* output line */
+	if (pass == LAST_PASS) {
+		/* just output an address in S_ZP and S_BSS, else show the data */
+		if (section == S_ZP || section == S_BSS) {
+			loadlc(data_loccnt, 0);
+			data_loccnt = -1;
+		}
+		println();
+	}
 }
 
 
