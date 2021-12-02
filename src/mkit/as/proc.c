@@ -57,7 +57,8 @@ do_call(int *ip)
 	}
 
 	/* check end of line */
-	check_eol(ip);
+	if (!check_eol(ip))
+		return;
 
 	/* increment procedure refcnt */
 	stlook(1);

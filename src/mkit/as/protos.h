@@ -53,6 +53,12 @@ void do_fail(int *ip);
 void do_section(int *ip);
 void do_incchr(int *ip);
 void do_opt(int *ip);
+void do_align(int *ip);
+void do_kickc(int *ip);
+void do_cpu(int *ip);
+void do_segment(int *ip);
+void do_label(int *ip);
+void do_encoding(int *ip);
 int  htoi(char *str, int nb);
 
 /* CRC.C */

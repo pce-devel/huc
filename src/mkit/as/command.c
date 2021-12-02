@@ -8,12 +8,13 @@
 
 /* pseudo instructions section flag */
 char pseudo_flag[] = {
-	0x0C, 0x0C, 0x0F, 0x0F, 0x0F, 0x0C, 0x0C, 0x0C, 0x0F, 0x0C,
-	0x0C, 0x0C, 0x0C, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F,
-	0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0C,
-	0x0F, 0x0F, 0x0F, 0x0C, 0x0C, 0x0C, 0x0C, 0x0F, 0x0F, 0x0F,
-	0x0F, 0x0F, 0x0C, 0x0C, 0x0C, 0x04, 0x04, 0x04, 0x0C, 0x0C,
-	0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x0F
+	0x0C, 0x0C, 0x0C, 0x0F, 0x0F, 0x0F, 0x0C, 0x0C, 0x0C, 0x0F,
+	0x0C, 0x0C, 0x0C, 0x0C, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F,
+	0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F,
+	0x0C, 0x0F, 0x0F, 0x0F, 0x0C, 0x0C, 0x0C, 0x0C, 0x0F, 0x0F,
+	0x0F, 0x0F, 0x0F, 0x0C, 0x0C, 0x0C, 0x04, 0x04, 0x04, 0x04,
+	0x04, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x0F, 0x0F, 0x0F, 0x0F,
+	0x0F, 0x0F, 0x0F
 };
 
 
@@ -48,6 +49,8 @@ do_pseudo(int *ip)
 
 	case P_DB:
 	case P_DW:
+	case P_DD:
+	case P_DS:
 	case P_DWL:
 	case P_DWH:
 		if (lastlabl) {
@@ -561,6 +564,16 @@ do_dd(int *ip)
 void
 do_equ(int *ip)
 {
+	/* check symbol */
+	if (lablptr == NULL) {
+		fatal_error("Label name missing from equate!");
+		return;
+	}
+	if (lablptr->name[1] == '!') {
+		fatal_error("A multi-label must be a location, not an equate!");
+		return;
+	}
+
 	/* get value */
 	if (!evaluate(ip, ';'))
 		return;
@@ -1499,6 +1512,252 @@ do_opt(int *ip)
 
 
 /* ----
+ * do_align()
+ * ----
+ * .align pseudo
+ */
+
+void
+do_align(int *ip)
+{
+	int offset;
+
+	/* get the .align value */
+	if (!evaluate(ip, ';'))
+		return;
+
+	/* check for undefined symbol - they are not allowed in .align */
+	if (undef != 0) {
+		error("Undefined symbol in operand field!");
+		return;
+	}
+
+	/* check for power-of-two, 1 bank maximum */
+	if ((value > 8192) || (value == 0) || ((value & (value - 1)) != 0)) {
+		error(".align value must be a power-of-two, with a maximum of 8192!");
+		return;
+	}
+
+	/* did the previous instruction fill up the current bank? */
+	if (loccnt >= 0x2000) {
+		loccnt &= 0x1fff;
+		page++;
+		bank++;
+	}
+
+	/* are we already aligned to the request boundary? */
+	if ((offset = loccnt & (value - 1)) != 0) {
+		/* update location counter */
+		loccnt = (loccnt + value - offset) & 0x1fff;
+
+		if (loccnt == 0) {
+			page++;
+			bank++;
+		}
+
+		/* signal discontiguous change in loccnt */
+		discontiguous = 1;
+	}
+
+	/* set label value if there was one */
+	labldef(loccnt, 1);
+
+	/* output line on last pass */
+	if (pass == LAST_PASS) {
+		loadlc(loccnt + (page << 13), 1);
+		println();
+	}
+}
+
+
+/* ----
+ * do_kickc()
+ * ----
+ * .pceas pseudo
+ * .kickc pseudo
+ */
+
+void
+do_kickc(int *ip)
+{
+	/* define label */
+	labldef(loccnt, 1);
+
+	/* check end of line */
+	if (!check_eol(ip))
+		return;
+
+	/* enable/disable KickC mode */
+	kickc_mode = optype;
+
+	/* enable () for indirect addressing in KickC mode */
+	paren_opt = optype;
+
+	/* output line */
+	if (pass == LAST_PASS)
+		println();
+}
+
+
+/* ----
+ * do_cpu()
+ * ----
+ * .cpu pseudo (ignored, only for compatibility with KickC)
+ */
+
+void
+do_cpu(int *ip)
+{
+	/* define label */
+	labldef(loccnt, 1);
+
+	/* skip spaces */
+	while (isspace(prlnbuf[*ip]))
+		(*ip)++;
+
+	/* extract name */
+	if (!colsym(ip)) {
+		if (symbol[0] == 0)
+			fatal_error("Syntax error!");
+		return;
+	}
+
+	/* check end of line */
+	if (!check_eol(ip))
+		return;
+
+	/* output line */
+	if (pass == LAST_PASS)
+		println();
+}
+
+
+/* ----
+ * do_segment()
+ * ----
+ * .segment pseudo (for KickC code)
+ */
+
+void
+do_segment(int *ip)
+{
+	/* define label */
+	labldef(loccnt, 1);
+
+	/* skip spaces */
+	while (isspace(prlnbuf[*ip]))
+		(*ip)++;
+
+	/* extract name */
+	if (!colsym(ip)) {
+		if (symbol[0] == 0)
+			fatal_error("Syntax error!");
+		return;
+	}
+
+	/* check end of line */
+	if (!check_eol(ip))
+		return;
+
+	/* which segment? */
+	if (!strcasecmp(&symbol[1], "ZP"))
+		optype = S_ZP;
+	else
+	if (!strcasecmp(&symbol[1], "BSS"))
+		optype = S_BSS;
+	else
+	if (!strcasecmp(&symbol[1], "CODE"))
+		optype = S_CODE;
+	else
+	if (!strcasecmp(&symbol[1], "DATA"))
+		optype = S_DATA;
+	else {
+		fatal_error("Segment can only be CODE, DATA, BSS or ZP!");
+		return;
+	}
+
+	/* handle this as a PCEAS section type */
+	do_section(ip);
+}
+
+
+/* ----
+ * do_label()
+ * ----
+ * .label & .const pseudo (for KickC code)
+ */
+
+void
+do_label(int *ip)
+{
+	/* define label */
+	labldef(loccnt, 1);
+
+	/* skip spaces */
+	while (isspace(prlnbuf[*ip]))
+		(*ip)++;
+
+	/* extract name */
+	if (!colsym(ip)) {
+		if (symbol[0] == 0)
+			fatal_error("Syntax error!");
+		return;
+	}
+
+	/* skip spaces */
+	while (isspace(prlnbuf[*ip]))
+		(*ip)++;
+
+	if (prlnbuf[(*ip)++] != '=') {
+		fatal_error("Syntax error!");
+		return;
+	}
+
+	/* create the symbol */
+	if ((lablptr = stlook(1)) == NULL)
+		return;
+
+	/* handle the rest of this as a PCEAS equate */
+	do_equ(ip);
+}
+
+
+/* ----
+ * do_encoding()
+ * ----
+ * .encoding pseudo (ignored, only for compatibility with KickC)
+ */
+
+void
+do_encoding(int *ip)
+{
+	/* define label */
+	labldef(loccnt, 1);
+
+	/* skip spaces */
+	while (isspace(prlnbuf[*ip]))
+		(*ip)++;
+
+#if 0
+	/* extract name */
+	if (!colsym(ip)) {
+		if (symbol[0] == 0)
+			fatal_error("Syntax error!");
+		return;
+	}
+
+	/* check end of line */
+	if (!check_eol(ip))
+		return;
+#endif
+
+	/* output line */
+	if (pass == LAST_PASS)
+		println();
+}
+
+
+/* ----
  * htoi()
  * ----
  */
@@ -1526,4 +1785,3 @@ htoi(char *str, int nb)
 	/* ok */
 	return (val);
 }
-

@@ -593,15 +593,17 @@ main(int argc, char **argv)
 			discontiguous = 0;
 
 			assemble(0);
-			if (loccnt > 0x2000) {
-				loccnt &= 0x1fff;
-				page++;
-				bank++;
-				if (pass == FIRST_PASS)
-					printf("   (Warning. Opcode crossing page boundary $%04X, bank $%02X)\n", (page * 0x2000), bank);
-			}
 
 			if (!discontiguous) {
+				/* N.B. $2000 is a legal loccnt that says that the bank is full! */
+				if (loccnt > 0x2000) {
+					loccnt &= 0x1fff;
+					page++;
+					bank++;
+					if (pass == FIRST_PASS) {
+						printf("   (Warning. Opcode crossing page boundary $%04X, bank $%02X)\n", (page * 0x2000), bank);
+					}
+				}
 				while (old_bank != bank) {
 					bank_maxloc[old_bank++] = 0x2000;
 				}

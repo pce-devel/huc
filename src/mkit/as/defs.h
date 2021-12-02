@@ -3,9 +3,9 @@
 
 #include "version.h"
 
-#define NES_ASM_VERSION ("NES Assembler (v 3.24-" GIT_VERSION " Beta, " GIT_DATE ")")
-#define PCE_ASM_VERSION ("PC Engine Assembler (v 3.24-" GIT_VERSION ", " GIT_DATE ")")
-#define FUJI_ASM_VERSION ("Fuji Assembler for Atari (v 3.24-" GIT_VERSION " Beta, " GIT_DATE ")")
+#define NES_ASM_VERSION ("NES Assembler (v 3.25-" GIT_VERSION " Beta, " GIT_DATE ")")
+#define PCE_ASM_VERSION ("PC Engine Assembler (v 3.25-" GIT_VERSION ", " GIT_DATE ")")
+#define FUJI_ASM_VERSION ("Fuji Assembler for Atari (v 3.25-" GIT_VERSION " Beta, " GIT_DATE ")")
 
 /* path separator */
 #if defined(WIN32)
@@ -61,60 +61,67 @@
 /* assembler directives */
 #define P_DB		0	// .db
 #define P_DW		1	// .dw
-#define P_DS		2	// .ds
-#define P_EQU		3	// .equ
-#define P_ORG		4	// .org
-#define P_PAGE		5	// .page
-#define P_BANK		6	// .bank
-#define P_INCBIN	7	// .incbin
-#define P_INCLUDE	8	// .include
-#define P_INCCHR	9	// .incchr
-#define P_INCSPR	10	// .incspr
-#define P_INCPAL	11	// .incpal
-#define P_INCBAT	12	// .incbat
-#define P_MACRO		13	// .macro
-#define P_ENDM		14	// .endm
-#define P_LIST		15	// .list
-#define P_MLIST		16	// .mlist
-#define P_NOLIST	17	// .nolist
-#define P_NOMLIST	18	// .nomlist
-#define P_RSSET		19	// .rsset
-#define P_RS		20	// .rs
-#define P_IF		21	// .if
-#define P_ELSE		22	// .else
-#define P_ENDIF		23	// .endif
-#define P_FAIL		24	// .fail
-#define P_ZP		25	// .zp
-#define P_BSS		26	// .bss
-#define P_CODE		27	// .code
-#define P_DATA		28	// .data
-#define P_DEFCHR	29	// .defchr
-#define P_FUNC		30	// .func
-#define P_IFDEF		31	// .ifdef
-#define P_IFNDEF	32	// .ifndef
-#define P_VRAM		33	// .vram
-#define P_PAL		34	// .pal
-#define P_DEFPAL	35	// .defpal
-#define P_DEFSPR	36	// .defspr
-#define P_INESPRG	37	// .inesprg
-#define P_INESCHR	38	// .ineschr
-#define P_INESMAP	39	// .inesmap
-#define P_INESMIR	40	// .inesmir
-#define P_OPT		41	// .opt
-#define P_INCTILE	42	// .inctile
-#define P_INCMAP	43	// .incmap
-#define P_MML		44	// .mml
-#define P_PROC		45	// .proc
-#define P_ENDP		46	// .endp
-#define P_PGROUP	47	// .procgroup
-#define P_ENDPG		48	// .endprocgroup
-#define P_CALL		49	// .call
-#define P_DWL		50	// lsb of a WORD
-#define P_DWH		51	// lsb of a WORD
-#define P_INCCHRPAL	52	// .incchrpal
-#define P_INCSPRPAL	53	// .incsprpal
-#define P_INCTILEPAL	54	// .inctilepal
-#define P_CARTRIDGE	55	// .cartridge
+#define P_DD		2	// .dd
+#define P_DS		3	// .ds
+#define P_EQU		4	// .equ
+#define P_ORG		5	// .org
+#define P_PAGE		6	// .page
+#define P_BANK		7	// .bank
+#define P_INCBIN	8	// .incbin
+#define P_INCLUDE	9	// .include
+#define P_INCCHR	10	// .incchr
+#define P_INCSPR	11	// .incspr
+#define P_INCPAL	12	// .incpal
+#define P_INCBAT	13	// .incbat
+#define P_MACRO		14	// .macro
+#define P_ENDM		15	// .endm
+#define P_LIST		16	// .list
+#define P_MLIST		17	// .mlist
+#define P_NOLIST	18	// .nolist
+#define P_NOMLIST	19	// .nomlist
+#define P_RSSET		20	// .rsset
+#define P_RS		21	// .rs
+#define P_IF		22	// .if
+#define P_ELSE		23	// .else
+#define P_ENDIF		24	// .endif
+#define P_FAIL		25	// .fail
+#define P_ZP		26	// .zp
+#define P_BSS		27	// .bss
+#define P_CODE		28	// .code
+#define P_DATA		29	// .data
+#define P_DEFCHR	30	// .defchr
+#define P_FUNC		31	// .func
+#define P_IFDEF		32	// .ifdef
+#define P_IFNDEF	33	// .ifndef
+#define P_VRAM		34	// .vram
+#define P_PAL		35	// .pal
+#define P_DEFPAL	36	// .defpal
+#define P_DEFSPR	37	// .defspr
+#define P_INESPRG	38	// .inesprg
+#define P_INESCHR	39	// .ineschr
+#define P_INESMAP	40	// .inesmap
+#define P_INESMIR	41	// .inesmir
+#define P_OPT		42	// .opt
+#define P_INCTILE	43	// .inctile
+#define P_INCMAP	44	// .incmap
+#define P_MML		45	// .mml
+#define P_PROC		46	// .proc
+#define P_ENDP		47	// .endp
+#define P_PGROUP	48	// .procgroup
+#define P_ENDPG		49	// .endprocgroup
+#define P_CALL		50	// .call
+#define P_DWL		51	// lsb of a WORD
+#define P_DWH		52	// lsb of a WORD
+#define P_INCCHRPAL	53	// .incchrpal
+#define P_INCSPRPAL	54	// .incsprpal
+#define P_INCTILEPAL	55	// .inctilepal
+#define P_CARTRIDGE	56	// .cartridge
+#define P_ALIGN		57	// .align
+#define P_KICKC		58	// .kickc
+#define P_CPU		59	// .cpu
+#define P_SEGMENT	60	// .segment
+#define P_LABEL		61	// .label or .const
+#define P_ENCODING	62	// .encoding
 
 /* symbol flags */
 #define MDEF	3	/* multiply defined */
