@@ -48,6 +48,11 @@ do_func(int *ip)
 				return;
 			}
 		}
+		if (kickc_mode) {
+			/* Avoid dealing with C-style comments inside a Function. */
+			fatal_error("Cannot define a Function in .kickc mode!");
+			return;
+		}
 
 		/* install this new function in the hash table */
 		if (!func_install(*ip))

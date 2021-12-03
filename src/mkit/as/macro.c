@@ -65,6 +65,11 @@ do_macro(int *ip)
 				return;
 			}
 		}
+		if (kickc_mode) {
+			/* Avoid dealing with C-style comments inside a Macro. */
+			fatal_error("Cannot define a Macro in .kickc mode!");
+			return;
+		}
 
 		if (!check_eol(ip))
 			return;
@@ -244,7 +249,7 @@ macro_getargs(int ip)
 					return (0);
 
 				/* rewind line pointer and continue */
-				ip = SFIELD;
+				ip = preproc_sfield;
 				break;
 			}
 

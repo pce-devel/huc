@@ -23,6 +23,9 @@ int section_bank[4];	/* current bank for each section */
 int stop_pass;		/* stop the program; set by fatal_error() */
 int errcnt;		/* error counter */
 int kickc_mode;		/* NZ if assembling KickC code */
+int preproc_inblock;	/* C-style comment: within block comment */
+int preproc_sfield;	/* C-style comment: SFIELD as a variable */
+int preproc_modidx;	/* C-style comment: offset to modified char */
 struct t_machine *machine;
 struct t_opcode *inst_tbl[256];		/* instructions hash table */
 struct t_symbol *hash_tbl[256];		/* label hash table */

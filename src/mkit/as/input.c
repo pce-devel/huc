@@ -289,6 +289,71 @@ start:
 		c = getc(in_fp);
 	}
 	prlnbuf[i] = '\0';
+
+	/* reset these at the beginning of the new line */
+	preproc_sfield = SFIELD;
+	preproc_modidx = 0;
+
+	/* pre-process the input to change C-style comments into ASM ';' comments */
+	if (kickc_mode)
+	{
+		int i = SFIELD;
+		int c = 0;
+
+		/* repeat this loop until we know how the line ends */
+		do {
+			/* if we're in a block comment, look for the end of the block */
+			if (preproc_inblock != 0) {
+				for (; prlnbuf[i] != '\0'; ++i) {
+					if (prlnbuf[i] == '*' && prlnbuf[i+1] == '/') {
+						preproc_inblock = 0;
+						if (preproc_modidx != 0 && c == 0) {
+							prlnbuf[preproc_modidx] = '/';
+							preproc_modidx = 0;
+						}
+						i = i + 2;
+						if (preproc_modidx == 0) {
+							preproc_sfield = i;
+						}
+						break;
+					}
+				}
+			}
+
+			/* if we're not in a block comment, look for a new comment */
+			for (; prlnbuf[i] != '\0'; ++i) {
+				if (prlnbuf[i] == '/') {
+					if (prlnbuf[i+1] == '/') {
+						if (preproc_modidx == 0) {
+							preproc_modidx = i;
+							prlnbuf[i] = ';';
+						}
+						break;
+					}
+					else
+					if (prlnbuf[i+1] == '*') {
+						preproc_inblock = 1;
+						if (preproc_modidx == 0) {
+							preproc_modidx = i;
+							prlnbuf[i] = ';';
+						}
+						i = i + 2;
+						break;
+					}
+				}
+				/* remember if we see text that needs to be assembled */
+				if (!isspace(prlnbuf[i])) { c = 1; }
+			}
+
+			/* repeat if we're in a block comment, and not at the EOL */
+		} while (preproc_inblock != 0 && prlnbuf[i] != '\0');
+
+		/* if we've been in a block comment for the whole line */
+		if (preproc_inblock != 0 && preproc_modidx == 0) {
+			preproc_sfield = i;
+		}
+	}
+
 	return (0);
 }
 

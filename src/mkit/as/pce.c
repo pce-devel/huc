@@ -1244,7 +1244,7 @@ pce_mml(int *ip)
 					return;
 
 				/* rewind line pointer and continue */
-				*ip = SFIELD;
+				*ip = preproc_sfield;
 			}
 			else {
 				error("Syntax error!");

@@ -110,7 +110,7 @@ cont:
 				/* replace '\' with three dots */
 				strcpy(expr, "...");
 
-				/* store the current line */
+				/* remember the 1st line continued */
 				strcpy(tmplnbuf, prlnbuf);
 			}
 
@@ -122,7 +122,7 @@ cont:
 				return (0);
 
 			/* rewind line pointer and continue */
-			expr = &prlnbuf[SFIELD];
+			expr = &prlnbuf[preproc_sfield];
 			goto cont;
 		}
 	}

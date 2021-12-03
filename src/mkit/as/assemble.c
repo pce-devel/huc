@@ -41,7 +41,7 @@ assemble(int do_label)
 
 	/* macro definition */
 	if (in_macro) {
-		i = SFIELD;
+		i = preproc_sfield;
 		if (do_label && colsym(&i))
 			if (prlnbuf[i] == ':')
 				i++;
@@ -65,12 +65,12 @@ assemble(int do_label)
 		}
 		if (pass == FIRST_PASS) {
 			ptr = (void *)malloc(sizeof(struct t_line));
-			buf = (void *)malloc(strlen(&prlnbuf[SFIELD]) + 1);
+			buf = (void *)malloc(strlen(&prlnbuf[preproc_sfield]) + 1);
 			if ((ptr == NULL) || (buf == NULL)) {
 				error("Out of memory!");
 				return;
 			}
-			strcpy(buf, &prlnbuf[SFIELD]);
+			strcpy(buf, &prlnbuf[preproc_sfield]);
 			ptr->next = NULL;
 			ptr->data = buf;
 			if (mlptr)
@@ -87,7 +87,7 @@ assemble(int do_label)
 	 * to toggle state
 	 */
 	if (in_if) {
-		i = SFIELD;
+		i = preproc_sfield;
 		while (isspace(prlnbuf[i])) { i++; }
 		if (oplook(&i) >= 0) {
 			if (opflg == PSEUDO) {
@@ -150,7 +150,7 @@ assemble(int do_label)
 		return;
 
 	/* comment line */
-	c = prlnbuf[SFIELD];
+	c = prlnbuf[preproc_sfield];
 	if (c == ';' || c == '*' || c == '\0') {
 //		if (c == '\0')
 		lastlabl = NULL;
@@ -160,7 +160,7 @@ assemble(int do_label)
 	}
 
 	/* search for a label */
-	i = SFIELD;
+	i = preproc_sfield;
 	j = 0;
 	while (isspace(prlnbuf[i]))
 		i++;
@@ -175,14 +175,14 @@ assemble(int do_label)
 		}
 	}
 
-	if ((j == 0) || ((i != SFIELD) && (c != ':')))
-		i = SFIELD;
+	if ((j == 0) || ((i != preproc_sfield) && (c != ':')))
+		i = preproc_sfield;
 	else {
 		if (colsym(&i) != 0) {
 			if (!do_label && !stlook(2)) {
 				/* Unless it is already defined we're supposed
 				   to assume it is not a label. */
-				i = SFIELD;
+				i = preproc_sfield;
 			}
 			else if ((lablptr = stlook(1)) == NULL)
 				return;

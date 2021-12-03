@@ -89,3 +89,6 @@ extern int asm_opt[8];				/* assembler option state */
 extern int opvaltab[6][16];
 extern int call_bank;				/* bank for .proc trampolines */
 extern int kickc_mode;				/* NZ if assembling KickC code */
+extern int preproc_inblock;			/* C-style comment: within block comment */
+extern int preproc_sfield;			/* C-style comment: SFIELD as a variable */
+extern int preproc_modidx;			/* C-style comment: offset to modified char */

@@ -23,7 +23,13 @@ println(void)
 	if (!xlist || !asm_opt[OPT_LIST] || (expand_macro && !asm_opt[OPT_MACRO]))
 		return;
 
-	/* update line buffer if necessary */
+	/* undo the pre-processor's modification to the line */
+	if (preproc_modidx != 0) {
+		prlnbuf[preproc_modidx] = '/';
+		preproc_modidx = 0;
+	}
+
+	/* only output the 1st line that was continued */
 	if (continued_line)
 		strcpy(prlnbuf, tmplnbuf);
 
@@ -457,9 +463,19 @@ warning(char *stptr)
 		printf("#[%i]   %s\n", infile_num, input_file[infile_num].name);
 	}
 
+	/* undo the pre-processor's modification to the line */
+	if (preproc_modidx != 0) {
+		prlnbuf[preproc_modidx] = '/';
+	}
+
 	/* output the line and the error message */
 	loadlc(loccnt, 0);
 	printf("%s\n", prlnbuf);
 	printf("       %s\n", stptr);
+
+	/* redo the pre-processor's modification to the line */
+	if (preproc_modidx != 0) {
+		prlnbuf[preproc_modidx] = ';';
+	}
 }
 
