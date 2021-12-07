@@ -14,7 +14,7 @@ char pseudo_flag[] = {
 	0x0C, 0x0F, 0x0F, 0x0F, 0x0C, 0x0C, 0x0C, 0x0C, 0x0F, 0x0F,
 	0x0F, 0x0F, 0x0F, 0x0C, 0x0C, 0x0C, 0x04, 0x04, 0x04, 0x04,
 	0x04, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x0F, 0x0F, 0x0F, 0x0F,
-	0x0F, 0x0F, 0x0F, 0x04, 0x04
+	0x0F, 0x0F, 0x0F, 0x0F, 0x0F
 };
 
 
@@ -578,8 +578,20 @@ do_equ(int *ip)
 	if (!evaluate(ip, ';'))
 		return;
 
-	/* assign value to the label */
-	labldef(value, 0);
+	/* check for undefined symbol - they are not allowed in .set */
+	if ((optype == 1) && (undef != 0)) {
+		error("Undefined symbol in operand field!");
+		return;
+	}
+
+	/* allow ".set" to change a label's value */
+	if ((optype == 1) && (lablptr->type == DEFABS)) {
+		lablptr->type = DEFABS;
+		lablptr->value = value;
+	} else {
+		/* assign value to the label */
+		labldef(value, 0);
+	}
 
 	/* output line */
 	if (pass == LAST_PASS) {
@@ -1206,6 +1218,12 @@ do_ds(int *ip)
 	/* get the number of bytes to reserve */
 	if (!evaluate(ip, 0))
 		return;
+
+	/* check for undefined symbol - they are not allowed in .ds */
+	if (undef != 0) {
+		error("Undefined symbol in operand field!");
+		return;
+	}
 
 	nbytes = value;
 
