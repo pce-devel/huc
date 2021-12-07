@@ -42,7 +42,7 @@ assemble(int do_label)
 	/* macro definition */
 	if (in_macro) {
 		i = preproc_sfield;
-		if (do_label && colsym(&i))
+		if (do_label && colsym(&i, 0))
 			if (prlnbuf[i] == ':')
 				i++;
 		while (isspace(prlnbuf[i]))
@@ -151,44 +151,62 @@ assemble(int do_label)
 
 	/* comment line */
 	c = prlnbuf[preproc_sfield];
-	if (c == ';' || c == '*' || c == '\0') {
-//		if (c == '\0')
+//	if (c == ';' || c == '*' || c == '\0') { /* Let's see if anyone really uses '*' for a comment line! */
+	if (c == ';' || c == '\0') {
 		lastlabl = NULL;
 		if (pass == LAST_PASS)
 			println();
 		return;
 	}
 
-	/* search for a label */
+	/* search for a symbol, either a label or an instruction */
 	i = preproc_sfield;
 	j = 0;
 	while (isspace(prlnbuf[i]))
 		i++;
 	for (;;) {
 		c = prlnbuf[i + j];
-		if (j == 0 && isdigit(c))
+		if ((j == 0) && isdigit(c))
 			break;
-		if (isalnum(c) || (c == '_') || (c == '.') || (j == 0 && c == '@') || (j == 0 && c == '!')) {
+		if (isalnum(c) || (c == '_') || (c == '.') || (j == 0 && (c == '@' || c == '!'))) {
 			++j;
 		} else {
 			break;
 		}
 	}
 
-	if ((j == 0) || ((i != preproc_sfield) && (c != ':')))
+	if ((j == 0) || ((i != preproc_sfield) && (c != ':'))) {
+		/* either it is not a symbol, or it is a symbol that is */
+		/* not in 1st column and that does not end with a ':' */
 		i = preproc_sfield;
+	}
 	else {
-		if (colsym(&i) != 0) {
-			if (!do_label && !stlook(2)) {
-				/* Unless it is already defined we're supposed
-				   to assume it is not a label. */
-				i = preproc_sfield;
+		/* a symbol, either in the 1st column or ending with a ':' */
+		j = i;
+		if (!colsym(&i, 0))
+			return;
+		if ((do_label == 0) && (prlnbuf[i] != ':') && (stlook(2) == NULL)) {
+			/* it doesn't end with a ':', and it isn't a symbol */
+			/* that is recognized, so attempt to process it as  */
+			/* an opcode (unless forced), so that both opcodes  */
+			/* and pseudo-ops work properly in the 1st column   */
+			i = preproc_sfield;
+		} else {
+			/* it either ends with a ':', it is already known as */
+			/* a label or macro, or it failed the attempt to see */
+			/* if it was a pseudo-op ... so it MUST be a label!  */
+			c = symbol[1];
+			if ((scopeptr != NULL) && (c != '.') && (c != '@') && (c != '!')) {
+				/* adjust name to include full label-scope */
+				i = j;
+				if (!colsym(&i, 1))
+					return;
 			}
-			else if ((lablptr = stlook(1)) == NULL)
+			if (prlnbuf[i] == ':')
+				i++;
+			if ((lablptr = stlook(1)) == NULL)
 				return;
 		}
-		if ((lablptr) && (prlnbuf[i] == ':'))
-			i++;
 	}
 
 	/* skip spaces */
@@ -297,13 +315,13 @@ oplook(int *idx)
 		c = toupper(prlnbuf[*idx]);
 		if (c == ' ' || c == '\t' || c == '\0' || c == ';')
 			break;
-		if (!isalnum(c) && c != '.' && c != '*' && c != '=')
+		if ((!isalnum(c)) && (c != '.') && (c != '*') && (c != '=') && (c != '{') && (c != '}'))
 			return (-1);
 		if (i == 15)
 			return (-1);
 
 		/* handle instruction extension */
-		if (c == '.' && i) {
+		if ((c == '.') && (i != 0)) {
 			if (flag)
 				return (-1);
 			flag = 1;
@@ -323,8 +341,8 @@ oplook(int *idx)
 		hash += c;
 		(*idx)++;
 
-		/* break if '=' directive */
-		if (c == '=')
+		/* break if single-character directive */
+		if ((c == '*') || (c == '=') || (c == '{') || (c == '}'))
 			break;
 	}
 
@@ -525,7 +543,7 @@ do_ifdef(int *ip)
 	save_if_expr(ip);
 
 	/* get symbol */
-	if (!colsym(ip)) {
+	if (!colsym(ip, 0)) {
 		error("Syntax error!");
 		return;
 	}

@@ -26,8 +26,21 @@ do_func(int *ip)
 		println();
 	else {
 		/* error checking */
+		if (kickc_mode) {
+			/* Avoid dealing with C-style comments inside a Function. */
+			fatal_error("Cannot define a function in .kickc mode!");
+			return;
+		}
+		if (scopeptr) {
+			fatal_error("Cannot define a function inside a label scope!");
+			return;
+		}
 		if (lablptr == NULL) {
 			error("No name for this function!");
+			return;
+		}
+		if (lablptr->name[1] == '.' || lablptr->name[1] == '@') {
+			fatal_error("Function name cannot be a local label!");
 			return;
 		}
 		if (lablptr->name[1] == '!') {
@@ -47,11 +60,6 @@ do_func(int *ip)
 				fatal_error("Symbol already used by a label!");
 				return;
 			}
-		}
-		if (kickc_mode) {
-			/* Avoid dealing with C-style comments inside a Function. */
-			fatal_error("Cannot define a Function in .kickc mode!");
-			return;
 		}
 
 		/* install this new function in the hash table */

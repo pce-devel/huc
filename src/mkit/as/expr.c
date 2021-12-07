@@ -15,6 +15,7 @@
 t_symbol pc_symbol = {
 	NULL, /* next */
 	NULL, /* local */
+	NULL, /* scope */
 	NULL, /* proc */
 	DEFABS, /* type */
 	0, /* value */
@@ -455,6 +456,7 @@ push_val(int type)
 	unsigned int mul, val;
 	int op;
 	char c;
+	char *symexpr;
 
 	val = 0;
 	c = *expr;
@@ -490,8 +492,9 @@ push_val(int type)
 
 			expr_lablptr = &pc_symbol;
 		} else {
-			/* extract it */
-			if (!getsym())
+			/* extract the symbol in root scope */
+			symexpr = expr;
+			if (!getsym(NULL))
 				return (0);
 
 			/* an user function? */
@@ -513,8 +516,31 @@ push_val(int type)
 					return (1);
 			}
 
-			/* search the symbol */
-			expr_lablptr = stlook(1);
+			c = *symexpr;
+			if ((scopeptr != NULL) && (c != '.') && (c != '@') && (c != '!')) {
+				struct t_symbol * curscope = scopeptr;
+				for (;;) {
+					/* extract symbol in the current scope */
+					expr = symexpr;
+					if (!getsym(curscope))
+						return (0);
+
+					/* search for the symbol */
+					expr_lablptr = stlook(1);
+
+					/* has it been defined? */
+					if ((expr_lablptr != NULL) && (expr_lablptr->type != UNDEF))
+						break;
+
+					if (curscope == NULL)
+						break;
+
+					curscope = curscope->scope;
+				}
+			} else {
+				/* just search for the symbol in the root scope */
+				expr_lablptr = stlook(1);
+			}
 		}
 
 		/* check if undefined, if not get its value */
@@ -609,12 +635,20 @@ extract:
  */
 
 int
-getsym(void)
+getsym(struct t_symbol * curscope)
 {
-	int i;
+	int i = 0;
+	int j;
 	char c;
 
-	i = 0;
+	/* prepend the current scope? */
+	c = *expr;
+	if ((curscope != NULL) && (c != '.') && (c != '@') && (c != '!')) {
+		i = addscope(curscope, i);
+	}
+
+	/* remember where the symbol itself starts */
+	j = i;
 
 	/* get the symbol, stop at the first 'non symbol' char */
 	for (;;) {
@@ -630,6 +664,7 @@ getsym(void)
 	}
 
 	/* store symbol length */
+	if (i == j) { i = 0; }
 	symbol[0] = i;
 	symbol[i + 1] = '\0';
 

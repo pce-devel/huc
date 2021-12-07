@@ -14,7 +14,7 @@ char pseudo_flag[] = {
 	0x0C, 0x0F, 0x0F, 0x0F, 0x0C, 0x0C, 0x0C, 0x0C, 0x0F, 0x0F,
 	0x0F, 0x0F, 0x0F, 0x0C, 0x0C, 0x0C, 0x04, 0x04, 0x04, 0x04,
 	0x04, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x0F, 0x0F, 0x0F, 0x0F,
-	0x0F, 0x0F, 0x0F
+	0x0F, 0x0F, 0x0F, 0x04, 0x04
 };
 
 
@@ -760,6 +760,7 @@ do_bank(int *ip)
 
 	/* backup current bank infos */
 	bank_glabl[section][bank] = glablptr;
+	bank_scope[section][bank] = scopeptr;
 	bank_loccnt[section][bank] = loccnt;
 	bank_page[section][bank] = page;
 
@@ -768,6 +769,7 @@ do_bank(int *ip)
 	page = bank_page[section][bank];
 	loccnt = bank_loccnt[section][bank];
 	glablptr = bank_glabl[section][bank];
+	scopeptr = bank_scope[section][bank];
 
 	/* signal discontiguous change in loccnt */
 	discontiguous = 1;
@@ -1616,7 +1618,7 @@ do_cpu(int *ip)
 		(*ip)++;
 
 	/* extract name */
-	if (!colsym(ip)) {
+	if (!colsym(ip, 0)) {
 		if (symbol[0] == 0)
 			fatal_error("Syntax error!");
 		return;
@@ -1649,7 +1651,7 @@ do_segment(int *ip)
 		(*ip)++;
 
 	/* extract name */
-	if (!colsym(ip)) {
+	if (!colsym(ip, 0)) {
 		if (symbol[0] == 0)
 			fatal_error("Syntax error!");
 		return;
@@ -1682,6 +1684,29 @@ do_segment(int *ip)
 
 
 /* ----
+ * do_star()
+ * ----
+ * '*' pseudo (for KickC code)
+ */
+
+void
+do_star(int *ip)
+{
+	/* skip spaces */
+	while (isspace(prlnbuf[*ip]))
+		(*ip)++;
+
+	if (prlnbuf[(*ip)++] != '=') {
+		fatal_error("Syntax error!");
+		return;
+	}
+
+	/* handle the rest of this as a PCEAS ".org" */
+	do_org(ip);
+}
+
+
+/* ----
  * do_label()
  * ----
  * .label & .const pseudo (for KickC code)
@@ -1698,7 +1723,7 @@ do_label(int *ip)
 		(*ip)++;
 
 	/* extract name */
-	if (!colsym(ip)) {
+	if (!colsym(ip, 1)) {
 		if (symbol[0] == 0)
 			fatal_error("Syntax error!");
 		return;
@@ -1717,7 +1742,7 @@ do_label(int *ip)
 	if ((lablptr = stlook(1)) == NULL)
 		return;
 
-	/* handle the rest of this as a PCEAS equate */
+	/* handle the rest of this as a PCEAS ".equ" */
 	do_equ(ip);
 }
 
@@ -1740,7 +1765,7 @@ do_encoding(int *ip)
 
 #if 0
 	/* extract name */
-	if (!colsym(ip)) {
+	if (!colsym(ip, 0)) {
 		if (symbol[0] == 0)
 			fatal_error("Syntax error!");
 		return;
@@ -1750,6 +1775,82 @@ do_encoding(int *ip)
 	if (!check_eol(ip))
 		return;
 #endif
+
+	/* output line */
+	if (pass == LAST_PASS)
+		println();
+}
+
+
+/* ----
+ * do_scope()
+ * ----
+ * '{' pseudo
+ */
+
+void
+do_scope(int *ip)
+{
+	/* temporarily, while we see if this is needed */
+	if (scopeptr != NULL) {
+		fatal_error("Cannot nest '{' label scopes!");
+		return;
+	}
+
+	/* check symbol */
+	if (lablptr == NULL) {
+		fatal_error("Label name missing from scope!");
+		return;
+	}
+	if (lablptr->name[1] == '.' || lablptr->name[1] == '@') {
+		fatal_error("Cannot open label scope on a local label!");
+		return;
+	}
+	if (lablptr->name[1] == '!') {
+		fatal_error("Cannot open label scope on a multi-label!");
+		return;
+	}
+
+	/* define label */
+	labldef(loccnt, 1);
+
+	/* check end of line */
+	if (!check_eol(ip))
+		return;
+
+	lablptr->scope = scopeptr;
+	scopeptr = lablptr;
+
+	/* output line */
+	if (pass == LAST_PASS)
+		println();
+}
+
+
+/* ----
+ * do_ends()
+ * ----
+ * '}' pseudo
+ */
+
+void
+do_ends(int *ip)
+{
+	/* sanity check */
+	if (scopeptr == NULL) {
+		fatal_error("Unexpected '}'!");
+		return;
+	}
+
+	/* define label */
+	labldef(loccnt, 1);
+
+	/* check end of line */
+	if (!check_eol(ip))
+		return;
+
+	/* return to previous scope */
+	scopeptr = scopeptr->scope;
 
 	/* output line */
 	if (pass == LAST_PASS)

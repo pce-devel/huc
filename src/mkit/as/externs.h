@@ -64,8 +64,10 @@ extern struct t_opcode *inst_tbl[256];		/* instructions hash table */
 extern struct t_symbol *hash_tbl[256];		/* label hash table */
 extern struct t_symbol *lablptr;		/* label pointer into symbol table */
 extern struct t_symbol *glablptr;		/* pointer to the latest defined global symbol */
+extern struct t_symbol *scopeptr;		/* pointer to the latest defined scope label */
 extern struct t_symbol *lastlabl;		/* last label we have seen */
 extern struct t_symbol *bank_glabl[4][256];	/* latest global label in each bank */
+extern struct t_symbol *bank_scope[4][256];	/* latest scope symbol for each bank */
 extern char hex[];				/* hexadecimal character buffer */
 extern int stop_pass;				/* stop the program; set by fatal_error() */
 extern int errcnt;				/* error counter */

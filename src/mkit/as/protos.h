@@ -57,8 +57,11 @@ void do_align(int *ip);
 void do_kickc(int *ip);
 void do_cpu(int *ip);
 void do_segment(int *ip);
+void do_star(int *ip);
 void do_label(int *ip);
 void do_encoding(int *ip);
+void do_scope(int *ip);
+void do_ends(int *ip);
 int  htoi(char *str, int nb);
 
 /* CRC.C */
@@ -68,7 +71,7 @@ unsigned int crc_calc(unsigned char *data, int len);
 /* EXPR.C */
 int  evaluate(int *ip, char flag);
 int  push_val(int type);
-int  getsym(void);
+int  getsym(struct t_symbol * curscope);
 int  check_keyword(void);
 int  push_op(int op);
 int  do_op(void);
@@ -147,7 +150,8 @@ int check_trampolines(void);
 
 /* SYMBOL.C */
 int  symhash(void);
-int  colsym(int *ip);
+int  addscope(struct t_symbol * curscope, int i);
+int  colsym(int *ip, int flag);
 struct t_symbol *stlook(int flag);
 struct t_symbol *stinstall(int hash, int type);
 int  labldef(int lval, int flag);

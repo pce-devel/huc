@@ -32,6 +32,39 @@ symhash(void)
 
 
 /* ----
+ * addscope()
+ * ----
+ * prepend the scope chain to the front of a symbol.
+ */
+
+int
+addscope(struct t_symbol * curscope, int i)
+{
+	char * string;
+
+	/* stop at the end of scope chain */
+	if (curscope == NULL) {
+		return i;
+	}
+
+	/* recurse if not at root */
+	if (curscope->scope != NULL) {
+		i = addscope(curscope->scope, i);
+	}
+
+	string = curscope->name + 1;
+
+	while (*string != '\0') {
+		if (i < (SBOLSZ - 1)) { symbol[++i] = *string++; }
+	}
+
+	if (i < (SBOLSZ - 1)) { symbol[++i] = '.'; }
+
+	return i;
+}
+
+
+/* ----
  * colsym()
  * ----
  * collect a symbol from prlnbuf into symbol[],
@@ -40,24 +73,36 @@ symhash(void)
  */
 
 int
-colsym(int *ip)
+colsym(int *ip, int flag)
 {
 	int err = 0;
 	int i = 0;
+	int j;
 	char c;
+
+	/* prepend the current scope? */
+	c = prlnbuf[*ip];
+	if ((flag != 0) && (scopeptr != NULL) && (c != '.') && (c != '@') && (c != '!')) {
+		i = addscope(scopeptr, i);
+	}
+
+	/* remember where the symbol itself starts */
+	j = i;
 
 	/* get the symbol */
 	for (;;) {
 		c = prlnbuf[*ip];
-		if (i == 0 && isdigit(c))
+		if (i == j && isdigit(c))
 			break;
-		if (isalnum(c) || (c == '_') || (c == '.') || (i == 0 && c == '@') || (i == 0 && c == '!')) {
+		if (isalnum(c) || (c == '_') || (c == '.') || (i == j && (c == '@' || c == '!'))) {
 			if (i < (SBOLSZ - 1)) { symbol[++i] = c; }
 			(*ip)++;
 		} else {
 			break;
 		}
 	}
+
+	if (i == j) { i = 0; }
 
 	symbol[0] = i;
 	symbol[i + 1] = '\0';
@@ -189,6 +234,7 @@ stinstall(int hash, int type)
 	sym->type = if_expr ? IFUNDEF : UNDEF;
 	sym->value = 0;
 	sym->local = NULL;
+	sym->scope = NULL;
 	sym->proc = NULL;
 	sym->bank = RESERVED_BANK;
 	sym->nb = 0;
@@ -304,7 +350,7 @@ labldef(int lval, int flag)
 	else {
 		if ((lablptr->value != lval) ||
 		    ((flag) && (bank < bank_limit) && (lablptr->bank != bank_base + bank))) {
-			fatal_error("Symbol's bank changed in 2nd pass, was it undefined the 1st time?");
+			fatal_error("Symbol's bank or address changed in 2nd pass!");
 			return (-1);
 		}
 	}
@@ -324,9 +370,10 @@ labldef(int lval, int flag)
 
 		/* check if it's a local or global symbol */
 		c = lablptr->name[1];
-		if (c == '.' || c == '@')
+		if (c == '.' || c == '@' || c == '!') {
 			/* local */
 			lastlabl = NULL;
+		}
 		else {
 			/* global */
 			glablptr = lablptr;
@@ -459,7 +506,7 @@ labldump(FILE *fp)
 	/* browse the symbol table */
 	for (i = 0; i < 256; i++) {
 		for (sym = hash_tbl[i]; sym != NULL; sym = sym->next) {
-			/* skip undefined multi-label base symbols */
+			/* skip undefined multi-label base symbols and scoped symbols */
 			if (sym->type == UNDEF)
 				continue;
 

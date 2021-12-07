@@ -27,6 +27,15 @@ do_macro(int *ip)
 		println();
 	else {
 		/* error checking */
+		if (kickc_mode) {
+			/* Avoid dealing with C-style comments inside a Macro. */
+			fatal_error("Cannot define a macro in .kickc mode!");
+			return;
+		}
+		if (scopeptr) {
+			fatal_error("Cannot define a macro inside a label scope!");
+			return;
+		}
 		if (expand_macro) {
 			error("Can not nest macro definitions!");
 			return;
@@ -37,7 +46,7 @@ do_macro(int *ip)
 				(*ip)++;
 
 			/* search a label after the .macro */
-			if (colsym(ip) == 0) {
+			if (colsym(ip, 0) == 0) {
 				error("No name for this macro!");
 				return;
 			}
@@ -45,6 +54,10 @@ do_macro(int *ip)
 			/* put the macro name in the symbol table */
 			if ((lablptr = stlook(1)) == NULL)
 				return;
+		}
+		if (lablptr->name[1] == '.' || lablptr->name[1] == '@') {
+			fatal_error("Macro name cannot be a local label!");
+			return;
 		}
 		if (lablptr->name[1] == '!') {
 			fatal_error("Macro name cannot be a multi-label!");
@@ -64,11 +77,6 @@ do_macro(int *ip)
 				fatal_error("Symbol already used by a label!");
 				return;
 			}
-		}
-		if (kickc_mode) {
-			/* Avoid dealing with C-style comments inside a Macro. */
-			fatal_error("Cannot define a Macro in .kickc mode!");
-			return;
 		}
 
 		if (!check_eol(ip))
@@ -106,11 +114,9 @@ macro_look(int *ip)
 	hash = 0;
 	for (;;) {
 		c = prlnbuf[*ip];
-		if (c == '\0' || c == ' ' || c == '\t' || c == ';')
+		if ((c == '\0') || (c == ' ') || (c == '\t') || (c == ';'))
 			break;
-
-		if (!isalnum(c) && c != '_')
-			if (c != 0x2e)
+		if (!isalnum(c) && (c != '_') && (c != '.'))
 				return (NULL);
 		if (l == 0) {
 			if (isdigit(c))

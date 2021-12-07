@@ -476,7 +476,6 @@ main(int argc, char **argv)
 	}
 
 	/* fill the instruction hash table */
-
 	addinst(base_pseudo);
 
 	/* add machine specific instructions and pseudos */
@@ -537,6 +536,7 @@ main(int argc, char **argv)
 		mcntmax = 0;
 		xlist = 0;
 		glablptr = NULL;
+		scopeptr = NULL;
 		skip_lines = 0;
 		rsbase = 0;
 		proc_nb = 0;

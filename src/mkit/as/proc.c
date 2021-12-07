@@ -50,7 +50,7 @@ do_call(int *ip)
 		(*ip)++;
 
 	/* extract name */
-	if (!colsym(ip)) {
+	if (!colsym(ip, 0)) {
 		if (symbol[0] == 0)
 			fatal_error("Syntax error!");
 		return;
@@ -176,12 +176,12 @@ do_proc(int *ip)
 	/* check if nesting procs/groups */
 	if (proc_ptr) {
 		if (optype == P_PGROUP) {
-			fatal_error("Can not declare a group inside a proc/group!");
+			fatal_error("Cannot declare a group inside a proc/group!");
 			return;
 		}
 		else {
 			if (proc_ptr->type == P_PROC) {
-				fatal_error("Can not nest procs!");
+				fatal_error("Cannot nest procs!");
 				return;
 			}
 		}
@@ -203,7 +203,7 @@ do_proc(int *ip)
 			(*ip)++;
 
 		/* extract name */
-		if (!colsym(ip)) {
+		if (!colsym(ip, 0)) {
 			if (symbol[0])
 				return;
 			if (optype == P_PROC) {
@@ -223,11 +223,9 @@ do_proc(int *ip)
 
 	/* check symbol */
 	if (symbol[1] == '.' || symbol[1] == '@') {
-		fatal_error("Proc/group name cannot be local!");
+		fatal_error("Proc/group name cannot be a local label!");
 		return;
 	}
-
-	/* check symbol */
 	if (symbol[1] == '!') {
 		fatal_error("Proc/group name cannot be a multi-label!");
 		return;
@@ -254,6 +252,7 @@ do_proc(int *ip)
 
 	/* backup current bank infos */
 	bank_glabl[section][bank]  = glablptr;
+	bank_scope[section][bank]  = scopeptr;
 	bank_loccnt[section][bank] = loccnt;
 	bank_page[section][bank]   = page;
 	proc_ptr->old_bank = bank;
@@ -264,6 +263,7 @@ do_proc(int *ip)
 	page     = (newproc_opt == 0) ? 5 : 6;
 	loccnt   = proc_ptr->org;
 	glablptr = lablptr;
+	scopeptr = NULL;
 
 	/* signal discontiguous change in loccnt */
 	discontiguous = 1;
@@ -311,6 +311,7 @@ do_endp(int *ip)
 		page     = bank_page[section][bank];
 		loccnt   = bank_loccnt[section][bank];
 		glablptr = bank_glabl[section][bank];
+		scopeptr = bank_scope[section][bank];
 
 		/* signal discontiguous change in loccnt */
 		discontiguous = 1;

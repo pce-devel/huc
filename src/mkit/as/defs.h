@@ -122,11 +122,13 @@
 #define P_SEGMENT	60	// .segment
 #define P_LABEL		61	// .label or .const
 #define P_ENCODING	62	// .encoding
+#define P_SCOPE		63	// '{'
+#define P_ENDS		64	// '}'
 
 /* symbol flags */
-#define MDEF	3	/* multiply defined */
 #define UNDEF	1	/* undefined - may be zero page */
 #define IFUNDEF 2	/* declared in a .if expression */
+#define MDEF	3	/* multiply defined */
 #define DEFABS	4	/* defined - two byte address */
 #define MACRO	5	/* used for a macro name */
 #define FUNC	6	/* used for a function */
@@ -196,6 +198,7 @@ typedef struct t_proc {
 typedef struct t_symbol {
 	struct t_symbol *next;
 	struct t_symbol *local;
+	struct t_symbol *scope;
 	struct t_proc *proc;
 	int type;
 	int value;
