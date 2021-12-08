@@ -1,0 +1,321 @@
+                        ; ****************************************************************************
+                        ; ****************************************************************************
+                        ;
+                        ; SUMMARY OF RECENT CHANGES IN PCEAS 3.25 (2021-12-08)
+                        ;
+                        ; ****************************************************************************
+                        ; ****************************************************************************
+
+                        ; ****************************************************************************
+                        ;
+                        ; Defining data (traditional PCEAS pseudo-ops) ...
+                        ;
+
+01:6000  01 02 03 04                    db      1,2,3,4,"hello",0
+01:6004  68 65 6C 6C  
+01:6008  6F 00        
+01:600A  01 02 03 04                    .db     1,2,3,4,"hello",0
+01:600E  68 65 6C 6C  
+01:6012  6F 00        
+
+01:6014  34 12                          dw      $1234,$5678
+01:6016  78 56        
+01:6018  34 12                          .dw     $1234,$5678
+01:601A  78 56        
+
+01:601C  34                             dwl     $1234,$5678
+01:601D  78           
+01:601E  34                             .dwl    $1234,$5678
+01:601F  78           
+
+01:6020  12                             dwh     $1234,$5678
+01:6021  56           
+01:6022  12                             .dwh    $1234,$5678
+01:6023  56           
+
+01:6024  78 56 34 12                    dd      $12345678,$8765 ; <-- new!
+01:6028  65 87 00 00  
+01:602C  78 56 34 12                    .dd     $12345678,$8765 ; <-- added in 2020
+01:6030  65 87 00 00  
+
+01:6034  00 00 00 00                    ds      8
+01:6038  00 00 00 00  
+01:603C  00 00 00 00                    .ds     8
+01:6040  00 00 00 00  
+
+01:6044  FF FF FF FF                    ds      8,255           ; <-- new syntax!
+01:6048  FF FF FF FF  
+01:604C  FF FF FF FF                    .ds     8,255           ; <-- new syntax!
+01:6050  FF FF FF FF  
+
+
+                        ; ****************************************************************************
+                        ;
+                        ; Defining data (for compatibility with other assemblers) ...
+                        ;
+
+01:6054  68 65 6C 6C                    .text   "hello"         ; <-- new!
+01:6058  6F           
+
+01:6059  01 02 03 04                    .byte   1,2,3,4,"hello",0
+01:605D  68 65 6C 6C  
+01:6061  6F 00        
+
+01:6063  34 12                          .word   $1234,$5678
+01:6065  78 56        
+
+01:6067  78 56 34 12                    .dword  $12345678,$8765 ; <-- new!
+01:606B  65 87 00 00  
+
+01:606F  00 00 00 00                    .fill   8               ; <-- new!
+01:6073  00 00 00 00  
+
+01:6077  FF FF FF FF                    .fill   8,255           ; <-- new!
+01:607B  FF FF FF FF  
+
+
+                        ; ****************************************************************************
+                        ;
+                        ; New pseudo instructions (that currently do nothing) ...
+                        ;
+
+                                        .cpu    _65c02
+
+                                        .encoding "ascii"	; For data in ".text"
+
+
+                        ; ****************************************************************************
+                        ;
+                        ; New pseudo instructions (that actually do something) ...
+                        ;
+
+         6000                           *       = $6000         ; Same as a ".org"
+         6003                           *       = * + 3         ; Same as a ".org"
+
+         6004                           align   4               ; Like a ".org"
+         6010                           .align  16
+
+         6010                           align   4
+         6010                           .align  16
+
+         0008                           .const  myconst = 8     ; Same as a ".equ"
+         0020                           .label  mylabel = 32    ; Same as a ".equ"
+
+         2004                           .segment zp             ; Same as a ".zp"
+         2309                           .segment Bss            ; Same as a ".bss"
+         6000                           .segment Data           ; Same as a ".data"
+         6010                           .segment Code           ; Same as a ".code"
+
+         0003           mycounter       .set    3               ; ".set" allows a label to change
+         0004           mycounter       .set    mycounter + 1
+         0006           mycounter       .set    mycounter + 2
+
+         0008                           .var    mycounter = 8   ; So does ".var"
+
+                                        .kickc                  ; Switch to KickC mode
+                                        .pceas                  ; Switch to PCEAS mode
+
+
+                        ; ****************************************************************************
+                        ;
+                        ; New support for KickAssembler's style of "multi-labels" ...
+                        ;
+                        ; A "multi-label" is a location label that can be declared more than once.
+                        ;
+                        ; These are useful to prevent name conflicts between labels.  A multi-label
+                        ; starts with a ‘!’ and when you reference it you have to end with a '+' to
+                        ; refer to the next multi-label or '-' to refer to the previous one.
+                        ;
+                        ; Applying more than one '+' or '-' will skip labels, so '+++' will jump to
+                        ; the third label.
+                        ;
+                        ; Multi-labels are global labels, and so references can be made to them from
+                        ; outside the current local label scope, which they do not affect.
+                        ;
+
+01:6010  4C 29 60                       jmp     !+              ; Multi-labels are global.
+
+01:6013  EA             new_locals:     nop                     ; New scope for local labels.
+
+01:6014  AD 29 60       .label1:        lda     !+ +0           ; You can do math on them.
+
+01:6017  BD 2B 60       !skip:          lda     !+++,x
+01:601A  4C 1A 60       !skip:          jmp     !skip-
+01:601D  4C 2B 60       !skip:          jmp     !+++
+01:6020  4C 2A 60                       jmp     !++
+01:6023  4C 29 60                       jmp     !+
+
+01:6026  4C 35 60                       jmp     .label2         ; Still available!
+
+01:6029  EA             !:              nop
+01:602A  EA             !:              nop
+01:602B  EA             !:              nop
+
+01:602C  80 FD                          bra     !-
+01:602E  80 FA                          bra     !--
+01:6030  80 F7                          bra     !---
+
+01:6032  4C 14 60                       jmp     .label1         ; Still available!
+
+01:6035  4C 17 60       .label2:        jmp     !skip---
+
+01:6038  EA             more_locals:    nop                     ; New scope for local labels.
+
+                        ;               jmp     .label2         ; Error, not defined in new scope.
+01:6039  4C 20 60                       jmp     !skip- +3       ; Still works!
+
+
+                        ; ****************************************************************************
+                        ;
+                        ; New support for KickAssembler's style of "label scopes" ...
+                        ;
+                        ; If you declare a scope, by using '{' and '}' after a label, then you can
+                        ; access the labels inside the scope as fields on the declared label.
+                        ;
+                        ; This is a way to make the labels in your functions seem to be local, but
+                        ; still have them accessible in global scope.
+                        ;
+                        ; Note: From a practical standpoint, this is quite a good match for the way
+                        ; that the C language accesses variables and labels that are defined within
+                        ; a function.
+                        ;
+
+         0004           stringLen       =       4               ; Define the length of a string
+01:603C  00 00 00 00    string:         .ds     stringLen       ; Global variable.
+
+01:6040  A9 20                          lda     #' '
+01:6042  8D 4A 60                       sta     clearString1.fillbyte + 1
+01:6045  20 49 60                       jsr     clearString1
+01:6048  60                             rts
+
+                        clearString1:   {                       ; Open scope on "clearString1"
+
+01:6049  A9 00          fillbyte:       lda     #0              ; Defined as "clearString1.fillbyte"
+01:604B  A2 03                          ldx     #stringLen - 1  ; Access the global label
+01:604D  9D 54 60       !loop:          sta     string, x       ; Access the version in this scope
+01:6050  CA                             dex
+01:6051  10 FA                          bpl     !loop-
+01:6053  60                             rts
+
+01:6054  00 00 00 00    string:         .ds     stringLen       ; Defined as "clearString1.string"
+
+                                        }                       ; Close scope of "clearString1"
+
+
+                                        ; The above code fills the string with spaces.  The code that
+                                        ; calls the clearString1 subroutine use clearString1.fillbyte
+                                        ; to access the fillbyte label.
+                                        ;
+                                        ; If you use the label directive to define the fillbyte label,
+                                        ; the code can be a cleaner ...
+
+01:6058  A9 61                          lda     #'a'
+01:605A  8D 62 60                       sta     clearString2.fillbyte
+01:605D  20 61 60                       jsr     clearString2
+01:6060  60                             rts
+
+                        clearString2:   {                       ; Open scope on "clearString2"
+
+         6062                           .label  fillbyte = *+1  ; Defined as "clearString2.fillbyte"
+01:6061  A9 00                          lda     #0
+01:6063  A2 03                          ldx     #stringLen - 1
+01:6065  9D 3C 60       !loop:          sta     string, x               ; Either the global variable
+01:6068  9D 54 60                       sta     clearString1.string, x  ; Or the one in clearString1
+01:606B  CA                             dex
+01:606C  10 F7                          bpl     !loop-
+01:606E  60                             rts
+01:606F  62 60                          .dw     fillbyte        ; To show that it's the local one.
+
+                                        }                       ; Close scope of "clearString2"
+
+
+                        ; ****************************************************************************
+                        ;
+                        ; The 'A'-for-accumulator in ASL/DEC/INC/LSR/ROL/ROR is now optional ...
+                        ;
+
+01:6071  1A                             inc     a
+01:6072  1A                             inc
+01:6073  2A                             rol     a
+01:6074  2A                             rol
+
+
+                        ; ****************************************************************************
+                        ;
+                        ; New ".z" and ".a" instruction suffixes for addressing modes, to add to
+                        ; the existing, but undocumented, ".l" and ".h" suffixes from v3.21 ...
+                        ;
+
+                        ;               lda     #__ax           ; Error, because __ax > $FF.
+01:6075  A9 F8                          lda     #<__ax          ; One method to get lo-byte.
+01:6077  A9 20                          lda     #>__ax          ; One method to get hi-byte.
+01:6079  A9 F8                          lda.l   #__ax           ; Or ... lo-byte of a word.
+01:607B  A9 20                          lda.h   #__ax           ; Or ... hi-byte of a word.
+
+01:607D  B9 F8 20                       lda     __ax, y         ; Default is absolute mode.
+01:6080  B9 F8 20                       lda.l   __ax, y         ; Addr+0 for lo-byte of a word.
+01:6083  B9 F9 20                       lda.h   __ax, y         ; Addr+1 for hi-byte of a word.
+
+01:6086  B5 F8                          lda     <__ax, x        ; Force zero-page mode.
+01:6088  B5 F8                          lda.l   <__ax, x        ; Addr+0 for lo-byte of a word.
+01:608A  B5 F9                          lda.h   <__ax, x        ; Addr+1 for hi-byte of a word.
+
+01:608C  BD F8 20                       lda     __ax, x         ; Default is absolute mode.
+01:608F  BD F8 20                       lda.a   __ax, x         ; Force absolute mode (redundant).
+01:6092  B5 F8                          lda.z   __ax, x         ; Force zero-page mode.
+
+
+                        ; ****************************************************************************
+                        ;
+                        ; C-style line and block comments are available in KickC mode ...
+                        ;
+                        ; This is not a true pre-processor, it is line oriented, and so it
+                        ; can only handle block comments at the beginning and end of lines.
+                        ;
+
+                                        .kickc                  ; Switch to KickC mode
+
+01:6094  82             clear_bat:      clx                     // Offset to PCE VDC.
+
+                                /*
+                                ** Block comments are OK.
+                                **
+01:6095  64 F0                  */      stz.z   __di + 0        /* Set VDC or SGX destination
+01:6097  64 F1                  */      stz.z   __di + 1        /* address. */
+01:6099  20 38 E1                       jsr     __di_to_vram
+
+                        //              lda.z   __bl            // Xvert hi-byte of # words
+01:609C  4A                             lsr                     // in screen to loop count.
+
+01:609D  C2                             cly
+01:609E  48             .bat_loop:      pha
+01:609F  A5 F8                          lda.z   __ax + 0        /* Redundant */ /* comment */
+01:60A1  9D 02 00                       sta     VDC_DL, x
+01:60A4  A5 F9                          lda.z   __ax + 1
+01:60A6  9D 03 00       .bat_pair:      sta     VDC_DH, x       /* Write 1st word. */
+01:60A9  9D 03 00                       sta     VDC_DH, x       // Write 2nd word.
+01:60AC  88                             dey
+01:60AD  D0 F7                          bne     .bat_pair       /*
+                                        pla                     // In block comment, so do */
+01:60AF  3A                             dec                     // Line comment, so ignore /*
+01:60B0  D0 EC                          bne     .bat_loop
+
+01:60B2  60             /* Why??? */    rts                     // Because we can!
+
+
+                        ; ****************************************************************************
+                        ;
+                        ; Traditional 6502 assembler usage of '()' for indirect addressing is now
+                        ; supported, but only in KickC mode, because it can change the meaning of
+                        ; instructions ...
+                        ;
+
+                                        .kickc                  ; Switch to KickC mode
+
+01:60B3  B1 F8                          lda     (__ax),y        ; Indirect addressing
+01:60B5  B1 F8                          lda     [__ax],y        ; Indirect addressing
+
+                                        .pceas                  ; Switch to PCEAS mode
+
+01:60B7  B9 F8 20                       lda     (__ax),y        ; Absolute addressing
+01:60BA  B1 F8                          lda     [__ax],y        ; Indirect addressing

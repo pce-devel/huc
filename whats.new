@@ -1,6 +1,22 @@
 New in version 3.99:
 --------------------
 
+2021-12-08:
+-----------
+  PCEAS changes ...
+  -----------------
+- Bump version number to 3.25 (see ./doc/pce/usage-3.25.txt)
+- Add ".pceas" and ".kickc" to set current compatibility-mode.
+- Allow C-style comments while in .kickc mode.
+- Use "()" for traditional 6502 indirect-addressing while in .kickc mode.
+- The 'A' operand in ASL/DEC/INC/LSR/ROL/ROR is now optional.
+- Add ".z" and ".a" instruction suffixes to force addressing mode.
+- Add "{}" label scopes, which is a way of scoping access to label names.
+- Add "!" multi-labels, which are a form of "nameless" labels.
+- Add ".align", ".const", ".cpu", ".dword", ".encoding", ".fill", ".label",
+  ".segment", ".set", ".text", ".var", "*="
+
+
 2021-11-16:
 -----------
   HuC changes ...
