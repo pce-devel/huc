@@ -284,7 +284,10 @@ labldef(int lval, int flag)
 
 	/* adjust symbol address */
 	if (flag) {
-		lval = (lval & 0x1FFF) | (page << 13);
+		if (bank >= RESERVED_BANK)
+			lval = lval + (page << 13) + (bank << 23);
+		else
+			lval = lval + (page << 13) + ((bank + bank_base) << 23);
 
 		/* is this a multi-label? */
 		if (lablptr->name[1] == '!') {
@@ -506,12 +509,12 @@ labldump(FILE *fp)
 	/* browse the symbol table */
 	for (i = 0; i < 256; i++) {
 		for (sym = hash_tbl[i]; sym != NULL; sym = sym->next) {
-			/* skip undefined multi-label base symbols and scoped symbols */
-			if (sym->type == UNDEF)
+			/* skip undefined symbols and stripped symbols */
+			if ((sym->type != DEFABS) || (sym->bank == STRIPPED_BANK) || (sym->name[1] == '!'))
 				continue;
 
 			/* dump the label */
-			fprintf(fp, "%2.2x\t%4.4x\t", sym->bank, sym->value);
+			fprintf(fp, "%2.2x\t%4.4x\t", sym->bank, sym->value & 0xFFFF);
 			fprintf(fp, "%s\t", &(sym->name[1]));
 			if (strlen(&(sym->name[1])) < 8)
 				fprintf(fp, "\t");
@@ -526,7 +529,7 @@ labldump(FILE *fp)
 				local = sym->local;
 
 				while (local) {
-					fprintf(fp, "%2.2x\t%4.4x\t", local->bank, local->value);
+					fprintf(fp, "%2.2x\t%4.4x\t", local->bank, local->value & 0xFFFF);
 					fprintf(fp, "\t%s\t", &(local->name[1]));
 					if (strlen(&(local->name[1])) < 8)
 						fprintf(fp, "\t");

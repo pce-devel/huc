@@ -59,10 +59,10 @@ class2(int *ip)
 		putbyte(data_loccnt, opval);
 
 		/* calculate branch offset */
-		addr = value - (loccnt + (page << 13));
+		addr = (value & 0xFFFF) - (loccnt + (page << 13));
 
 		/* check range */
-		if (addr > 0x7F && addr < 0xFFFFFF80) {
+		if (addr > 0x7Fu && addr < ~0x7Fu) {
 			error("Branch address out of range!");
 			return;
 		}
@@ -263,10 +263,10 @@ class5(int *ip)
 		putbyte(data_loccnt + 1, zp);
 
 		/* calculate branch offset */
-		addr = value - (loccnt + (page << 13));
+		addr = (value & 0xFFFF) - (loccnt + (page << 13));
 
 		/* check range */
-		if (addr > 0x7F && addr < 0xFFFFFF80) {
+		if (addr > 0x7Fu && addr < ~0x7Fu) {
 			error("Branch address out of range!");
 			return;
 		}
@@ -300,7 +300,7 @@ class6(int *ip)
 		if (!evaluate(ip, (i < 2) ? ',' : ';'))
 			return;
 		if (pass == LAST_PASS) {
-			if (value & 0xFFFF0000) {
+			if (value & 0x007F0000) {
 				error("Operand size error!");
 				return;
 			}
@@ -516,10 +516,10 @@ class10(int *ip)
 		putbyte(data_loccnt + 1, zp);
 
 		/* calculate branch offset */
-		addr = value - (loccnt + (page << 13));
+		addr = (value & 0xFFFF) - (loccnt + (page << 13));
 
 		/* check range */
-		if (addr > 0x7F && addr < 0xFFFFFF80) {
+		if (addr > 0x7Fu && addr < ~0x7Fu) {
 			error("Branch address out of range!");
 			return;
 		}
@@ -734,7 +734,7 @@ getoperand(int *ip, int flag, int last_char)
 						value++;
 				}
 				/* check address validity */
-				if ((value & 0xFFFFFF00) && ((value & 0xFFFFFF00) != machine->ram_base))
+				if ((value & 0x007FFF00) && ((value & 0x007FFF00) != machine->ram_base))
 					error("Incorrect zero page address!");
 			}
 
@@ -749,7 +749,7 @@ getoperand(int *ip, int flag, int last_char)
 					error("Instruction extension not supported in immediate mode!");
 				else {
 					/* check value validity */
-					if ((value > 0xFF) && (value < 0xFFFFFF00))
+					if (((value & 0x007FFF00) > 0xFF) && ((value & 0x007FFF00) < 0x007FFF00))
 						error("Incorrect immediate value!");
 				}
 			}
@@ -764,7 +764,7 @@ getoperand(int *ip, int flag, int last_char)
 						value++;
 				}
 				/* check address validity */
-				if (value & 0xFFFF0000)
+				if (value & 0x007F0000)
 					error("Incorrect absolute address!");
 			}
 		}

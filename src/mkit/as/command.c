@@ -229,7 +229,7 @@ do_db(int *ip)
 			/* store byte on last pass */
 			if (pass == LAST_PASS) {
 				/* check for overflow */
-				if ((value > 0xFF) && (value < 0xFFFFFF80)) {
+				if (((value & 0x007FFFFF) > 0xFF) && ((value & 0x007FFFFF) < 0x007FFF80)) {
 					error("Overflow error!");
 					return;
 				}
@@ -301,7 +301,7 @@ do_dw(int *ip)
 		/* store word on last pass */
 		if (pass == LAST_PASS) {
 			/* check for overflow */
-			if ((value > 0xFFFF) && (value < 0xFFFF8000)) {
+			if (((value & 0x007FFFFF) > 0xFFFF) && ((value & 0x007FFFFF) < 0x007F8000)) {
 				error("Overflow error!");
 				return;
 			}
@@ -372,7 +372,7 @@ do_dwl(int *ip)
 		/* store word on last pass */
 		if (pass == LAST_PASS) {
 			/* check for overflow */
-			if ((value > 0xFFFF) && (value < 0xFFFF8000)) {
+			if (((value & 0x007FFFFF) > 0xFFFF) && ((value & 0x007FFFFF) < 0x007F8000)) {
 				error("Overflow error!");
 				return;
 			}
@@ -443,7 +443,7 @@ do_dwh(int *ip)
 		/* store word on last pass */
 		if (pass == LAST_PASS) {
 			/* check for overflow */
-			if ((value > 0xFFFF) && (value < 0xFFFF8000)) {
+			if (((value & 0x007FFFFF) > 0xFFFF) && ((value & 0x007FFFFF) < 0x007F8000)) {
 				error("Overflow error!");
 				return;
 			}
@@ -513,12 +513,6 @@ do_dd(int *ip)
 
 		/* store dword on last pass */
 		if (pass == LAST_PASS) {
-			/* check for overflow */
-			if ((value > 0xFFFF) && (value > 0xffffffff)) {
-				error("Overflow error!");
-				return;
-			}
-
 			/* store word */
 			putdword(loccnt - 4, value);
 		}
@@ -1854,6 +1848,10 @@ do_scope(int *ip)
 void
 do_ends(int *ip)
 {
+	/* remember the current label */
+	struct t_symbol *curlabl = lablptr;
+	int i;
+
 	/* sanity check */
 	if (scopeptr == NULL) {
 		fatal_error("Unexpected '}'!");
@@ -1866,6 +1864,30 @@ do_ends(int *ip)
 	/* check end of line */
 	if (!check_eol(ip))
 		return;
+
+	/* remember the size of the scope */
+	scopeptr->data_type = P_SCOPE;
+	scopeptr->data_size = (loccnt + (bank << 13)) - ((scopeptr->value & 0x1FFF) + (scopeptr->bank << 13));
+
+	/* add a label with the scope size */
+	i = addscope(scopeptr, 0);
+	symbol[++i] = '\0';
+
+	if (i > (SBOLSZ - 1 - 7)) {
+		fatal_error("Scope name too long to create \"_sizeof\" label!");
+		return;
+	}
+	strncat(&symbol[i], "_sizeof", SBOLSZ - 1 - i);
+
+	/* create the "_sizeof" label */
+	if ((lablptr = stlook(1)) == NULL)
+		return;
+
+	/* assign value to the label */
+	labldef(scopeptr->data_size, 0);
+
+	/* restore the previous label */
+	lablptr = curlabl;
 
 	/* return to previous scope */
 	scopeptr = scopeptr->scope;

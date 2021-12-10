@@ -69,10 +69,10 @@ do_call(int *ip)
 		if((ptr = proc_look())) {
 			/* check banks */
 			if ((newproc_opt == 0) && (bank == ptr->bank)) {
-				/* different */
+				/* same bank */
 				value = ptr->org + 0xA000;
 			} else {
-				/* different */
+				/* different bank */
 				if (ptr->call) {
 					value = ptr->call;
 				} else {
@@ -476,6 +476,7 @@ proc_reloc(void)
 					sym->bank = STRIPPED_BANK;
 				else
 					sym->bank = proc_ptr->bank + bank_base;
+				sym->value = (sym->value & 0x007FFFFF) + (sym->bank << 23);
 				sym->value += (proc_ptr->org - proc_ptr->base);
 
 				/* local symbols */
@@ -491,6 +492,7 @@ proc_reloc(void)
 								local->bank = STRIPPED_BANK;
 							else
 								local->bank = proc_ptr->bank + bank_base;
+							local->value = (local->value & 0x007FFFFF) + (local->bank << 23);
 							local->value += (proc_ptr->org - proc_ptr->base);
 						}
 
