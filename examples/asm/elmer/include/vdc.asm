@@ -28,14 +28,14 @@
 ;
 
 set_bgon:	lda	#$80			; Enable BG layer.
-		bra	*+8
+		bra	!+
 
 set_spron:	lda	#$40			; Enable SPR layer.
-		bra	*+4
+		bra	!+
 
 set_dspon:	lda	#$C0			; Enable BG & SPR layers.
 
-		tsb	<vdc_crl		; These take effect when
+!:		tsb	<vdc_crl		; These take effect when
 	.if	SUPPORT_SGX			; the next VBLANK occurs.
 		tsb	<sgx_crl
 	.endif
@@ -46,14 +46,14 @@ set_dspon:	lda	#$C0			; Enable BG & SPR layers.
 ;
 
 set_bgoff:	lda	#$80			; Disable BG layer.
-		bra	*+8
+		bra	!+
 
 set_sproff:	lda	#$40			; Disable SPR layer.
-		bra	*+4
+		bra	!+
 
 set_dspoff:	lda	#$C0			; Disable BG & SPR layers.
 
-		trb	<vdc_crl		; These take effect when
+!:		trb	<vdc_crl		; These take effect when
 	.if	SUPPORT_SGX			; the next VBLANK occurs.
 		trb	<sgx_crl
 	.endif
@@ -272,15 +272,17 @@ set_mode_vdc	.proc
 init_256x224	.proc
 
 .BAT_SIZE	=	64 * 32
-.CHR_ZERO	=	.BAT_SIZE / 16		; 1st tile # after BAT.
-.CHR_0x20	=	.CHR_ZERO + 32		; ' ' CHR tile #.
+.SAT_ADDR	=	.BAT_SIZE		; SAT takes 16 tiles of VRAM.
+.CHR_ZERO	=	.BAT_SIZE / 16		; 1st tile # after the BAT.
+.CHR_0x10	=	.CHR_ZERO + 16		; 1st tile # after the SAT.
+.CHR_0x20	=	.CHR_ZERO + 32		; ASCII ' ' CHR tile #.
 
 		call	clear_vce		; Clear all palettes.
 
-		lda	#<.mode_256x224		; Disable BKG & SPR layers but
-		sta	<__si + 0		; enable RCR & VBLANK IRQ.
-		lda	#>.mode_256x224
-		sta	<__si + 1
+		lda.l	#.mode_256x224		; Disable BKG & SPR layers but
+		sta.l	<__si			; enable RCR & VBLANK IRQ.
+		lda.h	#.mode_256x224
+		sta.h	<__si
 		lda	#^.mode_256x224
 		sta	<__si_bank
 		call	set_mode_vdc
@@ -290,10 +292,10 @@ init_256x224	.proc
 
 		call	wait_vsync		; Wait for the next VBLANK.
 
-		lda	#<.CHR_0x20		; Tile # of ' ' CHR.
-		sta	<__al
-		lda	#>.CHR_0x20
-		sta	<__ah
+		lda.l	#.CHR_0x20		; Tile # of ' ' CHR.
+		sta.l	<__ax
+		lda.h	#.CHR_0x20
+		sta.h	<__ax
 
 		lda	#>.BAT_SIZE		; Size of BAT in words.
 		sta	<__bl
