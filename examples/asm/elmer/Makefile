@@ -2,7 +2,7 @@
 # Makefile for examples/as/elmer
 #
 
-SUBDIRS = ipl-scd rom-core-hello scd-core-1stage scd-core-2stage
+SUBDIRS = ipl-scd scd-bios-hello rom-core-hello scd-core-1stage scd-core-2stage
 
 all clean:
 	@$(MAKE) $(SUBDIRS) "COMMAND=$@"
