@@ -217,6 +217,7 @@ struct t_opcode base_pseudo[] = {
 	{NULL,  "ENDM",         do_endm,        PSEUDO, P_ENDM,    0},
 	{NULL,  "ENDP",         do_endp,        PSEUDO, P_ENDP,    P_PROC},
 	{NULL,  "ENDPROCGROUP", do_endp,        PSEUDO, P_ENDPG,   P_PGROUP},
+	{NULL,  "ENDS",         do_ends,        PSEUDO, P_ENDS,    0},
 	{NULL,  "EQU",          do_equ,         PSEUDO, P_EQU,     0},
 	{NULL,  "FAIL",         do_fail,        PSEUDO, P_FAIL,    0},
 //	{NULL,  "FILL",         do_ds,          PSEUDO, P_DS,      0},
@@ -240,6 +241,7 @@ struct t_opcode base_pseudo[] = {
 	{NULL,  "PROCGROUP",    do_proc,        PSEUDO, P_PGROUP,  P_PGROUP},
 	{NULL,  "RSSET",        do_rsset,       PSEUDO, P_RSSET,   0},
 	{NULL,  "RS",           do_rs,          PSEUDO, P_RS,      0},
+	{NULL,  "STRUCT",       do_struct,      PSEUDO, P_STRUCT,  0},
 //	{NULL,  "TEXT",         do_db,          PSEUDO, P_DB,      1},
 //	{NULL,  "WORD",         do_dw,          PSEUDO, P_DW,      0},
 	{NULL,  "ZP",           do_section,     PSEUDO, P_ZP,      S_ZP},
@@ -287,6 +289,8 @@ struct t_opcode base_pseudo[] = {
 	{NULL, ".RSSET",        do_rsset,       PSEUDO, P_RSSET,   0},
 	{NULL, ".RS",           do_rs,          PSEUDO, P_RS,      0},
 	{NULL, ".SET",          do_equ,         PSEUDO, P_EQU,     1},
+	{NULL, ".STRUCT",       do_struct,      PSEUDO, P_STRUCT,  0},
+	{NULL, ".ENDS",         do_ends,        PSEUDO, P_ENDS,    0},
 	{NULL, ".TEXT",         do_db,          PSEUDO, P_DB,      1},
 	{NULL, ".WORD",         do_dw,          PSEUDO, P_DW,      0},
 	{NULL, ".ZP",           do_section,     PSEUDO, P_ZP,      S_ZP},
@@ -301,8 +305,8 @@ struct t_opcode base_pseudo[] = {
 	{NULL, ".LABEL",        do_label,       PSEUDO, P_LABEL,   0},
 	{NULL, ".VAR",          do_label,       PSEUDO, P_LABEL,   1},
 	{NULL, ".ENCODING",     do_encoding,    PSEUDO, P_ENCODING,0},
-	{NULL, "{",             do_scope,       PSEUDO, P_SCOPE   ,0},
-	{NULL, "}",             do_ends,        PSEUDO, P_ENDS    ,0},
+	{NULL, "{",             do_struct,      PSEUDO, P_STRUCT,  1},
+	{NULL, "}",             do_ends,        PSEUDO, P_ENDS,    1},
 
 	{NULL, NULL, NULL, 0, 0, 0}
 };

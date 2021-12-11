@@ -122,8 +122,8 @@
 #define P_SEGMENT	60	// .segment
 #define P_LABEL		61	// .label or .const
 #define P_ENCODING	62	// .encoding
-#define P_SCOPE		63	// '{'
-#define P_ENDS		64	// '}'
+#define P_STRUCT	63	// .struct
+#define P_ENDS		64	// .ends
 
 /* symbol flags */
 #define UNDEF	1	/* undefined - may be zero page */

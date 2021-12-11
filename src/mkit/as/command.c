@@ -1795,31 +1795,38 @@ do_encoding(int *ip)
 
 
 /* ----
- * do_scope()
+ * do_struct()
  * ----
- * '{' pseudo
+ * '.struct' pseudo
  */
 
 void
-do_scope(int *ip)
+do_struct(int *ip)
 {
-	/* temporarily, while we see if this is needed */
+	/* the code is written to handle nesting, but try */
+	/* this temporarily, while we see if it is needed */
 	if (scopeptr != NULL) {
-		fatal_error("Cannot nest '{' label scopes!");
+		fatal_error("Cannot nest .struct scopes!");
+		return;
+	}
+
+	/* reserve "{}" syntax for KickC code */
+	if ((optype == 1) && (kickc_mode == 0)) {
+		fatal_error("Cannot use \"{}\" syntax in .pceas mode!");
 		return;
 	}
 
 	/* check symbol */
 	if (lablptr == NULL) {
-		fatal_error("Label name missing from scope!");
+		fatal_error("Label name missing from .struct!");
 		return;
 	}
 	if (lablptr->name[1] == '.' || lablptr->name[1] == '@') {
-		fatal_error("Cannot open label scope on a local label!");
+		fatal_error("Cannot open .struct scope on a local label!");
 		return;
 	}
 	if (lablptr->name[1] == '!') {
-		fatal_error("Cannot open label scope on a multi-label!");
+		fatal_error("Cannot open .struct scope on a multi-label!");
 		return;
 	}
 
@@ -1842,7 +1849,7 @@ do_scope(int *ip)
 /* ----
  * do_ends()
  * ----
- * '}' pseudo
+ * '.ends' pseudo
  */
 
 void
@@ -1858,6 +1865,12 @@ do_ends(int *ip)
 		return;
 	}
 
+	/* reserve "{}" syntax for KickC code */
+	if ((optype == 1) && (kickc_mode == 0)) {
+		fatal_error("Cannot use \"{}\" syntax in .pceas mode!");
+		return;
+	}
+
 	/* define label */
 	labldef(loccnt, 1);
 
@@ -1866,7 +1879,7 @@ do_ends(int *ip)
 		return;
 
 	/* remember the size of the scope */
-	scopeptr->data_type = P_SCOPE;
+	scopeptr->data_type = P_STRUCT;
 	scopeptr->data_size = (loccnt + (bank << 13)) - ((scopeptr->value & 0x1FFF) + (scopeptr->bank << 13));
 
 	/* add a label with the scope size */
@@ -1874,7 +1887,7 @@ do_ends(int *ip)
 	symbol[++i] = '\0';
 
 	if (i > (SBOLSZ - 1 - 7)) {
-		fatal_error("Scope name too long to create \"_sizeof\" label!");
+		fatal_error("Struct name too long to create \"_sizeof\" label!");
 		return;
 	}
 	strncat(&symbol[i], "_sizeof", SBOLSZ - 1 - i);

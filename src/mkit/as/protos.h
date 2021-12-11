@@ -60,7 +60,7 @@ void do_segment(int *ip);
 void do_star(int *ip);
 void do_label(int *ip);
 void do_encoding(int *ip);
-void do_scope(int *ip);
+void do_struct(int *ip);
 void do_ends(int *ip);
 int  htoi(char *str, int nb);
 

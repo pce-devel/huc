@@ -81,7 +81,7 @@
 
                                         .cpu    _65c02
 
-                                        .encoding "ascii"	; For data in ".text"
+                                        .encoding "ascii"       ; For data in ".text"
 
 
                         ; ****************************************************************************
@@ -176,8 +176,13 @@
                         ; still have them accessible in global scope.
                         ;
                         ; Note: From a practical standpoint, this is quite a good match for the way
-                        ; that the C language accesses variables and labels that are defined within
-                        ; a function.
+                        ;       that the C language accesses variables and labels that are defined
+                        ;       within a function.
+                        ;
+                        ; Note: The "{}" syntax is only available in ".kickc" mode, because it is used
+                        ;       for compiled C functions, and it may need to change in the future.
+                        ;       In ".pceas" mode, this "label scope" functionality is made available
+                        ;       as ".struct/.ends".
                         ;
 
          0004           stringLen       =       4               ; Define the length of a string
