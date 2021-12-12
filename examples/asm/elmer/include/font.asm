@@ -62,10 +62,8 @@ dropfnt8x8_vdc	.proc
 
 		clx				; Offset to PCE VDC.
 
-		jsr	__si_to_mpr34		; Map font to MPR3 & MPR4.
+		jsr	__si_to_mpr3		; Map font to MPR3.
 		jsr	__di_to_vram		; Map __di to VRAM.
-
-;		cly				; Offset into source data.
 
 		; Generate shadowed glyph.
 
@@ -84,15 +82,22 @@ dropfnt8x8_vdc	.proc
 		lsr	a
 	.endif
 
+	.if	0
 		ora	[__si]			; Composite font and shadow
-		sta	tmp_shadow_buf + 2, x	; planes.
+		sta	tmp_shadow_buf + 2, x	; planes (wide shadow).
+	.else
+
+		sta	tmp_shadow_buf + 2, x	; Composite font and shadow
+		ora	[__si]			; planes (normal shadow).
+	.endif
+
 		ora	tmp_shadow_buf, x
 		eor	tmp_normal_buf, x
 		sta	tmp_shadow_buf, x
 
-		inc	<__si + 0
+		inc	<__si			; Increment ptr to font.
 		bne	.next_line
-		inc	<__si + 1
+		jsr	__si_inc_page
 .next_line:	inx
 		inx
 		cpx	#8 * 2			; 8 lines high per glyph.
@@ -167,10 +172,8 @@ dropfnt8x16_sgx	.proc
 dropfnt8x16_vdc	.proc
 		clx				; Offset to PCE VDC.
 
-		jsr	__si_to_mpr34		; Map font to MPR3 & MPR4.
+		jsr	__si_to_mpr3		; Map font to MPR3.
 		jsr	__di_to_vram		; Map __di to VRAM.
-
-;		cly				; Offset into source data.
 
 		; Generate shadowed glyph.
 
@@ -189,15 +192,22 @@ dropfnt8x16_vdc	.proc
 		lsr	a
 	.endif
 
+	.if	0
 		ora	[__si]			; Composite font and shadow
-		sta	tmp_shadow_buf + 2, x	; planes.
+		sta	tmp_shadow_buf + 2, x	; planes (wide shadow).
+	.else
+
+		sta	tmp_shadow_buf + 2, x	; Composite font and shadow
+		ora	[__si]			; planes (normal shadow).
+	.endif
+
 		ora	tmp_shadow_buf, x
 		eor	tmp_normal_buf, x
 		sta	tmp_shadow_buf, x
 
-		inc	<__si + 0
+		inc	<__si			; Increment ptr to font.
 		bne	.next_line
-		inc	<__si + 1
+		jsr	__si_inc_page
 .next_line:	inx
 		inx
 		cpx	#16 * 2			; 16 lines high per glyph.
@@ -209,14 +219,10 @@ dropfnt8x16_vdc	.proc
 
 		cly
 		bsr	.plane01_loop
-;		tia	tmp_shadow_buf + $00, VDC_DL, 16
-
 		bsr	.fill_plane23
 
 		ldy	#16
 		bsr	.plane01_loop
-;		tia	tmp_shadow_buf + $10, VDC_DL, 16
-
 		bsr	.fill_plane23
 
 		dec	<__bl			; Upload next glyph.
