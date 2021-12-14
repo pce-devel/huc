@@ -19,15 +19,15 @@
 ; HuC6270 - Video Display Controller
 ;
 
-VDC_SR		= $0000		; Status Register
-VDC_AR		= $0000		; Address Register
-VDC_DL		= $0002		; Data (Read/Write) Low
-VDC_DH		= $0003		; Data (Read/Write) High
+VDC_SR		= $0200		; Status Register
+VDC_AR		= $0200		; Address Register
+VDC_DL		= $0202		; Data (Read/Write) Low
+VDC_DH		= $0203		; Data (Read/Write) High
 
-SGX_SR		= $0010		; Status Register
-SGX_AR		= $0010		; Address Register
-SGX_DL		= $0012		; Data (Read/Write) Low
-SGX_DH		= $0013		; Data (Read/Write) High
+SGX_SR		= $0210		; Status Register
+SGX_AR		= $0210		; Address Register
+SGX_DL		= $0212		; Data (Read/Write) Low
+SGX_DH		= $0213		; Data (Read/Write) High
 
 VDC_MAWR	= 0		; Memory Address Write
 VDC_MARR	= 1		; Memory Address Read
@@ -56,19 +56,19 @@ VDC_DVSSR	= 19		; VRAM-SATB Block Transfer Source
 ; HuC6202 - Video Priority Controller (SGX-only)
 ;
 
-VPC_CR		= $0008
-VPC_CRL		= $0008
-VPC_CRH		= $0009
+VPC_CR		= $0208
+VPC_CRL		= $0208
+VPC_CRH		= $0209
 
-VPC_WIN1	= $000A
-VPC_WIN1L	= $000A
-VPC_WIN1H	= $000B
+VPC_WIN1	= $020A
+VPC_WIN1L	= $020A
+VPC_WIN1H	= $020B
 
-VPC_WIN2	= $000C
-VPC_WIN2L	= $000C
-VPC_WIN2H	= $000D
+VPC_WIN2	= $020C
+VPC_WIN2L	= $020C
+VPC_WIN2H	= $020D
 
-VPC_VDC_REDIR	= $000E
+VPC_VDC_REDIR	= $020E
 
 
 

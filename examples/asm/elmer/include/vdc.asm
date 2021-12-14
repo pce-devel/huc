@@ -195,7 +195,12 @@ set_mode_vdc	.proc
 
 		clx				; Offset to PCE VDC.
 
-.set_mode_x:	jsr	__si_to_mpr34		; Map data to MPR3 & MPR4.
+.set_mode_x:	tma3				; Preserve MPR3.
+		pha
+		tma4				; Preserve MPR4.
+		pha
+
+		jsr	__si_to_mpr34		; Map data to MPR3 & MPR4.
 
 		php				; Disable interrupts.
 		sei
@@ -252,6 +257,11 @@ set_mode_vdc	.proc
 		sta	VDC_AR, x		; the shadow variable.
 
 		plp				; Restore interrupts.
+
+		pla				; Restore MPR4.
+		tam4
+		pla				; Restore MPR3.
+		tam3
 
 		leave				; All done, phew!
 

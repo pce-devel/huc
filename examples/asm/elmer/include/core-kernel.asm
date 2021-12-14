@@ -56,7 +56,7 @@
 ;
 
 leave_proc:	pla
-		tma6
+		tam6
 		rts
 
 	.endif	USING_NEWPROC

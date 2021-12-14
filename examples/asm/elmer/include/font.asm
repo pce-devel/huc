@@ -62,6 +62,9 @@ dropfnt8x8_vdc	.proc
 
 		clx				; Offset to PCE VDC.
 
+		tma3				; Preserve MPR3.
+		pha
+
 		jsr	__si_to_mpr3		; Map font to MPR3.
 		jsr	__di_to_vram		; Map __di to VRAM.
 
@@ -128,7 +131,10 @@ dropfnt8x8_vdc	.proc
 .next_tile:	dec	<__bl			; Upload next glyph.
 		bne	.tile_loop
 
-.exit:		leave				; All done, phew!
+.exit:		pla				; Restore MPR3.
+		tam3
+
+		leave				; All done, phew!
 
 		.endp
 		.endprocgroup
@@ -171,6 +177,9 @@ dropfnt8x16_sgx	.proc
 
 dropfnt8x16_vdc	.proc
 		clx				; Offset to PCE VDC.
+
+		tma3				; Preserve MPR3.
+		pha
 
 		jsr	__si_to_mpr3		; Map font to MPR3.
 		jsr	__di_to_vram		; Map __di to VRAM.
@@ -228,7 +237,10 @@ dropfnt8x16_vdc	.proc
 		dec	<__bl			; Upload next glyph.
 		bne	.tile_loop
 
-.exit:		leave				; All done, phew!
+.exit:		pla				; Restore MPR3.
+		tam3
+
+		leave				; All done, phew!
 
 .plane01_loop:	lda	tmp_shadow_buf, y	; Write bitplane 0 data.
 		sta	VDC_DL, x

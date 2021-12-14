@@ -5,7 +5,7 @@
 ;
 ; HuC6280 decompressor for Emmanuel Marty's LZSA2 format.
 ;
-; The code is 241 bytes for the small version, and 256 bytes for the normal.
+; The code is 247 bytes for the small version, and 262 bytes for the normal.
 ;
 ; Copyright John Brandwood 2019-2021.
 ;
@@ -79,6 +79,9 @@ lzsa2_nibble	=	__dl			; 1 byte.
 ;
 
 lzsa2_to_ram	.proc
+
+		tma3				; Preserve MPR3.
+		pha
 
 		jsr	__si_to_mpr3		; Map lzsa2_srcptr to MPR3.
 
@@ -269,6 +272,9 @@ lzsa2_to_ram	.proc
 
 .finished:	pla				; Decompression completed, pop
 		pla				; return address.
+
+		pla				; Restore MPR3.
+		tam3
 
 		leave				; Finished decompression!
 

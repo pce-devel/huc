@@ -5,7 +5,7 @@
 ;
 ; HuC6280 decompressor for Einar Saukas's "classic" ZX0 format.
 ;
-; The code length is 193 bytes for RAM, 243 bytes for direct-to-VRAM, plus
+; The code length is 199 bytes for RAM, 249 bytes for direct-to-VRAM, plus
 ; some generic utility code.
 ;
 ; Copyright John Brandwood 2021.
@@ -77,6 +77,9 @@ zx0_bitbuf	=	__dl			; 1 byte.
 ;
 
 zx0_to_ram	.proc
+
+		tma3				; Preserve MPR3.
+		pha
 
 		jsr	__si_to_mpr3		; Map zx0_srcptr to MPR3.
 
@@ -163,7 +166,10 @@ zx0_to_ram	.proc
 		inc	<zx0_winptr + 1
 		bra	.lz_byte
 
-.got_eof:	leave				; Finished decompression!
+.got_eof:	pla				; Restore MPR3.
+		tam3
+
+		leave				; Finished decompression!
 
 		;
 		; Copy bytes from compressed source.
@@ -282,6 +288,9 @@ zx0_to_vdc	.proc
 
 		clx				; Offset to PCE VDC.
 
+		tma3				; Preserve MPR3.
+		pha
+
 		jsr	__si_to_mpr3		; Map zx0_srcptr to MPR3.
 		jsr	__di_to_vram		; Map zx0_dstptr to VRAM.
 
@@ -375,7 +384,10 @@ zx0_to_vdc	.proc
 		dec	<zx0_length + 1		; This is rare, so slower.
 		bra	.lz_byte
 
-.got_eof:	leave				; Finished decompression!
+.got_eof:	pla				; Restore MPR3.
+		tam3
+
+		leave				; Finished decompression!
 
 		;
 		; Copy bytes from compressed source.
