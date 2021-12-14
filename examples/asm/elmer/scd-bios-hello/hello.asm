@@ -153,8 +153,8 @@ bios_main:	; Turn the display off and initialize the screen mode.
 
 		; Display the classic "hello, world" on the screen.
 
-		lda	#<(13*64 + 9)		; Destination VRAM address.
-		ldx	#>(13*64 + 9)
+		lda	#<(13*64 + 10)		; Destination VRAM address.
+		ldx	#>(13*64 + 10)
 		jsr	ex_setwrt
 
 		cly				; Display the message.

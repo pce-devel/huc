@@ -144,9 +144,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 
 		; Display the classic "hello, world" on the screen.
 
-		lda	#<(13*64 + 9)		; Destination VRAM address.
+		lda	#<(13*64 + 10)		; Destination VRAM address.
 		sta	<__di + 0
-		lda	#>(13*64 + 9)
+		lda	#>(13*64 + 10)
 		sta	<__di + 1
 		call	__di_to_vdc
 
