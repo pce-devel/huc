@@ -236,7 +236,7 @@ cont:
 					break;
 				default:
 					if (!need_operator)
-						op = OP_LOW;
+						op = OP_dotLO;
 					else
 						op = OP_LOWER;
 					expr++;
@@ -263,7 +263,7 @@ cont:
 					break;
 				default:
 					if (!need_operator)
-						op = OP_HIGH;
+						op = OP_dotHI;
 					else
 						op = OP_HIGHER;
 					expr++;
@@ -832,7 +832,7 @@ do_op(void)
 	val[0] = val_stack[val_idx];
 
 	/* second arg */
-	if (op_pri[op] < 9)
+	if (op_pri[op] < op_pri[OP_NOT])
 		val[1] = val_stack[--val_idx];
 	else
 		val[1] = 0;
@@ -910,11 +910,13 @@ do_op(void)
 		break;
 
 	/* HIGH */
+	case OP_dotHI:
 	case OP_HIGH:
 		val[0] = (val[0] & 0xFF00) >> 8;
 		break;
 
 	/* LOW */
+	case OP_dotLO:
 	case OP_LOW:
 		val[0] = val[0] & 0xFF;
 		break;

@@ -35,17 +35,20 @@
 #define OP_VRAM		26
 #define OP_PAL		27
 #define OP_SIZEOF	28
+#define OP_dotLO	29
+#define OP_dotHI	30
 
 /* operator priority */
 const int op_pri[] = {
-	0 /* START */, 0 /* OPEN  */,
-	7 /* ADD   */, 7 /* SUB   */, 8	/* MUL   */, 8 /* DIV   */,
-	8 /* MOD   */, 10 /* NEG   */, 6 /* SHL   */, 6	/* SHR   */,
-	1 /* OR    */, 2 /* XOR   */, 3	/* AND   */, 10	/* COM   */,
-	9 /* NOT   */, 4 /* =     */, 4	/* <>    */, 5 /* <     */,
-	5 /* <=    */, 5 /* >     */, 5	/* >=    */,
-	10 /* DEFIN.*/, 10 /* HIGH  */, 10 /* LOW   */, 10 /* PAGE  */,
-	10 /* BANK  */, 10 /* VRAM  */, 10 /* PAL   */, 10	/* SIZEOF*/
+	 0 /* START */,  0 /* OPEN  */,
+	 8 /* ADD   */,  8 /* SUB   */,  9 /* MUL   */,  9 /* DIV   */,
+	 9 /* MOD   */, 11 /* NEG   */,  7 /* SHL   */,  7 /* SHR   */,
+	 2 /* OR    */,  3 /* XOR   */,  4 /* AND   */, 11 /* COM   */,
+	10 /* NOT   */,  5 /* =     */,  5 /* <>    */,  6 /* <     */,
+	 6 /* <=    */,  6 /* >     */,  6 /* >=    */,
+	11 /* DEFIN.*/, 11 /* HIGH  */, 11 /* LOW   */, 11 /* PAGE  */,
+	11 /* BANK  */, 11 /* VRAM  */, 11 /* PAL   */, 11 /* SIZEOF*/,
+	 1 /* dotLO */,  1 /* dotHI */
 };
 
 unsigned int op_stack[64] = {
