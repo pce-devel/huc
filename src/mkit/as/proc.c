@@ -15,8 +15,6 @@ int call_1st;
 int call_ptr;
 int call_bank;
 
-extern int strip_opt;
-extern int newproc_opt;
 extern int dump_seg;
 
 /* protos */

@@ -14,6 +14,7 @@ void do_endif(int *ip);
 void do_ifdef(int *ip);
 
 /* CODE.C */
+void classJ(int *ip);
 void class1(int *ip);
 void class2(int *ip);
 void class3(int *ip);

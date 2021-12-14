@@ -11,6 +11,34 @@ unsigned int auto_tag_value;
 
 
 /* ----
+ * classJ()
+ * ----
+ * choose "jsr" or "call" processing for a "jsr" instruction
+ */
+
+void
+classJ(int *ip)
+{
+	/* Both ".kickc" and "-newproc" need to use the call trampolines */
+	if (newproc_opt || kickc_mode)
+	{
+		/* skip spaces */
+		while (isspace(prlnbuf[*ip]))
+			(*ip)++;
+
+		/* if the operand looks like a global label */
+		if (isalpha(prlnbuf[*ip]) || (prlnbuf[*ip] == '_')) {
+			do_call(ip);
+			return;
+		}
+	}
+
+	/* default to traditional "jsr" behavior */
+	class4(ip);
+}
+
+
+/* ----
  * class1()
  * ----
  * 1 byte, no operand field
