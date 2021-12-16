@@ -766,7 +766,6 @@ do_bank(int *ip)
 
 	/* backup current bank infos */
 	bank_glabl[section][bank] = glablptr;
-	bank_scope[section][bank] = scopeptr;
 	bank_loccnt[section][bank] = loccnt;
 	bank_page[section][bank] = page;
 
@@ -775,7 +774,6 @@ do_bank(int *ip)
 	page = bank_page[section][bank];
 	loccnt = bank_loccnt[section][bank];
 	glablptr = bank_glabl[section][bank];
-	scopeptr = bank_scope[section][bank];
 
 	/* signal discontiguous change in loccnt */
 	discontiguous = 1;
@@ -1349,7 +1347,7 @@ do_fail(int *ip)
 void
 do_section(int *ip)
 {
-	if (proc_ptr) {
+	if (proc_ptr && (scopeptr == NULL)) {
 		if (optype == S_DATA) {
 			fatal_error("No data segment in procs!");
 			return;
@@ -1863,24 +1861,28 @@ do_ends(int *ip)
 	struct t_symbol *curlabl = lablptr;
 	int i;
 
-	/* sanity check */
-	if (scopeptr == NULL) {
-		fatal_error("Unexpected '}'!");
-		return;
-	}
-
 	/* reserve "{}" syntax for KickC code */
 	if ((optype == 1) && (kickc_mode == 0)) {
 		fatal_error("Cannot use \"{}\" syntax in .pceas mode!");
 		return;
 	}
 
-	/* define label */
-	labldef(loccnt, 1);
+	/* sanity check */
+	if (scopeptr == NULL) {
+		fatal_error("Unexpected '.ends'!");
+		return;
+	}
 
 	/* check end of line */
 	if (!check_eol(ip))
 		return;
+
+	/* restore the scope's original section */
+	optype = scopeptr->section;
+	do_section(ip);
+
+	/* define label */
+	labldef(loccnt, 1);
 
 	/* remember the size of the scope */
 	scopeptr->data_type = P_STRUCT;
@@ -1909,9 +1911,9 @@ do_ends(int *ip)
 	/* return to previous scope */
 	scopeptr = scopeptr->scope;
 
-	/* output line */
-	if (pass == LAST_PASS)
-		println();
+//	/* output line */
+//	if (pass == LAST_PASS)
+//		println();
 }
 
 

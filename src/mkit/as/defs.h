@@ -204,6 +204,7 @@ typedef struct t_symbol {
 	struct t_proc *proc;
 	int type;
 	int value;
+	int section;
 	int bank;
 	int page;
 	int nb;

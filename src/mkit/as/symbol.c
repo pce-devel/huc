@@ -236,6 +236,7 @@ stinstall(int hash, int type)
 	sym->local = NULL;
 	sym->scope = NULL;
 	sym->proc = NULL;
+	sym->section = -1;
 	sym->bank = RESERVED_BANK;
 	sym->nb = 0;
 	sym->size = 0;
@@ -360,6 +361,8 @@ labldef(int lval, int flag)
 
 	/* update symbol data */
 	if (flag) {
+		lablptr->section = section;
+
 		if (section == S_CODE)
 			lablptr->proc = proc_ptr;
 

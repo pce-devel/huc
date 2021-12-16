@@ -250,7 +250,6 @@ do_proc(int *ip)
 
 	/* backup current bank infos */
 	bank_glabl[section][bank]  = glablptr;
-	bank_scope[section][bank]  = scopeptr;
 	bank_loccnt[section][bank] = loccnt;
 	bank_page[section][bank]   = page;
 	proc_ptr->old_bank = bank;
@@ -261,7 +260,6 @@ do_proc(int *ip)
 	page     = (newproc_opt == 0) ? 5 : 6;
 	loccnt   = proc_ptr->org;
 	glablptr = lablptr;
-	scopeptr = NULL;
 
 	/* signal discontiguous change in loccnt */
 	discontiguous = 1;
@@ -309,7 +307,6 @@ do_endp(int *ip)
 		page     = bank_page[section][bank];
 		loccnt   = bank_loccnt[section][bank];
 		glablptr = bank_glabl[section][bank];
-		scopeptr = bank_scope[section][bank];
 
 		/* signal discontiguous change in loccnt */
 		discontiguous = 1;

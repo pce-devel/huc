@@ -19,6 +19,7 @@ t_symbol pc_symbol = {
 	NULL, /* proc */
 	DEFABS, /* type */
 	0, /* value */
+	0, /* section */
 	0, /* bank */
 	0, /* page */
 	0, /* nb */
