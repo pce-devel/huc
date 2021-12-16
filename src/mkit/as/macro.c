@@ -52,7 +52,7 @@ do_macro(int *ip)
 			}
 
 			/* put the macro name in the symbol table */
-			if ((lablptr = stlook(1)) == NULL)
+			if ((lablptr = stlook(SYM_DEF)) == NULL)
 				return;
 		}
 		if (lablptr->name[1] == '.' || lablptr->name[1] == '@') {
@@ -63,7 +63,7 @@ do_macro(int *ip)
 			fatal_error("Macro name cannot be a multi-label!");
 			return;
 		}
-		if (lablptr->refcnt) {
+		if (lablptr->defcnt || lablptr->refcnt) {
 			switch (lablptr->type) {
 			case MACRO:
 				fatal_error("Macro already defined!");
@@ -344,6 +344,7 @@ macro_install(void)
 
 	/* mark the macro name as reserved */
 	lablptr->type = MACRO;
+	lablptr->defcnt = 1;
 
 	/* check macro name syntax */
 	/*
@@ -434,7 +435,7 @@ macro_getargtype(char *arg)
 				symbol[0] = i;
 				symbol[i + 1] = '\0';
 
-				if ((sym = stlook(0)) == NULL)
+				if ((sym = stlook(SYM_REF)) == NULL)
 					return (ARG_LABEL);
 				else {
 					if ((sym->type == UNDEF) || (sym->type == IFUNDEF))

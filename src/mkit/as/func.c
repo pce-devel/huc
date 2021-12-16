@@ -47,7 +47,7 @@ do_func(int *ip)
 			fatal_error("Function name cannot be a multi-label!");
 			return;
 		}
-		if (lablptr->refcnt) {
+		if (lablptr->defcnt || lablptr->refcnt) {
 			switch (lablptr->type) {
 			case MACRO:
 				fatal_error("Symbol already used by a macro!");
@@ -101,6 +101,7 @@ func_install(int ip)
 
 	/* mark the function name as reserved */
 	lablptr->type = FUNC;
+	lablptr->defcnt = 1;
 
 	/* check function name syntax */
 	if (strchr(&symbol[1], '.')) {

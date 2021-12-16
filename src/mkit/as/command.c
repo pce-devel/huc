@@ -1753,7 +1753,7 @@ do_label(int *ip)
 	}
 
 	/* create the symbol */
-	if ((lablptr = stlook(1)) == NULL)
+	if ((lablptr = stlook(SYM_DEF)) == NULL)
 		return;
 
 	/* handle the rest of this as a PCEAS ".equ" */
@@ -1899,7 +1899,7 @@ do_ends(int *ip)
 	strncat(&symbol[i], "_sizeof", SBOLSZ - 1 - i);
 
 	/* create the "_sizeof" label */
-	if ((lablptr = stlook(1)) == NULL)
+	if ((lablptr = stlook(SYM_DEF)) == NULL)
 		return;
 
 	/* assign value to the label */

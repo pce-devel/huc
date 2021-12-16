@@ -527,7 +527,7 @@ push_val(int type)
 						return (0);
 
 					/* search for the symbol */
-					expr_lablptr = stlook(1);
+					expr_lablptr = stlook(SYM_REF);
 
 					/* has it been defined? */
 					if ((expr_lablptr != NULL) && (expr_lablptr->type != UNDEF))
@@ -540,7 +540,7 @@ push_val(int type)
 				}
 			} else {
 				/* just search for the symbol in the root scope */
-				expr_lablptr = stlook(1);
+				expr_lablptr = stlook(SYM_REF);
 			}
 		}
 
@@ -687,7 +687,7 @@ getsym(struct t_symbol * curscope)
 		char tail [10];
 
 		/* find the base multi-label instance */
-		if ((baselabl = stlook(1)) == NULL) {
+		if ((baselabl = stlook(SYM_REF)) == NULL) {
 			fatal_error("Out of memory!");
 			return (0);
 		}

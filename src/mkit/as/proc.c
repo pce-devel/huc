@@ -33,7 +33,8 @@ void           proc_sortlist(void);
 void
 do_call(int *ip)
 {
-	struct t_proc *ptr;
+	struct t_symbol *target;
+	struct t_proc *proc;
 	int value;
 
 	/* define label */
@@ -59,20 +60,21 @@ do_call(int *ip)
 		return;
 
 	/* increment procedure refcnt */
-	stlook(1);
+	if ((target = stlook(SYM_REF)) == NULL)
+		return;
 
 	/* generate code */
 	if (pass == LAST_PASS) {
 		/* lookup proc table */
-		if((ptr = proc_look())) {
+		if((proc = proc_look())) {
 			/* check banks */
-			if ((newproc_opt == 0) && (bank == ptr->bank)) {
+			if ((newproc_opt == 0) && (bank == proc->bank)) {
 				/* same bank */
-				value = ptr->org + 0xA000;
+				value = proc->org + 0xA000;
 			} else {
 				/* different bank */
-				if (ptr->call) {
-					value = ptr->call;
+				if (proc->call) {
+					value = proc->call;
 				} else {
 					/* init */
 					if (call_bank > max_bank) {
@@ -100,13 +102,13 @@ do_call(int *ip)
 						poke(call_ptr++, 0x20);
 						poke(call_ptr++, 0x48);			// pha
 						poke(call_ptr++, 0xA9);			// lda #...
-						poke(call_ptr++, ptr->bank + bank_base);
+						poke(call_ptr++, proc->bank + bank_base);
 						poke(call_ptr++, 0x53);			// tam #5
 						poke(call_ptr++, 0x20);
 						poke(call_ptr++, 0x98);			// tya
 						poke(call_ptr++, 0x20);			// jsr ...
-						poke(call_ptr++, (ptr->org + 0xA000) & 255);
-						poke(call_ptr++, (ptr->org + 0xA000) >> 8);
+						poke(call_ptr++, (proc->org + 0xA000) & 255);
+						poke(call_ptr++, (proc->org + 0xA000) >> 8);
 						poke(call_ptr++, 0xA8);			// tay
 						poke(call_ptr++, 0x68);			// pla
 						poke(call_ptr++, 0x53);			// tam #5
@@ -121,12 +123,12 @@ do_call(int *ip)
 						}
 
 						/* install new trampolines at end of MPR7, map code into MPR6 */
-						poke(call_ptr--, (ptr->org + 0xC000) >> 8);
-						poke(call_ptr--, (ptr->org + 0xC000) & 255);
+						poke(call_ptr--, (proc->org + 0xC000) >> 8);
+						poke(call_ptr--, (proc->org + 0xC000) & 255);
 						poke(call_ptr--, 0x4C);			// jmp ...
 						poke(call_ptr--, 0x40);
 						poke(call_ptr--, 0x53);			// tam #6
-						poke(call_ptr--, ptr->bank + bank_base);
+						poke(call_ptr--, proc->bank + bank_base);
 						poke(call_ptr--, 0xA9);			// lda #...
 						poke(call_ptr--, 0x48);			// pha
 						poke(call_ptr--, 0x40);
@@ -135,19 +137,19 @@ do_call(int *ip)
 						value = call_ptr + 1;
 					}
 
-					ptr->call = value;
+					proc->call = value;
 				}
 			}
 		}
 		else {
-			/* lookup symbol table */
-			if (((lablptr = stlook(0)) == NULL) || (lablptr->type != DEFABS)) {
+			/* target is a label, not a procedure */
+			if (target->type != DEFABS) {
 				fatal_error("Undefined destination!");
 				return;
 			}
 
 			/* get symbol value */
-			value = lablptr->value;
+			value = target->value;
 		}
 
 		/* opcode */
@@ -189,11 +191,6 @@ do_proc(int *ip)
 	if (lablptr) {
 		strcpy(&symbol[1], &lablptr->name[1]);
 		symbol[0] = strlen(&symbol[1]);
-
-		/* hack to fix double-counted reference when label is */
-		/* used in code and then defined on line before .proc */
-		if (lablptr->refcnt)
-			lablptr->refcnt--;
 	}
 	else {
 		/* skip spaces */
@@ -215,7 +212,7 @@ do_proc(int *ip)
 		}
 
 		/* lookup symbol table */
-		if ((lablptr = stlook(1)) == NULL)
+		if ((lablptr = stlook(SYM_DEF)) == NULL)
 			return;
 	}
 
@@ -240,13 +237,13 @@ do_proc(int *ip)
 		if (!proc_install())
 			return;
 	}
-	if (proc_ptr->refcnt) {
+	if (proc_ptr->defined) {
 		fatal_error("Proc/group multiply defined!");
 		return;
 	}
 
 	/* increment proc ref counter */
-	proc_ptr->refcnt++;
+	proc_ptr->defined++;
 
 	/* backup current bank infos */
 	bank_glabl[section][bank]  = glablptr;
@@ -451,7 +448,7 @@ proc_reloc(void)
 		}
 
 		/* next */
-		proc_ptr->refcnt = 0;
+		proc_ptr->defined = 0;
 		proc_ptr = proc_ptr->link;
 	}
 
@@ -579,7 +576,7 @@ proc_install(void)
 	ptr->org = ptr->base;
 	ptr->size = 0;
 	ptr->call = 0;
-	ptr->refcnt = 0;
+	ptr->defined = 0;
 	ptr->link = NULL;
 	ptr->next = proc_tbl[hash];
 	ptr->group = proc_ptr;

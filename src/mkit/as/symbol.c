@@ -149,10 +149,9 @@ colsym(int *ip, int flag)
  */
 
 struct t_symbol *
-stlook(int flag)
+stlook(int type)
 {
 	struct t_symbol *sym;
-	int sym_flag = 0;
 	int hash;
 
 	/* local symbol */
@@ -168,15 +167,12 @@ stlook(int flag)
 			}
 
 			/* new symbol */
-			if (sym == NULL) {
-				if (flag == 1) {
-					sym = stinstall(0, 1);
-					sym_flag = 1;
-				}
+			if ((sym == NULL) && (type != SYM_CHK)) {
+				sym = stinstall(0, 1);
 			}
 		}
 		else {
-			if (flag != 2)
+			if (type != SYM_CHK)
 				error("Local symbol not allowed here!");
 			return (NULL);
 		}
@@ -194,18 +190,14 @@ stlook(int flag)
 		}
 
 		/* new symbol */
-		if (sym == NULL) {
-			if (flag == 1) {
-				sym = stinstall(hash, 0);
-				sym_flag = 1;
-			}
+		if ((sym == NULL) && (type != SYM_CHK)) {
+			sym = stinstall(hash, 0);
 		}
 	}
 
 	/* increment symbol reference counter */
-	if (sym_flag == 0) {
-		if (sym)
-			sym->refcnt++;
+	if ((sym != NULL) && (type == SYM_REF)) {
+		sym->refcnt++;
 	}
 
 	/* ok */
@@ -305,12 +297,15 @@ labldef(int lval, int flag)
 			sprintf(tail, "!%d", 0x7FFFF & ++(lablptr->defcnt));
 			strncat(symbol, tail, SBOLSZ - 1 - strlen(symbol));
 			symbol[0] = strlen(&symbol[1]);
-			if ((lablptr = stlook(1)) == NULL) {
+			if ((lablptr = stlook(SYM_DEF)) == NULL) {
 				fatal_error("Out of memory!");
 				return (-1);
 			}
 		}
 	}
+
+	/* record definition */
+	lablptr->defcnt = 1;
 
 	/* first pass */
 	if (pass == FIRST_PASS) {
@@ -409,11 +404,12 @@ lablset(char *name, int val)
 	if (len) {
 		symbol[0] = len;
 		strcpy(&symbol[1], name);
-		lablptr = stlook(1);
+		lablptr = stlook(SYM_DEF);
 
 		if (lablptr) {
 			lablptr->type = DEFABS;
 			lablptr->value = val;
+			lablptr->defcnt = 1;
 			lablptr->reserved = 1;
 		}
 	}
@@ -440,7 +436,7 @@ lablexists(char *name)
 	if (len) {
 		symbol[0] = len;
 		strcpy(&symbol[1], name);
-		lablptr = stlook(0);
+		lablptr = stlook(SYM_CHK);
 
 		if (lablptr) {
 			return (1);

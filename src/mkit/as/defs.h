@@ -135,6 +135,11 @@
 #define MACRO	5	/* used for a macro name */
 #define FUNC	6	/* used for a function */
 
+/* symbol lookup flags */
+#define SYM_CHK	0	/* does it exist? */
+#define SYM_DEF 1	/* symbol definition */
+#define SYM_REF	2	/* symbol reference */
+
 /* operation code flags */
 #define PSEUDO		0x0008000
 #define CLASS1		0x0010000
@@ -193,7 +198,7 @@ typedef struct t_proc {
 	int size;
 	int call;
 	int type;
-	int refcnt;
+	int defined;
 	char name[SBOLSZ];
 } t_proc;
 

@@ -185,7 +185,7 @@ assemble(int do_label)
 		j = i;
 		if (!colsym(&i, 0))
 			return;
-		if ((do_label == 0) && (prlnbuf[i] != ':') && (stlook(2) == NULL)) {
+		if ((do_label == 0) && (prlnbuf[i] != ':') && (stlook(SYM_CHK) == NULL)) {
 			/* it doesn't end with a ':', and it isn't a symbol */
 			/* that is recognized, so attempt to process it as  */
 			/* an opcode (unless forced), so that both opcodes  */
@@ -204,7 +204,7 @@ assemble(int do_label)
 			}
 			if (prlnbuf[i] == ':')
 				i++;
-			if ((lablptr = stlook(1)) == NULL)
+			if ((lablptr = stlook(SYM_DEF)) == NULL)
 				return;
 		}
 	}
@@ -549,7 +549,7 @@ do_ifdef(int *ip)
 	}
 	if (!check_eol(ip))
 		return;
-	lablptr = stlook(0);
+	lablptr = stlook(SYM_CHK);
 
 	/* check for '.if' stack overflow */
 	if (if_level == 255) {
