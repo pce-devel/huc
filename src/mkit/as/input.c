@@ -295,7 +295,7 @@ start:
 	preproc_modidx = 0;
 
 	/* pre-process the input to change C-style comments into ASM ';' comments */
-	if (kickc_mode)
+	if (asm_opt[OPT_CCOMMENT])
 	{
 		int i = SFIELD;
 		int c = 0;

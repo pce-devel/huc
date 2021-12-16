@@ -631,7 +631,7 @@ getoperand(int *ip, int flag, int last_char)
 
 		case '(':
 			/* allow () as an alternative to [] for indirect? */
-			if (paren_opt) {
+			if (asm_opt[OPT_INDPAREN]) {
 				/* indirect */
 				mode = ABS_IND | ABS_IND_X | ZP_IND | ZP_IND_X | ZP_IND_Y;
 				(*ip)++;

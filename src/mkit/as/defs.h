@@ -57,6 +57,8 @@
 #define OPT_MACRO	1
 #define OPT_WARNING	2
 #define OPT_OPTIMIZE	3
+#define OPT_CCOMMENT	4
+#define OPT_INDPAREN	5
 
 /* assembler directives */
 #define P_DB		0	// .db

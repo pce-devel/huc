@@ -85,14 +85,14 @@ extern int undef;				/* undefined symbol in expression flag */
 extern unsigned int value;			/* operand field value */
 extern int newproc_opt;				/* use "new" style of procedure trampolines */
 extern int strip_opt;				/* strip unused procedures? */
-extern int paren_opt;				/* allow () as alternative to [] flag */
+extern int kickc_opt;				/* NZ if -kc flag on command line */
 extern int mlist_opt;				/* macro listing main flag */
 extern int xlist;				/* listing file main flag */
 extern int list_level;				/* output level */
 extern int asm_opt[8];				/* assembler option state */
 extern int opvaltab[6][16];
 extern int call_bank;				/* bank for .proc trampolines */
-extern int kickc_mode;				/* NZ if assembling KickC code */
+extern int kickc_mode;				/* NZ if currently in KickC mode */
 extern int preproc_inblock;			/* C-style comment: within block comment */
 extern int preproc_sfield;			/* C-style comment: SFIELD as a variable */
 extern int preproc_modidx;			/* C-style comment: offset to modified char */

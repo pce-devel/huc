@@ -1507,6 +1507,10 @@ do_opt(int *ip)
 			opt = OPT_WARNING;
 		else if (!strcasecmp(name, "o"))
 			opt = OPT_OPTIMIZE;
+		else if (!strcasecmp(name, "c"))
+			opt = OPT_CCOMMENT;
+		else if (!strcasecmp(name, "i"))
+			opt = OPT_INDPAREN;
 		else {
 			error("Unknown option!");
 			return;
@@ -1605,7 +1609,7 @@ do_kickc(int *ip)
 	kickc_mode = optype;
 
 	/* enable () for indirect addressing in KickC mode */
-	paren_opt = optype;
+	asm_opt[OPT_INDPAREN] = optype;
 
 	/* output line */
 	if (pass == LAST_PASS)
