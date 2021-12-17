@@ -8,7 +8,7 @@
 
 /* pseudo instructions section flag */
 char pseudo_flag[] = {
-	0x0C, 0x0C, 0x0C, 0x0F, 0x0F, 0x0F, 0x0C, 0x0C, 0x0C, 0x0F,
+	0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0C, 0x0C, 0x0C, 0x0F,
 	0x0C, 0x0C, 0x0C, 0x0C, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F,
 	0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F,
 	0x0C, 0x0F, 0x0F, 0x0F, 0x0C, 0x0C, 0x0C, 0x0C, 0x0F, 0x0F,
@@ -186,6 +186,12 @@ do_db(int *ip)
 
 		/* ASCII string */
 		if (prlnbuf[*ip] == '\"') {
+			/* check for non-zero value in ZP or BSS sections */
+			if (section == S_ZP || section == S_BSS) {
+				error("Cannot store non-zero data in .zp or .bss sections!");
+				return;
+			}
+
 			for (;;) {
 				c = prlnbuf[++(*ip)];
 				if (c == '\"')
@@ -209,8 +215,10 @@ do_db(int *ip)
 					}
 				}
 				/* store char on last pass */
-				if (pass == LAST_PASS)
+				if (pass == LAST_PASS) {
+					/* store character */
 					putbyte(loccnt, c);
+				}
 
 				/* update location counter */
 				loccnt++;
@@ -228,6 +236,12 @@ do_db(int *ip)
 
 			/* store byte on last pass */
 			if (pass == LAST_PASS) {
+				/* check for non-zero value in ZP or BSS sections */
+				if ((value != 0) && (section == S_ZP || section == S_BSS)) {
+					error("Cannot store non-zero data in .zp or .bss sections!");
+					return;
+				}
+
 				/* check for overflow */
 				if (((value & 0x007FFFFF) > 0xFF) && ((value & 0x007FFFFF) < 0x007FFF80)) {
 					error("Overflow error!");
@@ -300,6 +314,12 @@ do_dw(int *ip)
 
 		/* store word on last pass */
 		if (pass == LAST_PASS) {
+			/* check for non-zero value in ZP or BSS sections */
+			if ((value != 0) && (section == S_ZP || section == S_BSS)) {
+				error("Cannot store non-zero data in .zp or .bss sections!");
+				return;
+			}
+
 			/* check for overflow */
 			if (((value & 0x007FFFFF) > 0xFFFF) && ((value & 0x007FFFFF) < 0x007F8000)) {
 				error("Overflow error!");
@@ -371,6 +391,12 @@ do_dwl(int *ip)
 
 		/* store word on last pass */
 		if (pass == LAST_PASS) {
+			/* check for non-zero value in ZP or BSS sections */
+			if ((value != 0) && (section == S_ZP || section == S_BSS)) {
+				error("Cannot store non-zero data in .zp or .bss sections!");
+				return;
+			}
+
 			/* check for overflow */
 			if (((value & 0x007FFFFF) > 0xFFFF) && ((value & 0x007FFFFF) < 0x007F8000)) {
 				error("Overflow error!");
@@ -442,6 +468,12 @@ do_dwh(int *ip)
 
 		/* store word on last pass */
 		if (pass == LAST_PASS) {
+			/* check for non-zero value in ZP or BSS sections */
+			if ((value != 0) && (section == S_ZP || section == S_BSS)) {
+				error("Cannot store non-zero data in .zp or .bss sections!");
+				return;
+			}
+
 			/* check for overflow */
 			if (((value & 0x007FFFFF) > 0xFFFF) && ((value & 0x007FFFFF) < 0x007F8000)) {
 				error("Overflow error!");
@@ -513,6 +545,12 @@ do_dd(int *ip)
 
 		/* store dword on last pass */
 		if (pass == LAST_PASS) {
+			/* check for non-zero value in ZP or BSS sections */
+			if ((value != 0) && (section == S_ZP || section == S_BSS)) {
+				error("Cannot store non-zero data in .zp or .bss sections!");
+				return;
+			}
+
 			/* store word */
 			putdword(loccnt - 4, value);
 		}
