@@ -44,25 +44,6 @@
 
 
 
-	.if	USING_NEWPROC
-
-; ***************************************************************************
-; ***************************************************************************
-;
-; leave_proc - Code used by ".proc/.endp" functions to return to the caller.
-;
-; This restores the original bank that was in MPR6 when the ".proc" function
-; was called.
-;
-
-leave_proc:	pla
-		tam6
-		rts
-
-	.endif	USING_NEWPROC
-
-
-
 ; ***************************************************************************
 ; ***************************************************************************
 ;

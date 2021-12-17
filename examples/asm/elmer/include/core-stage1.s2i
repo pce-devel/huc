@@ -32,8 +32,6 @@
 
 core_ram1st
 
-leave_proc
-
 const_FFFF
 const_0000
 bit_mask

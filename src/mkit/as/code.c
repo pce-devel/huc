@@ -11,13 +11,13 @@ unsigned int auto_tag_value;
 
 
 /* ----
- * classJ()
+ * classC()
  * ----
  * choose "jsr" or "call" processing for a "jsr" instruction
  */
 
 void
-classJ(int *ip)
+classC(int *ip)
 {
 	/* Both ".kickc" and "-newproc" need to use the call trampolines */
 	if (newproc_opt || kickc_mode)
@@ -35,6 +35,28 @@ classJ(int *ip)
 
 	/* default to traditional "jsr" behavior */
 	class4(ip);
+}
+
+
+/* ----
+ * classR()
+ * ----
+ * choose "rts" or "leave" processing for an "rts" instruction
+ */
+
+void
+classR(int *ip)
+{
+	/* Only if ".kickc" and currently inside a C function/procedure */
+	if (kickc_mode && scopeptr && proc_ptr)
+	{
+		/* Replace the "rts" instruction with a "jmp leave_proc" */
+		do_leave(ip);
+		return;
+	}
+
+	/* default to traditional "rts" instruction */
+	class1(ip);
 }
 
 

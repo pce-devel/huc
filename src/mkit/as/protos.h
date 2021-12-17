@@ -14,7 +14,8 @@ void do_endif(int *ip);
 void do_ifdef(int *ip);
 
 /* CODE.C */
-void classJ(int *ip);
+void classC(int *ip);
+void classR(int *ip);
 void class1(int *ip);
 void class2(int *ip);
 void class3(int *ip);
@@ -143,6 +144,7 @@ int  bmp_load(char *name);
 
 /* PROC.C */
 void do_call(int *ip);
+void do_leave(int *ip);
 void do_proc(int *ip);
 void do_endp(int *ip);
 void proc_reloc(void);

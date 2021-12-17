@@ -163,6 +163,43 @@ do_call(int *ip)
 
 
 /* ----
+ * do_leave()
+ * ----
+ * leave pseudo
+ */
+
+void
+do_leave(int *ip)
+{
+	/* define label */
+	labldef(loccnt, 1);
+
+	/* check end of line */
+	if (!check_eol(ip))
+		return;
+
+	/* update location counter */
+	data_loccnt = loccnt;
+	loccnt += (newproc_opt != 0) ? 3 : 1;
+
+	/* generate code */
+	if (pass == LAST_PASS) {
+		if (newproc_opt != 0) {
+			/* "jmp" opcode */
+			putbyte(data_loccnt, 0x4C);
+			putword(data_loccnt+1, call_1st - 3);
+		} else {
+			/* "rts" opcode */
+			putbyte(data_loccnt, 0x60);
+		}
+
+		/* output line */
+		println();
+	}
+}
+
+
+/* ----
  * do_proc()
  * ----
  * .proc pseudo
@@ -327,6 +364,7 @@ proc_reloc(void)
 	struct t_symbol *sym;
 	struct t_symbol *local;
 	struct t_proc   *group;
+	int num_relocated = 0;
 	int i;
 	int *bank_free = NULL;
 	int new_bank = 0;
@@ -436,6 +474,8 @@ proc_reloc(void)
 				proc_ptr->org = 0x2000 - bank_free[reloc_bank];
 
 				bank_free[reloc_bank] -= proc_ptr->size;
+
+				++num_relocated;
 			}
 		}
 
@@ -520,6 +560,20 @@ proc_reloc(void)
 	}
 
 	call_1st = call_ptr;
+
+	/* initialize the "leave_proc" routine for exiting a procedure */
+	if ((newproc_opt != 0) && (num_relocated != 0)) {
+		/* install code for leaving .proc */
+		poke(call_ptr--, 0x60);			// rts
+		poke(call_ptr--, 0x40);
+		poke(call_ptr--, 0x53);			// tam #6
+		poke(call_ptr--, 0x68);			// pla
+
+		strcpy(symbol, "\x0Aleave_proc");
+		if ((lablptr = stlook(SYM_DEF)) == NULL)
+			return;
+		labldef(call_ptr + 1 + (call_bank << 23), 0);
+	}
 }
 
 

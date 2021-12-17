@@ -71,21 +71,6 @@ __trampolinebnk	=	0			; are in MPR2, tell PCEAS to
 __trampolineptr	=	$5FFF			; put them right at the end.
 	.endif
 
-		; Code used by ".proc/.endp" functions to return to the
-		; caller (if USING_NEWPROC).
-		;
-		; This restores the original bank that was in MPR6 when the
-		; ".proc" function was called.
-		;
-		; If you're not using the ".proc/.endp" functionality then
-		; this doesn't need to be included.
-
-	.if	USING_NEWPROC			; If the ".proc" trampolines
-leave_proc:	pla
-		tma6
-		rts
-	.endif
-
 
 
 ; ***************************************************************************
