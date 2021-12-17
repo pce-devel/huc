@@ -26,11 +26,6 @@ do_func(int *ip)
 		println();
 	else {
 		/* error checking */
-		if (kickc_mode) {
-			/* Avoid dealing with C-style comments inside a Function. */
-			fatal_error("Cannot define a function in .kickc mode!");
-			return;
-		}
 		if (scopeptr) {
 			fatal_error("Cannot define a function inside a label scope!");
 			return;
