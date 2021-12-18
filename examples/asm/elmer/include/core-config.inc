@@ -134,19 +134,3 @@ SUPPORT_MOUSE	=	0	; (0 or 1)
 ;
 
 MAX_PADS	=	5	; (1..5)
-
-;
-; Control the "slow" and "fast" delays for auto-repeating the UP and DOWN
-; button on the joypads.
-;
-; The "slow" setting is the delay from when the direction is held to the
-; first auto-repeat.
-;
-; The "fast" setting is the delay from when the first auto-repeat to all
-; subsequent auto-repeats until the direction is released. 
-;
-; Set to "0" to disable auto-repeat.
-;
-
-SLOW_RPT_UDLR	=	30
-FAST_RPT_UDLR	=	10
