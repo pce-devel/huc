@@ -309,8 +309,8 @@ struct t_opcode base_pseudo[] = {
 	{NULL, ".LABEL",        do_label,       PSEUDO, P_LABEL,   0},
 	{NULL, ".VAR",          do_label,       PSEUDO, P_LABEL,   1},
 	{NULL, ".ENCODING",     do_encoding,    PSEUDO, P_ENCODING,0},
-	{NULL, "{",             do_struct,      PSEUDO, P_STRUCT,  1},
-	{NULL, "}",             do_ends,        PSEUDO, P_ENDS,    1},
+	{NULL, "{",             do_proc,        PSEUDO, P_PROC,    P_KICKC},
+	{NULL, "}",             do_endp,        PSEUDO, P_ENDP,    P_KICKC},
 
 	{NULL, NULL, NULL, 0, 0, 0}
 };

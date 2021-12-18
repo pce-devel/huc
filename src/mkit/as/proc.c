@@ -210,15 +210,36 @@ do_proc(int *ip)
 {
 	struct t_proc *ptr;
 
+	/* special checks for KickC procedures */
+	if (optype == P_KICKC) {
+		/* reserve "{}" syntax for KickC code */
+		if (kickc_mode == 0) {
+			fatal_error("Cannot use \"{}\" syntax in .pceas mode!");
+			return;
+		}
+
+		/* check symbol */
+		if (lablptr == NULL) {
+			fatal_error("KickC procedure name is missing!");
+			return;
+		}
+	}
+
+	/* do not mix different types of label-scope */
+	if (scopeptr) {
+		fatal_error("Cannot declare a .proc/.procgroup inside a .struct!");
+			return;
+	}
+
 	/* check if nesting procs/groups */
 	if (proc_ptr) {
 		if (optype == P_PGROUP) {
-			fatal_error("Cannot declare a group inside a proc/group!");
+			fatal_error("Cannot declare a .procgroup inside a .proc/.procgroup!");
 			return;
 		}
 		else {
-			if (proc_ptr->type == P_PROC) {
-				fatal_error("Cannot nest procs!");
+			if (proc_ptr->type != P_PGROUP) {
+				fatal_error("Cannot nest procedures!");
 				return;
 			}
 		}
@@ -226,8 +247,8 @@ do_proc(int *ip)
 
 	/* get proc name */
 	if (lablptr) {
-		strcpy(&symbol[1], &lablptr->name[1]);
-		symbol[0] = strlen(&symbol[1]);
+		/* copy the procedure name from the label */
+		strcpy(symbol, lablptr->name);
 	}
 	else {
 		/* skip spaces */
@@ -239,7 +260,7 @@ do_proc(int *ip)
 			if (symbol[0])
 				return;
 			if (optype == P_PROC) {
-				fatal_error("Proc name is missing!");
+				fatal_error(".proc name is missing!");
 				return;
 			}
 
@@ -255,11 +276,11 @@ do_proc(int *ip)
 
 	/* check symbol */
 	if (symbol[1] == '.' || symbol[1] == '@') {
-		fatal_error("Proc/group name cannot be a local label!");
+		fatal_error(".proc/.procgroup name cannot be a local label!");
 		return;
 	}
 	if (symbol[1] == '!') {
-		fatal_error("Proc/group name cannot be a multi-label!");
+		fatal_error(".proc/.procgroup name cannot be a multi-label!");
 		return;
 	}
 
@@ -275,12 +296,12 @@ do_proc(int *ip)
 			return;
 	}
 	if (proc_ptr->defined) {
-		fatal_error("Proc/group multiply defined!");
+		fatal_error(".proc/.procgroup multiply defined!");
 		return;
 	}
 
 	/* increment proc ref counter */
-	proc_ptr->defined++;
+	proc_ptr->defined = 1;
 
 	/* backup current bank infos */
 	bank_glabl[section][bank]  = glablptr;
@@ -301,6 +322,12 @@ do_proc(int *ip)
 	/* define label */
 	labldef(loccnt, 1);
 
+	/* a KickC procedure also opens a label-scope */
+	if (optype == P_KICKC) {
+		lablptr->scope = scopeptr;
+		scopeptr = lablptr;
+	}
+
 	/* output */
 	if (pass == LAST_PASS) {
 		loadlc(loccnt, 0);
@@ -318,12 +345,21 @@ do_proc(int *ip)
 void
 do_endp(int *ip)
 {
+	/* special checks for KickC procedures */
+	if (optype == P_KICKC) {
+		/* reserve "{}" syntax for KickC code */
+		if (kickc_mode == 0) {
+			fatal_error("Cannot use \"{}\" syntax in .pceas mode!");
+			return;
+		}
+	}
+
 	if (proc_ptr == NULL) {
-		fatal_error("Unexpected ENDP/ENDPROCGROUP!");
+		fatal_error("Unexpected .endp/.endprocgroup!");
 		return;
 	}
 	if (optype != proc_ptr->type) {
-		fatal_error("Unexpected ENDP/ENDPROCGROUP!");
+		fatal_error("Unexpected .endp/.endprocgroup!");
 		return;
 	}
 
@@ -331,8 +367,34 @@ do_endp(int *ip)
 	if (!check_eol(ip))
 		return;
 
+	/* restore procedure's initial section */
+	if (section != proc_ptr->label->section) {
+		/* backup current section data */
+		section_bank[section] = bank;
+		bank_glabl[section][bank] = glablptr;
+		bank_loccnt[section][bank] = loccnt;
+		bank_page[section][bank] = page;
+
+		/* change section */
+		section = proc_ptr->label->section;
+
+		/* switch to the new section */
+		bank = section_bank[section];
+		page = bank_page[section][bank];
+		loccnt = bank_loccnt[section][bank];
+		glablptr = bank_glabl[section][bank];
+
+		/* signal discontiguous change in loccnt */
+		discontiguous = 1;
+	}
+
+	/* define label */
+	labldef(loccnt, 1);
+
 	/* record proc size */
 	bank = proc_ptr->old_bank;
+	proc_ptr->label->data_type = proc_ptr->type;
+	proc_ptr->label->data_size =
 	proc_ptr->size = loccnt - proc_ptr->base;
 	proc_ptr = proc_ptr->group;
 
@@ -344,6 +406,16 @@ do_endp(int *ip)
 
 		/* signal discontiguous change in loccnt */
 		discontiguous = 1;
+	}
+
+	/* a KickC procedure also closes the label-scope */
+	if (optype == P_KICKC) {
+		/* return to previous scope */
+		if (scopeptr == NULL) {
+			fatal_error("Why is scopeptr NULL!");
+			return;
+		}
+		scopeptr = scopeptr->scope;
 	}
 
 	/* output */
