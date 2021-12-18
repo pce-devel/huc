@@ -64,6 +64,10 @@ assemble(int do_label)
 			}
 		}
 		if (pass == FIRST_PASS) {
+			if (preproc_modidx != 0) {
+				/* Remove C-style comments within a macro */
+				prlnbuf[preproc_modidx] = '\0';
+			}
 			ptr = (void *)malloc(sizeof(struct t_line));
 			buf = (void *)malloc(strlen(&prlnbuf[preproc_sfield]) + 1);
 			if ((ptr == NULL) || (buf == NULL)) {

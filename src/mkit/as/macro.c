@@ -27,11 +27,6 @@ do_macro(int *ip)
 		println();
 	else {
 		/* error checking */
-		if (kickc_mode) {
-			/* Avoid dealing with C-style comments inside a Macro. */
-			fatal_error("Cannot define a macro in .kickc mode!");
-			return;
-		}
 		if (scopeptr) {
 			fatal_error("Cannot define a macro inside a label scope!");
 			return;

@@ -434,7 +434,11 @@ int
 close_input(void)
 {
 	if (proc_ptr) {
-		fatal_error("Incomplete PROC!");
+		fatal_error("Incomplete .proc/.procgroup!");
+		return (-1);
+	}
+	if (scopeptr) {
+		fatal_error("Incomplete .struct!");
 		return (-1);
 	}
 	if (in_macro) {

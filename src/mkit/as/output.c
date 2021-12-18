@@ -26,7 +26,6 @@ println(void)
 	/* undo the pre-processor's modification to the line */
 	if (preproc_modidx != 0) {
 		prlnbuf[preproc_modidx] = '/';
-		preproc_modidx = 0;
 	}
 
 	/* only output the 1st line that was continued */
@@ -75,6 +74,11 @@ println(void)
 				fputs(prlnbuf, lst_fp); putc('\n', lst_fp);
 			}
 		}
+	}
+
+	/* redo the pre-processor's modification to the line */
+	if (preproc_modidx != 0) {
+		prlnbuf[preproc_modidx] = ';';
 	}
 }
 
