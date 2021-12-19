@@ -1,20 +1,37 @@
 New in version 3.99:
 --------------------
 
-2021-12-08:
+
+2021-12-19:
 -----------
   PCEAS changes ...
   -----------------
 - Bump version number to 3.25 (see ./doc/pce/usage-3.25.txt)
-- Add ".pceas" and ".kickc" to set current compatibility-mode.
-- Allow C-style comments while in .kickc mode.
-- Use "()" for traditional 6502 indirect-addressing while in .kickc mode.
-- The 'A' operand in ASL/DEC/INC/LSR/ROL/ROR is now optional.
-- Add ".z" and ".a" instruction suffixes to force addressing mode.
-- Add "{}" label scopes, which is a way of scoping access to label names.
 - Add "!" multi-labels, which are a form of "nameless" labels.
-- Add ".align", ".const", ".cpu", ".dword", ".encoding", ".fill", ".label",
-  ".segment", ".set", ".text", ".var", "*="
+- Add label-scopes, which add a base-name to every label inside the scope.
+- Add ".align", ".const", ".cpu", ".dword", ".encoding", ".ends", ".fill",
+      ".label", ".segment", ".set", ".struct", ".text", ".var", "*="
+- Allow section changes in ".proc" and ".struct", but restore original
+  section at ".endp" and ".ends".
+- Add "{}" in ".kickc" mode, which acts as both a ".proc" and a ".struct",
+  and also changes the handling of JSR and RTS instructions.
+- Fix broken ".opt" processing, enabling "l,m,w,o" options.
+  NB: ".opt l+" is the same as ".list"
+  NB: ".opt m+" is the same as ".mlist"
+  NB: ".opt o+" is OPT_OPTIMIZE, which does nothing.
+  NB: ".opt w+" is OPT_WARNING, which does nothing.
+- Add ".opt a+" to automatically use ZP addressing when labels are known.
+- Add ".opt c+" to allow C-style comments in source.
+- Add ".opt i+" to use "()" for traditional 6502 indirect-addressing.
+- Add "-kc" flag for assembling KickC-generated code.
+  NB: Sets ".opt c+"
+- Add ".pceas" and ".kickc" to set current compatibility-mode.
+  NB: ".pceas" mode also sets ".opt a-,i-" (default)
+  NB: ".kickc" mode also sets ".opt a+,i+"
+- Add '>' to force absolute addressing mode and match existing '<'.
+- Add ".a" and ".z" instruction suffixes to force addressing mode.
+- The 'A' operand in ASL/DEC/INC/LSR/ROL/ROR is now optional.
+- Allow ".db/.dw/.dd" in ZP and BSS sections, but only if data is zero.
 
 
 2021-11-16:
