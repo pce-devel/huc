@@ -549,6 +549,7 @@ main(int argc, char **argv)
 		asm_opt[OPT_OPTIMIZE] = 0;
 		asm_opt[OPT_CCOMMENT] = kickc_opt;
 		asm_opt[OPT_INDPAREN] = 0;
+		asm_opt[OPT_ZPDETECT] = 0;
 
 		/* reset bank arrays */
 		for (i = 0; i < 4; i++) {

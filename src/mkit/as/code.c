@@ -645,6 +645,12 @@ getoperand(int *ip, int flag, int last_char)
 			(*ip)++;
 			break;
 
+		case '>':
+			/* absolute */
+			mode = ABS | ABS_X | ABS_Y;
+			(*ip)++;
+			break;
+
 		case '[':
 			/* indirect */
 			mode = ABS_IND | ABS_IND_X | ZP_IND | ZP_IND_X | ZP_IND_Y;
@@ -663,9 +669,17 @@ getoperand(int *ip, int flag, int last_char)
 			/* fall through */
 
 		default:
+			if (opext == 'A')
+				/* absolute */
+				mode = ABS | ABS_X | ABS_Y;
+			else
 			if (opext == 'Z')
 				/* zero page */
 				mode = ZP | ZP_X | ZP_Y;
+			else
+			if (asm_opt[OPT_ZPDETECT])
+				/* absolute OR zero page */
+				mode = ABS | ABS_X | ABS_Y | ZP | ZP_X | ZP_Y;
 			else
 				/* absolute */
 				mode = ABS | ABS_X | ABS_Y;
@@ -675,6 +689,30 @@ getoperand(int *ip, int flag, int last_char)
 		/* get value */
 		if (!evaluate(ip, (paren == 1) ? ')' : 0))
 			return (0);
+
+		/* traditional 6502 assembler auto-detect between ZP and ABS */
+		if (mode == (ABS | ABS_X | ABS_Y | ZP | ZP_X | ZP_Y)) {
+			/* was there an undefined or undefined-this-pass symbol? */
+			if (undef || notyetdef ||
+				((value & 0x007FFF00) != machine->ram_base)) {
+//				((value & 0x007FFF00) && ((value & 0x007FFF00) != machine->ram_base))) {
+				/* use ABS addressing, if available */
+				if (flag & ABS)
+					mode &= ~ZP;
+				if (flag & ABS_X)
+					mode &= ~ZP_X;
+				if (flag & ABS_Y)
+					mode &= ~ZP_Y;
+			} else {
+				/* use ZP addressing, if available */
+				if (flag & ZP)
+					mode &= ~ABS;
+				if (flag & ZP_X)
+					mode &= ~ABS_X;
+				if (flag & ZP_Y)
+					mode &= ~ABS_Y;
+			}
+		}
 
 		/* check addressing mode */
 		code = 0;

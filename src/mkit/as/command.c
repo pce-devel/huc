@@ -1495,7 +1495,6 @@ do_opt(int *ip)
 	char c;
 	char flag;
 	char name[32];
-	int opt;
 	int i;
 
 	for (;;) {
@@ -1504,59 +1503,69 @@ do_opt(int *ip)
 			(*ip)++;
 
 		/* get char */
-		c = prlnbuf[(*ip)++];
-
-		/* no option */
-		if (c == ',')
-			continue;
-
-		/* end of line */
-		if (c == ';' || c == '\0')
-			break;
+		c = prlnbuf[(*ip)];
 
 		/* extract option */
 		i = 0;
-		for (;;) {
-			if (c == ' ')
-				continue;
-			if (c == ',' || c == ';' || c == '\0')
-				break;
+		while (!isspace(c) && (c != ',') && (c != ';') && (c != '\0')) {
 			if (i > 31) {
 				error("Syntax error!");
 				return;
 			}
 			name[i++] = c;
-			c = prlnbuf[(*ip)++];
+			c = prlnbuf[++(*ip)];
 		}
 
 		/* get option flag */
+		flag = (i != 0) ? name[--i] : '\0';
 		name[i] = '\0';
-		flag = name[--i];
-		name[i] = '\0';
+
+		/* set option */
+		if (flag == '+')
+			i = 1;
+		else if (flag == '-')
+			i = 0;
+		else {
+			error("Syntax error!");
+			return;
+		}
 
 		/* search option */
 		if (!strcasecmp(name, "l"))
-			opt = OPT_LIST;
+			asm_opt[OPT_LIST] = i;
 		else if (!strcasecmp(name, "m"))
-			opt = OPT_MACRO;
+			asm_opt[OPT_MACRO] = i;
 		else if (!strcasecmp(name, "w"))
-			opt = OPT_WARNING;
+			asm_opt[OPT_WARNING] = i;
 		else if (!strcasecmp(name, "o"))
-			opt = OPT_OPTIMIZE;
+			asm_opt[OPT_OPTIMIZE] = i;
 		else if (!strcasecmp(name, "c"))
-			opt = OPT_CCOMMENT;
+			asm_opt[OPT_CCOMMENT] = i;
 		else if (!strcasecmp(name, "i"))
-			opt = OPT_INDPAREN;
+			asm_opt[OPT_INDPAREN] = i;
+		else if (!strcasecmp(name, "a"))
+			asm_opt[OPT_ZPDETECT] = i;
 		else {
 			error("Unknown option!");
 			return;
 		}
 
-		/* set option */
-		if (flag == '+')
-			asm_opt[opt] = 1;
-		if (flag == '-')
-			asm_opt[opt] = 0;
+		/* skip spaces */
+		while (isspace(prlnbuf[*ip]))
+			(*ip)++;
+
+		/* get char */
+		c = prlnbuf[(*ip)++];
+
+		/* end of line */
+		if (c == ';' || c == '\0')
+			break;
+
+		/* skip comma */
+		if (c != ',') {
+			error("Syntax error!");
+			return;
+		}
 	}
 
 	/* output */
@@ -1646,6 +1655,9 @@ do_kickc(int *ip)
 
 	/* enable () for indirect addressing in KickC mode */
 	asm_opt[OPT_INDPAREN] = optype;
+
+	/* enable auto-detect ZP addressing in KickC mode */
+	asm_opt[OPT_ZPDETECT] = optype;
 
 	/* output line */
 	if (pass == LAST_PASS)

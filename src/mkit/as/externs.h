@@ -82,6 +82,7 @@ extern char tmplnbuf[];				/* temporary line buffer */
 extern int slnum;				/* source line number counter */
 extern char symbol[];				/* temporary symbol storage */
 extern int undef;				/* undefined symbol in expression flag */
+extern int notyetdef;				/* undefined-in-current-pass symbol in expr */
 extern unsigned int value;			/* operand field value */
 extern int newproc_opt;				/* use "new" style of procedure trampolines */
 extern int strip_opt;				/* strip unused procedures? */

@@ -46,6 +46,7 @@ char tmplnbuf[LAST_CH_POS + 4];		/* temporary line buffer */
 int slnum;				/* source line number counter */
 char symbol[SBOLSZ + 1];		/* temporary symbol storage */
 int undef;				/* undefined symbol in expression flg  */
+int notyetdef;				/* undefined-in-current-pass symbol in expr */
 unsigned int value;			/* operand field value */
 int opvaltab[6][16] = {
 	{0x08, 0x08, 0x04, 0x14, 0x14, 0x11, 0x00, 0x10,// CPX CPY LDX LDY

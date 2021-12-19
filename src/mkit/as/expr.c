@@ -80,6 +80,7 @@ evaluate(int *ip, char last_char)
 	end = 0;
 	level = 0;
 	undef = 0;
+	notyetdef = 0;
 	op_idx = 0;
 	val_idx = 0;
 	value = 0;
@@ -556,8 +557,12 @@ push_val(int type)
 				error("Symbol from an unused procedure that was stripped out!");
 				undef++;
 			}
-		else
+		else {
 			val = expr_lablptr->value;
+			if (expr_lablptr->defcnt == 0) {
+				notyetdef++;
+			}
+		}
 
 		/* remember we have seen a symbol in the expression */
 		expr_lablcnt++;

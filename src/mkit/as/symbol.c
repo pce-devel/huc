@@ -563,7 +563,6 @@ lablresetdefcnt(void)
 		while (sym) {
 			sym->defcnt = 0;
 
-#if 0
 			/* local symbols */
 			if (sym->local) {
 				struct t_symbol * local = sym->local;
@@ -575,7 +574,6 @@ lablresetdefcnt(void)
 					local = local->next;
 				}
 			}
-#endif
 
 			/* next */
 			sym = sym->next;

@@ -59,6 +59,7 @@
 #define OPT_OPTIMIZE	3
 #define OPT_CCOMMENT	4
 #define OPT_INDPAREN	5
+#define OPT_ZPDETECT	6
 
 /* assembler directives */
 #define P_DB		0	// .db
