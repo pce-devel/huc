@@ -310,7 +310,7 @@
                         ; ****************************************************************************
                         ;
                         ; The traditional 6502-assembler usage of zero-page addressing when a symbol
-                        ; has been previously defined is now support, but only as an option, because
+                        ; has been previously defined is supported, but only as an option, because
                         ; it can change the meaning of instructions ...
                         ;
 

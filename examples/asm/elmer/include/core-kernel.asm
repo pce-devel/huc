@@ -216,13 +216,17 @@ irq1_handler:	pha				; Save all registers.
 	.if	SUPPORT_SGX
 		lda	#VDC_CR			; Update the SGX's Control
 		sta	SGX_AR			; Register first, just in
-		lda	<sgx_crl		; case this is not an SGX!
+		sta	VDC_AR			; case this is not an SGX!
+		lda	<sgx_crl		
 		sta	SGX_DL
+		lda	<vdc_crl
+		sta	VDC_DL
 
 ;		lda	<sgx_crh		; Do not mess with the SGX's
 ;		sta	SGX_DH			; auto-increment!!!
-	.endif
-
+;		lda	<vdc_crh		; Do not mess with the VDC's
+;		sta	VDC_DH			; auto-increment!!!
+	.else
 		lda	#VDC_CR			; Update the VDC's Control
 		sta	VDC_AR			; Register.
 		lda	<vdc_crl
@@ -230,6 +234,7 @@ irq1_handler:	pha				; Save all registers.
 
 ;		lda	<vdc_crh		; Do not mess with the VDC's
 ;		sta	VDC_DH			; auto-increment!!!
+	.endif
 
 		inc	irq_cnt			; Mark that a VBLANK occurred.
 
