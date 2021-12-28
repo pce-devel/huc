@@ -854,6 +854,13 @@ getoperand(int *ip, int flag, int last_char)
 				/* check address validity */
 				if (value & 0x007F0000)
 					error("Incorrect absolute address!");
+
+				/* if HuC6280 and currently inside a ".kickc" C function/procedure */
+				if (machine->ram_base && kickc_mode && scopeptr && proc_ptr) {
+					if ((value & 0xFF00) == 0x0000) {
+						error("Incorrect absolute address!");
+					}
+				}
 			}
 		}
 		break;
