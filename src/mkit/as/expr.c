@@ -27,8 +27,8 @@ t_symbol pc_symbol = {
 	0, /* vram */
 	0, /* pal */
 	1, /* defcnt */
-	0, /* refcnt */
-	0, /* reserved */
+	1, /* refcnt */
+	1, /* reserved */
 	0, /* data_type */
 	0, /* data_size */
 	"*" /* name */
@@ -88,6 +88,7 @@ evaluate(int *ip, char last_char)
 	need_operator = 0;
 	expr_lablptr = NULL;
 	expr_lablcnt = 0;
+	simple_expr = 1;
 	op = OP_START;
 	func_idx = 0;
 
@@ -815,6 +816,7 @@ push_op(int op)
 	op_idx++;
 	op_stack[op_idx] = op;
 	need_operator = 0;
+	simple_expr = 0;
 	return (1);
 }
 

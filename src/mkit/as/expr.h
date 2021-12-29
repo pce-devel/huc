@@ -61,6 +61,7 @@ char *expr;			/* pointer to the expression string */
 char *expr_stack[16];		/* expression stack */
 struct t_symbol *expr_lablptr;	/* pointer to the lastest label */
 int expr_lablcnt;		/* number of label seen in an expression */
+int simple_expr;		/* NZ if the expression has no operators */
 const char *keyword[8] = {	/* predefined functions */
 	"\7DEFINED",
 	"\4HIGH", "\3LOW",
