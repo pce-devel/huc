@@ -1545,6 +1545,8 @@ do_opt(int *ip)
 			asm_opt[OPT_INDPAREN] = i;
 		else if (!strcasecmp(name, "a"))
 			asm_opt[OPT_ZPDETECT] = i;
+		else if (!strcasecmp(name, "b"))
+			asm_opt[OPT_LBRANCH] = i;
 		else {
 			error("Unknown option!");
 			return;
@@ -1658,6 +1660,9 @@ do_kickc(int *ip)
 
 	/* enable auto-detect ZP addressing in KickC mode */
 	asm_opt[OPT_ZPDETECT] = optype;
+
+	/* enable long-branch support in KickC mode */
+	asm_opt[OPT_LBRANCH] = optype;
 
 	/* output line */
 	if (pass == LAST_PASS)
