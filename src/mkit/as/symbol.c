@@ -345,11 +345,17 @@ labldef(int lval, int flag)
 		}
 	}
 
-	/* second pass */
+	/* branch pass */
+	else if (pass != LAST_PASS) {
+		if (lablptr->type == DEFABS)
+			lablptr->value = lval;
+	}
+
+	/* last pass */
 	else {
 		if ((lablptr->value != lval) ||
 		    ((flag) && (bank < bank_limit) && (lablptr->bank != bank_base + bank))) {
-			fatal_error("Symbol's bank or address changed in 2nd pass!");
+			fatal_error("Symbol's bank or address changed in final pass!");
 			return (-1);
 		}
 	}

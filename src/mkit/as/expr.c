@@ -26,7 +26,7 @@ t_symbol pc_symbol = {
 	0, /* size */
 	0, /* vram */
 	0, /* pal */
-	0, /* defcnt */
+	1, /* defcnt */
 	0, /* refcnt */
 	0, /* reserved */
 	0, /* data_type */

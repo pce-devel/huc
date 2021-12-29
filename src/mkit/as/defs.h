@@ -168,7 +168,8 @@
 
 /* pass flags */
 #define FIRST_PASS	0
-#define LAST_PASS	1
+#define BRANCH_PASS	1
+#define LAST_PASS	2
 
 /* structs */
 typedef struct t_opcode {

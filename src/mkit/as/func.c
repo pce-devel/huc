@@ -24,7 +24,8 @@ do_func(int *ip)
 {
 	if (pass == LAST_PASS)
 		println();
-	else {
+	else
+	if (pass == FIRST_PASS) {
 		/* error checking */
 		if (scopeptr) {
 			fatal_error("Cannot define a function inside a label scope!");

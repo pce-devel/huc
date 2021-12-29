@@ -218,6 +218,7 @@ main(int argc, char **argv)
 	int file;
 	int ram_bank;
 	int cd_type;
+	int pass_count = 0;
 	const char *cmd_line_options = "sSl:mhI:o:";
 	const struct option cmd_line_long_options[] = {
 		{"segment",     0, 0,           's'},
@@ -585,11 +586,17 @@ main(int argc, char **argv)
 		bank_page[S_DATA][0x00] = 0x07;
 		bank_loccnt[S_DATA][0x00] = 0x0000;
 
-		/* clear the list of included files from the previous pass */
-		forget_included_files();
+		/* reset symbol table and include files */
+		if (pass != FIRST_PASS) {
+			/* clear the label and multi-label defcnt */
+			lablresetdefcnt();
+
+			/* clear the list of included files */
+			forget_included_files();
+		}
 
 		/* pass message */
-		printf("pass %i\n", pass + 1);
+		printf("pass %i\n", ++pass_count);
 
 		/* assemble */
 		while (readline() != -1) {
@@ -620,19 +627,21 @@ main(int argc, char **argv)
 				break;
 		}
 
-		/* relocate procs */
-		if (pass == FIRST_PASS)
+		/* before the last pass */
+		if (pass == LAST_PASS - 1) {
+			/* open the listing file */
+			if (lst_fp == NULL && xlist && list_level) {
+				if ((lst_fp = fopen(lst_fname, "w")) == NULL) {
+					printf("Can not open listing file '%s'!\n", lst_fname);
+					exit(1);
+				}
+				fprintf(lst_fp, "#[1]   %s\n", input_file[1].name);
+			}
+
+			/* relocate procs */
 			proc_reloc();
 
-		/* abort pass on errors */
-		if (errcnt) {
-			printf("# %d error(s)\n", errcnt);
-			exit(1);
-			// break;
-		}
-
-		/* update predefined symbols */
-		if (pass == FIRST_PASS) {
+			/* update predefined symbols */
 			lablset("_bss_end", machine->ram_base + max_bss);
 			lablset("_call_bank", bank_base + call_bank);
 			if (call_bank > max_bank) {
@@ -642,27 +651,18 @@ main(int argc, char **argv)
 			}
 		}
 
-		/* reset multi-labels for the next pass */
-		if (pass == FIRST_PASS)
-			lablresetdefcnt();
+		/* abort pass on errors */
+		if (errcnt) {
+			printf("# %d error(s)\n", errcnt);
+			exit(1);
+		}
 
 		/* rewind input file */
 		rewind(in_fp);
-
-		/* open the listing file */
-		if (pass == FIRST_PASS) {
-			if (xlist && list_level) {
-				if ((lst_fp = fopen(lst_fname, "w")) == NULL) {
-					printf("Can not open listing file '%s'!\n", lst_fname);
-					exit(1);
-				}
-				fprintf(lst_fp, "#[1]   %s\n", input_file[1].name);
-			}
-		}
 	}
 
 	/* close listing file */
-	if (xlist && list_level)
+	if (lst_fp)
 		fclose(lst_fp);
 
 	/* close input file */

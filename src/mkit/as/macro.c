@@ -25,7 +25,8 @@ do_macro(int *ip)
 {
 	if (pass == LAST_PASS)
 		println();
-	else {
+	else
+	if (pass == FIRST_PASS) {
 		/* error checking */
 		if (scopeptr) {
 			fatal_error("Cannot define a macro inside a label scope!");

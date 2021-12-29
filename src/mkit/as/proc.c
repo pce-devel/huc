@@ -295,7 +295,7 @@ do_proc(int *ip)
 		if (!proc_install())
 			return;
 	}
-	if (proc_ptr->defined) {
+	if (pass == FIRST_PASS && proc_ptr->defined) {
 		fatal_error(".proc/.procgroup multiply defined!");
 		return;
 	}
@@ -412,7 +412,7 @@ do_endp(int *ip)
 	if (optype == P_KICKC) {
 		/* return to previous scope */
 		if (scopeptr == NULL) {
-			fatal_error("Why is scopeptr NULL!");
+			fatal_error("Why is scopeptr NULL here?!?!");
 			return;
 		}
 		scopeptr = scopeptr->scope;
@@ -641,10 +641,7 @@ proc_reloc(void)
 		poke(call_ptr--, 0x53);			// tam #6
 		poke(call_ptr--, 0x68);			// pla
 
-		strcpy(symbol, "\x0Aleave_proc");
-		if ((lablptr = stlook(SYM_DEF)) == NULL)
-			return;
-		labldef(call_ptr + 1 + (call_bank << 23), 0);
+		lablset("leave_proc", call_ptr + 1 + (call_bank << 23));
 	}
 }
 
