@@ -59,9 +59,10 @@ int op_idx, val_idx;		/* index in the operator and value stacks */
 int need_operator;		/* when set await an operator, else await a value */
 char *expr;			/* pointer to the expression string */
 char *expr_stack[16];		/* expression stack */
-struct t_symbol *expr_lablptr;	/* pointer to the lastest label */
+struct t_symbol *expr_toplabl;	/* pointer to the innermost scope-label */
+struct t_symbol *expr_lablptr;	/* pointer to the last-referenced label */
 int expr_lablcnt;		/* number of label seen in an expression */
-int simple_expr;		/* NZ if the expression has no operators */
+int complex_expr;		/* NZ if an expression contains operators */
 const char *keyword[8] = {	/* predefined functions */
 	"\7DEFINED",
 	"\4HIGH", "\3LOW",

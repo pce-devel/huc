@@ -86,9 +86,10 @@ evaluate(int *ip, char last_char)
 	value = 0;
 	val_stack[0] = 0;
 	need_operator = 0;
+	expr_toplabl = NULL;
 	expr_lablptr = NULL;
 	expr_lablcnt = 0;
-	simple_expr = 1;
+	complex_expr = 0;
 	op = OP_START;
 	func_idx = 0;
 
@@ -531,6 +532,10 @@ push_val(int type)
 					/* search for the symbol */
 					expr_lablptr = stlook(SYM_REF);
 
+					/* remember label in innermost scope */
+					if (!expr_toplabl)
+						expr_toplabl = expr_lablptr;
+
 					/* has it been defined? */
 					if ((expr_lablptr != NULL) && (expr_lablptr->type != UNDEF))
 						break;
@@ -542,6 +547,7 @@ push_val(int type)
 				}
 			} else {
 				/* just search for the symbol in the root scope */
+				expr_toplabl =
 				expr_lablptr = stlook(SYM_REF);
 			}
 		}
@@ -816,7 +822,7 @@ push_op(int op)
 	op_idx++;
 	op_stack[op_idx] = op;
 	need_operator = 0;
-	simple_expr = 0;
+	complex_expr = 1;
 	return (1);
 }
 

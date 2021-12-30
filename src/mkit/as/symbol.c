@@ -278,9 +278,9 @@ labldef(int lval, int flag)
 	/* adjust symbol address */
 	if (flag) {
 		if (bank >= RESERVED_BANK)
-			lval = lval + (page << 13) + (bank << 23);
+			lval = ((lval + (page << 13)) & 0xFFFF) + (bank << 23);
 		else
-			lval = lval + (page << 13) + ((bank + bank_base) << 23);
+			lval = ((lval + (page << 13)) & 0xFFFF) + ((bank + bank_base) << 23);
 
 		/* is this a multi-label? */
 		if (lablptr->name[1] == '!') {

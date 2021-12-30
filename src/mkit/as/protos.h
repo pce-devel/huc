@@ -28,6 +28,7 @@ void class9(int *ip);
 void class10(int *ip);
 int  getoperand(int *ip, int flag, int last_char);
 int  getstring(int *ip, char *buffer, int size);
+int  branchopt(void);
 
 /* COMMAND.C */
 void do_pseudo(int *ip);

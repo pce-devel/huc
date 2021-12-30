@@ -33,6 +33,10 @@ extern unsigned int pcx_arg[8];		/* PCX args array */
 extern unsigned char *pcx_buf;		/* pointer to the PCX buffer */
 extern unsigned char pcx_pal[256][3];	/* palette */
 extern char *expr;			/* expression string pointer */
+extern struct t_symbol *expr_toplabl;	/* pointer to the innermost scope-label */
+extern struct t_symbol *expr_lablptr;	/* pointer to the last-referenced label */
+extern int expr_lablcnt;		/* number of label seen in an expression */
+extern int complex_expr;		/* NZ if an expression contains operators */
 extern int mopt;
 extern int in_macro;
 extern int expand_macro;
@@ -67,7 +71,8 @@ extern struct t_symbol *glablptr;		/* pointer to the latest defined global symbo
 extern struct t_symbol *scopeptr;		/* pointer to the latest defined scope label */
 extern struct t_symbol *lastlabl;		/* last label we have seen */
 extern struct t_symbol *bank_glabl[4][256];	/* latest global label in each bank */
-extern struct t_symbol *bank_scope[4][256];	/* latest scope symbol for each bank */
+extern struct t_branch *branchlst;		/* first branch instruction assembled */
+extern struct t_branch *branchptr;		/* last branch instruction assembled */
 extern char hex[];				/* hexadecimal character buffer */
 extern int stop_pass;				/* stop the program; set by fatal_error() */
 extern int errcnt;				/* error counter */

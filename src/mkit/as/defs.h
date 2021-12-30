@@ -227,6 +227,13 @@ typedef struct t_symbol {
 	char name[SBOLSZ];
 } t_symbol;
 
+typedef struct t_branch {
+	struct t_branch *next;
+	struct t_symbol *label;
+	int addr;
+	int type;
+} t_branch;
+
 typedef struct t_line {
 	struct t_line *next;
 	char *data;

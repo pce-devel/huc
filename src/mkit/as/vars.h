@@ -34,6 +34,8 @@ struct t_symbol *glablptr;		/* pointer to the latest defined global label */
 struct t_symbol *scopeptr;		/* pointer to the latest defined scope label */
 struct t_symbol *lastlabl;		/* last label we have seen */
 struct t_symbol *bank_glabl[4][256];	/* latest global symbol for each bank */
+struct t_branch *branchlst;		/* first branch instruction assembled */
+struct t_branch *branchptr;		/* last branch instruction assembled */
 char hex[5];				/* hexadecimal character buffer */
 void (*opproc)(int *);			/* instruction gen proc */
 int opflg;				/* instruction flags */

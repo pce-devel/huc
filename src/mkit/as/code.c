@@ -1,4 +1,6 @@
+
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include "defs.h"
@@ -8,6 +10,8 @@
 unsigned char auto_inc;
 unsigned char auto_tag;
 unsigned int auto_tag_value;
+
+static struct t_branch * getbranch(int opcode_length);
 
 
 /* ----
@@ -94,6 +98,7 @@ class1(int *ip)
 void
 class2(int *ip)
 {
+	struct t_branch * branch;
 	unsigned int addr;
 
 	/* update location counter */
@@ -103,22 +108,52 @@ class2(int *ip)
 	if (!evaluate(ip, ';'))
 		return;
 
+	/* all branches tracked for long-branch handling */
+	if ((branch = getbranch(2)) == NULL)
+		return;
+
+	/* need more space for a long-branch */
+	if (branch->type) {
+		if ((opval & 0x1F) == 0x10)
+			/* conditional branch */
+			loccnt += 3;
+		else
+			/* bra and bsr */
+			loccnt += 1;
+	}
+
 	/* generate code */
 	if (pass == LAST_PASS) {
-		/* opcode */
-		putbyte(data_loccnt, opval);
+		if (branch->type) {
+			/* long-branch opcode */
+			if ((opval & 0x1F) == 0x10) {
+				/* conditional-branch */
+				putbyte(data_loccnt + 0, opval ^ 0x20);
+				putbyte(data_loccnt + 1, 0x03);
 
-		/* calculate branch offset */
-		addr = (value & 0xFFFF) - (loccnt + (page << 13));
+				putbyte(data_loccnt + 2, 0x4C);
+				putword(data_loccnt + 3, value & 0xFFFF);
+			} else {
+				/* bra and bsr */
+				putbyte(data_loccnt + 0, (opval == 0x80) ? 0x4C : 0x20);
+				putword(data_loccnt + 1, value & 0xFFFF);
+			}
+		} else {
+			/* short-branch opcode */
+			putbyte(data_loccnt, opval);
 
-		/* check range */
-		if (addr > 0x7Fu && addr < ~0x7Fu) {
-			error("Branch address out of range!");
-			return;
+			/* calculate branch offset */
+			addr = (value & 0xFFFF) - (loccnt + (page << 13));
+
+			/* check range */
+			if (addr > 0x7Fu && addr < ~0x7Fu) {
+				error("Branch address out of range!");
+				return;
+			}
+
+			/* offset */
+			putbyte(data_loccnt + 1, addr);
 		}
-
-		/* offset */
-		putbyte(data_loccnt + 1, addr);
 
 		/* output line */
 		println();
@@ -288,9 +323,10 @@ class4(int *ip)
 void
 class5(int *ip)
 {
+	struct t_branch * branch;
 	int zp;
-	unsigned int addr;
 	int mode;
+	unsigned int addr;
 
 	/* update location counter */
 	loccnt += 3;
@@ -306,23 +342,41 @@ class5(int *ip)
 	if (!mode)
 		return;
 
+	/* all branches tracked for long-branch handling */
+	if ((branch = getbranch(3)) == NULL)
+		return;
+
+	/* need more space for a long-branch */
+	if (branch->type)
+		loccnt += 3;
+
 	/* generate code */
 	if (pass == LAST_PASS) {
-		/* opcodes */
-		putbyte(data_loccnt, opval);
-		putbyte(data_loccnt + 1, zp);
+		if (branch->type) {
+			/* long-branch opcode */
+			putbyte(data_loccnt, opval ^ 0x80);
+			putbyte(data_loccnt + 1, zp);
+			putbyte(data_loccnt + 2, 0x03);
 
-		/* calculate branch offset */
-		addr = (value & 0xFFFF) - (loccnt + (page << 13));
+			putbyte(data_loccnt + 3, 0x4C);
+			putword(data_loccnt + 4, value & 0xFFFF);
+		} else {
+			/* short-branch opcode */
+			putbyte(data_loccnt, opval);
+			putbyte(data_loccnt + 1, zp);
 
-		/* check range */
-		if (addr > 0x7Fu && addr < ~0x7Fu) {
-			error("Branch address out of range!");
-			return;
+			/* calculate branch offset */
+			addr = (value & 0xFFFF) - (loccnt + (page << 13));
+
+			/* check range */
+			if (addr > 0x7Fu && addr < ~0x7Fu) {
+				error("Branch address out of range!");
+				return;
+			}
+
+			/* offset */
+			putbyte(data_loccnt + 2, addr);
 		}
-
-		/* offset */
-		putbyte(data_loccnt + 2, addr);
 
 		/* output line */
 		println();
@@ -528,6 +582,7 @@ class9(int *ip)
 void
 class10(int *ip)
 {
+	struct t_branch * branch;
 	int bit;
 	int zp;
 	int mode;
@@ -553,6 +608,14 @@ class10(int *ip)
 	if (!mode)
 		return;
 
+	/* all branches tracked for long-branch handling */
+	if ((branch = getbranch(3)) == NULL)
+		return;
+
+	/* need more space for a long-branch */
+	if (branch->type)
+		loccnt += 3;
+
 	/* generate code */
 	if (pass == LAST_PASS) {
 		/* check bit number */
@@ -561,21 +624,31 @@ class10(int *ip)
 			return;
 		}
 
-		/* opcodes */
-		putbyte(data_loccnt, opval + (bit << 4));
-		putbyte(data_loccnt + 1, zp);
+		if (branch->type) {
+			/* long-branch opcode */
+			putbyte(data_loccnt, (opval + (bit << 4)) ^ 0x80);
+			putbyte(data_loccnt + 1, zp);
+			putbyte(data_loccnt + 2, 0x03);
 
-		/* calculate branch offset */
-		addr = (value & 0xFFFF) - (loccnt + (page << 13));
+			putbyte(data_loccnt + 3, 0x4C);
+			putword(data_loccnt + 4, value & 0xFFFF);
+		} else {
+			/* short-branch opcode */
+			putbyte(data_loccnt, opval + (bit << 4));
+			putbyte(data_loccnt + 1, zp);
 
-		/* check range */
-		if (addr > 0x7Fu && addr < ~0x7Fu) {
-			error("Branch address out of range!");
-			return;
+			/* calculate branch offset */
+			addr = (value & 0xFFFF) - (loccnt + (page << 13));
+
+			/* check range */
+			if (addr > 0x7Fu && addr < ~0x7Fu) {
+				error("Branch address out of range!");
+				return;
+			}
+
+			/* offset */
+			putbyte(data_loccnt + 2, addr);
 		}
-
-		/* offset */
-		putbyte(data_loccnt + 2, addr);
 
 		/* output line */
 		println();
@@ -952,3 +1025,104 @@ getstring(int *ip, char *buffer, int size)
 	return (1);
 }
 
+
+/* ----
+ * getbranch()
+ * ----
+ * return tracking structure for the current branch
+ */
+
+static struct t_branch *
+getbranch(int opcode_length)
+{
+	struct t_branch * branch;
+
+	/* track all branches for long-branch handling */
+	if (pass == FIRST_PASS) {
+		/* remember this branch instruction */
+		if ((branch = malloc(sizeof(struct t_branch))) == NULL) {
+			error("Out of memory!");
+			return NULL;
+		}
+		if (branchlst == NULL)
+			branchlst = branch;
+		if (branchptr != NULL)
+			branchptr->next = branch;
+		branchptr = branch;
+
+		branch->next = NULL;
+		branch->addr = (loccnt + (page << 13)) & 0xFFFF;
+		branch->type = 0;
+
+		if (asm_opt[OPT_LBRANCH] && !complex_expr) {
+			/* enable expansion to long-branch */
+			branch->label = expr_toplabl;
+		} else {
+			/* assume short, error if out-of-range */
+			branch->label = NULL;
+		}
+	} else {
+		/* update this branch instruction */
+		if (branchptr == NULL) {
+			error("Untracked branch instruction!");
+			return NULL;
+		}
+
+		branch = branchptr;
+		branchptr = branchptr->next;
+
+		/* sanity check */
+		if ((branch->label != NULL) && (branch->label != expr_toplabl)) {
+			error("Branch label mismatch!");
+			return NULL;
+		}
+
+		branch->addr = (loccnt + (page << 13)) & 0xFFFF;
+
+		if (branch->type && pass == LAST_PASS) {
+			loccnt -= opcode_length;
+			warning("Warning: Converted to long-branch!\n");
+			loccnt += opcode_length;
+		}
+	}
+
+	return branch;
+}
+
+
+/* ----
+ * branchopt()
+ * ----
+ * convert out-of-range short-branches into long-branches
+ */
+
+int
+branchopt(void)
+{
+	struct t_branch * branch;
+	unsigned int addr;
+	int changed = 0;
+
+	/* look through the entire list of branch instructions */
+	for (branch = branchlst; branch != NULL; branch = branch->next) {
+
+		/* check to see if a short-branch needs to be converted */
+		if ((branch->type == 0) &&
+		    (branch->label != NULL) &&
+		    (branch->label->type == DEFABS)) {
+			/* check if it is outside short-branch range */
+			addr = (branch->label->value & 0xFFFF) - branch->addr;
+
+			if (addr > 0x7Fu && addr < ~0x7Fu) {
+				branch->type = 1;
+				++changed;
+			}
+		}
+	}
+
+	/* report changes */
+	if (changed)
+		printf("Changed %d branches from short to long.\n", changed);
+
+	return changed;
+}

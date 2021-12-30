@@ -487,6 +487,7 @@ main(int argc, char **argv)
 	addinst(machine->pseudo_inst);
 
 	/* init global variables */
+	branchlst = NULL;
 	max_zp = 0x01;
 	max_bss = 0x0201;
 	max_bank = 0;
@@ -539,6 +540,7 @@ main(int argc, char **argv)
 		xlist = 0;
 		glablptr = NULL;
 		scopeptr = NULL;
+		branchptr = branchlst;
 		skip_lines = 0;
 		rsbase = 0;
 		proc_nb = 0;
@@ -596,6 +598,11 @@ main(int argc, char **argv)
 			forget_included_files();
 		}
 
+		/* reset max_bank */
+		if (pass != LAST_PASS) {
+			max_bank = 0;
+		}
+
 		/* pass message */
 		printf("pass %i\n", ++pass_count);
 
@@ -628,8 +635,18 @@ main(int argc, char **argv)
 				break;
 		}
 
-		/* before the last pass */
-		if (pass == LAST_PASS - 1) {
+		/* set pass to FIRST_PASS to run BRANCH_PASS next */
+		/* or set it to BRANCH_PASS to run LAST_PASS next */
+		if (pass != LAST_PASS) {
+			/* fix out-of-range short-branches, return number fixed */
+			if (branchopt() == 0)
+				pass = BRANCH_PASS;
+			else
+				pass = FIRST_PASS;
+		}
+
+		/* do this just before the last pass */
+		if (pass == BRANCH_PASS) {
 			/* open the listing file */
 			if (lst_fp == NULL && xlist && list_level) {
 				if ((lst_fp = fopen(lst_fname, "w")) == NULL) {
