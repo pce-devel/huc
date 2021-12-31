@@ -2,7 +2,7 @@ New in version 3.99:
 --------------------
 
 
-2021-12-19:
+2021-12-31:
 -----------
   PCEAS changes ...
   -----------------
@@ -15,19 +15,20 @@ New in version 3.99:
   section at ".endp" and ".ends".
 - Add "{}" in ".kickc" mode, which acts as both a ".proc" and a ".struct",
   and also changes the handling of JSR and RTS instructions.
-- Fix broken ".opt" processing, enabling "l,m,w,o" options.
+- Fix broken ".opt" processing, enabling "l,m,o" options.
   NB: ".opt l+" is the same as ".list"
   NB: ".opt m+" is the same as ".mlist"
   NB: ".opt o+" is OPT_OPTIMIZE, which does nothing.
-  NB: ".opt w+" is OPT_WARNING, which does nothing.
 - Add ".opt a+" to automatically use ZP addressing when labels are known.
+- Add ".opt b+" to convert out-of-range branches to long-branches.
 - Add ".opt c+" to allow C-style comments in source.
 - Add ".opt i+" to use "()" for traditional 6502 indirect-addressing.
+- Add ".opt w+" for optional warnings, i.e. when a long-branch is generated.
 - Add "-kc" flag for assembling KickC-generated code.
   NB: Sets ".opt c+"
 - Add ".pceas" and ".kickc" to set current compatibility-mode.
-  NB: ".pceas" mode also sets ".opt a-,i-" (default)
-  NB: ".kickc" mode also sets ".opt a+,i+"
+  NB: ".pceas" mode also sets ".opt a-,b-,i-" (default)
+  NB: ".kickc" mode also sets ".opt a+,b+,i+"
 - Add '>' to force absolute addressing mode and match existing '<'.
 - Add ".a" and ".z" instruction suffixes to force addressing mode.
 - The 'A' operand in ASL/DEC/INC/LSR/ROL/ROR is now optional.

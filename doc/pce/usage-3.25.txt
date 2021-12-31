@@ -1,7 +1,7 @@
                         ; ****************************************************************************
                         ; ****************************************************************************
                         ;
-                        ; SUMMARY OF RECENT CHANGES IN PCEAS 3.25 (2021-12-19)
+                        ; SUMMARY OF RECENT CHANGES IN PCEAS 3.25 (2021-12-31)
                         ;
                         ; ****************************************************************************
                         ; ****************************************************************************
@@ -314,26 +314,26 @@
                         ; it can change the meaning of instructions ...
                         ;
 
-                                        .opt    a+                      ; Enable auto-zp addressing.
+                                        .opt    a+              ; Enable auto-zp addressing.
 
-01:6097  9C 80 20                       stz     mysymbol                ; Symbol is unknown here, so
-01:609A  9D 80 20                       sta     mysymbol,x              ; use absolute addressing.
+01:6097  9C 80 20                       stz     mysymbol        ; Symbol is unknown here, so
+01:609A  9D 80 20                       sta     mysymbol,x      ; use absolute addressing.
 01:609D  99 80 20                       sta     mysymbol,y
-01:60A0  96 80                          stx     mysymbol,y              ; Unless ZP is only option.
+01:60A0  96 80                          stx     mysymbol,y      ; Unless ZP is only option.
 
-         2080           mysymbol        =       $2080                   ; Tell PCEAS that it is ZP.
+         2080           mysymbol        =       $2080           ; Tell PCEAS that it is ZP.
 
-01:60A2  64 80                          stz     mysymbol                ; Symbol is defined now, so
-01:60A4  95 80                          sta     mysymbol,x              ; PCEAS uses ZP addressing.
-01:60A6  99 80 20                       sta     mysymbol,y              ; Unless ABS is only option.
+01:60A2  64 80                          stz     mysymbol        ; Symbol is defined now, so
+01:60A4  95 80                          sta     mysymbol,x      ; PCEAS uses ZP addressing.
+01:60A6  99 80 20                       sta     mysymbol,y      ; Unless ABS is only option.
 01:60A9  96 80                          stx     mysymbol,y
 
-                                        .opt    a-                      ; Traditional PCEAS behavior.
+                                        .opt    a-              ; Traditional PCEAS behavior.
 
-01:60AB  9C 80 20                       stz     mysymbol                ; Absolute addressing is used
-01:60AE  9D 80 20                       sta     mysymbol,x              ; unless specifically told to
-01:60B1  99 80 20                       sta     mysymbol,y              ; use ZP addressing.
-                        ;               stx     mysymbol,y              ; !Incorrect addressing mode!
+01:60AB  9C 80 20                       stz     mysymbol        ; Absolute addressing is used
+01:60AE  9D 80 20                       sta     mysymbol,x      ; unless specifically told to
+01:60B1  99 80 20                       sta     mysymbol,y      ; use ZP addressing.
+                        ;               stx     mysymbol,y      ; !Incorrect addressing mode!
 
 
                         ; ****************************************************************************
@@ -371,3 +371,80 @@
 01:60DC  B5 F8                          lda     __ax, x         ; Symbol known, so zero-page mode.
 01:60DE  BD F8 20                       lda.a   __ax, x         ; Force absolute mode.
 01:60E1  B5 F8                          lda.z   __ax, x         ; Force zero-page mode.
+
+
+                        ; ****************************************************************************
+                        ;
+                        ; Out-of-Range branches can be converted to long-branches with ".opt b+" ...
+                        ;
+                        ; The conversion changes the assembled instruction into a short-branch and an
+                        ; absolute jump.
+                        ;
+                        ; Note: In order to be converted a branch must be directly to a label, and
+                        ;       when inside a label-scope, then only global labels defined within
+                        ;       that scope can be converted.
+                        ;
+
+01:60E3  60             !:              rts
+01:60E4  60             long:           rts
+01:60E5  60             .big:           rts
+
+01:60E6  00 00 00 00                    ds      128             ; Add some distance.
+
+01:6166  80 2D                          bra     !+
+01:6168  44 2A                          bsr     short
+01:616A  F0 28                          beq     short
+01:616C  D0 26                          bne     short
+01:616E  0F 12 23                       bbr0    <$12, short
+01:6171  8F 12 20                       bbs0    <$12, short
+
+                                        .opt    b-              ; Disable long-branch (default).
+
+                        ;               bra     !-              ; Error, out of range!
+                        ;               bsr     long            ; Error, out of range!
+                        ;               beq     long            ; Error, out of range!
+                        ;               bne     long            ; Error, out of range!
+                        ;               bbr0    <$12, .big      ; Error, out of range!
+                        ;               bbs0    <$12, .big      ; Error, out of range!
+
+                                        .opt    b+              ; Enable long-branch conversion.
+
+01:6174  4C E3 60                       bra     !-              ; Converted to "jmp".
+01:6177  20 E4 60                       bsr     long            ; Converted to "jsr".
+01:617A  D0 03 4C E4                    beq     long            ; Converted to "bne and jmp".
+01:617E  60
+01:617F  F0 03 4C E4                    bne     long            ; Converted to "beq and jmp".
+01:6183  60
+01:6184  8F 12 03 4C                    bbr0    <$12, .big      ; Converted to "bbs and jmp".
+01:6188  E5 60
+01:618A  0F 12 03 4C                    bbs0    <$12, .big      ; Converted to "bbr and jmp".
+01:618E  E5 60
+
+01:6190  80 01                          bra     * + 3           ; Complex target address expressions
+01:6192  80 01                          bra     short + 1       ; with math are never converted.
+                        ;               bra     long - 1        ; Error, out of range!
+
+01:6194  60             short:          rts
+01:6195  60             !:              rts
+
+                                        ; In ".struct" and KickC "{}" scoped-labels can only be
+                                        ; converted to long-branches if they are defined in the
+                                        ; current scope.
+
+                        myfunc          .struct                 ; Open new label scope "myfunc".
+
+01:6196  4C 23 62                       bra     .exit           ; Local and multi-labels can be
+01:6199  4C E3 60                       bra     !--             ; converted within a scope.
+
+01:619C  F0 03 4C 24                    bne     _exit           ; Convert scoped-label "myfunc._exit".
+01:61A0  62
+
+01:61A1  80 F1                          bra     short           ; Label not in scope, so assume short.
+                        ;               bra     long            ; Error, out of range!
+
+01:61A3  00 00 00 00                    ds      128             ; Add some distance.
+
+01:6223  60             .exit:          rts
+01:6224  60             _exit:          rts
+
+         6225                           .ends
