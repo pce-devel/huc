@@ -230,8 +230,9 @@ typedef struct t_symbol {
 typedef struct t_branch {
 	struct t_branch *next;
 	struct t_symbol *label;
-	int addr;
-	int type;
+	int  addr;
+	char checked;
+	char convert;
 } t_branch;
 
 typedef struct t_line {

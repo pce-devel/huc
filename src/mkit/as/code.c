@@ -113,7 +113,7 @@ class2(int *ip)
 		return;
 
 	/* need more space for a long-branch */
-	if (branch->type) {
+	if (branch->convert) {
 		if ((opval & 0x1F) == 0x10)
 			/* conditional branch */
 			loccnt += 3;
@@ -124,7 +124,7 @@ class2(int *ip)
 
 	/* generate code */
 	if (pass == LAST_PASS) {
-		if (branch->type) {
+		if (branch->convert) {
 			/* long-branch opcode */
 			if ((opval & 0x1F) == 0x10) {
 				/* conditional-branch */
@@ -347,12 +347,12 @@ class5(int *ip)
 		return;
 
 	/* need more space for a long-branch */
-	if (branch->type)
+	if (branch->convert)
 		loccnt += 3;
 
 	/* generate code */
 	if (pass == LAST_PASS) {
-		if (branch->type) {
+		if (branch->convert) {
 			/* long-branch opcode */
 			putbyte(data_loccnt, opval ^ 0x80);
 			putbyte(data_loccnt + 1, zp);
@@ -613,7 +613,7 @@ class10(int *ip)
 		return;
 
 	/* need more space for a long-branch */
-	if (branch->type)
+	if (branch->convert)
 		loccnt += 3;
 
 	/* generate code */
@@ -624,7 +624,7 @@ class10(int *ip)
 			return;
 		}
 
-		if (branch->type) {
+		if (branch->convert) {
 			/* long-branch opcode */
 			putbyte(data_loccnt, (opval + (bit << 4)) ^ 0x80);
 			putbyte(data_loccnt + 1, zp);
@@ -1036,6 +1036,7 @@ static struct t_branch *
 getbranch(int opcode_length)
 {
 	struct t_branch * branch;
+	unsigned int addr;
 
 	/* track all branches for long-branch handling */
 	if (pass == FIRST_PASS) {
@@ -1051,8 +1052,7 @@ getbranch(int opcode_length)
 		branchptr = branch;
 
 		branch->next = NULL;
-		branch->addr = (loccnt + (page << 13)) & 0xFFFF;
-		branch->type = 0;
+		branch->convert = 0;
 
 		if (asm_opt[OPT_LBRANCH] && !complex_expr) {
 			/* enable expansion to long-branch */
@@ -1072,17 +1072,43 @@ getbranch(int opcode_length)
 		branchptr = branchptr->next;
 
 		/* sanity check */
-		if ((branch->label != NULL) && (branch->label != expr_toplabl)) {
-			error("Branch label mismatch!");
-			return NULL;
+		if ((branch->label != NULL) && (branch->label != expr_lablptr)) {
+			if (branch->label == expr_toplabl) {
+				/* resolve branch outside of label-scope */
+				/* disable for now, because this is more */
+				/* likely to be an error than deliberate */
+//				branch->label = expr_lablptr;
+			} else {
+				error("Branch label mismatch!");
+				return NULL;
+			}
 		}
+	}
 
-		branch->addr = (loccnt + (page << 13)) & 0xFFFF;
+	branch->addr = (loccnt + (page << 13)) & 0xFFFF;
+	branch->checked = 0;
 
-		if (branch->type && pass == LAST_PASS) {
+	if (pass == LAST_PASS) {
+		/* display the branches that have been converted */
+		if (branch->convert && asm_opt[OPT_WARNING]) {
 			loccnt -= opcode_length;
 			warning("Warning: Converted to long-branch!\n");
 			loccnt += opcode_length;
+		}
+	} else {
+		/* has target already been defined (this pass)? */
+		if ((branch->convert == 0) &&
+		    (branch->label != NULL) &&
+		    (branch->label->defcnt != 0) &&
+		    (branch->label->type == DEFABS)) {
+			/* check if it is outside short-branch range */
+			addr = (branch->label->value & 0xFFFF) - branch->addr;
+
+			if (addr > 0x7Fu && addr < ~0x7Fu) {
+				branch->convert = 1;
+				++xvertlong;
+			}
+			branch->checked = 1;
 		}
 	}
 
@@ -1107,22 +1133,25 @@ branchopt(void)
 	for (branch = branchlst; branch != NULL; branch = branch->next) {
 
 		/* check to see if a short-branch needs to be converted */
-		if ((branch->type == 0) &&
+		if ((branch->convert == 0) &&
+		    (branch->checked == 0) &&
 		    (branch->label != NULL) &&
 		    (branch->label->type == DEFABS)) {
 			/* check if it is outside short-branch range */
 			addr = (branch->label->value & 0xFFFF) - branch->addr;
 
 			if (addr > 0x7Fu && addr < ~0x7Fu) {
-				branch->type = 1;
+				branch->convert = 1;
 				++changed;
 			}
 		}
 	}
 
-	/* report changes */
-	if (changed)
-		printf("Changed %d branches from short to long.\n", changed);
+	/* report total changes this pass */
+	xvertlong += changed;
+	if (xvertlong)
+		printf("Changed %d branches from short to long.\n", xvertlong);
 
+	/* do another pass if anything just changed */
 	return changed;
 }

@@ -541,6 +541,7 @@ main(int argc, char **argv)
 		glablptr = NULL;
 		scopeptr = NULL;
 		branchptr = branchlst;
+		xvertlong = 0;
 		skip_lines = 0;
 		rsbase = 0;
 		proc_nb = 0;

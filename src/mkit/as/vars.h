@@ -36,6 +36,7 @@ struct t_symbol *lastlabl;		/* last label we have seen */
 struct t_symbol *bank_glabl[4][256];	/* latest global symbol for each bank */
 struct t_branch *branchlst;		/* first branch instruction assembled */
 struct t_branch *branchptr;		/* last branch instruction assembled */
+int xvertlong;				/* count of branches fixed in pass */
 char hex[5];				/* hexadecimal character buffer */
 void (*opproc)(int *);			/* instruction gen proc */
 int opflg;				/* instruction flags */

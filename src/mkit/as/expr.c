@@ -494,7 +494,11 @@ push_val(int type)
 			pc_symbol.bank = bank + bank_base;
 			pc_symbol.page = page;
 
+			expr_toplabl =
 			expr_lablptr = &pc_symbol;
+
+			/* branches cannot rely on this label */
+			complex_expr = 1;
 		} else {
 			/* extract the symbol in root scope */
 			symexpr = expr;
