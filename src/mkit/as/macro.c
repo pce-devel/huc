@@ -436,7 +436,7 @@ macro_getargtype(char *arg)
 				else {
 					if ((sym->type == UNDEF) || (sym->type == IFUNDEF))
 						return (ARG_LABEL);
-					if (sym->bank >= RESERVED_BANK)
+					if (sym->bank == RESERVED_BANK)
 						return (ARG_ABS);
 					else
 						return (ARG_LABEL);
