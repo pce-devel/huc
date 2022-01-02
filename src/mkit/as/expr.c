@@ -861,13 +861,10 @@ do_op(void)
 		if (!check_func_args("BANK"))
 			return (0);
 		if (pass == LAST_PASS) {
-			if (expr_lablptr->bank >= RESERVED_BANK) {
-				if ((expr_lablptr->bank != STRIPPED_BANK) ||
-					(proc_ptr == NULL) || (proc_ptr->bank != STRIPPED_BANK)) {
-					error("No BANK index for this symbol!");
-					val[0] = 0;
-					break;
-				}
+			if (expr_lablptr->bank == RESERVED_BANK) {
+				error("No BANK index for this symbol!");
+				val[0] = 0;
+				break;
 			}
 		}
 		val[0] = expr_lablptr->bank + (val[0] / 8192) - (expr_lablptr->value / 8192);
