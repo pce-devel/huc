@@ -954,7 +954,6 @@ _spr_pri:
 
 _satb_update:
 	ldx	<spr_max
-	bra	satb_update
 
 _satb_update.1:
 	lda	<spr_flag
