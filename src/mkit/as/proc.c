@@ -580,8 +580,14 @@ proc_reloc(void)
 					sym->bank = STRIPPED_BANK;
 				else
 					sym->bank = proc_ptr->bank + bank_base;
-				sym->value = (sym->value & 0x007FFFFF) + (sym->bank << 23);
+
+				sym->value = (sym->value & 0x007FFFFF);
 				sym->value += (proc_ptr->org - proc_ptr->base);
+
+				/* KickC can't call bank(), so put it in the label */
+				if (proc_ptr->kickc) {
+					sym->value += sym->bank << 23;
+				}
 
 				/* local symbols */
 				if (sym->local) {
@@ -596,8 +602,14 @@ proc_reloc(void)
 								local->bank = STRIPPED_BANK;
 							else
 								local->bank = proc_ptr->bank + bank_base;
-							local->value = (local->value & 0x007FFFFF) + (local->bank << 23);
+
+							local->value = (local->value & 0x007FFFFF);
 							local->value += (proc_ptr->org - proc_ptr->base);
+
+							/* KickC can't call bank(), so put it in the label */
+							if (proc_ptr->kickc) {
+								local->value += local->bank << 23;
+							}
 						}
 
 						/* next */
@@ -699,6 +711,7 @@ proc_install(void)
 	ptr->org = ptr->base;
 	ptr->size = 0;
 	ptr->call = 0;
+	ptr->kickc = kickc_mode;
 	ptr->defined = 0;
 	ptr->link = NULL;
 	ptr->next = proc_tbl[hash];

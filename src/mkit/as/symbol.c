@@ -277,10 +277,15 @@ labldef(int lval, int flag)
 
 	/* adjust symbol address */
 	if (flag) {
-		if (bank >= RESERVED_BANK)
-			lval = ((lval + (page << 13)) & 0xFFFF) + (bank << 23);
-		else
-			lval = ((lval + (page << 13)) & 0xFFFF) + ((bank + bank_base) << 23);
+		lval = ((lval + (page << 13)) & 0xFFFF);
+
+		/* KickC can't call bank(), so put it in the label */
+		if (kickc_mode) {
+			if (bank >= RESERVED_BANK)
+				lval += bank << 23;
+			else
+				lval += (bank + bank_base) << 23;
+		}
 
 		/* is this a multi-label? */
 		if (lablptr->name[1] == '!') {

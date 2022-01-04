@@ -201,6 +201,7 @@ typedef struct t_proc {
 	int size;
 	int call;
 	int type;
+	int kickc;
 	int defined;
 	char name[SBOLSZ];
 } t_proc;

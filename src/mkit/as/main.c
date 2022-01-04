@@ -545,6 +545,7 @@ main(int argc, char **argv)
 		skip_lines = 0;
 		rsbase = 0;
 		proc_nb = 0;
+		kickc_mode = 0;
 
 		/* reset assembler options */
 		asm_opt[OPT_LIST] = 0;

@@ -488,9 +488,18 @@ push_val(int type)
 			expr++;
 
 			if (data_loccnt == -1)
-				pc_symbol.value = (loccnt + (page << 13));
+				pc_symbol.value = (loccnt + (page << 13)) & 0xFFFF;
 			else
-				pc_symbol.value = (data_loccnt + (page << 13));
+				pc_symbol.value = (data_loccnt + (page << 13)) & 0xFFFF;
+
+			/* KickC can't call bank(), so put it in the label */
+			if (kickc_mode) {
+				if (bank >= RESERVED_BANK)
+					pc_symbol.value += bank << 23;
+				else
+					pc_symbol.value += (bank + bank_base) << 23;
+			}
+
 			pc_symbol.bank = bank + bank_base;
 			pc_symbol.page = page;
 
