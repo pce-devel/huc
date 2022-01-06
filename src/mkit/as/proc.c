@@ -38,7 +38,7 @@ do_call(int *ip)
 	int value;
 
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* update location counter */
 	data_loccnt = loccnt;
@@ -172,7 +172,7 @@ void
 do_leave(int *ip)
 {
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* check end of line */
 	if (!check_eol(ip))
@@ -320,7 +320,7 @@ do_proc(int *ip)
 	discontiguous = 1;
 
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* a KickC procedure also opens a label-scope */
 	if (optype == P_KICKC) {
@@ -389,7 +389,7 @@ do_endp(int *ip)
 	}
 
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* record proc size */
 	bank = proc_ptr->old_bank;

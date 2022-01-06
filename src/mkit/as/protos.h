@@ -158,7 +158,7 @@ int  addscope(struct t_symbol * curscope, int i);
 int  colsym(int *ip, int flag);
 struct t_symbol *stlook(int flag);
 struct t_symbol *stinstall(int hash, int type);
-int  labldef(int lval, int flag);
+int  labldef(int lval, int lbnk, int lsrc);
 void lablset(char *name, int val);
 int  lablexists(char *name);
 void lablremap(void);

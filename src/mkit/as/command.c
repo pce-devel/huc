@@ -173,7 +173,7 @@ do_db(int *ip)
 	unsigned char c;
 
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* output infos */
 	data_loccnt = loccnt;
@@ -296,7 +296,7 @@ do_dw(int *ip)
 	char c;
 
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* output infos */
 	data_loccnt = loccnt;
@@ -373,7 +373,7 @@ do_dwl(int *ip)
 	char c;
 
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* output infos */
 	data_loccnt = loccnt;
@@ -450,7 +450,7 @@ do_dwh(int *ip)
 	char c;
 
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* output infos */
 	data_loccnt = loccnt;
@@ -527,7 +527,7 @@ do_dd(int *ip)
 	char c;
 
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* output infos */
 	data_loccnt = loccnt;
@@ -622,7 +622,7 @@ do_equ(int *ip)
 		lablptr->value = value;
 	} else {
 		/* assign value to the label */
-		labldef(value, 0);
+		labldef(value, RESERVED_BANK, CONSTANT);
 	}
 
 	/* output line */
@@ -649,7 +649,7 @@ do_page(int *ip)
 	}
 
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* get page index */
 	if (!evaluate(ip, ';'))
@@ -729,7 +729,7 @@ do_org(int *ip)
 	discontiguous = 1;
 
 	/* set label value if there was one */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* output line on last pass */
 	if (pass == LAST_PASS) {
@@ -757,7 +757,7 @@ do_bank(int *ip)
 	}
 
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* get bank index */
 	if (!evaluate(ip, 0))
@@ -868,7 +868,7 @@ do_incbin(int *ip)
 	}
 
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -1024,7 +1024,7 @@ do_mx(char *fname)
 				/* define label */
 				if (flag == 0) {
 					flag = 1;
-					labldef(loccnt, 1);
+					labldef(0, 0, LOCATION);
 
 					/* output */
 					if (pass == LAST_PASS)
@@ -1049,7 +1049,7 @@ do_mx(char *fname)
 
 	/* define label */
 	if (flag == 0) {
-		labldef(loccnt, 1);
+		labldef(0, 0, LOCATION);
 
 		/* output */
 		if (pass == LAST_PASS)
@@ -1114,7 +1114,7 @@ do_include(int *ip)
 	t_filelist * list;
 
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* avoid problems */
 	if (expand_macro) {
@@ -1173,7 +1173,7 @@ void
 do_rsset(int *ip)
 {
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* get value */
 	if (!evaluate(ip, ';'))
@@ -1204,7 +1204,7 @@ void
 do_rs(int *ip)
 {
 	/* define label */
-	labldef(rsbase, 0);
+	labldef(rsbase, RESERVED_BANK, CONSTANT);
 
 	/* get the number of bytes to reserve */
 	if (!evaluate(ip, ';'))
@@ -1239,7 +1239,7 @@ do_ds(int *ip)
 	unsigned char c;
 
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* output infos */
 	data_loccnt = loccnt;
@@ -1436,7 +1436,7 @@ do_incchr(int *ip)
 	int size;
 
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -1625,7 +1625,7 @@ do_align(int *ip)
 	}
 
 	/* set label value if there was one */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* output line on last pass */
 	if (pass == LAST_PASS) {
@@ -1646,7 +1646,7 @@ void
 do_kickc(int *ip)
 {
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* check end of line */
 	if (!check_eol(ip))
@@ -1680,7 +1680,7 @@ void
 do_cpu(int *ip)
 {
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* skip spaces */
 	while (isspace(prlnbuf[*ip]))
@@ -1713,7 +1713,7 @@ void
 do_segment(int *ip)
 {
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* skip spaces */
 	while (isspace(prlnbuf[*ip]))
@@ -1785,7 +1785,7 @@ void
 do_label(int *ip)
 {
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* skip spaces */
 	while (isspace(prlnbuf[*ip]))
@@ -1826,7 +1826,7 @@ void
 do_encoding(int *ip)
 {
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* skip spaces */
 	while (isspace(prlnbuf[*ip]))
@@ -1888,7 +1888,7 @@ do_struct(int *ip)
 	}
 
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* check end of line */
 	if (!check_eol(ip))
@@ -1931,7 +1931,7 @@ do_ends(int *ip)
 	do_section(ip);
 
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* remember the size of the scope */
 	scopeptr->data_type = P_STRUCT;
@@ -1952,7 +1952,7 @@ do_ends(int *ip)
 		return;
 
 	/* assign value to the label */
-	labldef(scopeptr->data_size, 0);
+	labldef(scopeptr->data_size, RESERVED_BANK, CONSTANT);
 
 	/* restore the previous label */
 	lablptr = curlabl;

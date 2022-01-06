@@ -142,6 +142,10 @@
 #define SYM_DEF 1	/* symbol definition */
 #define SYM_REF	2	/* symbol reference */
 
+/* symbol definition source */
+#define CONSTANT 0	/* constant value */
+#define LOCATION 1	/* location (current PC) */
+
 /* operation code flags */
 #define PSEUDO		0x0008000
 #define CLASS1		0x0010000

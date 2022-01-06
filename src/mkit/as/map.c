@@ -50,7 +50,7 @@ pce_load_map(char *fname, int mode)
 	}
 
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -169,7 +169,7 @@ pce_load_stm(char *fname, int mode)
 	}
 
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* output */
 	if (pass == LAST_PASS)

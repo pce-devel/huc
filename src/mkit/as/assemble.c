@@ -222,7 +222,7 @@ assemble(int do_label)
 	mptr = macro_look(&ip);
 	if (mptr) {
 		/* define label */
-		labldef(loccnt, 1);
+		labldef(0, 0, LOCATION);
 
 		/* output location counter */
 		if (pass == LAST_PASS) {
@@ -256,7 +256,7 @@ assemble(int do_label)
 			return;
 		}
 
-		labldef(loccnt, 1);
+		labldef(0, 0, LOCATION);
 		if (flag == -1)
 			error("Unknown instruction!");
 		if ((flag == -2) && (pass == LAST_PASS)) {
@@ -271,7 +271,7 @@ assemble(int do_label)
 	/* generate code */
 	if (opflg == PSEUDO)
 		do_pseudo(&ip);
-	else if (labldef(loccnt, 1) == -1)
+	else if (labldef(0, 0, LOCATION) == -1)
 		return;
 	else {
 		/* output infos */
@@ -484,7 +484,7 @@ save_if_expr(int *ip)
 void
 do_if(int *ip)
 {
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* save condition text */
 	save_if_expr(ip);
@@ -537,7 +537,7 @@ do_endif(int *ip)
 void
 do_ifdef(int *ip)
 {
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* skip spaces */
 	while (isspace(prlnbuf[*ip]))

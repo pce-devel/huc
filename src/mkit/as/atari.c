@@ -105,7 +105,7 @@ fuji_carttype(int *ip)
 	int num_banks;
 
 	/* define label */
-//	labldef(loccnt, 1);
+//	labldef(0, 0, LOCATION);
 
 	/* get cartridge type value */
 	if (!evaluate(ip, ';'))

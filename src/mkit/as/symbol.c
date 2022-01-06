@@ -267,7 +267,7 @@ stinstall(int hash, int type)
  */
 
 int
-labldef(int lval, int flag)
+labldef(int lval, int lbnk, int lsrc)
 {
 	char c;
 
@@ -276,17 +276,7 @@ labldef(int lval, int flag)
 		return (0);
 
 	/* adjust symbol address */
-	if (flag) {
-		lval = ((lval + (page << 13)) & 0xFFFF);
-
-		/* KickC can't call bank(), so put it in the label */
-		if (kickc_mode) {
-			if (bank >= RESERVED_BANK)
-				lval += bank << 23;
-			else
-				lval += (bank + bank_base) << 23;
-		}
-
+	if (lsrc == LOCATION) {
 		/* is this a multi-label? */
 		if (lablptr->name[1] == '!') {
 			char tail [10];
@@ -306,6 +296,23 @@ labldef(int lval, int flag)
 				fatal_error("Out of memory!");
 				return (-1);
 			}
+		}
+
+		/* fix location after crossing bank */
+		if (loccnt >= 0x2000) {
+			loccnt &= 0x1FFF;
+			page++;
+			bank++;
+		}
+
+		lval = ((loccnt + (page << 13)) & 0xFFFF);
+
+		/* KickC can't call bank(), so put it in the label */
+		if (kickc_mode) {
+			if (bank >= RESERVED_BANK)
+				lval += bank << 23;
+			else
+				lval += (bank + bank_base) << 23;
 		}
 	}
 
@@ -359,14 +366,14 @@ labldef(int lval, int flag)
 	/* last pass */
 	else {
 		if ((lablptr->value != lval) ||
-		    ((flag) && (bank < bank_limit) && (lablptr->bank != bank_base + bank))) {
+		    ((lsrc == LOCATION) && (bank < bank_limit) && (lablptr->bank != bank_base + bank))) {
 			fatal_error("Symbol's bank or address changed in final pass!");
 			return (-1);
 		}
 	}
 
 	/* update symbol data */
-	if (flag) {
+	if (lsrc == LOCATION) {
 		lablptr->section = section;
 
 		if (section == S_CODE)
