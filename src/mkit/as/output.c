@@ -52,7 +52,7 @@ println(void)
 			/* ok */
 			cnt = 0;
 			for (i = 0; i < nb; i++) {
-				if (bank >= RESERVED_BANK) {
+				if (bank == RESERVED_BANK || bank == STRIPPED_BANK) {
 					prlnbuf[16 + (3 * cnt)] = '-';
 					prlnbuf[17 + (3 * cnt)] = '-';
 				}
@@ -117,7 +117,7 @@ loadlc(int offset, int pos)
 		i = 7;
 
 	if (pos == 0) {
-		if (bank >= RESERVED_BANK) {
+		if (bank == RESERVED_BANK || bank == STRIPPED_BANK) {
 			prlnbuf[i++] = '-';
 			prlnbuf[i++] = '-';
 		}
