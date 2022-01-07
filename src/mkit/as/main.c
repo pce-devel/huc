@@ -544,6 +544,7 @@ main(int argc, char **argv)
 		xvertlong = 0;
 		skip_lines = 0;
 		rsbase = 0;
+		rsbank = RESERVED_BANK;
 		proc_nb = 0;
 		kickc_mode = 0;
 

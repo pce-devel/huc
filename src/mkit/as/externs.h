@@ -18,6 +18,7 @@ extern int bank_limit;			/* bank limit */
 extern int rom_limit;			/* rom max. size in bytes */
 extern int page;			/* page */
 extern int rsbase;			/* .rs counter */
+extern int rsbank;			/* .rs counter */
 extern int section;			/* current section: S_ZP, S_BSS, S_CODE or S_DATA */
 extern int section_bank[4];		/* current bank for each section */
 extern int in_if;			/* true if in a '.if' statement */
@@ -36,6 +37,7 @@ extern char *expr;			/* expression string pointer */
 extern struct t_symbol *expr_toplabl;	/* pointer to the innermost scope-label */
 extern struct t_symbol *expr_lablptr;	/* pointer to the last-referenced label */
 extern int expr_lablcnt;		/* number of label seen in an expression */
+extern int expr_valbank;		/* last-defined bank# in an expression */
 extern int complex_expr;		/* NZ if an expression contains operators */
 extern int mopt;
 extern int in_macro;

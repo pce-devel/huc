@@ -349,7 +349,7 @@ pce_vram(int *ip)
 	}
 
 	/* get the VRAM address */
-	if (!evaluate(ip, ';'))
+	if (!evaluate(ip, ';', 0))
 		return;
 	if (value >= 0x7F00) {
 		error("Incorrect VRAM address!");
@@ -384,7 +384,7 @@ pce_pal(int *ip)
 	}
 
 	/* get the palette index */
-	if (!evaluate(ip, ';'))
+	if (!evaluate(ip, ';', 0))
 		return;
 	if (value > 15) {
 		error("Incorrect palette index!");
@@ -423,7 +423,7 @@ pce_defchr(int *ip)
 		labldef(0, 0, LOCATION);
 
 		/* get the VRAM address */
-		if (!evaluate(ip, ','))
+		if (!evaluate(ip, ',', 0))
 			return;
 		if (value >= 0x7F00) {
 			error("Incorrect VRAM address!");
@@ -432,7 +432,7 @@ pce_defchr(int *ip)
 		lablptr->vram = value;
 
 		/* get the default palette */
-		if (!evaluate(ip, ','))
+		if (!evaluate(ip, ',', 0))
 			return;
 		if (value > 0x0F) {
 			error("Incorrect palette index!");
@@ -444,7 +444,7 @@ pce_defchr(int *ip)
 	/* get tile data */
 	for (i = 0; i < 8; i++) {
 		/* get value */
-		if (!evaluate(ip, (i < 7) ? ',' : ';'))
+		if (!evaluate(ip, (i < 7) ? ',' : ';', 0))
 			return;
 
 		/* store value */
@@ -487,7 +487,7 @@ pce_defpal(int *ip)
 	/* get data */
 	for (;;) {
 		/* get color */
-		if (!evaluate(ip, 0))
+		if (!evaluate(ip, 0, 0))
 			return;
 
 		/* store data on last pass */
@@ -545,7 +545,7 @@ pce_defspr(int *ip)
 		labldef(0, 0, LOCATION);
 
 		/* get the VRAM address */
-		if (!evaluate(ip, ','))
+		if (!evaluate(ip, ',', 0))
 			return;
 		if (value >= 0x7F00) {
 			error("Incorrect VRAM address!");
@@ -554,7 +554,7 @@ pce_defspr(int *ip)
 		lablptr->vram = value;
 
 		/* get the default palette */
-		if (!evaluate(ip, ','))
+		if (!evaluate(ip, ',', 0))
 			return;
 		if (value > 0x0F) {
 			error("Incorrect palette index!");
@@ -566,7 +566,7 @@ pce_defspr(int *ip)
 	/* get sprite data */
 	for (i = 0; i < 32; i++) {
 		/* get value */
-		if (!evaluate(ip, (i < 31) ? ',' : ';'))
+		if (!evaluate(ip, (i < 31) ? ',' : ';', 0))
 			return;
 
 		/* store value */

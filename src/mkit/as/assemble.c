@@ -491,7 +491,7 @@ do_if(int *ip)
 
 	/* get expression */
 	if_expr = 1;
-	if (!evaluate(ip, ';')) {
+	if (!evaluate(ip, ';', 0)) {
 		if_expr = 0;
 		return;
 	}

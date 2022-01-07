@@ -18,6 +18,7 @@ int rom_limit;		/* bank limit */
 int bank_limit;		/* rom max. size in bytes */
 int page;		/* page */
 int rsbase;		/* .rs counter */
+int rsbank;		/* .rs counter */
 int section;		/* current section: S_ZP, S_BSS, S_CODE or S_DATA */
 int section_bank[4];	/* current bank for each section */
 int stop_pass;		/* stop the program; set by fatal_error() */

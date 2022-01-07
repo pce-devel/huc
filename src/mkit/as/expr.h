@@ -75,6 +75,7 @@ char *expr_stack[16];		/* expression stack */
 struct t_symbol *expr_toplabl;	/* pointer to the innermost scope-label */
 struct t_symbol *expr_lablptr;	/* pointer to the last-referenced label */
 int expr_lablcnt;		/* number of label seen in an expression */
+int expr_valbank;		/* last-defined bank# in an expression */
 int complex_expr;		/* NZ if an expression contains operators */
 const char *keyword[8] = {	/* predefined functions */
 	"\7DEFINED",

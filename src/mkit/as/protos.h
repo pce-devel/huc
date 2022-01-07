@@ -72,7 +72,7 @@ void         crc_init(void);
 unsigned int crc_calc(unsigned char *data, int len);
 
 /* EXPR.C */
-int  evaluate(int *ip, char flag);
+int  evaluate(int *ip, char flag, char allow_bank);
 int  push_val(int type);
 int  getsym(struct t_symbol * curscope);
 int  check_keyword(void);

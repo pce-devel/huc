@@ -145,7 +145,7 @@ nes_defchr(int *ip)
 	/* get tile data */
 	for (i = 0; i < 8; i++) {
 		/* get value */
-		if (!evaluate(ip, (i < 7) ? ',' : ';'))
+		if (!evaluate(ip, (i < 7) ? ',' : ';', 0))
 			return;
 
 		/* store value */
@@ -173,7 +173,7 @@ nes_defchr(int *ip)
 void
 nes_inesprg(int *ip)
 {
-	if (!evaluate(ip, ';'))
+	if (!evaluate(ip, ';', 0))
 		return;
 
 	if ((value < 0) || (value > 64)) {
@@ -199,7 +199,7 @@ nes_inesprg(int *ip)
 void
 nes_ineschr(int *ip)
 {
-	if (!evaluate(ip, ';'))
+	if (!evaluate(ip, ';', 0))
 		return;
 
 	if ((value < 0) || (value > 64)) {
@@ -225,7 +225,7 @@ nes_ineschr(int *ip)
 void
 nes_inesmap(int *ip)
 {
-	if (!evaluate(ip, ';'))
+	if (!evaluate(ip, ';', 0))
 		return;
 
 	if ((value < 0) || (value > 255)) {
@@ -253,7 +253,7 @@ nes_inesmap(int *ip)
 void
 nes_inesmir(int *ip)
 {
-	if (!evaluate(ip, ';'))
+	if (!evaluate(ip, ';', 0))
 		return;
 
 	if ((value < 0) || (value > 15)) {

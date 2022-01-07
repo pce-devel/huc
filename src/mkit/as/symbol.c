@@ -307,13 +307,14 @@ labldef(int lval, int lbnk, int lsrc)
 
 		lval = ((loccnt + (page << 13)) & 0xFFFF);
 
+		if (bank >= RESERVED_BANK)
+			lbnk = bank;
+		else
+			lbnk = bank_base + bank;
+
 		/* KickC can't call bank(), so put it in the label */
-		if (kickc_mode) {
-			if (bank >= RESERVED_BANK)
-				lval += bank << 23;
-			else
-				lval += (bank + bank_base) << 23;
-		}
+		if (kickc_mode)
+			lval += lbnk << 23;
 	}
 
 	/* record definition */
@@ -326,6 +327,7 @@ labldef(int lval, int lbnk, int lsrc)
 		case UNDEF:
 		case IFUNDEF:
 			lablptr->type = DEFABS;
+			lablptr->bank = lbnk;
 			lablptr->value = lval;
 			break;
 
@@ -359,8 +361,10 @@ labldef(int lval, int lbnk, int lsrc)
 
 	/* branch pass */
 	else if (pass != LAST_PASS) {
-		if (lablptr->type == DEFABS)
+		if (lablptr->type == DEFABS) {
+			lablptr->bank = lbnk;
 			lablptr->value = lval;
+		}
 	}
 
 	/* last pass */
@@ -379,12 +383,6 @@ labldef(int lval, int lbnk, int lsrc)
 		if (section == S_CODE)
 			lablptr->proc = proc_ptr;
 
-		if ((section == S_BSS) || (section == S_ZP)) {
-			lablptr->bank = bank;
-		}
-		else {
-			lablptr->bank = bank_base + bank;
-		}
 		lablptr->page = page;
 
 		/* check if it's a local or global symbol */

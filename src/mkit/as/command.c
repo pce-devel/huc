@@ -228,7 +228,7 @@ do_db(int *ip)
 		/* bytes */
 		else {
 			/* get a byte */
-			if (!evaluate(ip, 0))
+			if (!evaluate(ip, 0, 0))
 				return;
 
 			/* update location counter */
@@ -306,7 +306,7 @@ do_dw(int *ip)
 	/* get data */
 	for (;;) {
 		/* get a word */
-		if (!evaluate(ip, 0))
+		if (!evaluate(ip, 0, 0))
 			return;
 
 		/* update location counter */
@@ -383,7 +383,7 @@ do_dwl(int *ip)
 	/* get data */
 	for (;;) {
 		/* get a word */
-		if (!evaluate(ip, 0))
+		if (!evaluate(ip, 0, 0))
 			return;
 
 		/* update location counter */
@@ -460,7 +460,7 @@ do_dwh(int *ip)
 	/* get data */
 	for (;;) {
 		/* get a word */
-		if (!evaluate(ip, 0))
+		if (!evaluate(ip, 0, 0))
 			return;
 
 		/* update location counter */
@@ -537,7 +537,7 @@ do_dd(int *ip)
 	/* get data */
 	for (;;) {
 		/* get a word */
-		if (!evaluate(ip, 0))
+		if (!evaluate(ip, 0, 0))
 			return;
 
 		/* update location counter */
@@ -607,7 +607,7 @@ do_equ(int *ip)
 	}
 
 	/* get value */
-	if (!evaluate(ip, ';'))
+	if (!evaluate(ip, ';', 1))
 		return;
 
 	/* check for undefined symbol - they are not allowed in .set */
@@ -618,11 +618,11 @@ do_equ(int *ip)
 
 	/* allow ".set" to change a label's value */
 	if ((optype == 1) && (lablptr->type == DEFABS)) {
-		lablptr->type = DEFABS;
 		lablptr->value = value;
+		lablptr->bank = expr_valbank;
 	} else {
 		/* assign value to the label */
-		labldef(value, RESERVED_BANK, CONSTANT);
+		labldef(value, expr_valbank, CONSTANT);
 	}
 
 	/* output line */
@@ -652,7 +652,7 @@ do_page(int *ip)
 	labldef(0, 0, LOCATION);
 
 	/* get page index */
-	if (!evaluate(ip, ';'))
+	if (!evaluate(ip, ';', 0))
 		return;
 	if (value > 7) {
 		error("Invalid page index!");
@@ -678,7 +678,7 @@ void
 do_org(int *ip)
 {
 	/* get the .org value */
-	if (!evaluate(ip, ';'))
+	if (!evaluate(ip, ';', 0))
 		return;
 
 	/* check for undefined symbol - they are not allowed in .org */
@@ -691,7 +691,7 @@ do_org(int *ip)
 	switch (section) {
 	case S_ZP:
 		/* zero page section */
-		if ((value & 0xFFFFFF00) && ((value & 0xFFFFFF00) != machine->ram_base)) {
+		if ((value & 0x007FFF00) && ((value & 0x007FFF00) != machine->ram_base)) {
 			error("Invalid address!");
 			return;
 		}
@@ -699,7 +699,7 @@ do_org(int *ip)
 
 	case S_BSS:
 		/* ram section */
-		if ((value < machine->ram_base) || (value >= (machine->ram_base + machine->ram_limit))) {
+		if (((value & 0x007FFFFF) < machine->ram_base) || ((value & 0x007FFFFF) >= (machine->ram_base + machine->ram_limit))) {
 			error("Invalid address!");
 			return;
 		}
@@ -714,7 +714,7 @@ do_org(int *ip)
 		}
 
 		/* code and data section */
-		if (value & 0xFFFF0000) {
+		if (value & 0x007F0000) {
 			error("Invalid address!");
 			return;
 		}
@@ -760,7 +760,7 @@ do_bank(int *ip)
 	labldef(0, 0, LOCATION);
 
 	/* get bank index */
-	if (!evaluate(ip, 0))
+	if (!evaluate(ip, 0, 0))
 		return;
 	if (value > bank_limit) {
 		error("Bank index out of range!");
@@ -1176,15 +1176,16 @@ do_rsset(int *ip)
 	labldef(0, 0, LOCATION);
 
 	/* get value */
-	if (!evaluate(ip, ';'))
+	if (!evaluate(ip, ';', 1))
 		return;
-	if (value & 0xFFFF0000) {
+	if (value & 0x007F0000) {
 		error("Address out of range!");
 		return;
 	}
 
-	/* set 'rs' base */
-	rsbase = value;
+	/* set 'rs' base and bank */
+	rsbase = value & 0xFFFF;
+	rsbank = expr_valbank;
 
 	/* output line */
 	if (pass == LAST_PASS) {
@@ -1203,11 +1204,13 @@ do_rsset(int *ip)
 void
 do_rs(int *ip)
 {
+	int oldrs = rsbase;
+
 	/* define label */
-	labldef(rsbase, RESERVED_BANK, CONSTANT);
+	labldef(rsbase, rsbank, CONSTANT);
 
 	/* get the number of bytes to reserve */
-	if (!evaluate(ip, ';'))
+	if (!evaluate(ip, ';', 0))
 		return;
 
 	/* ouput line */
@@ -1218,8 +1221,16 @@ do_rs(int *ip)
 
 	/* update 'rs' base */
 	rsbase += value;
-	if (rsbase & 0xFFFF0000)
+	if (rsbase & 0x007F0000)
 		error("Address out of range!");
+
+	/* update 'rs' bank */
+	if (rsbank != RESERVED_BANK) {
+		while ((oldrs & 0xE000) != (rsbase & 0xE000)) {
+			oldrs += 0x2000;
+			++rsbank;
+		}
+	}
 }
 
 
@@ -1246,7 +1257,7 @@ do_ds(int *ip)
 	data_level = 2;
 
 	/* get the number of bytes to reserve */
-	if (!evaluate(ip, 0))
+	if (!evaluate(ip, 0, 0))
 		return;
 
 	/* check for undefined symbol - they are not allowed in .ds */
@@ -1262,7 +1273,7 @@ do_ds(int *ip)
 	/* check if there's another word */
 	if (c == ',') {
 		/* get the filler byte */
-		if (!evaluate(ip, 0))
+		if (!evaluate(ip, 0, 0))
 			return;
 
 		filler = value & 255;
@@ -1588,7 +1599,7 @@ do_align(int *ip)
 	int offset;
 
 	/* get the .align value */
-	if (!evaluate(ip, ';'))
+	if (!evaluate(ip, ';', 0))
 		return;
 
 	/* check for undefined symbol - they are not allowed in .align */
@@ -1605,7 +1616,7 @@ do_align(int *ip)
 
 	/* did the previous instruction fill up the current bank? */
 	if (loccnt >= 0x2000) {
-		loccnt &= 0x1fff;
+		loccnt &= 0x1FFF;
 		page++;
 		bank++;
 	}

@@ -105,7 +105,7 @@ class2(int *ip)
 	loccnt += 2;
 
 	/* get destination address */
-	if (!evaluate(ip, ';'))
+	if (!evaluate(ip, ';', 0))
 		return;
 
 	/* all branches tracked for long-branch handling */
@@ -401,7 +401,7 @@ class6(int *ip)
 
 	/* get operands */
 	for (i = 0; i < 3; i++) {
-		if (!evaluate(ip, (i < 2) ? ',' : ';'))
+		if (!evaluate(ip, (i < 2) ? ',' : ';', 0))
 			return;
 		if (pass == LAST_PASS) {
 			if (value & 0x007F0000) {
@@ -760,7 +760,7 @@ getoperand(int *ip, int flag, int last_char)
 		}
 
 		/* get value */
-		if (!evaluate(ip, (paren == 1) ? ')' : 0))
+		if (!evaluate(ip, (paren == 1) ? ')' : 0, 0))
 			return (0);
 
 		/* traditional 6502 assembler auto-detect between ZP and ABS */
@@ -854,7 +854,7 @@ getoperand(int *ip, int flag, int last_char)
 			/* get tag */
 			tmp = value;
 
-			if (!evaluate(ip, 0))
+			if (!evaluate(ip, 0, 0))
 				return (0);
 
 			/* ok */

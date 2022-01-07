@@ -263,7 +263,7 @@ pcx_get_args(int *ip)
 			break;
 
 		/* get arg */
-		if (!evaluate(ip, 0))
+		if (!evaluate(ip, 0, 0))
 			return (0);
 
 		/* store arg */

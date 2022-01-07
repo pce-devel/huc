@@ -108,8 +108,8 @@ fuji_carttype(int *ip)
 //	labldef(0, 0, LOCATION);
 
 	/* get cartridge type value */
-	if (!evaluate(ip, ';'))
-//	if (!evaluate(ip, 0))
+	if (!evaluate(ip, ';', 0))
+//	if (!evaluate(ip, 0, 0))
 		return;
 	if ((value < 1) || (value >= sizeof(fuji_cartsize))) {
 		error("Cartridge type out of range!");

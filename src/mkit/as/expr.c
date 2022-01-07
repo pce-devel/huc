@@ -6,6 +6,8 @@
 #include "protos.h"
 #include "expr.h"
 
+static char allow_numeric_bank = 0;
+
 /* ----
  * pc_symbol
  * ----
@@ -69,7 +71,7 @@ inline int is_expr_symbol (char * pstr)
  */
 
 int
-evaluate(int *ip, char last_char)
+evaluate(int *ip, char last_char, char allow_bank)
 {
 	int end, level;
 	int op, type;
@@ -89,9 +91,12 @@ evaluate(int *ip, char last_char)
 	expr_toplabl = NULL;
 	expr_lablptr = NULL;
 	expr_lablcnt = 0;
+	expr_valbank = RESERVED_BANK;
 	complex_expr = 0;
 	op = OP_START;
 	func_idx = 0;
+
+	allow_numeric_bank = allow_bank;
 
 	/* array index to pointer */
 	expr = &prlnbuf[*ip];
@@ -487,21 +492,32 @@ push_val(int type)
 			symbol[2] = '\0';
 			expr++;
 
+			/* complicated because loccnt & data_loccnt can be >= $2000 */
 			if (data_loccnt == -1)
-				pc_symbol.value = (loccnt + (page << 13)) & 0xFFFF;
+				pc_symbol.value = loccnt;
 			else
-				pc_symbol.value = (data_loccnt + (page << 13)) & 0xFFFF;
+				pc_symbol.value = data_loccnt;
+
+			pc_symbol.page = page;
+
+			if (bank >= RESERVED_BANK)
+				pc_symbol.bank = bank;
+			else
+				pc_symbol.bank = bank + bank_base;
+
+			if (pc_symbol.value >= 0x2000) {
+				pc_symbol.bank += 1;
+				pc_symbol.page += 1;
+			}
+
+			pc_symbol.value += (page << 13);
 
 			/* KickC can't call bank(), so put it in the label */
 			if (kickc_mode) {
-				if (bank >= RESERVED_BANK)
-					pc_symbol.value += bank << 23;
-				else
-					pc_symbol.value += (bank + bank_base) << 23;
+				pc_symbol.value += pc_symbol.bank << 23;
 			}
 
-			pc_symbol.bank = bank + bank_base;
-			pc_symbol.page = page;
+			expr_valbank = pc_symbol.bank;
 
 			expr_toplabl =
 			expr_lablptr = &pc_symbol;
@@ -578,6 +594,7 @@ push_val(int type)
 				undef++;
 			}
 		else {
+			expr_valbank = expr_lablptr->bank;
 			val = expr_lablptr->value;
 			if (expr_lablptr->defcnt == 0) {
 				notyetdef++;
@@ -632,6 +649,10 @@ extract:
 			if (c >= mul)
 				break;
 			val = (val * mul) + c;
+		}
+		if (c == ':' && mul == 16 && allow_numeric_bank) {
+			expr_valbank = val;
+			return push_val(T_HEXA);
 		}
 		break;
 	}
