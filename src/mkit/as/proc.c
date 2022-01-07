@@ -493,7 +493,8 @@ proc_reloc(void)
 				{
 					for (check_bank = 0; check_bank <= max_bank; check_bank++)
 					{
-						if (bank_free[check_bank] >= proc_ptr->size)
+						/* don't use a full bank, even if proc_ptr->size==0 */
+						if ((bank_free[check_bank] != 0) && (bank_free[check_bank] >= proc_ptr->size))
 						{
 							if (smallest > (bank_free[check_bank] - proc_ptr->size))
 							{
