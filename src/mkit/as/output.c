@@ -52,7 +52,8 @@ println(void)
 			/* ok */
 			cnt = 0;
 			for (i = 0; i < nb; i++) {
-				if (bank == RESERVED_BANK || bank == STRIPPED_BANK) {
+//				if (bank == RESERVED_BANK || bank == STRIPPED_BANK) {
+				if (bank > bank_limit) {
 					prlnbuf[16 + (3 * cnt)] = '-';
 					prlnbuf[17 + (3 * cnt)] = '-';
 				}

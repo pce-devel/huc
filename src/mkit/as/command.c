@@ -279,8 +279,14 @@ do_db(int *ip)
 	}
 
 	/* output line */
-	if (pass == LAST_PASS)
+	if (pass == LAST_PASS) {
+		/* just output an address in S_ZP and S_BSS, else show the data */
+		if (section == S_ZP || section == S_BSS) {
+			loadlc(data_loccnt, 0);
+			data_loccnt = -1;
+		}
 		println();
+	}
 }
 
 
@@ -356,8 +362,14 @@ do_dw(int *ip)
 	}
 
 	/* output line */
-	if (pass == LAST_PASS)
+	if (pass == LAST_PASS) {
+		/* just output an address in S_ZP and S_BSS, else show the data */
+		if (section == S_ZP || section == S_BSS) {
+			loadlc(data_loccnt, 0);
+			data_loccnt = -1;
+		}
 		println();
+	}
 }
 
 
@@ -433,8 +445,14 @@ do_dwl(int *ip)
 	}
 
 	/* output line */
-	if (pass == LAST_PASS)
+	if (pass == LAST_PASS) {
+		/* just output an address in S_ZP and S_BSS, else show the data */
+		if (section == S_ZP || section == S_BSS) {
+			loadlc(data_loccnt, 0);
+			data_loccnt = -1;
+		}
 		println();
+	}
 }
 
 
@@ -510,8 +528,14 @@ do_dwh(int *ip)
 	}
 
 	/* output line */
-	if (pass == LAST_PASS)
+	if (pass == LAST_PASS) {
+		/* just output an address in S_ZP and S_BSS, else show the data */
+		if (section == S_ZP || section == S_BSS) {
+			loadlc(data_loccnt, 0);
+			data_loccnt = -1;
+		}
 		println();
+	}
 }
 
 
@@ -581,8 +605,14 @@ do_dd(int *ip)
 	}
 
 	/* output line */
-	if (pass == LAST_PASS)
+	if (pass == LAST_PASS) {
+		/* just output an address in S_ZP and S_BSS, else show the data */
+		if (section == S_ZP || section == S_BSS) {
+			loadlc(data_loccnt, 0);
+			data_loccnt = -1;
+		}
 		println();
+	}
 }
 
 
