@@ -71,7 +71,7 @@ struct t_opcode undoc_inst[13] = {
 	{NULL, "AXS", class4, IMM, 0xC3, 0},
 	{NULL, "DCP", class4, ZP|ZP_X|ZP_IND_X|ZP_IND_Y|ABS|ABS_X|ABS_Y, 0xC3, 0},
 	{NULL, "ISC", class4, ZP|ZP_X|ZP_IND_X|ZP_IND_Y|ABS|ABS_X|ABS_Y, 0xE3, 0},
-	{NULL, "LAX", class4, ZP|ZP_Y|ZP_IND_X|ZP_IND_Y|ABS|ABS_Y, 0xA3, 0},
+	{NULL, "LAX", class4, ZP|ZP_Y|ZP_IND_X|ZP_IND_Y|ABS|ABS_Y, 0xA3, 1},
 	{NULL, "RLA", class4, ZP|ZP_X|ZP_IND_X|ZP_IND_Y|ABS|ABS_X|ABS_Y, 0x23, 0},
 	{NULL, "RRA", class4, ZP|ZP_X|ZP_IND_X|ZP_IND_Y|ABS|ABS_X|ABS_Y, 0x63, 0},
 	{NULL, "SAX", class4, ZP|ZP_Y|ZP_IND_X|ABS, 0x83, 0},
