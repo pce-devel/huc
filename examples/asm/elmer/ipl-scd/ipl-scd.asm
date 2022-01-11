@@ -171,7 +171,7 @@ iso_dirhi	=	$2F00			; hi-byte of file's sector #
 ; ipl_scd - Replacement IPL file loader using ISOlink diectory information.
 ;
 
-		.org	$3080			; First free memory in IPL.
+		.org	$3090			; First free memory in IPL.
 
 ipl_scd:	jsr	ex_getver		; Get System Card version.
 		cpx	#3			; Need version 3 or higher.
