@@ -66,6 +66,7 @@ int padding_opt;
 int srec_opt;
 int run_opt;
 int ipl_opt;
+int sgx_opt;
 int scd_opt;
 int cd_opt;
 int mx_opt;
@@ -230,6 +231,7 @@ main(int argc, char **argv)
 		{"trim",        0, &trim_opt,    1 },
 		{"cd",          0, &cd_type,     1 },
 		{"scd",         0, &cd_type,     2 },
+		{"sgx",         0, &sgx_opt,     1 },
 		{"ipl",         0, &ipl_opt,     1 },
 		{"over",        0, &overlayflag, 1 },
 		{"overlay",     0, &overlayflag, 1 },
@@ -291,6 +293,7 @@ main(int argc, char **argv)
 	srec_opt = 0;
 	run_opt = 0;
 	ipl_opt = 0;
+	sgx_opt = 0;
 	scd_opt = 0;
 	cd_opt = 0;
 	mx_opt = 0;
@@ -437,6 +440,8 @@ main(int argc, char **argv)
 			strcat(bin_fname, ".ovl");
 		else if (cd_opt || scd_opt)
 			strcat(bin_fname, ".iso");
+		else if (sgx_opt)
+			strcat(bin_fname, ".sgx");
 		else
 			strcat(bin_fname, machine->rom_ext);
 	}
@@ -737,6 +742,10 @@ main(int argc, char **argv)
 				/* load mode */
 				ipl_buffer[0x80D] = 0x60;
 
+				/* add a SuperGRAFX signature to the IPL Information Block */
+				if (sgx_opt)
+					memcpy(ipl_buffer + 0x880, "(for SuperGRAFX)", 16);
+
 				/* directory with only 2 files, the IPL and this program */
 				ipl_buffer[0x600] = (0);
 				ipl_buffer[0x700] = (0) >> 8;
@@ -914,7 +923,7 @@ help(void)
 		prg_name = machine->asm_name;
 
 	/* display help */
-	printf("%s [-options] [-? (for help)] infile\n\n", prg_name);
+	printf("%s [-options] [-? (for help)] [-o outfile] infile\n\n", prg_name);
 	printf("-s/S       : show segment usage\n");
 	printf("-l #       : listing file output level (0-3)\n");
 	printf("-m         : force macro expansion in listing\n");
@@ -925,6 +934,7 @@ help(void)
 	if (machine->type == MACHINE_PCE) {
 		printf("-cd        : create a CD-ROM track image\n");
 		printf("-scd       : create a Super CD-ROM track image\n");
+		printf("-sgx       : add a SuperGRAFX signature to the CD-ROM\n");
 		printf("-over(lay) : create an executable 'overlay' program segment\n");
 		printf("-ipl       : create a custom CD-ROM IPL file\n");
 		printf("-dev       : assemble and run on the Develo Box\n");

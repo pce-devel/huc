@@ -39,6 +39,7 @@ int file_count = 0;
 int cderr_flag = 0;
 int cderr_ovl = 0;
 int asm_flag = 0;
+int sgx_flag = 0;
 static char incpath[10][256];
 static int debug;
 
@@ -380,6 +381,10 @@ ipl_write(FILE *outfile)
       memcpy(ipl_buffer + 0x86A, ipl_name, ipl_nend - ipl_name);
    }
 
+   /* add a SuperGRAFX signature to the IPL Information Block */
+   if (sgx_flag)
+      memcpy(ipl_buffer + 0x880, "(for SuperGRAFX)", 16);
+
    /* store directory information in the last 512 bytes of the 1st sector */
    for (i = 0; i <= MAX_FILES; i++) {
 
@@ -439,6 +444,7 @@ usage(void)
    printf("            <mpr4 value>, \n");
    printf("            <mpr5 value>, \n");
    printf("            <mpr6 value> \n\n");
+   printf("-sgx   :  Add a SuperGRAFX signature string to the IPL\n");
    printf("-asm   :  Do not write HuC-specific data into overlays\n");
    printf("-cderr :  Indicates that the following HuC overlay is to be used \n");
    printf("          instead of the default text message when SCD programs\n");
@@ -560,6 +566,11 @@ main(int argc, char *argv[])
          if ((strcmp(argv[i], "-asm") == 0) &&
              (asm_flag == 0)) {        /* only valid once on line */
             asm_flag = 1;
+            continue;
+         } else
+         if ((strcmp(argv[i], "-sgx") == 0) &&
+             (sgx_flag == 0)) {        /* only valid once on line */
+            sgx_flag = 1;
             continue;
          } else {
             usage();
