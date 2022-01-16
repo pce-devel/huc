@@ -552,6 +552,7 @@ main(int argc, char **argv)
 		rsbank = RESERVED_BANK;
 		proc_nb = 0;
 		kickc_mode = 0;
+		kickc_incl = kickc_opt;
 
 		/* reset assembler options */
 		asm_opt[OPT_LIST] = 0;

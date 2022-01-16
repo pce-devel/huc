@@ -265,8 +265,17 @@ start:
 	i = SFIELD;
 	c = getc(in_fp);
 	if (c == EOF) {
-		if (close_input())
-			return (-1);
+		if (close_input()) {
+			if (stop_pass != 0 || kickc_incl == 0) {
+				return (-1);
+			} else {
+				kickc_incl = 0;
+				if (open_input("kickc-final.asm") == -1) {
+					fatal_error("Cannot open \"kickc-final.asm\" file!");
+					return (-1);
+				}
+			}
+		}
 		goto start;
 	}
 	for (;;) {
