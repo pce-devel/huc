@@ -385,27 +385,27 @@ ipl_write(FILE *outfile)
    if (sgx_flag)
       memcpy(ipl_buffer + 0x880, "(for SuperGRAFX)", 16);
 
-   /* store directory information in the last 512 bytes of the 1st sector */
+   /* store directory information in the last 512 bytes of the 2nd sector */
    for (i = 0; i <= MAX_FILES; i++) {
 
       /* sector_array[0] is ipl.bin which is a segment    */
       /* but not an addressable one - still, it is stored */
 
-      ipl_buffer[i + 0x600] = (sector_array[i]) & 255;
-      ipl_buffer[i + 0x700] = (sector_array[i]) >> 8;
+      ipl_buffer[i + 0xE00] = (sector_array[i]) & 255;
+      ipl_buffer[i + 0xF00] = (sector_array[i]) >> 8;
 
       if ((beyond128mb == 255) && (sector_array[i] >= 65536))
          beyond128mb = i;
    }
 
    /* store which is the first file beyond the 128Mbyte ISO boundary */
-   ipl_buffer[0x5FF] = beyond128mb;
+   ipl_buffer[0xDFF] = beyond128mb;
 
    /* store which is the cd error overlay file */
-   ipl_buffer[0x5FE] = cderr_ovl;
+   ipl_buffer[0xDFE] = cderr_ovl;
 
    /* store the count of directory entries */
-   ipl_buffer[0x5FD] = file_count;
+   ipl_buffer[0xDFD] = file_count;
 
    /* write out the ipl data */
    fwrite(ipl_buffer, 1, 2048 * sectors, outfile);

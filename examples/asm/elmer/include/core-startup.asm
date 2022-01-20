@@ -254,7 +254,7 @@ core_boot:
 
 		; Copy the ISO's directory from IPL memory to a safe spot.
 
-		tii	$2DFD, $3DFD, 515
+		tii	$35FD, $3DFD, 515
 
 		; Copy the kernel code to its destination in MPR1.
 
@@ -421,15 +421,15 @@ core_ramcpy	=	*
 		; ISOlink CD-ROM File Directory :
 		;
 		; When this program is run, the IPL has loaded the directory
-		; into memory at $2DFD-$2FFF.
+		; into memory at $35FD-$37FF.
 		;
 		; The format of the directory is shown below ...
 		;
-		;  ------$2DFD: # of files stored on CD-ROM
-		;  ------$2DFE: index # of CDERR file
-		;  ------$2DFF: index # of 1st file beyond 128MB
-		;  $2E00-$2EFF: lo-byte of sector # of start of file
-		;  $2F00-$2FFF: hi-byte of sector # of start of file
+		;  ------$35FD: # of files stored on CD-ROM
+		;  ------$35FE: index # of CDERR file
+		;  ------$35FF: index # of 1st file beyond 128MB
+		;  $3600-$36FF: lo-byte of sector # of start of file
+		;  $3700-$37FF: hi-byte of sector # of start of file
 		;
 		; File 0  is the IPL (the 1st 2 sectors of the ISO).
 		; File 1  is the first file on the ISOlink command line.

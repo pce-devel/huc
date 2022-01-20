@@ -128,7 +128,11 @@ core_main:	jsr	ex_getver		; Get System Card version.
 
 		jsr	clear_vram		; Initialize VRAM.
 
-		jsr	upload_font8x8		; Upload font data.
+		lda	#<font_data		; Upload font data.
+		sta	<__si + 0
+		lda	#>font_data
+		sta	<__si + 1
+		jsr	upload_font8x8
 
 		cla				; Set up a 32x28 video
 		ldx	#32			; mode.
@@ -149,6 +153,7 @@ core_main:	jsr	ex_getver		; Get System Card version.
 		stz	sprc_len
 		lda	#2
 		sta	color_cmd
+		jsr	ex_colorcmd		; Do immediately!
 
 		jsr	write_string		; Display the message.
 
@@ -259,39 +264,34 @@ upload_font8x8: ldx	#$14			; Upload solid version to
 		stz	VDC_DL
 		stx	VDC_DH
 
-		lda	#<font_data		; Set source font.
-		sta	<__ax + 0
-		lda	#>font_data
-		sta	<__ax + 1
-
 		vreg	#VDC_VWR
-		lda	#21			; Small font of 21 characters.
-		sta	<__bl
+		lda	#23			; Minimal font of 23 characters.
+		sta	<__al
 
 		cly
 
 .tile_loop:	clx				; Create a drop-shadowed version
-		stz	tmp_shadow_buf,x	; of the glyph.
+		stz	tmp_shadow_buf, x	; of the glyph.
 
 		.if	1
-.line_loop:	lda	[__ax],y		; Drop-shadow on the LHS.
-		sta	tmp_normal_buf,x	; Font data is RHS justified.
+.line_loop:	lda	[__si],y		; Drop-shadow on the LHS.
+		sta	tmp_normal_buf, x	; Font data is RHS justified.
 		asl	a
 		.else
-.line_loop:	lda	[__ax],y		; Drop-shadow on the RHS.
-		sta	tmp_normal_buf,x	; Font data is LHS justified.
+.line_loop:	lda	[__si],y		; Drop-shadow on the RHS.
+		sta	tmp_normal_buf, x	; Font data is LHS justified.
 		lsr	a
 		.endif
 
-		ora	[__ax],y
-		sta	tmp_shadow_buf+2,x
-		ora	tmp_shadow_buf,x
-		eor	tmp_normal_buf,x
-		sta	tmp_shadow_buf,x
+		ora	[__si],y
+		sta	tmp_shadow_buf+2, x
+		ora	tmp_shadow_buf, x
+		eor	tmp_normal_buf, x
+		sta	tmp_shadow_buf, x
 
 		iny
 		bne	.next_line
-		inc	<__ah
+		inc	<__si + 1
 .next_line:	inx
 		inx
 		cpx	#2*8
@@ -300,6 +300,7 @@ upload_font8x8: ldx	#$14			; Upload solid version to
 .copy_tile:	tia	tmp_shadow_buf, VDC_DL, 16
 
 		pla				; Restore bit 2 & 3 byte.
+
 		ldx	#8
 		sta	VDC_DL			; Solid uses colors 12-14.
 .plane23_loop:	sta	VDC_DH
@@ -307,7 +308,7 @@ upload_font8x8: ldx	#$14			; Upload solid version to
 		bne	.plane23_loop
 		pha				; Preserve bit 2 & 3 byte.
 
-		dec	<__bl
+		dec	<__al
 		bne	.tile_loop
 
 		pla
@@ -325,8 +326,8 @@ upload_font8x8: ldx	#$14			; Upload solid version to
 write_string:	php				; Nasty code to set up the
 		sei				; VDC write address without
 		st0	#VDC_MAWR		; using the "vreg" macro.
-		st1	#<(1 + (13 * 64))
-		st2	#>(1 + (13 * 64))
+		st1	#<(2 + (13 * 64))
+		st2	#>(2 + (13 * 64))
 		st0	#VDC_VWR
 		lda	#VDC_VWR
 		sta	<vdc_reg
@@ -345,7 +346,9 @@ write_string:	php				; Nasty code to set up the
 .done:		rts
 
 		; The error message is remapped into a minimal font that
-		; contains only 21 characters.
+		; contains only 23 characters.
+		;
+		; N.B. The font is also used by "ipl-scd.asm"!
 		;
 		; @ = ' '
 		; A = 'S'
@@ -364,13 +367,15 @@ write_string:	php				; Nasty code to set up the
 		; N = 's'
 		; O = 't'
 		; P = 'm'
-		; Q = 'q'
-		; R = 'i'
-		; S = 'd'
-		; T = '!'
-	
-.supercd_msg:	db	"ABCDE@FGHIJKL@AMNODP@EDQBREDST"
-;		db	"Super CD-ROM2 System required!"
+		; Q = 'n'
+		; R = 'd'
+		; S = '!'
+		; T = 'o'
+		; U = 'a'
+		; V = 'g'
+
+.supercd_msg:	db	"ABCDE@FGHIJKL@AMNODP@QDDRDRS"
+;		db	"Super CD-ROM2 System needed!"
 		db	0
 
 

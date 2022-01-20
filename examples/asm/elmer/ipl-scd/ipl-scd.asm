@@ -75,19 +75,19 @@
 ; are contained in the CD-ROM's ISO track.
 ;
 ; This directory is stored in the previously unused 515-byte space at the
-; end of the first sector of the ISO, which contains Hudson's IPL loader.
+; end of the second sector of the ISO, which contains the IPL's boot info.
 ;
 ; As long as the game developer loads their initial boot program at memory
-; location $3000 or higher, then when the boot program starts to execute,
-; memory locations $2DFD-$2FFF will hold a copy of the directory information.
+; location $3800 or higher, then when the boot program starts to execute,
+; memory locations $35FD-$37FF will hold a copy of the directory information.
 ;
 ; The format of the directory is shown below ...
 ;
-;	 $2DFD: # of files stored on CD-ROM
-;	 $2DFE: index # of CDERR file
-;	 $2DFF: index # of 1st file beyond 128MB
-;  $2E00-$2EFF: lo-byte of sector # of start of file (255 files max)
-;  $2F00-$2FFF: hi-byte of sector # of start of file (255 files max)
+;	 $35FD: # of files stored on CD-ROM
+;	 $35FE: index # of CDERR file
+;	 $35FF: index # of 1st file beyond 128MB
+;  $3600-$36FF: lo-byte of sector # of start of file (255 files max)
+;  $3700-$37FF: hi-byte of sector # of start of file (255 files max)
 ;
 ; File 0  is the IPL		  (starts at sector 0, length 2 sectors)
 ; File 1  is the game's boot file (starts at sector 2, length ? sectors)
@@ -103,18 +103,18 @@
 ; ***************************************************************************
 ; ***************************************************************************
 
-iso_count	=	$2DFD			; # of files stored on CD-ROM
-iso_cderr	=	$2DFE			; index # of CDERR file
-iso_128mb	=	$2DFF			; index # of 1st beyond 128MB
-iso_dirlo	=	$2E00			; lo-byte of file's sector #
-iso_dirhi	=	$2F00			; hi-byte of file's sector #
+iso_count	=	$35FD			; # of files stored on CD-ROM
+iso_cderr	=	$35FE			; index # of CDERR file
+iso_128mb	=	$35FF			; index # of 1st beyond 128MB
+iso_dirlo	=	$3600			; lo-byte of file's sector #
+iso_dirhi	=	$3700			; hi-byte of file's sector #
 
 
 
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; Inlude definitions for PC Engine assembly-language coding.
+; Include definitions for PC Engine assembly-language coding.
 ;
 
 		include "pceas.inc"
@@ -122,7 +122,6 @@ iso_dirhi	=	$2F00			; hi-byte of file's sector #
 
 		.list
 		.mlist
-
 
 
 ; ***************************************************************************
@@ -199,9 +198,9 @@ ipl_scd:	jsr	ex_getver		; Get System Card version.
 
 		ldy	#1			; Load & run the 1st file.
 
-.load_file:	lda	iso_dirlo + 1,y		; Calculate file length.
+.load_file:	lda	iso_dirlo + 1, y	; Calculate file length.
 		sec
-		sbc	iso_dirlo + 0,y
+		sbc	iso_dirlo + 0, y
 		sta	<__al
 		stz	<__ah
 
@@ -214,9 +213,9 @@ ipl_scd:	jsr	ex_getver		; Get System Card version.
 		bcc	.set_rec_h
 		inc	a
 .set_rec_h:	sta	<__cl
-		lda	iso_dirhi + 0,y
+		lda	iso_dirhi + 0, y
 		sta	<__ch
-		lda	iso_dirlo + 0,y
+		lda	iso_dirlo + 0, y
 		sta	<__dl
 
 		lda	#6			; Use MPR6 for loading.
@@ -251,7 +250,11 @@ ipl_scd:	jsr	ex_getver		; Get System Card version.
 
 		jsr	clear_vram		; Initialize VRAM.
 
-		jsr	upload_font8x8		; Upload font data.
+		lda	#<font_data		; Upload font data.
+		sta	<__si + 0
+		lda	#>font_data
+		sta	<__si + 1
+		jsr	upload_font8x8
 
 		cla				; Set up a 32x28 video
 		ldx	#32			; mode.
@@ -283,35 +286,46 @@ ipl_scd:	jsr	ex_getver		; Get System Card version.
 
 .hang:		bra	.hang			; Wait for user to reboot.
 
-.supercd_msg:	db	1			; Screen X
+		; The error message is remapped into a minimal font that
+		; contains only 23 characters.
+		;
+		; N.B. The font is also used by "core-stage1.asm"!
+		;
+		; @ = ' '
+		; A = 'S'
+		; B = 'u'
+		; C = 'p'
+		; D = 'e'
+		; E = 'r'
+		; F = 'C'
+		; G = 'D'
+		; H = '-'
+		; I = 'R'
+		; J = 'O'
+		; K = 'M'
+		; L = '2'
+		; M = 'y'
+		; N = 's'
+		; O = 't'
+		; P = 'm'
+		; Q = 'n'
+		; R = 'd'
+		; S = '!'
+		; T = 'o'
+		; U = 'a'
+		; V = 'g'
+
+.supercd_msg:	db	2			; Screen X
 		db	13			; Screen Y
-		db	"Super CD-ROM"
-		db	$7F			; "2"
-		db	" System required!"
+		db	"ABCDE@FGHIJKL@AMNODP@QDDRDRS"
+;		db	"Super CD-ROM2 System needed!"
 		db	0
 
-.cderror_msg:	db	1			; Screen X
+.cderror_msg:	db	3			; Screen X
 		db	13			; Screen Y
-		db	"CD error! Unable to load game!"
+		db	"FG@DEETES@FUQQTO@EBQ@VUPDS"
+;		db	"CD error! Cannot run game!"
 		db	0
-
-
-
-; ***************************************************************************
-; ***************************************************************************
-;
-; cpc464_colors - Palette data (a blast-from-the-past!)
-;
-;  0 = transparent
-;  1 = dark blue shadow
-;  2 = white font
-;
-; 12 = dark blue background
-; 13 = blue shadow
-; 14 = yellow font
-
-cpc464_colors:	dw	$0000,$0001,$01B2,$01B2,$0000,$0000,$0000,$0000
-		dw	$0000,$0000,$0000,$0000,$0002,$004C,$0169,$01B2
 
 
 
@@ -355,7 +369,7 @@ clear_screen:	vreg	#VDC_CR
 
 		ldx	#$1000 / $200
 		cly
-		st1	#$20			; Write "space" character
+		st1	#$40			; Write "space" character
 .bat_loop:	st2	#$01			; in palette 0.
 		st2	#$01
 		dey
@@ -372,59 +386,51 @@ clear_screen:	vreg	#VDC_CR
 ;
 ; upload_font8x8 - Upload an 8x8 font with a CPU generated drop-shadow.
 ;
-; 0 = trans
-; 1 = shadow
-; 2 = font
+; 12 = trans
+; 13 = shadow
+; 14 = font
+;
 
 tmp_shadow_buf	equ	$2100			; Interleaved 16 + 1 lines.
 tmp_normal_buf	equ	$2101			; Interleaved 16 lines.
 
-upload_font8x8: ldx	#$12			; Upload solid version to
-		lda	#$FF			; VRAM $1200-$17FF.
-		bsr	.upload
+upload_font8x8: ldx	#$14			; Upload solid version to
+		lda	#$FF			; VRAM $1400-$156F.
 
-		ldx	#$1A			; Upload transparent version
-		lda	#$00			; to VRAM $1A00-$1FFF.
-
-.upload:	pha				; Preserve bit 2 & 3 fill.
+		pha				; Preserve bit 2 & 3 fill.
 
 		vreg	#VDC_MAWR		; Set VRAM destination.
 		stz	VDC_DL
 		stx	VDC_DH
 
-		lda	#<font_data		; Set source font.
-		sta	<__ax + 0
-		lda	#>font_data
-		sta	<__ax + 1
-
 		vreg	#VDC_VWR
-		lda	#96			; ASCII =  96 characters.
-		sta	<__bl
+		lda	#23			; Minimal font of 23 characters.
+		sta	<__al
 
 		cly
 
 .tile_loop:	clx				; Create a drop-shadowed version
-		stz	tmp_shadow_buf,x	; of the glyph.
+		stz	tmp_shadow_buf, x	; of the glyph.
 
 		.if	1
-.line_loop:	lda	[__ax],y		; Drop-shadow on the LHS.
-		sta	tmp_normal_buf,x	; Font data is RHS justified.
+.line_loop:	lda	[__si],y		; Drop-shadow on the LHS.
+		sta	tmp_normal_buf, x	; Font data is RHS justified.
 		asl	a
 		.else
-.line_loop:	lda	[__ax],y		; Drop-shadow on the RHS.
-		sta	tmp_normal_buf,x	; Font data is LHS justified.
+.line_loop:	lda	[__si],y		; Drop-shadow on the RHS.
+		sta	tmp_normal_buf, x	; Font data is LHS justified.
 		lsr	a
 		.endif
 
-		ora	[__ax],y
-		sta	tmp_shadow_buf+2,x
-		ora	tmp_shadow_buf,x
-		eor	tmp_normal_buf,x
-		sta	tmp_shadow_buf,x
+		ora	[__si],y
+		sta	tmp_shadow_buf+2, x
+		ora	tmp_shadow_buf, x
+		eor	tmp_normal_buf, x
+		sta	tmp_shadow_buf, x
 
 		iny
 		bne	.next_line
-		inc	<__ah
+		inc	<__si + 1
 .next_line:	inx
 		inx
 		cpx	#2*8
@@ -433,6 +439,7 @@ upload_font8x8: ldx	#$12			; Upload solid version to
 .copy_tile:	tia	tmp_shadow_buf, VDC_DL, 16
 
 		pla				; Restore bit 2 & 3 byte.
+
 		ldx	#8
 		sta	VDC_DL			; Solid uses colors 12-14.
 .plane23_loop:	sta	VDC_DH			; Transparent uses 0-2.
@@ -440,7 +447,7 @@ upload_font8x8: ldx	#$12			; Upload solid version to
 		bne	.plane23_loop
 		pha				; Preserve bit 2 & 3 byte.
 
-		dec	<__bl
+		dec	<__al
 		bne	.tile_loop
 
 		pla
@@ -459,7 +466,7 @@ write_string:	sta	<__al			; String address.
 		stx	<__ah
 
 		ldy	#1			; Calculate screen address.
-		lda	[__ax],y		; Get Y coordinate.
+		lda	[__ax], y		; Get Y coordinate.
 		lsr	a
 		tax
 		cla
@@ -488,7 +495,7 @@ write_string:	sta	<__al			; String address.
 		sta	<vdc_reg
 		plp
 
-.loop:		lda	[__ax],y		; Get next ASCII character.
+.loop:		lda	[__ax], y		; Get next ASCII character.
 		beq	.done
 		iny
 
@@ -507,9 +514,22 @@ write_string:	sta	<__al			; String address.
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; Put the font data at the end of the IPL sector.
+; cpc464_colors - Palette data (a blast-from-the-past!)
+;
+; 12 = dark blue background
+; 13 = blue shadow
+; 14 = yellow font
 ;
 
-		.org	$3500
+cpc464_colors:	dw	$0000,$0000,$0000,$0000,$0000,$0000,$0000,$0000
+		dw	$0000,$0000,$0000,$0000,$0002,$004C,$0169,$01B2
 
-font_data:	incbin	"../font/font8x8-ascii-exos.dat"
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; Compressed font data.
+;
+
+font_data:	incbin	"../font/font8x8-stage1-exos.dat"

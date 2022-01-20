@@ -748,21 +748,21 @@ main(int argc, char **argv)
 					memcpy(ipl_buffer + 0x880, "(for SuperGRAFX)", 16);
 
 				/* directory with only 2 files, the IPL and this program */
-				ipl_buffer[0x600] = (0);
-				ipl_buffer[0x700] = (0) >> 8;
-				ipl_buffer[0x601] = (2);
-				ipl_buffer[0x701] = (2) >> 8;
-				ipl_buffer[0x602] = (2 + ((max_bank + 1) * 8192 / 2048));
-				ipl_buffer[0x702] = (2 + ((max_bank + 1) * 8192 / 2048)) >> 8;
+				ipl_buffer[0xE00] = (0);
+				ipl_buffer[0xF00] = (0) >> 8;
+				ipl_buffer[0xE01] = (2);
+				ipl_buffer[0xF01] = (2) >> 8;
+				ipl_buffer[0xE02] = (2 + ((max_bank + 1) * 8192 / 2048));
+				ipl_buffer[0xF02] = (2 + ((max_bank + 1) * 8192 / 2048)) >> 8;
 
 				/* store which is the first file beyond the 128Mbyte ISO boundary */
-				ipl_buffer[0x5FF] = 255;
+				ipl_buffer[0xDFF] = 255;
 
 				/* store which is the cd error overlay file */
-				ipl_buffer[0x5FE] = 0;
+				ipl_buffer[0xDFE] = 0;
 
 				/* store the count of directory entries */
-				ipl_buffer[0x5FD] = 2;
+				ipl_buffer[0xDFD] = 2;
 
 				/* write boot code */
 				fwrite(ipl_buffer, 1, 4096, fp);
