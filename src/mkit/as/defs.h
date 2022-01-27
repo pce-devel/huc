@@ -198,7 +198,10 @@ typedef struct t_proc {
 	struct t_proc *link;
 	struct t_proc *group;
 	struct t_symbol *label;
+	struct t_symbol *old_glablptr;
 	int old_bank;
+	int old_page;
+	int old_loccnt;
 	int bank;
 	int org;
 	int base;

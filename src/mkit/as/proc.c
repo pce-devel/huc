@@ -304,9 +304,9 @@ do_proc(int *ip)
 	proc_ptr->defined = 1;
 
 	/* backup current bank infos */
-	bank_glabl[section][bank]  = glablptr;
-	bank_loccnt[section][bank] = loccnt;
-	bank_page[section][bank]   = page;
+	bank_glabl[section][bank]  = proc_ptr->old_glablptr = glablptr;
+	bank_loccnt[section][bank] = proc_ptr->old_loccnt = loccnt;
+	bank_page[section][bank]   = proc_ptr->old_page = page;
 	proc_ptr->old_bank = bank;
 	proc_nb++;
 
@@ -392,21 +392,23 @@ do_endp(int *ip)
 	labldef(0, 0, LOCATION);
 
 	/* record proc size */
-	bank = proc_ptr->old_bank;
 	proc_ptr->label->data_type = proc_ptr->type;
 	proc_ptr->label->data_size =
 	proc_ptr->size = loccnt - proc_ptr->base;
-	proc_ptr = proc_ptr->group;
+
+	bank = proc_ptr->old_bank;
 
 	/* restore previous bank settings */
-	if (proc_ptr == NULL) {
-		page     = bank_page[section][bank];
-		loccnt   = bank_loccnt[section][bank];
-		glablptr = bank_glabl[section][bank];
+	if (proc_ptr->group == NULL) {
+		page     = bank_page[section][bank]   = proc_ptr->old_page;
+		loccnt   = bank_loccnt[section][bank] = proc_ptr->old_loccnt;
+		glablptr = bank_glabl[section][bank]  = proc_ptr->old_glablptr;
 
 		/* signal discontiguous change in loccnt */
 		discontiguous = 1;
 	}
+
+	proc_ptr = proc_ptr->group;
 
 	/* a KickC procedure also closes the label-scope */
 	if (optype == P_KICKC) {
