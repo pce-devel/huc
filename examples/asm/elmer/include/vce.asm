@@ -32,7 +32,7 @@
 
 xfer_palettes:	lda	#$80			; Acquire color mutex to avoid
 		tsb	color_mutex		; conflict with a delayed VBL.
-		bmi	.exit
+		bmi	.busy
 
 		ldy	color_queue_r		; Are there any palette xfers
 		cpy	color_queue_w		; queued up?
@@ -60,29 +60,26 @@ xfer_palettes:	lda	#$80			; Acquire color mutex to avoid
 		rol	a
 		sta	VCE_CTA + 1
 
+		ldx	color_count,y		; How many palettes to xfer?
+
 		lda	color_bank, y		; Map data into MPR3 & MPR4.
 		tam3
 		inc	a
 		tam4
-		lda	color_addr_l, y
-		sta	.ram_tia + 1
 		lda	color_addr_h, y
 		sta	.ram_tia + 2
-
-		ldx	color_count,y		; How many palettes to xfer?
+		lda	color_addr_l, y
+.palette_loop:	sta	.ram_tia + 1
 
 	.if	CDROM
-.palette_loop:	tia	0, VCE_CTW, 32		; Copy 32-bytes to the VCE.
+.ram_tia:	tia	0, VCE_CTW, 32		; Progam code is writable!
 	.else
-.palette_loop:	jsr	.ram_tia
+		jsr	.ram_tia		; Copy 32-bytes to the VCE.
 	.endif
 
 		clc				; Increment the data ptr to
-		lda	#32			; the next 32-byte palette.
-		adc	.ram_tia + 1
-		sta	.ram_tia + 1
-		bcc	.next_palette
-		inc	.ram_tia + 2
+		adc	#32			; the next 32-byte palette.
+		bcs	.next_page
 
 .next_palette:	dex				; Any palettes left to xfer?
 		bne	.palette_loop
@@ -101,20 +98,21 @@ xfer_palettes:	lda	#$80			; Acquire color mutex to avoid
 		pla
 		tam3
 
-		stz	color_mutex		; Release color mutex.
-
 		plp				; Restore interrupt state.
 
-.exit:		rts
+.exit:		stz	color_mutex		; Release color mutex.
 
-	.if	CDROM
-.ram_tia	=	.palette_loop		; Progam code is writable!
-	.else
+.busy:		rts
+
+.next_page:	inc	.ram_tia + 2
+		bra	.next_palette
+
+	.if	!CDROM
 .ram_tia	=	color_tia		; Use a TIA in RAM.
 
 .tia_func:	tia	0, VCE_CTW, 32
 		rts
-	.endif	CDROM
+	.endif	!CDROM
 
 		.bss
 
