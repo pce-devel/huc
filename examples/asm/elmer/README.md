@@ -37,3 +37,12 @@ The "CORE(not TM)" PC Engine library is a small and configurable set of library 
 
 * scd-core-2stage
   - A simple example of creating an ISO for a Super CD-ROM, and loading the "CORE(not TM)" kernel code in a startup overlay.
+
+
+## Getting started with the KickC compiler
+
+* rom-kickc-hello
+  - A simple example of creating a HuCARD ROM.
+
+* rom-kickc-shmup
+  - A simple conversion of HuC's shmup.c sample to KickC.
