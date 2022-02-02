@@ -79,15 +79,15 @@
 ;
 ; As long as the game developer loads their initial boot program at memory
 ; location $3800 or higher, then when the boot program starts to execute,
-; memory locations $35FD-$37FF will hold a copy of the directory information.
+; memory locations $35FF-$37FF will hold a copy of the directory information.
 ;
 ; The format of the directory is shown below ...
 ;
-;	 $35FD: # of files stored on CD-ROM
-;	 $35FE: index # of CDERR file
-;	 $35FF: index # of 1st file beyond 128MB
-;  $3600-$36FF: lo-byte of sector # of start of file (255 files max)
-;  $3700-$37FF: hi-byte of sector # of start of file (255 files max)
+;  ------$35FF: index # of CDERR file
+;  $3600-$36FF: lo-byte of sector # of start of file
+;  $3700-$37FF: hi-byte of sector # of start of file
+;  ------$3600: # of files stored on CD-ROM
+;  ------$3700: index # of 1st file beyond 128MB
 ;
 ; File 0  is the IPL		  (starts at sector 0, length 2 sectors)
 ; File 1  is the game's boot file (starts at sector 2, length ? sectors)
@@ -103,11 +103,11 @@
 ; ***************************************************************************
 ; ***************************************************************************
 
-iso_count	=	$35FD			; # of files stored on CD-ROM
-iso_cderr	=	$35FE			; index # of CDERR file
-iso_128mb	=	$35FF			; index # of 1st beyond 128MB
+iso_cderr	=	$35FF			; index # of CDERR file
 iso_dirlo	=	$3600			; lo-byte of file's sector #
 iso_dirhi	=	$3700			; hi-byte of file's sector #
+iso_count	=	iso_dirlo		; # of files stored on CD-ROM
+iso_128mb	=	iso_dirhi		; index # of 1st beyond 128MB
 
 
 

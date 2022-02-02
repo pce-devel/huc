@@ -14,7 +14,7 @@ SRC_ISO  = core-stage1.bin stage2.ovl
 all: core-2stage.iso
 
 core-2stage.iso: $(SRC_ISO)
-	$(IL) core-2stage.iso -ipl,"2-Stage CD",0x4000,0x4000,0,1,2,3,4 -asm $(SRC_ISO)
+	$(IL) core-2stage.iso -ipl="2-Stage CD",0x4000,0x4000,0,1,2,3,4 -asm $(SRC_ISO)
 
 core-stage1.bin core-stage1.sym: $(SRC1_OVL) $(SRC1_INC)
 	$(AS) $(AFLAGS) -cd -trim core-stage1.asm

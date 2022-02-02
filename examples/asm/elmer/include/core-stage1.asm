@@ -22,20 +22,20 @@
 ; If you are using the "CORE(not TM)" library for a Super CD-ROM project,
 ; there are two different ways that you can build your ISO ...
 ;
-; 1) isolink mygame.iso -ipl,"../include/ipl-scd.bin" -asm \
+; 1) isolink mygame.iso -boot="../include/ipl-scd.bin" -asm \
 ;      myoverlay1.ovl <more-files> <-cderr syscard2.ovl>
 ;
-; 2) isolink mygame.iso -ipl,"Game Name",0x4000,0x4000,0,1,2,3,4 -asm \
+; 2) isolink mygame.iso -ipl="Game Name",0x4000,0x4000,0,1,2,3,4 -asm \
 ;      core-stage1.bin myoverlay1.ovl <more-files> <-cderr syscard2.ovl>
 ;
 ;
 ; If you are using the "CORE(not TM)" library for an old CD-ROM project,
 ; there are also two different ways that you can build your ISO ...
 ;
-; 1) isolink mygame.iso -ipl,"Game Name",0x4000,0x4000,0,1,2,3,4 -asm \
+; 1) isolink mygame.iso -ipl="Game Name",0x4000,0x4000,0,1,2,3,4 -asm \
 ;      myoverlay1.ovl <more-files>
 ;
-; 2) isolink mygame.iso -ipl,"Game Name",0x4000,0x4000,0,1,2,3,4 -asm \
+; 2) isolink mygame.iso -ipl="Game Name",0x4000,0x4000,0,1,2,3,4 -asm \
 ;      core-stage1.bin myoverlay1.ovl <more-files>
 ;
 ; ***************************************************************************

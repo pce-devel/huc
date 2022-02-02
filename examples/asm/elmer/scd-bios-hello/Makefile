@@ -11,7 +11,7 @@ SRC_ISO = hello.ovl
 all: bios-hello.iso
 
 bios-hello.iso: $(SRC_ISO)
-	$(IL) bios-hello.iso -ipl,"../include/ipl-scd.bin" -asm $(SRC_ISO)
+	$(IL) bios-hello.iso -boot="../include/ipl-scd.bin" -ipl="Hello SuperCD" -asm $(SRC_ISO)
 
 hello.ovl: $(SRC_OVL) $(SRC_INC)
 	$(AS) $(AFLAGS) -scd hello.asm

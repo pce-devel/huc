@@ -755,14 +755,14 @@ main(int argc, char **argv)
 				ipl_buffer[0xE02] = (2 + ((max_bank + 1) * 8192 / 2048));
 				ipl_buffer[0xF02] = (2 + ((max_bank + 1) * 8192 / 2048)) >> 8;
 
-				/* store which is the first file beyond the 128Mbyte ISO boundary */
-				ipl_buffer[0xDFF] = 255;
-
 				/* store which is the cd error overlay file */
-				ipl_buffer[0xDFE] = 0;
+				ipl_buffer[0xDFF] = 0;
 
 				/* store the count of directory entries */
-				ipl_buffer[0xDFD] = 2;
+				ipl_buffer[0xE00] = 2;
+
+				/* store which is the first file beyond the 128Mbyte ISO boundary */
+				ipl_buffer[0xF00] = 255;
 
 				/* write boot code */
 				fwrite(ipl_buffer, 1, 4096, fp);

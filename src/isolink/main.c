@@ -470,15 +470,17 @@ ipl_write(FILE *outfile)
    unsigned char * ipl_buffer = calloc(sectors, 2048);
    int beyond128mb = 255;
 
-   if (ipl_file) {
-      /* read the ipl (and presumably boot code) from a file */
+   /* initialize the CD's IPL sector contents */
+   if (ipl_file != NULL) {
+      /* read the IPL (and presumably boot code) from a file */
       FILE *infile = file_open(ipl_file, "rb");
       if (infile) {
          fread((void *)ipl_buffer, 1, 2048 * sectors, infile);
          fclose(infile);
       }
+
    } else {
-      /* initialize the ipl */
+      /* initialize the IPL */
       prepare_ipl(ipl_buffer);
 
       if (pcfx_flag) {
@@ -499,16 +501,11 @@ ipl_write(FILE *outfile)
          ipl_buffer[0x82B] = (ipl_load >> 24) & 255;
 
          /* starting address */
-         ipl_buffer[0x82C] = (ipl_exec & 255);       /* boot entry point */
+         ipl_buffer[0x82C] = (ipl_exec & 255);
          ipl_buffer[0x82D] = (ipl_exec >>  8) & 255;
          ipl_buffer[0x82E] = (ipl_exec >> 16) & 255;
          ipl_buffer[0x82F] = (ipl_exec >> 24) & 255;
 
-         /* program name */
-         memcpy(ipl_buffer + 0x800, ipl_name, ipl_nend - ipl_name);
-
-         /* current date (in UTC time) */
-         set_ipl_date((char *) &ipl_buffer[0x878]);
       } else {
          /* Set boot parameters for PC Engine */
 
@@ -516,7 +513,7 @@ ipl_write(FILE *outfile)
          ipl_buffer[0x802] = sector_array[1];
 
          /* nb_sectors */
-         if (ipl_flag) {
+         if (asm_flag) {
             /* ASM boot segment */
             ipl_buffer[0x803] = sector_array[2] - sector_array[1];
          } else {
@@ -531,7 +528,7 @@ ipl_write(FILE *outfile)
          ipl_buffer[0x805] = (ipl_load >> 8) & 255;
 
          /* starting address */
-         ipl_buffer[0x806] = (ipl_exec & 255);       /* boot entry point */
+         ipl_buffer[0x806] = (ipl_exec & 255);
          ipl_buffer[0x807] = (ipl_exec >> 8) & 255;
 
          /* mpr registers */
@@ -539,45 +536,80 @@ ipl_write(FILE *outfile)
          ipl_buffer[0x809] = ipl_mpr3;
          ipl_buffer[0x80A] = ipl_mpr4;
          ipl_buffer[0x80B] = ipl_mpr5;
-         ipl_buffer[0x80C] = ipl_mpr6;    /* boot loader also @ $C000 */
+         ipl_buffer[0x80C] = ipl_mpr6; /* HuC boot loader also @ $C000 */
 
          /* load mode */
          ipl_buffer[0x80D] = ipl_mode;
-
-         /* program name */
-         memcpy(ipl_buffer + 0x86A, ipl_name, ipl_nend - ipl_name);
-
-         /* add a SuperGRAFX signature to the IPL Information Block */
-         if (sgx_flag)
-            memcpy(ipl_buffer + 0x880, "(for SuperGRAFX)", 16);
       }
    }
 
-   /* store directory information in the last 512 bytes of the 2nd sector */
-   for (i = 0; i <= MAX_FILES; i++) {
-      int lba = sector_array[i];
+   /* always write this project-specific data */
+   if (pcfx_flag) {
+      /* Set project-specific data for PC-FX */
 
-      /* align to 4KB on the PC-FX to allow for 512Mbyte ISO */
-      if (pcfx_flag)
-         lba = lba / 2;
+      /* allow game name to override the one in an ipl_file */
+      if (ipl_flag || ipl_file == NULL) {
+         memcpy(ipl_buffer + 0x800, ipl_name, ipl_nend - ipl_name);
+      }
 
-      /* sector_array[0] is ipl.bin which is a segment    */
-      /* but not an addressable one - still, it is stored */
-      ipl_buffer[i + 0xE00] = lba & 255;
-      ipl_buffer[i + 0xF00] = lba >> 8;
+      /* current date (in UTC time) */
+      set_ipl_date((char *) &ipl_buffer[0x878]);
 
-      if ((beyond128mb == 255) && (lba >= 65536))
-         beyond128mb = i;
+      /* store directory information in the last 512 bytes of the 2nd sector */
+      for (i = 0; i <= MAX_FILES; i++) {
+         /* align to 4KB on the PC-FX to allow for 512Mbyte ISO */
+         int lba = sector_array[i] / 2;
+
+         /* sector_array[0] is ipl.bin which is a segment    */
+         /* but not an addressable one - still, it is stored */
+         ipl_buffer[2*i + 0xE00] = lba & 255;
+         ipl_buffer[2*i + 0xE01] = lba >> 8;
+
+         if ((beyond128mb == 255) && (lba >= 65536))
+            beyond128mb = i;
+      }
+
+      /* store the count of directory entries */
+      ipl_buffer[0xE00] = file_count;
+
+      /* store which is the first file beyond the 128Mbyte ISO boundary */
+      ipl_buffer[0xE01] = beyond128mb;
+
+   } else {
+      /* Set project-specific data for PC Engine */
+
+      /* allow game name to override the one in an ipl_file */
+      if (ipl_flag || ipl_file == NULL) {
+         memcpy(ipl_buffer + 0x86A, ipl_name, ipl_nend - ipl_name);
+      }
+
+      /* add a SuperGRAFX signature to the IPL Information Block */
+      if (sgx_flag)
+         memcpy(ipl_buffer + 0x880, "(for SuperGRAFX)", 16);
+
+      /* store which is the cd error overlay file */
+      ipl_buffer[0xDFF] = cderr_ovl;
+
+      /* store directory information in the last 512 bytes of the 2nd sector */
+      for (i = 0; i <= MAX_FILES; i++) {
+         /* align to 2KB on the PC Engine to allow for 256Mbyte ISO */
+         int lba = sector_array[i];
+
+         /* sector_array[0] is ipl.bin which is a segment    */
+         /* but not an addressable one - still, it is stored */
+         ipl_buffer[i + 0xE00] = lba & 255;
+         ipl_buffer[i + 0xF00] = lba >> 8;
+
+         if ((beyond128mb == 255) && (lba >= 65536))
+            beyond128mb = i;
+      }
+
+      /* store the count of directory entries */
+      ipl_buffer[0xE00] = file_count;
+
+      /* store which is the first file beyond the 128Mbyte ISO boundary */
+      ipl_buffer[0xF00] = beyond128mb;
    }
-
-   /* store which is the first file beyond the 128Mbyte ISO boundary */
-   ipl_buffer[0xDFF] = beyond128mb;
-
-   /* store which is the cd error overlay file */
-   ipl_buffer[0xDFE] = cderr_ovl;
-
-   /* store the count of directory entries */
-   ipl_buffer[0xDFD] = file_count;
 
    /* write out the ipl data */
    fwrite(ipl_buffer, 1, 2048 * sectors, outfile);
@@ -604,31 +636,30 @@ usage(void)
    printf(ISOLINK_VERSION "\n");
    printf("\nUsage: isolink <outfile> [<options>] <infile_1> <infile_2> -cderr <infile_n>\n");
    printf("\nOptions:\n\n");
-   printf("-pcfx  :  Write a PC-FX ISO instead of a PC Engine ISO\n\n");
-   printf("-ipl,  :  The comma is followed by either ... \n");
-   printf("            <ipl file> \n\n");
-   printf("          ... or ...\n");
-   printf("            <program name>, \n\n");
-   printf("          ... or (only for PC Engine) ...\n");
-   printf("            <program name>, \n");
-   printf("            <load address>, \n");
-   printf("            <exec address>, \n");
-   printf("            <mpr2 value>, \n");
-   printf("            <mpr3 value>, \n");
-   printf("            <mpr4 value>, \n");
-   printf("            <mpr5 value>, \n");
-   printf("            <mpr6 value> \n\n");
-   printf("          ... or (only for PC-FX) ...\n");
-   printf("            <program name>, \n");
-   printf("            <load address>, \n");
-   printf("            <exec address> \n\n");
-   printf("          Note that HuC programs can only set the <program name>!\n\n");
-   printf("-sgx   :  Add a SuperGRAFX signature string to the IPL\n\n");
-   printf("-asm   :  Do not write HuC-specific data into overlays\n\n");
-   printf("-cderr :  Indicates that the following overlay should be run instead\n");
-   printf("          of displaying a text message when a SuperCD-ROM program is\n");
-   printf("          executed on plain CD-ROM system\n\n");
-   printf("          Note: this overlay must be compiled as '-cd', not '-scd'!\n");
+   printf("-pcfx   :  Write a PC-FX ISO instead of a PC Engine ISO\n\n");
+   printf("-boot=  :  The '=' is followed ... \n");
+   printf("             <ipl-file> \n\n");
+   printf("-ipl=   :  The '=' is followed by either ... \n");
+   printf("             <program name> \n\n");
+   printf("           ... or (only for PC Engine) ...\n");
+   printf("             <program name>, \n");
+   printf("             <load address>, \n");
+   printf("             <exec address>, \n");
+   printf("             <mpr2 value>, \n");
+   printf("             <mpr3 value>, \n");
+   printf("             <mpr4 value>, \n");
+   printf("             <mpr5 value>, \n");
+   printf("             <mpr6 value> \n\n");
+   printf("           ... or (only for PC-FX) ...\n");
+   printf("             <program name>, \n");
+   printf("             <load address>, \n");
+   printf("             <exec address> \n\n");
+   printf("           HuC programs can only set the <program name>!\n\n");
+   printf("-sgx    :  Add a SuperGRAFX signature string to the IPL\n\n");
+   printf("-asm    :  Do not write HuC-specific data into overlays\n\n");
+   printf("-cderr  :  Indicates that the following overlay should be run instead\n");
+   printf("           of displaying a text message when a SuperCD-ROM program is\n");
+   printf("           executed on plain CD-ROM system.\n\n");
 }
 
 
@@ -685,82 +716,102 @@ main(int argc, char *argv[])
             continue;
 
          } else
-         if ((strncmp(argv[i], "-ipl,", 5) == 0) &&
-             (ipl_flag == 0)) {        /* only valid once on line */
+         if ((strncmp(argv[i], "-boot=", 6) == 0) &&
+             (ipl_file == NULL)) {        /* only valid once on line */
 
-            char * ptr = argv[i] + 5;
-            char * nxt;
-            long val;
+            ipl_file = argv[i] + 6;
+
+            if (*ipl_file == '\0') {
+               printf("\"-boot=\" option without a file name!\n");
+               printf("Operation aborted\n\n");
+               exit(1);
+            }
 
             if (file_num != 0 || ipl_flag != 0) {
+               printf("\"-boot\" option must appear before -ipl or any files!\n");
+               printf("Operation aborted\n\n");
+               exit(1);
+            }
+
+         } else
+         if ((strncmp(argv[i], "-ipl=", 5) == 0) &&
+             (ipl_flag == 0)) {        /* only valid once on line */
+
+            long val;
+            char * ptr = argv[i] + 5;
+            char * nxt;
+
+            if (*ptr == '\0') {
+               printf("\"-ipl=\" option without any parameters!\n");
+               printf("Operation aborted\n\n");
+               exit(1);
+            }
+
+            if (file_num >= 2 || ipl_flag != 0) {
                printf("\"-ipl\" option must appear before any files!\n");
                printf("Operation aborted\n\n");
                exit(1);
             }
 
-            ipl_flag = 1;
-
             nxt = strchr(ptr,',');
 
+            /* Allow developers to set *only* the program name */
             if (nxt == NULL) {
-               ipl_file = ptr;
+               ipl_flag = 1;
+
+               ipl_name = ptr;
+               ipl_nend = ptr + strlen(ptr);
+
             } else {
+               ipl_flag = -1;
+
                ipl_name = ptr;
                ipl_nend = nxt;
                ptr = nxt + 1;
 
-               /* Allow HuC developers to set *only* the program name */
-               if (*ptr != '\0') {
-                  ipl_flag = -1;
+               val = strtol(ptr, &nxt, 0);
+               if (nxt != ptr) ipl_load = val;
+               if (*nxt != ',') break;
+               ptr = nxt + 1;
 
-                  val = strtol(ptr, &nxt, 0);
-                  if (nxt != ptr) ipl_load = val;
+               val = strtol(ptr, &nxt, 0);
+               if (nxt != ptr) ipl_exec = val;
+
+               /* PC-FX does not have MPR settings! */
+               if (pcfx_flag != 0) {
+                  if (*nxt != '\0') break;
+               } else {
                   if (*nxt != ',') break;
                   ptr = nxt + 1;
 
                   val = strtol(ptr, &nxt, 0);
-                  if (nxt != ptr) ipl_exec = val;
+                  if (nxt != ptr) ipl_mpr2 = val;
+                  if (*nxt != ',') break;
+                  ptr = nxt + 1;
 
-                  /* PC-FX does not have MPR settings! */
-                  if (pcfx_flag != 0) {
-                     if (*nxt != '\0') break;
-                  } else {
-                     if (*nxt != ',') break;
-                     ptr = nxt + 1;
+                  val = strtol(ptr, &nxt, 0);
+                  if (nxt != ptr) ipl_mpr3 = val;
+                  if (*nxt != ',') break;
+                  ptr = nxt + 1;
 
-                     val = strtol(ptr, &nxt, 0);
-                     if (nxt != ptr) ipl_mpr2 = val;
-                     if (*nxt != ',') break;
-                     ptr = nxt + 1;
+                  val = strtol(ptr, &nxt, 0);
+                  if (nxt != ptr) ipl_mpr4 = val;
+                  if (*nxt != ',') break;
+                  ptr = nxt + 1;
 
-                     val = strtol(ptr, &nxt, 0);
-                     if (nxt != ptr) ipl_mpr3 = val;
-                     if (*nxt != ',') break;
-                     ptr = nxt + 1;
+                  val = strtol(ptr, &nxt, 0);
+                  if (nxt != ptr) ipl_mpr5 = val;
+                  if (*nxt != ',') break;
+                  ptr = nxt + 1;
 
-                     val = strtol(ptr, &nxt, 0);
-                     if (nxt != ptr) ipl_mpr4 = val;
-                     if (*nxt != ',') break;
-                     ptr = nxt + 1;
-
-                     val = strtol(ptr, &nxt, 0);
-                     if (nxt != ptr) ipl_mpr5 = val;
-                     if (*nxt != ',') break;
-                     ptr = nxt + 1;
-
-                     val = strtol(ptr, &nxt, 0);
-                     if (nxt != ptr) ipl_mpr6 = val;
-                     if (*nxt != '\0') break;
-                  }
-
-                  ipl_flag = 1;
+                  val = strtol(ptr, &nxt, 0);
+                  if (nxt != ptr) ipl_mpr6 = val;
+                  if (*nxt != '\0') break;
                }
 
-               sector_array[file_num++] = curr_sector;
-               curr_sector += 2;
-
-               continue;
+               ipl_flag = 1;
             }
+            continue;
 
          } else
          if ((strcmp(argv[i], "-cderr") == 0) &&
