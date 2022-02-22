@@ -14,26 +14,26 @@
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; This is an example of a simple Super CD-ROM overlay program that uses the
-; "CORE(not TM)" library to provide interrupt-handling, joypad reading, and
-; the ability to replace the System Card in MPR7 ($E000-$FFFF).
+; This is an example of a simple original CD-ROM2 overlay program that uses
+; the "CORE(not TM)" library to provide interrupt-handling, joypad reading,
+; and the ability to replace the System Card in MPR7 ($E000-$FFFF).
 ;
 ; This CD-ROM overlay does not include the "CORE(not TM)" kernel code, since
 ; it is run after the core-stage1 overlay has already installed the kernel.
 ;
-; It is running on a SuperCD System, so the overlay is loaded from the ISO
-; into banks $68-$87 (256KB max).
+; It is running on an old CD-ROM2 System, so the overlay is loaded from the
+; ISO into banks $80-$87 (64KB max).
 ;
 ; The PC Engine's memory map is set to ...
 ;
 ;   MPR0 = bank $FF : PCE hardware
 ;   MPR1 = bank $F8 : PCE RAM with Stack & ZP & "CORE(not TM)" kernel
-;   MPR2 = bank $68 : SCD RAM
-;   MPR3 = bank $69 : SCD RAM
-;   MPR4 = bank $6A : SCD RAM
-;   MPR5 = bank $6B : SCD RAM
-;   MPR6 = bank $6C : SCD RAM
-;   MPR7 = bank $68 : SCD RAM or System Card's bank $00
+;   MPR2 = bank $80 : SCD RAM
+;   MPR3 = bank $81 : SCD RAM
+;   MPR4 = bank $82 : SCD RAM
+;   MPR5 = bank $83 : SCD RAM
+;   MPR6 = bank $84 : SCD RAM
+;   MPR7 = bank $80 : SCD RAM or System Card's bank $00
 ;
 ; ***************************************************************************
 ; ***************************************************************************
