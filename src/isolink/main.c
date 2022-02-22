@@ -815,9 +815,20 @@ main(int argc, char *argv[])
 
          } else
          if ((strcmp(argv[i], "-cderr") == 0) &&
-             (file_num < 2) &&                 /* not valid for first file */
-             (i < (argc - 1)) &&        /* must have filename after */
              (cderr_flag == 0)) {       /* only valid once on line */
+
+            if (file_num < 2) {
+               printf("\"-cderr\" cannot be first file!\n");
+               printf("Operation aborted\n\n");
+               exit(1);
+            }
+
+            if (i >= (argc - 1)) {
+               printf("\"-cderr\" must be followed by a filename!\n");
+               printf("Operation aborted\n\n");
+               exit(1);
+            }
+
             cderr_flag = 1;
             cderr_ovl = file_num;
             continue;
