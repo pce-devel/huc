@@ -20,8 +20,7 @@
 ;
 
 VDC_SR		= $FF:0200	; Status Register
-;VDC_AR		= $FF:$0200	; Address Register
-VDC_AR		= 0xFF:0200	; Address Register
+VDC_AR		= $FF:0200	; Address Register
 VDC_DL		= $FF:0202	; Data (Read/Write) Low
 VDC_DH		= $FF:0203	; Data (Read/Write) High
 

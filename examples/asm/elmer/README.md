@@ -38,6 +38,12 @@ The "CORE(not TM)" PC Engine library is a small and configurable set of library 
 * scd-core-2stage
   - A simple example of creating an ISO for a Super CD-ROM, and loading the "CORE(not TM)" kernel code in a startup overlay.
 
+* scd-core-1stage-error
+  - An expansion of scd-core-1stage, using an error overlay to show a pretty screen when run with System Card 2.0 or earlier.
+
+* scd-core-2stage-error
+  - An expansion of scd-core-2stage, using an error overlay to show a pretty screen when run with System Card 2.0 or earlier.
+
 
 ## Getting started with the KickC compiler
 

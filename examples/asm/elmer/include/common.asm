@@ -46,6 +46,15 @@ wait_vsync:	lda	irq_cnt			; System Card variable, changed
 		rts
 
 ;
+; Delay for the next Y VBLANK IRQs.
+;
+
+wait_nvsync:	bsr	wait_vsync		; # of VBLANK IRQs to wait in
+		dey				; the Y register.
+		bne	wait_nvsync
+		rts
+
+;
 ; Map the __si data far-pointer into MPR3 (& MPR4).
 ;
 
