@@ -17,6 +17,9 @@ This directory contains a number of example programs and utilities for developin
 * scd-bios-hello
   - A simple example of creating an ISO for a Super CD-ROM, and using the System Card BIOS.
 
+* scd-bios-hello-error
+  - An expansion of scd-bios-hello, using an error overlay to show a pretty screen when run with System Card 2.0 or earlier.
+
 
 ## Getting started with the "CORE(not TM)" PC Engine library
 
