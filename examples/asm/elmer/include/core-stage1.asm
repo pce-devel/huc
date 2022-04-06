@@ -346,7 +346,7 @@ write_string:	php				; Nasty code to set up the
 .done:		rts
 
 		; The error message is remapped into a minimal font that
-		; contains only 23 characters.
+		; contains only 25 characters.
 		;
 		; N.B. The font is also used by "ipl-scd.asm"!
 		;
@@ -373,10 +373,26 @@ write_string:	php				; Nasty code to set up the
 		; T = 'o'
 		; U = 'a'
 		; V = 'g'
+		; W = 'q'
+		; X = 'i'
 
-.supercd_msg:	db	"ABCDE@FGHIJKL@AMNODP@QDDRDRS"
+	.if	0
+
+.supercd_msg:	db	2			; Screen X
+		db	13			; Screen Y
+		db	"ABCDE@FGHIJKL@AMNODP@QDDRDRS"
 ;		db	"Super CD-ROM2 System needed!"
 		db	0
+
+	.else
+
+.supercd_msg:	db	1			; Screen X
+		db	13			; Screen Y
+		db	"ABCDE@FGHIJKL@AMNODP@EDWBXEDRS"
+;		db	"Super CD-ROM2 System required!"
+		db	0
+
+	.endif
 
 
 

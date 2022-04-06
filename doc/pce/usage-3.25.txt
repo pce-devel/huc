@@ -181,7 +181,7 @@
                         ;
                         ;       The "{}" syntax is only available in ".kickc" mode, because it wraps
                         ;       compiled C functions, where it also implies ".proc/.endp" and changes
-                        ;       the handling of JSR and RTS insturctions.
+                        ;       the handling of JSR and RTS instructions.
                         ;
 
          0004           stringLen       =       4               ; Define the length of a string

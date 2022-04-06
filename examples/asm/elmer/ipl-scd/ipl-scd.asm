@@ -287,7 +287,7 @@ ipl_scd:	jsr	ex_getver		; Get System Card version.
 .hang:		bra	.hang			; Wait for user to reboot.
 
 		; The error message is remapped into a minimal font that
-		; contains only 23 characters.
+		; contains only 25 characters.
 		;
 		; N.B. The font is also used by "core-stage1.asm"!
 		;
@@ -314,12 +314,26 @@ ipl_scd:	jsr	ex_getver		; Get System Card version.
 		; T = 'o'
 		; U = 'a'
 		; V = 'g'
+		; W = 'q'
+		; X = 'i'
+
+	.if	0
 
 .supercd_msg:	db	2			; Screen X
 		db	13			; Screen Y
 		db	"ABCDE@FGHIJKL@AMNODP@QDDRDRS"
 ;		db	"Super CD-ROM2 System needed!"
 		db	0
+
+	.else
+
+.supercd_msg:	db	1			; Screen X
+		db	13			; Screen Y
+		db	"ABCDE@FGHIJKL@AMNODP@EDWBXEDRS"
+;		db	"Super CD-ROM2 System required!"
+		db	0
+
+	.endif
 
 .cderror_msg:	db	3			; Screen X
 		db	13			; Screen Y

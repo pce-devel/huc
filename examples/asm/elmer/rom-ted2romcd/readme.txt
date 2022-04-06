@@ -35,10 +35,9 @@ To do that ...
      
   4) Upload the combined image to you TED2 with Krikzz's "turbo-usb.exe".
 
-  5) The System Card should start up as normal, and then when you
-     press the "RUN" button, it will initialize the the CD and load its
-     IPL as normal, but then it load your game overlay from the ROM instead
-     of from the CD.
+  5) The System Card should start up as normal, and then when you press the
+     "RUN" button, it will initialize the CD and load its IPL as normal,
+     but then it loads your game overlay from the ROM instead of the CD.
 
      This avoids the need to burn a CD-R disc every time that you want to
      test some code on a real PC Engine CD-ROM.

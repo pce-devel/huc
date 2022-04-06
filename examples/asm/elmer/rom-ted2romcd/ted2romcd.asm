@@ -6,7 +6,7 @@
 ; Create a Turbo Everdrive 2 version of the Super System Card that can be
 ; used to test homebrew SCD overlay programs created by PCEAS.
 ;
-; Copyright John Brandwood 2021.
+; Copyright John Brandwood 2021-2022.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -15,8 +15,9 @@
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; NOTE: This is not compatible with the current version of HuC!
+; NOTE: This is not compatible with programs written in HuC!
 ;
+; NOTE: This *is* compatible wtih programs written in KickC!
 ;
 ; ***************************************************************************
 ; ***************************************************************************

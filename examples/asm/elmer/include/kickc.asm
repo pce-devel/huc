@@ -21,8 +21,8 @@
 ;      MPR0 = bank $FF : PCE hardware
 ;      MPR1 = bank $F8 : PCE RAM with ZP & Stack
 ;      MPR2 = bank $87 : SGX RAM or CD RAM
-;      MPR3 = bank $xx : Freely mapped data, init to $03 (DATA segment)
-;      MPR4 = bank $xx : Freely mapped data, init to $04
+;      MPR3 = bank $xx : Freely mapped data, init to $02 (DATA segment)
+;      MPR4 = bank $xx : Freely mapped data, init to $03
 ;      MPR5 = bank $01 : KickC permanent code & data (CODE segment)
 ;      MPR6 = bank $xx : Banked ASM library & KickC procedures
 ;      MPR7 = bank $00 : CORE(not TM) base code & call-trampolines
@@ -36,8 +36,8 @@
 ;      MPR0 = bank $FF : PCE hardware
 ;      MPR1 = bank $F8 : PCE RAM with ZP & Stack
 ;      MPR2 = bank $87 : SGX RAM or CD RAM
-;      MPR3 = bank $xx : Freely mapped data, init to $04 (DATA segment)
-;      MPR4 = bank $xx : Freely mapped data, init to $05
+;      MPR3 = bank $xx : Freely mapped data, init to $03 (DATA segment)
+;      MPR4 = bank $xx : Freely mapped data, init to $04
 ;      MPR5 = bank $02 : KickC permanent code & data (CODE segment)
 ;      MPR6 = bank $xx : Banked ASM library & KickC procedures
 ;      MPR7 = bank $01 : CORE(not TM) base code & call-trampolines
@@ -51,8 +51,8 @@
 ;      MPR0 = bank $FF : PCE hardware
 ;      MPR1 = bank $F8 : PCE RAM with ZP & Stack & CORE(not TM) kernel
 ;      MPR2 = bank $87 : SGX RAM or CD RAM
-;      MPR3 = bank $xx : Freely mapped data, init to $83 (DATA segment)
-;      MPR4 = bank $xx : Freely mapped data, init to $84
+;      MPR3 = bank $xx : Freely mapped data, init to $82 (DATA segment)
+;      MPR4 = bank $xx : Freely mapped data, init to $83
 ;      MPR5 = bank $81 : KickC permanent code & data (CODE segment)
 ;      MPR6 = bank $xx : Banked ASM library & KickC procedures
 ;      MPR7 = bank $80 : CORE(not TM) base code & call-trampolines
@@ -66,8 +66,8 @@
 ;      MPR0 = bank $FF : PCE hardware
 ;      MPR1 = bank $F8 : PCE RAM with ZP & Stack & CORE(not TM) kernel
 ;      MPR2 = bank $87 : SGX RAM or CD RAM
-;      MPR3 = bank $xx : Freely mapped data, init to $6B (DATA segment)
-;      MPR4 = bank $xx : Freely mapped data, init to $6C
+;      MPR3 = bank $xx : Freely mapped data, init to $6A (DATA segment)
+;      MPR4 = bank $xx : Freely mapped data, init to $6B
 ;      MPR5 = bank $69 : KickC permanent code & data (CODE segment)
 ;      MPR6 = bank $xx : Banked ASM library & KickC procedures
 ;      MPR7 = bank $68 : CORE(not TM) base code & call-trampolines

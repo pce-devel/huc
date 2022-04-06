@@ -18,6 +18,15 @@
 ;
 ; HuC6270 - Video Display Controller
 ;
+; The VDC is mirrored throughout the first 1KB of the hardware bank.
+;
+; Traditionally, PCE developers use the first mirrored address at $0000, but
+; I'm using the mirror at $0200 so that the address doesn't confuse folk who
+; are used to $00xx being the zero-page location, and $01xx being the stack.
+;
+; Avoiding $00xx is also important for KickC, which follows 6502 conventions
+; and assumes that equates in the $00xx region are zero-page.
+;
 
 VDC_SR		= $FF:0200	; Status Register
 VDC_AR		= $FF:0200	; Address Register
