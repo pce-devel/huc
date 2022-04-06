@@ -38,7 +38,7 @@
   #define GIT_DATE __DATE__
 #endif
 
-#define VERSION_STR "pce2png (v0.20-" GIT_VERSION ", " GIT_DATE ")"
+#define VERSION_STR "pce2png (v0.30-" GIT_VERSION ", " GIT_DATE ")"
 
 //
 // GLOBAL VARIABLES
@@ -71,7 +71,7 @@ int         g_iRgbN = -1;
 
 int         g_iPalN = 0;
 
-RGBQUAD_T     Palette[256];
+sysID       g_uRgbType = ConstID( 0x357211C6u, "hce" );
 
 //
 // STATIC VARIABLES
@@ -153,7 +153,7 @@ int main ( int argc, char **argv )
   {
     if (ERROR_NONE != ReadBinaryFile( g_aSatFilename, &g_pSatBuffer, &g_uSatLength ))
     {
-      printf( "Unable to load Sat data file \"%s\". Aborting!\n", g_aSatFilename );
+      printf( "Unable to load SAT data file \"%s\". Aborting!\n", g_aSatFilename );
       goto errorExit;
     }
   }
@@ -182,6 +182,8 @@ int main ( int argc, char **argv )
 
     for (uRGB = 0; uRGB < uVceCnt; uRGB++)
     {
+      static uint8_t aPC98[8] = { 0x00,0x20,0x40,0x60,0x80,0xA0,0xB0,0xC0 };
+
       RGBQUAD_T * pRGB = pPxlmap->m_aPxmC + uRGB;
 
       #if BYTE_ORDER_LO_HI
@@ -190,18 +192,21 @@ int main ( int argc, char **argv )
         unsigned uVceRGB = ((unsigned) pVceBin[0x01]) * 256 + ((unsigned) pVceBin[0x00]);
       #endif
 
-      pVceBin += 2;
+      if (g_uRgbType == ConstID( 0x5F468818u, "lin" )) {
+        // Linear step-by-36
+        pRGB->m_uRgbB = ((uVceRGB >> 0) & 7) * 36;
+        pRGB->m_uRgbR = ((uVceRGB >> 3) & 7) * 36;
+        pRGB->m_uRgbG = ((uVceRGB >> 6) & 7) * 36;
+      } else {
+        // Hudson's CE.EXE Editor (original)
+        pRGB->m_uRgbB = aPC98[ ((uVceRGB >> 0) & 7) ];
+        pRGB->m_uRgbR = aPC98[ ((uVceRGB >> 3) & 7) ];
+        pRGB->m_uRgbG = aPC98[ ((uVceRGB >> 6) & 7) ];
+      }
 
-#if 0
-      pRGB->m_uRgbB = ((uVceRGB >> 0) & 7) << 5;
-      pRGB->m_uRgbR = ((uVceRGB >> 3) & 7) << 5;
-      pRGB->m_uRgbG = ((uVceRGB >> 6) & 7) << 5;
-#else
-      pRGB->m_uRgbB = ((uVceRGB >> 0) & 7) * 36;
-      pRGB->m_uRgbR = ((uVceRGB >> 3) & 7) * 36;
-      pRGB->m_uRgbG = ((uVceRGB >> 6) & 7) * 36;
-#endif
       pRGB->m_uRgbA = 0;
+
+      pVceBin += 2;
     }
   }
 
@@ -519,9 +524,20 @@ static ERRORCODE ProcessArguments (
 
         case ConstID( 0xDECB67C7u, "rgb" ):
         {
-          if (GetLexValue( &cLexInfo, &iValue )) goto errorExit;
+          if (GetLexToken( &cLexInfo )) goto errorExit;
 
-          g_iRgbN = (int) iValue;
+          g_uRgbType = PStringToID( cLexInfo.m_iTokenLen, cLexInfo.m_pTokenStr );
+
+          switch (g_uRgbType)
+          {
+            case ConstID( 0x357211C6u, "hce" ):
+            case ConstID( 0x5F468818u, "lin" ):
+              break;
+            default:
+              sprintf( g_aErrorMessage, "Unknown RGB conversion type \"%s\"!\n", cLexInfo.m_pTokenStr );
+              g_iErrorCode = ERROR_ILLEGAL;
+              goto errorExit;
+          }
 
           break;
         }
@@ -591,7 +607,7 @@ static ERRORCODE ProcessArguments (
       printf
         (
         "\n"
-        "Purpose    : Convert PCE VDC memory dump into a PCX/BMP/PNG bitmap.\n"
+        "Purpose    : Convert PCE VDC memory dump into a BMP/PCX/PNG bitmap.\n"
         "\n"
         "Usage      : pce2png [<inopt>] [<outopt>]\n"
         "\n"
@@ -611,6 +627,9 @@ static ERRORCODE ProcessArguments (
         "             -w <n>        Pixel width of output bitmap (a power of 2)\n"
         "             -h <n>        Pixel height of output bitmap (a power of 2)\n"
         "             -out <file>   Filename to save output bitmap\n"
+        "             -rgb <type>   VCE palette conversion method ...\n"
+        "                  hce        Hudson's Character Editor tool (default)\n"
+        "                  lin        Traditional-but-inaccurate linear palette\n"
         "\n"
         );
 
