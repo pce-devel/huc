@@ -99,6 +99,10 @@ bit_mask:	db	$01,$02,$04,$08,$10,$20,$40,$80
 core_irq2:	bbs0	<irq_vec, .hook		; 8 cycles if taken.
 
 	.if	CDROM
+		; N.B. Do NOT change ANY of this code without understanding
+		; how and why the RTI from the System Card's IRQ2 handler
+		; changes "BSR .fake" & "DB 0" into "BSR .fake" & "ORA #0"!
+
 		pha				; Page System Card into MPR7.
 		tma7
 		pha
@@ -106,19 +110,23 @@ core_irq2:	bbs0	<irq_vec, .hook		; 8 cycles if taken.
 		tam7
 
 		bsr	.fake			; Call System Card's IRQ2.
+		db	0			; Becomes "ORA #0" on RTI!
 
 		pla				; Restore caller's MPR7.
 		tam7
 		pla
 		rti
 
-.fake:		php				; The System Card's ADPCM
-		jmp	[$FFF6]			; & CD code uses this IRQ.
+.hook:		jmp	[irq2_hook]		; 7 cycles.
+
+.fake:		php				; Turn BSR into a fake IRQ2
+		jmp	[$FFF6]			; without fixing return PC!
 	.else
 		rti				; No IRQ2 hardware on HuCard.
-	.endif	CDROM
 
 .hook:		jmp	[irq2_hook]		; 7 cycles.
+	.endif	CDROM
+
 
 		;
 
