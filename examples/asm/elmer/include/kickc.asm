@@ -172,7 +172,7 @@ kickc_vbl:	jmp	xfer_palettes		; Upload any palette changes.
 		.bank	CORE_BANK + 1		; initialized data runs in
 		.org	$A000			; MPR5 (.section CODE).
 
-		include	"math.asm"		; 2KBytes of fast-multiply.
+		include	"fastmath.asm"		; 2KBytes of fast-multiply.
 
 		.data				; KickC banked data starts
 		.bank	CORE_BANK + 2		; after the code, and runs
