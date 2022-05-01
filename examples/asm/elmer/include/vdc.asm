@@ -320,7 +320,7 @@ init_256x224	.proc
 		; A standard 256x224 screen with overscan.
 
 .mode_256x224:	db	$80			; VCE Control Register.
-		db	VCE_CR_5MHz		; Video Clock
+		db	VCE_CR_5MHz + 4		;   Video Clock + Artifact Reduction
 
 		db	VDC_MWR			; Memory-access Width Register
 		dw	VDC_MWR_64x32 + VDC_MWR_1CYCLE
@@ -338,6 +338,87 @@ init_256x224	.proc
 		dw	$0010			;   Enable automatic VRAM->SATB
 		db	VDC_DVSSR		; VRAM->SATB address $0800
 		dw	$0800
+		db	VDC_BXR			; Background X-Scroll Register
+		dw	$0000
+		db	VDC_BYR			; Background Y-Scroll Register
+		dw	$0000
+		db	VDC_RCR			; Raster Counter Register
+		dw	$0000			;   Never occurs!
+		db	VDC_CR			; Control Register
+		dw	$000C			;   Enable VSYNC & RCR IRQ
+		db	0
+
+		.endp
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; init_512x224 - An example of initializing screen and VRAM.
+;
+; This can be used as-is, or copied to your own program and modified.
+;
+
+init_512x224	.proc
+
+.BAT_SIZE	=	64 * 32
+.SAT_ADDR	=	.BAT_SIZE		; SAT takes 16 tiles of VRAM.
+.CHR_ZERO	=	.BAT_SIZE / 16		; 1st tile # after the BAT.
+.CHR_0x10	=	.CHR_ZERO + 16		; 1st tile # after the SAT.
+.CHR_0x20	=	.CHR_ZERO + 32		; ASCII ' ' CHR tile #.
+
+		call	clear_vce		; Clear all palettes.
+
+		lda.l	#.mode_512x224		; Disable BKG & SPR layers but
+		sta.l	<__si			; enable RCR & VBLANK IRQ.
+		lda.h	#.mode_512x224
+		sta.h	<__si
+		lda	#^.mode_512x224
+		sta	<__si_bank
+		call	set_mode_vdc
+	.if	SUPPORT_SGX
+		call	set_mode_sgx
+	.endif
+
+		call	wait_vsync		; Wait for the next VBLANK.
+
+		lda.l	#.CHR_0x20		; Tile # of ' ' CHR.
+		sta.l	<__ax
+		lda.h	#.CHR_0x20
+		sta.h	<__ax
+
+		lda	#>.BAT_SIZE		; Size of BAT in words.
+		sta	<__bl
+
+		call	clear_vram_vdc		; Clear VRAM.
+	.if	SUPPORT_SGX
+		call	clear_vram_sgx
+	.endif
+
+		leave				; All done, phew!
+
+		; A standard 512x224 screen with overscan.
+
+.mode_512x224:	db	$80			; VCE Control Register.
+		db	VCE_CR_10MHz + 4	;   Video Clock + Artifact Reduction
+
+		db	VDC_MWR			; Memory-access Width Register
+		dw	VDC_MWR_64x32 + VDC_MWR_2CYCLE
+		db	VDC_HSR			; Horizontal Sync Register
+		dw	VDC_HSR_512
+		db	VDC_HDR			; Horizontal Display Register
+		dw	VDC_HDR_512
+		db	VDC_VPR			; Vertical Sync Register
+		dw	VDC_VPR_224
+		db	VDC_VDW			; Vertical Display Register
+		dw	VDC_VDW_224
+		db	VDC_VCR			; Vertical Display END position Register
+		dw	VDC_VCR_224
+		db	VDC_DCR			; DMA Control Register
+		dw	$0010			;   Enable automatic VRAM->SATB
+		db	VDC_DVSSR		; VRAM->SATB address $1000
+		dw	$1000
 		db	VDC_BXR			; Background X-Scroll Register
 		dw	$0000
 		db	VDC_BYR			; Background Y-Scroll Register

@@ -172,7 +172,7 @@ mb1_read_data	.proc
 
 .finished:	stz	port_mutex		; Release port mutex.
 
-		txa				; Set the N & Z result flags.
+;		txa				; Set the N & Z result flags.
 		leave				; All done, phew!
 
 		.endp
@@ -269,7 +269,7 @@ mb1_write_data	.proc
 
 .finished:	stz	port_mutex		; Release port mutex.
 
-		txa				; Set the N & Z result flags.
+;		txa				; Set the N & Z result flags.
 		leave				; All done, phew!
 
 		.endp
@@ -371,7 +371,7 @@ mb1_check_data	.proc
 
 .finished:	stz	port_mutex		; Release port mutex.
 
-		txa				; Set the N & Z result flags.
+;		txa				; Set the N & Z result flags.
 		leave				; All done, phew!
 
 		.endp
@@ -419,7 +419,7 @@ mb1_detect	.proc
 
 		stz	port_mutex		; Release port mutex.
 
-		txa				; Set the N & Z result flags.
+;		txa				; Set the N & Z result flags.
 		leave				; All done, phew!
 
 		.endp

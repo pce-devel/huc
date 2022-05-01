@@ -58,7 +58,7 @@
 
 	.if	0
 
-		PAGE_ALIGN
+		align	256
 
 f32_long_name:	ds	256			; Lo-Byte of a long filename.
 f32_cache_buf:	ds	512			; Sector cache (FAT/DIR).
@@ -434,7 +434,10 @@ f32_mount_vol	.proc
 		lda	#$01
 		sta	sdc_block_cnt + 0
 		stz	sdc_block_cnt + 1
-		stw	#f32_cache_buf, <sdc_data_addr
+
+		lda	#>f32_cache_buf
+		stz	<sdc_data_addr + 0
+		sta	<sdc_data_addr + 1
 
 		call	sdc_read_data
 		txa				; Refresh flags after CALL.
@@ -1504,7 +1507,7 @@ f32_file_write	.proc
 		bcc	.last_xfer		; Fragment size > xfer size?
 
 		jsr	f32_next_frag		; Prepare for next fragment.
-		bra	.xfer_fragment		; Transfer entire fragment.
+		bra	!xfer_call+		; Transfer entire fragment.
 
 .last_xfer:	ldx	#$FC			; Just xfer the remaining tail
 		clc				; of the xfer size.
@@ -1521,7 +1524,7 @@ f32_file_write	.proc
 
 		lda	<__ax + 0		; Transfer complete?
 		ora	<__ax + 1
-		bne	f32_file_xfer
+		bne	!file_xfer-
 
 ;		txa				; Set the N & Z return flags.
 

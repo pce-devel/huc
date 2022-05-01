@@ -179,6 +179,9 @@ TED_REG_SPI_CFG	=	2
 TED_REG_VERSION	=	8
 TED_REG_I2C	=	9
 
+TED_STR_KRIKZZ	=	TED_BASE_ADDR + $1FE5
+
+
 
 ; ***************************************************************************
 ;

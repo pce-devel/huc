@@ -5,7 +5,7 @@
 ;
 ; Configuration settings for the "CORE(not TM)" PC Engine library code.
 ;
-; Copyright John Brandwood 2021.
+; Copyright John Brandwood 2021-2022.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -28,7 +28,6 @@
 ; ***************************************************************************
 ; ***************************************************************************
 
-	.ifndef	USING_MPR7
 ;
 ; Are we going to take over MPR7?
 ;
@@ -40,10 +39,10 @@
 ;      installs the kernel into PCE RAM in MPR1.
 ;
 
+	.ifndef	USING_MPR7
 USING_MPR7	=	1	; (0 or 1)
 	.endif
 
-	.ifndef	USING_STAGE1
 ;
 ; Are we building a CD-ROM overlay that uses an already-built CD-ROM Stage1
 ; loader to install the library's kernel code into PCE RAM in MPR1?
@@ -54,6 +53,7 @@ USING_MPR7	=	1	; (0 or 1)
 ; N.B. The CD-ROM Stage1 loader sets USING_STAGE1=0 so it builds correctly.
 ;
 
+	.ifndef	USING_STAGE1
 USING_STAGE1	=	0	; (0 or 1)
 	.endif
 
@@ -67,7 +67,9 @@ USING_STAGE1	=	0	; (0 or 1)
 ; If set, the secondary track will be enabled when the library 1st starts.
 ;
 
+	.ifndef	SUPPORT_2ISO
 SUPPORT_2ISO	=	0	; (0 or 1)
+	.endif
 
 ;
 ; Maximum number of directory entries to use from the ISO.
@@ -76,14 +78,18 @@ SUPPORT_2ISO	=	0	; (0 or 1)
 ; a good compromise to use until you are putting lots of files on the ISO.
 ;
 
+	.ifndef	MAX_DIRSIZE
 MAX_DIRSIZE	=	64	; (4..256)
+	.endif
 
 ;
 ; Use the System Card's PSG driver code instead of a modern alternative
 ; sound driver like a DefleMask player?
 ;
 
+	.ifndef	USING_PSGDRIVER
 USING_PSGDRIVER	=	0	; (0 or 1)
+	.endif
 
 ;
 ; Support development for the Turbo EverDrive v2?
@@ -96,7 +102,9 @@ USING_PSGDRIVER	=	0	; (0 or 1)
 ; activated, and so we need to run with a different bank in MPR7.
 ;
 
+	.ifndef	SUPPORT_TED2
 SUPPORT_TED2	=	0	; (0 or 1)
+	.endif
 
 ;
 ; Support development for the SuperGrafx?
@@ -104,7 +112,9 @@ SUPPORT_TED2	=	0	; (0 or 1)
 ; This enables SGX hardware support in certain library functions.
 ;
 
+	.ifndef	SUPPORT_SGX
 SUPPORT_SGX	=	0	; (0 or 1)
+	.endif
 
 ;
 ; Select which version of the joystick library code to include, only one of
@@ -121,9 +131,13 @@ SUPPORT_SGX	=	0	; (0 or 1)
 ; this just controls reading either buttons III-VI or the Mouse Y-movement.
 ;
 
+	.ifndef	SUPPORT_6BUTTON
+	.ifndef	SUPPORT_MOUSE
 SUPPORT_2BUTTON	=	1	; (0 or 1)
 SUPPORT_6BUTTON	=	0	; (0 or 1)
 SUPPORT_MOUSE	=	0	; (0 or 1)
+	.endif
+	.endif
 
 ;
 ; How many joypad/mouse devices should be supported?
@@ -133,4 +147,6 @@ SUPPORT_MOUSE	=	0	; (0 or 1)
 ; useful for mouse games.
 ;
 
+	.ifndef	MAX_PADS
 MAX_PADS	=	5	; (1..5)
+	.endif

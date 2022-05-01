@@ -163,3 +163,16 @@
 ;       the BXR register, so write BYR first. After BXR, the
 ;       CR register is shadowed/locked next.
 ;
+
+
+
+; ***************************************************************************
+; PC ENGINE VDC SPRITE PATTERN CODES
+; ***************************************************************************
+
+fedcba98765zzzzz = 32-word granularity = 64-byte granularity, designed for 16x16-2bpp
+
+---------X-zzzzz = for 32-wide
+-------YY--zzzzz = for 64-high
+
+fedcba9yyx0----- = 512-word granularity = 1KB-byte granularity, designed for 32x64-4bpp
