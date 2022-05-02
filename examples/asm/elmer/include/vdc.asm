@@ -417,8 +417,8 @@ init_512x224	.proc
 		dw	VDC_VCR_224
 		db	VDC_DCR			; DMA Control Register
 		dw	$0010			;   Enable automatic VRAM->SATB
-		db	VDC_DVSSR		; VRAM->SATB address $1000
-		dw	$1000
+		db	VDC_DVSSR		; VRAM->SATB address $0800
+		dw	$0800
 		db	VDC_BXR			; Background X-Scroll Register
 		dw	$0000
 		db	VDC_BYR			; Background Y-Scroll Register
@@ -547,7 +547,7 @@ mode_512x224:	db	$80			; VCE Control Register.
 		db	VCE_CR_10MHz + 4	;   Video Clock + Artifact Reduction
 
 		db	VDC_MWR			; Memory-access Width Register
-		dw	VDC_MWR_128x32 + VDC_MWR_2CYCLE
+		dw	VDC_MWR_64x32 + VDC_MWR_2CYCLE
 		db	VDC_HSR			; Horizontal Sync Register
 		dw	VDC_HSR_512
 		db	VDC_HDR			; Horizontal Display Register
@@ -560,8 +560,8 @@ mode_512x224:	db	$80			; VCE Control Register.
 		dw	VDC_VCR_224
 		db	VDC_DCR			; DMA Control Register
 		dw	$0010			;   Enable automatic VRAM->SATB
-		db	VDC_DVSSR		; VRAM->SATB address $1000
-		dw	$1000
+		db	VDC_DVSSR		; VRAM->SATB address $0800
+		dw	$0800
 		db	VDC_BXR			; Background X-Scroll Register
 		dw	$0000
 		db	VDC_BYR			; Background Y-Scroll Register
