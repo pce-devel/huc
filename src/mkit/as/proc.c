@@ -652,6 +652,7 @@ proc_reloc(void)
 	if ((newproc_opt != 0) && (num_relocated != 0)) {
 		/* install code for leaving .proc */
 		poke(call_ptr--, 0x60);			// rts
+		poke(call_ptr--, 0x98);			// tya
 		poke(call_ptr--, 0x40);
 		poke(call_ptr--, 0x53);			// tam #6
 		poke(call_ptr--, 0x68);			// pla
