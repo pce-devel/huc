@@ -167,7 +167,7 @@ _load_bat	.proc
 		sta	VDC_DH
 		iny
 		bne	!+
-		jsr	__si_inc_page
+		jsr	__si_inc_mpr3
 !:		dex
 		bne	.tile_loop
 

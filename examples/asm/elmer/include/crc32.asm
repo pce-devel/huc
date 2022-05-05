@@ -134,7 +134,7 @@ calc_crc32	.proc
 
 		leave
 
-.next_page:	jsr	__si_inc_page
+.next_page:	jsr	__si_inc_mpr3
 		bra	.next_byte
 
 		.endp

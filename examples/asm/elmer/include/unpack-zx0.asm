@@ -222,16 +222,16 @@ zx0_to_ram	.proc
 		; Optimized handling of pointers crossing page-boundaries.
 		;
 
-.inc_off_src:	jsr	__si_inc_page
+.inc_off_src:	jsr	__si_inc_mpr3
 		bra	.off_skip1
 
-.inc_cp_src:	jsr	__si_inc_page
+.inc_cp_src:	jsr	__si_inc_mpr3
 		bra	.cp_skip1
 
 .inc_cp_dst:	inc	<zx0_dstptr + 1
 		bra	.cp_skip2
 
-.gamma_page:	jsr	__si_inc_page
+.gamma_page:	jsr	__si_inc_mpr3
 		bra	.gamma_skip1
 
 		;
@@ -442,13 +442,13 @@ zx0_to_vdc	.proc
 		; Optimized handling of pointers crossing page-boundaries.
 		;
 
-.inc_off_src:	jsr	__si_inc_page
+.inc_off_src:	jsr	__si_inc_mpr3
 		bra	.off_skip1
 
 .inc_lz_dst:	bsr	.next_dstpage
 		bra	.lz_skip2
 
-.inc_cp_src:	jsr	__si_inc_page
+.inc_cp_src:	jsr	__si_inc_mpr3
 		bra	.cp_skip1
 
 .inc_cp_dst:	bsr	.next_dstpage
@@ -468,7 +468,7 @@ zx0_to_vdc	.proc
 		sta	<zx0_dstptr + 1
 		rts
 
-.gamma_page:	jsr	__si_inc_page
+.gamma_page:	jsr	__si_inc_mpr3
 		bra	.gamma_skip1
 
 		;

@@ -43,7 +43,7 @@ LZSA2_GET_SRC	.macro
 		lda	[lzsa_srcptr]
 		inc	<lzsa_srcptr + 0
 		bne	.skip\@
-		jsr	__si_inc_page
+		jsr	__si_inc_mpr3
 .skip\@:
 		.endm
 	.endif	LZSA2_SMALL
@@ -268,7 +268,7 @@ lzsa2_to_ram	.proc
 		beq	.next_page
 .got_byte:	rts
 
-.next_page:	jmp	__si_inc_page		; Inc & test for bank overflow.
+.next_page:	jmp	__si_inc_mpr3		; Inc & test for bank overflow.
 
 .finished:	pla				; Decompression completed, pop
 		pla				; return address.

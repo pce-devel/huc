@@ -43,7 +43,7 @@ LZSA1_GET_SRC	.macro
 		lda	[lzsa_srcptr]
 		inc	<lzsa_srcptr + 0
 		bne	.skip\@
-		jsr	__si_inc_page
+		jsr	__si_inc_mpr3
 .skip\@:
 		.endm
 	.endif	LZSA1_SMALL
@@ -116,7 +116,7 @@ lzsa1_to_ram	.proc
 
 		inc	<lzsa1_srcptr + 0
 		bne	.cp_skip1
-		jsr	__si_inc_page
+		jsr	__si_inc_mpr3
 
 .cp_skip1:	inc	<lzsa1_dstptr + 0
 		bne	.cp_skip2
@@ -197,7 +197,7 @@ lzsa1_to_ram	.proc
 .lz_offset:	lda	[lzsa1_srcptr]		; Get offset-lo.
 		inc	<lzsa1_srcptr + 0
 		bne	.offset_lo
-		jsr	__si_inc_page
+		jsr	__si_inc_mpr3
 
 .offset_lo:	sta	<lzsa1_offset + 0
 
@@ -208,7 +208,7 @@ lzsa1_to_ram	.proc
 		lda	[lzsa1_srcptr]
 		inc	<lzsa1_srcptr + 0
 		bne	.offset_hi
-		jsr	__si_inc_page
+		jsr	__si_inc_mpr3
 
 .offset_hi:	sta	<lzsa1_offset + 1
 
@@ -265,7 +265,7 @@ lzsa1_to_ram	.proc
 		adc	[lzsa1_srcptr]		; the length.
 		inc	<lzsa1_srcptr + 0
 		bne	.skip_inc
-		jsr	__si_inc_page
+		jsr	__si_inc_mpr3
 
 .skip_inc:	bcc	.got_length		; No overflow means done.
 		clc				; MUST return CC!
@@ -299,6 +299,6 @@ lzsa1_to_ram	.proc
 		beq	.next_page
 .got_byte:	rts
 
-.next_page:	jmp	__si_inc_page		; Inc & test for bank overflow.
+.next_page:	jmp	__si_inc_mpr3		; Inc & test for bank overflow.
 
 		.endp

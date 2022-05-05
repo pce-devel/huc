@@ -128,7 +128,7 @@ core_main:	; Turn the display off and initialize the screen mode.
 		sta	VCE_CTW + 1		; Set hi-byte of color.
 		inc	<__si + 0
 		bne	.color_page
-		jsr	__si_inc_page
+		jsr	__si_inc_mpr3
 .color_page:	dey
 
 		bne	.color_loop
@@ -189,6 +189,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 
 .message_text:	db	"hello, world",0
 
+;		.org	$6000
+;
+;		include	"newcode.asm"
 
 
 ; ***************************************************************************

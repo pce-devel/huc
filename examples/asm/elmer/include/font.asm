@@ -100,7 +100,7 @@ dropfnt8x8_vdc	.proc
 
 		inc	<__si			; Increment ptr to font.
 		bne	.next_line
-		jsr	__si_inc_page
+		jsr	__si_inc_mpr3
 .next_line:	inx
 		inx
 		cpx	#8 * 2			; 8 lines high per glyph.
@@ -216,7 +216,7 @@ dropfnt8x16_vdc	.proc
 
 		inc	<__si			; Increment ptr to font.
 		bne	.next_line
-		jsr	__si_inc_page
+		jsr	__si_inc_mpr3
 .next_line:	inx
 		inx
 		cpx	#16 * 2			; 16 lines high per glyph.
