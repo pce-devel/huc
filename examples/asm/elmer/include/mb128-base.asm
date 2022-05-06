@@ -5,7 +5,7 @@
 ;
 ; Base code for talking to an "MB128" or "Save Kun" backup-memory device.
 ;
-; Copyright John Brandwood 2019-2021.
+; Copyright John Brandwood 2019-2022.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -56,6 +56,16 @@
 ;
 ; ***************************************************************************
 ; ***************************************************************************
+;
+; ONLY USE THESE PUBLIC INTERFACES ...
+;
+; mb1_detect     - Detect whether an MB128 is present.
+; mb1_read_data  - Read sectors of data into memory from the MB128.
+; mb1_write_data - Write sectors of data from memory to the MB128.
+; mb1_check_data - Check that sectors of data from the MB128 match memory.
+;
+; ***************************************************************************
+; ***************************************************************************
 
 ; Compilation options.
 
@@ -88,12 +98,12 @@ mb1_detected:	ds	1			; NZ if MB128 ever detected.
 ; mb1_read_data - Read sectors of data into memory from the MB128.
 ;
 ; Args: __di, __di_bank = _farptr to page-aligned buffer memory in MPR3.
-; Args: __al = Sector address.
-; Args: __ah = Sector count.
+; Args: __al = Sector address (0..255).
+; Args: __ah = Sector count (0..255).
 ;
 ; Uses: __temp
 ;
-; Returns: X = MB1_OK (and Z flag) or an error code.
+; Returns: Y,A,Z-flag,N-flag = MB1_OK or an error code.
 ;
 
 mb1_read_data	.proc
@@ -164,7 +174,7 @@ mb1_read_data	.proc
 
 		jsr	mb1_flush_data		; Prime wakeup buffer.
 
-		ldx	#MB1_OK
+		ldy	#MB1_OK
 
 ;.finished:	lda	VDC_SR			; Skip any pending VDC irq.
 ;		nop
@@ -172,7 +182,7 @@ mb1_read_data	.proc
 
 .finished:	stz	port_mutex		; Release port mutex.
 
-;		txa				; Set the N & Z result flags.
+;		tya				; Set the N & Z result flags.
 		leave				; All done, phew!
 
 		.endp
@@ -185,12 +195,12 @@ mb1_read_data	.proc
 ; mb1_write_data - Write sectors of data from memory to the MB128.
 ;
 ; Args: __si, __si_bank = _farptr to page-aligned buffer memory in MPR3.
-; Args: __al = Sector address.
-; Args: __ah = Sector count.
+; Args: __al = Sector address (0..255).
+; Args: __ah = Sector count (0..255).
 ;
 ; Uses: __temp
 ;
-; Returns: X = MB1_OK (and Z flag) or an error code.
+; Returns: Y,A,Z-flag,N-flag = MB1_OK or an error code.
 ;
 
 mb1_write_data	.proc
@@ -261,7 +271,7 @@ mb1_write_data	.proc
 
 		jsr	mb1_flush_data		; Prime wakeup buffer.
 
-		ldx	#MB1_OK
+		ldy	#MB1_OK
 
 ;.finished:	lda	VDC_SR			; Skip any pending VDC irq.
 ;		nop
@@ -269,7 +279,7 @@ mb1_write_data	.proc
 
 .finished:	stz	port_mutex		; Release port mutex.
 
-;		txa				; Set the N & Z result flags.
+;		tya				; Set the N & Z result flags.
 		leave				; All done, phew!
 
 		.endp
@@ -282,12 +292,12 @@ mb1_write_data	.proc
 ; mb1_check_data - Check that sectors of data from the MB128 match memory.
 ;
 ; Args: __si, __si_bank = _farptr to page-aligned buffer memory in MPR3.
-; Args: __al = Sector address.
-; Args: __ah = Sector count.
+; Args: __al = Sector address (0..255).
+; Args: __ah = Sector count (0..255).
 ;
 ; Uses: __temp
 ;
-; Returns: X = MB1_OK (and Z flag) or an error code.
+; Returns: Y,A,Z-flag,N-flag = MB1_OK or an error code.
 ;
 
 mb1_check_data	.proc
@@ -363,7 +373,7 @@ mb1_check_data	.proc
 
 		pla				; Get the D flag value.
 		and	#$08			; Test the D flag.
-		tax
+		tay
 
 ;.finished:	lda	VDC_SR			; Skip any pending VDC irq.
 ;		nop
@@ -371,7 +381,7 @@ mb1_check_data	.proc
 
 .finished:	stz	port_mutex		; Release port mutex.
 
-;		txa				; Set the N & Z result flags.
+;		tya				; Set the N & Z result flags.
 		leave				; All done, phew!
 
 		.endp
@@ -385,7 +395,7 @@ mb1_check_data	.proc
 ;
 ; Uses: __temp
 ;
-; Returns: X = MB1_OK (and Z flag) or an error code.
+; Returns: Y,A,Z-flag,N-flag = MB1_OK or an error code.
 ;
 
 mb1_detect	.proc
@@ -409,7 +419,7 @@ mb1_detect	.proc
 ;		lda	#%00000000		; Send 7 bits, Recv 1 bit,
 		jsr	mb1_send_byte		; but we ignore the value.
 
-		ldx	#MB1_OK			; Return MB128_OK, i.e. found!
+		ldy	#MB1_OK			; Return MB128_OK, i.e. found!
 
 .finished:	jsr	mb1_flush_data		; Prime wakeup buffer.
 
@@ -419,7 +429,7 @@ mb1_detect	.proc
 
 		stz	port_mutex		; Release port mutex.
 
-;		txa				; Set the N & Z result flags.
+;		tya				; Set the N & Z result flags.
 		leave				; All done, phew!
 
 		.endp
@@ -431,7 +441,7 @@ mb1_detect	.proc
 ;
 ; mb1_wakeup - Wake up the MB128 so that it is ready for a command.
 ;
-; Returns: X = MB1_OK (and Z flag) or an error code.
+; Returns: Y,A,Z-flag,N-flag = MB1_OK or an error code.
 ;
 ; Uses: __temp
 ;
@@ -467,7 +477,7 @@ mb1_wakeup:	ldy	#$80 + 1		; Max 128KB of data to "unjam".
 
 		sta	mb1_detected		; Remember this for the future.
 
-		ldx	#MB1_OK			; MB128_OK, found and ready!
+		ldy	#MB1_OK			; MB128_OK, found and ready!
 		rts				;
 
 .not_detected:	dex				; Timeout?
@@ -494,7 +504,7 @@ mb1_wakeup:	ldy	#$80 + 1		; Max 128KB of data to "unjam".
 
 	.endif	MB1_TRY_UNJAM
 
-.fail:		ldx	#MB1_ERR_INIT		; MB1_ERR_INIT, i.e. not found.
+.fail:		ldy	#MB1_ERR_INIT		; MB1_ERR_INIT, i.e. not found.
 		rts
 
 

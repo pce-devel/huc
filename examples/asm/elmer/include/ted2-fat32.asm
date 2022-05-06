@@ -27,21 +27,25 @@
 ;
 ; ONLY USE THESE PUBLIC INTERFACES ...
 ;
-; f32_mount_vol	  - Initialize the SD Card and mount the first FAT32 partition.
-; f32_select_root - Change dir to root directory.
-;
-; f32_find_name	  - Locate a specific name in the current directory in __bp.
+; f32_find_name	  - Locate file/dir name in the current directory, sets __bp.
+; f32_1st_entry	  - Get 1st short entry in the current directory, sets __bp.
+; f32_nxt_entry	  - Get next short entry in the current directory, sets __bp.
 ; f32_change_dir  - Change dir to one in directory entry ptr in __bp.
-; f32_open_file	  - Open the file in the directory entry ptr in __bp.
 ;
+; f32_open_file	  - Open the file in the directory entry ptr in __bp.
 ; f32_close_file  - Close the current file.
 ; f32_file_read	  - Load #sectors from the current file position.
 ; f32_file_write  - Save #sectors to the current file position.
 ; f32_seek_set	  - Seek #sectors from the beginning of the file.
 ; f32_seek_cur	  - Seek #sectors forwards from the current file position.
 ;
-; f32_1st_entry	  - Get the 1st short entry in the current directory in __bp.
-; f32_nxt_entry	  - Get the next short entry in the current directory in __bp.
+; f32_mount_vol	  - Initialize the SD Card and mount the 1st FAT32 partition.
+; f32_select_root - Change dir to root directory.
+;
+; ***************************************************************************
+; ***************************************************************************
+;
+; N.B. This uses self-modifying code, and so must be located in RAM!
 ;
 ; ***************************************************************************
 ; ***************************************************************************
@@ -213,7 +217,7 @@ FLAG_Last_Ord	=	$40
 ;
 ; f32_mount_vol - Initialize the SD Card and mount the first FAT32 partition.
 ;
-; Returns: X = F32_OK or an error code.
+; Returns: Y,Z-flag,N-flag = F32_OK or an error code.
 ;
 
 f32_mount_vol	.proc
@@ -221,10 +225,9 @@ f32_mount_vol	.proc
 		; Initialize the SD Card.
 
 		call	sdc_initialize
-		txa				; Refresh flags after CALL.
 		beq	.find_volume
 
-.no_disk:	ldx	#F32_ERR_NO_DSK
+.no_disk:	ldy	#F32_ERR_NO_DSK
 		leave				; Return the result.
 
 		; Read the SD Card's Boot Sector.
@@ -241,7 +244,7 @@ f32_mount_vol	.proc
 
 		; Is it an MBR?
 
-		cpx	#F32_FOUND_MBR
+		cpy	#F32_FOUND_MBR
 		bne	.no_volume
 
 		; Select the first valid FAT32 partition.
@@ -278,7 +281,7 @@ f32_mount_vol	.proc
 		jsr	.check_bpb
 		beq	.found_fat
 
-.no_volume:	ldx	#F32_ERR_NO_VOL
+.no_volume:	ldy	#F32_ERR_NO_VOL
 		leave				; Return the result.
 
 .found_fat:	; Make sure the volume uses 512 bytes-per-sector (SDC standard).
@@ -419,10 +422,10 @@ f32_mount_vol	.proc
 		inx
 		bne	.clamp
 
-.got_fat32:	ldx	#F32_OK
+.got_fat32:	ldy	#F32_OK
 		leave				; Return the result.
 
-.not_fat32:	ldx	#F32_ERR_BAD_FAT
+.not_fat32:	ldy	#F32_ERR_BAD_FAT
 		leave				; Return the result.
 
 		;
@@ -432,21 +435,20 @@ f32_mount_vol	.proc
 .check_bpb:	tii	f32_boot_sector, sdc_block_num, 4
 
 		lda	#$01
-		sta	sdc_block_cnt + 0
-		stz	sdc_block_cnt + 1
+		sta.l	sdc_block_cnt
+		stz.h	sdc_block_cnt
 
 		lda	#>f32_cache_buf
-		stz	<sdc_data_addr + 0
-		sta	<sdc_data_addr + 1
+		stz.l	<sdc_data_addr
+		sta.h	<sdc_data_addr
 
 		call	sdc_read_data
-		txa				; Refresh flags after CALL.
 		beq	.got_sector
 
-		ldx	#F32_ERR_DSK_RD
+		ldy	#F32_ERR_DSK_RD
 		rts
 
-.got_sector:	ldx	#F32_FOUND_UNK
+.got_sector:	ldy	#F32_FOUND_UNK
 
 		; Check for the boot sector signature.
 
@@ -457,18 +459,18 @@ f32_mount_vol	.proc
 		cmp	#$AA
 		bne	.finished
 
-		ldx	#F32_FOUND_MBR
+		ldy	#F32_FOUND_MBR
 
 		; Check for the FAT32 ID in the BPB.
 
-		ldy	#7
-.strcmp:	lda	BS_FilSysType, y
-		cmp	.signature, y
+		ldx	#7
+.strcmp:	lda	BS_FilSysType, x
+		cmp	.signature, x
 		bne	.finished
-		dey
+		dex
 		bpl	.strcmp
 
-		ldx	#F32_FOUND_FAT
+		ldy	#F32_FOUND_FAT
 .finished:	rts
 
 .signature:	db	"FAT32   "
@@ -509,16 +511,16 @@ f32_clear_cache:lda	#$02
 ;
 ; f32_load_cache - Load up the sector cache from the SD card.
 ;
-; Returns: X = F32_OK (and Z flag) or an error code.
+; Returns: Y,Z-flag,N-flag = F32_OK or an error code.
 ;
 ; N.B. FOR INTERNAL USE ONLY, THIS IS NOT A PUBLIC FUNCTION!
 ;
 
-f32_load_cache: ldx	#$FC			; Is the sector cached?
-.test:		lda	f32_sector_num -$FC, x
-		cmp	f32_cache_sec  -$FC, x
+f32_load_cache: ldy	#$FC			; Is the sector cached?
+.test:		lda	f32_sector_num -$FC, y
+		cmp	f32_cache_sec  -$FC, y
 		bne	.load
-		inx
+		iny
 		bne	.test
 		rts				; Return F32_OK.
 
@@ -534,11 +536,10 @@ f32_load_cache: ldx	#$FC			; Is the sector cached?
 		tii	f32_sector_num, f32_cache_sec, 4
 		tii	f32_sector_num, sdc_block_num, 4
 
-		call	sdc_read_data
-		txa				; Refresh flags after CALL.
+		call	sdc_read_data		; Read the sector from SD.
 		beq	.done
 
-		ldx	#F32_ERR_DSK_RD
+		ldy	#F32_ERR_DSK_RD
 .done:		rts
 
 
@@ -555,15 +556,15 @@ f32_load_cache: ldx	#$FC			; Is the sector cached?
 f32_nxt_sector: lda	f32_cluster_idx
 		inc	a
 		cmp	f32_sec2cls_cnt
-		bcs	f32_got_sector		; C flag state is returned.
+		bcs	!got_sector+		; C flag state is returned.
 		sta	f32_cluster_idx
 
 f32_inc_sector: ldx	#$FC
 .inc_byte:	inc	f32_sector_num -$FC, x
-		bne	f32_got_sector
+		bne	!got_sector+
 		inx
 		bne	.inc_byte
-f32_got_sector: rts
+!got_sector:	rts
 
 
 
@@ -574,7 +575,7 @@ f32_got_sector: rts
 ;
 ; Uses __bp = Pointer to the cluster number in the cached FAT.
 ;
-; Returns: X = F32_OK (and Z flag) or an error code.
+; Returns: Y,Z-flag,N-flag = F32_OK or an error code.
 ;
 ; N.B. FOR INTERNAL USE ONLY, THIS IS NOT A PUBLIC FUNCTION!
 ;
@@ -617,12 +618,15 @@ f32_nxt_cluster:lda	f32_cur_cluster		; Ptr = (cluster * 4) % 512
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; f32_change_dir  - Change dir to one in directory entry ptr in __bp.
 ; f32_select_root - Change dir to root directory.
 ;
-; Args __bp = Pointer to directory entry in cache.
+; Args: None!
 ;
-; Returns: X = F32_OK (and Z flag) or an error code.
+; f32_change_dir  - Change dir to one in directory entry ptr in __bp.
+;
+; Args: __bp = Pointer to a directory entry (usually within f32_cache_buf).
+;
+; Returns: Y,Z-flag,N-flag = F32_OK or an error code.
 ;
 
 f32_change_dir	.proc
@@ -638,16 +642,12 @@ f32_change_dir	.proc
 		cmp	#ATTR_Directory
 		beq	.got_directory
 
-.not_directory: ldx	#F32_ERR_INVALID
+.not_directory: ldy	#F32_ERR_INVALID
 		rts
 
 .got_directory: jsr	f32_set_cluster		; From cur directory entry.
 
 		tii	f32_cur_cluster, f32_dir_cluster, 4
-
-		.endp				; f32_change_dir
-
-f32_dir_chosen	.proc				; Private to TEOS!
 
 		lda	f32_dir_cluster + 0	; Check for a zero cluster.
 		ora	f32_dir_cluster + 1
@@ -655,7 +655,7 @@ f32_dir_chosen	.proc				; Private to TEOS!
 		ora	f32_dir_cluster + 3
 		bne	!finished+		; Finished if non-zero.
 
-		.endp				; f32_choose_dir
+		.endp				; f32_change_dir
 
 f32_select_root .proc
 
@@ -678,7 +678,7 @@ f32_select_root .proc
 ;
 ; Uses __bp = Pointer to variable holding the cluster number.
 ;
-; Returns: X = F32_OK (and Z flag) or an error code.
+; Returns: Y,Z-flag,N-flag = F32_OK or an error code.
 ;
 ; N.B. FOR INTERNAL USE ONLY, THIS IS NOT A PUBLIC FUNCTION!
 ;
@@ -756,13 +756,13 @@ f32_use_cluster:ldy	#3			; Copy the cluster # from the
 
 		stz	f32_cluster_idx		; Reset sector idx within cluster.
 
-		ldx	#F32_OK
+		ldy	#F32_OK
 		rts
 
-.eoc_cluster:	ldx	#F32_EOC_CLUSTER	; Invalid cluster.
+.eoc_cluster:	ldy	#F32_EOC_CLUSTER	; Invalid cluster.
 		rts
 
-.bad_cluster:	ldx	#F32_ERR_INVALID	; Invalid cluster.
+.bad_cluster:	ldy	#F32_ERR_INVALID	; Invalid cluster.
 		rts
 
 
@@ -801,13 +801,15 @@ f32_set_cluster:clx				; Copy the cluster # from the
 ;
 ; N.B. This includes unused ($E5) and end-of-directory ($00) entries.
 ;
-; Uses: __bp = Pointer to directory entry in cache.
-; Uses: __dh = Temporary variable (trashed).
+; Uses: __bp = Pointer to directory entry within f32_cache_buf.
+; Uses: __temp = Temporary variable (trashed).
 ;
-; Returns: X = F32_OK (and Z flag) or an error code.
+; Returns: __bp, Y,Z-flag,N-flag = F32_OK or an error code
 ;
 
 f32_1st_entry	.proc
+
+		jsr	f32_clear_cache		; Cache may have been trashed!
 
 		jsr	f32_rewind_dir		; Goto 1st cluster in dir.
 		bra	!get_entry+
@@ -817,12 +819,12 @@ f32_1st_entry	.proc
 f32_nxt_entry	.proc
 
 !nxt_entry:	clc				; Inc directory pointer.
-		lda	<__bp + 0
+		lda.l	<__bp
 		adc	#32
-		sta	<__bp + 0
-		lda	<__bp + 1
+		sta.l	<__bp
+		lda.h	<__bp
 		adc	#0
-		sta	<__bp + 1
+		sta.h	<__bp
 
 		cmp	#>(f32_cache_buf + 512) ; Any entries left in cache?
 		bne	!tst_entry+
@@ -837,7 +839,7 @@ f32_nxt_entry	.proc
 
 		; Refresh the directory cache.
 
-!get_entry:	ldx	#F32_ERR_MUTEX		; The f32_file_map shares space
+!get_entry:	ldy	#F32_ERR_MUTEX		; The f32_file_map shares space
 		lda	f32_file_mutex		; with the f32_long_name, so
 		bne	.error			; abort if a file is open.
 
@@ -846,9 +848,9 @@ f32_nxt_entry	.proc
 
 .error:		leave				; Return the error code.
 
-.loaded:	stz	<__bp + 0		; Reset directory pointer.
+.loaded:	stz.l	<__bp			; Reset directory pointer.
 		lda	#>f32_cache_buf
-		sta	<__bp + 1
+		sta.h	<__bp
 
 		; Test the current directory entry.
 
@@ -922,7 +924,7 @@ f32_nxt_entry	.proc
 .copy_done:	stz	f32_long_name, x	; Terminate the string.
 		stx	f32_name_length		; Save the name length.
 
-.got_long:	ldx	#F32_OK			; Return OK, with Z.
+.got_long:	ldy	#F32_OK			; Return OK, with Z.
 		leave				; Return the error code.
 
 		;
@@ -1004,7 +1006,7 @@ f32_nxt_entry	.proc
 		pla
 		jmp	!nxt_entry-		; Get the next part of it!
 
-.copy_utf16:	sta	<__dh			; Copy UTF16 glyphs to the
+.copy_utf16:	sta	<__temp			; Copy UTF16 glyphs to the
 .copy_loop:	lda	[__bp], y		; long name buffer.
 		sta	f32_long_name, x
 		iny
@@ -1021,7 +1023,7 @@ f32_nxt_entry	.proc
 .copy_next:	iny
 		inx
 		beq	.too_long		; Is name > than 255 glyphs?
-		cpy	<__dh
+		cpy	<__temp
 		bne	.copy_loop
 		rts
 
@@ -1038,10 +1040,13 @@ f32_nxt_entry	.proc
 ;
 ; f32_find_name - Locate a specifc named entry in the current directory.
 ;
-; Args: __ax = Pointer to the name to search for.
-; Sets: __bp = Pointer to directory entry in cache.
+; Args: __si, __si_bank = _farptr to filename string to map into MPR3.
 ;
-; Returns: X = F32_OK or an error code.
+; N.B. This filename string MUST NOT cross a bank boundary!
+;
+; Sets: __bp = Pointer to directory entry within f32_cache_buf.
+;
+; Returns: Y,Z-flag,N-flag = F32_OK or an error code.
 ;
 ; This is a case-insensitive compare, just like on MS-DOS/Windows.
 ;
@@ -1060,13 +1065,17 @@ f32_nxt_entry	.proc
 
 f32_find_name	.proc
 
+		tma3				; Preserve MPR3.
+		pha
+
+		jsr	__si_to_mpr3		; Map filename to MPR3.
+
 		call	f32_1st_entry		; Start at the top of the dir.
 		bra	.test_name
 
 .next_name:	call	f32_nxt_entry		; Get the next directory entry.
 
-.test_name:	txa				; Refresh flags after CALL.
-		bmi	.error			; Was there an error?
+.test_name:	bmi	.finished		; Was there an error?
 
 		lda	[__bp]			; Is this the end of the directory?
 		beq	.not_found
@@ -1079,7 +1088,7 @@ f32_find_name	.proc
 .chr_loop:	iny				; Assume same if > 256 chrs.
 		beq	.str_same
 
-.chr_test:	lda	[__ax], y		; End of name?
+.chr_test:	lda	[__si], y		; End of name?
 		beq	.chr_last
 		bmi	.next_name		; Fail if UTF16 $80..$FF glyph.
 
@@ -1116,11 +1125,15 @@ f32_find_name	.proc
 .chr_last:	cmp	f32_long_name, y	; Make sure that both strings
 		bne	.next_name		; end at the same point!
 
-.str_same:	ldx	#F32_OK
-		leave				; Return the result.
+.str_same:	ldy	#F32_OK
+		bra	.finished
 
-.not_found:	ldx	#F32_ERR_NO_NAME	; Can't find the named entry!
-.error:		leave				; Return the result.
+.not_found:	ldy	#F32_ERR_NO_NAME	; Can't find the named entry!
+
+.finished:	pla				; Restore MPR3.
+		tam3
+
+		leave				; Return the result.
 
 		.endp				; f32_find_name
 
@@ -1133,7 +1146,7 @@ f32_find_name	.proc
 ;
 ; Uses: f32_file_map = 256-byte data buffer for the file map (PAGE_ALIGNED).
 ;
-; Returns: X = F32_OK (and Z flag) or an error code.
+; Returns: Y,Z-flag,N-flag = F32_OK or an error code.
 ;
 ; N.B. FOR INTERNAL USE ONLY, THIS IS NOT A PUBLIC FUNCTION!
 ;
@@ -1174,7 +1187,7 @@ f32_map_file:	jsr	f32_rewind_file		; Start at the beginning.
 .next_cluster:	jsr	f32_nxt_cluster		; Find the next cluster in the
 		beq	.sub_long		; file.
 
-		cpx	#F32_EOC_CLUSTER	; EOC cluster?
+		cpy	#F32_EOC_CLUSTER	; EOC cluster?
 		bne	.failed
 
 		clc				; Mark the end of the file map.
@@ -1190,7 +1203,7 @@ f32_map_file:	jsr	f32_rewind_file		; Start at the beginning.
 
 		jsr	f32_rewind_file		; Rewind to the beginning.
 
-		ldx	#F32_OK
+		ldy	#F32_OK
 .failed:	rts
 
 .sub_long:	ldx	#$FC			; Subtract current and previous
@@ -1226,7 +1239,7 @@ f32_map_file:	jsr	f32_rewind_file		; Start at the beginning.
 		sta	<__di + 0
 		bne	.copy_cluster
 
-.too_fragged:	ldx	#F32_ERR_FRAGGED	; Too many fragments!
+.too_fragged:	ldy	#F32_ERR_FRAGGED	; Too many fragments!
 		rts
 
 
@@ -1236,17 +1249,20 @@ f32_map_file:	jsr	f32_rewind_file		; Start at the beginning.
 ;
 ; f32_open_file - Open the file in the directory entry ptr in __bp.
 ;
-; Args: __bp = Pointer to directory entry in cache.
+; Args: __bp = Pointer to a directory entry (usually within f32_cache_buf).
 ;
-; Returns: X = F32_OK or an error code.
+; Returns: Y,Z-flag,N-flag = F32_OK or an error code.
 ;
 ; Uses: f32_file_map = Data buffer containing the file map.
 ; Uses: f32_file_pos = Current fragment within the file map.
 ;
+; After this returns, the f32_cache_buf is not needed until the next time
+; that a directory operation is called.
+;
 
 f32_open_file	.proc
 
-		ldx	#F32_ERR_MUTEX		; Only allow one file to
+		ldy	#F32_ERR_MUTEX		; Only allow one file to
 		lda	f32_file_mutex		; be open at once.
 		bne	!finished+
 
@@ -1260,7 +1276,7 @@ f32_open_file	.proc
 		and	#ATTR_Type_Mask
 		beq	.got_file
 
-.not_file:	ldx	#F32_ERR_INVALID
+.not_file:	ldy	#F32_ERR_INVALID
 		leave				; Return the result.
 
 .got_file:	ldy	#DIR_FileSize		; Save the file length.
@@ -1275,12 +1291,10 @@ f32_open_file	.proc
 
 		tii	f32_cur_cluster, f32_fil_cluster, 4
 
-		.endp				; f32_open_file
+		jsr	f32_map_file		; Map the file fragments for
+		bne	!finished+		; faster seeks without cache.
 
-f32_file_chosen .proc				; Private to TEOS!
-
-		jsr	f32_map_file		; Map the file fragments.
-		bne	!finished+
+		jsr	f32_clear_cache		; Cache is no longer needed!
 
 		dec	f32_file_mutex		; Signal that a file is open.
 
@@ -1292,7 +1306,7 @@ f32_file_chosen .proc				; Private to TEOS!
 
 !finished:	leave				; Return the result.
 
-		.endp				; f32_file_chosen
+		.endp				; f32_open_file
 
 
 
@@ -1301,14 +1315,14 @@ f32_file_chosen .proc				; Private to TEOS!
 ;
 ; f32_close_file - Close the current file.
 ;
-; Returns: X = F32_OK or an error code.
+; Returns: Y,Z-flag,N-flag = F32_OK or an error code.
 ;
 
 f32_close_file	.proc
 
 		stz	f32_file_mutex		; Release the mutex.
 
-		ldx	#F32_OK
+		ldy	#F32_OK
 		leave				; Return the result.
 
 		.endp				; f32_close_file
@@ -1327,7 +1341,7 @@ f32_close_file	.proc
 ; Uses: f32_file_map = Data buffer containing the file map.
 ; Uses: f32_file_pos = Current fragment within the file map.
 ;
-; Returns: X = F32_OK or an error code.
+; Returns: Y,Z-flag,N-flag = F32_OK or an error code.
 ;
 
 f32_seek_set	.proc
@@ -1398,10 +1412,10 @@ f32_seek_cur	.proc
 		inx
 		bne	.frag_len
 
-		ldx	#F32_OK			; Success!
+		ldy	#F32_OK			; Success!
 		leave				; Return the result.
 
-.at_eof:	ldx	#F32_ERR_EOF		; Read beyond EOF!
+.at_eof:	ldy	#F32_ERR_EOF		; Read beyond EOF!
 		leave				; Return the result.
 
 		.endp				; f32_seek_cur
@@ -1413,13 +1427,15 @@ f32_seek_cur	.proc
 ;
 ; f32_next_frag - Move on to the file's next fragment in the fragment map.
 ;
+; N.B. Self-modifying code!
+;
 ; N.B. FOR INTERNAL USE ONLY, THIS IS NOT A PUBLIC FUNCTION!
 ;
 
 f32_next_frag:	tii	f32_file_map, f32_file_pos, 8
 
-		lda	f32_next_frag + 1
-		clc
+		lda	f32_next_frag + 1	; Self-modify the TII
+		clc				; instruction!
 		adc	#8
 		sta	f32_next_frag + 1
 		bcc	.done
@@ -1435,14 +1451,23 @@ f32_next_frag:	tii	f32_file_map, f32_file_pos, 8
 ; f32_file_read	 - Load a # of sectors from the current file position.
 ; f32_file_write - Save a # of sectors to the current file position.
 ;
-; Args: sdc_data_bank
-; Args: sdc_data_addr
-; Args: __ax	     = unsigned 16-bit # of blocks to read/write.
+; N.B. Self-modifying code!
+;
+; Args: __ax = unsigned 16-bit # of 512-byte sectors to read/write.
+; Args: __bx = address to transfer data
 ;
 ; Uses: f32_file_map = Data buffer containing the file map.
 ; Uses: f32_file_pos = Current fragment within the file map.
 ;
-; Returns: X = F32_OK or an error code.
+; Returns: Y,Z-flag,N-flag = F32_OK or an error code.
+;
+; Notes:
+;
+;   The __bx address MUST be in MPR3, and also be 512-byte aligned in order
+;   for the auto-incrementing bank capability to work.
+;
+;   When __bx increments to >= $8000, the next PCE bank is mapped into MPR3,
+;   and reading/writing continues.
 ;
 
 		;
@@ -1450,7 +1475,7 @@ f32_next_frag:	tii	f32_file_map, f32_file_pos, 8
 f32_file_read	.proc
 
 		tii	.load, !xfer_call+, 3	; Self-Modify the xfer code.
-		bra	!file_xfer+
+		bra	!+
 .load:		call	sdc_read_data		; Low level function for xfer.
 
 		.endp				; f32_file_read
@@ -1460,17 +1485,19 @@ f32_file_read	.proc
 f32_file_write	.proc
 
 		tii	.save, !xfer_call+, 3	; Self-Modify the xfer code.
-		bra	!file_xfer+
+		bra	!+
 .save:		call	sdc_write_data		; Low level function for xfer.
 
 		.endp				; f32_file_write
 
 		;
 
-!file_xfer:	lda	f32_file_mutex		; Is there a file open?
+!:		lda	f32_file_mutex		; Is there a file open?
 		beq	.at_eof
 
-		lda	f32_file_pos + 0	; Are we already at the EOF?
+		tii	__bx, sdc_data_addr, 2	; Save the transfer address.
+
+.xfer_more:	lda	f32_file_pos + 0	; Are we already at the EOF?
 		ora	f32_file_pos + 1
 		ora	f32_file_pos + 2
 		ora	f32_file_pos + 3
@@ -1519,18 +1546,17 @@ f32_file_write	.proc
 		bne	.copy_last_cnt
 
 !xfer_call:	call	.finished		; Xfer fragment (self-modifying).
-		txa				; Refresh flags after CALL.
 		bne	.finished
 
 		lda	<__ax + 0		; Transfer complete?
 		ora	<__ax + 1
-		bne	!file_xfer-
+		bne	.xfer_more
 
 ;		txa				; Set the N & Z return flags.
 
 .finished:	leave				; Return the result.
 
-.at_eof:	ldx	#F32_ERR_EOF		; Read beyond EOF!
+.at_eof:	ldy	#F32_ERR_EOF		; Read beyond EOF!
 		bra	.finished
 
 		.endprocgroup			; Group ted2-fat32 in 1 bank!

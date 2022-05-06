@@ -98,7 +98,6 @@ sdc_cmd_param:	ds	4		; 32-bits (big-endian).
 sdc_block_num:	ds	4		; Current SD block number.
 sdc_block_cnt:	ds	4		; Block count (32-bit, but 32MB max).
 sdc_card_type:	ds	1		; card type bit0=SDHC bit1=v2
-sdc_data_bank:	ds	1		; TED2 512KB bank number.
 sdc_cid_value:	ds	16	        ; SD card's CID register.
 
 		.code
@@ -139,7 +138,7 @@ sdc_zero:	ds	2			; zero
 ;
 ; sdc_initialize - Initialize the SD card.
 ;
-; Returns: X = SDC_OK or an error code.
+; Returns: Y,A,Z-flag,N-flag = SDC_OK or an error code.
 ;
 
 sdc_initialize	.proc
@@ -148,10 +147,10 @@ sdc_initialize	.proc
 
 		stz	sdc_card_type
 
-		stz	sdc_data_addr + 0
-		stz	sdc_data_addr + 1
+		stz	<sdc_data_addr + 0
+		stz	<sdc_data_addr + 1
 
-		tai	sdc_zero, sdc_block_num, 4
+		tai	sdc_zero, sdc_block_num, 4 + 4
 
 		; Send > 74 clock pulses with CS off to enter native mode.
 
@@ -168,15 +167,15 @@ sdc_initialize	.proc
 		; Send CMD0 to turn SD card into SPI mode.
 
 		lda	#SDC_GO_IDLE_STATE
-		ldx	#$95			; Valid CRC
+		ldy	#$95			; Valid CRC
 		jsr	sdc_send_cmd
-		cpx	#$01	        	; "In Idle" state?
+		cpy	#$01	        	; "In Idle" state?
 		beq	.card_idle
 
 		lda	#SDC_GO_IDLE_STATE
-		ldx	#$95			; Valid CRC
+		ldy	#$95			; Valid CRC
 		jsr	sdc_send_cmd
-		cpx	#$01	        	; "In Idle" state?
+		cpy	#$01	        	; "In Idle" state?
 		bne	.card_error
 
 		; Send CMD8 to check SDCv2 voltage range.
@@ -187,9 +186,9 @@ sdc_initialize	.proc
 		sta	sdc_cmd_param + 3
 
 		lda	#SDC_SEND_IF_COND
-		ldx	#$87			; Valid CRC
+		ldy	#$87			; Valid CRC
 		jsr	sdc_send_cmd
-		cpx	#$01			; Was the command accepted?
+		cpy	#$01			; Was the command accepted?
 		bne	.sdc_init
 
 		jsr	spi_recv_byte		; Skip 1st byte of response.
@@ -210,38 +209,38 @@ sdc_initialize	.proc
 		PUTS	_init_found_v2
 	.endif
 
-.sdc_init:	ldy	#66			; Set timeout to > 1 second.
+.sdc_init:	ldx	#66			; Set timeout to > 1 second.
 
 		tai	sdc_zero, sdc_cmd_param, 4
 
 .sdc_init_loop: stz	sdc_cmd_param + 0
 
 		lda	#SDC_APP_CMD		; Send part 1 of APP command.
-		ldx	#SDC_DUMMY_CRC
+		ldy	#SDC_DUMMY_CRC
 		jsr	sdc_send_cmd
 		bmi	.card_error		; Was there a timeout?
-		cpx	#$02			; Was there an error?
+		cpy	#$02			; Was there an error?
 		bcs	.sdc_init_wait
 
 		lda	sdc_card_type		; SDCv2=$40 or SDCv1=$00
 		sta	sdc_cmd_param + 0	; Because HCS flag is bit 30!
 
 		lda	#SDC_APP_SEND_OP_COND	; Send part 2 of the command,
-		ldx	#SDC_DUMMY_CRC		; to INITIALIZE the SD card.
+		ldy	#SDC_DUMMY_CRC		; to INITIALIZE the SD card.
 		jsr	sdc_send_cmd
 		beq	.sdc_ready		; Is the SD card initialized?
 		bmi	.card_error		; Was there a timeout?
-		cpx	#$01			; Was there an error?
+		cpy	#$01			; Was there an error?
 		bne	.card_error
 
 .sdc_init_wait: jsr	wait_vsync		; Delay before asking again.
 
-		dey				; Still waiting for the
+		dex				; Still waiting for the
 		bne	.sdc_init_loop		; card to initialize?
 
 .card_error:	bsr	spi_recv_byte		; Wait 8clk before halting SPI.
 
-		ldx	#SDC_ERR_INIT		; Timeout or Error.
+		ldy	#SDC_ERR_INIT		; Timeout or Error.
 		bra	.sdc_init_done
 
 .sdc_ready:	stz	sdc_cmd_param + 0
@@ -254,17 +253,17 @@ sdc_initialize	.proc
 		beq	.sdc_blocklen
 
 		lda	#SDC_READ_OCR		; Send CMD58 to read the OCR.
-		ldx	#SDC_DUMMY_CRC
+		ldy	#SDC_DUMMY_CRC
 		bsr	sdc_send_cmd
 		bne	.card_error
 
 		bsr	spi_recv_byte		; Read top byte of OCR.
 		and	#$40			; Save the HCS bit.
-		tax
+		tay
 		bsr	spi_recv_byte		; Skip 2nd byte of OCR.
 		bsr	spi_recv_byte		; Skip 3rd byte of OCR.
 		bsr	spi_recv_byte		; Skip btm byte of OCR.
-		txa				; Check the HCS bit.
+		tya				; Check the HCS bit.
 		beq	.sdc_blocklen
 
 		lda	#SDC_HC			; Card uses block addressing!
@@ -281,14 +280,14 @@ sdc_initialize	.proc
 ;		stz	sdc_cmd_param + 3
 
 		lda	#SDC_SET_BLOCK_LENGTH
-		ldx	#SDC_DUMMY_CRC
+		ldy	#SDC_DUMMY_CRC
 		bsr	sdc_send_cmd
 		bne	.card_error
 
 .sdc_init_ok:	stz	sdc_cmd_param + 2
 
 		lda	#SDC_SEND_CID		; Send CMD4A to read the CID.
-		ldx	#SDC_DUMMY_CRC
+		ldy	#SDC_DUMMY_CRC
 		bsr	sdc_send_cmd
 		bne	.card_error
 
@@ -312,12 +311,13 @@ sdc_initialize	.proc
 
 		bsr	spi_recv_byte		; Wait 8clk before halting SPI.
 
-		ldx	#SDC_OK
+		ldy	#SDC_OK
 
 		TED_SPI_SPD_HI			; OK to do this now.
 
 .sdc_init_done: TED_SPI_CS_OFF			; All done, deselect the card.
 
+;		tya				; Set the N & Z result flags.
 		leave				; Return the result.
 
 		.endp				; sdc_initialize
@@ -348,13 +348,13 @@ spi_send_byte:	sta	TED_BASE_ADDR + TED_REG_SPI
 ;
 ; sdc_send_cmd - Send a command packet to the SD card.
 ;
-; A = CMD value, X = CRC value.
+; A = CMD value, Y = CRC value.
 ;
-; Returns: X = result code (and Z flag) or $FF if timeout.
+; Returns: Y = result code (and Z flag) or $FF if timeout.
+;
+; Preserves X register.
 ;
 ; N.B. FOR INTERNAL USE ONLY, THIS IS NOT A PUBLIC FUNCTION!
-;
-; Preserves Y register.
 ;
 
 sdc_send_cmd:	pha				; Preserve CMD parameter.
@@ -379,10 +379,10 @@ sdc_send_cmd:	pha				; Preserve CMD parameter.
 		lda	sdc_cmd_param + 3
 		bsr	spi_send_byte
 
-		txa				; Send CRC.
+		tya				; Send CRC.
 		bsr	spi_send_byte
 
-		clx
+		cly				; Timeout count.
 
 		; Discard the byte after SDC_STOP_TRANSMISSION.
 
@@ -396,12 +396,12 @@ sdc_send_cmd:	pha				; Preserve CMD parameter.
 .wait:		bsr	spi_recv_byte
 		cmp	#$FF
 		bne	.done
-		dex
+		dey
 		bne	.wait
 
 		; Timeout waiting for response!
 
-.done:		tax				; Return response code in X.
+.done:		tay				; Return response code in Y.
 		rts
 
 
@@ -413,6 +413,8 @@ sdc_send_cmd:	pha				; Preserve CMD parameter.
 ;
 ; Args: sdc_block_num (little-endian)
 ; Sets: sdc_cmd_param (big-endian)
+;
+; Preserves X & Y registers.
 ;
 ; N.B. FOR INTERNAL USE ONLY, THIS IS NOT A PUBLIC FUNCTION!
 ;
@@ -452,12 +454,13 @@ sdc_set_blk_arg:lda	sdc_card_type		; Check the SDC_HC flag.
 ;
 ; sdc_read_data - Read one or more 512-byte blocks.
 ;
-; Args: sdc_data_bank
-; Args: sdc_data_addr
 ; Args: sdc_block_num
 ; Args: sdc_block_cnt
+; Args: sdc_data_addr
 ;
-; Returns: X = SDC_OK or an error code.
+; Args: sdc_data_512k
+;
+; Returns: Y,A,Z-flag,N-flag = SDC_OK or an error code.
 ;
 ; Notes:
 ;
@@ -477,7 +480,7 @@ sdc_read_data	.proc
 		lda	sdc_block_cnt + 0	; Check for zero blocks.
 		cmp	#2
 		ora	sdc_block_cnt + 1
-		tax				; Zero returns SDC_OK.
+		tay				; Zero returns SDC_OK.
 		beq	.all_done
 		lda	sdc_block_cnt + 1
 		sbc	#0			; Set C if >= 2 blocks.
@@ -486,7 +489,7 @@ sdc_read_data	.proc
 
 		cla				; If == 1, SDC_READ_ONE_BLOCK.
 		adc	#SDC_READ_ONE_BLOCK	; If >= 2, SDC_READ_BLOCKS.
-		ldx	#SDC_DUMMY_CRC
+		ldy	#SDC_DUMMY_CRC
 		jsr	sdc_send_cmd
 		bne	.read_error
 
@@ -495,33 +498,34 @@ sdc_read_data	.proc
 		plp				; Restore the C flag.
 		bcc	.all_done		; Was this a multiple read?
 
-.stop_data:	phx				; Preserve result.
+.stop_data:	phy				; Preserve result.
 
 		tai	sdc_zero, sdc_cmd_param, 4
 
 		lda	#SDC_STOP_TRANSMISSION	; Send SDC_STOP_TRANSMISSION.
-		ldx	#SDC_DUMMY_CRC
+		ldy	#SDC_DUMMY_CRC
 		jsr	sdc_send_cmd		; Returns garbage!
 
 .busy:		jsr	spi_recv_byte		; Wait for the busy to be done.
 		cmp	#$FF
 		bne	.busy
 
-		plx				; Restore result.
+		ply				; Restore result.
 
 .all_done:	jsr	spi_recv_byte		; Wait 8clk before halting SPI.
 
 		TED_SPI_CS_OFF
 
 	.if	SDC_PRINT_MESSAGES
-		txa				; Set flags for result.
+		tya				; Set flags for result.
 		beq	.exit			; Report the error.
-		phx
+		phy
 		PUTS	_disk_read_err
-		plx
+		ply
 .exit:
 	.endif	SDC_PRINT_MESSAGES
 
+;		tya				; Set the N & Z result flags.
 		leave				; Return the result.
 
 .read_error:	plp
@@ -536,11 +540,12 @@ sdc_read_data	.proc
 ;
 ; spi_rd_fast - Hardware-accelerated sector read from SD card to RAM.
 ;
-; Args: sdc_data_bank
-; Args: sdc_data_addr
 ; Args: sdc_block_cnt
+; Args: sdc_data_addr
 ;
-; Returns: X = SDC_OK (and Z flag) or an error code.
+; Args: sdc_data_512k
+;
+; Returns: Y,A,Z-flag,N-flag = SDC_OK or an error code.
 ;
 ; N.B. FOR INTERNAL USE ONLY, THIS IS NOT A PUBLIC FUNCTION!
 ;
@@ -563,14 +568,14 @@ spi_rd_fast:	TED_SPI_ARD_ON
 .sector_loop:	lda	<sdc_data_addr + 1
 		sta	.start_xfer + 4
 
-		ldx	#$80
-		cly
+		ldy	#$80
+		clx
 .wait_start:	lda	TED_BASE_ADDR + TED_REG_SPI
 		cmp	#SDC_DATA_XFER_TOKEN
 		beq	.start_xfer
-		dey
-		bne	.wait_start
 		dex
+		bne	.wait_start
+		dey
 		bpl	.wait_start
 		bra	.timeout
 
@@ -594,20 +599,7 @@ spi_rd_fast:	TED_SPI_ARD_ON
 
 		tma3				; Map in next PCE 8KB bank.
 		inc	a
-		bpl	.next_bank		; Have we just loaded 512KB?
-
-.next_512kb:	lda	sdc_data_bank		; Map in next TED 512KB block.
-		clc
-		adc	#$10
-		bit	#$40			; Wrap from block 4 to block 0.
-		beq	.wrap_512kb
-		and	#$0F
-
-.wrap_512kb:	sta	sdc_data_bank		; Save current TED 512KB block.
-		sta	TED_BASE_ADDR + TED_REG_MAP
-
-		lda	#$40			; Reset destination PCE bank.
-.next_bank:	tam3
+		tam3
 
 .decrement:	lda	sdc_block_cnt + 0	; Decrement 16-bit block
 		bne	.skip			; count.
@@ -617,11 +609,11 @@ spi_rd_fast:	TED_SPI_ARD_ON
 		ora	sdc_block_cnt + 1
 		bne	.sector_loop
 
-		ldx	#SDC_OK
+		ldy	#SDC_OK
 
 .timeout:	TED_SPI_ARD_OFF
 
-		txa				; Set the N & Z result flags.
+		tya				; Set the N & Z result flags.
 		rts
 
 
@@ -631,12 +623,13 @@ spi_rd_fast:	TED_SPI_ARD_ON
 ;
 ; sdc_write_data - Write one or more 512-byte blocks.
 ;
-; Args: sdc_data_bank
-; Args: sdc_data_addr
 ; Args: sdc_block_num
 ; Args: sdc_block_cnt
+; Args: sdc_data_addr
 ;
-; Returns: X = SDC_OK or an error code.
+; Args: sdc_data_512k
+;
+; Returns: Y,A,Z-flag,N-flag = SDC_OK or an error code.
 ;
 ; Notes:
 ;
@@ -656,7 +649,7 @@ sdc_write_data	.proc
 		ora	sdc_block_cnt + 1
 		bne	.non_zero
 
-		tax				; Zero returns SDC_OK.
+		tay				; Zero returns SDC_OK.
 
 		leave				; Return the result.
 
@@ -673,7 +666,7 @@ sdc_write_data	.proc
 		tai	sdc_zero, sdc_cmd_param, 4
 
 		lda	#SDC_APP_CMD		; Send part 1 of APP command.
-		ldx	#SDC_DUMMY_CRC
+		ldy	#SDC_DUMMY_CRC
 		jsr	sdc_send_cmd
 		bne	.cmd_failed
 
@@ -683,7 +676,7 @@ sdc_write_data	.proc
 		sta	sdc_cmd_param + 3
 
 		lda	#SDC_APP_WRITE_ERASE_CNT
-		ldx	#SDC_DUMMY_CRC
+		ldy	#SDC_DUMMY_CRC
 		jsr	sdc_send_cmd
 		bne	.cmd_failed
 
@@ -691,15 +684,15 @@ sdc_write_data	.proc
 
 .start_write:	jsr	sdc_set_blk_arg		; Set the block num parameter.
 
-		ldy	#SDC_DATA_XFER_TOKEN	; Set token for data block.
+		ldx	#SDC_DATA_XFER_TOKEN	; Set token for data block.
 		plp				; Is this a multiple write?
 		bcc	.send_cmd
-		ldy	#SDC_WRITE_MUL_TOKEN
+		ldx	#SDC_WRITE_MUL_TOKEN
 .send_cmd:	php				; Preserve C flag.
 
 		cla				; If == 1, SDC_WRITE_ONE_BLOCK.
 		adc	#SDC_WRITE_ONE_BLOCK	; If >= 2, SDC_WRITE_BLOCKS.
-		ldx	#SDC_DUMMY_CRC
+		ldy	#SDC_DUMMY_CRC
 		jsr	sdc_send_cmd
 		bne	.cmd_failed
 
@@ -717,17 +710,17 @@ sdc_write_data	.proc
 		cmp	#$FF
 		bne	.busy
 
-.check_write:	txa				; Was there are error in the
+.check_write:	tya				; Was there are error in the
 		bne	.finished		; transfer to the SD card?
 
 		tai	sdc_zero, sdc_cmd_param, 4
 
 		lda	#SDC_SEND_STATUS	; Check the status of the
-		ldx	#SDC_DUMMY_CRC		; actual write itself.
+		ldy	#SDC_DUMMY_CRC		; actual write itself.
 		jsr	sdc_send_cmd
 		jsr	spi_recv_byte		; Get 2nd byte of status.
 		bne	.write_failed
-		txa				; X == 0 == SDC_OK if no error.
+		tya				; Y == 0 == SDC_OK if no error.
 		beq	.finished
 
 .write_failed:	.if	0			; Do we want to know #written?
@@ -736,20 +729,20 @@ sdc_write_data	.proc
 		stz	sdc_block_cnt + 1
 
 		lda	#SDC_APP_CMD		; Send part 1 of APP command.
-		ldx	#SDC_DUMMY_CRC
+		ldy	#SDC_DUMMY_CRC
 		jsr	sdc_send_cmd
 		bne	.count_done
 
 		lda	#SDC_APP_SEND_NUM_WR_BLK; Send part 2 to get count.
-		ldx	#SDC_DUMMY_CRC		; of successfully written blks.
+		ldy	#SDC_DUMMY_CRC		; of successfully written blks.
 		jsr	sdc_send_cmd
 		bne	.count_done
 
-		ldx	#$80			; Wait for the block count.
+		ldy	#$80			; Wait for the block count.
 .wait_count:	jsr	spi_recv_byte		; (0..8 bytes per the SD
 		cmp	#SDC_DATA_XFER_TOKEN	;  specification).
 		beq	.xfer_count
-		dex
+		dey
 		bne	.wait_count
 		bra	.count_done		; Timeout!
 
@@ -766,21 +759,22 @@ sdc_write_data	.proc
 .count_done:
 		.endif
 
-		ldx	#SDC_ERR_WR_ERR		; Signal that the write failed.
+		ldy	#SDC_ERR_WR_ERR		; Signal that the write failed.
 
 .finished:	jsr	spi_recv_byte		; Wait 8clk before halting SPI.
 
 		TED_SPI_CS_OFF
 
 		.if	SDC_PRINT_MESSAGES
-		txa				; Set flags for result.
+		tya				; Set flags for result.
 		beq	.exit			; Report the error.
-		phx
+		phy
 		PUTS	_disk_write_err
-		plx
+		ply
 .exit:
 		.endif	SDC_PRINT_MESSAGES
 
+;		tya				; Set the N & Z result flags.
 		leave				; Return the result.
 
 		.endp				; sdc_write_data
@@ -792,11 +786,13 @@ sdc_write_data	.proc
 ;
 ; spi_wr_slow - Write one or more data packets to the SPI.
 ;
-; Args: sdc_data_bank
-; Args: sdc_data_addr
+; Args: X = SDC_DATA_XFER_TOKEN or SDC_WRITE_MUL_TOKEN
 ; Args: sdc_block_cnt
+; Args: sdc_data_addr
 ;
-; Returns: X = SDC_OK (and Z flag) or an error code.
+; Args: sdc_data_512k
+;
+; Returns: Y,A,Z-flag,N-flag = SDC_OK or an error code.
 ;
 ; N.B. FOR INTERNAL USE ONLY, THIS IS NOT A PUBLIC FUNCTION!
 ;
@@ -811,8 +807,8 @@ sdc_write_data	.proc
 ;   This also handles wrapping into new 512KB regions of TED2 memory.
 ;
 
-spi_wr_slow:	phy				; Preserve data-start token.
-		tya
+spi_wr_slow:	txa
+;		phx				; Preserve data-start token.
 		jsr	spi_send_byte		; Send data-start token.
 
 		bsr	.write_page		; Send 1st 256 bytes of data.
@@ -831,10 +827,10 @@ spi_wr_slow:	phy				; Preserve data-start token.
 		pla				; Check the response code.
 		and	#$1F
 		ora	#$80			; Make any error negative.
-		tax
-		ply				; Restore data-start token.
+		tay
+;		plx				; Restore data-start token.
 
-		cpx	#$85			; Was the data accepted?
+		cpy	#$85			; Was the data accepted?
 		bne	.error
 
 		lda	<sdc_data_addr + 1
@@ -845,20 +841,7 @@ spi_wr_slow:	phy				; Preserve data-start token.
 
 		tma3				; Map in next PCE 8KB bank.
 		inc	a
-		bpl	.next_bank		; Have we just loaded 512KB?
-
-.next_512kb:	lda	sdc_data_bank		; Map in next TED 512KB block.
-		clc
-		adc	#$10
-		bit	#$40			; Wrap from block 4 to block 0.
-		beq	.wrap_512kb
-		and	#$0F
-
-.wrap_512kb:	sta	sdc_data_bank		; Save current TED 512KB block.
-		sta	TED_BASE_ADDR + TED_REG_MAP
-
-		lda	#$40			; Reset destination PCE bank.
-.next_bank:	tam3
+		tam3
 
 .decrement:	lda	sdc_block_cnt + 0	; Decrement 16-bit block
 		bne	.skip			; count.
@@ -868,7 +851,7 @@ spi_wr_slow:	phy				; Preserve data-start token.
 		ora	sdc_block_cnt + 1
 		bne	spi_wr_slow
 
-		ldx	#SDC_OK			; All finished OK!
+		ldy	#SDC_OK			; All finished OK!
 
 .error:		rts
 
