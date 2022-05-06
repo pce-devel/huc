@@ -5,7 +5,7 @@
 ;
 ; Definitions and macros for accessing the TED2's hardware.
 ;
-; Copyright John Brandwood 2019.
+; Copyright John Brandwood 2019-2022.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -122,9 +122,9 @@ TED_SPI_AREAD	=	2		; Accelerated Read (0=off)
 ;   Bank 4 : Used as Low 512KB
 ;   Bank 5 :
 ;   Bank 6 :
-;   Bank 7 : Used for TED OS
+;   Bank 7 : Used for TED OS (cannot be trashed if cfg_skip_eep is set!)
 ;
-;   The TED2 runs a HuCard image with TED_REG_MAP set to $04.
+;   The TED2 runs a HuCard image with TED_REG_MAP set to $04!
 ;
 ;   !!! WARNING !!!
 ;
@@ -145,10 +145,10 @@ TED_MAP_BANK7	=	$74
 
 ; ***************************************************************************
 ;
-; When TED is mapped into CPU space at $4000-$5FFF (as the TED2 OS does).
+; Map the TED hardware into commonly-banked CPU space at $8000-$9FFF (MPR4).
 ;
 
-TED_BASE_ADDR	=	$4000
+TED_BASE_ADDR	=	$8000
 
 ;
 ; TED registers that are the same for TED v1 and TED v2.

@@ -44,9 +44,9 @@ SDC_OK			= $00
 
 SDC_ERR_TIMEOUT		= $FF
 
-SDC_ERR_INIT		= $80
-SDC_ERR_DSK_RD		= $81
-SDC_ERR_DSK_WR		= $82
+SDC_ERR_INIT		= $81
+SDC_ERR_DSK_RD		= $82
+SDC_ERR_DSK_WR		= $83
 SDC_ERR_WR_CRC		= $8B	; From SD Data Response code.
 SDC_ERR_WR_ERR		= $8D	; From SD Data Response code.
 
@@ -143,7 +143,19 @@ sdc_zero:	ds	2			; zero
 
 sdc_initialize	.proc
 
-		stz	TED_BASE_ADDR + TED_REG_SPI_CFG
+		tma4				; Preserve MPR4.
+		pha
+		cla				; Map the TED2 into MPR4.
+		tam4
+
+		lda	ted2_unlocked		; Is TED2 hardware unlocked?
+		bne	.unlocked
+
+		call	unlock_ted2		; If not, try unlocking it!
+		beq	.unlocked
+		jmp	.sdc_init_done		; Return the error code.
+
+.unlocked:	stz	TED_BASE_ADDR + TED_REG_SPI_CFG
 
 		stz	sdc_card_type
 
@@ -317,6 +329,9 @@ sdc_initialize	.proc
 
 .sdc_init_done: TED_SPI_CS_OFF			; All done, deselect the card.
 
+		pla				; Restore MPR4.
+		tam4
+
 ;		tya				; Set the N & Z result flags.
 		leave				; Return the result.
 
@@ -475,7 +490,20 @@ sdc_set_blk_arg:lda	sdc_card_type		; Check the SDC_HC flag.
 
 sdc_read_data	.proc
 
-		jsr	sdc_set_blk_arg		; Set the block num parameter.
+		tma4				; Preserve MPR4.
+		pha
+		cla				; Map the TED2 into MPR4.
+		tam4
+
+		lda	ted2_unlocked		; Is TED2 hardware unlocked?
+		bne	.unlocked
+
+		call	unlock_ted2		; If not, try unlocking it!
+		bne	.exit
+;		beq	.unlocked
+;		jmp	.exit			; Return the error code.
+
+.unlocked:	jsr	sdc_set_blk_arg		; Set the block num parameter.
 
 		lda	sdc_block_cnt + 0	; Check for zero blocks.
 		cmp	#2
@@ -522,8 +550,10 @@ sdc_read_data	.proc
 		phy
 		PUTS	_disk_read_err
 		ply
-.exit:
 	.endif	SDC_PRINT_MESSAGES
+
+.exit:		pla				; Restore MPR4.
+		tam4
 
 ;		tya				; Set the N & Z result flags.
 		leave				; Return the result.
@@ -644,14 +674,25 @@ spi_rd_fast:	TED_SPI_ARD_ON
 
 sdc_write_data	.proc
 
-		lda	sdc_block_cnt + 0	; Check for zero blocks.
+		tma4				; Preserve MPR4.
+		pha
+		cla				; Map the TED2 into MPR4.
+		tam4
+
+		lda	ted2_unlocked		; Is TED2 hardware unlocked?
+		bne	.unlocked
+
+		call	unlock_ted2		; If not, try unlocking it!
+		beq	.unlocked
+		jmp	.exit			; Return the error code.
+
+.unlocked:	lda	sdc_block_cnt + 0	; Check for zero blocks.
 		cmp	#2
 		ora	sdc_block_cnt + 1
 		bne	.non_zero
 
 		tay				; Zero returns SDC_OK.
-
-		leave				; Return the result.
+		jmp	.exit
 
 .cmd_failed:	plp				; Discard the C flag.
 		bra	.finished
@@ -771,8 +812,10 @@ sdc_write_data	.proc
 		phy
 		PUTS	_disk_write_err
 		ply
-.exit:
 		.endif	SDC_PRINT_MESSAGES
+
+.exit:		pla				; Restore MPR4.
+		tam4
 
 ;		tya				; Set the N & Z result flags.
 		leave				; Return the result.
