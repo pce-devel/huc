@@ -19,7 +19,7 @@
 ;    The PC Engine's memory map is set to ...
 ;
 ;      MPR0 = bank $FF : PCE hardware
-;      MPR1 = bank $F8 : PCE RAM with ZP & Stack
+;      MPR1 = bank $F8 : PCE RAM with ZP & Stack (BSS segment)
 ;      MPR2 = bank $87 : SGX RAM or CD RAM
 ;      MPR3 = bank $xx : Freely mapped data, init to $02 (DATA segment)
 ;      MPR4 = bank $xx : Freely mapped data, init to $03
@@ -34,7 +34,7 @@
 ;    The PC Engine's memory map is set to ...
 ;
 ;      MPR0 = bank $FF : PCE hardware
-;      MPR1 = bank $F8 : PCE RAM with ZP & Stack
+;      MPR1 = bank $F8 : PCE RAM with ZP & Stack (BSS segment)
 ;      MPR2 = bank $87 : SGX RAM or CD RAM
 ;      MPR3 = bank $xx : Freely mapped data, init to $03 (DATA segment)
 ;      MPR4 = bank $xx : Freely mapped data, init to $04
@@ -49,7 +49,7 @@
 ;    The PC Engine's memory map is set to ...
 ;
 ;      MPR0 = bank $FF : PCE hardware
-;      MPR1 = bank $F8 : PCE RAM with ZP & Stack & CORE(not TM) kernel
+;      MPR1 = bank $F8 : PCE RAM & CORE(not TM) kernel (BSS segment)
 ;      MPR2 = bank $87 : SGX RAM or CD RAM
 ;      MPR3 = bank $xx : Freely mapped data, init to $82 (DATA segment)
 ;      MPR4 = bank $xx : Freely mapped data, init to $83
@@ -64,7 +64,7 @@
 ;    The PC Engine's memory map is set to ...
 ;
 ;      MPR0 = bank $FF : PCE hardware
-;      MPR1 = bank $F8 : PCE RAM with ZP & Stack & CORE(not TM) kernel
+;      MPR1 = bank $F8 : PCE RAM & CORE(not TM) kernel (BSS segment)
 ;      MPR2 = bank $87 : SGX RAM or CD RAM
 ;      MPR3 = bank $xx : Freely mapped data, init to $6A (DATA segment)
 ;      MPR4 = bank $xx : Freely mapped data, init to $6B
@@ -126,12 +126,34 @@ core_main:	tma7				; Get the CORE_BANK.
 	.endif
 		tam2
 
+	.if	CDROM				; Overlays should clear BSS.
+
+		php				; Disable interrupts while
+		sei				; clearing overlay's BSS.
+
 		lda	#<kickc_vbl		; Setup KickC's vblank IRQ
 		sta.l	vsync_hook		; handler.
 		lda	#>kickc_vbl
 		sta.h	vsync_hook
-		lda	#$10
-		tsb	<irq_vec
+
+		tai	const_0000, core_ramend, (_bss_end - core_ramend)
+
+		lda	VDC_SR			; Purge any overdue VBL.
+		stz	irq_cnt			; Make it easy to check.
+
+		plp				; Restore interrupts.
+
+	.else					; HuCARD clears RAM on boot.
+
+		lda	#<kickc_vbl		; Setup KickC's vblank IRQ
+		sta.l	vsync_hook		; handler.
+		lda	#>kickc_vbl
+		sta.h	vsync_hook
+
+	.endif	CDROM
+
+		lda	#$10			; Enable KickC's vblank IRQ
+		tsb	<irq_vec		; handler.
 
 		call	init_random		; Initialize random seed.
 

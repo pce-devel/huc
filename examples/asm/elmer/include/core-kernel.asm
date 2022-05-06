@@ -5,7 +5,7 @@
 ;
 ; The "CORE(not TM)" PC Engine library kernel code that runs after startup.
 ;
-; Copyright John Brandwood 2021.
+; Copyright John Brandwood 2021-2022.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -333,7 +333,7 @@ sound_mutex:	ds	1			; NZ when controller port busy.
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; core_sw_reset - Default handler for a joypad "soft-reset" button press.
+; core_sw_reset - Default HuCARD handler for a joypad "soft-reset".
 ;
 
 core_sw_reset:	sei				; Disable interrupts.
@@ -347,7 +347,7 @@ core_sw_reset:	sei				; Disable interrupts.
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; core_sw_reset - Default handler for a joypad "soft-reset" button press.
+; core_sw_reset - Default CD-ROM handler for a joypad "soft-reset".
 ;
 
 core_sw_reset:	sei				; Disable interrupts.
