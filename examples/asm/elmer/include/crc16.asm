@@ -8,6 +8,12 @@
 ; ***************************************************************************
 ; ***************************************************************************
 
+;
+; Include dependancies ...
+;
+
+		include "common.asm"		; Common helpers.
+
 
 
 ; ***************************************************************************
@@ -23,8 +29,8 @@
 ;
 
 	.ifndef	crc16_tbl_lo
-crc16_tbl_lo:	=	$3700			; 256-bytes
-crc16_tbl_hi:	=	$3800			; 256-bytes
+crc16_tbl_lo:	=	$3E00			; 256-bytes
+crc16_tbl_hi:	=	$3F00			; 256-bytes
 	.endif
 
 init_crc16	.proc
@@ -46,9 +52,9 @@ init_crc16	.proc
 .no_add:	dey
 		bne	.bit_loop		; Do next bit
 
-		sta	crc16_tbl_lo,x		; Save CRC into table, low byte
+		sta	crc16_tbl_lo, x		; Save CRC into table, low byte
 		lda	<__al			; then high byte
-		sta	crc16_tbl_hi,x
+		sta	crc16_tbl_hi, x
 		inx
 		bne	.byte_loop		; Do next byte
 
@@ -78,33 +84,33 @@ calc_crc16	.proc
 
 	.if	1
 		lda	#$FF			; For CCITT.
-		sta	<__ax + 0
-		sta	<__ax + 1
+		sta	<__cx + 0
+		sta	<__cx + 1
 	.else
-		stz	<__ax + 0		; For XMODEM.
-		stz	<__ax + 1
+		stz	<__cx + 0		; For XMODEM.
+		stz	<__cx + 1
 	.endif
 
-		ldy	<__cx + 0
+		ldy	<__ax + 0
 		beq	.byte_loop
-		inc	<__cx + 1
+		inc	<__ax + 1
 
 .byte_loop:	lda	[__si]
 
-		eor	<__ax + 1		; Update CRC-16.
+		eor	<__cx + 1		; Update CRC-16.
 		tax
-		lda	<__ax + 1
-		eor	crc16_tbl_hi,x
-		sta	<__ax + 1
-		lda	crc16_tbl_lo,x
-		sta	<__ax + 0
+		lda	<__cx + 1
+		eor	crc16_tbl_hi, x
+		sta	<__cx + 1
+		lda	crc16_tbl_lo, x
+		sta	<__cx + 0
 
 		inc	<__si + 0
 		beq	.next_page
 
 .next_byte:	dey
 		bne	.byte_loop
-		dec	<__cx + 1
+		dec	<__ax + 1
 		bne	.byte_loop
 
 		pla				; Restore MPR3.

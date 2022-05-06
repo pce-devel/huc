@@ -8,6 +8,12 @@
 ; ***************************************************************************
 ; ***************************************************************************
 
+;
+; Include dependancies ...
+;
+
+		include "common.asm"		; Common helpers.
+
 
 
 ; ***************************************************************************
@@ -23,10 +29,10 @@
 ;
 
 	.ifndef	crc32_tbl_b0
-crc32_tbl_b0	=	$3900			; 256-bytes
-crc32_tbl_b1	=	$3A00			; 256-bytes
-crc32_tbl_b2	=	$3B00			; 256-bytes
-crc32_tbl_b3	=	$3C00			; 256-bytes
+crc32_tbl_b0	=	$3C00			; 256-bytes
+crc32_tbl_b1	=	$3D00			; 256-bytes
+crc32_tbl_b2	=	$3E00			; 256-bytes
+crc32_tbl_b3	=	$3F00			; 256-bytes
 	.endif
 
 init_crc32	.proc
@@ -89,43 +95,43 @@ calc_crc32	.proc
 		jsr	__si_to_mpr3		; Map memory block to MPR3.
 
 		lda	#$FF			; Initialize CRC-32.
-		sta	<__ax + 0
-		sta	<__ax + 1
-		sta	<__ax + 2
-		sta	<__ax + 3
+		sta	<__cx + 0
+		sta	<__cx + 1
+		sta	<__cx + 2
+		sta	<__cx + 3
 
-		ldy	<__cx + 0
+		ldy	<__ax + 0
 		beq	.byte_loop
-		inc	<__cx + 1
+		inc	<__ax + 1
 
 .byte_loop:	lda	[__si]
 
-		eor	<__ax + 0		; Update CRC-32.
+		eor	<__cx + 0		; Update CRC-32.
 		tax
-		lda	<__ax + 1
+		lda	<__cx + 1
 		eor	crc32_tbl_b0, x
-		sta	<__ax + 0
-		lda	<__ax + 2
+		sta	<__cx + 0
+		lda	<__cx + 2
 		eor	crc32_tbl_b1, x
-		sta	<__ax + 1
-		lda	<__ax + 3
+		sta	<__cx + 1
+		lda	<__cx + 3
 		eor	crc32_tbl_b2, x
-		sta	<__ax + 2
+		sta	<__cx + 2
 		lda	crc32_tbl_b3, x
-		sta	<__ax + 3
+		sta	<__cx + 3
 
 		inc	<__si + 0
 		beq	.next_page
 
 .next_byte:	dey
 		bne	.byte_loop
-		dec	<__cx + 1		; Next page.
+		dec	<__ax + 1		; Next page.
 		bne	.byte_loop
 
 		ldx	#3			; Complement CRC-32 when done
-.flip_bits:	lda	<__ax, x		; to follow standard.
+.flip_bits:	lda	<__cx, x		; to follow standard.
 		eor	#$FF
-		sta	<__ax, x
+		sta	<__cx, x
 		dex
 		bpl	.flip_bits
 
