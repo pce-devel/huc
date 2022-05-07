@@ -17,9 +17,6 @@ LDFLAGS = -g
 #
 # platform-specific stuff
 #
-ifeq "$(shell uname -o)" "Cygwin"
-CFLAGS += -Wno-char-subscripts
-endif
 
 # BASEDIR uses 'd' for path separator; we fix that here
 #
