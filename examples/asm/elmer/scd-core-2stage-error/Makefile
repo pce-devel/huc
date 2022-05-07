@@ -30,7 +30,7 @@ stage2.ovl: $(SRC2_OVL) $(SRC2_INC) core-stage1.s
 
 # Note that the error overlay is assembled as "-cd" and NOT "-scd"!
 
-error.ovl: $(ERR_OVL) $(ERR_INC)
+error.ovl: $(ERR_OVL) $(ERR_INC) core-stage1.s
 	$(AS) $(AFLAGS) -cd error.asm
 
 clean:
