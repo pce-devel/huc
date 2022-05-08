@@ -97,7 +97,7 @@ mb1_detected:	ds	1			; NZ if MB128 ever detected.
 ;
 ; mb1_read_data - Read sectors of data into memory from the MB128.
 ;
-; Args: __di, __di_bank = _farptr to page-aligned buffer memory in MPR3.
+; Args: __si, __si_bank = _farptr to page-aligned buffer memory in MPR3.
 ; Args: __al = Sector address (0..255).
 ; Args: __ah = Sector count (0..255).
 ;
@@ -112,13 +112,10 @@ mb1_read_data	.proc
 		tsb	port_mutex		; conflict with a joypad.
 		bmi	.wait_mutex
 
-		jsr	__di_to_mpr3		; Map data to read into MPR3.
-
 ;		php				; Disable interrupts during
 ;		sei				; this function.
 
-		phx				; Preserve sector count.
-		pha				; Preserve sector address.
+		jsr	__si_to_mpr3		; Map data to read into MPR3.
 
 		jsr	mb1_wakeup		; Wakeup the MB128 interface.
 		bne	.finished		; Return error code.
@@ -154,18 +151,12 @@ mb1_read_data	.proc
 		stz	IO_PORT			; CLR lo, SEL lo (buttons).
 		bcc	.bit_loop		; RWCLK hi for 14 cycles = 2us.
 
-		sta	[__di], y		; Save the byte in memory.
+		sta	[__si], y		; Save the byte in memory.
 
 .next_byte:	iny
 		bne	.byte_loop
-		inc	<__di + 1
-		bpl	.next_page
-		tma3
-		inc	a
-		tam3
-		lda	#$60
-		sta	<__di + 1
-.next_page:	plx
+.next_page:	jsr	__si_inc_mpr3
+		plx
 		dex
 		bne	.page_loop
 		ply
@@ -253,16 +244,9 @@ mb1_write_data	.proc
 
 .next_byte:	iny
 		bne	.byte_loop
-		inc	<__si + 1
-		nop
-		stx	IO_PORT			; RWCLK lo for 29 cycles = 4us.
-		bpl	.next_page
-		tma3
-		inc	a
-		tam3
-		lda	#$60
-		sta	<__si + 1
-.next_page:	plx
+.next_page:	jsr	__si_inc_mpr3
+		stx	IO_PORT			; CLR lo, SEL is bit.
+		plx
 		dex
 		bne	.page_loop
 		ply
@@ -352,14 +336,8 @@ mb1_check_data	.proc
 
 .next_byte:	iny
 		bne	.byte_loop
-		inc	<__si + 1
-		bpl	.next_page
-		tma3
-		inc	a
-		tam3
-		lda	#$60
-		sta	<__si + 1
-.next_page:	plx
+.next_page:	jsr	__si_inc_mpr3
+		plx
 		dex
 		bne	.page_loop
 		ply
