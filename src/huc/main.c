@@ -191,9 +191,8 @@ int main (int argc, char *argv[])
 
 
 				case 'v':
-					verboseflag++;
-					if (verboseflag > 1)
-						ctext = 1;		/* "C" code in asm output */
+					verboseflag = 1;
+					ctext = 1;		/* "C" code in asm output */
 					break;
 
 				case 'd': case 'D':
@@ -1066,13 +1065,8 @@ intptr_t assemble (char *s)
 		strcat_s(buf, sizeof(buf), "-over ");
 
 	if (verboseflag) {
-		if (verboseflag > 1)
-			strcat_s(buf, sizeof(buf), "-S -l 3 -m ");
-		else
-			strcat_s(buf, sizeof(buf), "-S -l 0 ");
+		strcat_s(buf, sizeof(buf), "-S -l 3 -m ");
 	}
-	else
-		strcat_s(buf, sizeof(buf), "-l 0 ");
 
 	strcat_s(buf, sizeof(buf), "\"");
 	strcat_s(buf, sizeof(buf), s);
