@@ -97,11 +97,11 @@ mb1_detected:	ds	1			; NZ if MB128 ever detected.
 ;
 ; mb1_read_data - Read sectors of data into memory from the MB128.
 ;
-; Args: __si, __si_bank = _farptr to page-aligned buffer memory in MPR3.
-; Args: __al = Sector address (0..255).
-; Args: __ah = Sector count (0..255).
+; Args: _si, _si_bank = _farptr to page-aligned buffer memory in MPR3.
+; Args: _al = Sector address (0..255).
+; Args: _ah = Sector count (0..255).
 ;
-; Uses: __temp
+; Uses: _temp
 ;
 ; Returns: Y,A,Z-flag,N-flag = MB1_OK or an error code.
 ;
@@ -115,18 +115,18 @@ mb1_read_data	.proc
 ;		php				; Disable interrupts during
 ;		sei				; this function.
 
-		jsr	__si_to_mpr3		; Map data to read into MPR3.
+		jsr	set_si_to_mpr3		; Map data to read into MPR3.
 
 		jsr	mb1_wakeup		; Wakeup the MB128 interface.
 		bne	.finished		; Return error code.
 
 		jsr	mb1_send_rd_cmd
-		lda	<__al			; Get sector address.
+		lda	<_al			; Get sector address.
 		jsr	mb1_send_addr
-		lda	<__ah			; Get sector count.
+		lda	<_ah			; Get sector count.
 		jsr	mb1_send_size
 
-		lda	<__ah			; Get sector count.
+		lda	<_ah			; Get sector count.
 		jsr	mb1_xvert_size		; Xvert sectors to bytes.
 
 		stz	IO_PORT			; CLR lo, SEL lo (buttons).
@@ -151,11 +151,11 @@ mb1_read_data	.proc
 		stz	IO_PORT			; CLR lo, SEL lo (buttons).
 		bcc	.bit_loop		; RWCLK hi for 14 cycles = 2us.
 
-		sta	[__si], y		; Save the byte in memory.
+		sta	[_si], y		; Save the byte in memory.
 
 .next_byte:	iny
 		bne	.byte_loop
-.next_page:	jsr	__si_inc_mpr3
+.next_page:	jsr	inc.h_si_mpr3
 		plx
 		dex
 		bne	.page_loop
@@ -185,11 +185,11 @@ mb1_read_data	.proc
 ;
 ; mb1_write_data - Write sectors of data from memory to the MB128.
 ;
-; Args: __si, __si_bank = _farptr to page-aligned buffer memory in MPR3.
-; Args: __al = Sector address (0..255).
-; Args: __ah = Sector count (0..255).
+; Args: _si, _si_bank = _farptr to page-aligned buffer memory in MPR3.
+; Args: _al = Sector address (0..255).
+; Args: _ah = Sector count (0..255).
 ;
-; Uses: __temp
+; Uses: _temp
 ;
 ; Returns: Y,A,Z-flag,N-flag = MB1_OK or an error code.
 ;
@@ -203,18 +203,18 @@ mb1_write_data	.proc
 ;		php				; Disable interrupts during
 ;		sei				; this function.
 
-		jsr	__si_to_mpr3		; Map data to check into MPR3.
+		jsr	set_si_to_mpr3		; Map data to check into MPR3.
 
 		jsr	mb1_wakeup		; Wakeup the MB128 interface.
 		bne	.finished		; Return error code.
 
 		jsr	mb1_send_wr_cmd
-		lda	<__al			; Get sector address.
+		lda	<_al			; Get sector address.
 		jsr	mb1_send_addr
-		lda	<__ah			; Get sector count.
+		lda	<_ah			; Get sector count.
 		jsr	mb1_send_size
 
-		lda	<__ah			; Get sector count.
+		lda	<_ah			; Get sector count.
 		jsr	mb1_xvert_size		; Xvert sectors to bytes.
 
 		cpx	#$00
@@ -224,7 +224,7 @@ mb1_write_data	.proc
 .page_loop:	phx
 		clx
 		sec
-.byte_loop:	lda	[__si], y
+.byte_loop:	lda	[_si], y
 ;		stx	IO_PORT			; RWCLK lo for 30 cycles > 4us.
 		ror	a			; Put next bit in C.
 
@@ -244,7 +244,7 @@ mb1_write_data	.proc
 
 .next_byte:	iny
 		bne	.byte_loop
-.next_page:	jsr	__si_inc_mpr3
+.next_page:	jsr	inc.h_si_mpr3
 		stx	IO_PORT			; CLR lo, SEL is bit.
 		plx
 		dex
@@ -275,11 +275,11 @@ mb1_write_data	.proc
 ;
 ; mb1_check_data - Check that sectors of data from the MB128 match memory.
 ;
-; Args: __si, __si_bank = _farptr to page-aligned buffer memory in MPR3.
-; Args: __al = Sector address (0..255).
-; Args: __ah = Sector count (0..255).
+; Args: _si, _si_bank = _farptr to page-aligned buffer memory in MPR3.
+; Args: _al = Sector address (0..255).
+; Args: _ah = Sector count (0..255).
 ;
-; Uses: __temp
+; Uses: _temp
 ;
 ; Returns: Y,A,Z-flag,N-flag = MB1_OK or an error code.
 ;
@@ -293,18 +293,18 @@ mb1_check_data	.proc
 ;		php				; Disable interrupts during
 ;		sei				; this function.
 
-		jsr	__si_to_mpr3		; Map data to check into MPR3.
+		jsr	set_si_to_mpr3		; Map data to check into MPR3.
 
 		jsr	mb1_wakeup		; Wakeup the MB128 interface.
 		bne	.finished		; Return error code.
 
 		jsr	mb1_send_rd_cmd
-		lda	<__al			; Get sector address.
+		lda	<_al			; Get sector address.
 		jsr	mb1_send_addr
-		lda	<__ah			; Get sector count.
+		lda	<_ah			; Get sector count.
 		jsr	mb1_send_size
 
-		lda	<__ah			; Get sector count.
+		lda	<_ah			; Get sector count.
 		jsr	mb1_xvert_size		; Xvert sectors to bytes.
 
 		cld				; D flag indicates failure.
@@ -330,13 +330,13 @@ mb1_check_data	.proc
 		stz	IO_PORT			; CLR lo, SEL lo (buttons).
 		bcc	.bit_loop		; RWCLK hi for 14 cycles = 2us.
 
-		cmp	[__si], y		; Compare the byte in memory.
+		cmp	[_si], y		; Compare the byte in memory.
 		beq	.next_byte
 		sed				; Signal that the test failed!
 
 .next_byte:	iny
 		bne	.byte_loop
-.next_page:	jsr	__si_inc_mpr3
+.next_page:	jsr	inc.h_si_mpr3
 		plx
 		dex
 		bne	.page_loop
@@ -371,7 +371,7 @@ mb1_check_data	.proc
 ;
 ; mb1_detect - Detect whether an MB128 is present.
 ;
-; Uses: __temp
+; Uses: _temp
 ;
 ; Returns: Y,A,Z-flag,N-flag = MB1_OK or an error code.
 ;
@@ -421,7 +421,7 @@ mb1_detect	.proc
 ;
 ; Returns: Y,A,Z-flag,N-flag = MB1_OK or an error code.
 ;
-; Uses: __temp
+; Uses: _temp
 ;
 ; N.B. For INTERNAL use, not for APPLICATION use!
 ;
@@ -438,7 +438,7 @@ mb1_wakeup:	ldy	#$80 + 1		; Max 128KB of data to "unjam".
 
 		lda	IO_PORT			; Read buttons.
 		and	#$0F
-		sta	<__temp
+		sta	<_temp
 
 		lda	#%11			; Send '1' bit to MB128.
 		jsr	mb1_send_bits		; Selects direction-pad.
@@ -449,7 +449,7 @@ mb1_wakeup:	ldy	#$80 + 1		; Max 128KB of data to "unjam".
 		asl	a
 		asl	a
 
-.self_mod:	ora	<__temp			; Composite the buttons.
+.self_mod:	ora	<_temp			; Composite the buttons.
 		cmp	#$40			; Magic value for detection.
 		bne	.not_detected		; L, R, U, RUN, SEL, I & II.
 

@@ -71,8 +71,8 @@ set_dspoff:	lda	#$C0			; Disable BG & SPR layers.
 ; clear_vram_sgx - Clear all of VRAM in the SGX VDC.
 ; clear_vram_vdc - Clear all of VRAM in the PCE VDC.
 ;
-; Args: __ax = word value to write to the BAT.
-; Args: __bl = hi-byte of size of BAT (# of words).
+; Args: _ax = word value to write to the BAT.
+; Args: _bl = hi-byte of size of BAT (# of words).
 ;
 
 	.if	SUPPORT_SGX
@@ -92,7 +92,7 @@ clear_vram_x:	bsr	clear_bat_x		; Clear the BAT.
 
 		lda	#$80			; Xvert hi-byte of # words
 		sec				; in screen to loop count.
-		sbc	<__bl
+		sbc	<_bl
 		lsr	a
 
 ;		cly				; Clear the rest of VRAM.
@@ -118,8 +118,8 @@ clear_vram_x:	bsr	clear_bat_x		; Clear the BAT.
 ; clear_bat_sgx - Clear the BAT in the SGX VDC.
 ; clear_bat_vdc - Clear the BAT in the PCE VDC.
 ;
-; Args: __ax = word value to write to the BAT.
-; Args: __bl = hi-byte of size of BAT (# of words).
+; Args: _ax = word value to write to the BAT.
+; Args: _bl = hi-byte of size of BAT (# of words).
 ;
 
 	.if	SUPPORT_SGX
@@ -143,18 +143,18 @@ clear_bat_vdc	.proc
 
 		; Written as a subroutine because of "leave"!
 
-clear_bat_x:	stz	<__di + 0		; Set VDC or SGX destination
-		stz	<__di + 1		; address.
-		jsr	__di_to_vram
+clear_bat_x:	stz	<_di + 0		; Set VDC or SGX destination
+		stz	<_di + 1		; address.
+		jsr	set_di_to_vram
 
-		lda	<__bl			; Xvert hi-byte of # words
+		lda	<_bl			; Xvert hi-byte of # words
 		lsr	a			; in screen to loop count.
 
 		cly
 .bat_loop:	pha
-		lda	<__ax + 0
+		lda	<_ax + 0
 		sta	VDC_DL, x
-		lda	<__ax + 1
+		lda	<_ax + 1
 .bat_pair:	sta	VDC_DH, x
 		sta	VDC_DH, x
 		dey
@@ -179,7 +179,7 @@ clear_bat_x:	stz	<__di + 0		; Set VDC or SGX destination
 ; set_mode_sgx - Set video hardware registers from a data table.
 ; set_mode_vdc - Set video hardware registers from a data table.
 ;
-; Args: __si, __si_bank = _farptr to data table mapped into MPR3 & MPR4.
+; Args: _si, _si_bank = _farptr to data table mapped into MPR3 & MPR4.
 ;
 
 	.if	SUPPORT_SGX
@@ -200,14 +200,14 @@ set_mode_vdc	.proc
 		tma4				; Preserve MPR4.
 		pha
 
-		jsr	__si_to_mpr34		; Map data to MPR3 & MPR4.
+		jsr	set_si_to_mpr34		; Map data to MPR3 & MPR4.
 
 		php				; Disable interrupts.
 		sei
 
 		cly				; Table size is < 256 bytes.
 
-.loop:		lda	[__si], y		; Get the register #, +ve for
+.loop:		lda	[_si], y		; Get the register #, +ve for
 		beq	.done			; VDC, -128 for VCE.
 		bpl	.set_vdc_reg
 
@@ -215,7 +215,7 @@ set_mode_vdc	.proc
 
 .set_vce_reg:	iny
 
-		lda	[__si], y		; Get lo-byte of register.
+		lda	[_si], y		; Get lo-byte of register.
 		iny
 		sta	VCE_CR			; Set the VCE clock speed and
 		bra	.loop			; artifact reduction.
@@ -229,7 +229,7 @@ set_mode_vdc	.proc
 		beq	.skip_cc
 		clc				; CC if not VDC_CR.
 
-.skip_cc:	lda	[__si], y		; Get lo-byte of register.
+.skip_cc:	lda	[_si], y		; Get lo-byte of register.
 		iny
 		bcc	.not_vdc_cr
 
@@ -242,7 +242,7 @@ set_mode_vdc	.proc
 
 .not_vdc_cr:	sta	VDC_DL, x		; Write to VDC.
 
-		lda	[__si], y		; Get hi-byte of register.
+		lda	[_si], y		; Get hi-byte of register.
 		iny
 		sta	VDC_DH, x
 		bcc	.loop			; Next register, please!
@@ -290,11 +290,11 @@ init_256x224	.proc
 		call	clear_vce		; Clear all palettes.
 
 		lda.l	#.mode_256x224		; Disable BKG & SPR layers but
-		sta.l	<__si			; enable RCR & VBLANK IRQ.
+		sta.l	<_si			; enable RCR & VBLANK IRQ.
 		lda.h	#.mode_256x224
-		sta.h	<__si
+		sta.h	<_si
 		lda	#^.mode_256x224
-		sta	<__si_bank
+		sta	<_si_bank
 		call	set_mode_vdc
 	.if	SUPPORT_SGX
 		call	set_mode_sgx
@@ -303,12 +303,12 @@ init_256x224	.proc
 		call	wait_vsync		; Wait for the next VBLANK.
 
 		lda.l	#.CHR_0x20		; Tile # of ' ' CHR.
-		sta.l	<__ax
+		sta.l	<_ax
 		lda.h	#.CHR_0x20
-		sta.h	<__ax
+		sta.h	<_ax
 
 		lda	#>.BAT_SIZE		; Size of BAT in words.
-		sta	<__bl
+		sta	<_bl
 
 		call	clear_vram_vdc		; Clear VRAM.
 	.if	SUPPORT_SGX
@@ -371,11 +371,11 @@ init_512x224	.proc
 		call	clear_vce		; Clear all palettes.
 
 		lda.l	#.mode_512x224		; Disable BKG & SPR layers but
-		sta.l	<__si			; enable RCR & VBLANK IRQ.
+		sta.l	<_si			; enable RCR & VBLANK IRQ.
 		lda.h	#.mode_512x224
-		sta.h	<__si
+		sta.h	<_si
 		lda	#^.mode_512x224
-		sta	<__si_bank
+		sta	<_si_bank
 		call	set_mode_vdc
 	.if	SUPPORT_SGX
 		call	set_mode_sgx
@@ -384,12 +384,12 @@ init_512x224	.proc
 		call	wait_vsync		; Wait for the next VBLANK.
 
 		lda.l	#.CHR_0x20		; Tile # of ' ' CHR.
-		sta.l	<__ax
+		sta.l	<_ax
 		lda.h	#.CHR_0x20
-		sta.h	<__ax
+		sta.h	<_ax
 
 		lda	#>.BAT_SIZE		; Size of BAT in words.
-		sta	<__bl
+		sta	<_bl
 
 		call	clear_vram_vdc		; Clear VRAM.
 	.if	SUPPORT_SGX

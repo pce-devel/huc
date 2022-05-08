@@ -5,7 +5,7 @@
 ;
 ; The "CORE(not TM)" PC Engine library startup code that runs at boot/reset.
 ;
-; Copyright John Brandwood 2021.
+; Copyright John Brandwood 2021-2022.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -127,8 +127,8 @@ ted2_hw_reset:	sei				; Disable interrupts.
 		lda	#$F8
 		tam1
 
-		tii	.reboot_bank, __ax, 7	; Reboot with bank 1 in MPR7.
-		jmp	__ax
+		tii	.reboot_bank, _ax, 7	; Reboot with bank 1 in MPR7.
+		jmp	_ax
 .reboot_bank:	lda	#1			; Put bank 1 in MPR7.
 		tam7
 		jmp	[$FFFE]			; Call reset, just like boot.
@@ -242,11 +242,11 @@ core_boot:
 
 	.if	SUPPORT_2ISO
 		lda	tnomax			; Set the last track as the
-		sta	<__al			; backup area for reading
+		sta	<_al			; backup area for reading
 		lda	#$80			; CD data in case of disc
-		sta	<__bh			; errors.
+		sta	<_bh			; errors.
 		lda	#2
-		sta	<__cl
+		sta	<_cl
 		jsr	cd_base
 	.endif	SUPPORT_2ISO
 

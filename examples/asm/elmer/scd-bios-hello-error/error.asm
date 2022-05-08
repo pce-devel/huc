@@ -73,7 +73,7 @@ __trampolineptr	=	$5FFF			; put them right at the end.
 
 		; A few definitions for readability.
 
-__si_bank	=	__dh			; Alias for far-pointers.
+_si_bank	=	_dh			; Alias for far-pointers.
 
 CHR_SIZ		=	32			; Size in bytes.
 SPR_SIZ		=	128			; Size in bytes.
@@ -132,68 +132,68 @@ bios_main:	; Turn the display off and initialize the screen mode.
 		; Copy the BAT to VRAM (@$0000).
 
 		lda.l	#bkg_bat
-		sta.l	<__si
+		sta.l	<_si
 		lda.h	#bkg_bat
-		sta.h	<__si
+		sta.h	<_si
 		lda	#bank(bkg_bat)
-		sta	<__si_bank
-		stz.l	<__di
-		stz.h	<__di
+		sta	<_si_bank
+		stz.l	<_di
+		stz.h	<_di
 		lda.l	#32*28
-		sta.l	<__ax
+		sta.l	<_ax
 		lda.h	#32*28
-		sta.h	<__ax
+		sta.h	<_ax
 		jsr	load_vram
 
 		; Copy the CHR to VRAM (@$0800).
 
 		lda.l	#bkg_chr
-		sta.l	<__si
+		sta.l	<_si
 		lda.h	#bkg_chr
-		sta.h	<__si
+		sta.h	<_si
 		lda	#bank(bkg_chr)
-		sta	<__si_bank
-		stz.l	<__di
+		sta	<_si_bank
+		stz.l	<_di
 		lda.h	#$0800
-		sta.h	<__di
+		sta.h	<_di
 		lda.l	#32*28*(CHR_SIZ/2)
-		sta.l	<__ax
+		sta.l	<_ax
 		lda.h	#32*28*(CHR_SIZ/2)
-		sta.h	<__ax
+		sta.h	<_ax
 		jsr	load_vram
 
 		; Copy the SPR to VRAM (@$4000).
 
 		lda.l	#spr_spr
-		sta.l	<__si
+		sta.l	<_si
 		lda.h	#spr_spr
-		sta.h	<__si
+		sta.h	<_si
 		lda	#bank(spr_spr)
-		sta	<__si_bank
-		stz.l	<__di
+		sta	<_si_bank
+		stz.l	<_di
 		lda.h	#$4000
-		sta.h	<__di
+		sta.h	<_di
 		lda.l	#2*4*2*(SPR_SIZ/2)
-		sta.l	<__ax
+		sta.l	<_ax
 		lda.h	#2*4*2*(SPR_SIZ/2)
-		sta.h	<__ax
+		sta.h	<_ax
 		jsr	load_vram
 
 		; Copy the SAT to VRAM (@$7F00).
 
 		lda.l	#spr_sat
-		sta.l	<__si
+		sta.l	<_si
 		lda.h	#spr_sat
-		sta.h	<__si
+		sta.h	<_si
 		lda	#bank(spr_sat)
-		sta	<__si_bank
-		stz.l	<__di
+		sta	<_si_bank
+		stz.l	<_di
 		lda.h	#$7F00
-		sta.h	<__di
+		sta.h	<_di
 		lda.l	#2*8/2
-		sta.l	<__ax
+		sta.l	<_ax
 		lda.h	#2*8/2
-		sta.h	<__ax
+		sta.h	<_ax
 		jsr	load_vram
 
 		; Xfer the VRAM SATB to SAT next vblank.
@@ -243,10 +243,10 @@ clear_vram:	cla				; Set VDC or SGX destination
 ;
 ; load_vram - Copy far-data from memory to VRAM.
 ;
-; __si		= Source memory location
-; __si_bank	= Source bank
-; __di		= Destination VRAM address
-; __ax		= # of words to copy
+; _si		= Source memory location
+; _si_bank	= Source bank
+; _di		= Destination VRAM address
+; _ax		= # of words to copy
 ;
 
 load_vram:	tma3				; Preserve MPR3 & MPR4.
@@ -254,11 +254,11 @@ load_vram:	tma3				; Preserve MPR3 & MPR4.
 		tma4
 		pha
 
-		lda	<__si + 1		; Remap ptr to MPR3.
+		lda	<_si + 1		; Remap ptr to MPR3.
 		and	#$1F
 		ora	#$60
-		sta	<__si + 1
-		lda	<__si_bank		; Put bank into MPR3.
+		sta	<_si + 1
+		lda	<_si_bank		; Put bank into MPR3.
 		tam3
 		inc	a			; Put next bank into MPR4.
 		tam4
@@ -266,29 +266,29 @@ load_vram:	tma3				; Preserve MPR3 & MPR4.
 		lda	#VDC_MAWR		; Set VDC or SGX destination
 		stz	<vdc_reg		; address.
 		stz	VDC_AR
-		lda	<__di + 0
+		lda	<_di + 0
 		sta	VDC_DL
-		lda	<__di + 1
+		lda	<_di + 1
 		sta	VDC_DH
 		lda	#VDC_VWR		; Select the VWR data-write
 		sta	<vdc_reg		; register.
 		sta	VDC_AR
 
-		ldx.l	<__si
+		ldx.l	<_si
 		stx	.ram_tia + 1
-		ldy.h	<__si
+		ldy.h	<_si
 		sty	.ram_tia + 2
 		lda	#32
 		sta	.ram_tia + 5
 
-		lda	<__al			; length in chunks
-		lsr	<__ah
+		lda	<_al			; length in chunks
+		lsr	<_ah
 		ror	a
-		lsr	<__ah
+		lsr	<_ah
 		ror	a
-		lsr	<__ah
+		lsr	<_ah
 		ror	a
-		lsr	<__ah
+		lsr	<_ah
 		ror	a
 
 		sax				; x=chunks-lo
@@ -316,10 +316,10 @@ load_vram:	tma3				; Preserve MPR3 & MPR4.
 .same_page:	dex
 		bne	.copy_chunk
 
-.next_4kw:	dec	<__ah
+.next_4kw:	dec	<_ah
 		bpl	.copy_chunk
 
-		lda	<__al
+		lda	<_al
 		and	#15
 		beq	.done
 

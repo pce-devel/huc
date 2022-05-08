@@ -98,44 +98,44 @@ core_main:	; Turn the display off and initialize the screen mode.
 		; window at $3800. That's perfect for this example.
 
 		lda.l	#saz_vdc		; Address of VDC graphics.
-		sta.l	<__si
+		sta.l	<_si
 		lda.h	#saz_vdc
-		sta.h	<__si
+		sta.h	<_si
 		lda	#^saz_vdc
-		sta	<__si_bank
+		sta	<_si_bank
 
-		stz.l	<__di			; VDC destination address.
-		stz.h	<__di
+		stz.l	<_di			; VDC destination address.
+		stz.h	<_di
 
 		call	zx0_to_vdc		; Decompress the graphics.
 
 		; Decompress the color palette data.
 
 		lda.l	#saz_vce		; Address of font data.
-		sta.l	<__si
+		sta.l	<_si
 		lda.h	#saz_vce
-		sta.h	<__si
+		sta.h	<_si
 		lda	#^saz_vce
-		sta	<__si_bank
+		sta	<_si_bank
 
 		lda.l	#PALETTE_BUFFER		; Destination buffer for the
-		sta.l	<__di			; 256 colors.
+		sta.l	<_di			; 256 colors.
 		lda.h	#PALETTE_BUFFER
-		sta.h	<__di
+		sta.h	<_di
 
 		call	zx0_to_ram		; Decompress the palettes.
 
 		; Upload the palette data to the VCE.
 
 		lda.l	#PALETTE_BUFFER		; Set the ptr to the palette
-		sta.l	<__si			; data.
+		sta.l	<_si			; data.
 		lda.h	#PALETTE_BUFFER
-		sta.h	<__si
+		sta.h	<_si
 		lda	#^PALETTE_BUFFER
-		sta	<__si_bank
-		stz	<__al			; Start at palette 0 (BG).
+		sta	<_si_bank
+		stz	<_al			; Start at palette 0 (BG).
 		lda	#32			; Copy 32 palette of 16 colors.
-		sta	<__ah
+		sta	<_ah
 		call	load_palettes		; Add to the palette queue.
 
 		call	xfer_palettes		; Transfer queue to VCE now.
@@ -148,20 +148,20 @@ core_main:	; Turn the display off and initialize the screen mode.
 		call	wait_nvsync
 
 		lda.l	#$0834			; Upload hand position sprites
-		sta.l	<__di			; to the SATB in VRAM.
+		sta.l	<_di			; to the SATB in VRAM.
 		lda.h	#$0834
-		sta.h	<__di
-		jsr	__di_to_vdc
+		sta.h	<_di
+		jsr	set_di_to_vdc
 		tia	saz_satb0, VDC_DL, 32	; Frame 1 of 2.
 
 		ldy	#30			; Wait for 30 frames.
 		call	wait_nvsync
 
 		lda.l	#$0834			; Upload hand position sprites
-		sta.l	<__di			; to the SATB in VRAM.
+		sta.l	<_di			; to the SATB in VRAM.
 		lda.h	#$0834
-		sta.h	<__di
-		jsr	__di_to_vdc
+		sta.h	<_di
+		jsr	set_di_to_vdc
 		tia	saz_satb1, VDC_DL, 32	; Frame 2 of 2.
 
 		bra	.animate		; Wait for user to reboot.

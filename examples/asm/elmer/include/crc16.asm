@@ -37,23 +37,23 @@ init_crc16	.proc
 
 		clx				; X counts from 0 to 255
 .byte_loop:	cla				; Lo 8 bits of the CRC-16
-		stx	<__al			; Hi 8 bits of the CRC-16
+		stx	<_al			; Hi 8 bits of the CRC-16
 		ldy	#8			; Y counts bits in a byte
 
 .bit_loop:	asl	a
-		rol	<__al			; Shift CRC left
+		rol	<_al			; Shift CRC left
 		bcc	.no_add			; Do nothing if no overflow
 		eor	#$21			; else add CRC-16 polynomial $1021
 		pha				; Save low byte
-		lda	<__al			; Do high byte
+		lda	<_al			; Do high byte
 		eor	#$10
-		sta	<__al
+		sta	<_al
 		pla				; Restore low byte
 .no_add:	dey
 		bne	.bit_loop		; Do next bit
 
 		sta	crc16_tbl_lo, x		; Save CRC into table, low byte
-		lda	<__al			; then high byte
+		lda	<_al			; then high byte
 		sta	crc16_tbl_hi, x
 		inx
 		bne	.byte_loop		; Do next byte
@@ -80,37 +80,37 @@ calc_crc16	.proc
 
 		tma3				; Preserve MPR3.
 		pha
-		jsr	__si_to_mpr3		; Map memory block to MPR3.
+		jsr	set_si_to_mpr3		; Map memory block to MPR3.
 
 	.if	1
 		lda	#$FF			; For CCITT.
-		sta	<__cx + 0
-		sta	<__cx + 1
+		sta	<_cx + 0
+		sta	<_cx + 1
 	.else
-		stz	<__cx + 0		; For XMODEM.
-		stz	<__cx + 1
+		stz	<_cx + 0		; For XMODEM.
+		stz	<_cx + 1
 	.endif
 
-		ldy	<__ax + 0
+		ldy	<_ax + 0
 		beq	.byte_loop
-		inc	<__ax + 1
+		inc	<_ax + 1
 
-.byte_loop:	lda	[__si]
+.byte_loop:	lda	[_si]
 
-		eor	<__cx + 1		; Update CRC-16.
+		eor	<_cx + 1		; Update CRC-16.
 		tax
-		lda	<__cx + 1
+		lda	<_cx + 1
 		eor	crc16_tbl_hi, x
-		sta	<__cx + 1
+		sta	<_cx + 1
 		lda	crc16_tbl_lo, x
-		sta	<__cx + 0
+		sta	<_cx + 0
 
-		inc	<__si + 0
+		inc	<_si + 0
 		beq	.next_page
 
 .next_byte:	dey
 		bne	.byte_loop
-		dec	<__ax + 1
+		dec	<_ax + 1
 		bne	.byte_loop
 
 		pla				; Restore MPR3.
@@ -118,7 +118,7 @@ calc_crc16	.proc
 
 		leave
 
-.next_page:	jsr	__si_inc_mpr3
+.next_page:	jsr	inc.h_si_mpr3
 		bra	.next_byte
 
 		.endp

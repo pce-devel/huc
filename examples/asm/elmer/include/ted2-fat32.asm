@@ -27,12 +27,12 @@
 ;
 ; ONLY USE THESE PUBLIC INTERFACES ...
 ;
-; f32_find_name	  - Locate file/dir name in the current directory, sets __bp.
-; f32_1st_entry	  - Get 1st short entry in the current directory, sets __bp.
-; f32_nxt_entry	  - Get next short entry in the current directory, sets __bp.
-; f32_change_dir  - Change dir to one in directory entry ptr in __bp.
+; f32_find_name	  - Locate file/dir name in the current directory, sets _bp.
+; f32_1st_entry	  - Get 1st short entry in the current directory, sets _bp.
+; f32_nxt_entry	  - Get next short entry in the current directory, sets _bp.
+; f32_change_dir  - Change dir to one in directory entry ptr in _bp.
 ;
-; f32_open_file	  - Open the file in the directory entry ptr in __bp.
+; f32_open_file	  - Open the file in the directory entry ptr in _bp.
 ; f32_close_file  - Close the current file.
 ; f32_file_read	  - Load #sectors from the current file position.
 ; f32_file_write  - Save #sectors to the current file position.
@@ -573,7 +573,7 @@ f32_inc_sector: ldx	#$FC
 ;
 ; f32_nxt_cluster - Follow the FAT32 cluster chain to the next cluster.
 ;
-; Uses __bp = Pointer to the cluster number in the cached FAT.
+; Uses _bp = Pointer to the cluster number in the cached FAT.
 ;
 ; Returns: Y,Z-flag,N-flag = F32_OK or an error code.
 ;
@@ -584,11 +584,11 @@ f32_nxt_cluster:lda	f32_cur_cluster		; Ptr = (cluster * 4) % 512
 		tax
 		asl	a
 		asl	a
-		sta	<__bp + 0
+		sta	<_bp + 0
 		cla
 		rol	a
 		adc	#>f32_cache_buf
-		sta	<__bp + 1
+		sta	<_bp + 1
 
 		txa				; Sec = (cluster * 4) / 512
 		asl	a			;     = (cluster * 2) / 256
@@ -622,22 +622,22 @@ f32_nxt_cluster:lda	f32_cur_cluster		; Ptr = (cluster * 4) % 512
 ;
 ; Args: None!
 ;
-; f32_change_dir  - Change dir to one in directory entry ptr in __bp.
+; f32_change_dir  - Change dir to one in directory entry ptr in _bp.
 ;
-; Args: __bp = Pointer to a directory entry (usually within f32_cache_buf).
+; Args: _bp = Pointer to a directory entry (usually within f32_cache_buf).
 ;
 ; Returns: Y,Z-flag,N-flag = F32_OK or an error code.
 ;
 
 f32_change_dir	.proc
 
-		lda	[__bp]			; End of directory?
+		lda	[_bp]			; End of directory?
 		beq	.not_directory
 		cmp	#$E5			; Empty entry?
 		beq	.not_directory
 
 		ldy	#DIR_Attr		; Is this a directory?
-		lda	[__bp], y
+		lda	[_bp], y
 		and	#ATTR_Type_Mask
 		cmp	#ATTR_Directory
 		beq	.got_directory
@@ -674,9 +674,9 @@ f32_select_root .proc
 ;
 ; f32_rewind_dir  - Goto the 1st cluster of the current directory.
 ; f32_rewind_file - Goto the 1st cluster of the current file.
-; f32_use_cluster - Calc a sector addr (from ptr to cluster # in __bp).
+; f32_use_cluster - Calc a sector addr (from ptr to cluster # in _bp).
 ;
-; Uses __bp = Pointer to variable holding the cluster number.
+; Uses _bp = Pointer to variable holding the cluster number.
 ;
 ; Returns: Y,Z-flag,N-flag = F32_OK or an error code.
 ;
@@ -688,23 +688,23 @@ f32_rewind_dir: lda	#$FF			; Signal no long name.
 		stz	f32_name_length		; Reset the long name length.
 
 		lda	#<f32_dir_cluster	; Goto 1st cluster in the
-		sta	<__bp + 0		; current directory.
+		sta	<_bp + 0		; current directory.
 		lda	#>f32_dir_cluster
-		sta	<__bp + 1
+		sta	<_bp + 1
 		bra	f32_use_cluster
 
 		;
 
 f32_rewind_file:lda	#<f32_fil_cluster	; Goto 1st cluster in the
-		sta	<__bp + 0		; current file.
+		sta	<_bp + 0		; current file.
 		lda	#>f32_fil_cluster
-		sta	<__bp + 1
+		sta	<_bp + 1
 ;		bra	f32_use_cluster
 
 		;
 
 f32_use_cluster:ldy	#3			; Copy the cluster # from the
-.copy:		lda	[__bp], y		; pointer in __bp.
+.copy:		lda	[_bp], y		; pointer in _bp.
 		and	f32_cluster_msk, y
 		sta	f32_cur_cluster, y
 		sta	f32_sector_num, y
@@ -770,20 +770,20 @@ f32_use_cluster:ldy	#3			; Copy the cluster # from the
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; f32_set_cluster - Set the cluster from the directory entry ptr in __bp.
+; f32_set_cluster - Set the cluster from the directory entry ptr in _bp.
 ;
-; Uses __bp = Pointer to directory entry in cache.
+; Uses _bp = Pointer to directory entry in cache.
 ;
 ; N.B. FOR INTERNAL USE ONLY, THIS IS NOT A PUBLIC FUNCTION!
 ;
 
 f32_set_cluster:clx				; Copy the cluster # from the
-		ldy	#DIR_FstClusLO		; directory entry in __bp.
-.copy_word:	lda	[__bp], y
+		ldy	#DIR_FstClusLO		; directory entry in _bp.
+.copy_word:	lda	[_bp], y
 		sta	f32_cur_cluster, x
 		inx
 		iny
-		lda	[__bp], y
+		lda	[_bp], y
 		sta	f32_cur_cluster, x
 		inx
 		ldy	#DIR_FstClusHI
@@ -796,15 +796,15 @@ f32_set_cluster:clx				; Copy the cluster # from the
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; f32_1st_entry - Get the 1st short entry in the current directory in __bp.
-; f32_nxt_entry - Get the next short entry in the current directory in __bp.
+; f32_1st_entry - Get the 1st short entry in the current directory in _bp.
+; f32_nxt_entry - Get the next short entry in the current directory in _bp.
 ;
 ; N.B. This includes unused ($E5) and end-of-directory ($00) entries.
 ;
-; Uses: __bp = Pointer to directory entry within f32_cache_buf.
-; Uses: __temp = Temporary variable (trashed).
+; Uses: _bp = Pointer to directory entry within f32_cache_buf.
+; Uses: _temp = Temporary variable (trashed).
 ;
-; Returns: __bp, Y,Z-flag,N-flag = F32_OK or an error code
+; Returns: _bp, Y,Z-flag,N-flag = F32_OK or an error code
 ;
 
 f32_1st_entry	.proc
@@ -819,12 +819,12 @@ f32_1st_entry	.proc
 f32_nxt_entry	.proc
 
 !nxt_entry:	clc				; Inc directory pointer.
-		lda.l	<__bp
+		lda.l	<_bp
 		adc	#32
-		sta.l	<__bp
-		lda.h	<__bp
+		sta.l	<_bp
+		lda.h	<_bp
 		adc	#0
-		sta.h	<__bp
+		sta.h	<_bp
 
 		cmp	#>(f32_cache_buf + 512) ; Any entries left in cache?
 		bne	!tst_entry+
@@ -848,19 +848,19 @@ f32_nxt_entry	.proc
 
 .error:		leave				; Return the error code.
 
-.loaded:	stz.l	<__bp			; Reset directory pointer.
+.loaded:	stz.l	<_bp			; Reset directory pointer.
 		lda	#>f32_cache_buf
-		sta.h	<__bp
+		sta.h	<_bp
 
 		; Test the current directory entry.
 
-!tst_entry:	lda	[__bp]			; End of Directory?
+!tst_entry:	lda	[_bp]			; End of Directory?
 		beq	.no_long
 		cmp	#$E5			; Empty entry?
 		beq	.no_long
 
 		ldy	#DIR_Attr		; Part of a long name?
-		lda	[__bp], y
+		lda	[_bp], y
 		and	#ATTR_Long_Mask
 		cmp	#ATTR_Long_Name
 		beq	.long_name
@@ -878,7 +878,7 @@ f32_nxt_entry	.proc
 .calc_csum:	lsr	a
 		bcc	.skip_set_hi
 		adc	#$7F
-.skip_set_hi:	adc	[__bp], y
+.skip_set_hi:	adc	[_bp], y
 		iny
 		cpy	#11
 		bne	.calc_csum
@@ -891,12 +891,12 @@ f32_nxt_entry	.proc
 
 		clx
 .copy_name:	cly				; Copy the short name.
-		lda	[__bp], y
+		lda	[_bp], y
 		cmp	#$05			; SJIS??? Really???
 		bne	.name_loop
 		lda	#$E5			; Repair leading SJIS.
 		bra	.sjis_name
-.name_loop:	lda	[__bp], y
+.name_loop:	lda	[_bp], y
 		cmp	#$20
 		beq	.copy_extn
 .sjis_name:	sta	f32_long_name, x
@@ -906,13 +906,13 @@ f32_nxt_entry	.proc
 		bne	.name_loop
 
 .copy_extn:	ldy	#8			; Copy the short extn.
-		lda	[__bp], y
+		lda	[_bp], y
 		cmp	#$20
 		beq	.copy_done
 		lda	#'.'
 		sta	f32_long_name, x
 		inx
-.extn_loop:	lda	[__bp], y
+.extn_loop:	lda	[_bp], y
 		cmp	#$20
 		beq	.copy_done
 		sta	f32_long_name, x
@@ -942,7 +942,7 @@ f32_nxt_entry	.proc
 		; Got a long-name entry (with 13 UTF16 glyphs).
 		;
 
-.long_name:	lda	[__bp]			; Get the ORD#.
+.long_name:	lda	[_bp]			; Get the ORD#.
 		tax
 		ldy	#LDIR_Chksum
 
@@ -951,10 +951,10 @@ f32_nxt_entry	.proc
 
 .new_long_name: and	#FLAG_Last_Ord - 1	; Save which ORD# is next.
 		sta	f32_long_next
-		lda	[__bp], y		; Save short name checksum.
+		lda	[_bp], y		; Save short name checksum.
 		sta	f32_long_csum
 
-.nxt_long_part: lda	[__bp], y		; Is the checksum consistent?
+.nxt_long_part: lda	[_bp], y		; Is the checksum consistent?
 		cmp	f32_long_csum
 		bne	.bad_entry
 
@@ -991,7 +991,7 @@ f32_nxt_entry	.proc
 
 		bsr	.got_part		; N.B. Does not return!
 
-.got_part:	lda	[__bp]			; Is this the last part of the
+.got_part:	lda	[_bp]			; Is this the last part of the
 		bit	#FLAG_Last_Ord		; long filename?
 		beq	.next_part
 
@@ -1006,12 +1006,12 @@ f32_nxt_entry	.proc
 		pla
 		jmp	!nxt_entry-		; Get the next part of it!
 
-.copy_utf16:	sta	<__temp			; Copy UTF16 glyphs to the
-.copy_loop:	lda	[__bp], y		; long name buffer.
+.copy_utf16:	sta	<_temp			; Copy UTF16 glyphs to the
+.copy_loop:	lda	[_bp], y		; long name buffer.
 		sta	f32_long_name, x
 		iny
 		asl	a
-		lda	[__bp], y		; Get UTF16 hi-byte.
+		lda	[_bp], y		; Get UTF16 hi-byte.
 		bne	.replace_utf16		; Reject UTF16 $0100..$FFFF.
 
 	.if	1				; Remove for CP1252 accents.
@@ -1023,7 +1023,7 @@ f32_nxt_entry	.proc
 .copy_next:	iny
 		inx
 		beq	.too_long		; Is name > than 255 glyphs?
-		cpy	<__temp
+		cpy	<_temp
 		bne	.copy_loop
 		rts
 
@@ -1040,11 +1040,11 @@ f32_nxt_entry	.proc
 ;
 ; f32_find_name - Locate a specifc named entry in the current directory.
 ;
-; Args: __si, __si_bank = _farptr to filename string to map into MPR3.
+; Args: _si, _si_bank = _farptr to filename string to map into MPR3.
 ;
 ; N.B. This filename string MUST NOT cross a bank boundary!
 ;
-; Sets: __bp = Pointer to directory entry within f32_cache_buf.
+; Sets: _bp = Pointer to directory entry within f32_cache_buf.
 ;
 ; Returns: Y,Z-flag,N-flag = F32_OK or an error code.
 ;
@@ -1068,7 +1068,7 @@ f32_find_name	.proc
 		tma3				; Preserve MPR3.
 		pha
 
-		jsr	__si_to_mpr3		; Map filename to MPR3.
+		jsr	set_si_to_mpr3		; Map filename to MPR3.
 
 		call	f32_1st_entry		; Start at the top of the dir.
 		bra	.test_name
@@ -1077,7 +1077,7 @@ f32_find_name	.proc
 
 .test_name:	bmi	.finished		; Was there an error?
 
-		lda	[__bp]			; Is this the end of the directory?
+		lda	[_bp]			; Is this the end of the directory?
 		beq	.not_found
 		cmp	#$E5			; Is this an empty entry?
 		beq	.next_name
@@ -1088,7 +1088,7 @@ f32_find_name	.proc
 .chr_loop:	iny				; Assume same if > 256 chrs.
 		beq	.str_same
 
-.chr_test:	lda	[__si], y		; End of name?
+.chr_test:	lda	[_si], y		; End of name?
 		beq	.chr_last
 		bmi	.next_name		; Fail if UTF16 $80..$FF glyph.
 
@@ -1161,28 +1161,28 @@ f32_find_name	.proc
 f32_map_file:	jsr	f32_rewind_file		; Start at the beginning.
 		bne	.failed
 
-		stz	<__di + 0		; Page-aligned map.
+		stz	<_di + 0		; Page-aligned map.
 		lda	#>f32_file_map
-		sta	<__di + 1
+		sta	<_di + 1
 
 .copy_cluster:	cly				; Save f32_sector_num and
 .copy_byte:	lda	f32_cur_cluster, y	; remember f32_cur_cluster.
-		sta	__ax, y
+		sta	_ax, y
 		lda	f32_sector_num, y
-		sta	[__di], y
+		sta	[_di], y
 		iny
 		cpy	#4
 		bne	.copy_byte
 
 		lda	f32_sec2cls_cnt		; Initialize fragment length.
-		sta	[__di], y
+		sta	[_di], y
 		iny
 		cla
-		sta	[__di], y
+		sta	[_di], y
 		iny
-		sta	[__di], y
+		sta	[_di], y
 		iny
-		sta	[__di], y
+		sta	[_di], y
 
 .next_cluster:	jsr	f32_nxt_cluster		; Find the next cluster in the
 		beq	.sub_long		; file.
@@ -1191,13 +1191,13 @@ f32_map_file:	jsr	f32_rewind_file		; Start at the beginning.
 		bne	.failed
 
 		clc				; Mark the end of the file map.
-		lda	<__di + 0
+		lda	<_di + 0
 		adc	#8
-		sta	<__di + 0
+		sta	<_di + 0
 		beq	.too_fragged
 		ldy	#7
 		cla
-.end_of_map:	sta	[__di], y
+.end_of_map:	sta	[_di], y
 		dey
 		bpl	.end_of_map
 
@@ -1210,33 +1210,33 @@ f32_map_file:	jsr	f32_rewind_file		; Start at the beginning.
 		sec				; cluster numbers.
 .sub_byte:	lda	f32_cur_cluster -$FC, x
 		tay
-		sbc	<(__ax -$FC) & 255, x
-		sta	<(__cx -$FC) & 255, x
-		sty	<(__ax -$FC) & 255, x
+		sbc	<(_ax -$FC) & 255, x
+		sta	<(_cx -$FC) & 255, x
+		sty	<(_ax -$FC) & 255, x
 		inx
 		bne	.sub_byte
 
-		lda	<__cx + 0		; Do they differ by 1?
+		lda	<_cx + 0		; Do they differ by 1?
 		dec	a
-		ora	<__cx + 1
-		ora	<__cx + 2
-		ora	<__cx + 3
+		ora	<_cx + 1
+		ora	<_cx + 2
+		ora	<_cx + 3
 		bne	.next_frag
 
 .same_frag:	lda	f32_sec2cls_cnt		; Increment the length of the
 		clc				; fragment.
 		ldy	#4
-.add_loop:	adc	[__di], y
-		sta	[__di], y
+.add_loop:	adc	[_di], y
+		sta	[_di], y
 		bne	.next_cluster
 		iny
 		cla
 		bra	.add_loop
 
 .next_frag:	clc				; Start a new fragment.
-		lda	<__di + 0
+		lda	<_di + 0
 		adc	#8
-		sta	<__di + 0
+		sta	<_di + 0
 		bne	.copy_cluster
 
 .too_fragged:	ldy	#F32_ERR_FRAGGED	; Too many fragments!
@@ -1247,9 +1247,9 @@ f32_map_file:	jsr	f32_rewind_file		; Start at the beginning.
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; f32_open_file - Open the file in the directory entry ptr in __bp.
+; f32_open_file - Open the file in the directory entry ptr in _bp.
 ;
-; Args: __bp = Pointer to a directory entry (usually within f32_cache_buf).
+; Args: _bp = Pointer to a directory entry (usually within f32_cache_buf).
 ;
 ; Returns: Y,Z-flag,N-flag = F32_OK or an error code.
 ;
@@ -1266,13 +1266,13 @@ f32_open_file	.proc
 		lda	f32_file_mutex		; be open at once.
 		bne	!finished+
 
-		lda	[__bp]			; End of directory?
+		lda	[_bp]			; End of directory?
 		beq	.not_file
 		cmp	#$E5			; Empty entry?
 		beq	.not_file
 
 		ldy	#DIR_Attr		; Is this a file?
-		lda	[__bp], y
+		lda	[_bp], y
 		and	#ATTR_Type_Mask
 		beq	.got_file
 
@@ -1281,7 +1281,7 @@ f32_open_file	.proc
 
 .got_file:	ldy	#DIR_FileSize		; Save the file length.
 		ldx	#$FC
-.copy_length:	lda	[__bp], y
+.copy_length:	lda	[_bp], y
 		iny
 		sta	f32_file_length -$FC, x
 		inx
@@ -1298,10 +1298,10 @@ f32_open_file	.proc
 
 		dec	f32_file_mutex		; Signal that a file is open.
 
-		stz	<__ax + 0		; Seek to the beginning
-		stz	<__ax + 1		; of the file.
-		stz	<__ax + 2
-		stz	<__ax + 3
+		stz	<_ax + 0		; Seek to the beginning
+		stz	<_ax + 1		; of the file.
+		stz	<_ax + 2
+		stz	<_ax + 3
 		jsr	f32_seek_set
 
 !finished:	leave				; Return the result.
@@ -1335,8 +1335,8 @@ f32_close_file	.proc
 ; f32_seek_set - Seek a # of sectors from the beginning of the file.
 ; f32_seek_cur - Seek a # of sectors forwards from the current file position.
 ;
-; Args: __ax = lo-word of unsigned 32-bit # of 512-byte sectors to seek.
-; Args: __bx = hi-word of unsigned 32-bit # of 512-byte sectors to seek.
+; Args: _ax = lo-word of unsigned 32-bit # of 512-byte sectors to seek.
+; Args: _bx = hi-word of unsigned 32-bit # of 512-byte sectors to seek.
 ;
 ; Uses: f32_file_map = Data buffer containing the file map.
 ; Uses: f32_file_pos = Current fragment within the file map.
@@ -1367,7 +1367,7 @@ f32_seek_cur	.proc
 
 		ldx	#$FC			; seek_nxt = seek_len - frag_len
 		sec
-.test_size:	lda	<((__ax -$FC) & 255), x
+.test_size:	lda	<((_ax -$FC) & 255), x
 		sbc	f32_file_pos + 4 -$FC, x
 		pha
 		inx
@@ -1377,13 +1377,13 @@ f32_seek_cur	.proc
 		; frag_len <= seek_len
 
 .next_frag:	pla				; seek_len = seek_nxt
-		sta	<__ax + 3
+		sta	<_ax + 3
 		pla
-		sta	<__ax + 2
+		sta	<_ax + 2
 		pla
-		sta	<__ax + 1
+		sta	<_ax + 1
 		pla
-		sta	<__ax + 0
+		sta	<_ax + 0
 
 		bsr	f32_next_frag		; Move forward to next fragment.
 		bra	f32_seek_cur		; Try again.
@@ -1398,7 +1398,7 @@ f32_seek_cur	.proc
 		ldx	#$FC			; frag_1st += seek_len
 		clc
 .frag_1st:	lda	f32_file_pos + 0 -$FC, x
-		adc	<((__ax -$FC) & 255), x
+		adc	<((_ax -$FC) & 255), x
 		sta	f32_file_pos + 0 -$FC, x
 		inx
 		bne	.frag_1st
@@ -1406,8 +1406,8 @@ f32_seek_cur	.proc
 		ldx	#$FC			; frag_len -= seek_len
 		sec
 .frag_len:	lda	f32_file_pos + 4 -$FC, x
-		sbc	<((__ax -$FC) & 255), x
-		stz	<((__ax -$FC) & 255), x
+		sbc	<((_ax -$FC) & 255), x
+		stz	<((_ax -$FC) & 255), x
 		sta	f32_file_pos + 4 -$FC, x
 		inx
 		bne	.frag_len
@@ -1453,8 +1453,8 @@ f32_next_frag:	tii	f32_file_map, f32_file_pos, 8
 ;
 ; N.B. Self-modifying code!
 ;
-; Args: __ax = unsigned 16-bit # of 512-byte sectors to read/write.
-; Args: __bx = address to transfer data
+; Args: _ax = unsigned 16-bit # of 512-byte sectors to read/write.
+; Args: _bx = address to transfer data
 ;
 ; Uses: f32_file_map = Data buffer containing the file map.
 ; Uses: f32_file_pos = Current fragment within the file map.
@@ -1463,10 +1463,10 @@ f32_next_frag:	tii	f32_file_map, f32_file_pos, 8
 ;
 ; Notes:
 ;
-;   The __bx address MUST be in MPR3, and also be 512-byte aligned in order
-;   for the auto-incrementing bank capability to work.
+;   The _bx address MUST be in MPR3, and also be 512-byte aligned, if you
+;   want to use the routine's auto-incrementing bank capability!
 ;
-;   When __bx increments to >= $8000, the next PCE bank is mapped into MPR3,
+;   When _bx increments to >= $8000, the next PCE bank is mapped into MPR3,
 ;   and reading/writing continues.
 ;
 
@@ -1495,7 +1495,7 @@ f32_file_write	.proc
 !:		lda	f32_file_mutex		; Is there a file open?
 		beq	.at_eof
 
-		tii	__bx, sdc_data_addr, 2	; Save the transfer address.
+		tii	_bx, sdc_data_addr, 2	; Save the transfer address.
 
 .xfer_more:	lda	f32_file_pos + 0	; Are we already at the EOF?
 		ora	f32_file_pos + 1
@@ -1503,14 +1503,14 @@ f32_file_write	.proc
 		ora	f32_file_pos + 3
 		beq	.at_eof
 
-		stz	<__ax + 2		; Expand to a 32-bit value
-		stz	<__ax + 3		; to keep the math clean.
+		stz	<_ax + 2		; Expand to a 32-bit value
+		stz	<_ax + 3		; to keep the math clean.
 
 		ldx	#$FC	        	; Copy fragment's block #.
 		clc
 .copy_block_num:lda	f32_file_pos + 0 -$FC, x
 		sta	sdc_block_num -$FC, x
-		adc	<((__ax -$FC) & 255), x ; Add # of blocks to transfer.
+		adc	<((_ax -$FC) & 255), x ; Add # of blocks to transfer.
 		sta	f32_file_pos + 0 -$FC, x; Next block in fragment.
 		inx
 		bne	.copy_block_num
@@ -1519,16 +1519,16 @@ f32_file_write	.proc
 		sec
 .copy_block_cnt:lda	f32_file_pos + 4 -$FC, x
 		sta	sdc_block_cnt -$FC, x
-		sbc	<((__ax -$FC) & 255), x ; Sub # of blocks to transfer.
+		sbc	<((_ax -$FC) & 255), x ; Sub # of blocks to transfer.
 		sta	f32_file_pos + 4 -$FC, x; Next count in fragment.
 		inx
 		bne	.copy_block_cnt
 
 		ldx	#$FC			; Subtract fragment size from
 		sec				; xfer count.
-.block_cnt_left:lda	<((__ax -$FC) & 255), x
+.block_cnt_left:lda	<((_ax -$FC) & 255), x
 		sbc	sdc_block_cnt -$FC, x
-		sta	<((__ax -$FC) & 255), x
+		sta	<((_ax -$FC) & 255), x
 		inx
 		bne	.block_cnt_left
 		bcc	.last_xfer		; Fragment size > xfer size?
@@ -1539,17 +1539,17 @@ f32_file_write	.proc
 .last_xfer:	ldx	#$FC			; Just xfer the remaining tail
 		clc				; of the xfer size.
 .copy_last_cnt: lda	sdc_block_cnt -$FC, x
-		adc	<((__ax -$FC) & 255), x
+		adc	<((_ax -$FC) & 255), x
 		sta	sdc_block_cnt -$FC, x
-		stz	<((__ax -$FC) & 255), x
+		stz	<((_ax -$FC) & 255), x
 		inx
 		bne	.copy_last_cnt
 
 !xfer_call:	call	.finished		; Xfer fragment (self-modifying).
 		bne	.finished
 
-		lda	<__ax + 0		; Transfer complete?
-		ora	<__ax + 1
+		lda	<_ax + 0		; Transfer complete?
+		ora	<_ax + 1
 		bne	.xfer_more
 
 ;		txa				; Set the N & Z return flags.

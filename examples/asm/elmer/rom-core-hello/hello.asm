@@ -84,22 +84,22 @@ core_main:	; Turn the display off and initialize the screen mode.
 		; Upload the font to VRAM.
 
 		lda	#<my_font		; Address of font data.
-		sta	<__si + 0
+		sta	<_si + 0
 		lda	#>my_font
-		sta	<__si + 1
+		sta	<_si + 1
 		lda	#^my_font
-		sta	<__si_bank
+		sta	<_si_bank
 
-		stz	<__di + 0		; Destination VRAM address.
+		stz	<_di + 0		; Destination VRAM address.
 		lda	#>(CHR_0x10 * 16)
-		sta	<__di + 1
+		sta	<_di + 1
 
 		lda	#$FF			; Put font in colors 4-7,
-		sta	<__al			; so bitplane 2 = $FF and
-		stz	<__ah			; bitplane 3 = $00.
+		sta	<_al			; so bitplane 2 = $FF and
+		stz	<_ah			; bitplane 3 = $00.
 
 		lda	#16 + 96		; 16 graphics + 96 ASCII.
-		sta	<__bl
+		sta	<_bl
 
 		call	dropfnt8x8_vdc		; Upload font to VRAM.
 
@@ -110,25 +110,25 @@ core_main:	; Turn the display off and initialize the screen mode.
 		; This method shows writing directly to the VCE.
 
 		lda	#<cpc464_colors		; Set the ptr to the palette
-		sta	<__si + 0		; data.
+		sta	<_si + 0		; data.
 		lda	#>cpc464_colors
-		sta	<__si + 1
+		sta	<_si + 1
 		lda	#^cpc464_colors
-		sta	<__si_bank
-		jsr	__si_to_mpr3		; Map data to MPR3 & MPR4.
+		sta	<_si_bank
+		jsr	set_si_to_mpr3		; Map data to MPR3 & MPR4.
 
 		stz	VCE_CTA + 0		; Set VCE write address.
 		stz	VCE_CTA + 1
 
 		ldy	#16
-.color_loop:	lda	[__si]
+.color_loop:	lda	[_si]
 		sta	VCE_CTW + 0		; Set lo-byte of color.
-		inc	<__si + 0
-		lda	[__si]
+		inc	<_si + 0
+		lda	[_si]
 		sta	VCE_CTW + 1		; Set hi-byte of color.
-		inc	<__si + 0
+		inc	<_si + 0
 		bne	.color_page
-		jsr	__si_inc_mpr3
+		jsr	inc.h_si_mpr3
 .color_page:	dey
 
 		bne	.color_loop
@@ -140,14 +140,14 @@ core_main:	; Turn the display off and initialize the screen mode.
 		; This method does the same thing using library functions.
 
 		lda	#<cpc464_colors		; Set the ptr to the palette
-		sta	<__si + 0		; data.
+		sta	<_si + 0		; data.
 		lda	#>cpc464_colors
-		sta	<__si + 1
+		sta	<_si + 1
 		lda	#^cpc464_colors
-		sta	<__si_bank
-		stz	<__al			; Start at palette 0 (BG).
+		sta	<_si_bank
+		stz	<_al			; Start at palette 0 (BG).
 		lda	#1			; Copy 1 palette of 16 colors.
-		sta	<__ah
+		sta	<_ah
 		call	load_palettes		; Add to the palette queue.
 
 		call	xfer_palettes		; Transfer queue to VCE now.
@@ -157,10 +157,10 @@ core_main:	; Turn the display off and initialize the screen mode.
 		; Display the classic "hello, world" on the screen.
 
 		lda	#<(13*64 + 10)		; Destination VRAM address.
-		sta	<__di + 0
+		sta	<_di + 0
 		lda	#>(13*64 + 10)
-		sta	<__di + 1
-		call	__di_to_vdc
+		sta	<_di + 1
+		call	set_di_to_vdc
 
 		cly				; Display the message.
 		bsr	.print_message

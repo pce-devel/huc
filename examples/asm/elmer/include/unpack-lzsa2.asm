@@ -43,7 +43,7 @@ LZSA2_GET_SRC	.macro
 		lda	[lzsa_srcptr]
 		inc	<lzsa_srcptr + 0
 		bne	.skip\@
-		jsr	__si_inc_mpr3
+		jsr	inc.h_si_mpr3
 .skip\@:
 		.endm
 	.endif	LZSA2_SMALL
@@ -56,14 +56,14 @@ LZSA2_GET_SRC	.macro
 ; Data usage is 11 bytes of zero-page.
 ;
 
-lzsa2_srcptr	=	__si			; 1 word.
-lzsa2_dstptr	=	__di			; 1 word.
+lzsa2_srcptr	=	_si			; 1 word.
+lzsa2_dstptr	=	_di			; 1 word.
 
-lzsa2_offset	=	__ax			; 1 word.
-lzsa2_winptr	=	__bx			; 1 word.
-lzsa2_cmdbuf	=	__cl			; 1 byte.
-lzsa2_nibflg	=	__ch			; 1 byte.
-lzsa2_nibble	=	__dl			; 1 byte.
+lzsa2_offset	=	_ax			; 1 word.
+lzsa2_winptr	=	_bx			; 1 word.
+lzsa2_cmdbuf	=	_cl			; 1 byte.
+lzsa2_nibflg	=	_ch			; 1 byte.
+lzsa2_nibble	=	_dl			; 1 byte.
 
 
 
@@ -72,10 +72,10 @@ lzsa2_nibble	=	__dl			; 1 byte.
 ;
 ; lzsa2_to_ram - Decompress data stored in Emmanuel Marty's LZSA2 format.
 ;
-; Args: __si, __si_bank = _farptr to compressed data in MPR3.
-; Args: __di = ptr to output address in RAM.
+; Args: _si, _si_bank = _farptr to compressed data in MPR3.
+; Args: _di = ptr to output address in RAM.
 ;
-; Uses: __si, __di, __ax, __bx, __cx, __dl !
+; Uses: _si, _di, _ax, _bx, _cx, _dl !
 ;
 
 lzsa2_to_ram	.proc
@@ -83,7 +83,7 @@ lzsa2_to_ram	.proc
 		tma3				; Preserve MPR3.
 		pha
 
-		jsr	__si_to_mpr3		; Map lzsa2_srcptr to MPR3.
+		jsr	set_si_to_mpr3		; Map lzsa2_srcptr to MPR3.
 
 		clx				; Hi-byte of length or offset.
 		cly				; Initialize source index.
@@ -268,7 +268,7 @@ lzsa2_to_ram	.proc
 		beq	.next_page
 .got_byte:	rts
 
-.next_page:	jmp	__si_inc_mpr3		; Inc & test for bank overflow.
+.next_page:	jmp	inc.h_si_mpr3		; Inc & test for bank overflow.
 
 .finished:	pla				; Decompression completed, pop
 		pla				; return address.

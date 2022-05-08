@@ -405,20 +405,20 @@ call_bios:	sty	.self_mod_func + 1	; Which System Card function?
 get_file_info:	sec				; Calculate file length.
 		lda	iso_dirlo + 1, x
 		sbc	iso_dirlo + 0, x
-		sta	<__al
+		sta	<_al
 		lda	iso_dirhi + 1, x
 		sbc	iso_dirhi + 0, x
-		sta	<__ah
+		sta	<_ah
 
 		cla				; Set file start location.
 		cpx	iso_128mb
 		bcc	.set_rec_h
 		inc	a
-.set_rec_h:	sta	<__cl
+.set_rec_h:	sta	<_cl
 		lda	iso_dirhi + 0, x
-		sta	<__ch
+		sta	<_ch
 		lda	iso_dirlo + 0, x
-		sta	<__dl
+		sta	<_dl
 
 		rts
 
@@ -461,8 +461,8 @@ exec_overlay:	phx				; Preserve file number.
 		jsr	get_file_info		; Set CD-ROM sector & length.
 
 		lda	<core_1stbank		; Set first bank to load.
-		sta	<__bl
-		stz	<__bh
+		sta	<_bl
+		stz	<_bh
 
 		tam2				; Reset bank mapping back to
 		inc	a                       ; its "CORE(not TM)" default.
@@ -475,7 +475,7 @@ exec_overlay:	phx				; Preserve file number.
 		tam6
 
 		lda	#6			; Use MPR6 for loading.
-		sta	<__dh
+		sta	<_dh
 
 		jsr	cd_read			; Load the file from CD.
 

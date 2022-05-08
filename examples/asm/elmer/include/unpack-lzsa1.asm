@@ -43,7 +43,7 @@ LZSA1_GET_SRC	.macro
 		lda	[lzsa_srcptr]
 		inc	<lzsa_srcptr + 0
 		bne	.skip\@
-		jsr	__si_inc_mpr3
+		jsr	inc.h_si_mpr3
 .skip\@:
 		.endm
 	.endif	LZSA1_SMALL
@@ -56,11 +56,11 @@ LZSA1_GET_SRC	.macro
 ; Data usage is 7 bytes of zero-page.
 ;
 
-lzsa1_srcptr	=	__si			; 1 word.
-lzsa1_dstptr	=	__di			; 1 word.
+lzsa1_srcptr	=	_si			; 1 word.
+lzsa1_dstptr	=	_di			; 1 word.
 
-lzsa1_winptr	=	__ax			; 1 word.
-lzsa1_cmdbuf	=	__bl			; 1 byte.
+lzsa1_winptr	=	_ax			; 1 word.
+lzsa1_cmdbuf	=	_bl			; 1 byte.
 
 lzsa1_offset	=	lzsa1_winptr
 
@@ -71,10 +71,10 @@ lzsa1_offset	=	lzsa1_winptr
 ;
 ; lzsa1_to_ram - Decompress data stored in Emmanuel Marty's LZSA1 format.
 ;
-; Args: __si, __si_bank = _farptr to compressed data in MPR3.
-; Args: __di = ptr to output address in RAM.
+; Args: _si, _si_bank = _farptr to compressed data in MPR3.
+; Args: _di = ptr to output address in RAM.
 ;
-; Uses: __si, __di, __ax, __bl !
+; Uses: _si, _di, _ax, _bl !
 ;
 
 lzsa1_to_ram	.proc
@@ -82,7 +82,7 @@ lzsa1_to_ram	.proc
 		tma3				; Preserve MPR3.
 		pha
 
-		jsr	__si_to_mpr3		; Map lzsa1_srcptr to MPR3.
+		jsr	set_si_to_mpr3		; Map lzsa1_srcptr to MPR3.
 
 		clx				; Initialize hi-byte of length.
 		cly				; Initialize source index.
@@ -116,7 +116,7 @@ lzsa1_to_ram	.proc
 
 		inc	<lzsa1_srcptr + 0
 		bne	.cp_skip1
-		jsr	__si_inc_mpr3
+		jsr	inc.h_si_mpr3
 
 .cp_skip1:	inc	<lzsa1_dstptr + 0
 		bne	.cp_skip2
@@ -197,7 +197,7 @@ lzsa1_to_ram	.proc
 .lz_offset:	lda	[lzsa1_srcptr]		; Get offset-lo.
 		inc	<lzsa1_srcptr + 0
 		bne	.offset_lo
-		jsr	__si_inc_mpr3
+		jsr	inc.h_si_mpr3
 
 .offset_lo:	sta	<lzsa1_offset + 0
 
@@ -208,7 +208,7 @@ lzsa1_to_ram	.proc
 		lda	[lzsa1_srcptr]
 		inc	<lzsa1_srcptr + 0
 		bne	.offset_hi
-		jsr	__si_inc_mpr3
+		jsr	inc.h_si_mpr3
 
 .offset_hi:	sta	<lzsa1_offset + 1
 
@@ -265,7 +265,7 @@ lzsa1_to_ram	.proc
 		adc	[lzsa1_srcptr]		; the length.
 		inc	<lzsa1_srcptr + 0
 		bne	.skip_inc
-		jsr	__si_inc_mpr3
+		jsr	inc.h_si_mpr3
 
 .skip_inc:	bcc	.got_length		; No overflow means done.
 		clc				; MUST return CC!
@@ -299,6 +299,6 @@ lzsa1_to_ram	.proc
 		beq	.next_page
 .got_byte:	rts
 
-.next_page:	jmp	__si_inc_mpr3		; Inc & test for bank overflow.
+.next_page:	jmp	inc.h_si_mpr3		; Inc & test for bank overflow.
 
 		.endp

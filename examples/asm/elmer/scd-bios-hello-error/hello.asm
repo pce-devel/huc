@@ -114,12 +114,12 @@ bios_main:	; Turn the display off and initialize the screen mode.
 		; Clear VRAM, including the BAT.
 
 		lda	#<CHR_0x20		; Use tile # of ASCII ' '
-		sta	<__al			; to fill the BAT, using
+		sta	<_al			; to fill the BAT, using
 		lda	#>CHR_0x20		; palette 0.
-		sta	<__ah
+		sta	<_ah
 
 		lda	#>BAT_SIZE		; Size of BAT in words.
-		sta	<__bl
+		sta	<_bl
 		jsr	clear_bat
 
 		; Upload the palette data to the VCE.
@@ -176,22 +176,22 @@ bios_main:	; Turn the display off and initialize the screen mode.
 ;
 ; clear_bat - Clear the BAT in the PCE VDC.
 ;
-; Args: __ax = word value to write to the BAT.
-; Args: __bl = hi-byte of size of BAT (# of words).
+; Args: _ax = word value to write to the BAT.
+; Args: _bl = hi-byte of size of BAT (# of words).
 ;
 
 clear_bat:	cla				; Set VDC or SGX destination
 		clx				; address.
 		jsr	ex_setwrt
 
-		lda	<__bl			; Xvert hi-byte of # words
+		lda	<_bl			; Xvert hi-byte of # words
 		lsr	a			; in screen to loop count.
 
 		cly
 .bat_loop:	pha
-		lda	<__ax + 0
+		lda	<_ax + 0
 		sta	VDC_DL
-		lda	<__ax + 1
+		lda	<_ax + 1
 .bat_pair:	sta	VDC_DH
 		sta	VDC_DH
 		dey

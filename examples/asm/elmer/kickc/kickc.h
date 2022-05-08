@@ -5,7 +5,7 @@
 //
 // KickC interfaces to assembly-language library code.
 //
-// Copyright John Brandwood 2021.
+// Copyright John Brandwood 2021-2022.
 //
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
@@ -40,7 +40,7 @@ inline byte rand (void) {
 inline byte rand210 (void) {
 	kickasm( clobbers "AY" )
 	{{ jsr _random210 }}
-	return *_al;
+	return *__al;
 }
 
 //
@@ -63,10 +63,10 @@ inline void dropfnt8x8_vdc (byte * font, word vram, byte count, byte plane2, byt
 	{{ jsr dropfnt8x8_vdc }}
 }
 
-inline void __di_to_vdc (word vram) {
+inline void set_di_to_vdc (word vram) {
 	*__di = (word) vram;
 	kickasm( clobbers "AXY" )
-	{{ jsr __di_to_vdc }}
+	{{ jsr set_di_to_vdc }}
 }
 
 inline void set_dspon(void) {
@@ -75,10 +75,10 @@ inline void set_dspon(void) {
 }
 
 inline void load_palette (byte palnum, word * data, byte palcnt) {
-	*_si = (word) data;
-	*_si_bank = (byte) (data >> 23);
-	*_al = palnum;
-	*_ah = palcnt;
+	*__si = (word) data;
+	*__si_bank = (byte) (data >> 23);
+	*__al = palnum;
+	*__ah = palcnt;
 	kickasm( clobbers "AXY" )
 	{{ jsr load_palettes }}
 }

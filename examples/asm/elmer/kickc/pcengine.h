@@ -331,9 +331,9 @@ byte * const	psg_r0_l	= (byte *) 0x20EA;	//
 byte * const	psg_r0_h	= (byte *) 0x20EB;	//
 
 byte * const	zpg_sys_top	= (byte *) 0x20EC;
-word * const	__bp		= (word *) 0x20EC;	// base pointer
-word * const	__si		= (word *) 0x20EE;	// source address
-word * const	__di		= (word *) 0x20F0;	// destination address
+word * const	_bp		= (word *) 0x20EC;	// base pointer
+word * const	_si		= (word *) 0x20EE;	// source address
+word * const	_di		= (word *) 0x20F0;	// destination address
 byte * const	cdi_b		= (byte *) 0x20F2;	// ???
 byte * const	vdc_crl		= (byte *) 0x20F3;	// shadow of VDC control register (lo-byte)
 byte * const	vdc_crh		= (byte *) 0x20F4;	// shadow of VDC control register (hi-byte)
@@ -341,25 +341,25 @@ byte * const	irq_vec		= (byte *) 0x20F5;	// interrupt vector control mask
 byte * const	vdc_sr		= (byte *) 0x20F6;	// shadow of VDC status register
 byte * const	vdc_reg		= (byte *) 0x20F7;	// shadow of VDC register index
 
-word * const	__ax		= (word *) 0x20F8;
-byte * const	__al		= (byte *) 0x20F8;
-byte * const	__ah		= (byte *) 0x20F9;
+word * const	_ax		= (word *) 0x20F8;
+byte * const	_al		= (byte *) 0x20F8;
+byte * const	_ah		= (byte *) 0x20F9;
 
-word * const	__bx		= (word *) 0x20FA;
-byte * const	__bl		= (byte *) 0x20FA;
-byte * const	__bh		= (byte *) 0x20FB;
+word * const	_bx		= (word *) 0x20FA;
+byte * const	_bl		= (byte *) 0x20FA;
+byte * const	_bh		= (byte *) 0x20FB;
 
-word * const	__cx		= (word *) 0x20FC;
-byte * const	__cl		= (byte *) 0x20FC;
-byte * const	__ch		= (byte *) 0x20FD;
+word * const	_cx		= (word *) 0x20FC;
+byte * const	_cl		= (byte *) 0x20FC;
+byte * const	_ch		= (byte *) 0x20FD;
 
-word * const	__dx		= (word *) 0x20FE;
-byte * const	__dl		= (byte *) 0x20FE;
-byte * const	__dh		= (byte *) 0x20FF;
+word * const	_dx		= (word *) 0x20FE;
+byte * const	_dl		= (byte *) 0x20FE;
+byte * const	_dh		= (byte *) 0x20FF;
 
-byte * const	__si_bank	= __dh;
-byte * const	__di_bank	= __dh;
-byte * const	__bp_bank	= __dh;
+byte * const	_si_bank	= _dh;
+byte * const	_di_bank	= _dh;
+byte * const	_bp_bank	= _dh;
 
 
 
@@ -368,35 +368,35 @@ byte * const	__bp_bank	= __dh;
 // System Card's Zero Page Variables (6502-style zero-page addresses).
 //
 
-word * const	_bp		= (word *) 0xEC;		// base pointer
-word * const	_si		= (word *) 0xEE;		// source address
-word * const	_di		= (word *) 0xF0;		// destination address
-byte * const	_cdi_b		= (byte *) 0xF2;		// ???
-byte * const	_vdc_crl	= (byte *) 0xF3;		// shadow of VDC control register (lo-byte)
-byte * const	_vdc_crh	= (byte *) 0xF4;		// shadow of VDC control register (hi-byte)
-byte * const	_irq_vec	= (byte *) 0xF5;		// interrupt vector control mask
-byte * const	_vdc_sr		= (byte *) 0xF6;		// shadow of VDC status register
-byte * const	_vdc_reg	= (byte *) 0xF7;		// shadow of VDC register index
+word * const	__bp		= (word *) 0xEC;		// base pointer
+word * const	__si		= (word *) 0xEE;		// source address
+word * const	__di		= (word *) 0xF0;		// destination address
+byte * const	__cdi_b		= (byte *) 0xF2;		// ???
+byte * const	__vdc_crl	= (byte *) 0xF3;		// shadow of VDC control register (lo-byte)
+byte * const	__vdc_crh	= (byte *) 0xF4;		// shadow of VDC control register (hi-byte)
+byte * const	__irq_vec	= (byte *) 0xF5;		// interrupt vector control mask
+byte * const	__vdc_sr	= (byte *) 0xF6;		// shadow of VDC status register
+byte * const	__vdc_reg	= (byte *) 0xF7;		// shadow of VDC register index
 
-word * const	_ax		= (word *) 0xF8;
-byte * const	_al		= (byte *) 0xF8;
-byte * const	_ah		= (byte *) 0xF9;
+word * const	__ax		= (word *) 0xF8;
+byte * const	__al		= (byte *) 0xF8;
+byte * const	__ah		= (byte *) 0xF9;
 
-word * const	_bx		= (word *) 0xFA;
-byte * const	_bl		= (byte *) 0xFA;
-byte * const	_bh		= (byte *) 0xFB;
+word * const	__bx		= (word *) 0xFA;
+byte * const	__bl		= (byte *) 0xFA;
+byte * const	__bh		= (byte *) 0xFB;
 
-word * const	_cx		= (word *) 0xFC;
-byte * const	_cl		= (byte *) 0xFC;
-byte * const	_ch		= (byte *) 0xFD;
+word * const	__cx		= (word *) 0xFC;
+byte * const	__cl		= (byte *) 0xFC;
+byte * const	__ch		= (byte *) 0xFD;
 
-word * const	_dx		= (word *) 0xFE;
-byte * const	_dl		= (byte *) 0xFE;
-byte * const	_dh		= (byte *) 0xFF;
+word * const	__dx		= (word *) 0xFE;
+byte * const	__dl		= (byte *) 0xFE;
+byte * const	__dh		= (byte *) 0xFF;
 
-byte * const	_si_bank	= _dh;
-byte * const	_di_bank	= _dh;
-byte * const	_bp_bank	= _dh;
+byte * const	__si_bank	= __dh;
+byte * const	__di_bank	= __dh;
+byte * const	__bp_bank	= __dh;
 
 
 
@@ -443,7 +443,7 @@ byte * const	rndh		= (byte *) 0x224A; // 1
 byte * const	rndm		= (byte *) 0x224B; // 1
 byte * const	scsisend	= (byte *) 0x224C; // 10	*UNDOCUMENTED* buffer for SCSI cmd send
 byte * const	scsirecv	= (byte *) 0x2256; // 10	*UNDOCUMENTED* buffer for SCSI cmd recv
-byte * const	paramcpy	= (byte *) 0x2260; // 8	*UNDOCUMENTED* stored __ax,__bx,__cx,__dx
+byte * const	paramcpy	= (byte *) 0x2260; // 8	*UNDOCUMENTED* stored _ax,_bx,_cx,_dx
 byte * const	initialmpr	= (byte *) 0x2268; // 1	*UNDOCUMENTED*
 //?		= 0x2269 // ? 
 byte * const	tnomin		= (byte *) 0x226A; // 1

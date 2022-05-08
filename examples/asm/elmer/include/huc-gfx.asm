@@ -39,10 +39,10 @@
 ; ----
 ; copy a block of memory to VRAM
 ; ----
-; __si		= BAT memory location
-; __si_bank	= BAT bank
-; __di		= VRAM base address
-; __ax		= nb of words to copy
+; _si		= BAT memory location
+; _si_bank	= BAT bank
+; _di		= VRAM base address
+; _ax		= nb of words to copy
 ; ----
 ; N.B. BAT data *must* be word-aligned!
 
@@ -63,24 +63,24 @@ _load_vram	.proc
 		tma4
 		pha
 
-		jsr	__si_to_mpr34
-		jsr	__di_to_vdc
+		jsr	set_si_to_mpr34
+		jsr	set_di_to_vdc
 
 		tii	.vdc_tai, ram_tia, 8
 
-		ldx.l	<__si
+		ldx.l	<_si
 		stx.l	ram_tia_src
-		ldy.h	<__si
+		ldy.h	<_si
 		sty.h	ram_tia_src
 
-		lda	<__al			; length in chunks
-		lsr	<__ah
+		lda	<_al			; length in chunks
+		lsr	<_ah
 		ror	a
-		lsr	<__ah
+		lsr	<_ah
 		ror	a
-		lsr	<__ah
+		lsr	<_ah
 		ror	a
-		lsr	<__ah
+		lsr	<_ah
 		ror	a
 
 		sax				; x=chunks-lo
@@ -108,10 +108,10 @@ _load_vram	.proc
 .same_page:	dex
 		bne	.chunk_loop
 
-.next_4kw:	dec	<__ah
+.next_4kw:	dec	<_ah
 		bpl	.chunk_loop
 
-		lda	<__al
+		lda	<_al
 		and	#15
 		beq	.done
 
@@ -139,11 +139,11 @@ _load_vram	.proc
 ; ----
 ; transfer a BAT to VRAM
 ; ----
-; __si		= BAT memory location
-; __si_bank	= BAT bank
-; __di		= VRAM base address
-; __al		= nb of column to copy
-; __ah		= nb of row
+; _si		= BAT memory location
+; _si_bank	= BAT bank
+; _di		= VRAM base address
+; _al		= nb of column to copy
+; _ah		= nb of row
 ; ----
 ; N.B. BAT data *must* be word-aligned!
 
@@ -152,32 +152,32 @@ _load_bat	.proc
 		tma3
 		pha
 
-		jsr	__si_to_mpr3
+		jsr	set_si_to_mpr3
 
-		ldy.l	<__si
-		stz.l	<__si
+		ldy.l	<_si
+		stz.l	<_si
 
-.line_loop:	jsr	__di_to_vdc
+.line_loop:	jsr	set_di_to_vdc
 
-		ldx	<__al
-.tile_loop:	lda	[__si], y
+		ldx	<_al
+.tile_loop:	lda	[_si], y
 		sta	VDC_DL
 		iny
-		lda	[__si], y
+		lda	[_si], y
 		sta	VDC_DH
 		iny
 		bne	!+
-		jsr	__si_inc_mpr3
+		jsr	inc.h_si_mpr3
 !:		dex
 		bne	.tile_loop
 
 		lda	#64
 		clc
-		adc.l	<__di
-		sta.l	<__di
+		adc.l	<_di
+		sta.l	<_di
 		bcc	!+
-		inc.h	<__di
-!:		dec	<__ah
+		inc.h	<_di
+!:		dec	<_ah
 		bne	.line_loop
 
 		pla
@@ -229,9 +229,9 @@ _satb_update	.proc
 
 ;		lda.h	#$7F00			; HuC puts the SAT here in VRAM
 		lda.h	#$0800			; but we put it here instead
-		stz.l	<__di
-		sta.h	<__di
-		jsr	__di_to_vdc
+		stz.l	<_di
+		sta.h	<_di
+		jsr	set_di_to_vdc
 
 		ldx	spr_max
 
@@ -276,12 +276,12 @@ _satb_update	.proc
 ; ----
 ; spr_set(char num)
 ; ----
-; __al=num
+; _al=num
 ; ----
 ; load SI with the offset of the sprite to change
 ; SI = satb + 8 * sprite_number
 
-_spr_set:	lda	<__al
+_spr_set:	lda	<_al
 		cmp	#64
 		bcs	.exit
 
@@ -329,14 +329,14 @@ _spr_show:	ldy	#1
 ; ----
 ; spr_x(int value)
 ; ----
-; __ax=value
+; _ax=value
 
 _spr_x:		ldy	#2
 		clc
-		lda	<__al
+		lda	<_al
 		adc	#32
 		sta	[spr_ptr], y
-		lda	<__ah
+		lda	<_ah
 		adc	#0
 		iny
 		sta	[spr_ptr], y
@@ -345,13 +345,13 @@ _spr_x:		ldy	#2
 ; ----
 ; spr_y(int value)
 ; ----
-; __ax=value
+; _ax=value
 
 _spr_y:		clc
-		lda	<__al
+		lda	<_al
 		adc	#64
 		sta	[spr_ptr]
-		lda	<__ah
+		lda	<_ah
 		adc	#0
 ;		and	#$01
 		ldy	#1
@@ -361,20 +361,20 @@ _spr_y:		clc
 ; ----
 ; spr_pattern(int vaddr >> 5)
 ; ----
-; __ax=value
+; _ax=value
 
-_spr_pattern:	lda	<__al		;     zp=fedcba98 a=76543210
+_spr_pattern:	lda	<_al		;     zp=fedcba98 a=76543210
 		asl	a		; c=f zp=edcba987 a=6543210x
-		rol	<__ah
+		rol	<_ah
 		rol	a		; c=e zp=dcba9876 a=543210xf
-		rol	<__ah
+		rol	<_ah
 		rol	a		; c=d zp=cba98765 a=43210xfe
-		rol	<__ah
+		rol	<_ah
 		rol	a		; c=4 zp=cba98765 a=3210xfed
 ;		and	#$7
 		ldy	#5
 		sta	[spr_ptr], y
-		lda	<__ah
+		lda	<_ah
 		dey
 		sta	[spr_ptr], y
 		rts
@@ -382,38 +382,38 @@ _spr_pattern:	lda	<__al		;     zp=fedcba98 a=76543210
 ; ----
 ; spr_ctrl(char mask, char value)
 ; ----
-; __al=!mask __ah=mask&value
+; _al=!mask _ah=mask&value
 
 _spr_ctrl:	ldy	#7
-		lda	<__al
+		lda	<_al
 		and	[spr_ptr], y
-		ora	<__ah
+		ora	<_ah
 		sta	[spr_ptr], y
 		rts
 
 ; ----
 ; spr_pal(char pal)
 ; ----
-; __al=pal
+; _al=pal
 
-_spr_pal:	lda	<__al
+_spr_pal:	lda	<_al
 		and	#$0F
-		sta	<__temp
+		sta	<_temp
 		ldy	#6
 		lda	[spr_ptr], y
 		and	#$F0
-		ora	<__temp
+		ora	<_temp
 		sta	[spr_ptr], y
 		rts
 
 ; ----
 ; spr_pri(char pri)
 ; ----
-; __al=pri
+; _al=pri
 
 _spr_pri:	ldy	#6
 		cla
-		cmp	<__al
+		cmp	<_al
 		lda	[spr_ptr], y
 		and	#$7F
 		bcs	!+
@@ -435,19 +435,19 @@ _spr_pri:	ldy	#6
 ; ----
 ; put_string(char *string, char x, char y)
 ; ----
-; __al		= x coordinate
-; __ah		= y coordinate
-; __si		= string address
-; __si_bank	= string bank
+; _al		= x coordinate
+; _ah		= y coordinate
+; _si		= string address
+; _si_bank	= string bank
 ; ----
-; __di		= corrupted
+; _di		= corrupted
 ; ----
 
 _put_string	.proc
 
 		jsr	_put_xy
 
-.chr_loop:	lda	[__si]
+.chr_loop:	lda	[_si]
 		beq	.done
 
 		clc
@@ -456,9 +456,9 @@ _put_string	.proc
 		lda	#$10
 ;		lda	#$00
 		sta	VDC_DH
-		inc.l	<__si
+		inc.l	<_si
 		bne	.chr_loop
-		inc.h	<__si
+		inc.h	<_si
 		bra	.chr_loop
 
 .done:		leave
@@ -469,33 +469,33 @@ _put_string	.proc
 ; ----
 ; put_number(int number, char n, char x, char y)
 ; ----
-; __al		= x coordinate
-; __ah		= y coordinate
-; __bx          = number 
-; __cl          = minimum characters
+; _al		= x coordinate
+; _ah		= y coordinate
+; _bx          = number 
+; _cl          = minimum characters
 ; ----
-; __di		= corrupted
+; _di		= corrupted
 ; ----
 
 _put_number	.proc
 
 		jsr	_put_xy
 
-		ldy	<__cl			; Minimum #characters.
+		ldy	<_cl			; Minimum #characters.
 
 		cla				; Push EOL marker.
 		pha
 
 .divide_by_ten:	ldx	#16
 		cla				; Clear Remainder.
-		asl.l	<__bx			; Rotate Dividend, MSB -> C.
-		rol.h	<__bx
+		asl.l	<_bx			; Rotate Dividend, MSB -> C.
+		rol.h	<_bx
 .divide_loop:	rol	a			; Rotate C into Remainder.
 		cmp	#10			; Test Divisor.
 		bcc	.divide_less		; CC if Divisor > Remainder.
 		sbc	#10			; Subtract Divisor.
-.divide_less:	rol.l	<__bx			; Quotient bit -> Dividend LSB.
-		rol.h	<__bx			; Rotate Dividend, MSB -> C.
+.divide_less:	rol.l	<_bx			; Quotient bit -> Dividend LSB.
+		rol.h	<_bx			; Rotate Dividend, MSB -> C.
 		dex
 		bne	.divide_loop
 
@@ -503,8 +503,8 @@ _put_number	.proc
 		adc	#'0'			; Always leaves C clr.
 		pha
 		dey
-		lda.l	<__bx			; Repeat while non-zero.
-		ora.h	<__bx
+		lda.l	<_bx			; Repeat while non-zero.
+		ora.h	<_bx
 		bne	.divide_by_ten
 
 		lda	#'0'
@@ -531,22 +531,22 @@ _put_number	.proc
 ; ----
 ; put_xy(char x, char y)
 ; ----
-; __al		= x coordinate
-; __ah		= y coordinate
+; _al		= x coordinate
+; _ah		= y coordinate
 ; ----
-; __di		= VRAM address
+; _di		= VRAM address
 ; ----
 
 _put_xy:	cla
-		lsr	<__ah
+		lsr	<_ah
 		ror	a
-		lsr	<__ah
+		lsr	<_ah
 		ror	a
-		ora	<__al
-		sta.l	<__di
-		lda	<__ah
-		sta.h	<__di
-		jmp	__di_to_vdc
+		ora	<_al
+		sta.l	<_di
+		lda	<_ah
+		sta.h	<_di
+		jmp	set_di_to_vdc
 
 
 
@@ -561,7 +561,7 @@ _put_xy:	cla
 ; ----
 ; _random210()
 ; ----
-; __al		= random value 0..209
+; _al		= random value 0..209
 ; ----
 
 _random210:	jsr	get_random
@@ -570,8 +570,8 @@ _random210:	jsr	get_random
 		sec
 		lda	square_pos_lo + (210), y
 		sbc	square_neg_lo + (210 ^ $FF), y
-;		sta	<__al
+;		sta	<_al
 		lda	square_pos_hi + (210), y
 		sbc	square_neg_hi + (210 ^ $FF), y
-		sta	<__al
+		sta	<_al
 		rts

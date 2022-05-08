@@ -5,7 +5,7 @@
 //
 // Compatibility stuff for HuC's library functions.
 //
-// Copyright John Brandwood 2021.
+// Copyright John Brandwood 2021-2022.
 //
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
@@ -47,19 +47,19 @@ inline byte get_joytrg (byte which) {
  */
 
 #define load_vram(addr, data, size) \
-	*_si = (word) (data); \
-	*_si_bank = (byte) ((data) >> 23); \
-	*_di = (word) (addr); \
-	*_ax = (word) (size); \
+	*__si = (word) (data); \
+	*__si_bank = (byte) ((data) >> 23); \
+	*__di = (word) (addr); \
+	*__ax = (word) (size); \
 	kickasm( clobbers "AXY" ) \
 	{{ jsr _load_vram }}
 
 #define load_bat(addr, data, w, h) \
-	*_si = (word) (data); \
-	*_si_bank = (byte) ((data) >> 23); \
-	*_di = (word) (addr); \
-	*_al = (byte) (w); \
-	*_ah = (byte) (h); \
+	*__si = (word) (data); \
+	*__si_bank = (byte) ((data) >> 23); \
+	*__di = (word) (addr); \
+	*__al = (byte) (w); \
+	*__ah = (byte) (h); \
 	kickasm( clobbers "AXY" ) \
 	{{ jsr _load_bat }}
 
@@ -76,17 +76,17 @@ inline byte get_joytrg (byte which) {
  */
 
 #define put_string(addr, x, y) \
-	*_al = (byte) (x); \
-	*_ah = (byte) (y); \
-	*_si = (word) (addr); \
+	*__al = (byte) (x); \
+	*__ah = (byte) (y); \
+	*__si = (word) (addr); \
 	kickasm( clobbers "AXY" ) \
 	{{ jsr _put_string }}
 
 #define put_number(value, n, x, y) \
-	*_al = (byte) (x); \
-	*_ah = (byte) (y); \
-	*_bx = (word) (value); \
-	*_cl = (byte) (n); \
+	*__al = (byte) (x); \
+	*__ah = (byte) (y); \
+	*__bx = (word) (value); \
+	*__cl = (byte) (n); \
 	kickasm( clobbers "AXY" ) \
 	{{ jsr _put_number }}
 
@@ -129,7 +129,7 @@ inline void satb_update (void) {
 } 
 
 #define spr_set(num) { \
-	*_al = (byte) (num); \
+	*__al = (byte) (num); \
 	kickasm( clobbers "A" ) \
 	{{ jsr _spr_set }} } 
 
@@ -142,32 +142,32 @@ inline void satb_update (void) {
 	{{ jsr _spr_show }} }
 
 #define spr_x(x_val) { \
-	*_ax = (word) (x_val); \
+	*__ax = (word) (x_val); \
 	kickasm( clobbers "AY" ) \
 	{{ jsr _spr_x }} }
 
 #define spr_y(y_val) { \
-	*_ax = (word) (y_val); \
+	*__ax = (word) (y_val); \
 	kickasm( clobbers "AY" ) \
 	{{ jsr _spr_y }} }
 
 #define spr_pattern(vaddr) { \
-	*_ax = (word) (vaddr); \
+	*__ax = (word) (vaddr); \
 	kickasm( clobbers "AY" ) \
 	{{ jsr _spr_pattern }} }
 
 #define spr_pal(pal) { \
-	*_al = (byte) (pal); \
+	*__al = (byte) (pal); \
 	kickasm( clobbers "AY" ) \
 	{{ jsr _spr_pal }} }
 
 #define spr_pri(pri) { \
-	*_al = (byte) (pri); \
+	*__al = (byte) (pri); \
 	kickasm( clobbers "AY" ) \
 	{{ jsr _spr_pri }} }
 
 #define spr_ctrl(mask, value) { \
-	*_al = (byte) ~(mask); \
-	*_ah = (byte) ((value) & (mask)); \
+	*__al = (byte) ~(mask); \
+	*__ah = (byte) ((value) & (mask)); \
 	kickasm( clobbers "AY" ) \
 	{{ jsr _spr_ctrl }} }

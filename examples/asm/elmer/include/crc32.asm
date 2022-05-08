@@ -39,37 +39,37 @@ init_crc32	.proc
 
 		clx				; X counts from 0 to 255
 .byte_loop:	cla				; A contains the high byte of the CRC-32
-		sta	<__ax + 2		; The other three bytes are in memory
-		sta	<__ax + 1
-		stx	<__ax + 0
+		sta	<_ax + 2		; The other three bytes are in memory
+		sta	<_ax + 1
+		stx	<_ax + 0
 
 		ldy	#8			; Y counts bits in a byte
 .bit_loop:	lsr	a			; The CRC-32 algorithm is similar to CRC-16
-		ror	<__ax + 2		; except that it is reversed (originally for
-		ror	<__ax + 1		; hardware reasons). This is why we shift
-		ror	<__ax + 0		; right instead of left here.
+		ror	<_ax + 2		; except that it is reversed (originally for
+		ror	<_ax + 1		; hardware reasons). This is why we shift
+		ror	<_ax + 0		; right instead of left here.
 		bcc	.no_add			; Do nothing if no overflow
 		eor	#$ED			; else add CRC-32 polynomial $EDB88320
 		pha				; Save high byte while we do others
-		lda	<__ax + 2
+		lda	<_ax + 2
 		eor	#$B8			; Most reference books give the CRC-32 poly
-		sta	<__ax + 2		; as $04C11DB7. This is actually the same if
-		lda	<__ax + 1		; you write it in binary and read it right-
+		sta	<_ax + 2		; as $04C11DB7. This is actually the same if
+		lda	<_ax + 1		; you write it in binary and read it right-
 		eor	#$83			; to-left instead of left-to-right. Doing it
-		sta	<__ax + 1		; this way means we won't have to explicitly
-		lda	<__ax + 0		; reverse things afterwards.
+		sta	<_ax + 1		; this way means we won't have to explicitly
+		lda	<_ax + 0		; reverse things afterwards.
 		eor	#$20
-		sta	<__ax + 0
+		sta	<_ax + 0
 		pla				; Restore high byte.
 .no_add:	dey
 		bne	.bit_loop		; Do next bit
 
 		sta	crc32_tbl_b3, x		; Save CRC into table, high to low bytes.
-		lda	<__ax + 2
+		lda	<_ax + 2
 		sta	crc32_tbl_b2, x
-		lda	<__ax + 1
+		lda	<_ax + 1
 		sta	crc32_tbl_b1, x
-		lda	<__ax + 0
+		lda	<_ax + 0
 		sta	crc32_tbl_b0, x
 		inx
 		bne	.byte_loop		; Do next byte
@@ -92,46 +92,46 @@ calc_crc32	.proc
 
 		tma3				; Preserve MPR3.
 		pha
-		jsr	__si_to_mpr3		; Map memory block to MPR3.
+		jsr	set_si_to_mpr3		; Map memory block to MPR3.
 
 		lda	#$FF			; Initialize CRC-32.
-		sta	<__cx + 0
-		sta	<__cx + 1
-		sta	<__cx + 2
-		sta	<__cx + 3
+		sta	<_cx + 0
+		sta	<_cx + 1
+		sta	<_cx + 2
+		sta	<_cx + 3
 
-		ldy	<__ax + 0
+		ldy	<_ax + 0
 		beq	.byte_loop
-		inc	<__ax + 1
+		inc	<_ax + 1
 
-.byte_loop:	lda	[__si]
+.byte_loop:	lda	[_si]
 
-		eor	<__cx + 0		; Update CRC-32.
+		eor	<_cx + 0		; Update CRC-32.
 		tax
-		lda	<__cx + 1
+		lda	<_cx + 1
 		eor	crc32_tbl_b0, x
-		sta	<__cx + 0
-		lda	<__cx + 2
+		sta	<_cx + 0
+		lda	<_cx + 2
 		eor	crc32_tbl_b1, x
-		sta	<__cx + 1
-		lda	<__cx + 3
+		sta	<_cx + 1
+		lda	<_cx + 3
 		eor	crc32_tbl_b2, x
-		sta	<__cx + 2
+		sta	<_cx + 2
 		lda	crc32_tbl_b3, x
-		sta	<__cx + 3
+		sta	<_cx + 3
 
-		inc	<__si + 0
+		inc	<_si + 0
 		beq	.next_page
 
 .next_byte:	dey
 		bne	.byte_loop
-		dec	<__ax + 1		; Next page.
+		dec	<_ax + 1		; Next page.
 		bne	.byte_loop
 
 		ldx	#3			; Complement CRC-32 when done
-.flip_bits:	lda	<__cx, x		; to follow standard.
+.flip_bits:	lda	<_cx, x		; to follow standard.
 		eor	#$FF
-		sta	<__cx, x
+		sta	<_cx, x
 		dex
 		bpl	.flip_bits
 
@@ -140,7 +140,7 @@ calc_crc32	.proc
 
 		leave
 
-.next_page:	jsr	__si_inc_mpr3
+.next_page:	jsr	inc.h_si_mpr3
 		bra	.next_byte
 
 		.endp

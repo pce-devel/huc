@@ -134,26 +134,26 @@ color_bank:	ds	8			; Ring buffer - Data Ptr (bank).
 ;
 ; load_palettes - Queue a set of palettes to upload to the VCE next VBLANK.
 ;
-; Args: __si, __si_bank = _farptr to data table mapped into MPR3 & MPR4.
-; Args: __al = Palette index (0..15 for BG, 16..31 for SPR).
-; Args: __ah = Palette count (0..32).
+; Args: _si, _si_bank = _farptr to data table mapped into MPR3 & MPR4.
+; Args: _al = Palette index (0..15 for BG, 16..31 for SPR).
+; Args: _ah = Palette count (0..32).
 ;
 
 load_palettes	.proc
 
 		ldy	color_queue_w		; Get the queue's write index.
 
-		lda	<__si + 0		; Add this set of palettes to
+		lda	<_si + 0		; Add this set of palettes to
 		sta	color_addr_l, y		; the queue.
-		lda	<__si + 1
+		lda	<_si + 1
 		and	#$1F
 		ora	#$60
 		sta	color_addr_h, y
-		lda	<__si_bank
+		lda	<_si_bank
 		sta	color_bank,y
-		lda	<__al
+		lda	<_al
 		sta	color_index, y
-		lda	<__ah
+		lda	<_ah
 		sta	color_count, y
 
 		tya				; Increment the queue index.

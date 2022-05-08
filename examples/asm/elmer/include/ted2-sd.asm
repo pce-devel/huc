@@ -473,8 +473,6 @@ sdc_set_blk_arg:lda	sdc_card_type		; Check the SDC_HC flag.
 ; Args: sdc_block_cnt
 ; Args: sdc_data_addr
 ;
-; Args: sdc_data_512k
-;
 ; Returns: Y,A,Z-flag,N-flag = SDC_OK or an error code.
 ;
 ; Notes:
@@ -484,8 +482,6 @@ sdc_set_blk_arg:lda	sdc_card_type		; Check the SDC_HC flag.
 ;
 ;   When the sdc_data_addr increments to >= $8000, then the next PCE bank
 ;   is mapped into MPR3, and reading continues.
-;
-;   This also handles wrapping into new 512KB regions of TED2 memory.
 ;
 
 sdc_read_data	.proc
@@ -573,8 +569,6 @@ sdc_read_data	.proc
 ; Args: sdc_block_cnt
 ; Args: sdc_data_addr
 ;
-; Args: sdc_data_512k
-;
 ; Returns: Y,A,Z-flag,N-flag = SDC_OK or an error code.
 ;
 ; N.B. FOR INTERNAL USE ONLY, THIS IS NOT A PUBLIC FUNCTION!
@@ -586,8 +580,6 @@ sdc_read_data	.proc
 ;
 ;   When the sdc_data_addr increments to >= $8000, then the next PCE bank
 ;   is mapped into MPR3, and reading continues.
-;
-;   This also handles wrapping into new 512KB regions of TED2 memory.
 ;
 
 spi_rd_fast:	TED_SPI_ARD_ON
@@ -657,8 +649,6 @@ spi_rd_fast:	TED_SPI_ARD_ON
 ; Args: sdc_block_cnt
 ; Args: sdc_data_addr
 ;
-; Args: sdc_data_512k
-;
 ; Returns: Y,A,Z-flag,N-flag = SDC_OK or an error code.
 ;
 ; Notes:
@@ -668,8 +658,6 @@ spi_rd_fast:	TED_SPI_ARD_ON
 ;
 ;   When the sdc_data_addr increments to >= $8000, then the next PCE bank
 ;   is mapped into MPR3, and reading continues.
-;
-;   This also handles wrapping into new 512KB regions of TED2 memory.
 ;
 
 sdc_write_data	.proc
@@ -833,8 +821,6 @@ sdc_write_data	.proc
 ; Args: sdc_block_cnt
 ; Args: sdc_data_addr
 ;
-; Args: sdc_data_512k
-;
 ; Returns: Y,A,Z-flag,N-flag = SDC_OK or an error code.
 ;
 ; N.B. FOR INTERNAL USE ONLY, THIS IS NOT A PUBLIC FUNCTION!
@@ -846,8 +832,6 @@ sdc_write_data	.proc
 ;
 ;   When the sdc_data_addr increments to >= $8000, then the next PCE bank
 ;   is mapped into MPR3, and reading continues.
-;
-;   This also handles wrapping into new 512KB regions of TED2 memory.
 ;
 
 spi_wr_slow:	txa

@@ -334,9 +334,9 @@ psg_r0_l	= $F8:20EA	;
 psg_r0_h	= $F8:20EB	;
 
 zpg_sys_top	= $F8:20EC
-__bp		= $F8:20EC	; base pointer
-__si		= $F8:20EE	; source address
-__di		= $F8:20F0	; destination address
+_bp		= $F8:20EC	; base pointer
+_si		= $F8:20EE	; source address
+_di		= $F8:20F0	; destination address
 cdi_b		= $F8:20F2	; ???
 vdc_crl		= $F8:20F3	; shadow of VDC control register (lo-byte)
 vdc_crh		= $F8:20F4	; shadow of VDC control register (hi-byte)
@@ -344,21 +344,21 @@ irq_vec		= $F8:20F5	; interrupt vector control mask
 vdc_sr		= $F8:20F6	; shadow of VDC status register
 vdc_reg		= $F8:20F7	; shadow of VDC register index
 
-__ax		= $F8:20F8
-__al		= $F8:20F8
-__ah		= $F8:20F9
+_ax		= $F8:20F8
+_al		= $F8:20F8
+_ah		= $F8:20F9
 
-__bx		= $F8:20FA
-__bl		= $F8:20FA
-__bh		= $F8:20FB
+_bx		= $F8:20FA
+_bl		= $F8:20FA
+_bh		= $F8:20FB
 
-__cx		= $F8:20FC
-__cl		= $F8:20FC
-__ch		= $F8:20FD
+_cx		= $F8:20FC
+_cl		= $F8:20FC
+_ch		= $F8:20FD
 
-__dx		= $F8:20FE
-__dl		= $F8:20FE
-__dh		= $F8:20FF
+_dx		= $F8:20FE
+_dl		= $F8:20FE
+_dh		= $F8:20FF
 
 
 
@@ -406,7 +406,7 @@ rndm		= $F8:224B ; 1
 rndm		= $F8:224B ; 1
 scsisend	= $F8:224C ; 10	*UNDOCUMENTED* buffer for SCSI cmd send
 scsirecv	= $F8:2256 ; 10	*UNDOCUMENTED* buffer for SCSI cmd recv
-paramcpy	= $F8:2260 ; 8	*UNDOCUMENTED* stored __ax,__bx,__cx,__dx
+paramcpy	= $F8:2260 ; 8	*UNDOCUMENTED* stored _ax,_bx,_cx,_dx
 initialmpr	= $F8:2268 ; 1	*UNDOCUMENTED*
 ;?		= $F8:2269 ; ?
 tnomin		= $F8:226A ; 1
@@ -646,24 +646,22 @@ VDC_HSR_512	= $0B05 ; HDS HSW (Normal)
 VDC_HDR_512	= $033F ; HDE HDW
 
 ; VDC constants for 200, 208, 224 & 240 high display.
-;
-; N.B. 2 lines higher on the screen than the System Card.
 
-VDC_VPR_200	= $2102
+VDC_VPR_200	= $2302
 VDC_VDW_200	= $00C7
-VDC_VCR_200	= $0016 ; bios sets $00E2
+VDC_VCR_200	= $00FF ; Minimum of $17 for 263 lines.
 
-VDC_VPR_208	= $1E02
+VDC_VPR_208	= $1F02
 VDC_VDW_208	= $00CF
-VDC_VCR_208	= $0013 ; bios sets $00EE
+VDC_VCR_208	= $00FF ; Minimum of $13 for 263 lines.
 
-VDC_VPR_224	= $1502
+VDC_VPR_224	= $1702
 VDC_VDW_224	= $00DF
-VDC_VCR_224	= $000B ; bios sets $00EE
+VDC_VCR_224	= $00FF ; Minimum of $0B for 263 lines.
 
-VDC_VPR_240	= $0D02
+VDC_VPR_240	= $0F02
 VDC_VDW_240	= $00EF
-VDC_VCR_240	= $0003 ; bios sets $00F6
+VDC_VCR_240	= $00FF ; Minimum of $03 for 263 lines.
 
 ; VDC constants for different BAT screen sizes.
 

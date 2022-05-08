@@ -1,6 +1,6 @@
 {
     "description": "NEC PC Engine (assembles with PCEAS).",
-    "cpu": "WDC65C02",
+    "cpu": "HUC6280",
     "interrupt": "hardware_all",
     "link": "pce.ld",
     "encoding": "ascii",

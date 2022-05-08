@@ -5,7 +5,7 @@
 ;
 ; Base include for the "CORE(not TM)" PC Engine library code.
 ;
-; Copyright John Brandwood 2021.
+; Copyright John Brandwood 2021-2022.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -91,8 +91,8 @@ core_zpend	=	$20EC
 PCE_VDC_OFFSET	=	$00			; Offset to PCE VDC hw & vars.
 SGX_VDC_OFFSET	=	$10			; Offset to SGX VDC hw & vars.
 
-__temp		=	$2000			; Use within any ASM routine.
-__bank		=	$2002			; Use within any ASM routine.
+_temp		=	$2000			; Use within any ASM routine.
+_bank		=	$2002			; Use within any ASM routine.
 sgx_crl		=	$2003			; SGX shadow (vdc_crl = $20F3).
 sgx_crh		=	$2004			; SGX shadow (vdc_crh = $20F4).
 core_1stbank	=	$2005			; 1st bank of library code.
@@ -103,8 +103,8 @@ core_zp1st	=	$2008			; 1st free user address.
 
 	.else	SUPPORT_SGX
 
-__temp		=	$2000			; Use within any ASM routine.
-__bank		=	$2002			; Use within any ASM routine.
+_temp		=	$2000			; Use within any ASM routine.
+_bank		=	$2002			; Use within any ASM routine.
 core_1stbank	=	$2003			; 1st bank of engine code.
 
 core_zp1st	=	$2004			; 1st free user address.

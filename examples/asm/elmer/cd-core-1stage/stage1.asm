@@ -96,34 +96,34 @@ core_main:	; Turn the display off and initialize the screen mode.
 		; Clear VRAM, including the BAT.
 
 		lda	#<CHR_0x20		; Use tile # of ASCII ' '
-		sta	<__al			; to fill the BAT, using
+		sta	<_al			; to fill the BAT, using
 		lda	#>CHR_0x20		; palette 0.
-		sta	<__ah
+		sta	<_ah
 
 		lda	#>BAT_SIZE		; Size of BAT in words.
-		sta	<__bl
+		sta	<_bl
 
 		call	clear_vram_vdc		; Initialize VRAM.
 
 		; Upload the font to VRAM.
 
 		lda	#<my_font		; Address of font data.
-		sta	<__si + 0
+		sta	<_si + 0
 		lda	#>my_font
-		sta	<__si + 1
+		sta	<_si + 1
 		lda	#^my_font
-		sta	<__si_bank
+		sta	<_si_bank
 
-		stz	<__di + 0		; Destination VRAM address.
+		stz	<_di + 0		; Destination VRAM address.
 		lda	#>(CHR_0x10 * 16)
-		sta	<__di + 1
+		sta	<_di + 1
 
 		lda	#$FF			; Put font in colors 4-7,
-		sta	<__al			; so bitplane 2 = $FF and
-		stz	<__ah			; bitplane 3 = $00.
+		sta	<_al			; so bitplane 2 = $FF and
+		stz	<_ah			; bitplane 3 = $00.
 
 		lda	#16 + 96		; 16 graphics + 96 ASCII.
-		sta	<__bl
+		sta	<_bl
 
 		call	dropfnt8x8_vdc		; Upload font to VRAM.
 
@@ -145,10 +145,10 @@ core_main:	; Turn the display off and initialize the screen mode.
 		; Display the classic "hello, world" on the screen.
 
 		lda	#<(13*64 + 10)		; Destination VRAM address.
-		sta	<__di + 0
+		sta	<_di + 0
 		lda	#>(13*64 + 10)
-		sta	<__di + 1
-		call	__di_to_vdc
+		sta	<_di + 1
+		call	set_di_to_vdc
 
 		cly				; Display the message.
 		bsr	.print_message

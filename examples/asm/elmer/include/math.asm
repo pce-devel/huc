@@ -21,28 +21,28 @@
 ;
 ; mul8u - Simple 16-bit x 8-bit multiply.
 ;
-; Args: __ax = Multiplier / Result
-; Args: __bl = Multiplier
+; Args: _ax = Multiplier / Result
+; Args: _bl = Multiplier
 ;
 
 mul8u		.proc
 
 		cla				; Clear Result.
 		clx
-		lsr	<__bl			; Shift and test multiplier.
+		lsr	<_bl			; Shift and test multiplier.
 		bcc	.loop
-.add:		clc				; Add __ax to the Result.
-		adc	<__al
+.add:		clc				; Add _ax to the Result.
+		adc	<_al
 		sax
-		adc	<__ah
+		adc	<_ah
 		sax
-.loop:		asl	<__al			; __ax = __ax * 2
-		rol	<__ah
-		lsr	<__bl			; Shift and test multiplier.
+.loop:		asl	<_al			; _ax = _ax * 2
+		rol	<_ah
+		lsr	<_bl			; Shift and test multiplier.
 		bcs	.add
 		bne	.loop
-		sta	<__al			; Save Result.
-		stx	<__ah
+		sta	<_al			; Save Result.
+		stx	<_ah
 
 		leave
 
@@ -55,27 +55,27 @@ mul8u		.proc
 ;
 ; div16_7u - Simple 16-bit /  7-bit divide.
 ;
-; Args: __ax = Dividend / Quotient
-; Args: __bx = Dividend / Quotient (if 32-bit)
-; Args: __cl = Dividor
-; Uses: __dl = Remainder
+; Args: _ax = Dividend / Quotient
+; Args: _bx = Dividend / Quotient (if 32-bit)
+; Args: _cl = Dividor
+; Uses: _dl = Remainder
 ;
 
 div16_7u	.proc
 
 		ldx	#16
 		cla				; Clear Remainder.
-		asl	<__ax + 0		; Rotate Dividend, MSB -> C.
-		rol	<__ax + 1
+		asl	<_ax + 0		; Rotate Dividend, MSB -> C.
+		rol	<_ax + 1
 .loop:		rol	a			; Rotate C into Remainder.
-		cmp	<__cl			; Test Divisor.
+		cmp	<_cl			; Test Divisor.
 		bcc	.less			; CC if Divisor > Remainder.
-		sbc	<__cl			; Subtract Divisor.
-.less:		rol	<__ax + 0		; Quotient bit -> Dividend LSB.
-		rol	<__ax + 1		; Rotate Dividend, MSB -> C.
+		sbc	<_cl			; Subtract Divisor.
+.less:		rol	<_ax + 0		; Quotient bit -> Dividend LSB.
+		rol	<_ax + 1		; Rotate Dividend, MSB -> C.
 		dex
 		bne	.loop
-		sta	<__dl			; Save the remainder.
+		sta	<_dl			; Save the remainder.
 
 		leave
 
@@ -88,31 +88,31 @@ div16_7u	.proc
 ;
 ; div32_7u - Simple 32-bit /  7-bit divide.
 ;
-; Args: __ax = Dividend / Quotient
-; Args: __bx = Dividend / Quotient (if 32-bit)
-; Args: __cl = Dividor
-; Uses: __dl = Remainder
+; Args: _ax = Dividend / Quotient
+; Args: _bx = Dividend / Quotient (if 32-bit)
+; Args: _cl = Dividor
+; Uses: _dl = Remainder
 ;
 
 div32_7u	.proc
 
 		ldx	#32
 		cla				; Clear Remainder.
-		asl	<__ax + 0		; Rotate Dividend, MSB -> C.
-		rol	<__ax + 1
-		rol	<__ax + 2
-		rol	<__ax + 3
+		asl	<_ax + 0		; Rotate Dividend, MSB -> C.
+		rol	<_ax + 1
+		rol	<_ax + 2
+		rol	<_ax + 3
 .loop:		rol	a			; Rotate C into Remainder.
-		cmp	<__cl			; Test Divisor.
+		cmp	<_cl			; Test Divisor.
 		bcc	.skip			; CC if Divisor > Remainder.
-		sbc	<__cl			; Subtract Divisor.
-.skip:		rol	<__ax + 0		; Quotient bit -> Dividend LSB.
-		rol	<__ax + 1		; Rotate Dividend, MSB -> C.
-		rol	<__ax + 2
-		rol	<__ax + 3
+		sbc	<_cl			; Subtract Divisor.
+.skip:		rol	<_ax + 0		; Quotient bit -> Dividend LSB.
+		rol	<_ax + 1		; Rotate Dividend, MSB -> C.
+		rol	<_ax + 2
+		rol	<_ax + 3
 		dex
 		bne	.loop
-		sta	<__dl			; Save the remainder.
+		sta	<_dl			; Save the remainder.
 
 		leave
 

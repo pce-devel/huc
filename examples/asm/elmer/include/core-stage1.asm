@@ -5,7 +5,7 @@
 ;
 ; CD-ROM Stage1 loader using the "CORE(not TM)" PC Engine library code.
 ;
-; Copyright John Brandwood 2021.
+; Copyright John Brandwood 2021-2022.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -129,9 +129,9 @@ core_main:	jsr	ex_getver		; Get System Card version.
 		jsr	clear_vram		; Initialize VRAM.
 
 		lda	#<font_data		; Upload font data.
-		sta	<__si + 0
+		sta	<_si + 0
 		lda	#>font_data
-		sta	<__si + 1
+		sta	<_si + 1
 		jsr	upload_font8x8
 
 		cla				; Set up a 32x28 video
@@ -266,7 +266,7 @@ upload_font8x8: ldx	#$14			; Upload solid version to
 
 		vreg	#VDC_VWR
 		lda	#23			; Minimal font of 23 characters.
-		sta	<__al
+		sta	<_al
 
 		cly
 
@@ -274,16 +274,16 @@ upload_font8x8: ldx	#$14			; Upload solid version to
 		stz	tmp_shadow_buf, x	; of the glyph.
 
 		.if	1
-.line_loop:	lda	[__si],y		; Drop-shadow on the LHS.
+.line_loop:	lda	[_si], y		; Drop-shadow on the LHS.
 		sta	tmp_normal_buf, x	; Font data is RHS justified.
 		asl	a
 		.else
-.line_loop:	lda	[__si],y		; Drop-shadow on the RHS.
+.line_loop:	lda	[_si], y		; Drop-shadow on the RHS.
 		sta	tmp_normal_buf, x	; Font data is LHS justified.
 		lsr	a
 		.endif
 
-		ora	[__si],y
+		ora	[_si], y
 		sta	tmp_shadow_buf+2, x
 		ora	tmp_shadow_buf, x
 		eor	tmp_normal_buf, x
@@ -291,7 +291,7 @@ upload_font8x8: ldx	#$14			; Upload solid version to
 
 		iny
 		bne	.next_line
-		inc	<__si + 1
+		inc	<_si + 1
 .next_line:	inx
 		inx
 		cpx	#2*8
@@ -308,7 +308,7 @@ upload_font8x8: ldx	#$14			; Upload solid version to
 		bne	.plane23_loop
 		pha				; Preserve bit 2 & 3 byte.
 
-		dec	<__al
+		dec	<_al
 		bne	.tile_loop
 
 		pla

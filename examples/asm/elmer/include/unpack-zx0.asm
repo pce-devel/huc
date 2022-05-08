@@ -55,13 +55,13 @@ ZX0_WINMSK	=	($0800 - 1) >> 8	; RAM, located at $3800.
 ; Data usage is 11 bytes of zero-page, using aliases for clarity.
 ;
 
-zx0_srcptr	=	__si			; 1 word.
-zx0_dstptr	=	__di			; 1 word.
+zx0_srcptr	=	_si			; 1 word.
+zx0_dstptr	=	_di			; 1 word.
 
-zx0_length	=	__ax			; 1 word.
-zx0_offset	=	__bx			; 1 word.
-zx0_winptr	=	__cx			; 1 word.
-zx0_bitbuf	=	__dl			; 1 byte.
+zx0_length	=	_ax			; 1 word.
+zx0_offset	=	_bx			; 1 word.
+zx0_winptr	=	_cx			; 1 word.
+zx0_bitbuf	=	_dl			; 1 byte.
 
 
 
@@ -70,10 +70,10 @@ zx0_bitbuf	=	__dl			; 1 byte.
 ;
 ; zx0_to_ram - Decompress data stored in Einar Saukas's ZX0 "classic" format.
 ;
-; Args: __si, __si_bank = _farptr to compressed data in MPR3.
-; Args: __di = ptr to output address in RAM.
+; Args: _si, _si_bank = _farptr to compressed data in MPR3.
+; Args: _di = ptr to output address in RAM.
 ;
-; Uses: __si, __di, __ax, __bx, __cx, __dh !
+; Uses: _si, _di, _ax, _bx, _cx, _dh !
 ;
 
 zx0_to_ram	.proc
@@ -81,7 +81,7 @@ zx0_to_ram	.proc
 		tma3				; Preserve MPR3.
 		pha
 
-		jsr	__si_to_mpr3		; Map zx0_srcptr to MPR3.
+		jsr	set_si_to_mpr3		; Map zx0_srcptr to MPR3.
 
 		ldx	#$40			; Initialize bit-buffer.
 
@@ -222,16 +222,16 @@ zx0_to_ram	.proc
 		; Optimized handling of pointers crossing page-boundaries.
 		;
 
-.inc_off_src:	jsr	__si_inc_mpr3
+.inc_off_src:	jsr	inc.h_si_mpr3
 		bra	.off_skip1
 
-.inc_cp_src:	jsr	__si_inc_mpr3
+.inc_cp_src:	jsr	inc.h_si_mpr3
 		bra	.cp_skip1
 
 .inc_cp_dst:	inc	<zx0_dstptr + 1
 		bra	.cp_skip2
 
-.gamma_page:	jsr	__si_inc_mpr3
+.gamma_page:	jsr	inc.h_si_mpr3
 		bra	.gamma_skip1
 
 		;
@@ -269,10 +269,10 @@ zx0_to_ram	.proc
 ;
 ; zx0_to_vdc - Decompress data stored in Einar Saukas's ZX0 "classic" format.
 ;
-; Args: __si, __si_bank = _farptr to compressed data in MPR3.
-; Args: __di = ptr to output address in VRAM.
+; Args: _si, _si_bank = _farptr to compressed data in MPR3.
+; Args: _di = ptr to output address in VRAM.
 ;
-; Uses: __si, __di, __ax, __bx, __cx, __dl, __dh!
+; Uses: _si, _di, _ax, _bx, _cx, _dl, _dh!
 ;
 
 		.procgroup			; Group code in the same bank.
@@ -291,8 +291,8 @@ zx0_to_vdc	.proc
 		tma3				; Preserve MPR3.
 		pha
 
-		jsr	__si_to_mpr3		; Map zx0_srcptr to MPR3.
-		jsr	__di_to_vram		; Map zx0_dstptr to VRAM.
+		jsr	set_si_to_mpr3		; Map zx0_srcptr to MPR3.
+		jsr	set_di_to_vram		; Map zx0_dstptr to VRAM.
 
 		lda	#$40			; Initialize bit-buffer.
 		sta	<zx0_bitbuf
@@ -442,13 +442,13 @@ zx0_to_vdc	.proc
 		; Optimized handling of pointers crossing page-boundaries.
 		;
 
-.inc_off_src:	jsr	__si_inc_mpr3
+.inc_off_src:	jsr	inc.h_si_mpr3
 		bra	.off_skip1
 
 .inc_lz_dst:	bsr	.next_dstpage
 		bra	.lz_skip2
 
-.inc_cp_src:	jsr	__si_inc_mpr3
+.inc_cp_src:	jsr	inc.h_si_mpr3
 		bra	.cp_skip1
 
 .inc_cp_dst:	bsr	.next_dstpage
@@ -468,7 +468,7 @@ zx0_to_vdc	.proc
 		sta	<zx0_dstptr + 1
 		rts
 
-.gamma_page:	jsr	__si_inc_mpr3
+.gamma_page:	jsr	inc.h_si_mpr3
 		bra	.gamma_skip1
 
 		;
