@@ -8,7 +8,7 @@ This directory contains a number of example programs and utilities for developin
 * ipl-scd
   - A customized CD-ROM IPL that either displays an error message or runs an error overlay, when not booted on a Super CD-ROM.
 
-* rom-ted2romcd
+* ted2-bios-romcd
   - A modified System Card 3.0 HuCARD that runs a CD-ROM overlay stored inside the HuCARD image, rather than loading it from CD-ROM.
 
 
