@@ -64,7 +64,7 @@ USING_STAGE1	=	0	; (0 or 1)
 ; can be read from the secondary track if the drive has a problem reading it
 ; it from the primary location.
 ;
-; If set, the secondary track will be enabled when the library 1st starts.
+; If set, the secondary track will be enabled when the library first starts.
 ;
 
 	.ifndef	SUPPORT_2ISO
@@ -95,7 +95,7 @@ USING_PSGDRIVER	=	0	; (0 or 1)
 ; Support development for the Turbo EverDrive v2?
 ;
 ; This only applies to HuCard programs, but when chosen, the "CORE(not TM)"
-; kernel is moved from bank 0 to bank 1, and a minimal set of startup code
+; kernel is moved from bank 0 to bank 2, and a minimal set of startup code
 ; is put in bank 0.
 ;
 ; This is because the TED2 hardware occupies the whole of bank 0 when it is

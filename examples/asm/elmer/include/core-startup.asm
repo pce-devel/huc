@@ -51,18 +51,18 @@
 ;
 ;
 ; 2) If we're running on a HuCard that supports the Turbo Everdrive, then the
-;    first bank is reserved for mapping the TED2 hardware.
+;    first 2 banks are reserved for mapping the TED2 hardware and a RAM bank.
 ;
 ;    The PC Engine's memory map is set to ...
 ;
 ;      MPR0 = bank $FF : PCE hardware
 ;      MPR1 = bank $F8 : PCE RAM with Stack & ZP
-;      MPR2 = bank $01 : HuCard ROM
-;      MPR3 = bank $02 : HuCard ROM
-;      MPR4 = bank $03 : HuCard ROM
-;      MPR5 = bank $04 : HuCard ROM
-;      MPR6 = bank $05 : HuCard ROM
-;      MPR7 = bank $01 : HuCard ROM
+;      MPR2 = bank $02 : HuCard ROM
+;      MPR3 = bank $03 : HuCard ROM
+;      MPR4 = bank $04 : HuCard ROM
+;      MPR5 = bank $05 : HuCard ROM
+;      MPR6 = bank $06 : HuCard ROM
+;      MPR7 = bank $02 : HuCard ROM
 ;
 ;
 ; 3) If we're running on an old CD System, the overlay is loaded from the ISO
@@ -112,7 +112,7 @@
 ;
 
 		; Minimal HuCard startup code that immediately trampoline's
-		; to the normal HuCard startup code in bank 1.
+		; to the normal HuCard startup code in bank 2.
 
 		.org	$FF00
 
@@ -127,9 +127,9 @@ ted2_hw_reset:	sei				; Disable interrupts.
 		lda	#$F8
 		tam1
 
-		tii	.reboot_bank, _ax, 7	; Reboot with bank 1 in MPR7.
+		tii	.reboot_bank, _ax, 7	; Reboot with bank 2 in MPR7.
 		jmp	_ax
-.reboot_bank:	lda	#1			; Put bank 1 in MPR7.
+.reboot_bank:	lda	#2			; Put bank 2 in MPR7.
 		tam7
 		jmp	[$FFFE]			; Call reset, just like boot.
 
@@ -155,12 +155,27 @@ ted2_hw_reset:	sei				; Disable interrupts.
 		dw	ted2_hw_reset		; NMI	(unused)
 		dw	ted2_hw_reset		; RESET
 
-		.bank	1			; Continue in bank 1.
+		.data
+
+		.bank	1			; Keep bank 1 for MPR2 RAM!
+
+		.org	$5FFE			; Put something at the end so
+		dw	$FFFF			; that procedures are not put
+		.org	$4000			; in this bank!
+
+		.code
+
+		.bank	2			; Continue in bank 2.
 
 	.if	USING_NEWPROC			; If the ".proc" trampolines
-__trampolinebnk =	1			; are in MPR7, tell PCEAS to
-	.endif					; put them in bank 1.
+__trampolinebnk =	2			; are in MPR7, tell PCEAS to
+	.endif					; put them in bank 2.
 
+	.else	!CDROM
+		.fail	You cannot currently build for CD-ROM and SUPPORT_TED2!
+;	.if	!USING_MPR7
+;		.fail	You cannot build for CD-ROM and SUPPORT_TED2 without using MPR7!
+;	.endif	!USING_MPR7
 	.endif	!CDROM
 	.endif	SUPPORT_TED2
 
@@ -294,7 +309,7 @@ core_boot:
 		jsr	core_clr_hooks		; Reset default hooks.
 
 		tma2				; Remember overlay's 1st bank
-		sta	<core_1stbank		; $00, $01, $68 or $80!
+		sta	<core_1stbank		; $00, $02, $68 or $80!
 
 	.if	USING_MPR7
 		tam7				; "CORE(not TM)" takes MPR7!
@@ -302,6 +317,10 @@ core_boot:
 
 		ldx	#$FF			; Initialize stack pointer.
 		txs
+
+;		stz	TIMER_CR		; Stop HuC6280 timer.
+;		stz	IRQ_ACK			; Clr HuC6280 timer interrupt.
+;		stz	IRQ_MSK			; Clr HuC6280 interrupt mask.
 
 		lda	VDC_SR			; Purge any overdue VBL.
 		stz	irq_cnt			; Make it easy to check.
@@ -360,10 +379,6 @@ core_hw_reset:	sei				; Disable interrupts.
 		tam5
 		inc	a
 		tam6
-
-;		lda	#7			; Set HuC6280 interrupt mask.
-;		sta	IRQ_MSK
-;		stz	IRQ_ACK			; Clr HuC6280 timer interrupt.
 
 		jmp	core_boot		; Continue execution in MPR2.
 
