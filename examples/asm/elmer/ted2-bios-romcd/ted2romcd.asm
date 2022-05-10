@@ -57,13 +57,37 @@
                 jsr     test_overlay    ; Patch System Card's jump to boot loader.
 
                 ;
+                ; Autorun the CD, but not instantly, because that causes problems.
+                ;
+
+                .if     JPN_SYSCARD
+AUTORUN_ADR	=	$C8C4
+                .else
+AUTORUN_ADR	=	$C8B7
+                .endif
+
+		.bank	1
+		.org	AUTORUN_ADR
+
+		jsr	autorun_cd
+
+                .bank   0
+                .org    $FF00
+
+autorun_cd:	lda	irq_cnt
+		cmp	#30		; Wait 1/2 second.
+		cla
+		bcc	.set_pad1
+		lda	#$08
+.set_pad1:	sta	joynow
+		sta	joytrg
+		rts
+
+                ;
                 ; Copy ROM banks $20-$3F (256KB) into SCD RAM banks $68-$87,
                 ; then map banks $68-$6C to MPR2-6 and jump to bank $68:4000
                 ; just as if the game/overlay had been loaded by IPL-SCD.
                 ;
-
-                .bank   0
-                .org    $ff00
 
 test_overlay:   php                     ; Disable interrupts to avoid
                 sei                     ; screen-shake.

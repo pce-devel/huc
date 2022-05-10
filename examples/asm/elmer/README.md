@@ -11,6 +11,9 @@ This directory contains a number of example programs and utilities for developin
 * ted2-bios-romcd
   - A modified System Card 3.0 HuCARD that runs a CD-ROM overlay stored inside the HuCARD image, rather than loading it from CD-ROM.
 
+* ted2-bios-usbcd
+  - A modified System Card 3.0 HuCARD that runs a CD-ROM overlay uploaded through USB, rather than loading it from CD-ROM.
+
 
 ## Using the System Card BIOS
 

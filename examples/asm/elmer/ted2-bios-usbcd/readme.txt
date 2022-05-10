@@ -1,5 +1,5 @@
 *****************************************************************************
-Turbo Everdrive V2 ROMCD Overlay Tester
+Turbo Everdrive V2 USBCD Overlay Tester
 *****************************************************************************
 
 Note: To build this HuCard ROM, you must find your own source for a HuCard
@@ -24,7 +24,7 @@ used to test homebrew SCD overlay programs created by PCEAS.
 
 To do that ...
 
-  1) "make" this project to create the HuCard image "ted2romcd.pce".
+  1) "make" this project to create the HuCard image "ted2usbcd.pce".
 
   2) "make" your own game's SuperCD overlay using PCEAS as normal.
 
@@ -33,11 +33,12 @@ To do that ...
      In a Windows Command Prompt, this can be done with ...
      "copy /b ted2romcd.pce + mygame.ovl test.pce"
      
-  4) Upload the combined image to you TED2 with Krikzz's "turbo-usb.exe".
+  3) Upload ted2usb.pce to your TED2 with Krikzz's "turbo-usb.exe".
 
-  5) The System Card will startup, then automatically boot the CD that is in
-     the drive, in order to initialize the CD as normal, but then it loads
-     your game overlay from the ROM instead of the CD.
+     The System Card will startup, then automatically boot the CD that is
+     in the drive, then it waits for you to upload a CD overlay to run.
+
+  4) Upload your game's SuperCD overlay with Krikzz's "turbo-usb.exe".
 
      This avoids the need to burn a CD-R disc every time that you want to
      test some code on a real PC Engine CD-ROM.
