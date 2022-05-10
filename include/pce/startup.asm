@@ -380,7 +380,7 @@ cdrom_err_load:
 	bne	.error
 	lda	#$80
 	tam	#2
-	jmp	.boot
+	bra	.boot
 
 .error:	jmp	cd_boot		; Can't load - reboot CDROM system card
 	
@@ -401,9 +401,12 @@ cdrom_err_load:
 ;
 .if (CDROM = SUPER_CD)
 	jsr   ex_getver		; check if SCD program running
-	stx   cd_super		; on SCD hardware
-	cpx   #3		; don't copy to _bank_base if
-	bne   .nocopy		; memory doesn't exist there
+	cpx   #3		; on SCD hardware
+	bcc   .nocopy		; don't copy to _bank_base if
+	stx   cd_super		; memory doesn't exist there
+	tma   #6		; don't copy if SCD RAM mapped
+	tax			; i.e. somebody else loaded us
+	bpl   .copied		; completely
 
 	lda   #_bank_base+1	; copy bank 2 to proper location
 	tam   #6
@@ -412,7 +415,8 @@ cdrom_err_load:
 	lda   #_bank_base	; then copy bank 1
 	tam   #6
 	tii   $4000,$C000,$2000 ; then load rest of program
-	jmp   $C000 + (.nocopy & $1FFF)
+
+.copied:jmp   $C000 + (.nocopy & $1FFF)
 
 .nocopy:
 .endif	; (CDROM = SUPER_CD)
@@ -443,15 +447,20 @@ reset:
 	jsr   ex_rcroff
 	jsr   ex_irqoff
 	jsr   ad_reset
+	tma   #6		; Get LIB1_BANK.
 .else
 	stz   timer_ctrl	; init timer
+	tma   #7		; Get LIB1_BANK.
 .endif	; (CDROM)
 
-	jsr   init_psg		; init sound
-	jsr   init_vdc		; init video
+	inc   a			; Map LIB2_BANK into MPR5.
+	tam   #5
+	jsr   lib2_init_psg	; init sound
+	jsr   lib2_init_vdc	; init video
 .ifdef _SGX
-	jsr   init_sgx_vdc
+	jsr   lib2_init_sgx_vdc
 .endif
+
 	lda   #$1F		; init joypad
 	sta   joyena
 
@@ -522,8 +531,7 @@ reset:
 .if (CDROM)
 .if (CDROM = SUPER_CD)
 	 lda   cd_super		; don't load the program if SCD
-	 cmp   #3		; program not running on SCD hrdware
-	 beq   loadprog
+	 bne   loadprog		; program not running on SCD hrdware
 	 lda   cderr_override
 	 lbeq  dontloadprog
 	 jmp   cdrom_err_load
@@ -540,23 +548,25 @@ reset:
 loadprog:
 	lda   ovlentry+1	; current overlay (as written by ISOLINK)
 	cmp   #1		; is it initial overlay ?
-	lbne  init_go		; if not initial overlay, somebody else already
-				; loaded us completely; do not try to load remainder
+	beq   .load		; if not initial overlay, somebody else already
+.run:	jmp   init_go		; loaded us completely; do not try to load remainder
 				; (ie. executing CDROM error overlay)
 
-	stz   <__cl		; initial boot doesn't load complete program;
+.load:	stz   <__cl		; initial boot doesn't load complete program;
 	stz   <__ch		; prepare to load remainder
 	lda   #10		; 10th sector (0-1 are boot;
-				; 2-9 are this library...)
-	sta   <__dl
+	sta   <__dl		; 2-9 are this library...)
 	lda   #3		; load mode (consecutive banks; use MPR 3)
 	sta   <__dh
-	stw   #(_bank_base+2),<__bx	; 2 banks are boot/base library
-	stw   #(_nb_bank-2)*4,<__ax
+	lda   #(_bank_base+2)	; 2 banks are boot/base library
+	sta   <__bl
+	stz   <__bh
+	lda   #(_nb_bank-2)*4	; 512k maximum
+	sta   <__al
+	stz   <__ah
 	jsr   cd_read
-	cmp   #$00
-	lbeq  init_go
-
+	tax
+	beq   .run
 	; ----
 	jmp   cd_boot		; reset
 
@@ -646,8 +656,10 @@ dontloadprog:
 	jsr   _set_font_addr		; set VRAM
 
 .if (CDROM)
-	stb   #FONT_BANK+$80,<__bl	; guarantee FONT_BANK even if
-					; SCD on regular CDROM system
+;	stb   #FONT_BANK+$80,<__bl	; guarantee FONT_BANK even if
+;					; SCD on regular CDROM system
+	tma   #5			; guarantee FONT_BANK even if
+	sta   <__bl			; SCD on regular CDROM system
 .else
 	stb   #FONT_BANK+_bank_base,<__bl
 .endif
@@ -673,19 +685,9 @@ dontloadprog:
 	; The 'REAL' mapping for the lib2_load_font function
 	; maybe doesn't exist yet (we are executing from bank $80,
 	; not from $68 if it's a Super CDROM)
-	;
-	; So we must map the version at bank ($80 + LIB2_BANK)
-	; before executing it.  We remap the bank after completion,
-	; 'just in case'
 
 .if  (CDROM)
-	tma   #page(lib2_load_font)
-	pha
-	lda   #LIB2_BANK+$80
-	tam   #page(lib2_load_font)
 	jsr   lib2_load_font
-	pla
-	tam   #page(lib2_load_font)
 .else
 	jsr   load_font
 .endif
@@ -714,29 +716,24 @@ dontloadprog:
 
 .if (CDROM)
 .if (CDROM = SUPER_CD)
-	  lda  cd_super
-	  cmp  #3
-	  lbeq  .ok	; SCD running on Super system
-
-	  lda	  #FONT_BANK+$80	; guarantee FONT_BANK even if
-					; SCD on regular CDROM system
-	  tam	  #PAGE(scdmsg1)
+	  lda	  cd_super
+	  lbne	  .ok	; SCD running on Super system
 
 	  __stwi  <__si, scdmsg1
-	  __ldwi  $0180
-	  call    _put_string.2
+	  __ldwi  $0181
+	  jsr     _put_string.2
 
 	  __stwi  <__si, scdmsg2
-	  __ldwi  $0200
-	  call    _put_string.2
+	  __ldwi  $0201
+	  jsr     _put_string.2
 
 	  __stwi  <__si, scdmsg3
-	  __ldwi  $0383
-	  call    _put_string.2
+	  __ldwi  $0384
+	  jsr     _put_string.2
 
 	  __stwi  <__si, scdmsg4
-	  __ldwi  $0403
-	  call    _put_string.2
+	  __ldwi  $0404
+	  jsr     _put_string.2
 
 	  bra  *		; otherwise loop on blank screen
 
