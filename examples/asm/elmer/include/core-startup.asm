@@ -367,11 +367,16 @@ core_hw_reset:	sei				; Disable interrupts.
 		lda	#$F8
 		tam1
 
+		stz	TIMER_CR		; HW reset already does these,
+		stz	IRQ_ACK			; but this may be a reset from
+		stz	IRQ_MSK			; software (i.e. joypad).
+
 		tai	const_0000, $2000, 8192 ; Clear RAM.
 
-		tma7				; Set CD-ROM overlay memory map,
-		tam2				; 1st 5 banks in MPR2-MPR6.
-		inc	a
+		tma7				; Not always bank 0!
+
+		tam2				; Set CD-ROM overlay memory map,
+		inc	a			; 1st 5 banks in MPR2-MPR6.
 		tam3
 		inc	a
 		tam4
