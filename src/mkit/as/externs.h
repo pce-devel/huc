@@ -42,7 +42,7 @@ extern int complex_expr;		/* NZ if an expression contains operators */
 extern int mopt;
 extern int in_macro;
 extern int expand_macro;
-extern char marg[8][10][80];
+extern char marg[8][10][256];
 extern int midx;
 extern int mcounter, mcntmax;
 extern int mcntstack[8];

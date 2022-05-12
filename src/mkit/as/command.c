@@ -171,6 +171,7 @@ void
 do_db(int *ip)
 {
 	unsigned char c;
+	unsigned char h;
 
 	/* define label */
 	labldef(0, 0, LOCATION);
@@ -203,15 +204,83 @@ do_db(int *ip)
 				if (c == '\\') {
 					c = prlnbuf[++(*ip)];
 					switch (c) {
-					case 'r':
-						c = '\r';
+
+					case '\\':
+						c = '\\';
+						break;
+					case '\"':
+						c = '\"';
+						break;
+					case '\'':
+						c = '\'';
+						break;
+					case '0':
+						c = 0;
+						break;
+					case 'a':
+						c = '\a';
+						break;
+					case 'b':
+						c = '\b';
+						break;
+					case 'e':
+						c = 0x1B;
+						break;
+					case 'f':
+						c = '\f';
 						break;
 					case 'n':
 						c = '\n';
 						break;
+					case 'r':
+						c = '\r';
+						break;
 					case 't':
 						c = '\t';
 						break;
+					case 'v':
+						c = '\v';
+						break;
+					case 'x':
+						c = prlnbuf[++(*ip)];
+
+						if ((c >= '0') && (c <= '8'))
+							h = (c - '0');
+						else
+						if ((c >= 'A') && (c <= 'F'))
+							h = (c + 10 - 'A');
+						else
+						if ((c >= 'a') && (c <= 'f'))
+							h = (c + 10 - 'a');
+						else {
+							error("Illegal character in hex escape sequence!");
+							return;
+						}
+
+						for (;;) {
+							c = prlnbuf[++(*ip)];
+
+							if ((c >= '0') && (c <= '8'))
+								h = (h << 4) + (c - '0');
+							else
+							if ((c >= 'A') && (c <= 'F'))
+								h = (h << 4) + (c + 10 - 'A');
+							else
+							if ((c >= 'a') && (c <= 'f'))
+								h = (h << 4) + (c + 10 - 'a');
+							else {
+								--(*ip);
+								break;
+							}
+						}
+
+						c = h;
+						break;
+					default:
+						error("Illegal character in escape sequence!");
+						return;
+//						/* just pass it on, breaking the C standard */
+//						break;
 					}
 				}
 				/* store char on last pass */
@@ -1426,12 +1495,14 @@ do_fail(int *ip)
 void
 do_section(int *ip)
 {
+/*
 	if (proc_ptr && (scopeptr == NULL)) {
 		if (optype == S_DATA) {
 			fatal_error("No data segment in procs!");
 			return;
 		}
 	}
+*/
 	if (section != optype) {
 		/* backup current section data */
 		section_bank[section] = bank;

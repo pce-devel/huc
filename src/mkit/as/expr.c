@@ -476,7 +476,96 @@ push_val(int type)
 	case T_CHAR:
 		expr++;
 		val = *expr++;
-		if ((*expr != c) || (val == 0)) {
+		if (val == 0) {
+			error("Syntax Error!");
+			return (0);
+		}
+
+		if (val == '\\') {
+			unsigned char h;
+			val = *expr++;
+			switch (val) {
+
+			case '\\':
+				val = '\\';
+				break;
+			case '\"':
+				val = '\"';
+				break;
+			case '\'':
+				val = '\'';
+				break;
+			case '0':
+				val = 0;
+				break;
+			case 'a':
+				val = '\a';
+				break;
+			case 'b':
+				val = '\b';
+				break;
+			case 'e':
+				val = 0x1B;
+				break;
+			case 'f':
+				val = '\f';
+				break;
+			case 'n':
+				val = '\n';
+				break;
+			case 'r':
+				val = '\r';
+				break;
+			case 't':
+				val = '\t';
+				break;
+			case 'v':
+				val = '\v';
+				break;
+			case 'x':
+				val = *expr++;
+
+				if ((val >= '0') && (val <= '8'))
+					h = (val - '0');
+				else
+				if ((val >= 'A') && (val <= 'F'))
+					h = (val + 10 - 'A');
+				else
+				if ((val >= 'a') && (val <= 'f'))
+					h = (val + 10 - 'a');
+				else {
+					error("Illegal character in hex escape sequence!");
+					return (0);
+				}
+
+				for (;;) {
+					val = *expr++;
+
+					if ((val >= '0') && (val <= '8'))
+						h = (h << 4) + (val - '0');
+					else
+					if ((val >= 'A') && (val <= 'F'))
+						h = (h << 4) + (val + 10 - 'A');
+					else
+					if ((val >= 'a') && (val <= 'f'))
+						h = (h << 4) + (val + 10 - 'a');
+					else {
+						--expr;
+						break;
+					}
+				}
+
+				val = h;
+				break;
+			default:
+				error("Illegal character in escape sequence!");
+				return (0);
+//				/* just pass it on, breaking the C standard */
+//				break;
+			}
+		}
+
+		if (*expr != c) {
 			error("Syntax Error!");
 			return (0);
 		}

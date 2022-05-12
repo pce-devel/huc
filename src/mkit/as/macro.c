@@ -9,7 +9,7 @@
 int mopt;
 int in_macro;
 int expand_macro;
-char marg[8][10][80];
+char marg[8][10][256];
 int midx;
 int mcounter, mcntmax;
 int mcntstack[8];
@@ -195,12 +195,14 @@ macro_getargs(int ip)
 					error("Unterminated string!");
 					return (0);
 				}
-				if (i == 80) {
-					error("String too long, max. 80 characters!");
+				if (i == 256) {
+					error("String too long, max. 256 characters!");
 					return (0);
 				}
-				if (t == c)
-					break;
+				if (t == c) {
+					if ((c != '\"') || (ptr[i - 1] != '\\'))
+						break;
+				}
 				ptr[i++] = t;
 			}
 			if (c == '\"')
