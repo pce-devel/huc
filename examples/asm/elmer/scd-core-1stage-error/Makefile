@@ -14,7 +14,7 @@ SRC_ISO = stage1.ovl
 all: core-1stage-error.iso
 
 core-1stage-error.iso: $(SRC_ISO) error.ovl
-	$(IL) core-1stage-error.iso -boot="../include/ipl-scd.bin" -ipl="1-Stage-cderr CD" -asm $(SRC_ISO) -cderr error.ovl
+	$(IL) core-1stage-error.iso -boot="../include/ipl-scd.dat" -ipl="1-Stage-cderr CD" -asm $(SRC_ISO) -cderr error.ovl
 
 stage1.ovl: $(SRC_OVL) $(SRC_INC)
 	$(AS) $(AFLAGS) -scd stage1.asm

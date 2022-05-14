@@ -14,7 +14,7 @@ SRC_ISO = hello.ovl
 all: bios-hello-error.iso
 
 bios-hello-error.iso: $(SRC_ISO) error.ovl
-	$(IL) bios-hello-error.iso -boot="../include/ipl-scd.bin" -ipl="SuperCD Error" -asm $(SRC_ISO) -cderr error.ovl
+	$(IL) bios-hello-error.iso -boot="../include/ipl-scd.dat" -ipl="SuperCD Error" -asm $(SRC_ISO) -cderr error.ovl
 
 hello.ovl: $(SRC_OVL) $(SRC_INC)
 	$(AS) $(AFLAGS) -scd hello.asm

@@ -8,7 +8,7 @@ AFLAGS ?= -raw -m -l 2 -S
 
 ipl-scd.bin: $(SRC)
 	$(AS) $(AFLAGS) -ipl ipl-scd.asm
-	cp ipl-scd.bin ../include/ipl-scd.bin
+	cp ipl-scd.bin ../include/ipl-scd.dat
 
 clean:
-	rm -f ../include/ipl-scd.bin *.bin *.lst *.sym
+	rm -f *.bin *.lst *.sym
