@@ -23,9 +23,21 @@ install:
 	cp -pr include/pce/* /usr/include/pce/
 
 package:
-	$(MAKE) clean
+	mkdir -p tmp
+	strip bin/*
+	mv bin/* tmp/
+	$(MAKE) --directory=src   clean > /dev/null
+	$(MAKE) --directory=tgemu clean > /dev/null
+	cd examples
+	find . -type f -name '*.s'   -delete
+	find . -type f -name '*.lst' -delete
+	find . -type f -name '*.sym' -delete
+	find . -type f -name '*.bin' -delete
+	find . -type f -name '*.ovl' -delete
+	cd ..
+	mv tmp/* bin/
+	rm -d tmp
 	rm -f huc.zip
-	zip -R huc \* -x \*CVS\*
+	zip -r huc * -x .*
 
 examples: src
-
