@@ -19,7 +19,7 @@ TARGETS  = $(EXECMX) $(PERUN) $(GETROM)
 #
 
 all::
-ifneq "$(shell uname -s)" "Linux"
+ifneq ($(shell uname -s),Linux)
 	@echo 'Skipping Develo directories on this platform'
 else
 	$(MAKE) lib "COMMAND=$@"
@@ -27,7 +27,7 @@ else
 endif
 
 clean::
-ifneq "$(shell uname -s)" "Linux"
+ifneq ($(shell uname -s),Linux)
 	@echo 'Skipping Develo directories on this platform'
 else
 	$(MAKE) lib "COMMAND=$@"
@@ -60,3 +60,5 @@ indent:
 #
 include $(MAKETARG)
 
+clean::
+	rm -f $(TARGETS) $(BINDIR)/$(EXECMX) $(BINDIR)/$(PERUN) $(BINDIR)/$(GETROM)
