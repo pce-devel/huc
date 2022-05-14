@@ -40,4 +40,7 @@ package:
 	rm -f huc.zip
 	zip -r huc * -x .*
 
+check:
+	md5sum -c < examples/checksum.txt
+
 examples: src
