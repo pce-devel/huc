@@ -187,7 +187,7 @@ do_leave(int *ip)
 		if (newproc_opt != 0) {
 			/* "jmp" opcode */
 			putbyte(data_loccnt, 0x4C);
-			putword(data_loccnt+1, call_1st - 3);
+			putword(data_loccnt+1, call_1st - 4);
 		} else {
 			/* "rts" opcode */
 			putbyte(data_loccnt, 0x60);
@@ -651,6 +651,7 @@ proc_reloc(void)
 	/* initialize the "leave_proc" routine for exiting a procedure */
 	if ((newproc_opt != 0) && (num_relocated != 0)) {
 		/* install code for leaving .proc */
+		/* fix do_proc() if this changes! */
 		poke(call_ptr--, 0x60);			// rts
 		poke(call_ptr--, 0x98);			// tya
 		poke(call_ptr--, 0x40);
