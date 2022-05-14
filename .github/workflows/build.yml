@@ -1,0 +1,79 @@
+name: build
+
+# Github Actions aren't supporting anchors yet
+# upvote here https://github.com/github/feedback/discussions/4501
+
+on: 
+  push:
+  # activating dispatch to allow manual runs
+  workflow_dispatch:
+  
+env:
+  MSYS2_INSTALL_FOLDER: C:\msys64\ # provided by GitHub Actions VMs
+
+
+jobs:
+  build_linux:
+    strategy:
+      matrix:
+        config:
+            - {os: [ubuntu-18.04, ubuntu-20.04]}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Check out code from the repository
+        uses: actions/checkout@v3
+      - name: Setup
+        run: |
+          make
+          echo Build Complete
+      - name: Build
+        run: |
+          make
+          echo Build Complete
+      - name: Archive toolchain
+        uses: actions/upload-artifact@v3
+        with:
+          name: toolchain-${{ matrix.os }}
+          path: |
+            bin
+            include
+
+  build_mac:
+    strategy:
+      matrix:
+        os: [macos-11, macos-12]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Check out code from the repository
+        uses: actions/checkout@v3
+      - name: Build
+        run: |
+          brew install make # need gnumake
+          gmake
+          echo Build Complete
+      - name: Archive toolchain
+        uses: actions/upload-artifact@v3
+        with:
+          name: toolchain-${{ matrix.os }}
+          path: |
+            bin
+            include
+
+  build_msys2_windows_2022:
+    runs-on: windows-2022
+    steps:
+      - name: Check out code from the repository
+        uses: actions/checkout@v3
+      - name: Build
+        run: |
+          ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -c "pacman -S base-devel mingw-w64-x86_64-gcc git --noconfirm"
+          ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -where %CD% -c "make"
+          echo Build Complete
+      - name: Archive toolchain
+        uses: actions/upload-artifact@v3
+        with:
+          name: toolchain-mingw64
+          path: |
+            bin
+            include
+
