@@ -49,6 +49,10 @@ USING_STAGE1	=	0
 
 USING_MPR7	=	0
 
+		; This loader wants to keep DATA_BANK == CORE_BANK, so ...
+
+RESERVE_BANKS	=	-1
+
 		; Include the library, and override the project's settings of
 		; the above two values that are in "core-config.inc".
 
@@ -67,10 +71,10 @@ USING_MPR7	=	0
 		.org	core_ramend
 
 		.data
-		.org	core_ramend
+		.org	core_ramcpy
 
 		.if	(* & 2047)
-		ds	2048 - (* & 2047)	; Pad to end of CD sector.
+		ds	2048 - (* & 2047), 255	; Pad to end of CD sector.
 		.endif
 
 
@@ -265,7 +269,7 @@ upload_font8x8: ldx	#$14			; Upload solid version to
 		stx	VDC_DH
 
 		vreg	#VDC_VWR
-		lda	#23			; Minimal font of 23 characters.
+		lda	#25			; Minimal font of 23 characters.
 		sta	<_al
 
 		cly
@@ -326,8 +330,13 @@ upload_font8x8: ldx	#$14			; Upload solid version to
 write_string:	php				; Nasty code to set up the
 		sei				; VDC write address without
 		st0	#VDC_MAWR		; using the "vreg" macro.
+	.if	0
 		st1	#<(2 + (13 * 64))
 		st2	#>(2 + (13 * 64))
+	.else
+		st1	#<(1 + (13 * 64))
+		st2	#>(1 + (13 * 64))
+	.endif
 		st0	#VDC_VWR
 		lda	#VDC_VWR
 		sta	<vdc_reg
@@ -378,17 +387,13 @@ write_string:	php				; Nasty code to set up the
 
 	.if	0
 
-.supercd_msg:	db	2			; Screen X
-		db	13			; Screen Y
-		db	"ABCDE@FGHIJKL@AMNODP@QDDRDRS"
+.supercd_msg:	db	"ABCDE@FGHIJKL@AMNODP@QDDRDRS"
 ;		db	"Super CD-ROM2 System needed!"
 		db	0
 
 	.else
 
-.supercd_msg:	db	1			; Screen X
-		db	13			; Screen Y
-		db	"ABCDE@FGHIJKL@AMNODP@EDWBXEDRS"
+.supercd_msg:	db	"ABCDE@FGHIJKL@AMNODP@EDWBXEDRS"
 ;		db	"Super CD-ROM2 System required!"
 		db	0
 

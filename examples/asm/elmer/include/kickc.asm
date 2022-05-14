@@ -35,12 +35,12 @@
 ;
 ;      MPR0 = bank $FF : PCE hardware
 ;      MPR1 = bank $F8 : PCE RAM with ZP & Stack (BSS segment)
-;      MPR2 = bank $87 : SGX RAM or CD RAM
+;      MPR2 = bank $01 : TED2 RAM
 ;      MPR3 = bank $xx : Freely mapped data, init to $03 (DATA segment)
 ;      MPR4 = bank $xx : Freely mapped data, init to $04
-;      MPR5 = bank $02 : KickC permanent code & data (CODE segment)
+;      MPR5 = bank $03 : KickC permanent code & data (CODE segment)
 ;      MPR6 = bank $xx : Banked ASM library & KickC procedures
-;      MPR7 = bank $01 : CORE(not TM) base code & call-trampolines
+;      MPR7 = bank $02 : CORE(not TM) base code & call-trampolines
 ;
 ;
 ; 3) If we're running on an old CD System, the overlay is loaded from the ISO
@@ -195,9 +195,5 @@ kickc_vbl:	jmp	xfer_palettes		; Upload any palette changes.
 		.org	$A000			; MPR5 (.section CODE).
 
 		include	"fastmath.asm"		; 2KBytes of fast-multiply.
-
-		.data				; KickC banked data starts
-		.bank	CORE_BANK + 2		; after the code, and runs
-		.org	$6000			; in MPR3 (.section DATA)
 
 		.code				; Start the KickC code ...

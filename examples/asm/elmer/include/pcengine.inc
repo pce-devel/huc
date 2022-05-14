@@ -18,7 +18,7 @@
 ;
 ; HuC6270 - Video Display Controller
 ;
-; The VDC is mirrored throughout the first 1KB of the hardware bank.
+; The VDC is mirrored every 32-bytes in the first 1KB of the hardware bank.
 ;
 ; Traditionally, PCE developers use the first mirrored address at $0000, but
 ; I'm using the mirror at $0200 so that the address doesn't confuse folk who
@@ -645,11 +645,11 @@ VDC_HDR_480	= $053B ; HDE HDW
 VDC_HSR_512	= $0B05 ; HDS HSW (Normal)
 VDC_HDR_512	= $033F ; HDE HDW
 
-; VDC constants for 200, 208, 224 & 240 high display.
+; VDC constants for 192, 208, 224 & 240 high display.
 
-VDC_VPR_200	= $2302
-VDC_VDW_200	= $00C7
-VDC_VCR_200	= $00FF ; Minimum of $17 for 263 lines.
+VDC_VPR_192	= $2702
+VDC_VDW_192	= $00BF
+VDC_VCR_192	= $00FF ; Minimum of $1B for 263 lines.
 
 VDC_VPR_208	= $1F02
 VDC_VDW_208	= $00CF

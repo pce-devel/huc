@@ -36,17 +36,36 @@
 ; ***************************************************************************
 
 
+		;
+		; Create some equates for a very generic VRAM layout, with a
+		; 64*32 BAT, followed by the SAT, then followed by the tiles
+		; for the ASCII character set.
+		;
+		; This uses the first 8KBytes of VRAM ($0000-$0FFF).
+		;
+
+BAT_LINE	=	64
+BAT_SIZE	=	64 * 32
+SAT_ADDR	=	BAT_SIZE		; SAT takes 16 tiles of VRAM.
+CHR_ZERO	=	BAT_SIZE / 16		; 1st tile # after the BAT.
+CHR_0x10	=	CHR_ZERO + 16		; 1st tile # after the SAT.
+CHR_0x20	=	CHR_ZERO + 32		; ASCII ' ' CHR tile #.
+
+		;
 		; This is an overlay program that relies on a Stage1 loader
 		; to install the library kernel, so don't build the kernel.
 		;
 		; You would normally just set this in your project's local
 		; "core-config.inc", but this shows another way to achieve
 		; the same result.
+		;
 
 USING_STAGE1	=	1
 
+		;
 		; Include the library, reading the project's configuration
 		; settings from the local "core-config.inc", if it exists.
+		;
 
 		include "core.inc"		; Basic includes.
 
@@ -57,21 +76,6 @@ USING_STAGE1	=	1
 		include	"vdc.asm"		; Useful VDC routines.
 		include	"font.asm"		; Useful font routines.
 		include "unpack-zx0.asm"	; Decompressor for ZX0.
-
-
-
-; ***************************************************************************
-; ***************************************************************************
-;
-; Create some equates for a simple VRAM layout, with a 64*32 BAT, followed by
-; the SAT, then followed by the tiles for the ASCII character set.
-;
-
-BAT_SIZE	=	64 * 32
-SAT_ADDR	=	BAT_SIZE		; SAT takes 16 tiles of VRAM.
-CHR_ZERO	=	BAT_SIZE / 16		; 1st tile # after the BAT.
-CHR_0x10	=	CHR_ZERO + 16		; 1st tile # after the SAT.
-CHR_0x20	=	CHR_ZERO + 32		; ASCII ' ' CHR tile #.
 
 
 
@@ -180,25 +184,13 @@ core_main:	; Turn the display off and initialize the screen mode.
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; Put the data at the start of the next bank after the code.
+; The "CORE(not TM)" library initializes .DATA, so we don't do it again!
 ;
-; This is complicated by PCEAS's "bank()" function reporting the target bank,
-; which is $68..$87 for a Super CD-ROM, but the ".bank" pseudo-op uses a bank
-; number relative to the start of the overlay.
-;
-; The difference can be fixed by using the "_bank_base" value that PCEAS sets
-; at the start of the assembly.
-;
-; _bank_base = $00 when building a HuCARD ROM.
-; _bank_base = $68 when building with the "-scd" flag (for Super CD-ROM).
-; _bank_base = $80 when building with the "-cd" flag (for original CD-ROM).
-;
-
-DATA_BANK	=	bank(*) + 1 - _bank_base
+; ***************************************************************************
+; ***************************************************************************
 
 		.data
-		.bank	DATA_BANK
-		.org	$6000
+
 
 
 ; ***************************************************************************

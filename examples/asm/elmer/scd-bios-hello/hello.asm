@@ -36,9 +36,26 @@
 ; ***************************************************************************
 
 
-		.nolist
+		;
+		; Create some equates for a very generic VRAM layout, with a
+		; 64*32 BAT, followed by the SAT, then followed by the tiles
+		; for the ASCII character set.
+		;
+		; This uses the first 8KBytes of VRAM ($0000-$0FFF).
+		;
 
+BAT_LINE	=	64
+BAT_SIZE	=	64 * 32
+SAT_ADDR	=	BAT_SIZE		; SAT takes 16 tiles of VRAM.
+CHR_ZERO	=	BAT_SIZE / 16		; 1st tile # after the BAT.
+CHR_0x10	=	CHR_ZERO + 16		; 1st tile # after the SAT.
+CHR_0x20	=	CHR_ZERO + 32		; ASCII ' ' CHR tile #.
+
+		;
 		; Include the equates for the basic PCE hardware.
+		;
+
+		.nolist
 
 		include "pceas.inc"
 		include "pcengine.inc"
@@ -46,7 +63,9 @@
 		.list
 		.mlist
 
+		;
 		; Initialize the program sections/groups.
+		;
 
 		.zp				; Start at the beginning
 		.org	$2000			; of zero-page.
@@ -58,6 +77,7 @@
 		.org	$4000			; been set to map the program
 		jmp	bios_main		; into MPR2 and jump to $4000.
 
+		;
 		; A lot of the library functions are written as procedures
 		; with ".proc/.endp", so we need to decide where to put the
 		; call-trampolines so that the procedures can be paged into
@@ -65,24 +85,12 @@
 		;
 		; If you're not using the ".proc/.endp" functionality then
 		; this doesn't need to be set.
+		;
 
 	.if	USING_NEWPROC			; If the ".proc" trampolines
 __trampolinebnk	=	0			; are in MPR2, tell PCEAS to
 __trampolineptr	=	$5FFF			; put them right at the end.
 	.endif
-
-
-
-; ***************************************************************************
-; ***************************************************************************
-;
-; Create some equates for the System Card's VRAM layout at boot.
-;
-
-BAT_SIZE	=	64 * 32
-SAT_ADDR	=	$1000			; System Card's initial SAT.
-CHR_ZERO	=	$2000 / 16		; System Card's initial font.
-CHR_0x20	=	CHR_ZERO + 32		; ASCII ' ' CHR tile #.
 
 
 

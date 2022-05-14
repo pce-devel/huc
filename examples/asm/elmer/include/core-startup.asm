@@ -515,3 +515,35 @@ core_ramend	rs	0
 
 		.org	$4000 + (* & $1FFF)
 	.endif	USING_MPR7
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; The DATA_BANK location needs to be set as early as possible so that library
+; code is able to put data in there before the total overall size of the code
+; is known.
+;
+; By default, DATA_BANK is the next bank after the CORE_BANK.
+;
+; RESERVE_BANKS allows developers to reserve some banks between the CORE_BANK
+; and the DATA_BANK that they can use however they wish.
+;
+; One use for RESERVE_BANKS is to create empty space that PCEAS can use when
+; it relocates procedures. This provides a way for a developer to group code
+; together at the start of memory, and leave the maximum number of banks for
+; loading dynamic data from CD-ROM.
+;
+; The KickC environment sets RESERVE_BANKS=1 (or higher) so that there is a
+; a bank for the permanent C code and static constants.
+;
+; RESERVE_BANKS is normally defined in each project's "core-config.inc".
+;
+
+DATA_BANK	=	CORE_BANK + 1 + RESERVE_BANKS
+
+		.data
+		.bank	DATA_BANK
+		.org	$6000
+		.code

@@ -48,7 +48,7 @@ USING_MPR7	=	1	; (0 or 1)
 ; loader to install the library's kernel code into PCE RAM in MPR1?
 ;
 ; If this is set, the library's kernel code will be excluded from the build,
-; which will save about 1KB-3KB of code space in every overlay program.
+; which will save about 1KB-3KB of code space in every overlay program!
 ;
 ; N.B. The CD-ROM Stage1 loader sets USING_STAGE1=0 so it builds correctly.
 ;
@@ -150,3 +150,30 @@ SUPPORT_MOUSE	=	0	; (0 or 1)
 	.ifndef	MAX_PADS
 MAX_PADS	=	5	; (1..5)
 	.endif
+
+;
+; The DATA_BANK location needs to be set as early as possible so that library
+; code is able to put data in there before the total overall size of the code
+; is known.
+;
+; By default, DATA_BANK is the next bank after the CORE_BANK.
+;
+; RESERVE_BANKS allows developers to reserve some banks between the CORE_BANK
+; and the DATA_BANK that they can use however they wish.
+;
+; One use for RESERVE_BANKS is to create empty space that PCEAS can use when
+; it relocates procedures. This provides a way for a developer to group code
+; together at the start of memory, and leave the maximum number of banks for
+; loading dynamic data from CD-ROM.
+;
+; The KickC environment sets RESERVE_BANKS=1 (or higher) so that there is a
+; a bank for the permanent C code and static constants.
+;
+
+	.ifndef	RESERVE_BANKS
+	.ifndef	_KICKC
+RESERVE_BANKS	=	0
+	.else
+RESERVE_BANKS	=	1
+	.endif	_KICKC
+	.endif	RESERVE_BANKS

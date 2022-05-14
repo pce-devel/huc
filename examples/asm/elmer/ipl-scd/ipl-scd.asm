@@ -418,7 +418,7 @@ upload_font8x8: ldx	#$14			; Upload solid version to
 		stx	VDC_DH
 
 		vreg	#VDC_VWR
-		lda	#23			; Minimal font of 23 characters.
+		lda	#25			; Minimal font of 25 characters.
 		sta	<_al
 
 		cly
