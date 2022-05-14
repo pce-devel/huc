@@ -1,0 +1,7 @@
+ISO-646 International Character Sets (removing any international modifications to #)
+
+ISO-646 English (ISO-IR-006):   @ [ \ ] ^ ` { | } ~
+ISO-646 French  (ISO-IR-069):   à ° ç § ^ µ é ù è ¨
+ISO-646 Italian (ISO-IR-015):   § ° ç é ^ ù à ò è ì
+ISO-646 German  (ISO-IR-021):   § Ä Ö Ü ^ ` ä ö ü ß
+ISO-646 Spanish (ISO-IR-085):   · ¡ Ñ Ç ¿ ` ´ ñ ç ¨
