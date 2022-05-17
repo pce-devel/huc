@@ -58,7 +58,8 @@ mul8u		.proc
 ; Args: _ax = Dividend / Quotient
 ; Args: _bx = Dividend / Quotient (if 32-bit)
 ; Args: _cl = Dividor
-; Uses: _dl = Remainder
+;
+; Returns: Y=A,Z-flag,N-flag = Remainder.
 ;
 
 div16_7u	.proc
@@ -75,7 +76,7 @@ div16_7u	.proc
 		rol	<_ax + 1		; Rotate Dividend, MSB -> C.
 		dex
 		bne	.loop
-		sta	<_dl			; Save the remainder.
+		tay				; Return the remainder.
 
 		leave
 
@@ -91,7 +92,8 @@ div16_7u	.proc
 ; Args: _ax = Dividend / Quotient
 ; Args: _bx = Dividend / Quotient (if 32-bit)
 ; Args: _cl = Dividor
-; Uses: _dl = Remainder
+;
+; Returns: Y=A,Z-flag,N-flag = Remainder.
 ;
 
 div32_7u	.proc
@@ -112,7 +114,7 @@ div32_7u	.proc
 		rol	<_ax + 3
 		dex
 		bne	.loop
-		sta	<_dl			; Save the remainder.
+		tay				; Return the remainder.
 
 		leave
 
