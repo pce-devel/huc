@@ -1,10 +1,11 @@
 # Known MD5 checksums for the compiled HuC examples
 # which can be used to check for toolchain breakage.
 #
-1309fa9202f454d2fe2d6f809166f944 *examples/acd/ac_test.iso
-bb51c27eb2c650d2b53c12f6a1a6225c *examples/promotion/promotion.pce
-21055a067e4c54c793c3a275c086d875 *examples/scroll/scroll.pce
-4427a7142e975f7a2892f0b1c6ab1afd *examples/sgx/sgx_test.iso
-aa1c335beb5fd981f298e5f3463da222 *examples/sgx/sgx_test.sgx
-80867e12dfedab6f60dbe2630f9704dd *examples/shmup/shmup.iso
-13f31af65ed448415cb08369cc73660d *examples/shmup/shmup.pce
+c45f6d355344307809d9b12ee783d05f *examples/acd/ac_test.iso
+d1af59fb532cb821ec14c5a36d898691 *examples/overlay/overlay.iso
+7fa72a48e65519bae77cca31a4d62c46 *examples/promotion/promotion.pce
+fc26cacbdb8a2dd069d424a44dc16aa2 *examples/scroll/scroll.pce
+04b34498a13c81db9e9bd53164964852 *examples/sgx/sgx_test.iso
+7ba2832c3ca909629887501854899bff *examples/sgx/sgx_test.sgx
+1c6059803ca91eef0b2599adbd7647bb *examples/shmup/shmup.iso
+6943819c7cc5df579f785e8e8651f100 *examples/shmup/shmup.pce
