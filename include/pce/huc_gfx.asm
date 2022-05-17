@@ -40,10 +40,13 @@ _cls:
 _cls.1:
 	setvwaddr $0
 	; --
+	lda	<__dx
+	sta	video_data
+	lda	<__dx+1
 	ldy	bat_height
 .l2:	ldx	bat_width
 	; --
-.l3:	stw	<__dx,video_data
+.l3:	sta	video_data+1
 	dex
 	bne	.l3
 	dey

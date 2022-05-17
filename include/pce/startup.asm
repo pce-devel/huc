@@ -380,7 +380,7 @@ cdrom_err_load:
 	bne	.error
 	lda	#$80
 	tam	#2
-	bra	.boot
+	jmp	.boot
 
 .error:	jmp	cd_boot		; Can't load - reboot CDROM system card
 	
@@ -696,6 +696,8 @@ dontloadprog:
 	; END stolen font-load
 	;
 
+	lda   #1
+	jsr   wait_vsync ; cure screen flash
 	jsr   _cls
 
 	stz  color_reg	; set color #0 = 0/0/0 rgb
