@@ -24,12 +24,14 @@ install:
 
 test:
 ifneq ($(shell uname -s),Linux)
-	@echo 'Note: "make test" only runs on a linux platform.'
+	@echo ''
+	@echo 'Note: "make test" only runs on a linux platform!'
 else
 	cd test ; ./mk
 endif
 
 check:
+	@echo ''
 	md5sum -c < examples/checksum.txt
 
 DATE = $(shell date +%F)
@@ -45,9 +47,6 @@ package:
 	find examples     -type f -name '*.sym' -delete
 	find examples     -type f -name '*.ovl' -delete
 	find examples/asm -type f -name '*.bin' -delete
-	find test         -type f -name '*.s'   -delete
-	find test         -type f -name '*.pce' -delete
-	find test         -type f -name '*.sym' -delete
 	mv tmp/* bin/
 	rm -d tmp
 	rm -f huc-$(DATE).zip
