@@ -188,9 +188,9 @@
 /* symbol table entry format */
 /* N.B. nasty hack to allow space beyond NAMEMAX (see "copysym") */
 
-#define NAMESIZE	26
-#define NAMEMAX		25
-#define NAMEALLOC	40
+#define NAMESIZE	48
+#define NAMEMAX		47
+#define NAMEALLOC	64
 
 struct symbol {
 	char name[NAMEALLOC];

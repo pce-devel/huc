@@ -395,11 +395,11 @@ void declloc (intptr_t typ, intptr_t stclass, int otag)
 			totalk -= k;
 			if (const_expr(num, ",", ";")) {
 				/* XXX: minor memory leak */
-				char *locsym = malloc(80);
+				char *locsym = calloc(1,sizeof(SYMBOL));
 				gtext();
 				if (k == 1) {
 					if (norecurse) {
-						sprintf(locsym, "_%s_lend-%ld", current_fn, (long) -locals_ptr);
+						sprintf(locsym, "_%s_lend-%d", current_fn, (int) -locals_ptr);
 						out_ins_ex(I_STBI, T_SYMBOL, (intptr_t)locsym, T_VALUE, *num);
 					}
 					else
@@ -407,7 +407,7 @@ void declloc (intptr_t typ, intptr_t stclass, int otag)
 				}
 				else if (k == 2) {
 					if (norecurse) {
-						sprintf(locsym, "_%s_lend-%ld", current_fn, (long) -locals_ptr);
+						sprintf(locsym, "_%s_lend-%d", current_fn, (int) -locals_ptr);
 						out_ins_ex(I_STWI, T_SYMBOL, (intptr_t)locsym, T_VALUE, *num);
 					}
 					else
