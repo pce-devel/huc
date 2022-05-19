@@ -60,7 +60,7 @@ nes_pack_8x8_tile(unsigned char *buffer, void *data, int line_offset, int format
 
 	/* pack the tile only in the last pass */
 	if (pass != LAST_PASS)
-		return (16);
+		return (0);
 
 	/* clear buffer */
 	memset(buffer, 0, 16);
@@ -117,7 +117,7 @@ nes_pack_8x8_tile(unsigned char *buffer, void *data, int line_offset, int format
 	}
 
 	/* ok */
-	return (16);
+	return (0);
 }
 
 
@@ -132,11 +132,10 @@ nes_defchr(int *ip)
 {
 	unsigned char buffer[16];
 	unsigned int data[8];
-	int size;
 	int i;
 
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* output infos */
 	data_loccnt = loccnt;
@@ -146,7 +145,7 @@ nes_defchr(int *ip)
 	/* get tile data */
 	for (i = 0; i < 8; i++) {
 		/* get value */
-		if (!evaluate(ip, (i < 7) ? ',' : ';'))
+		if (!evaluate(ip, (i < 7) ? ',' : ';', 0))
 			return;
 
 		/* store value */
@@ -154,10 +153,10 @@ nes_defchr(int *ip)
 	}
 
 	/* encode tile */
-	size = nes_pack_8x8_tile(buffer, data, 0, PACKED_TILE);
+	nes_pack_8x8_tile(buffer, data, 0, PACKED_TILE);
 
 	/* store tile */
-	putbuffer(buffer, size);
+	putbuffer(buffer, 16);
 
 	/* output line */
 	if (pass == LAST_PASS)
@@ -174,7 +173,7 @@ nes_defchr(int *ip)
 void
 nes_inesprg(int *ip)
 {
-	if (!evaluate(ip, ';'))
+	if (!evaluate(ip, ';', 0))
 		return;
 
 	if ((value < 0) || (value > 64)) {
@@ -200,7 +199,7 @@ nes_inesprg(int *ip)
 void
 nes_ineschr(int *ip)
 {
-	if (!evaluate(ip, ';'))
+	if (!evaluate(ip, ';', 0))
 		return;
 
 	if ((value < 0) || (value > 64)) {
@@ -226,7 +225,7 @@ nes_ineschr(int *ip)
 void
 nes_inesmap(int *ip)
 {
-	if (!evaluate(ip, ';'))
+	if (!evaluate(ip, ';', 0))
 		return;
 
 	if ((value < 0) || (value > 255)) {
@@ -254,7 +253,7 @@ nes_inesmap(int *ip)
 void
 nes_inesmir(int *ip)
 {
-	if (!evaluate(ip, ';'))
+	if (!evaluate(ip, ';', 0))
 		return;
 
 	if ((value < 0) || (value > 15)) {

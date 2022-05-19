@@ -23,7 +23,12 @@ println(void)
 	if (!xlist || !asm_opt[OPT_LIST] || (expand_macro && !asm_opt[OPT_MACRO]))
 		return;
 
-	/* update line buffer if necessary */
+	/* undo the pre-processor's modification to the line */
+	if (preproc_modidx != 0) {
+		prlnbuf[preproc_modidx] = '/';
+	}
+
+	/* only output the 1st line that was continued */
 	if (continued_line)
 		strcpy(prlnbuf, tmplnbuf);
 
@@ -39,15 +44,16 @@ println(void)
 		nb = loccnt - data_loccnt;
 
 		/* check level */
-		if ((data_level > list_level) && (nb > 3)) {
+		if ((data_level > list_level) && (nb > 4)) {
 			/* doesn't match */
-			fputs(prlnbuf, lst_fp); putc_unlocked('\n', lst_fp);
+			fputs(prlnbuf, lst_fp); putc('\n', lst_fp);
 		}
 		else {
 			/* ok */
 			cnt = 0;
 			for (i = 0; i < nb; i++) {
-				if (bank >= RESERVED_BANK) {
+//				if (bank == RESERVED_BANK || bank == STRIPPED_BANK) {
+				if (bank > bank_limit) {
 					prlnbuf[16 + (3 * cnt)] = '-';
 					prlnbuf[17 + (3 * cnt)] = '-';
 				}
@@ -60,15 +66,20 @@ println(void)
 				cnt++;
 				if (cnt == data_size) {
 					cnt = 0;
-					fputs(prlnbuf, lst_fp); putc_unlocked('\n', lst_fp);
+					fputs(prlnbuf, lst_fp); putc('\n', lst_fp);
 					clearln();
 					loadlc(data_loccnt, 0);
 				}
 			}
 			if (cnt) {
-				fputs(prlnbuf, lst_fp); putc_unlocked('\n', lst_fp);
+				fputs(prlnbuf, lst_fp); putc('\n', lst_fp);
 			}
 		}
+	}
+
+	/* redo the pre-processor's modification to the line */
+	if (preproc_modidx != 0) {
+		prlnbuf[preproc_modidx] = ';';
 	}
 }
 
@@ -107,7 +118,7 @@ loadlc(int offset, int pos)
 		i = 7;
 
 	if (pos == 0) {
-		if (bank >= RESERVED_BANK) {
+		if (bank == RESERVED_BANK || bank == STRIPPED_BANK) {
 			prlnbuf[i++] = '-';
 			prlnbuf[i++] = '-';
 		}
@@ -154,16 +165,23 @@ hexcon(int digit, int num)
 void
 putbyte(int offset, int data)
 {
+	int addr;
+
 	if (bank >= RESERVED_BANK)
 		return;
-	if (offset < 0x2000) {
-		rom[bank][offset] = (data) & 0xFF;
-		map[bank][offset] = section + (page << 5);
 
-		/* update rom size */
-		if (bank > max_bank)
-			max_bank = bank;
+	addr = offset + 1 + (bank << 13);
+	if (addr > rom_limit) {
+		fatal_error("ROM overflow!");
+		return;
 	}
+
+	rom[bank][offset] = (data) & 0xFF;
+	map[bank][offset] = section + (page << 5);
+
+	/* update rom size */
+	if (((addr - 1) >> 13) > max_bank)
+		max_bank = ((addr - 1) >> 13);
 }
 
 
@@ -176,21 +194,69 @@ putbyte(int offset, int data)
 void
 putword(int offset, int data)
 {
+	int addr;
+
 	if (bank >= RESERVED_BANK)
 		return;
-	if (offset < 0x1FFF) {
-		/* low byte */
-		rom[bank][offset] = (data) & 0xFF;
-		map[bank][offset] = section + (page << 5);
 
-		/* high byte */
-		rom[bank][offset + 1] = (data >> 8) & 0xFF;
-		map[bank][offset + 1] = section + (page << 5);
-
-		/* update rom size */
-		if (bank > max_bank)
-			max_bank = bank;
+	addr = offset + 2 + (bank << 13);
+	if (addr > rom_limit) {
+		fatal_error("ROM overflow!");
+		return;
 	}
+
+	/* low byte */
+	rom[bank][offset] = (data) & 0xFF;
+	map[bank][offset] = section + (page << 5);
+
+	/* high byte */
+	rom[bank][offset + 1] = (data >> 8) & 0xFF;
+	map[bank][offset + 1] = section + (page << 5);
+
+	/* update rom size */
+	if (((addr - 1) >> 13) > max_bank)
+		max_bank = ((addr - 1) >> 13);
+}
+
+
+/* ----
+ * putdword()
+ * ----
+ * store a double word in the rom
+ */
+
+void
+putdword(int offset, int data)
+{
+	int addr;
+
+	if (bank >= RESERVED_BANK)
+		return;
+
+	addr = offset + 4 + (bank << 13);
+	if (addr > rom_limit) {
+		fatal_error("ROM overflow!");
+		return;
+	}
+
+	/* low byte */
+	rom[bank][offset] = (data) & 0xFF;
+	map[bank][offset] = section + (page << 5);
+
+	/* high byte */
+	rom[bank][offset + 1] = (data >> 8) & 0xFF;
+	map[bank][offset + 1] = section + (page << 5);
+
+	rom[bank][offset + 2] = (data>>16) & 0xFF;
+	map[bank][offset + 2] = section + (page << 5);
+
+	/* high byte */
+	rom[bank][offset + 3] = (data >> 24) & 0xFF;
+	map[bank][offset + 3] = section + (page << 5);
+
+	/* update rom size */
+	if (((addr - 1) >> 13) > max_bank)
+		max_bank = ((addr - 1) >> 13);
 }
 
 
@@ -402,9 +468,19 @@ warning(char *stptr)
 		printf("#[%i]   %s\n", infile_num, input_file[infile_num].name);
 	}
 
+	/* undo the pre-processor's modification to the line */
+	if (preproc_modidx != 0) {
+		prlnbuf[preproc_modidx] = '/';
+	}
+
 	/* output the line and the error message */
 	loadlc(loccnt, 0);
 	printf("%s\n", prlnbuf);
 	printf("       %s\n", stptr);
+
+	/* redo the pre-processor's modification to the line */
+	if (preproc_modidx != 0) {
+		prlnbuf[preproc_modidx] = ';';
+	}
 }
 

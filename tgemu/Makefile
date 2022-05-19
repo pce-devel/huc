@@ -7,12 +7,9 @@ OBJS	= $(RESOBJS) game.o \
   src/psg.o \
   src/render.o \
   src/system.o \
-  src/unzip.o \
   src/vce.o \
   src/vdc.o \
   src/cpu/h6280.o \
-
-LIBS	= -lz
 
 ARCH = $(shell uname -p)
 
@@ -26,6 +23,11 @@ CFLAGS = -Wall -W -Isrc -Isrc/cpu -Isrc/unix -fno-strict-aliasing -D_GNU_SOURCE 
 
 all: $(TARGET)
 $(TARGET):	$(OBJS)
-	$(CC) -o tgemu $(OBJS) $(LIBS)
+	$(CC) -o tgemu $(OBJS)
 clean:
 	rm -f $(OBJS) tgemu
+	find ../test -type f -name '*.s'   -delete
+	find ../test -type f -name '*.pce' -delete
+	find ../test -type f -name '*.sym' -delete
+
+CC = gcc

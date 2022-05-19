@@ -24,13 +24,26 @@ do_func(int *ip)
 {
 	if (pass == LAST_PASS)
 		println();
-	else {
+	else
+	if (pass == FIRST_PASS) {
 		/* error checking */
+		if (scopeptr) {
+			fatal_error("Cannot define a function inside a label scope!");
+			return;
+		}
 		if (lablptr == NULL) {
 			error("No name for this function!");
 			return;
 		}
-		if (lablptr->refcnt) {
+		if (lablptr->name[1] == '.' || lablptr->name[1] == '@') {
+			fatal_error("Function name cannot be a local label!");
+			return;
+		}
+		if (lablptr->name[1] == '!') {
+			fatal_error("Function name cannot be a multi-label!");
+			return;
+		}
+		if (lablptr->defcnt || lablptr->refcnt) {
 			switch (lablptr->type) {
 			case MACRO:
 				fatal_error("Symbol already used by a macro!");
@@ -84,6 +97,7 @@ func_install(int ip)
 
 	/* mark the function name as reserved */
 	lablptr->type = FUNC;
+	lablptr->defcnt = 1;
 
 	/* check function name syntax */
 	if (strchr(&symbol[1], '.')) {

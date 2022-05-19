@@ -3,7 +3,9 @@
  *
  */
 
+#include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include "defs.h"
 #include "data.h"
@@ -31,7 +33,7 @@
  */
 static int init (char *symbol_name, int type, int identity, int *dim, TAG_SYMBOL *tag)
 {
-	long value;
+	intptr_t value;
 	int number_of_chars;
 
 	if (identity == POINTER) {
@@ -45,7 +47,7 @@ static int init (char *symbol_name, int type, int identity, int *dim, TAG_SYMBOL
 			error("found string: must assign to char pointer or array");	/* XXX: make this a warning? */
 		if (identity == POINTER) {
 			/* unimplemented */
-			printf("initptr %s value %ld\n", symbol_name, value);
+			printf("initptr %s value %ld\n", symbol_name, (long) value);
 			abort();
 			// add_data_initials(symbol_name, CUINT, value, tag);
 		}
@@ -151,9 +153,9 @@ int initials (char *symbol_name, int type, int identity, int dim, int otag)
  *  David, added support for const arrays and improved error detection
  *
  */
-long declglb (long typ, long stor, TAG_SYMBOL *mtag, int otag, int is_struct)
+intptr_t declglb (intptr_t typ, intptr_t stor, TAG_SYMBOL *mtag, int otag, int is_struct)
 {
-	long k, id;
+	intptr_t k, id;
 	char sname[NAMESIZE];
 	int ptr_order;
 	SYMBOL *s;
@@ -194,7 +196,7 @@ long declglb (long typ, long stor, TAG_SYMBOL *mtag, int otag, int is_struct)
 				if (k == -1)
 					return (1);
 
-				/* XXX: This doesn't really belong here, but I
+				/* XXX: This doesn't really beintptr_t here, but I
 				   can't think of a better place right now. */
 				if (id == POINTER && (typ == CCHAR || typ == CUCHAR || typ == CVOID))
 					k *= INTSIZE;
@@ -281,12 +283,12 @@ long declglb (long typ, long stor, TAG_SYMBOL *mtag, int otag, int is_struct)
  *
  *  zeo : added "totalk" stuff and global stack modification (00/04/12)
  */
-void declloc (long typ, long stclass, int otag)
+void declloc (intptr_t typ, intptr_t stclass, int otag)
 {
-	long k = 0, j;
-	long elements = 0;
+	intptr_t k = 0, j;
+	intptr_t elements = 0;
 	char sname[NAMESIZE];
-	long totalk = 0;
+	intptr_t totalk = 0;
 
 	for (;;) {
 		for (;;) {
@@ -385,7 +387,7 @@ void declloc (long typ, long stclass, int otag)
 			break;
 		}
 		if (match("=")) {
-			long num[1];
+			intptr_t num[1];
 			if (!norecurse)
 				stkp = modstk(stkp - totalk);
 			else
@@ -393,20 +395,20 @@ void declloc (long typ, long stclass, int otag)
 			totalk -= k;
 			if (const_expr(num, ",", ";")) {
 				/* XXX: minor memory leak */
-				char *locsym = malloc(80);
+				char *locsym = calloc(1,sizeof(SYMBOL));
 				gtext();
 				if (k == 1) {
 					if (norecurse) {
-						sprintf(locsym, "_%s_lend-%ld", current_fn, -locals_ptr);
-						out_ins_ex(I_STBI, T_SYMBOL, (long)locsym, T_VALUE, *num);
+						sprintf(locsym, "_%s_lend-%d", current_fn, (int) -locals_ptr);
+						out_ins_ex(I_STBI, T_SYMBOL, (intptr_t)locsym, T_VALUE, *num);
 					}
 					else
 						out_ins_ex(X_STBI_S, T_VALUE, 0, T_VALUE, *num);
 				}
 				else if (k == 2) {
 					if (norecurse) {
-						sprintf(locsym, "_%s_lend-%ld", current_fn, -locals_ptr);
-						out_ins_ex(I_STWI, T_SYMBOL, (long)locsym, T_VALUE, *num);
+						sprintf(locsym, "_%s_lend-%d", current_fn, (int) -locals_ptr);
+						out_ins_ex(I_STWI, T_SYMBOL, (intptr_t)locsym, T_VALUE, *num);
 					}
 					else
 						out_ins_ex(X_STWI_S, T_VALUE, 0, T_VALUE, *num);
@@ -430,9 +432,9 @@ void declloc (long typ, long stclass, int otag)
 /*
  *	get required array size
  */
-long needsub (void)
+intptr_t needsub (void)
 {
-	long num[1];
+	intptr_t num[1];
 
 	if (match("]"))
 		return (0);
@@ -477,7 +479,7 @@ SYMBOL *findloc (char *sname)
 	return (NULL);
 }
 
-SYMBOL *addglb (char *sname, char id, char typ, long value, long stor, SYMBOL *replace)
+SYMBOL *addglb (char *sname, char id, char typ, intptr_t value, intptr_t stor, SYMBOL *replace)
 {
 	char *ptr;
 
@@ -524,7 +526,7 @@ SYMBOL *addglb_far (char *sname, char typ)
 }
 
 
-SYMBOL *addloc (char *sname, char id, char typ, long value, long stclass, long size)
+SYMBOL *addloc (char *sname, char id, char typ, intptr_t value, intptr_t stclass, intptr_t size)
 {
 	char *ptr;
 
@@ -552,9 +554,9 @@ SYMBOL *addloc (char *sname, char id, char typ, long value, long stclass, long s
  *	test if next input string is legal symbol name
  *
  */
-long symname (char *sname)
+intptr_t symname (char *sname)
 {
-	long k;
+	intptr_t k;
 
 /*	char	c; */
 
@@ -582,7 +584,17 @@ void multidef (char *sname)
 	nl();
 }
 
-long glint (SYMBOL *sym)
+intptr_t glint (SYMBOL *sym)
 {
 	return (sym->offset);
+}
+
+SYMBOL *copysym (SYMBOL *sym)
+{
+	SYMBOL *ptr = malloc(sizeof(SYMBOL));
+	if (ptr == NULL)
+		error("out of memory to copy symbol");
+	else
+		memcpy(ptr, sym, sizeof(SYMBOL));
+	return (ptr);
 }

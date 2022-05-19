@@ -3,7 +3,7 @@ const char a[5] = {1, 2, 3, 4, 5};
 main()
 {
   unsigned char u = 2;
-  char s = -1;
+  signed char s = -1;
   int i = 1;
   char *b;
   b = a + 2;

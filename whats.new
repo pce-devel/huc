@@ -1,3 +1,137 @@
+New in version 3.99:
+--------------------
+
+
+2021-12-31:
+-----------
+  PCEAS changes ...
+  -----------------
+- Bump version number to 3.25 (see ./doc/pce/usage-3.25.txt)
+- Add "!" multi-labels, which are a form of "nameless" labels.
+- Add label-scopes, which add a base-name to every label inside the scope.
+- Add ".align", ".const", ".cpu", ".dword", ".encoding", ".ends", ".fill",
+      ".label", ".segment", ".set", ".struct", ".text", ".var", "*="
+- Allow section changes in ".proc" and ".struct", but restore original
+  section at ".endp" and ".ends".
+- Add "{}" in ".kickc" mode, which acts as both a ".proc" and a ".struct",
+  and also changes the handling of JSR and RTS instructions.
+- Fix broken ".opt" processing, enabling "l,m,o" options.
+  NB: ".opt l+" is the same as ".list"
+  NB: ".opt m+" is the same as ".mlist"
+  NB: ".opt o+" is OPT_OPTIMIZE, which does nothing.
+- Add ".opt a+" to automatically use ZP addressing when labels are known.
+- Add ".opt b+" to convert out-of-range branches to long-branches.
+- Add ".opt c+" to allow C-style comments in source.
+- Add ".opt i+" to use "()" for traditional 6502 indirect-addressing.
+- Add ".opt w+" for optional warnings, i.e. when a long-branch is generated.
+- Add "-kc" flag for assembling KickC-generated code.
+  NB: Sets ".opt c+"
+- Add ".pceas" and ".kickc" to set current compatibility-mode.
+  NB: ".pceas" mode also sets ".opt a-,b-,i-" (default)
+  NB: ".kickc" mode also sets ".opt a+,b+,i+"
+- Add '>' to force absolute addressing mode and match existing '<'.
+- Add ".a" and ".z" instruction suffixes to force addressing mode.
+- The 'A' operand in ASL/DEC/INC/LSR/ROL/ROR is now optional.
+- Allow ".db/.dw/.dd" in ZP and BSS sections, but only if data is zero.
+
+
+2021-11-16:
+-----------
+  HuC changes ...
+  ---------------
+- Allow the initial SCD overlay program to be larger than 192KB.
+
+  PCEAS changes ...
+  -----------------
+- Local labels can now start with a '@'.
+- Add the ability to read graphic files in ".BMP" format.
+- Add ".dd" for generating 32-bit data values.
+- Only include each ".include" file once per pass, no matter how many times
+  that same file is included from different source files.
+- Allow procedure relocation to use unused memory at the top of existing banks
+  and not just allocate new banks, in order to reduce overall ROM size.
+- Keep _bank_base (the ASM symbol for the starting bank) the same during
+  both assembly passes, which makes "bank(my_symbol)" work reliably.
+- Add the ability to use "bank(*)" and "page(*)" in expressions.
+- Allow C-style "==" as an alternative to "=" as a comparison operator.
+- The bank/page/offset of the procedure trampolines can now be set during
+  assembly, although changing the MPR that the procedures run in can still
+  only be set on the command-line (i.e. with "-newproc").
+- Allow an optional expression after ".else" and ".endif" which, when present,
+  is checked to make sure that it matches the previous ".if".
+- Allow more data, and/or a comment, to appear after a string on a ".db" line.
+- Add "-newproc" to run ".proc" code in MPR6 instead of MPR5.
+- Add "-strip" to remove ".proc" code that is defined by not referenced.
+- Add "-ipl" option to pre-fill PCEAS memory with the 4KB of a CD-ROM IPL.
+- Add "-trim" option to strip off the unused head and tail of a ROM.
+
+  ISOlink changes ...
+  -------------------
+- Add a directory of the CD-ROM contents into the ".ISO" file's IPL sectors.
+- Add the ability to use a customized IPL file on the ".ISO", or to specify
+  new IPL boot parameters that replace HuC's normal boot parameters.
+- Add the "-asm" option to stop ISOlink from patching ".OVL" files on the CD
+  with HuC-specific data.
+
+  New tools ...
+  -------------
+- Add "sym2inc" tool so that symbol files can be parsed to make include files.
+- Add "wav2vox" tool for ADPCM compressing audio files to use on a PCE CD-ROM.
+
+
+2020-04-14:
+-----------
+- Added support for "macro" append option for pragma fastcalls. The output
+  of the corresponding macro name is used in place of "call". It equates
+  to in-lining the asm code. Note: arguments are not passed to the macro.
+
+
+2018-07-07:
+-----------
+- Fix potential buffer overrun in optimize.c that GCC7 complains about.
+- Increase switch label stack size from 100 to 256.
+- Allow a zero rows and/or columns size in .incchr, .inctile, etc to
+  autosize from the image itself.
+- When using .inctile, tile #256 now wraps around onto tile #0 (with a
+  warning message), so that ProMotion tilemaps can use all 256 tiles.
+- Add .incchrpal, .incsprpal, and .inctilepal commands to PCEAS so that
+  the user can create palette lookup tables for HuC maps directly from
+  the character, sprite and tile graphics.
+- Add #incchrpal, #incsprpal, and #inctilepal commands to HuC so that
+  the user can create palette lookup tables for HuC maps directly from
+  the character, sprite and tile graphics.
+- Add new example project that shows using ProMotion to create HuC maps.
+- Update PCEAS documentation with latest features.
+
+
+2017-02-21:
+-----------
+- Imported Uli's v3.98 version of HuC (https://github.com/uli/huc)
+  See README for all the changes that Uli made
+- Applied changes from Artemio Urbina's fork of HuC
+- Applied changes from Markus Buretorp's fork of HuC
+- Fixed compilation on Windows with mingw-w64
+- Fixed a few bugs related to Uli's improvements
+- Changed System Card parameter equates to have a "__" prefix
+- Changed startup.asm to allow a sound driver to use macros to integrate
+- Removed Uli's support for interrupt handlers in HuC (they're too slow)
+- New str/mem package to replace the old code
+    Note 1 : Strings are 255 bytes maximum (+ trailing null)
+    Note 2 : When a ptr is returned, it points to the end of the str/mem
+             This breaks ANSI/ISO compatibility, but is more useful
+    Note 3 : strncpy handing of the 'length' is the same as strncat
+             This breaks ANSI/ISO compatibility, but reduces code size
+- Bumping version number for all the current changes
+- Stop HuC adding an extra ".dw" to usage of .incchr/.incspr/.incpal/etc
+- Add extra parameter to set_tile_data() to set the tile type (8 or 16)
+    set_tile_data(char *tile, int nb_tile, char *ptable, char type);
+- Rewrite load_vram to use 32-byte TIA instructions (3x speed improvement)
+- Fix writing of instructions/data that cross a bank boundary.
+- Add "-pad" to PCEAS to pad out HuCard ROM images to next power-of-2 size.
+- Change HuC to use "-raw" and "-pad" options to avoid 384KB HuCard problem.
+- Add warning whenever a 384KB HuCard image is created to highlight problem.
+
+
 New in version 3.21:
 --------------------
 - Added support for adpcm
@@ -7,6 +141,7 @@ New in version 3.21:
 - Fixed bug to support bank boundary crossing map data (in map_calc_tile_addr)
 - Fixed bug to support bat wrapping in load_map function
 - Fixed bug in dumplits (in main.c), const bytes were and'ed by 127
+
 
 New in version 3.20:
 --------------------

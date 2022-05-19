@@ -1,0 +1,71 @@
+; ***************************************************************************
+; ***************************************************************************
+;
+; core-stage1.s2i
+;
+; CD-ROM Stage1 loader using the "CORE(not TM)" PC Engine library code.
+;
+; Copyright John Brandwood 2021.
+;
+; Distributed under the Boost Software License, Version 1.0.
+; (See accompanying file LICENSE_1_0.txt or copy at
+;  http://www.boost.org/LICENSE_1_0.txt)
+;
+; ***************************************************************************
+; ***************************************************************************
+;
+; This allows your CD-ROM overlays to use the code and variables that are in
+; the "CORE(not TM)" library kernel, without having to use jump tables.
+;
+; ***************************************************************************
+; ***************************************************************************
+;
+; Here is the list of symbols for SYM2INC to export into a ".s" file.
+;
+; A ';' marks a comment, and everything else on the line is ignored.
+;
+; A symbol with a '?' in front of it is optional, and can be used for
+; conditionally-compiled symbols.
+;
+; ***************************************************************************
+; ***************************************************************************
+
+core_ram1st
+
+const_FFFF
+const_0000
+bit_mask
+
+core_irq2
+core_irq1
+core_timer_irq
+core_nmi_irq
+
+read_joypads
+port_mutex
+?num_ports
+?mouse_flg
+?mouse_x
+?mouse_y
+?joy6now
+?joy6trg
+?joy6old
+
+sound_mutex
+
+core_clr_hooks
+core_sw_reset
+
+call_bios
+get_file_info
+exec_overlay
+
+core_ramcpy
+
+iso_count
+iso_cderr
+iso_128mb
+iso_dirlo
+iso_dirhi
+
+core_ramend

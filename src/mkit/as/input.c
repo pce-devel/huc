@@ -7,47 +7,136 @@
 #include "externs.h"
 #include "protos.h"
 
-int infile_error;
-int infile_num;
-struct t_input_info input_file[8];
-char incpath[10][128];
+#define INITIAL_PATH_SIZE 64
+#define INCREMENT_BASE 16
+#define INCREMENT_BASE_MASK 15
 
+int    infile_error;
+int    infile_num;
+struct t_input_info input_file[8];
+static char    *incpath			= NULL;
+static int	   *str_offset		= NULL;
+static int	   remaining		= 0;
+static int     incpathSize		= 0;
+static int     str_offsetCount	= 0;
+static int     incpathCount		= 0;
 
 /* ----
- * init_path()
+ * void cleanup_path()
+ * ----
+ * clean up allocated paths
+ */
+void
+cleanup_path(void)
+{
+	if(incpath)
+		free(incpath);
+		
+	if(str_offset)
+		free(str_offset);
+} 
+
+/* ----
+ * int add_path(char*, int)
+ * ----
+ * add a path to includes
+ */
+int
+add_path(char* path, int l)
+{
+	/* Expand str_offset array if needed */
+	if(incpathCount >= str_offsetCount)
+	{
+		str_offsetCount += INCREMENT_BASE;
+		str_offset = (int*)realloc(str_offset, str_offsetCount * sizeof(int));
+		if(str_offset == NULL)
+			return 0;
+	}
+
+	/* Initialize string offset */
+	str_offset[incpathCount] = incpathSize - remaining;
+
+	/* Realloc string buffer if needed */
+	if(remaining < l)
+	{
+		remaining  = incpathSize;
+		/* evil trick, get the greater multiple of INCREMENT_BASE closer 
+		   to (size + l). Note : this only works for INCREMENT_BASE = 2^n*/
+		incpathSize = ((incpathSize + l) + INCREMENT_BASE) & ~INCREMENT_BASE_MASK;
+		remaining  = incpathSize - remaining;
+		incpath = (char*)realloc(incpath, incpathSize);
+		if(incpath == NULL)
+			return 0;
+	}
+		
+	remaining -= l;
+
+	/* Copy path */
+	strncpy(incpath + str_offset[incpathCount], path, l);
+	incpath[str_offset[incpathCount] + l - 1] = '\0';
+	
+	++incpathCount;
+	
+	return 1;
+}
+
+#ifdef WIN32
+#define ENV_PATH_SEPARATOR ';'
+#else
+#define ENV_PATH_SEPARATOR ':'
+#endif
+
+/* ----
+ * int init_path()
  * ----
  * init the include path
  */
 
-void
+int
 init_path(void)
 {
-	const char *p, *pl;
-	int i, l;
+	char *p,*pl;
+	int	ret, l;
 
-	p = getenv(machine->include_env) ? : machine->default_dir;
+	/* Get env variable holding PCE path*/
+	p = getenv(machine->include_env);
 
-	for (i = 0; i < 10; i++) {
-		pl = strchr(p, ';');
+	if (p == NULL)
+		return 2;
 
-		if (pl == NULL)
-			l = strlen(p);
+	l  = 0;
+	pl = p;
+	while(pl != NULL)
+	{
+		
+		/* Jump to next separator */
+		pl = strchr(p, ENV_PATH_SEPARATOR);
+
+		/* Compute new substring size */
+		if(pl == NULL)
+			l = strlen(p) + 1;
 		else
-			l = pl - p;
-
-		if (l == 0) {
-			incpath[i][0] = '\0';
-		}
-		else {
-			strncpy(incpath[i], p, l);
-			p += l;
-			while (*p == ';') p++;
+			l = pl - p + 1;
+			
+		/* Might be empty, jump to next char */
+		if(l <= 1)
+		{
+			++p;
+			continue;
 		}
 
-		if (incpath[i][strlen(incpath[i])] != PATH_SEPARATOR) {
-			strcat(incpath[i], PATH_SEPARATOR_STRING);
-		}
+		/* Add path */
+		ret = add_path(p, l);
+		if(!ret)
+			return 0;
+
+		/* Eat remaining separators */
+		while (*p == ENV_PATH_SEPARATOR) ++p;
+		
+		p += l;
 	}
+	
+	return 1;
 }
 
 
@@ -67,7 +156,8 @@ readline(void)
 	int temp;	/* temp used for line number conversion */
 
 start:
-	memset(prlnbuf, ' ', SFIELD);
+	memset(prlnbuf, ' ', SFIELD - 1);
+	prlnbuf[SFIELD - 1] = '\t';
 
 	/* if 'expand_macro' is set get a line from macro buffer instead */
 	if (expand_macro) {
@@ -173,16 +263,25 @@ start:
 
 	/* get a line */
 	i = SFIELD;
-	c = getc_unlocked(in_fp);
+	c = getc(in_fp);
 	if (c == EOF) {
-		if (close_input())
-			return (-1);
+		if (close_input()) {
+			if (stop_pass != 0 || kickc_incl == 0) {
+				return (-1);
+			} else {
+				kickc_incl = 0;
+				if (open_input("kickc-final.asm") == -1) {
+					fatal_error("Cannot open \"kickc-final.asm\" file!");
+					return (-1);
+				}
+			}
+		}
 		goto start;
 	}
 	for (;;) {
 		/* check for the end of line */
 		if (c == '\r') {
-			c = getc_unlocked(in_fp);
+			c = getc(in_fp);
 			if (c == '\n' || c == EOF)
 				break;
 			ungetc(c, in_fp);
@@ -196,9 +295,74 @@ start:
 		i += (i < LAST_CH_POS) ? 1 : 0;
 
 		/* get next char */
-		c = getc_unlocked(in_fp);
+		c = getc(in_fp);
 	}
 	prlnbuf[i] = '\0';
+
+	/* reset these at the beginning of the new line */
+	preproc_sfield = SFIELD;
+	preproc_modidx = 0;
+
+	/* pre-process the input to change C-style comments into ASM ';' comments */
+	if (asm_opt[OPT_CCOMMENT])
+	{
+		int i = SFIELD;
+		int c = 0;
+
+		/* repeat this loop until we know how the line ends */
+		do {
+			/* if we're in a block comment, look for the end of the block */
+			if (preproc_inblock != 0) {
+				for (; prlnbuf[i] != '\0'; ++i) {
+					if (prlnbuf[i] == '*' && prlnbuf[i+1] == '/') {
+						preproc_inblock = 0;
+						if (preproc_modidx != 0 && c == 0) {
+							prlnbuf[preproc_modidx] = '/';
+							preproc_modidx = 0;
+						}
+						i = i + 2;
+						if (preproc_modidx == 0) {
+							preproc_sfield = i;
+						}
+						break;
+					}
+				}
+			}
+
+			/* if we're not in a block comment, look for a new comment */
+			for (; prlnbuf[i] != '\0'; ++i) {
+				if (prlnbuf[i] == '/') {
+					if (prlnbuf[i+1] == '/') {
+						if (preproc_modidx == 0) {
+							preproc_modidx = i;
+							prlnbuf[i] = ';';
+						}
+						break;
+					}
+					else
+					if (prlnbuf[i+1] == '*') {
+						preproc_inblock = 1;
+						if (preproc_modidx == 0) {
+							preproc_modidx = i;
+							prlnbuf[i] = ';';
+						}
+						i = i + 2;
+						break;
+					}
+				}
+				/* remember if we see text that needs to be assembled */
+				if (!isspace(prlnbuf[i])) { c = 1; }
+			}
+
+			/* repeat if we're in a block comment, and not at the EOL */
+		} while (preproc_inblock != 0 && prlnbuf[i] != '\0');
+
+		/* if we've been in a block comment for the whole line */
+		if (preproc_inblock != 0 && preproc_modidx == 0) {
+			preproc_sfield = i;
+		}
+	}
+
 	return (0);
 }
 
@@ -279,7 +443,11 @@ int
 close_input(void)
 {
 	if (proc_ptr) {
-		fatal_error("Incomplete PROC!");
+		fatal_error("Incomplete .proc/.procgroup!");
+		return (-1);
+	}
+	if (scopeptr) {
+		fatal_error("Incomplete .struct!");
 		return (-1);
 	}
 	if (in_macro) {
@@ -287,7 +455,9 @@ close_input(void)
 		return (-1);
 	}
 	if (input_file[infile_num].if_level != if_level) {
-		fatal_error("Incomplete IF/ENDIF statement!");
+		char message[128];
+		sprintf(message, "Incomplete IF/ENDIF statement, beginning at line %d!", if_line[if_level-1]);
+		fatal_error(message);
 		return (-1);
 	}
 	if (infile_num <= 1)
@@ -315,18 +485,19 @@ close_input(void)
 FILE *
 open_file(char *name, char *mode)
 {
-	FILE *fileptr;
-	char testname[256];
-	int i;
+	FILE 	*fileptr;
+	char	testname[256];
+	int	i;
 
 	fileptr = fopen(name, mode);
-	if (fileptr != NULL) return (fileptr);
+	if (fileptr != NULL) return(fileptr);
 
-	for (i = 0; i < 10; i++) {
-		if (strlen(incpath[i])) {
-			strcpy(testname, incpath[i]);
+	for (i = 0; i < incpathCount; ++i) {
+		if (strlen(incpath+str_offset[i])) {
+			strcpy(testname, incpath+str_offset[i]);
+			strcat(testname, PATH_SEPARATOR_STRING);
 			strcat(testname, name);
-
+		
 			fileptr = fopen(testname, mode);
 			if (fileptr != NULL) break;
 		}

@@ -52,15 +52,15 @@ _cd_unpause:
 lib3_cd_unpause:
 .endif ; HAVE_LIB3
 	lda	cdplay_end_ctl
-	sta	<dh
+	sta	<__dh
 	lda	cdplay_end_h
-	sta	<cl
+	sta	<__cl
 	lda	cdplay_end_m
-	sta	<ch
+	sta	<__ch
 	lda	cdplay_end_l
-	sta	<dl
+	sta	<__dl
 	lda	#CD_CURRPOS
-	sta	<bh
+	sta	<__bh
 	jsr	cd_play
 	tax
 	cla
@@ -91,7 +91,7 @@ _cd_fade:
 
 
 ;
-; cd_playtrk(int start_track [bx], int end_track [cx], int mode [acc])
+; cd_playtrk(int start_track [__bx], int end_track [__cx], int mode [acc])
 ;   mode = CDPLAY_MUTE / CDPLAY_REPEAT / CDPLAY_NORMAL
 ; ----
 ; Play CDROM audio track
@@ -108,36 +108,36 @@ lib3_cd_playtrk.3:
 	txa
 	and	#CD_PLAYMODE
 	ora	#CD_TRACK
-	sta	<dh		; end type + play mode
+	sta	<__dh		; end type + play mode
 	sta	cdplay_end_ctl
 	lda	#CD_TRACK
-	sta	<bh		; start type
+	sta	<__bh		; start type
 
-	lda	<cl
+	lda	<__cl
 	bne	.endtrk
 
 .endofdisc:
-	lda	<dh		; repeat to end of disc
+	lda	<__dh		; repeat to end of disc
 	ora	#CD_LEADOUT
-	sta	<dh
+	sta	<__dh
 	sta	cdplay_end_ctl
 	bra	.starttrk
 
 .endtrk:
 	jsr	ex_binbcd
-	sta	<cl		; end track
+	sta	<__cl		; end track
 	sta	cdplay_end_h
-	stz	<ch
+	stz	<__ch
 	stz	cdplay_end_m
-	stz	<dl
+	stz	<__dl
 	stz	cdplay_end_l
 
 .starttrk:
-	lda	<bl		; track #
+	lda	<__bl		; track #
 	jsr	ex_binbcd
-	sta	<al		; from track
-	stz	<ah
-	stz	<bl
+	sta	<__al		; from track
+	stz	<__ah
+	stz	<__bl
 	jsr	cd_play
 	tax
 	cla
@@ -148,8 +148,8 @@ lib3_cd_playtrk.3:
 .endif ; HAVE_LIB3
 
 ;
-; cd_playmsf(int start_minute [al], int start_second [ah], int start_frame [bl],
-;            int end_minute [cl], int end_second [ch], int end_frame [dl], int mode [acc])
+; cd_playmsf(int start_minute [__al], int start_second [__ah], int start_frame [__bl],
+;            int end_minute [__cl], int end_second [__ch], int end_frame [__dl], int mode [acc])
 ;   mode = CDPLAY_MUTE / CDPLAY_REPEAT / CDPLAY_NORMAL
 ; ----
 ; Play CDROM from/to 'minute/second/frame'
@@ -166,39 +166,39 @@ lib3_cd_playmsf.7:
 	txa
 	and	#CD_PLAYMODE
 	ora	#CD_MSF
-	sta	<dh		; end type + play mode
+	sta	<__dh		; end type + play mode
 	sta	cdplay_end_ctl
 	lda	#CD_MSF
-	sta	<bh		; start type
+	sta	<__bh		; start type
 
 .endmsf:
-	lda	<dl		; end frame
+	lda	<__dl		; end frame
 	jsr	ex_binbcd
-	sta	<dl
+	sta	<__dl
 	sta	cdplay_end_l
 
-	lda	<ch		; end second
+	lda	<__ch		; end second
 	jsr	ex_binbcd
-	sta	<ch
+	sta	<__ch
 	sta	cdplay_end_m
 
-	lda	<cl		; end minute
+	lda	<__cl		; end minute
 	jsr	ex_binbcd
-	sta	<cl
+	sta	<__cl
 	sta	cdplay_end_h
 
 .startmsf:
-	lda	<bl		; start frame
+	lda	<__bl		; start frame
 	jsr	ex_binbcd
-	sta	<bl
+	sta	<__bl
 
-	lda	<ah		; start second
+	lda	<__ah		; start second
 	jsr	ex_binbcd
-	sta	<ah
+	sta	<__ah
 
-	lda	<al		; start minute
+	lda	<__al		; start minute
 	jsr	ex_binbcd
-	sta	<al
+	sta	<__al
 
 	jsr	cd_play
 	tax
@@ -215,8 +215,8 @@ lib3_cd_playmsf.7:
 ; return number of tracks on CDROM
 ; ----
 ;
-_cd_numtrk:	stw	#cd_buf,<bx
-	stz	<al		; request type 0
+_cd_numtrk:	stw	#cd_buf,<__bx
+	stz	<__al		; request type 0
 	jsr	cd_dinfo
 	cmp	#$00
 	bne	.err
@@ -230,7 +230,7 @@ _cd_numtrk:	stw	#cd_buf,<bx
 	rts
 
 ;
-; char cd_trkinfo(char track [ax], char *min [cx], char *sec [dx], char *frm [bp])
+; char cd_trkinfo(char track [__ax], char *min [__cx], char *sec [__dx], char *frm [__bp])
 ; ----
 ; Return information about track
 ; ----
@@ -243,20 +243,20 @@ _cd_trkinfo.4:
 	.bank LIB3_BANK
 lib3_cd_trkinfo.4:
 .endif ; HAVE_LIB3
-	__ldw	<ax
+	__ldw	<__ax
 	jsr	_cd_trktype
 	phx
 	lda	cd_buf
 	jsr	ex_bcdbin
-	sta	[cx]
+	sta	[__cx]
 
 	lda	cd_buf+1
 	jsr	ex_bcdbin
-	sta	[dx]
+	sta	[__dx]
 
 	lda	cd_buf+2
 	jsr	ex_bcdbin
-	sta	[bp]
+	sta	[__bp]
 
 	plx
 	rts
@@ -280,15 +280,15 @@ lib3_cd_trktype:
 .endif ; HAVE_LIB3
 	sax
 	jsr	ex_binbcd
-	sta	<ah		; track #
-	stw	#cd_buf,<bx
+	sta	<__ah		; track #
+	stw	#cd_buf,<__bx
 	cmp	#0
 	beq	.discnottrk
 	lda	#2
 	bra	.go
 .discnottrk:
 	lda	#1
-.go:	sta	<al		; request type 2
+.go:	sta	<__al		; request type 2
 	jsr	cd_dinfo
 	cmp	#$00
 	bne	.err
@@ -330,16 +330,18 @@ lib3_cd_execoverlay:
 
 cd_overlay:
 	jsr	prep_rdsect
-	stz	<cl	; sector (offset from base of track)
-	sta	<ch
-	stx	<dl
-	iny
-	lda	ovlarray,Y
-	sta	<al	; # sectors
+	stz	<__cl	; sector (offset from base of track)
+	sta	<__ch
+	stx	<__dl
+	txa
+	sec
+	eor	#$FF
+	adc	ovlarray + 1,Y
+	sta	<__al	; # sectors
 	tma	#6
-	sta	<bl	; Bank #
+	sta	<__bl	; Bank #
 	lda	#3
-	sta	<dh	; MPR #
+	sta	<__dh	; MPR #
 	jsr	cd_read
 	rts
 .ifdef HAVE_LIB3
@@ -347,7 +349,7 @@ cd_overlay:
 .endif ; HAVE_LIB3
 
 ;
-; char cd_loadvram(int ovl_index [di], int sect_offset [si], int vramaddr [bx], int bytes [acc])
+; char cd_loadvram(int ovl_index [__di], int sect_offset [__si], int vramaddr [__bx], int bytes [acc])
 ; ----
 ; Load CDROM data directly into VRAM
 ; ----
@@ -360,15 +362,15 @@ _cd_loadvram.4:
 	.bank LIB3_BANK
 lib3_cd_loadvram.4:
 .endif ; HAVE_LIB3
-	__stw	<ax
-	__ldw	<di
+	__stw	<__ax
+	__ldw	<__di
 	jsr	prep_rdsect
-	__addw	<si
-	stz	<cl
-	sta	<ch
-	stx	<dl
+	__addw	<__si
+	stz	<__cl
+	sta	<__ch
+	stx	<__dl
 	lda	#$FE
-	sta	<dh
+	sta	<__dh
 	jsr	cd_read
 	tax
 	cla
@@ -379,7 +381,7 @@ lib3_cd_loadvram.4:
 .endif ; HAVE_LIB3
 
 ;
-; char cd_loaddata(int ovl_index [di], int sect_offset [si], farptr array [bl:bp], int bytes [acc])
+; char cd_loaddata(int ovl_index [__di], int sect_offset [__si], farptr array [__bl:__bp], int bytes [acc])
 ; ----
 ; Load CDROM data directly into data area, replacing predefined data
 ; ----
@@ -403,9 +405,9 @@ _cd_loaddata.4:
 lib3_cd_loaddata.4:
 .endif ; HAVE_LIB3
 	__stw	cdtemp_bytes
-	__ldw	<di
+	__ldw	<__di
 	jsr	prep_rdsect
-	__addw	<si
+	__addw	<__si
 	stx	cdtemp_l	; calculate sector adddress
 	sta	cdtemp_m
 
@@ -414,9 +416,9 @@ lib3_cd_loaddata.4:
 	tma	#4
 	sta	cdtemp_savbnk80
 
-	lda	<bl
+	lda	<__bl
 	sta	cdtemp_bank	; load addr (bank/address)
-	__ldw	<bp
+	__ldw	<__bp
 	and	#$1f		; correct to a $6000-relative addr.
 	ora	#$60
 	__stw	cdtemp_addr
@@ -428,14 +430,14 @@ lib3_cd_loaddata.4:
 	tam	#4
 
 	__ldw	cdtemp_addr	; load address
-	__stw	<bx
+	__stw	<__bx
 
-	stz	<cl		; sector address
+	stz	<__cl		; sector address
 	lda	cdtemp_m
-	sta	<ch
+	sta	<__ch
 	lda	cdtemp_l
-	sta	<dl
-	stz	<dh		; address type (local, # bytes)
+	sta	<__dl
+	stz	<__dh		; address type (local, # bytes)
 
 	__ldw	cdtemp_bytes
 	sub	#$20
@@ -446,7 +448,7 @@ lib3_cd_loaddata.4:
 
 .less2000:	add	#$20
 	stwz	cdtemp_bytes
-.read:	__stw	<ax
+.read:	__stw	<__ax
 
 	jsr	cd_read
 	cmp	#0
@@ -474,13 +476,10 @@ lib3_cd_loaddata.4:
 ; prepare the sector address
 ;
 prep_rdsect:	txa
-	asl	A
-	asl	A
 	tay
 	map	ovlarray	; in DATA_BANK
 	ldx	ovlarray,Y
-	iny
-	lda	ovlarray,Y
+	lda	ovlarray + 100,Y
 	rts
 
 ;--------------------
@@ -571,26 +570,26 @@ _ad_stat:
 	rts
 
 ;
-; char ad_trans(int ovl_index [di], int sect_offset [si], char nb_sectors [al], int ad_addr [bx])
+; char ad_trans(int ovl_index [__di], int sect_offset [__si], char nb_sectors [__al], int ad_addr [__bx])
 ; ----
 ; Load CDROM data directly into ADPCM RAM
 ; ----
 ;
 _ad_trans.4:
-	__ldw	<di
+	__ldw	<__di
 	jsr	prep_rdsect
-	__addw	<si
-	stz	<cl
-	sta	<ch
-	stx	<dl
-	stz	<dh
+	__addw	<__si
+	stz	<__cl
+	sta	<__ch
+	stx	<__dl
+	stz	<__dh
 	jsr	ad_trans
 	tax
 	cla
 	rts
 
 ;
-; char ad_read(int ad_addr [cx], char mode [dh], int buf [bx], int bytes [ax])
+; char ad_read(int ad_addr [__cx], char mode [__dh], int buf [__bx], int bytes [__ax])
 ; ----
 ; copy data from ADPCM RAM directly to RAM or VRAM
 ; ----
@@ -602,7 +601,7 @@ _ad_read.4:
 	rts
 
 ;
-; char ad_write(int ad_addr [cx], char mode [dh], int buf [bx], int bytes [ax])
+; char ad_write(int ad_addr [__cx], char mode [__dh], int buf [__bx], int bytes [__ax])
 ; ----
 ; copy data from RAM or VRAM directly to ADPCM VRAM
 ; ----
@@ -614,7 +613,7 @@ _ad_write.4:
 	rts
 
 ;
-; char ad_play(int ad_addr [bx], int bytes [ax], char freq [dh], char mode [dl])
+; char ad_play(int ad_addr [__bx], int bytes [__ax], char freq [__dh], char mode [__dl])
 ; ----
 ; play ADPCM sample
 ; ----

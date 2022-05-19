@@ -51,6 +51,11 @@
                 always adds an header to the ROM file; unless '-raw' is
                 specified, in this case no ROM header is generated.
 
+         -pad   Pad output ROM size to the nearest power-of-two. This
+                matches the physical single-chip hardware ROM chip
+                sizes, and avoids dealing with the horrible interleaved
+                output expected by the dual-chip 384KB HuCard size.
+
          -dev   ...
 
          -mx    ...
@@ -108,6 +113,16 @@
         an expression.
 
 
+        Unary Operators for compatability with 6502 assemblers
+        ------------------------------------------------------
+
+            >        - As a unary operator, this is the same as HIGH().
+
+            <        - As a unary operator, this is the same as LOW().
+
+            ^        - As a unary operator, this is the same as BANK().
+
+
         Predefined functions
         --------------------
 
@@ -135,7 +150,7 @@
             User-defined functions are declared with the .FUNC directive,
             for example:
 
-                BATVAL	.func	((\1) << 12) | ((\2) >> 4)
+                BATVAL  .func   ((\1) << 12) | ((\2) >> 4)
 
             Up to nine arguments, \1 to \9, can be used.
                                                     
@@ -317,8 +332,10 @@
         INCLUDE - Include a source file at the current location.
                   Up to 7 levels are possible.
 
-        INCCHR  - Extract a part of a PCX file and convert it into PC Engine
-                  8x8 graphic characters. Three syntaxes are possible :
+        INCCHR  - Extract a part of a PNG/PCX file and convert it into
+                  PC Engine 8x8 background graphic characters.
+
+                  Three syntaxes are possible :
 
                   INCCHR "pic.pcx"
 
@@ -330,17 +347,171 @@
                       Tell the assembler to convert only 4 rows
                       of 32 characters (a character size is 8x8).
 
+                      A rows or columns value of 0 will automatically
+                      calculate the value from the image size itself.
+
                   INCCHR "pic.pcx",48,16,32,4
 
                       Same as above but start extracting characters
                       from coordinate 48,16 (in pixels).
 
-        INCTILE - ...
+                      A rows or columns value of 0 will automatically
+                      calculate the value from the image size itself.
+
+        INCCHRPAL - Extract a part of a PNG/PCX file and make a one-byte
+                    per-character lookup table of the palette used.
+
+                    The palette number corresponds to which 16-color
+                    sub-palette (in a 256-color image) the first non-zero
+                    pixel of the character is drawn in.
+
+                    The palette number is stored as $00-$F0 so that it can
+                    be directly OR'ed into the screen's BAT.
+
+                  Three syntaxes are possible :
+
+                  INCCHRPAL "pic.pcx"
+
+                      Without any additional parameters, the command
+                      convert the whole PCX file.
+
+                  INCCHRPAL "pic.pcx",32,4
+
+                      Tell the assembler to convert only 4 rows
+                      of 32 characters (a character size is 8x8).
+
+                      A rows or columns value of 0 will automatically
+                      calculate the value from the image size itself.
+
+                  INCCHRPAL "pic.pcx",48,16,32,4
+
+                      Same as above but start extracting characters
+                      from coordinate 48,16 (in pixels).
+
+                      A rows or columns value of 0 will automatically
+                      calculate the value from the image size itself.
+
+        INCTILE - Extract a part of a PNG/PCX file and convert it into
+                  PC Engine 16x16 background graphic tiles, made up of
+                  4 contiguous 8x8 background graphic characters.
+
+                  Three syntaxes are possible :
+
+                  INCTILE "pic.pcx"
+
+                      Without any additional parameters, the command
+                      convert the whole PCX file.
+
+                  INCTILE "pic.pcx",32,4
+
+                      Tell the assembler to convert only 4 rows
+                      of 32 tiles (a character size is 16x16).
+
+                      A rows or columns value of 0 will automatically
+                      calculate the value from the image size itself.
+
+                  INCTILE "pic.pcx",48,16,32,4
+
+                      Same as above but start extracting characters
+                      from coordinate 48,16 (in pixels).
+
+                      A rows or columns value of 0 will automatically
+                      calculate the value from the image size itself.
+
+        INCTILEPAL - Extract a part of a PNG/PCX file and make a one-byte
+                     per-tile lookup table of the palette used.
+
+                     The palette number corresponds to which 16-color
+                     sub-palette (in a 256-color image) the first non-zero
+                     pixel of the tile is drawn in.
+
+                     The palette number is stored as $00-$F0 so that it can
+                     be directly OR'ed into the screen's BAT.
+
+                  Three syntaxes are possible :
+
+                  INCTILEPAL "pic.pcx"
+
+                      Without any additional parameters, the command
+                      convert the whole PCX file.
+
+                  INCTILEPAL "pic.pcx",32,4
+
+                      Tell the assembler to convert only 4 rows
+                      of 32 tiles (a character size is 16x16).
+
+                      A rows or columns value of 0 will automatically
+                      calculate the value from the image size itself.
+
+                  INCTILEPAL "pic.pcx",48,16,32,4
+
+                      Same as above but start extracting characters
+                      from coordinate 48,16 (in pixels).
+
+                      A rows or columns value of 0 will automatically
+                      calculate the value from the image size itself.
 
         INCMAP  - ...
 
-        INCSPR  - Same as INCCHR but for sprites; note that the size
-                  of a sprite is 16x16.
+        INCSPR  - Extract a part of a PNG/PCX file and convert it into
+                  PC Engine 16x16 sprite graphics.
+
+                  Three syntaxes are possible :
+
+                  INCSPR "pic.pcx"
+
+                      Without any additional parameters, the command
+                      convert the whole PCX file.
+
+                  INCSPR "pic.pcx",32,4
+
+                      Tell the assembler to convert only 4 rows
+                      of 32 sprites (a sprite is 16x16).
+
+                      A rows or columns value of 0 will automatically
+                      calculate the value from the image size itself.
+
+                  INCSPR "pic.pcx",48,16,32,4
+
+                      Same as above but start extracting characters
+                      from coordinate 48,16 (in pixels).
+
+                      A rows or columns value of 0 will automatically
+                      calculate the value from the image size itself.
+
+        INCSPRPAL - Extract a part of a PNG/PCX file and make a one-byte
+                    per-sprite lookup table of the palette used.
+
+                    The palette number corresponds to which 16-color
+                    sub-palette (in a 256-color image) the first non-zero
+                    pixel of the tile is drawn in.
+
+                    The palette number is stored as $00-$0F so that it can
+                    be directly OR'ed into the SATB.
+
+                  Three syntaxes are possible :
+
+                  INCSPRPAL "pic.pcx"
+
+                      Without any additional parameters, the command
+                      convert the whole PCX file.
+
+                  INCSPRPAL "pic.pcx",32,4
+
+                      Tell the assembler to convert only 4 rows
+                      of 32 tiles (a character size is 16x16).
+
+                      A rows or columns value of 0 will automatically
+                      calculate the value from the image size itself.
+
+                  INCSPRPAL "pic.pcx",48,16,32,4
+
+                      Same as above but start extracting characters
+                      from coordinate 48,16 (in pixels).
+
+                      A rows or columns value of 0 will automatically
+                      calculate the value from the image size itself.
+
 
         INCPAL  - Extract the palette of a PCX file. If no extra parameters
                   are given all the 256 colors are loaded and converted.
@@ -366,10 +537,16 @@
                       the number of rows. Both numbers are in character
                       (8x8 pixels).
 
+                      A rows or columns value of 0 will automatically
+                      calculate the value from the image size itself.
+
                   INCBAT "my_pic.pcx",$1000,16,16,32,30
 
                       Same as above but tell the assembler that the picture
                       starts at coordinates 16,16 (in pixels).
+
+                      A rows or columns value of 0 will automatically
+                      calculate the value from the image size itself.
 
         ZP      - Select the Zero-Page data group.
 

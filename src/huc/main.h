@@ -13,17 +13,19 @@
 #ifndef _MAIN_H
 #define _MAIN_H
 
-#define HUC_VERSION     "HuC (v3.98-" GIT_VERSION ", " GIT_DATE ")"
+#include "version.h"
+
+#define HUC_VERSION     "HuC (v3.99-" GIT_VERSION ", " GIT_DATE ")"
 
 void FEvers (void);
 void usage (char *exename);
 void parse (void);
-long dodcls (long stclass, TAG_SYMBOL *mtag, int is_struct);
+intptr_t dodcls (intptr_t stclass, TAG_SYMBOL *mtag, int is_struct);
 void dumplits (void);
 void dumpglbs (void);
 void errorsummary (void);
 char extension (char *s);
-long assemble (char *s);
+intptr_t assemble (char *s);
 
 void dotypedef (void);
 

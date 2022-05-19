@@ -10,7 +10,7 @@ all clean: bin
 bin:
 	mkdir -p bin
 
-.PHONY: $(SUBDIRS)
+.PHONY: $(SUBDIRS) test
 
 $(SUBDIRS):
 	@echo " "
@@ -22,10 +22,34 @@ install:
 	mkdir -p /usr/include/pce
 	cp -pr include/pce/* /usr/include/pce/
 
+test:
+ifneq ($(shell uname -s),Linux)
+	@echo ''
+	@echo 'Note: "make test" only runs on a linux platform!'
+else
+	cd test ; ./mk
+endif
+
+check:
+	@echo ''
+	md5sum -c < examples/checksum.txt
+
+DATE = $(shell date +%F)
+
 package:
-	$(MAKE) clean
-	rm -f huc.zip
-	zip -R huc \* -x \*CVS\*
+	mkdir -p tmp
+	strip bin/*
+	mv bin/* tmp/
+	$(MAKE) --directory=src   clean > /dev/null
+	$(MAKE) --directory=tgemu clean > /dev/null
+	find examples     -type f -name '*.s'   -delete
+	find examples     -type f -name '*.lst' -delete
+	find examples     -type f -name '*.sym' -delete
+	find examples     -type f -name '*.ovl' -delete
+	find examples/asm -type f -name '*.bin' -delete
+	mv tmp/* bin/
+	rm -d tmp
+	rm -f huc-$(DATE).zip
+	zip -r huc-$(DATE) * -x *.zip -x .*
 
 examples: src
-

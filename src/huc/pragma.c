@@ -3,6 +3,7 @@
  *
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,116 +25,116 @@ static char *cmdptr;
 /* default pragma's */
 static char *pragma_init[] = {
 	/* far pointer support funcs */
-	"fastcall farpeekb(farptr fbank:fptr)",
-	"fastcall farpeekw(farptr fbank:fptr)",
-	"fastcall farmemget(word bx, farptr fbank:fptr, word acc)",
+	"fastcall farpeekb(farptr __fbank:__fptr)",
+	"fastcall farpeekw(farptr __fbank:__fptr)",
+	"fastcall farmemget(word __bx, farptr __fbank:__fptr, word acc)",
 	/* asm-lib wrappers */
-	"fastcall load_palette(byte al, farptr bl:si, byte cl)",
-	"fastcall load_bat(word di, farptr bl:si, byte cl, byte ch)",
-	"fastcall load_vram(word di, farptr bl:si, word cx)",
-	"fastcall load_vram2(word di, word si, byte bl, word cx)",
-	"fastcall snd_trkreg(byte al, farptr bl:si)",
+	"fastcall load_palette(byte __al, farptr __bl:__si, byte __cl)",
+	"fastcall load_bat(word __di, farptr __bl:__si, byte __cl, byte __ch)",
+	"fastcall load_vram(word __di, farptr __bl:__si, word __cx)",
+	"fastcall load_vram2(word __di, word __si, byte __bl, word __cx)",
+	"fastcall snd_trkreg(byte __al, farptr __bl:__si)",
 	/* text funcs */
-	"fastcall cls(word dx)",
-	"fastcall set_xres(word ax)",
-	"fastcall set_xres(word ax, byte cl)",
-	"fastcall set_font_color(byte al, byte acc)",
-	"fastcall load_font(farptr bl:si, byte cl)",
-	"fastcall load_font(farptr bl:si, byte cl, word di)",
-	"fastcall load_default_font(byte dl)",
-	"fastcall load_default_font(byte dl, word di)",
-	"fastcall put_digit(byte dl, word acc)",
-	"fastcall put_digit(byte dl, byte cl, byte acc)",
-	"fastcall put_char(byte dl, word acc)",
-	"fastcall put_char(byte dl, byte cl, byte acc)",
-	"fastcall put_raw(word dx, word acc)",
-	"fastcall put_raw(word dx, byte cl, byte acc)",
-	"fastcall put_number(word dx, byte cl, word acc)",
-	"fastcall put_number(word dx, byte cl, byte bl, byte acc)",
-	"fastcall put_hex(word dx, byte cl, word acc)",
-	"fastcall put_hex(word dx, byte cl, byte bl, byte acc)",
-	"fastcall put_string(word si, word acc)",
-	"fastcall put_string(word si, byte bl, byte acc)",
+	"fastcall cls(word __dx)",
+	"fastcall set_xres(word __ax)",
+	"fastcall set_xres(word __ax, byte __cl)",
+	"fastcall set_font_color(byte __al, byte acc)",
+	"fastcall load_font(farptr __bl:__si, byte __cl)",
+	"fastcall load_font(farptr __bl:__si, byte __cl, word __di)",
+	"fastcall load_default_font(byte __dl)",
+	"fastcall load_default_font(byte __dl, word __di)",
+	"fastcall put_digit(byte __dl, word acc)",
+	"fastcall put_digit(byte __dl, byte __cl, byte acc)",
+	"fastcall put_char(byte __dl, word acc)",
+	"fastcall put_char(byte __dl, byte __cl, byte acc)",
+	"fastcall put_raw(word __dx, word acc)",
+	"fastcall put_raw(word __dx, byte __cl, byte acc)",
+	"fastcall put_number(word __dx, byte __cl, word acc)",
+	"fastcall put_number(word __dx, byte __cl, byte __bl, byte acc)",
+	"fastcall put_hex(word __dx, byte __cl, word acc)",
+	"fastcall put_hex(word __dx, byte __cl, byte __bl, byte acc)",
+	"fastcall put_string(word __si, word acc)",
+	"fastcall put_string(word __si, byte __bl, byte acc)",
 	/* gfx lib funcs */
-	"fastcall gfx_plot(word bx, word cx, word acc)",
-	"fastcall gfx_point(word bx, word cx)",
-	"fastcall gfx_line(word bx, word cx, word si, word bp, word acc)",
+	"fastcall gfx_plot(word __bx, word __cx, word acc)",
+	"fastcall gfx_point(word __bx, word __cx)",
+	"fastcall gfx_line(word __bx, word __cx, word __si, word __bp, word acc)",
 
-	"fastcall vram_addr(byte al, byte acc)",
-	"fastcall spr_ctrl(byte al, byte acc)",
+	"fastcall vram_addr(byte __al, byte acc)",
+	"fastcall spr_ctrl(byte __al, byte acc)",
 	"fastcall get_color(word color_reg)",
 	"fastcall set_color(word color_reg, word color_data) nop",
-	"fastcall set_color_rgb(word color_reg, byte al, byte ah, byte acc)",
-	"fastcall fade_color(word ax, byte acc)",
-	"fastcall fade_color(word color_reg, word ax, byte acc)",
+	"fastcall set_color_rgb(word color_reg, byte __al, byte __ah, byte acc)",
+	"fastcall fade_color(word __ax, byte acc)",
+	"fastcall fade_color(word color_reg, word __ax, byte acc)",
 	/* map lib funcs */
-	"fastcall scan_map_table(word si, word ax, word cx)",
-	"fastcall load_map(byte al, byte ah, word di, word bx, byte dl, byte dh)",
+	"fastcall scan_map_table(word __si, word __ax, word __cx)",
+	"fastcall load_map(byte __al, byte __ah, word __di, word __bx, byte __dl, byte __dh)",
 	"fastcall set_map_data(word acc)",
-	"fastcall set_map_data(farptr bl:si, word ax, word acc)",
-	"fastcall set_map_data(farptr bl:si, word ax, word dx, byte acc)",
-	"fastcall set_tile_data(word di)",
-	"fastcall set_tile_data(farptr bl:si, word cx, farptr al:dx)",
-	"fastcall put_tile(word dx, word acc)",
-	"fastcall put_tile(word dx, byte al, byte acc)",
-	"fastcall map_get_tile(byte dl, byte acc)",
-	"fastcall map_put_tile(byte dl, byte dh, byte acc)",
+	"fastcall set_map_data(farptr __bl:__si, word __ax, word acc)",
+	"fastcall set_map_data(farptr __bl:__si, word __ax, word __dx, byte acc)",
+	"fastcall set_tile_data(word __di)",
+	"fastcall set_tile_data(farptr __bl:__si, word __cx, farptr __al:__dx, byte __ah)",
+	"fastcall put_tile(word __dx, word acc)",
+	"fastcall put_tile(word __dx, byte __al, byte acc)",
+	"fastcall map_get_tile(byte __dl, byte acc)",
+	"fastcall map_put_tile(byte __dl, byte __dh, byte acc)",
 	/* misc funcs */
 	"fastcall get_joy_events(byte acc)",
-	"fastcall get_joy_events(byte al, byte acc)",
-	"fastcall set_joy_callback(byte dl, byte al, byte ah, farptr bl:si)",
-	"fastcall poke(word bx, word acc)",
-	"fastcall pokew(word bx, word acc)",
-	"fastcall srand32(word dx, word cx)",
+	"fastcall get_joy_events(byte __al, byte acc)",
+	"fastcall set_joy_callback(byte __dl, byte __al, byte __ah, farptr __bl:__si)",
+	"fastcall poke(word __bx, word acc)",
+	"fastcall pokew(word __bx, word acc)",
+	"fastcall srand32(word __dx, word __cx)",
 	/* 32-bit math funcs */
-	"fastcall mov32(word di, dword acc:ax|bx)",
-	"fastcall add32(word di, dword acc:ax|bx)",
-	"fastcall sub32(word di, dword acc:ax|bx)",
-	"fastcall mul32(word bp, dword acc:ax|bx)",
-	"fastcall div32(word bp, dword acc:ax|bx)",
-	"fastcall cmp32(word di, dword acc:ax|bx)",
-	"fastcall com32(word di)",
+	"fastcall mov32(word __di, dword acc:__ax|__bx)",
+	"fastcall add32(word __di, dword acc:__ax|__bx)",
+	"fastcall sub32(word __di, dword acc:__ax|__bx)",
+	"fastcall mul32(word __bp, dword acc:__ax|__bx)",
+	"fastcall div32(word __bp, dword acc:__ax|__bx)",
+	"fastcall cmp32(word __di, dword acc:__ax|__bx)",
+	"fastcall com32(word __di)",
 	/* bcd math funcs */
-	"fastcall bcd_init(word bx, word acc)",
-	"fastcall bcd_set(word bx, word acc)",
-	"fastcall bcd_mov(word bx, word acc)",
-	"fastcall bcd_add(word di, word acc)",
+	"fastcall bcd_init(word __bx, word acc)",
+	"fastcall bcd_set(word __bx, word acc)",
+	"fastcall bcd_mov(word __bx, word acc)",
+	"fastcall bcd_add(word __di, word acc)",
 	/* bram funcs */
-	"fastcall bm_rawwrite(word bx, word acc)",
-	"fastcall bm_read(word di, word bx, word bp, word acc)",
-	"fastcall bm_write(word di, word bx, word bp, word acc)",
-	"fastcall bm_create(word bx, word acc)",
-	"fastcall bm_getptr(word bp, word acc)",
+	"fastcall bm_rawwrite(word __bx, word acc)",
+	"fastcall bm_read(word __di, word __bx, word __bp, word acc)",
+	"fastcall bm_write(word __di, word __bx, word __bp, word acc)",
+	"fastcall bm_create(word __bx, word acc)",
+	"fastcall bm_getptr(word __bp, word acc)",
 	/* string funcs */
-	"fastcall strcpy(word di, word si)",
-	"fastcall strncpy(word di, word si, word acc)",
-	"fastcall strcat(word di, word si)",
-	"fastcall strncat(word di, word si, word acc)",
-	"fastcall strcmp(word di, word si)",
-	"fastcall strncmp(word di, word si, word acc)",
-	"fastcall strlen(word si)",
-	"fastcall memcpy(word di, word si, word acc)",
-	"fastcall mempcpy(word di, word si, word acc)",
-	"fastcall memcmp(word di, word si, word acc)",
-	"fastcall memset(word di, word bx, word acc)",
+	"fastcall strcpy(word __di, word __si)",
+	"fastcall strncpy(word __di, word __si, word acc)",
+	"fastcall strcat(word __di, word __si)",
+	"fastcall strncat(word __di, word __si, word acc)",
+	"fastcall strcmp(word __di, word __si)",
+	"fastcall strncmp(word __di, word __si, word acc)",
+	"fastcall strlen(word __si)",
+	"fastcall memcpy(word __di, word __si, word acc)",
+	"fastcall mempcpy(word __di, word __si, word acc)",
+	"fastcall memcmp(word __di, word __si, word acc)",
+	"fastcall memset(word __di, word __bx, word acc)",
 	/* CDROM funcs */
-	"fastcall cd_trkinfo(word ax, word cx, word dx, word bp)",
-	"fastcall cd_playtrk(word bx, word cx, word acc)",
-	"fastcall cd_playmsf(byte al, byte ah, byte bl, byte cl, byte ch, byte dl, word acc)",
-	"fastcall cd_loadvram(word di, word si, word bx, word acc)",
-	"fastcall cd_loaddata(word di, word si, farptr bl:bp, word acc)",
+	"fastcall cd_trkinfo(word __ax, word __cx, word __dx, word __bp)",
+	"fastcall cd_playtrk(word __bx, word __cx, word acc)",
+	"fastcall cd_playmsf(byte __al, byte __ah, byte __bl, byte __cl, byte __ch, byte __dl, word acc)",
+	"fastcall cd_loadvram(word __di, word __si, word __bx, word acc)",
+	"fastcall cd_loaddata(word __di, word __si, farptr __bl:__bp, word acc)",
 	/* ADPCM funcs */
-	"fastcall ad_trans(word di, word si, byte al, word bx)",
-	"fastcall ad_read(word cx, byte dh, word bx, word ax)",
-	"fastcall ad_write(word cx, byte dh, word bx, word ax)",
-	"fastcall ad_play(word bx, word ax, byte dh, byte dl)",
+	"fastcall ad_trans(word __di, word __si, byte __al, word __bx)",
+	"fastcall ad_read(word __cx, byte __dh, word __bx, word __ax)",
+	"fastcall ad_write(word __cx, byte __dh, word __bx, word __ax)",
+	"fastcall ad_play(word __bx, word __ax, byte __dh, byte __dl)",
 
 	"fastcall __builtin_ffs(word acc)",
 	NULL
 };
 
 /* protos */
-long fastcall_look (const char *fname, long nargs, struct fastcall **p);
+intptr_t fastcall_look (const char *fname, intptr_t nargs, struct fastcall **p);
 
 
 /* ----
@@ -144,7 +145,7 @@ long fastcall_look (const char *fname, long nargs, struct fastcall **p);
  */
 void dopragma (void)
 {
-	long i;
+	intptr_t i;
 
 	/* make a local copy of the pragma command line */
 	for (i = 0;; i++) {
@@ -167,7 +168,7 @@ void dopragma (void)
  */
 void defpragma (void)
 {
-	long i;
+	intptr_t i;
 
 	for (i = 0;; i++) {
 		if (pragma_init[i] == NULL)
@@ -215,7 +216,7 @@ void parse_pragma (void)
  * ----
  * setup a new fastcall
  *
- * ie. #pragma fastcall func(word dx, byte al, byte ah)
+ * ie. #pragma fastcall func(word __dx, byte __al, byte __ah)
  *
  */
 void new_fastcall (void)
@@ -223,9 +224,9 @@ void new_fastcall (void)
 	struct fastcall *ptr;
 	char fname[NAMESIZE];
 	char sname[NAMESIZE];
-	long hash;
-	long cnt;
-	long i;
+	intptr_t hash;
+	intptr_t cnt;
+	intptr_t i;
 
 	ptr = &ftemp;
 	cnt = 0;
@@ -369,7 +370,9 @@ void new_fastcall (void)
 	}
 	if (symget(sname)) {
 		if (strcmp(sname, "nop") == 0)
-			ptr->flags |= 0x01;
+			ptr->flags |= FASTCALL_NOP;
+		if (strcmp(sname, "macro") == 0)
+			ptr->flags |= FASTCALL_MACRO;
 	}
 
 	/* check arg number */
@@ -408,12 +411,12 @@ void new_fastcall (void)
  * search a fastcall function
  *
  */
-long fastcall_look (const char *fname, long nargs, struct fastcall **p)
+intptr_t fastcall_look (const char *fname, intptr_t nargs, struct fastcall **p)
 {
 	struct fastcall *ptr;
 	struct fastcall *ref;
-	long hash;
-	long nb;
+	intptr_t hash;
+	intptr_t nb;
 
 	/* search */
 	hash = symhash(fname);
@@ -448,11 +451,11 @@ long fastcall_look (const char *fname, long nargs, struct fastcall **p)
  * calculate the hash value of a symbol
  *
  */
-long symhash (const char *sym)
+intptr_t symhash (const char *sym)
 {
-	long i;
+	intptr_t i;
 	char c;
-	long hash = 0;
+	intptr_t hash = 0;
 
 	/* calc hash value */
 	for (i = 0;; i++) {
@@ -474,9 +477,9 @@ long symhash (const char *sym)
  * extract a symbol name
  *
  */
-long symget (char *sname)
+intptr_t symget (char *sname)
 {
-	long i;
+	intptr_t i;
 
 	skip_blanks();
 
@@ -503,9 +506,9 @@ long symget (char *sname)
  * test if next input string is legal symbol name
  *
  */
-long strmatch (char *lit)
+intptr_t strmatch (char *lit)
 {
-	long i;
+	intptr_t i;
 
 	skip_blanks();
 

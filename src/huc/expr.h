@@ -7,21 +7,21 @@
 #define _EXPR_H
 
 void expression (int comma);
-long expression_ex (LVALUE *lval, int comma, int norval);
-long heir1 (LVALUE *lval, int comma);
-long heir1a (LVALUE *lval, int comma);
-long heir1b (LVALUE *lval, int comma);
-long heir1c (LVALUE *lval, int comma);
-long heir2 (LVALUE *lval, int comma);
-long heir3 (LVALUE *lval, int comma);
-long heir4 (LVALUE *lval, int comma);
-long heir5 (LVALUE *lval, int comma);
-long heir6 (LVALUE *lval, int comma);
-long heir7 (LVALUE *lval, int comma);
-long heir8 (LVALUE *lval, int comma);
-long heir9 (LVALUE *lval, int comma);
-long heir10 (LVALUE *lval, int comma);
-long heir11 (LVALUE *lval, int comma);
+intptr_t expression_ex (LVALUE *lval, int comma, int norval);
+intptr_t heir1 (LVALUE *lval, int comma);
+intptr_t heir1a (LVALUE *lval, int comma);
+intptr_t heir1b (LVALUE *lval, int comma);
+intptr_t heir1c (LVALUE *lval, int comma);
+intptr_t heir2 (LVALUE *lval, int comma);
+intptr_t heir3 (LVALUE *lval, int comma);
+intptr_t heir4 (LVALUE *lval, int comma);
+intptr_t heir5 (LVALUE *lval, int comma);
+intptr_t heir6 (LVALUE *lval, int comma);
+intptr_t heir7 (LVALUE *lval, int comma);
+intptr_t heir8 (LVALUE *lval, int comma);
+intptr_t heir9 (LVALUE *lval, int comma);
+intptr_t heir10 (LVALUE *lval, int comma);
+intptr_t heir11 (LVALUE *lval, int comma);
 void store (LVALUE *lval);
 void rvalue (LVALUE *lval);
 void needlval (void);

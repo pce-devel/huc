@@ -11,8 +11,8 @@ __sp
 __stack	.ds 2
 __temp	.ds 4
 __ptr	.ds 2
-fbank	.ds 1
-fptr	.ds 2
+__fbank	.ds 1
+__fptr	.ds 2
 .ifdef HAVE_LIB3
 maplibfunc_hold_a	.ds 1
 .endif
@@ -25,7 +25,7 @@ maplibfunc_hold_a	.ds 1
 	sty	\2
 	ldy	#low(\1)
 	sty	\3
-	ldy	#high(\1)
+	ldy	#high(\1) & $1F
 	sty	\3+1
 .endm
 
@@ -462,7 +462,7 @@ __addw	.macro
 	adc	\1
 	sax
 	adc	\1+1
-.endm	
+.endm
 
 __addb	.macro
 	clc
@@ -502,7 +502,7 @@ __addwi	.macro
 	adc	#high(\1)
 .endif
 .endif
-.endm	
+.endm
 
 ; pceas workaround; the regular __addwi doesn't work if the argument is
 ; symbolic because the code size changes as it is resolved.
@@ -600,7 +600,7 @@ __addbi	.macro
 .endif
 .endif
 	cla
-.endm	
+.endm
 
 .ifdef SMALL
 __addmi	.macro
@@ -628,7 +628,7 @@ __addmi	.macro
 .endif
 .endif
 .endif
-.endm	
+.endm
 
 __addmi_sym	.macro
 	tay			; 2
@@ -686,7 +686,7 @@ __addmi	.macro
 	tya			; 2 => 20(24) / 26
 .endif
 .endif
-.endm	
+.endm
 
 __addmi_sym	.macro
 	tay			; 2
@@ -708,7 +708,7 @@ __subw	.macro
 	sbc	\1
 	sax
 	sbc	\1+1
-.endm	
+.endm
 
 __subwi	.macro
 .if (\1 = 1)
@@ -729,7 +729,7 @@ __subwi	.macro
 	sbc	#high(\1)
 .endif
 .endif
-.endm	
+.endm
 
 __submi	.macro
 	pha
@@ -741,7 +741,7 @@ __submi	.macro
 	sbc	#high(\1)
 	sta	<\2+1
 	pla
-.endm	
+.endm
 
 __addws	.macro
 	sax
@@ -789,14 +789,14 @@ __orwi	.macro
 	ora	#low(\1)
 	sax
 	ora	#high(\1)
-.endm	
+.endm
 
 __orw	.macro
 	sax
 	ora	\1
 	sax
 	ora	\1+1
-.endm	
+.endm
 
 __andws	.macro
 	sax
@@ -812,14 +812,14 @@ __andwi	.macro
 	and	#low(\1)
 	sax
 	and	#high(\1)
-.endm	
+.endm
 
 __andw	.macro
 	sax
 	and	\1
 	sax
 	and	\1+1
-.endm	
+.endm
 
 __eorwi	.macro
 	sax

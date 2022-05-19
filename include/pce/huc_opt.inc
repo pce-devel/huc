@@ -13,14 +13,19 @@
 	clc
 	adc	#LOW(\1)
 	tax
+.ifndef SMALL
 	lda	<__sp+1
 	adc	#HIGH(\1)
+.else
+	lda	#$3f
+.endif
 .endm
 
 ; pea_s
 ;
 .macro __pea_s
 	; (bytes : 25, cycles : 44)
+.ifndef SMALL
 	lda	<__sp
 	sec
 	sbc	#2
@@ -35,6 +40,19 @@
 	adc	#HIGH(\1+2)
 	ldy	#1
 	sta	[__sp],Y
+.else
+	lda	<__sp
+	dec	a
+	dec	a
+	sta	<__sp
+	clc
+	adc	#LOW(\1+2)
+	sta	[__sp]
+	tax
+	lda	#$3f
+	ldy	#1
+	sta	[__sp],Y
+.endif
 .endm
 
 ; ldb_s

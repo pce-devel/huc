@@ -49,7 +49,6 @@ A. Toolchain features
   received uncrustify config files to keep them straight
 
 4. Other enhancements
-- support for interrupt handlers implemented in C
 - support for more than one input file
 - "library" support that includes C files from the include path
 - default #include paths
@@ -70,7 +69,6 @@ Among the limitations that still exist and may cause problems:
 - no type casting to struct pointers
 - no floating point support
 - no anonymous structs
-- no support for MinGW (Windows users are recommended to use Cygwin)
 
 There are also a couple more absent features that are not so likely to be
 missed:
@@ -101,3 +99,7 @@ C. Tools
 - pceas updated to version 3.22
 - pceas symbol table rearranged to allow easier sorting by address
 - Develo tool ported to Linux (UNTESTED)
+
+
+NEW:
+  added 8bpp uncompressed .BMP support

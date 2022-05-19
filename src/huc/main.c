@@ -12,12 +12,15 @@
  *
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <ctype.h>
 #include <sys/stat.h>
+#include <getopt.h>
+#include <errno.h>
 #include "defs.h"
 #include "data.h"
 #include "code.h"
@@ -45,6 +48,49 @@ static int infile_ptr;
 
 static int user_norecurse = 0;
 
+#if !((__STDC_VERSION__ >= 201112L) || (_MSC_VER >= 1910))
+#   if !defined(HAVE_STRCAT_S) 
+static int strcat_s(char* dst, size_t len, const char* src) {
+	size_t i;
+	if (!dst || !len) {
+		return EINVAL;
+	}
+	if (src) {
+		for (i = 0; i < len; i++) {
+			if (dst[i] == '\0') {
+				size_t j;
+				for (j = 0; (i+j) < len; j++) {
+					if ((dst[i+j] = src[j]) == '\0') {
+						return 0;
+					}
+				}
+			}
+		}
+	}
+	dst[0] = '\0';
+	return EINVAL;
+}
+#   endif // !HAVE_STRCAT_S
+
+#   if !defined(HAVE_STRCPY_S)
+static int strcpy_s(char* dst, size_t len, const char* src) {
+	if (!dst || !len) {
+		return EINVAL;
+	}
+	if (src) {
+		size_t i;
+		for (i = 0; i < len; i++) {
+			if ((dst[i] = src[i]) == '\0') {
+				return 0;
+			}
+		}
+	}
+	dst[0] = '\0';
+	return EINVAL;
+}
+#   endif // !HAVE_STRCPY_S
+#endif 
+
 static char *lib_to_file (char *lib)
 {
 	int i;
@@ -66,7 +112,7 @@ int main (int argc, char *argv[])
 	char *p, *pp, *bp;
 	char **oldargv = argv;
 	char **link_lib;
-	long smacptr;
+	intptr_t smacptr;
 	int first = 1;
 	char *asmdefs_global_end;
 
@@ -90,7 +136,7 @@ int main (int argc, char *argv[])
 					break;
 
 				case 'c':
-					if ((*(p + 1) == 'd')) {
+					if (*(p + 1) == 'd') {
 						cdflag = 1;	/* pass '-cd' to assembler */
 						p++;
 						break;
@@ -145,9 +191,8 @@ int main (int argc, char *argv[])
 
 
 				case 'v':
-					verboseflag++;
-					if (verboseflag > 1)
-						ctext = 1;		/* "C" code in asm output */
+					verboseflag = 1;
+					ctext = 1;		/* "C" code in asm output */
 					break;
 
 				case 'd': case 'D':
@@ -202,6 +247,14 @@ int main (int argc, char *argv[])
 					else if (!strcmp(p, "short-enums")) {
 						user_short_enums = 1;
 						p += 10;
+					}
+					else if (!strcmp(p, "signed-char")) {
+						user_signed_char = 1;
+						p += 10;
+					}
+					else if (!strcmp(p, "unsigned-char")) {
+						user_signed_char = 0;
+						p += 12;
 					}
 					else
 						goto unknown_option;
@@ -483,9 +536,9 @@ void parse (void)
 /*
  *		parse top level declarations
  */
-long dodcls (long stclass, TAG_SYMBOL *mtag, int is_struct)
+intptr_t dodcls (intptr_t stclass, TAG_SYMBOL *mtag, int is_struct)
 {
-	long err;
+	intptr_t err;
 	struct type t;
 
 	blanks();
@@ -551,7 +604,7 @@ void dotypedef (void)
  */
 void dumplits (void)
 {
-	long j, k;
+	intptr_t j, k;
 
 	if ((litptr == 0) && (const_nb == 0))
 		return;
@@ -622,25 +675,150 @@ static int have_init_data = 0;
    separate buffers and dump them all together after the last input file.
  */
 #define DATABUFSIZE 65536
-static FILE *data = 0;
-char data_buf[DATABUFSIZE];
-static FILE *rodata = 0;
-char rodata_buf[DATABUFSIZE];
+char data_buffer[DATABUFSIZE+256];
+int  data_offset = 0;
+char rodata_buffer[DATABUFSIZE+256];
+int  rodata_offset = 0;
+
+char *current_buffer = NULL;
+int   current_offset = 0;
+
+/*
+ *	buffered print symbol prefix character
+ *
+ */
+void prefixBuffer(void)
+{
+	current_buffer[current_offset++] = '_';
+}
+
+/*
+ *	buffered print string
+ *
+ */
+void outstrBuffer (char *ptr)
+{
+	int i = 0;
+
+	if (current_offset >=	DATABUFSIZE) {
+		printf("HuC compiler overrun detected, DATABUFSIZE is too small!\n");
+		exit(-1);
+	}
+
+	while (ptr[i])
+		current_buffer[current_offset++] = ptr[i++];
+}
+
+/*
+ *	buffered print character
+ *
+ */
+char outbyteBuffer (char c)
+{
+	if (c == 0)
+		return (0);
+
+	current_buffer[current_offset++] = c;
+
+	return (c);
+}
+
+/*
+ *	buffered print decimal number
+ *
+ */
+void outdecBuffer (intptr_t number)
+{
+	if (current_offset >=	DATABUFSIZE) {
+		printf("HuC compiler overrun detected, DATABUFSIZE is too small!\n");
+		exit(-1);
+	}
+
+	current_offset += sprintf(current_buffer + current_offset, "%ld", (long) number);
+}
+
+/*
+ *	buffered print pseudo-op to define a byte
+ *
+ */
+void nlBuffer (void)
+{
+	current_buffer[current_offset++] = EOL;
+}
+
+/*
+ *	buffered print pseudo-op to define a byte
+ *
+ */
+void defbyteBuffer (void)
+{
+	outstrBuffer(".db\t");
+}
+
+/*
+ *	buffered print pseudo-op to define storage
+ *
+ */
+void defstorageBuffer (void)
+{
+	outstrBuffer(".ds\t");
+}
+
+/*
+ *	buffered print pseudo-op to define a word
+ *
+ */
+void defwordBuffer (void)
+{
+	outstrBuffer(".dw\t");
+}
+
+/**
+ * buffered dump struct data
+ * @param symbol struct variable
+ * @param position position of the struct in the array, or zero
+ */
+int dump_structBuffer (SYMBOL *symbol, int position)
+{
+	int dumped_bytes = 0;
+	int i, number_of_members, value;
+
+	number_of_members = tag_table[symbol->tagidx].number_of_members;
+	for (i = 0; i < number_of_members; i++) {
+		// i is the index of current member, get type
+		int member_type = member_table[tag_table[symbol->tagidx].member_idx + i].type;
+		if (member_type == CCHAR || member_type == CUCHAR) {
+			defbyteBuffer();
+			dumped_bytes += 1;
+		}
+		else {
+			/* XXX: compound types? */
+			defwordBuffer();
+			dumped_bytes += 2;
+		}
+		if (position < get_size(symbol->name)) {
+			// dump data
+			value = get_item_at(symbol->name, position * number_of_members + i, &tag_table[symbol->tagidx]);
+			outdecBuffer(value);
+		}
+		else {
+			// dump zero, no more data available
+			outdecBuffer(0);
+		}
+		nlBuffer();
+	}
+	return (dumped_bytes);
+}
 
 /*
  *	dump all static variables
  */
 void dumpglbs (void)
 {
-	long i = 1;
+	intptr_t i = 1;
 	int dim, list_size, line_count;
 	int j;
 	FILE *save = output;
-
-	if (!data)
-		data = fmemopen(data_buf, DATABUFSIZE, "w");
-	if (!rodata)
-		rodata = fmemopen(rodata_buf, DATABUFSIZE, "w");
 
 	/* This is done in several passes:
 	   Pass 0: Dump initialization data into const bank.
@@ -664,20 +842,24 @@ next:
 							continue;
 						else if (pass == 2) {
 							/* define space for initialized data */
-							output = data;
+							current_buffer = data_buffer;
+							current_offset = data_offset;
 							if (cptr->storage != LSTATIC)
-								prefix();
-							outstr(cptr->name);
-							outstr(":\t");
-							defstorage();
-							outdec(cptr->size);
-							nl();
+								prefixBuffer();
+							outstrBuffer(cptr->name);
+							outstrBuffer(":\t");
+							defstorageBuffer();
+							outdecBuffer(cptr->size);
+							nlBuffer();
 							cptr->storage |= WRITTEN;
-							output = save;
+							data_offset = current_offset;
+							current_buffer = NULL;
+							current_offset = 0;
 							continue;
 						}
 						/* output initialization data into const bank */
-						output = rodata;
+						current_buffer = rodata_buffer;
+						current_offset = rodata_offset;
 						have_init_data = 1;
 						list_size = 0;
 						line_count = 0;
@@ -692,35 +874,37 @@ next:
 						   we have to count both to get the right members out. */
 						for (j = item = 0; j < dim; j++, item++) {
 							if (cptr->type == CSTRUCT)
-								j += dump_struct(cptr, item) - 1;
+								j += dump_structBuffer(cptr, item) - 1;
 							else {
 								if (line_count % 10 == 0) {
-									nl();
+									nlBuffer();
 									if (cptr->type == CCHAR || cptr->type == CUCHAR)
-										defbyte();
+										defbyteBuffer();
 									else
-										defword();
+										defwordBuffer();
 								}
 								if (j < list_size) {
 									// dump data
 									int value = get_item_at(cptr->name, j, &tag_table[cptr->tagidx]);
-									outdec(value);
+									outdecBuffer(value);
 								}
 								else {
 									// dump zero, no more data available
-									outdec(0);
+									outdecBuffer(0);
 								}
 								line_count++;
 								if (line_count % 10 == 0)
 									line_count = 0;
 								else {
 									if (j < dim - 1)
-										outbyte(',');
+										outbyteBuffer(',');
 								}
 							}
 						}
-						nl();
-						output = save;
+						nlBuffer();
+						rodata_offset = current_offset;
+						current_buffer = NULL;
+						current_offset = 0;
 					}
 					else {
 						if (pass == 0)
@@ -770,25 +954,31 @@ static void dumpfinal (void)
 			outstr("_lend:\n");
 		}
 	}
-	if (data) {
-		fclose(data);
-		outstr("huc_data:\n");
-		outstr("___huc_data:\n");
-		outstr(data_buf);
-		outstr("huc_data_end:\n");
-		outstr("___huc_data_end:\n");
+	if (rodata_offset == 0) {
+		outstr("huc_rodata:\n");
+		outstr("__huc_rodata:\n");
+		outstr("huc_rodata_end:\n");
+		outstr("__huc_rodata_end:\n");
 	}
+	outstr("huc_data:\n");
+	outstr("__huc_data:\n");
+	if (data_offset != 0) {
+		data_buffer[data_offset] = '\0';
+		outstr(data_buffer);
+	}
+	outstr("huc_data_end:\n");
+	outstr("__huc_data_end:\n");
 	if (globals_h_in_process != 1)
 		outstr("__heap_start:\n");
-	if (rodata) {
-		fclose(rodata);
+	if (rodata_offset != 0) {
+		rodata_buffer[rodata_offset] = '\0';
 		ol(".data");
 		ol(".bank CONST_BANK");
 		outstr("huc_rodata:\n");
-		outstr("___huc_rodata:\n");
-		outstr(rodata_buf);
+		outstr("__huc_rodata:\n");
+		outstr(rodata_buffer);
 		outstr("huc_rodata_end:\n");
-		outstr("___huc_rodata_end:\n");
+		outstr("__huc_rodata_end:\n");
 	}
 	fseek(output, output_globdef, SEEK_SET);
 	if (have_irq_handler || have_sirq_handler)
@@ -840,27 +1030,65 @@ char extension (char *s)
 	return (' ');
 }
 
-long assemble (char *s)
+intptr_t assemble (char *s)
 {
-	char buf[100];
+#if defined(_WIN32)
+
 	char *exe;
-	char *opts[10];
-	long i;
-
-//	long j;
-
-	i = 0;
-
+	char buf[512];
+	char* p;
 
 	exe = getenv("PCE_PCEAS");
 	if (!exe) {
-#if defined(DJGPP) || defined(WIN32)
 		exe = "pceas.exe";
-#elif defined(linux) || defined(unix) || defined(osx)
+	}
+
+	strcpy_s(buf, sizeof(buf), exe);
+	strcat_s(buf, sizeof(buf), " ");
+	for (p = buf; (p = strchr(p, '/')) != NULL; *p++ = '\\');
+
+	switch (cdflag) {
+	case 1:
+		strcat_s(buf, sizeof(buf), "-cd ");
+		break;
+
+	case 2:
+		strcat_s(buf, sizeof(buf), "-scd ");
+		break;
+
+	default:
+		strcat_s(buf, sizeof(buf), "-raw -pad ");
+		break;
+	}
+
+	if (overlayflag)
+		strcat_s(buf, sizeof(buf), "-over ");
+
+	if (verboseflag) {
+		strcat_s(buf, sizeof(buf), "-S -l 3 -m ");
+	}
+
+	strcat_s(buf, sizeof(buf), "\"");
+	strcat_s(buf, sizeof(buf), s);
+	buf[strlen(buf) - 1] = 's';
+	strcat_s(buf, sizeof(buf), "\"");
+
+// Comment this out later...
+//	printf("invoking pceas:\n");
+//	printf("%s\n", buf);
+
+	return (system(buf));
+
+#elif defined(__unix__) || defined(__APPLE__)
+
+	char *exe;
+	char buf[256];
+	char *opts[10];
+	intptr_t i = 0;
+
+	exe = getenv("PCE_PCEAS");
+	if (!exe) {
 		exe = "pceas";
-#else
-#error Add calling sequence depending on your OS
-#endif
 	}
 	opts[i++] = exe;
 	switch (cdflag) {
@@ -873,6 +1101,8 @@ long assemble (char *s)
 		break;
 
 	default:
+		opts[i++] = "-raw";
+		opts[i++] = "-pad";
 		break;
 	}
 
@@ -898,17 +1128,16 @@ long assemble (char *s)
 	opts[i++] = 0;
 
 // Comment this out later...
-
-//	printf("invoking pceas:\n");
-//	for (j = 0; j < i; j++) {
-//		printf("arg[%d] = %s\n", j, opts[j]);
+//	{
+//		intptr_t j;
+//		printf("invoking pceas:\n");
+//		for (j = 0; j < i; j++)
+//			printf("arg[%d] = %s\n", j, opts[j]);
 //	}
-// .....
-#if defined(WIN32)
-	return (execvp(exe, (const char *const *)opts));
 
-#else
 	return (execvp(exe, (char *const *)opts));
 
+#else
+#error Add calling sequence depending on your OS
 #endif
 }

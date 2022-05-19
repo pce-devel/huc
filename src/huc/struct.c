@@ -2,6 +2,7 @@
  * File struct.c: (12/12/12,21:31:33)
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include "defs.h"

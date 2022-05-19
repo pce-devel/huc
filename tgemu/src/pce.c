@@ -42,14 +42,14 @@ void pce_reset(void)
     memset(dummy, 0, 0x2000);
     bank_reset();
 #endif
-    load_file("pce.brm", bram, 0x2000);
+    load_file("pce.brm", (char *) bram, 0x2000);
     h6280_reset(0);
     h6280_set_irq_callback(&pce_irq_callback);
 }
 
 void pce_shutdown(void)
 {
-    if(save_bram) save_file("pce.brm", bram, 0x2000);
+    if(save_bram) save_file("pce.brm", (char *) bram, 0x2000);
 #ifdef DEBUG
     error("PC:%04X\n", h6280_get_pc());
 #endif    
@@ -130,7 +130,7 @@ int cpu_readmem21(int address)
 
 #endif
 
-int pce_irq_callback(int irqline)
+int pce_irq_callback(int irqline __attribute__ ((unused)))
 {
     return (0);
 }

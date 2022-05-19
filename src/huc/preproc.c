@@ -5,6 +5,7 @@
 
 // #define DEBUG_PREPROC
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -22,7 +23,7 @@
 #include "sym.h"
 
 /* path separator */
-#if defined(DJGPP) || defined(MSDOS) || defined(WIN32)
+#if defined(WIN32)
 #define PATH_SEPARATOR '\\'
 #define PATH_SEPARATOR_STRING "\\"
 #define DEFAULT_DIRS "c:\\huc\\include\\pce"
@@ -62,7 +63,7 @@ char **include_dirs (void)
 void init_path (void)
 {
 	const char *p, *pl;
-	long i, l;
+	intptr_t i, l;
 
 	p = include_path();
 
@@ -101,7 +102,7 @@ FILE *file_open (char *name, char *mode)
 {
 	FILE *fp = NULL;
 	char testname[256];
-	long i;
+	intptr_t i;
 
 	for (i = 0; i < 10; i++) {
 		if (incpath[i] && strlen(incpath[i])) {
@@ -231,7 +232,7 @@ void doasmdef (void)
 {
 	char sname[100];
 	char sval[100];
-	long i = 0;
+	intptr_t i = 0;
 
 	symname(sname);
 	while ((ch() == ' ') || (ch() == 9))
@@ -290,10 +291,10 @@ static void bump_iflevel (void)
 	}
 }
 
-void doifdef (long ifdef)
+void doifdef (intptr_t ifdef)
 {
 	char sname[NAMESIZE];
-	long k;
+	intptr_t k;
 
 	blanks();
 	bump_iflevel();
@@ -306,7 +307,7 @@ void doifdef (long ifdef)
 
 static void doif (void)
 {
-	long num;
+	intptr_t num;
 
 	blanks();
 	bump_iflevel();
@@ -322,7 +323,7 @@ static void doif (void)
 
 static void doelif (void)
 {
-	long num;
+	intptr_t num;
 
 	blanks();
 	if (skiplevel && skiplevel < iflevel)
@@ -344,7 +345,7 @@ static void doelif (void)
 	}
 }
 
-long ifline (void)
+intptr_t ifline (void)
 {
 	FOREVER {
 		readline();
@@ -425,13 +426,13 @@ void noiferr (void)
 }
 
 
-long cpp (int subline)
+intptr_t cpp (int subline)
 {
-	long k;
+	intptr_t k;
 	char c, sname[NAMESIZE];
-	long tog;
-	long cpped;		/* non-zero if something expanded */
-	long llptr;
+	intptr_t tog;
+	intptr_t cpped;		/* non-zero if something expanded */
+	intptr_t llptr;
 
 	cpped = 0;
 	/* don't expand lines with preprocessor commands in them */
@@ -544,7 +545,9 @@ long cpp (int subline)
 					else {
 						haveargs = 1;
 						for (;;) {
-							args[argc][0] = 0;
+							char * parg = args[argc];
+							char * pend = args[argc] + 255;
+							parg[0] = '\0';
 							while (ch() != ',' || nest > 0) {
 								char c = gch();
 								if (c == '(')
@@ -553,7 +556,12 @@ long cpp (int subline)
 									error("missing closing paren");
 									return (0);
 								}
-								strncat(args[argc], &c, 1);
+								parg[0] = c;
+								parg[1] = '\0';
+								if (++parg >= pend) {
+									error("macro argument too intptr_t");
+									return (0);
+								}
 								if (ch() == ')') {
 									if (nest)
 										nest--;
@@ -620,7 +628,7 @@ long cpp (int subline)
 	}
 	keepch(0);
 	if (mptr >= MPMAX)
-		error("line too long");
+		error("line too intptr_t");
 	/* copy cooked input back to where we got the raw input from */
 	strcpy(&line[llptr], mline);
 	/* ...and continue processing at that point */
@@ -628,7 +636,7 @@ long cpp (int subline)
 	return (cpped);
 }
 
-long keepch (char c)
+intptr_t keepch (char c)
 {
 	mline[mptr] = c;
 	if (mptr < MPMAX)
@@ -777,7 +785,7 @@ void delmac (struct macro *mp)
 
 struct macro *findmac (char *sname)
 {
-	long k;
+	intptr_t k;
 
 	k = 0;
 	while (k < macptr) {
@@ -789,7 +797,7 @@ struct macro *findmac (char *sname)
 	return (0);
 }
 
-void toggle (char name, long onoff)
+void toggle (char name, intptr_t onoff)
 {
 	switch (name) {
 	case 'C':

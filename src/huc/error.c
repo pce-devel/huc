@@ -3,6 +3,7 @@
  *
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -45,7 +46,7 @@ void warning (int type, char *text)
 
 void doerror (char *ptr, int type)
 {
-	long k;
+	intptr_t k;
 
 	comment();
 	if (!type)

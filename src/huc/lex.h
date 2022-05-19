@@ -5,25 +5,25 @@ void ns (void);
 
 void junk (void);
 
-long endst (void);
+intptr_t endst (void);
 
 void needbrack (char *str);
 
-long alpha (char c);
+intptr_t alpha (char c);
 
-long numeric (char c);
+intptr_t numeric (char c);
 
-long an (char c);
+intptr_t an (char c);
 
-long sstreq (char *str1);
+intptr_t sstreq (char *str1);
 
-long streq (char *str1, char *str2);
+intptr_t streq (char *str1, char *str2);
 
-long astreq (char *str1, char *str2, long len);
+intptr_t astreq (char *str1, char *str2, intptr_t len);
 
-long match (char *lit);
+intptr_t match (char *lit);
 
-long amatch (char *lit, long len);
+intptr_t amatch (char *lit, intptr_t len);
 
 void blanks (void);
 

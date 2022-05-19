@@ -9,17 +9,28 @@ include ../../Make_src.inc
 
 OBJS   = main.o input.o assemble.o expr.o code.o command.o\
          macro.o func.o proc.o symbol.o pcx.o output.o crc.o\
-         pce.o map.o mml.o nes.o
+         pce.o map.o mml.o nes.o atari.o
+
+LIBS    = pngread/pngread.a
+
+CFLAGS  += -Ipngread
 
 TARGPCE  = pceas$(EXESUFFIX)
 TARGNES  = nesasm$(EXESUFFIX)
-TARGETS  = $(TARGPCE) $(TARGNES)
+TARGFUJ  = fujias$(EXESUFFIX)
+TARGETS  = $(TARGPCE) $(TARGNES) $(TARGFUJ)
 
 #
 #
 
-all: $(TARGETS)
+all::
+	$(MAKE) pngread "COMMAND=$@"
+	$(MAKE) $(TARGETS)
 
+.PHONY: pngread
+
+pngread:
+	$(MAKE) --directory=$@ $(COMMAND)
 
 # ASSEMBLER
 #
@@ -29,17 +40,22 @@ main.o: inst.h vars.h
 expr.o: expr.h
 pce.o: pce.h
 nes.o: nes.h
+atari.o: atari.h
 
 # EXE
 #
 
 $(TARGPCE) : $(OBJS) $(LIBS)
-	$(CC) $(LDFLAGS) $(OBJS) -o $@
+	$(CC) $(LDFLAGS) $(OBJS) $(LIBS) -o $@
 	$(CP) $(TARGPCE) $(BINDIR)
 
 $(TARGNES) : $(OBJS) $(LIBS)
-	$(CC) $(LDFLAGS) $(OBJS) -o $@
+	$(CC) $(LDFLAGS) $(OBJS) $(LIBS) -o $@
 	$(CP) $(TARGNES) $(BINDIR)
+
+$(TARGFUJ) : $(OBJS) $(LIBS)
+	$(CC) $(LDFLAGS) $(OBJS) $(LIBS) -o $@
+	$(CP) $(TARGFUJ) $(BINDIR)
 
 indent:	uncrustify.cfg
 	uncrustify -l c -q -c uncrustify.cfg --replace *.c *.h
@@ -50,4 +66,5 @@ indent:	uncrustify.cfg
 include $(MAKETARG)
 
 clean::
-	rm -f $(TARGETS) $(BINDIR)/$(TARGPCE) $(BINDIR)/$(TARGNES)
+	$(MAKE) pngread "COMMAND=$@"
+	rm -f $(TARGETS) $(BINDIR)/$(TARGPCE) $(BINDIR)/$(TARGNES) $(BINDIR)/$(TARGFUJ)

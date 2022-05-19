@@ -32,18 +32,21 @@ line_color	.ds 1
 
 	 .code
 
-; cls(int val [dx])
+; cls(int val [__dx])
 ; ----
 
 _cls:
-	stw	_font_base,<dx
+	stw	_font_base,<__dx
 _cls.1:
 	setvwaddr $0
 	; --
+	lda	<__dx
+	sta	video_data
+	lda	<__dx+1
 	ldy	bat_height
 .l2:	ldx	bat_width
 	; --
-.l3:	stw	<dx,video_data
+.l3:	sta	video_data+1
 	dex
 	bne	.l3
 	dey
@@ -73,7 +76,7 @@ _set_font_color.2:
 	txa
 	and	#$F
 	sta	font_color+1
-	lda	<al
+	lda	<__al
 	and	#$F
 	sta	font_color
 	rts
@@ -92,11 +95,11 @@ _set_font_addr:
 	ror	_font_base
 	lsr	A
 	ror	_font_base
-	sta	<al
+	sta	<__al
 	; --
 	lda	_font_base+1
 	and	#$F0
-	ora	<al
+	ora	<__al
 	sta	_font_base+1
 	rts
 
@@ -119,65 +122,65 @@ _get_font_pal:
 _get_font_addr:
 	; --
 	lda	_font_base+1
-	sta	<al
+	sta	<__al
 	lda	_font_base
 	asl	A
-	rol	<al
+	rol	<__al
 	asl	A
-	rol	<al
+	rol	<__al
 	asl	A
-	rol	<al
+	rol	<__al
 	asl	A
-	rol	<al
-	ldx	<al
+	rol	<__al
+	ldx	<__al
 	sax
 	rts
 
-; load_default_font(char num [dl], int addr [di])
+; load_default_font(char num [__dl], int addr [__di])
 ; ----
 
 _load_default_font:
 	; --
-	stz	<dl
+	stz	<__dl
 
 _load_default_font.1:
 	; --
 	ldx	#$FF
 	lda	#$FF
 	jsr	calc_vram_addr
-	incw	<di
+	incw	<__di
 
 _load_default_font.2:
 	; --
-	lda	<di
-	ora	<di+1
+	lda	<__di
+	ora	<__di+1
 	bne	.l1
 	jsr	_get_font_addr
-	__stw	<di
+	__stw	<__di
 	bra	.l2
 	; --
-.l1:	__ldw	<di
+.l1:	__ldw	<__di
 	jsr	_set_font_addr
 	; --
-.l2:	stb	#FONT_BANK+_bank_base,<bl
-	stb	#96,<cl
-	stb	font_color+1,<ah
+.l2:	stb	#FONT_BANK+_bank_base,<__bl
+	stb	#96,<__cl
+	stb	font_color+1,<__ah
 	lda	font_color
 	bne	.l3
 	inc	A
-.l3:	sta	<al
-	lda	<dl
+.l3:	sta	<__al
+	lda	<__dl
 	and	#$03
 	asl	A
 	tax
 	lda	font_table,X
-	sta	<si
+	sta	<__si
 	inx
 	lda	font_table,X
-	sta	<si+1
+	sta	<__si+1
 	jmp	load_font
 
-; load_font(farptr font [bl:si], char nb [cl], int addr [di])
+; load_font(farptr font [__bl:__si], char nb [__cl], int addr [__di])
 ; ----
 
 _load_font.2:
@@ -185,51 +188,45 @@ _load_font.2:
 	ldx	#$FF
 	lda	#$FF
 	jsr	calc_vram_addr
-	incw	<di
+	incw	<__di
 
 _load_font.3:
 	; --
-	lda	<di
-	ora	<di+1
+	lda	<__di
+	ora	<__di+1
 	bne	.l1
 	jsr	_get_font_addr
-	__stw	<di
+	__stw	<__di
 	bra	.l2
 	; --
-.l1:	__ldw	<di
+.l1:	__ldw	<__di
 	jsr	_set_font_addr
 	; --
-.l2:	lda	<cl
-	stz	<ch
+.l2:	lda	<__cl
+	stz	<__ch
 	asl	A
-	rol	<ch
+	rol	<__ch
 	asl	A
-	rol	<ch
+	rol	<__ch
 	asl	A
-	rol	<ch
+	rol	<__ch
 	asl	A
-	rol	<ch
-	sta	<cl
+	rol	<__ch
+	sta	<__cl
 	jmp	load_vram
-	;stb _font_color+1,<_ah
-	;lda _font_color
-	;bne .l3
-	;inc A
-	;.l3: sta <_al
-	;jmp load_font
 
 ; put_digit(char digit, int offset)
 ; put_digit(char digit, char x, char y)
 ; ----
 
 _put_digit.3:
-	lda	<cl
+	lda	<__cl
 	jsr	_put.xy
 	bra	_put_digit.main
 _put_digit.2:
 	jsr	_put.vram
 _put_digit.main:
-	lda	<dl
+	lda	<__dl
 _put_digit.sub:
 	cmp	#10
 	blo	.l1
@@ -258,13 +255,13 @@ _put.vram:
 ; ----
 
 _put_char.3:
-	lda	<cl
+	lda	<__cl
 	jsr	_put.xy
 	bra	_put_char.main
 _put_char.2:
 	jsr	_put.vram
 _put_char.main:
-	lda	<dl
+	lda	<__dl
 	; --
 	cmp	#32
 	bhs	.l1
@@ -283,15 +280,15 @@ _put_char.main:
 ; ----
 
 _put_raw.3:
-	lda	<cl
+	lda	<__cl
 	jsr	_put.xy
 	bra	_put_raw.main
 _put_raw.2:
 	jsr	_put.vram
 _put_raw.main:
-	lda	<dl
+	lda	<__dl
 	sta	video_data_l
-	lda	<dh
+	lda	<__dh
 	sta	video_data_h
 	rts
 
@@ -312,13 +309,13 @@ _put_number.4:	maplibfunc	lib2_put_number.4
 ; ----
 
 _put_hex.4:
-	lda	<bl
+	lda	<__bl
 	jsr	_put.xy
 	bra	_put_hex.main
 _put_hex.3:
 	jsr	_put.vram
 _put_hex.main:
-	ldx	<cl
+	ldx	<__cl
 	beq	.l3
 .l1:	cpx	#5
 	blo	.l2
@@ -336,25 +333,25 @@ _put_hex.main:
 	; --
 .tbl:	.dw	.h1,.h2,.h3,.h4
 	; --
-.h4:	lda	<dh
+.h4:	lda	<__dh
 	lsr	A
 	lsr	A
 	lsr	A
 	lsr	A
 	jsr	_put_digit.sub
 	; --
-.h3:	lda	<dh
+.h3:	lda	<__dh
 	and	#$0F
 	jsr	_put_digit.sub
 	; --
-.h2:	lda	<dl
+.h2:	lda	<__dl
 	lsr	A
 	lsr	A
 	lsr	A
 	lsr	A
 	jsr	_put_digit.sub
 	; --
-.h1:	lda	<dl
+.h1:	lda	<__dl
 	and	#$0F
 	jmp	_put_digit.sub
 
@@ -363,7 +360,7 @@ _put_hex.main:
 ; ----
 
 _put_string.3:
-	lda	<bl
+	lda	<__bl
 	jsr	_put.xy
 	bra	_put_string.main
 _put_string.2:
@@ -381,44 +378,51 @@ _put_string.main:
 	cla
 	adc	_font_base+1
 	sta	video_data_h
-	incw	<si
-.l3:	lda	[si]
+	incw	<__si
+.l3:	lda	[__si]
 	bne	.l1
 	rts
 
+; vsync()
 ; vsync(char nb_frame)
 ; ----
 
 _vsync:
-	txa
-	cpy	#0
-	bne	.l1
 	cla
-.l1:	jmp	wait_vsync
+	jmp	wait_vsync
+
+_vsync.1:
+	txa
+	jmp	wait_vsync
 
 ; vreg(char reg)
+; vreg(char reg, int data)
 ; ----
 
-_vreg:
-	cpy	#2
-	bne	.l1
-	jmp	setvdc
-.l1:
+_vreg.1:
 	stx	<vdc_reg
 	stx	video_reg
 	rts
 
-; vram_addr(char x [al], char y)
+_vreg.2:
+	ldy	<__al
+	sty	<vdc_reg
+	sty	video_reg
+	stx	video_data
+	sta	video_data+1
+	rts
+
+; vram_addr(char x [__al], char y)
 ; ----
 
 _vram_addr.2:
-	lda	<al
+	lda	<__al
 	sax
 	jsr	calc_vram_addr
-	__ldw	<di
+	__ldw	<__di
 	rts
 
-; scan_map_table(int *tbl [si], int *x [ax], int *y [cx])
+; scan_map_table(int *tbl [__si], int *x [__ax], int *y [__cx])
 ; ----
 ; tbl,
 ; x,
@@ -428,67 +432,67 @@ _vram_addr.2:
 _scan_map_table.3:
 
 	ldy	#1
-	lda	[ax]
-	sta	<bl
-	lda	[ax],Y
-	sta	<bh
-	lda	[cx]
-	sta	<dl
-	lda	[cx],Y
-	sta	<dh
+	lda	[__ax]
+	sta	<__bl
+	lda	[__ax],Y
+	sta	<__bh
+	lda	[__cx]
+	sta	<__dl
+	lda	[__cx],Y
+	sta	<__dh
 	; --
-	addw	#4,<si
+	addw	#4,<__si
 
 	; ----
 	; check bounds
 	;
 	; -- bottom
 .l1:	ldy	#7
-	lda	[si],Y
-	cmp	<dh
+	lda	[__si],Y
+	cmp	<__dh
 	blo	.x1
 	bne	.l2
 	dey
-	lda	[si],Y
-	cmp	<dl
+	lda	[__si],Y
+	cmp	<__dl
 	blo	.x1
 	; -- top
 .l2:	ldy	#3
-	lda	<dh
-	cmp	[si],Y
+	lda	<__dh
+	cmp	[__si],Y
 	blo	.x1
 	bne	.l3
 	dey
-	lda	<dl
-	cmp	[si],Y
+	lda	<__dl
+	cmp	[__si],Y
 	blo	.x1
 	; -- right
 .l3:	ldy	#5
-	lda	[si],Y
-	cmp	<bh
+	lda	[__si],Y
+	cmp	<__bh
 	blo	.x1
 	bne	.l4
 	dey
-	lda	[si],Y
-	cmp	<bl
+	lda	[__si],Y
+	cmp	<__bl
 	blo	.x1
 	; -- left
 .l4:	ldy	#1
-	lda	<bh
-	cmp	[si],Y
+	lda	<__bh
+	cmp	[__si],Y
 	blo	.x1
 	bne	.x2
-	lda	<bl
-	cmp	[si]
+	lda	<__bl
+	cmp	[__si]
 	bhs	.x2
 
 	; ----
 	; next
 	;
-.x1:	addw	#12,<si
+.x1:	addw	#12,<__si
 	ldy	#1
-	lda	[si]
-	and	[si],Y
+	lda	[__si]
+	and	[__si],Y
 	cmp	#$FF
 	bne	.l1
 
@@ -503,29 +507,29 @@ _scan_map_table.3:
 	; found map!
 	;
 .x2:	ldy	#1
-	lda	<bl
-	sub	[si]
-	sta	[ax]
-	lda	<bh
-	sbc	[si],Y
-	sta	[ax],Y
+	lda	<__bl
+	sub	[__si]
+	sta	[__ax]
+	lda	<__bh
+	sbc	[__si],Y
+	sta	[__ax],Y
 	; --
 	iny
-	lda	<dl
-	sub	[si],Y
-	sta	[cx]
+	lda	<__dl
+	sub	[__si],Y
+	sta	[__cx]
 	iny
-	lda	<dh
-	sbc	[si],Y
+	lda	<__dh
+	sbc	[__si],Y
 	ldy	#1
-	sta	[cx],Y
+	sta	[__cx],Y
 	; --
-	__ldw	<si
+	__ldw	<__si
 	rts
 
 ; set_map_data(int *ptr)
-; set_map_data(char *map [bl:si], int w [ax], int h)
-; set_map_data(char *map [bl:si], int w [ax], int h [dx], char wrap)
+; set_map_data(char *map [__bl:__si], int w [__ax], int h)
+; set_map_data(char *map [__bl:__si], int w [__ax], int h [__dx], char wrap)
 ; ----
 ; map,	map base address
 ; w,	map width
@@ -534,33 +538,33 @@ _scan_map_table.3:
 ; ----
 
 _set_map_data.1:
-	__stw	<si
-	ora	<si
+	__stw	<__si
+	ora	<__si
 	beq	.l1
 	; -- calculate width
-	lda	[si].4
-	sub	[si]
+	lda	[__si].4
+	sub	[__si]
 	sta	mapwidth
-	lda	[si].5
-	sbc	[si].1
+	lda	[__si].5
+	sbc	[__si].1
 	sta	mapwidth+1
 	incw	mapwidth
 	; -- calculate height
-	lda	[si].6
-	sub	[si].2
+	lda	[__si].6
+	sub	[__si].2
 	sta	mapheight
-	lda	[si].7
-	sbc	[si].3
+	lda	[__si].7
+	sbc	[__si].3
 	sta	mapheight+1
 	incw	mapheight
 	; -- get map bank
-	lda	[si].8
+	lda	[__si].8
 	sta	mapbank
 	; -- get map addr
-	lda	[si].10
+	lda	[__si].10
 	sta	mapaddr
 	iny
-	lda	[si]
+	lda	[__si]
 	sta	mapaddr+1
 	; -- no wrap
 	stz	mapwrap
@@ -574,16 +578,16 @@ _set_map_data.1:
 	rts
 _set_map_data.4:
 	stx	mapwrap
-	__ldw	<dx
+	__ldw	<__dx
 	bra	_set_map_data.main
 _set_map_data.3:
 	stz	mapwrap
 	inc	mapwrap
 _set_map_data.main:
 	__stw	mapheight
-	stw	<ax,mapwidth
-	stb	<bl,mapbank
-	stw	<si,mapaddr
+	stw	<__ax,mapwidth
+	stb	<__bl,mapbank
+	stw	<__si,mapaddr
 	rts
 
 ; get_map_width()
@@ -600,98 +604,80 @@ _get_map_height:
 	__ldw	mapheight
 	rts
 
-; set_tile_data(char *tile_ex [di])
-; set_tile_data(char *tile [bl:si], int nb_tile [cx], char *ptable [al:dx])
+; set_tile_data(char *tile_ex [__di])
+; set_tile_data(char *tile [__bl:__si], int nb_tile [__cx], char *ptable [__al:__dx], char type [__ah])
 ; ----
 ; tile,	tile base index
 ; nb_tile, number of tile
 ; ptable,	tile palette table address
+; type, tile type (8 or 16)
 ; ----
 
 _set_tile_data.1:
 	cly
-	lda	[di],Y++
+	lda	[__di],Y++
 	sta	mapnbtile
-	lda	[di],Y++
+	lda	[__di],Y++
 	sta	mapnbtile+1
-	lda	[di],Y++
+	lda	[__di],Y++
 	sta	maptiletype
 	iny
-	lda	[di],Y++
+	lda	[__di],Y++
 	sta	maptilebank
 	iny
-	lda	[di],Y++
+	lda	[__di],Y++
 	sta	maptileaddr
-	lda	[di],Y++
+	lda	[__di],Y++
 	sta	maptileaddr+1
 	lda	#(CONST_BANK+_bank_base)
 	sta	mapctablebank
-	lda	[di],Y++
+	lda	[__di],Y++
 	sta	mapctable
-	lda	[di],Y
+	lda	[__di],Y
 	sta	mapctable+1
 	rts
-_set_tile_data.3:
-	stb	<bl,maptilebank
-	stw	<si,maptileaddr
-	stw	<cx,mapnbtile
-	stb	<al,mapctablebank
-	stw	<dx,mapctable
-	; --
-	ldy	<bl		; get tile format (8x8 or 16x16)
-	lda	<si+1
-	and	#$1F
-	tax
-	lda	<si
-	bne	.l2
-	cpx	#$0
-	bne	.l1
-	dey
-	ldx	#$20
-.l1:	dex
-.l2:	dec	A
-	txa
-	ora	#$60
-	sta	<si+1
-	tya
-	tam	#3
-	lda	[si]
-	sta	maptiletype
+_set_tile_data.4:
+	stb	<__bl,maptilebank
+	stw	<__si,maptileaddr
+	stw	<__cx,mapnbtile
+	stb	<__al,mapctablebank
+	stw	<__dx,mapctable
+	stb	<__ah,maptiletype
 	rts
 
 ; load_tile(int addr)
 ; ----
 
 _load_tile:
-	__stw	<di
-	stx	<al
+	__stw	<__di
+	stx	<__al
 	lsr	A
-	ror	<al
+	ror	<__al
 	lsr	A
-	ror	<al
+	ror	<__al
 	lsr	A
-	ror	<al
+	ror	<__al
 	lsr	A
-	ror	<al
+	ror	<__al
 	sta		maptilebase+1
-	stb	<al,maptilebase
+	stb	<__al,maptilebase
 	; --
-	stw	mapnbtile,<cx
+	stw	mapnbtile,<__cx
 	ldx	#4
 	lda	maptiletype
 	cmp	#8
 	beq	.l1
 	ldx	#6
-.l1:	asl	<cl
-	rol	<ch
+.l1:	asl	<__cl
+	rol	<__ch
 	dex
 	bne	.l1
 	; --
-	stb	maptilebank,<bl
-	stw	maptileaddr,<si
+	stb	maptilebank,<__bl
+	stw	maptileaddr,<__si
 	jmp	load_vram
 
-; load_map(char x [al], char y [ah], int mx, int my, char w [dl], char h [dh])
+; load_map(char x [__al], char y [__ah], int mx, int my, char w [__dl], char h [__dh])
 ; ----
 
 _load_map.6:
@@ -704,32 +690,32 @@ _load_map.6:
 	; ----
 	; adjust map y coordinate
 	;
-	lda	<bh
+	lda	<__bh
 	bmi	.l2
-.l1:	cmpw	mapheight,<bx
+.l1:	cmpw	mapheight,<__bx
 	blo	.l3
-	subw	mapheight,<bx
+	subw	mapheight,<__bx
 	bra	.l1
 	; --
-.l2:	lda	<bh
+.l2:	lda	<__bh
 	bpl	.l3
-	addw	mapheight,<bx
+	addw	mapheight,<__bx
 	bra	.l2
-	
+
 	; ----
 	; adjust map x coordinate
 	;
-.l3:	stb	<bl,<ch
-	lda	<di+1
+.l3:	stb	<__bl,<__ch
+	lda	<__di+1
 	bmi	.l5
-.l4:	cmpw	mapwidth,<di
+.l4:	cmpw	mapwidth,<__di
 	blo	.l7
-	subw	mapwidth,<di
+	subw	mapwidth,<__di
 	bra	.l4
 	; --
-.l5:	lda	<di+1
+.l5:	lda	<__di+1
 	bpl	.l7
-	addw	mapwidth,<di
+	addw	mapwidth,<__di
 	bra	.l5
 
 	; ----
@@ -740,7 +726,7 @@ _load_map.6:
 	; ----
 	; ok
 	;
-.l7:	stb	<di,<cl
+.l7:	stb	<__di,<__cl
 	jmp	load_map
 
 ; spr_set(char num)
@@ -773,9 +759,15 @@ _spr_set:
 ; spr_hide(char num)
 ; ----
 
+	; -- hide current sprite
 _spr_hide:
-	cpy	#0
-	beq	.l2
+	ldy	#1
+	lda	[spr_ptr],Y
+	ora	#$02
+	sta	[spr_ptr],Y
+	rts
+
+_spr_hide.1:
 	; -- hide sprite number #
 	cpx	#64
 	bhs	.l1
@@ -784,12 +776,7 @@ _spr_hide:
 	ora	#$02
 	sta	[__ptr],Y
 .l1:	rts
-	; -- hide current sprite
-.l2:	ldy	#1
-	lda	[spr_ptr],Y
-	ora	#$02
-	sta	[spr_ptr],Y
-	rts
+
 	; -- calc satb ptr
 _spr_hide.sub:
 	txa
@@ -809,9 +796,15 @@ _spr_hide.sub:
 ; spr_show(char num)
 ; ----
 
+	; -- hide current sprite
 _spr_show:
-	cpy	#0
-	beq	.l2
+	ldy	#1
+	lda	[spr_ptr],Y
+	and	#$01
+	sta	[spr_ptr],Y
+	rts
+
+_spr_show.1:
 	; -- hide sprite number #
 	cpx	#64
 	bhs	.l1
@@ -820,12 +813,6 @@ _spr_show:
 	and	#$01
 	sta	[__ptr],Y
 .l1:	rts
-	; -- hide current sprite
-.l2:	ldy	#1
-	lda	[spr_ptr],Y
-	and	#$01
-	sta	[spr_ptr],Y
-	rts
 
 ; spr_x(int value)
 ; ----
@@ -913,14 +900,14 @@ _spr_get_pattern:
 	lda	<__temp
 	rts
 
-; spr_ctrl(char mask [al], char value)
+; spr_ctrl(char mask [__al], char value)
 ; ----
 
 _spr_ctrl.2:
 	txa
-	and	<al
+	and	<__al
 	sta	<__temp
-	lda	<al
+	lda	<__al
 	eor	#$FF
 	ldy	#7
 	and	[spr_ptr],Y
@@ -965,62 +952,62 @@ _spr_pri:
 	rts
 
 ; satb_update()
+; satb_update(char max)
 ; ----
 
 _satb_update:
+	ldx	<spr_max
+
+_satb_update.1:
 	lda	<spr_flag
-	beq	.l1
+	beq	satb_update
 	stz	<spr_flag
 	ldx	#64
-	bra	.l3
-	; --
-.l1:	cpy	#1
-	beq	.l2
-	ldx	<spr_max
-.l2:	cpx	#0
+
+satb_update:
+	cpx	#0
 	beq	.l4
 	; --
-.l3:	stx	<al	; number of sprites
+	stx	<__al	; number of sprites
 	txa
 	dec	A	; round up to the next group of 4 sprites
 	lsr	A
 	lsr	A
 	inc	A
-	sta	<cl
+	sta	<__cl
 
 ; Use TIA, but BLiT 16 words at a time (32 bytes)
 ; Because interrupt must not deferred too much
 ;
 	stw	#32, ram_hdwr_tia_size
 	stw	#video_data, ram_hdwr_tia_dest
-	stw	#satb, <si
+	stw	#satb, <__si
 
-	stw	#$7F00, <di
+	stw	#$7F00, <__di
 	jsr	set_write
 
-.l3a:	stw	<si, ram_hdwr_tia_src
+.l3a:	stw	<__si, ram_hdwr_tia_src
 	jsr	ram_hdwr_tia
-	addw	#32,<si
-	dec	<cl
+	addw	#32,<__si
+	dec	<__cl
 	bne	.l3a
-	
-;.l3:	stx	<al
-;	stw	#satb,<si
-;	stb	#BANK(satb),<bl
-;	stw	#$7F00,<di
+
+;.l3:	stx	<__al
+;	stw	#satb,<__si
+;	stb	#BANK(satb),<__bl
+;	stw	#$7F00,<__di
 ;	txa
-;	stz	<ch
+;	stz	<__ch
 ;	asl	A
 ;	asl	A
-;	rol	<ch
-;	sta	<cl
+;	rol	<__ch
+;	sta	<__cl
 ;	jsr	load_vram
 
 	; --
-	ldx	<al
+	ldx	<__al
 .l4:	cla
 	rts
-
 
 ; init_satb()
 ; reset_satb()
@@ -1063,8 +1050,8 @@ _get_color.1:
 ; NOTE : inlined
 ; ----
 
-; fade_color(int color [ax], char level)
-; fade_color(int index [color_reg], int color [ax], char level)
+; fade_color(int color [__ax], char level)
+; fade_color(int index [color_reg], int color [__ax], char level)
 ; ----
 ; set one palette entry to the specified color
 ; ----
@@ -1083,23 +1070,23 @@ _fade_color.3:
 	bhs	.l5
 	; -- fading
 	ldy	#3
-	stx	<bl
-	stwz	<dx
-.l1:	lsr	<bl
+	stx	<__bl
+	stwz	<__dx
+.l1:	lsr	<__bl
 	bcc	.l2
-	addw	<ax,<dx
-.l2:	aslw	<ax
+	addw	<__ax,<__dx
+.l2:	aslw	<__ax
 	dey
 	bne	.l1
-	lda	<dh
+	lda	<__dh
 	lsr	A
-	ror	<dl
+	ror	<__dl
 	lsr	A
-	ror	<dl
+	ror	<__dl
 	lsr	A
-	ror	<dl
+	ror	<__dl
 	; -- set color
-	ldx	<dl
+	ldx	<__dl
 .l3:	stx	color_data_l
 	sta	color_data_h
 	rts
@@ -1107,11 +1094,11 @@ _fade_color.3:
 .l4:	cla
 	bra	.l3
 	; -- full
-.l5:	ldx	<al
-	lda	<ah
+.l5:	ldx	<__al
+	lda	<__ah
 	bra	.l3
 
-; set_color_rgb(int index [color_reg], char r [al], char g [ah], char b)
+; set_color_rgb(int index [color_reg], char r [__al], char g [__ah], char b)
 ; ----
 ; set one palette entry to the specified color
 ; ----
@@ -1125,7 +1112,7 @@ _set_color_rgb.4:
 	txa
 	and	#$7
 	sta	<__temp
-	lda	<al
+	lda	<__al
 	asl	A
 	asl	A
 	asl	A
@@ -1133,7 +1120,7 @@ _set_color_rgb.4:
 	asl	A
 	asl	A
 	sta	<__temp
-	lda	<ah
+	lda	<__ah
 	lsr	A
 	ror	<__temp
 	lsr	A
@@ -1143,8 +1130,8 @@ _set_color_rgb.4:
 	sta	color_data_h
 	rts
 
-; put_tile(int tile_num [dx], int position)
-; put_tile(int tile_num [dx], char x [al], char y)
+; put_tile(int tile_num [__dx], int position)
+; put_tile(int tile_num [__dx], char x [__al], char y)
 ; ----
 ; draw a single 8x8 or 16x16 tile at a given position
 ; ----
@@ -1153,7 +1140,7 @@ _set_color_rgb.4:
 ; ----
 
 _put_tile.3:
-	lda	<al
+	lda	<__al
 	ldy	maptiletype
 	cpy	#8
 	beq	.l1
@@ -1168,64 +1155,84 @@ _put_tile.3:
 	jsr	calc_vram_addr
 	bra	_put_tile_8
 _put_tile.2:
-	__stw	<di
+	__stw	<__di
 	ldy	maptiletype
 	cpy	#8
 	bne	_put_tile_16
 _put_tile_8:
 	jsr	set_write
 	; -- calculate tile vram address
-	stw	mapctable,<bx
-	lda	<dl
+	tma	#2
+	pha
+	lda	mapctablebank
+	tam	#2
+	stb	mapctable,<__bx
+	lda	mapctable+1
+	and	#$1F
+	ora	#$40
+	sta	<__bx+1
+	lda	<__dl
 	tay
 	add	maptilebase
 	tax
 	cla
 	adc	maptilebase+1
-	adc	[bx],Y
+	adc	[__bx],Y
 	; -- copy tile
 	stx	video_data_l
 	sta	video_data_h
+	pla
+	tam	#2
 	rts
 _put_tile_16:
 	jsr	set_write
 	; -- calculate tile vram address
-	stw	mapctable,<bx
-	stz	<dh
-	lda	<dl
+	tma	#2
+	pha
+	lda	mapctablebank
+	tam	#2
+	stb	mapctable,<__bx
+	lda	mapctable+1
+	and	#$1F
+	ora	#$40
+	sta	<__bx+1
+	stz	<__dh
+	lda	<__dl
 	tay
 	asl	A
-	rol	<dh
+	rol	<__dh
 	asl	A
-	rol	<dh
+	rol	<__dh
 	add	maptilebase
-	sta	<dl
-	lda	<dh
+	sta	<__dl
+	lda	<__dh
 	adc	maptilebase+1
-	adc	[bx],Y
-	sta	<dh
+	adc	[__bx],Y
+	sta	<__dh
 	; -- copy tile
-	stw	<dx,video_data
-	incw	<dx
-	stw	<dx,video_data
-	incw	<dx
+	stw	<__dx,video_data
+	incw	<__dx
+	stw	<__dx,video_data
+	incw	<__dx
 	vreg	#0
-	addw	bat_width,<di,video_data
+	addw	bat_width,<__di,video_data
 	vreg	#2
-	stw	<dx,video_data
-	incw	<dx
-	stw	<dx,video_data
+	stw	<__dx,video_data
+	incw	<__dx
+	stw	<__dx,video_data
+	pla
+	tam	#2
 	rts
 
-; map_get_tile(char x [dl], char y)
-; map_put_tile(char x [dl], char y [dh], char tile)
+; map_get_tile(char x [__dl], char y)
+; map_put_tile(char x [__dl], char y [__dh], char tile)
 ; ----
 
 _map_get_tile.2:
-	stx	<dh
+	stx	<__dh
 	jsr	_map_calc_tile_addr
 	; --
-	lda	[cx]
+	lda	[__cx]
 	tax
 	cla
 	rts
@@ -1234,35 +1241,35 @@ _map_put_tile.3:
 	phx
 	jsr	_map_calc_tile_addr
 	pla
-	sta	[cx]
+	sta	[__cx]
 	rts
 
-; map_calc_tile_addr(char x [dl], char y [dh])
+; map_calc_tile_addr(char x [__dl], char y [__dh])
 ; ----
 _map_calc_tile_addr:
-	ldx	<dh
+	ldx	<__dh
 	lda	mapwidth+1
 	beq	.l1
-	stx	<ch
-	lda	<dl
-	sta	<cl
+	stx	<__ch
+	lda	<__dl
+	sta	<__cl
 	bra	.l2
 	; --
-.l1:	stx	<al
+.l1:	stx	<__al
 	lda	mapwidth
-	sta	<bl
+	sta	<__bl
 	jsr	mulu8
 	; --
-	lda	<cl
-	add	<dl
+	lda	<__cl
+	add	<__dl
 	bcc	.l2
-	inc	<ch
+	inc	<__ch
 	; --
 .l2:	add	mapaddr
-	sta	<cl
+	sta	<__cl
 	lda	mapaddr+1
 	and	#$1F
-	adc	<ch
+	adc	<__ch
 	tax
 	; --
 ;	rol	A
@@ -1281,8 +1288,8 @@ _map_calc_tile_addr:
 	txa
 	and	#$1F
 	ora	#$60
-	sta	<ch
-	ldx	<cl
+	sta	<__ch
+	ldx	<__cl
 	rts
 
 ; scroll(char num, int x, int y, char top, char bottom, char disp)
@@ -1293,7 +1300,7 @@ _map_calc_tile_addr:
 _scroll:
 	ldy	#8
 	lda	[__sp],Y
-	and	#$03
+	and	#$07
 	; --
 	sax
 	and	#$C0
@@ -1347,11 +1354,11 @@ _set_screen_size:
 
 _set_xres.1:
 	lda	#XRES_SOFT
-	sta	<cl
+	sta	<__cl
 _set_xres.2:
 	jsr	set_xres
-	ldx	<al
-	lda	<ah
+	ldx	<__al
+	lda	<__ah
 	rts
 
 
@@ -1426,24 +1433,24 @@ _gfx_init:
 
 	.bank LIB2_BANK
 lib2_gfx_init:
-	__stw	<dx	; vram addr
+	__stw	<__dx	; vram addr
 
-	lsrw	<dx	; shift address to make char pattern
-	lsrw	<dx
-	lsrw	<dx
-	lsrw	<dx
-	lda	<dx+1
+	lsrw	<__dx	; shift address to make char pattern
+	lsrw	<__dx
+	lsrw	<__dx
+	lsrw	<__dx
+	lda	<__dx+1
 	and	#$0f
 	ora	gfx_pal	; and add major palette info
-	sta	<dx+1
+	sta	<__dx+1
 
 	setvwaddr $0
 	; --
 	ldy	bat_height
 .l2:	ldx	bat_width
 	; --
-.l3:	stw	<dx,video_data
-	incw	<dx
+.l3:	stw	<__dx,video_data
+	incw	<__dx
 	dex
 	bne	.l3
 	dey
@@ -1458,25 +1465,25 @@ lib2_gfx_init:
 ; ----
 
 _gfx_clear:
-	__stw	<di		; start_vram_addr
+	__stw	<__di		; start_vram_addr
 	jsr	set_write	; setup VRAM addr for writing
 
 	lda	bat_height
-	sta	<bl		; loop for all lines
+	sta	<__bl		; loop for all lines
 .l2:	ldx	bat_width	; loop for all characters
 .l3:	ldy	#8		; loop for 16 words
 .l4:	stw	#0,video_data	; unrolled a bit (8 iterations
 	stw	#0,video_data	; @ 2 words each iteration)
 	dey
-	bne	.l4 
+	bne	.l4
 	dex
 	bne	.l3
-	dec	<bl
+	dec	<__bl
 	bne	.l2
 	rts
 
 
-; gfx_plot(int x [bx] int y [cx] char color [reg acc])
+; gfx_plot(int x [__bx] int y [__cx] char color [reg acc])
 ; ----
 ; Plot a point at location (x,y) in color
 ; ----
@@ -1486,7 +1493,7 @@ _gfx_plot.3:
 	rts
 
 
-; gfx_point(int x [bx], int y [cx])
+; gfx_point(int x [__bx], int y [__cx])
 ; ----
 ; Returns color of point at location (x,y)
 ; ----
@@ -1496,7 +1503,7 @@ _gfx_point.2:
 	rts
 
 
-; gfx_line(int x1 [bx], int y1 [cx], int x2 [si], int y2 [bp], char color [reg acc])
+; gfx_line(int x1 [__bx], int y1 [__cx], int x2 [__si], int y2 [__bp], char color [reg acc])
 ; ----
 ; Plot a line from location (x1,y1) to location (x2,y2) in color
 ; ----
@@ -1520,34 +1527,34 @@ _gfx_line.5:
 ; ----
 
 lib2_put_number.4:
-	lda	<bl
+	lda	<__bl
 	jsr	_put.xy
 	bra	putnum.main
 lib2_put_number.3:
 	jsr	_put.vram
 putnum.main:
-	ldx	<cl
+	ldx	<__cl
 	; --
-	stz	<al ; sign flag
+	stz	<__al ; sign flag
 	dex
 	cpx	#16
 	bhs	.l5
 	; --
-	lda	<dh ; check sign
+	lda	<__dh ; check sign
 	bpl	.l1
-	negw	<dx ; negate
+	negw	<__dx ; negate
 	lda	#1
-	sta	<al
+	sta	<__al
 	; --
 .l1:	jsr	divu10
 	ora	#$10
 	pha
 	dex
 	bmi	.l3
-	tstw	<dx
+	tstw	<__dx
 	bne	.l1
 	; --
-	lda	<al
+	lda	<__al
 	beq	.l2
 	lda	#$0D
 	pha
@@ -1559,7 +1566,7 @@ putnum.main:
 	dex
 	bpl	.l2
 	; --
-.l3:	ldx	<cl
+.l3:	ldx	<__cl
 .l4:	pla
 	add	_font_base
 	sta	video_data_l
@@ -1571,44 +1578,44 @@ putnum.main:
 .l5:	rts
 
 
-; gfx_line(int x1 [bx], int y1 [cx], int x2 [si], int y2 [bp], char color [reg acc])
+; gfx_line(int x1 [__bx], int y1 [__cx], int x2 [__si], int y2 [__bp], char color [reg acc])
 ; ----
 ; Plot a line from location (x1,y1) to locations (x2,y2) in color
 ; ----
 lib2_gfx_line.5:		; Bresenham line drawing algorithm
 	stx	line_color
 
-	cmpw	<cx,<bp	; make y always ascending by swapping
+	cmpw	<__cx,<__bp	; make y always ascending by swapping
 	bhs	.l1		; co-ordinates
 				; jump over swap if bp > cx
 
-	stw	<bp,line_curry	; swap coordinates
-	stw	<cx,<bp
-	stw	<si,line_currx
-	stw	<bx,<si
+	stw	<__bp,line_curry	; swap coordinates
+	stw	<__cx,<__bp
+	stw	<__si,line_currx
+	stw	<__bx,<__si
 
 	bra	.l2
 
-.l1:	stw	<bx,line_currx
-	stw	<cx,line_curry
+.l1:	stw	<__bx,line_currx
+	stw	<__cx,line_curry
 
 ; now:
 ;	line_currx and line_curry are start point
-;	<si and <bp are end point
-;	<bx and <cx are 'dont care'
+;	<__si and <__bp are end point
+;	<__bx and <__cx are 'dont care'
 
 .l2:
-	lda	LOW_BYTE  <bp
+	lda	LOW_BYTE  <__bp
 	sub	LOW_BYTE  line_curry
 	sta	LOW_BYTE  line_deltay
-	lda	HIGH_BYTE <bp
+	lda	HIGH_BYTE <__bp
 	sbc	HIGH_BYTE line_curry
 	sta	HIGH_BYTE line_deltay
 
-	lda	LOW_BYTE  <si
+	lda	LOW_BYTE  <__si
 	sub	LOW_BYTE  line_currx
 	sta	LOW_BYTE  line_deltax
-	lda	HIGH_BYTE <si
+	lda	HIGH_BYTE <__si
 	sbc	HIGH_BYTE line_currx
 	sta	HIGH_BYTE line_deltax
 
@@ -1645,8 +1652,8 @@ lib2_gfx_line.5:		; Bresenham line drawing algorithm
 	incw	line_deltax		; used as counter - get both endpoints
 
 .xlp1:
-	stw	line_currx,<bx	; draw pixel
-	stw	line_curry,<cx
+	stw	line_currx,<__bx	; draw pixel
+	stw	line_curry,<__cx
 	ldx	line_color
 	cla
 	jsr	lib2_gfx_plot.3
@@ -1683,14 +1690,14 @@ lib2_gfx_line.5:		; Bresenham line drawing algorithm
 
 	subw	line_deltay,line_adjust
 	subw	line_deltay,line_adjust
-	
+
 	subw	line_deltay,line_error
 
 	incw	line_deltay		; used as counter - get both endpoints
 
 .ylp1:
-	stw	line_currx,<bx	; draw pixel
-	stw	line_curry,<cx
+	stw	line_currx,<__bx	; draw pixel
+	stw	line_curry,<__cx
 	ldx	line_color
 	cla
 	jsr	lib2_gfx_plot.3
@@ -1724,32 +1731,32 @@ lib2_gfx_line.5:		; Bresenham line drawing algorithm
 	rts
 
 
-; gfx_plot(int x [bx], int y [cx], char color [reg acc])
+; gfx_plot(int x [__bx], int y [__cx], char color [reg acc])
 ; ----
 ; Plot a point at location (x,y) in color
 ; ----
 
 lib2_gfx_plot.3:
-	stx	<dl		; color
+	stx	<__dl		; color
 	jsr	gfx_getaddr
 
 	; same as vm_rawread - save 21 cycles by inlining
 	;
 	vreg	#1		; video read register
-	stw	<cx,video_data	; VRAM address
+	stw	<__cx,video_data	; VRAM address
 	vreg	#2		; set R/W memory mode
 	__ldw	video_data
 	;
 	; end inline
 
-	ldy	<al		; bit offset
-	bbr1	<dl,.l1
+	ldy	<__al		; bit offset
+	bbr1	<__dl,.l1
 	ora	gfx_bittbl,Y	; set bit
 	bra	.l1a
 .l1:	and	gfx_bittbl2,Y	; else mask bit
 .l1a:
 	sax
-	bbr0	<dl,.l2
+	bbr0	<__dl,.l2
 	ora	gfx_bittbl,Y	; set bit
 	bra	.l2a
 .l2:	and	gfx_bittbl2,Y	; else mask bit
@@ -1759,32 +1766,32 @@ lib2_gfx_plot.3:
 	phx
 	tax
 	vreg	#0		; video write register
-	stw	<cx,video_data	; VRAM address
+	stw	<__cx,video_data	; VRAM address
 	vreg	#2		; set R/W memory mode
 	pla
 	__stw	video_data	; write
 	;
 	; end inline
 
-	addw	#8,<cx		; other half of pixel
+	addw	#8,<__cx		; other half of pixel
 
 	; same as vm_rawread - save 21 cycles by inlining
 	;
 	vreg	#1		; video read register
-	stw	<cx,video_data	; VRAM address
+	stw	<__cx,video_data	; VRAM address
 	vreg	#2		; set R/W memory mode
 	__ldw	video_data
 	;
 	; end inline
 
-	ldy	<al		; bit offset
-	bbr3	<dl,.l3
+	ldy	<__al		; bit offset
+	bbr3	<__dl,.l3
 	ora	gfx_bittbl,Y	; set bit
 	bra	.l3a
 .l3:	and	gfx_bittbl2,Y	; else mask bit
 .l3a:
 	sax
-	bbr2	<dl,.l4
+	bbr2	<__dl,.l4
 	ora	gfx_bittbl,Y	; set bit
 	bra	.l4a
 .l4:	and	gfx_bittbl2,Y	; mask bit
@@ -1794,7 +1801,7 @@ lib2_gfx_plot.3:
 	phx
 	tax
 	vreg	#0		; video write register
-	stw	<cx,video_data	; VRAM address
+	stw	<__cx,video_data	; VRAM address
 	vreg	#2		; set R/W memory mode
 	pla
 	__stw	video_data	; write
@@ -1804,40 +1811,40 @@ lib2_gfx_plot.3:
 	rts
 
 
-; gfx_point(int x [bx], int y [cx])
+; gfx_point(int x [__bx], int y [__cx])
 ; ----
 ; Returns color of point at location (x,y)
 ; ----
 
 lib2_gfx_point.2:
 	jsr	gfx_getaddr
-	stz	<ah		; will be color
-	__ldw	<cx		; VRAM address
+	stz	<__ah		; will be color
+	__ldw	<__cx		; VRAM address
 	jsr	readvram
 
-	ldy	<al		; bit offset
+	ldy	<__al		; bit offset
 	and	gfx_bittbl,Y
 	beq	.l1
-	smb1	<ah
+	smb1	<__ah
 .l1:	txa
 	and	gfx_bittbl,Y
 	beq	.l2
-	smb0	<ah
+	smb0	<__ah
 .l2:
-	addw	#8,<cx
-	__ldw	<cx		; VRAM address part 2
+	addw	#8,<__cx
+	__ldw	<__cx		; VRAM address part 2
 	jsr	readvram
 
-	ldy	<al
+	ldy	<__al
 	and	gfx_bittbl,Y
 	beq	.l3
-	smb3	<ah
+	smb3	<__ah
 .l3:	txa
 	and	gfx_bittbl,Y
 	beq	.l4
-	smb2	<ah
+	smb2	<__ah
 .l4:
-	ldx	<ah
+	ldx	<__ah
 	cla
 	rts
 
@@ -1855,21 +1862,21 @@ gfx_bittbl2:
 ; ----
 
 gfx_getaddr:
-	lda	<cl
+	lda	<__cl
 	and	#7
-	sta	<al	; al = lines from tile base
+	sta	<__al	; al = lines from tile base
 
-	lda	<bl
+	lda	<__bl
 	and	#7
 	pha		; = bit offset
 
-	__ldw	<bx
+	__ldw	<__bx
 	__lsrw		; should be only 2 bits in MSB are possible
 	__lsrw		; but we'll shift 3 times anyway
 	__lsrw
 	phx		; X = character column
 
-	__ldw	<cx
+	__ldw	<__cx
 	__lsrw		; should be only 2 bits in MSB are possible
 	__lsrw		; but we'll shift 3 times anyway
 	__lsrw
@@ -1878,7 +1885,7 @@ gfx_getaddr:
 	plx
 	jsr	calc_vram_addr
 
-	__ldw	<di		; to get BAT addr
+	__ldw	<__di		; to get BAT addr
 	jsr	readvram	; read BAT value
 	__aslw			; change into VRAM tile addr
 	__aslw
@@ -1887,13 +1894,13 @@ gfx_getaddr:
 
 	sax
 	clc			; add row within tile
-	adc	<al
+	adc	<__al
 	sax
 	adc	#0
-	__stw	<cx
+	__stw	<__cx
 
 	pla
-	sta	<al		; al = bit offset
+	sta	<__al		; al = bit offset
 
 	rts
 
@@ -1912,6 +1919,6 @@ _set_map_tile_base:
 	rts
 
 _set_map_pals.1:
-	stb	<bl, mapctablebank
-	__stw	<si, mapctable
+	stb	<__bl, mapctablebank
+	stw	<__si, mapctable
 	rts

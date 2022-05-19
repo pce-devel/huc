@@ -11,11 +11,12 @@
 
 set -e
 
+export PATH="../../bin:$PATH"
 export PCE_INCLUDE="../../include/pce"
 export PCE_PCEAS="../../bin/pceas"
 
-HUC=../../src/huc/huc
-ISOLINK=../../bin/isolink
+HUC=huc
+ISOLINK=isolink
 
 for sys in cd scd
 do

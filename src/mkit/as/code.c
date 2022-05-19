@@ -1,4 +1,6 @@
+
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include "defs.h"
@@ -8,6 +10,58 @@
 unsigned char auto_inc;
 unsigned char auto_tag;
 unsigned int auto_tag_value;
+
+static struct t_branch * getbranch(int opcode_length);
+
+
+/* ----
+ * classC()
+ * ----
+ * choose "jsr" or "call" processing for a "jsr" instruction
+ */
+
+void
+classC(int *ip)
+{
+	/* Both ".kickc" and "-newproc" need to use the call trampolines */
+	if (newproc_opt || kickc_mode)
+	{
+		/* skip spaces */
+		while (isspace(prlnbuf[*ip]))
+			(*ip)++;
+
+		/* if the operand looks like a global label */
+		if (isalpha(prlnbuf[*ip]) || (prlnbuf[*ip] == '_')) {
+			do_call(ip);
+			return;
+		}
+	}
+
+	/* default to traditional "jsr" behavior */
+	class4(ip);
+}
+
+
+/* ----
+ * classR()
+ * ----
+ * choose "rts" or "leave" processing for an "rts" instruction
+ */
+
+void
+classR(int *ip)
+{
+	/* Only if ".kickc" and currently inside a C function/procedure */
+	if (kickc_mode && scopeptr && proc_ptr)
+	{
+		/* Replace the "rts" instruction with a "jmp leave_proc" */
+		do_leave(ip);
+		return;
+	}
+
+	/* default to traditional "rts" instruction */
+	class1(ip);
+}
 
 
 /* ----
@@ -44,31 +98,62 @@ class1(int *ip)
 void
 class2(int *ip)
 {
+	struct t_branch * branch;
 	unsigned int addr;
 
 	/* update location counter */
 	loccnt += 2;
 
 	/* get destination address */
-	if (!evaluate(ip, ';'))
+	if (!evaluate(ip, ';', 0))
 		return;
+
+	/* all branches tracked for long-branch handling */
+	if ((branch = getbranch(2)) == NULL)
+		return;
+
+	/* need more space for a long-branch */
+	if (branch->convert) {
+		if ((opval & 0x1F) == 0x10)
+			/* conditional branch */
+			loccnt += 3;
+		else
+			/* bra and bsr */
+			loccnt += 1;
+	}
 
 	/* generate code */
 	if (pass == LAST_PASS) {
-		/* opcode */
-		putbyte(data_loccnt, opval);
+		if (branch->convert) {
+			/* long-branch opcode */
+			if ((opval & 0x1F) == 0x10) {
+				/* conditional-branch */
+				putbyte(data_loccnt + 0, opval ^ 0x20);
+				putbyte(data_loccnt + 1, 0x03);
 
-		/* calculate branch offset */
-		addr = value - (loccnt + (page << 13));
+				putbyte(data_loccnt + 2, 0x4C);
+				putword(data_loccnt + 3, value & 0xFFFF);
+			} else {
+				/* bra and bsr */
+				putbyte(data_loccnt + 0, (opval == 0x80) ? 0x4C : 0x20);
+				putword(data_loccnt + 1, value & 0xFFFF);
+			}
+		} else {
+			/* short-branch opcode */
+			putbyte(data_loccnt, opval);
 
-		/* check range */
-		if (addr > 0x7F && addr < 0xFFFFFF80) {
-			error("Branch address out of range!");
-			return;
+			/* calculate branch offset */
+			addr = (value & 0xFFFF) - (loccnt + (page << 13));
+
+			/* check range */
+			if (addr > 0x7Fu && addr < ~0x7Fu) {
+				error("Branch address out of range!");
+				return;
+			}
+
+			/* offset */
+			putbyte(data_loccnt + 1, addr);
 		}
-
-		/* offset */
-		putbyte(data_loccnt + 1, addr);
 
 		/* output line */
 		println();
@@ -238,9 +323,10 @@ class4(int *ip)
 void
 class5(int *ip)
 {
+	struct t_branch * branch;
 	int zp;
-	unsigned int addr;
 	int mode;
+	unsigned int addr;
 
 	/* update location counter */
 	loccnt += 3;
@@ -256,23 +342,41 @@ class5(int *ip)
 	if (!mode)
 		return;
 
+	/* all branches tracked for long-branch handling */
+	if ((branch = getbranch(3)) == NULL)
+		return;
+
+	/* need more space for a long-branch */
+	if (branch->convert)
+		loccnt += 3;
+
 	/* generate code */
 	if (pass == LAST_PASS) {
-		/* opcodes */
-		putbyte(data_loccnt, opval);
-		putbyte(data_loccnt + 1, zp);
+		if (branch->convert) {
+			/* long-branch opcode */
+			putbyte(data_loccnt, opval ^ 0x80);
+			putbyte(data_loccnt + 1, zp);
+			putbyte(data_loccnt + 2, 0x03);
 
-		/* calculate branch offset */
-		addr = value - (loccnt + (page << 13));
+			putbyte(data_loccnt + 3, 0x4C);
+			putword(data_loccnt + 4, value & 0xFFFF);
+		} else {
+			/* short-branch opcode */
+			putbyte(data_loccnt, opval);
+			putbyte(data_loccnt + 1, zp);
 
-		/* check range */
-		if (addr > 0x7F && addr < 0xFFFFFF80) {
-			error("Branch address out of range!");
-			return;
+			/* calculate branch offset */
+			addr = (value & 0xFFFF) - (loccnt + (page << 13));
+
+			/* check range */
+			if (addr > 0x7Fu && addr < ~0x7Fu) {
+				error("Branch address out of range!");
+				return;
+			}
+
+			/* offset */
+			putbyte(data_loccnt + 2, addr);
 		}
-
-		/* offset */
-		putbyte(data_loccnt + 2, addr);
 
 		/* output line */
 		println();
@@ -297,10 +401,10 @@ class6(int *ip)
 
 	/* get operands */
 	for (i = 0; i < 3; i++) {
-		if (!evaluate(ip, (i < 2) ? ',' : ';'))
+		if (!evaluate(ip, (i < 2) ? ',' : ';', 0))
 			return;
 		if (pass == LAST_PASS) {
-			if (value & 0xFFFF0000) {
+			if (value & 0x007F0000) {
 				error("Operand size error!");
 				return;
 			}
@@ -478,6 +582,7 @@ class9(int *ip)
 void
 class10(int *ip)
 {
+	struct t_branch * branch;
 	int bit;
 	int zp;
 	int mode;
@@ -503,6 +608,14 @@ class10(int *ip)
 	if (!mode)
 		return;
 
+	/* all branches tracked for long-branch handling */
+	if ((branch = getbranch(3)) == NULL)
+		return;
+
+	/* need more space for a long-branch */
+	if (branch->convert)
+		loccnt += 3;
+
 	/* generate code */
 	if (pass == LAST_PASS) {
 		/* check bit number */
@@ -511,21 +624,31 @@ class10(int *ip)
 			return;
 		}
 
-		/* opcodes */
-		putbyte(data_loccnt, opval + (bit << 4));
-		putbyte(data_loccnt + 1, zp);
+		if (branch->convert) {
+			/* long-branch opcode */
+			putbyte(data_loccnt, (opval + (bit << 4)) ^ 0x80);
+			putbyte(data_loccnt + 1, zp);
+			putbyte(data_loccnt + 2, 0x03);
 
-		/* calculate branch offset */
-		addr = value - (loccnt + (page << 13));
+			putbyte(data_loccnt + 3, 0x4C);
+			putword(data_loccnt + 4, value & 0xFFFF);
+		} else {
+			/* short-branch opcode */
+			putbyte(data_loccnt, opval + (bit << 4));
+			putbyte(data_loccnt + 1, zp);
 
-		/* check range */
-		if (addr > 0x7F && addr < 0xFFFFFF80) {
-			error("Branch address out of range!");
-			return;
+			/* calculate branch offset */
+			addr = (value & 0xFFFF) - (loccnt + (page << 13));
+
+			/* check range */
+			if (addr > 0x7Fu && addr < ~0x7Fu) {
+				error("Branch address out of range!");
+				return;
+			}
+
+			/* offset */
+			putbyte(data_loccnt + 2, addr);
 		}
-
-		/* offset */
-		putbyte(data_loccnt + 2, addr);
 
 		/* output line */
 		println();
@@ -543,12 +666,14 @@ getoperand(int *ip, int flag, int last_char)
 {
 	unsigned int tmp;
 	char c;
+	int paren;
 	int code;
 	int mode;
 	int pos;
 	int end;
 
 	/* init */
+	paren = 0;
 	auto_inc = 0;
 	auto_tag = 0;
 
@@ -561,6 +686,10 @@ getoperand(int *ip, int flag, int last_char)
 	case '\0':
 	case ';':
 		/* no operand */
+		if (flag & ACC) {
+			mode = ACC;
+			break;
+		}
 		error("Operand missing!");
 		return (0);
 
@@ -589,21 +718,74 @@ getoperand(int *ip, int flag, int last_char)
 			(*ip)++;
 			break;
 
+		case '>':
+			/* absolute */
+			mode = ABS | ABS_X | ABS_Y;
+			(*ip)++;
+			break;
+
 		case '[':
 			/* indirect */
 			mode = ABS_IND | ABS_IND_X | ZP_IND | ZP_IND_X | ZP_IND_Y;
 			(*ip)++;
 			break;
 
+		case '(':
+			/* allow () as an alternative to [] for indirect? */
+			if (asm_opt[OPT_INDPAREN]) {
+				/* indirect */
+				mode = ABS_IND | ABS_IND_X | ZP_IND | ZP_IND_X | ZP_IND_Y;
+				(*ip)++;
+				paren = 1;
+				break;
+			}
+			/* fall through */
+
 		default:
-			/* absolute */
-			mode = ABS | ABS_X | ABS_Y;
+			if (opext == 'A')
+				/* absolute */
+				mode = ABS | ABS_X | ABS_Y;
+			else
+			if (opext == 'Z')
+				/* zero page */
+				mode = ZP | ZP_X | ZP_Y;
+			else
+			if (asm_opt[OPT_ZPDETECT])
+				/* absolute OR zero page */
+				mode = ABS | ABS_X | ABS_Y | ZP | ZP_X | ZP_Y;
+			else
+				/* absolute */
+				mode = ABS | ABS_X | ABS_Y;
 			break;
 		}
 
 		/* get value */
-		if (!evaluate(ip, 0))
+		if (!evaluate(ip, (paren == 1) ? ')' : 0, 0))
 			return (0);
+
+		/* traditional 6502 assembler auto-detect between ZP and ABS */
+		if (mode == (ABS | ABS_X | ABS_Y | ZP | ZP_X | ZP_Y)) {
+			/* was there an undefined or undefined-this-pass symbol? */
+			if (undef || notyetdef ||
+				((value & 0x007FFF00) != machine->ram_base)) {
+//				((value & 0x007FFF00) && ((value & 0x007FFF00) != machine->ram_base))) {
+				/* use ABS addressing, if available */
+				if (flag & ABS)
+					mode &= ~ZP;
+				if (flag & ABS_X)
+					mode &= ~ZP_X;
+				if (flag & ABS_Y)
+					mode &= ~ZP_Y;
+			} else {
+				/* use ZP addressing, if available */
+				if (flag & ZP)
+					mode &= ~ABS;
+				if (flag & ZP_X)
+					mode &= ~ABS_X;
+				if (flag & ZP_Y)
+					mode &= ~ABS_Y;
+			}
+		}
 
 		/* check addressing mode */
 		code = 0;
@@ -625,6 +807,7 @@ getoperand(int *ip, int flag, int last_char)
 				code++;
 			case '+':		/* + = 4 */
 				code++;
+			case ')':		/* ] = 3 */
 			case ']':		/* ] = 3 */
 				code++;
 				if (prlnbuf[*ip + 1] == '.') {
@@ -671,7 +854,7 @@ getoperand(int *ip, int flag, int last_char)
 			/* get tag */
 			tmp = value;
 
-			if (!evaluate(ip, 0))
+			if (!evaluate(ip, 0, 0))
 				return (0);
 
 			/* ok */
@@ -712,7 +895,7 @@ getoperand(int *ip, int flag, int last_char)
 						value++;
 				}
 				/* check address validity */
-				if ((value & 0xFFFFFF00) && ((value & 0xFFFFFF00) != machine->ram_base))
+				if ((value & 0x007FFF00) && ((value & 0x007FFF00) != machine->ram_base))
 					error("Incorrect zero page address!");
 			}
 
@@ -723,9 +906,11 @@ getoperand(int *ip, int flag, int last_char)
 					value = (value & 0xFF);
 				else if (opext == 'H')
 					value = (value & 0xFF00) >> 8;
+				else if (opext != 0)
+					error("Instruction extension not supported in immediate mode!");
 				else {
 					/* check value validity */
-					if ((value > 0xFF) && (value < 0xFFFFFF00))
+					if (((value & 0x007FFF00) > 0xFF) && ((value & 0x007FFF00) < 0x007FFF00))
 						error("Incorrect immediate value!");
 				}
 			}
@@ -740,8 +925,15 @@ getoperand(int *ip, int flag, int last_char)
 						value++;
 				}
 				/* check address validity */
-				if (value & 0xFFFF0000)
+				if (value & 0x007F0000)
 					error("Incorrect absolute address!");
+
+				/* if HuC6280 and currently inside a ".kickc" C function/procedure */
+				if (machine->ram_base && kickc_mode && scopeptr && proc_ptr) {
+					if ((value & 0xFF00) == 0x0000) {
+						error("Incorrect absolute address!");
+					}
+				}
 			}
 		}
 		break;
@@ -833,3 +1025,133 @@ getstring(int *ip, char *buffer, int size)
 	return (1);
 }
 
+
+/* ----
+ * getbranch()
+ * ----
+ * return tracking structure for the current branch
+ */
+
+static struct t_branch *
+getbranch(int opcode_length)
+{
+	struct t_branch * branch;
+	unsigned int addr;
+
+	/* track all branches for long-branch handling */
+	if (pass == FIRST_PASS) {
+		/* remember this branch instruction */
+		if ((branch = malloc(sizeof(struct t_branch))) == NULL) {
+			error("Out of memory!");
+			return NULL;
+		}
+		if (branchlst == NULL)
+			branchlst = branch;
+		if (branchptr != NULL)
+			branchptr->next = branch;
+		branchptr = branch;
+
+		branch->next = NULL;
+		branch->convert = 0;
+
+		if (asm_opt[OPT_LBRANCH] && !complex_expr) {
+			/* enable expansion to long-branch */
+			branch->label = expr_toplabl;
+		} else {
+			/* assume short, error if out-of-range */
+			branch->label = NULL;
+		}
+	} else {
+		/* update this branch instruction */
+		if (branchptr == NULL) {
+			error("Untracked branch instruction!");
+			return NULL;
+		}
+
+		branch = branchptr;
+		branchptr = branchptr->next;
+
+		/* sanity check */
+		if ((branch->label != NULL) && (branch->label != expr_lablptr)) {
+			if (branch->label == expr_toplabl) {
+				/* resolve branch outside of label-scope */
+				/* disable for now, because this is more */
+				/* likely to be an error than deliberate */
+//				branch->label = expr_lablptr;
+			} else {
+				error("Branch label mismatch!");
+				return NULL;
+			}
+		}
+	}
+
+	branch->addr = (loccnt + (page << 13)) & 0xFFFF;
+	branch->checked = 0;
+
+	if (pass == LAST_PASS) {
+		/* display the branches that have been converted */
+		if (branch->convert && asm_opt[OPT_WARNING]) {
+			loccnt -= opcode_length;
+			warning("Warning: Converted to long-branch!\n");
+			loccnt += opcode_length;
+		}
+	} else {
+		/* has target already been defined (this pass)? */
+		if ((branch->convert == 0) &&
+		    (branch->label != NULL) &&
+		    (branch->label->defcnt != 0) &&
+		    (branch->label->type == DEFABS)) {
+			/* check if it is outside short-branch range */
+			addr = (branch->label->value & 0xFFFF) - branch->addr;
+
+			if (addr > 0x7Fu && addr < ~0x7Fu) {
+				branch->convert = 1;
+				++xvertlong;
+			}
+			branch->checked = 1;
+		}
+	}
+
+	return branch;
+}
+
+
+/* ----
+ * branchopt()
+ * ----
+ * convert out-of-range short-branches into long-branches
+ */
+
+int
+branchopt(void)
+{
+	struct t_branch * branch;
+	unsigned int addr;
+	int changed = 0;
+
+	/* look through the entire list of branch instructions */
+	for (branch = branchlst; branch != NULL; branch = branch->next) {
+
+		/* check to see if a short-branch needs to be converted */
+		if ((branch->convert == 0) &&
+		    (branch->checked == 0) &&
+		    (branch->label != NULL) &&
+		    (branch->label->type == DEFABS)) {
+			/* check if it is outside short-branch range */
+			addr = (branch->label->value & 0xFFFF) - branch->addr;
+
+			if (addr > 0x7Fu && addr < ~0x7Fu) {
+				branch->convert = 1;
+				++changed;
+			}
+		}
+	}
+
+	/* report total changes this pass */
+	xvertlong += changed;
+	if (xvertlong)
+		printf("Changed %d branches from short to long.\n", xvertlong);
+
+	/* do another pass if anything just changed */
+	return changed;
+}

@@ -11,6 +11,8 @@ int if_expr;		/* set when parsing an .if expression */
 int if_level;		/* level of nested .if's */
 int if_state[256];	/* status when entering the .if */
 int if_flag[256];	/* .if/.else status */
+int if_line[256];	/* .if line number */
+char if_txt[256][64];	/* .if condition text */
 int skip_lines;		/* set when lines must be skipped */
 int continued_line;	/* set when a line is the continuation of another line */
 
@@ -27,7 +29,6 @@ assemble(int do_label)
 	struct t_line *ptr;
 	char *buf;
 	char c;
-	char local_check;
 	int flag;
 	int ip, i, j;			/* prlnbuf pointer */
 
@@ -35,13 +36,13 @@ assemble(int do_label)
 	lablptr = NULL;
 	continued_line = 0;
 	data_loccnt = -1;
-	data_size = 3;
+	data_size = 4;
 	data_level = 1;
 
 	/* macro definition */
 	if (in_macro) {
-		i = SFIELD;
-		if (do_label && colsym(&i))
+		i = preproc_sfield;
+		if (do_label && colsym(&i, 0))
 			if (prlnbuf[i] == ':')
 				i++;
 		while (isspace(prlnbuf[i]))
@@ -63,13 +64,17 @@ assemble(int do_label)
 			}
 		}
 		if (pass == FIRST_PASS) {
+			if (preproc_modidx != 0) {
+				/* Remove C-style comments within a macro */
+				prlnbuf[preproc_modidx] = '\0';
+			}
 			ptr = (void *)malloc(sizeof(struct t_line));
-			buf = (void *)malloc(strlen(&prlnbuf[SFIELD]) + 1);
+			buf = (void *)malloc(strlen(&prlnbuf[preproc_sfield]) + 1);
 			if ((ptr == NULL) || (buf == NULL)) {
 				error("Out of memory!");
 				return;
 			}
-			strcpy(buf, &prlnbuf[SFIELD]);
+			strcpy(buf, &prlnbuf[preproc_sfield]);
 			ptr->next = NULL;
 			ptr->data = buf;
 			if (mlptr)
@@ -86,15 +91,16 @@ assemble(int do_label)
 	 * to toggle state
 	 */
 	if (in_if) {
-		i = SFIELD;
-		while (isspace(prlnbuf[i]))
-			i++;
+		i = preproc_sfield;
+		while (isspace(prlnbuf[i])) { i++; }
 		if (oplook(&i) >= 0) {
 			if (opflg == PSEUDO) {
+
 				switch (opval) {
 				case P_IF:		// .if
 				case P_IFDEF:		// .ifdef
 				case P_IFNDEF:		// .ifndef
+					save_if_expr(&i);
 					if (skip_lines) {
 						if_level++;
 						if_state[if_level] = 0;
@@ -102,8 +108,17 @@ assemble(int do_label)
 					break;
 
 				case P_ELSE:		// .else
-					if (!check_eol(&i))
-						return;
+					while (isspace(prlnbuf[i])) { i++; }
+					if ((prlnbuf[i] != ';') && (prlnbuf[i] != '\0')) {
+						/* check that expression matches if_level */
+						save_if_expr(&i);
+						if (strcmp(if_txt[if_level], if_txt[if_level-1]) != 0) {
+							char message [128];
+							sprintf(message, "Condition does not match \".if %s\" at line %d!", if_txt[if_level-1], if_line[if_level-1]);
+							fatal_error(message);
+							return;
+						}
+					}
 					if (if_state[if_level]) {
 						skip_lines = !if_flag[if_level];
 						if (pass == LAST_PASS)
@@ -112,8 +127,17 @@ assemble(int do_label)
 					return;
 
 				case P_ENDIF:		// .endif
-					if (!check_eol(&i))
-						return;
+					while (isspace(prlnbuf[i])) { i++; }
+					if ((prlnbuf[i] != ';') && (prlnbuf[i] != '\0')) {
+						/* check that expression matches if_level */
+						save_if_expr(&i);
+						if (strcmp(if_txt[if_level], if_txt[if_level-1]) != 0) {
+							char message [128];
+							sprintf(message, "Condition does not match \".if %s\" at line %d!", if_txt[if_level-1], if_line[if_level-1]);
+							fatal_error(message);
+							return;
+						}
+					}
 					if (if_state[if_level] && (pass == LAST_PASS))
 						println();
 					skip_lines = !if_state[if_level];
@@ -130,47 +154,63 @@ assemble(int do_label)
 		return;
 
 	/* comment line */
-	c = prlnbuf[SFIELD];
-	if (c == ';' || c == '*' || c == '\0') {
-//		if (c == '\0')
+	c = prlnbuf[preproc_sfield];
+//	if (c == ';' || c == '*' || c == '\0') { /* Let's see if anyone really uses '*' for a comment line! */
+	if (c == ';' || c == '\0') {
 		lastlabl = NULL;
 		if (pass == LAST_PASS)
 			println();
 		return;
 	}
 
-	/* search for a label */
-	i = SFIELD;
+	/* search for a symbol, either a label or an instruction */
+	i = preproc_sfield;
 	j = 0;
 	while (isspace(prlnbuf[i]))
 		i++;
-	local_check = prlnbuf[i + j];
 	for (;;) {
 		c = prlnbuf[i + j];
-		if (isdigit(c) && (j == 0))
+		if ((j == 0) && isdigit(c))
 			break;
-		if (!isalnum(c) && (c != '_') && (c != '.')) {
-			if ((local_check == '.') && ((c == '-') || (c == '+'))) {
-			}
-			else break;
+		if (isalnum(c) || (c == '_') || (c == '.') || (j == 0 && (c == '@' || c == '!'))) {
+			++j;
+		} else {
+			break;
 		}
-
-		j++;
 	}
-	if ((j == 0) || ((i != SFIELD) && (c != ':')))
-		i = SFIELD;
+
+	if ((j == 0) || ((i != preproc_sfield) && (c != ':'))) {
+		/* either it is not a symbol, or it is a symbol that is */
+		/* not in 1st column and that does not end with a ':' */
+		i = preproc_sfield;
+	}
 	else {
-		if (colsym(&i) != 0) {
-			if (!do_label && !stlook(2)) {
-				/* Unless it is already defined we're supposed
-				   to assume it is not a label. */
-				i = SFIELD;
+		/* a symbol, either in the 1st column or ending with a ':' */
+		j = i;
+		if (!colsym(&i, 0))
+			return;
+		if ((do_label == 0) && (prlnbuf[i] != ':') && (stlook(SYM_CHK) == NULL)) {
+			/* it doesn't end with a ':', and it isn't a symbol */
+			/* that is recognized, so attempt to process it as  */
+			/* an opcode (unless forced), so that both opcodes  */
+			/* and pseudo-ops work properly in the 1st column   */
+			i = preproc_sfield;
+		} else {
+			/* it either ends with a ':', it is already known as */
+			/* a label or macro, or it failed the attempt to see */
+			/* if it was a pseudo-op ... so it MUST be a label!  */
+			c = symbol[1];
+			if ((scopeptr != NULL) && (c != '.') && (c != '@') && (c != '!')) {
+				/* adjust name to include full label-scope */
+				i = j;
+				if (!colsym(&i, 1))
+					return;
 			}
-			else if ((lablptr = stlook(1)) == NULL)
+			if (prlnbuf[i] == ':')
+				i++;
+			if ((lablptr = stlook(SYM_DEF)) == NULL)
 				return;
 		}
-		if ((lablptr) && (prlnbuf[i] == ':'))
-			i++;
 	}
 
 	/* skip spaces */
@@ -182,7 +222,7 @@ assemble(int do_label)
 	mptr = macro_look(&ip);
 	if (mptr) {
 		/* define label */
-		labldef(loccnt, 1);
+		labldef(0, 0, LOCATION);
 
 		/* output location counter */
 		if (pass == LAST_PASS) {
@@ -215,8 +255,9 @@ assemble(int do_label)
 			assemble(1);
 			return;
 		}
-		labldef(loccnt, 1);
-		if ((flag == -1))
+
+		labldef(0, 0, LOCATION);
+		if (flag == -1)
 			error("Unknown instruction!");
 		if ((flag == -2) && (pass == LAST_PASS)) {
 			if (lablptr)
@@ -230,7 +271,7 @@ assemble(int do_label)
 	/* generate code */
 	if (opflg == PSEUDO)
 		do_pseudo(&ip);
-	else if (labldef(loccnt, 1) == -1)
+	else if (labldef(0, 0, LOCATION) == -1)
 		return;
 	else {
 		/* output infos */
@@ -278,13 +319,13 @@ oplook(int *idx)
 		c = toupper(prlnbuf[*idx]);
 		if (c == ' ' || c == '\t' || c == '\0' || c == ';')
 			break;
-		if (!isalnum(c) && c != '.' && c != '*' && c != '=')
+		if ((!isalnum(c)) && (c != '.') && (c != '*') && (c != '=') && (c != '{') && (c != '}'))
 			return (-1);
 		if (i == 15)
 			return (-1);
 
 		/* handle instruction extension */
-		if (c == '.' && i) {
+		if ((c == '.') && (i != 0)) {
 			if (flag)
 				return (-1);
 			flag = 1;
@@ -304,14 +345,14 @@ oplook(int *idx)
 		hash += c;
 		(*idx)++;
 
-		/* break if '=' directive */
-		if (c == '=')
+		/* break if single-character directive */
+		if ((c == '*') || (c == '=') || (c == '{') || (c == '}'))
 			break;
 	}
 
 	/* check extension */
 	if (flag) {
-		if ((opext != 'L') && (opext != 'H'))
+		if ((opext != 'A') && (opext != 'H') && (opext != 'L') && (opext != 'Z'))
 			return (-1);
 	}
 
@@ -337,7 +378,7 @@ oplook(int *idx)
 				if (opflg == PSEUDO)
 					return (-1);
 				/* extension valid only for these addressing modes */
-				if (!(opflg & (IMM | ZP | ZP_X | ZP_IND_Y | ABS | ABS_X | ABS_Y)))
+				if (!(opflg & (IMM | ZP | ZP_X | ZP_Y | ABS | ABS_X | ABS_Y)))
 					return (-1);
 			}
 			return (i);
@@ -412,16 +453,45 @@ check_eol(int *ip)
 	}
 }
 
+
+/* ----
+ * save_if_expr()
+ * ----
+ * store .if expression to check for .else/.endif mismatch
+ */
+
+void
+save_if_expr(int *ip)
+{
+	int i, j;
+	if_line[if_level] = slnum;
+	if_txt[if_level][0] = '\0';
+	i = *ip;
+	while (isspace(prlnbuf[i])) { i++; }
+	j = 0;
+	while ((prlnbuf[i] != ';') && (prlnbuf[i] != '\0') && (j < 63)) {
+		if_txt[if_level][j++] = prlnbuf[i++];
+	}
+	if (j != 0) {
+		while (isspace(if_txt[if_level][--j])) {}
+		if_txt[if_level][++j] = '\0';
+	}
+}
+
+
 /* .if pseudo */
 
 void
 do_if(int *ip)
 {
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
+
+	/* save condition text */
+	save_if_expr(ip);
 
 	/* get expression */
 	if_expr = 1;
-	if (!evaluate(ip, ';')) {
+	if (!evaluate(ip, ';', 0)) {
 		if_expr = 0;
 		return;
 	}
@@ -467,20 +537,23 @@ do_endif(int *ip)
 void
 do_ifdef(int *ip)
 {
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* skip spaces */
 	while (isspace(prlnbuf[*ip]))
 		(*ip)++;
 
+	/* save condition text */
+	save_if_expr(ip);
+
 	/* get symbol */
-	if (!colsym(ip)) {
+	if (!colsym(ip, 0)) {
 		error("Syntax error!");
 		return;
 	}
 	if (!check_eol(ip))
 		return;
-	lablptr = stlook(0);
+	lablptr = stlook(SYM_CHK);
 
 	/* check for '.if' stack overflow */
 	if (if_level == 255) {
@@ -506,4 +579,3 @@ do_ifdef(int *ip)
 		println();
 	}
 }
-

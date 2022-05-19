@@ -1,8 +1,8 @@
 
-#define ISOLINK_VERSION "isolink (v3.21-" GIT_VERSION ", " GIT_DATE ")"
+#define ISOLINK_VERSION "isolink (v3.25-" GIT_VERSION ", " GIT_DATE ")"
 
 
-#if defined(DJGPP) || defined(MSDOS) || defined(WIN32)
+#if defined(WIN32)
 #define PATH_SEPARATOR          '\\'
 #define PATH_SEPARATOR_STRING   "\\"
 #else

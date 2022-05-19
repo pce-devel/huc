@@ -1,5 +1,5 @@
 /* path separator */
-#if defined(DJGPP) || defined(MSDOS) || defined(WIN32)
+#if defined(WIN32)
 #define PATH_SEPARATOR		'\\'
 #define PATH_SEPARATOR_STRING	"\\"
 #else

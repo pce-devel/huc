@@ -77,7 +77,6 @@
 #define I_FGETW      44
 #define I_VGETW      45
 #define I_VPUTW      46
-#define I_NARGS      47
 #define I_INCW       50
 #define I_ANDWI      51
 #define I_ORWI       52
@@ -123,6 +122,7 @@
 #define I_CLI        92
 #define I_MAPCBANK   93
 #define I_UNMAPCBANK 94
+#define I_MACRO      95			// Used to fastcall macro calling support
 
 /* optimized pseudo instructions */
 #define X_MASK          0xFFFF0
@@ -186,12 +186,14 @@
 #define ENDLOC  (symtab + SYMTBSZ - 1)
 
 /* symbol table entry format */
+/* N.B. nasty hack to allow space beyond NAMEMAX (see "copysym") */
 
-#define NAMESIZE        26
-#define NAMEMAX 25
+#define NAMESIZE	48
+#define NAMEMAX		47
+#define NAMEALLOC	64
 
 struct symbol {
-	char name[NAMESIZE];
+	char name[NAMEALLOC];
 	char ident;
 	char type;
 	char storage;
@@ -217,7 +219,7 @@ struct tag_symbol {
 #define NULL_TAG 0
 
 // Define the structure member table parameters
-#define NUMMEMB         30
+#define NUMMEMB         128
 
 /* possible entries for "ident" */
 
@@ -279,7 +281,7 @@ struct tag_symbol {
 
 /* "switch" label stack */
 
-#define SWSTSZ  100
+#define SWSTSZ  256
 
 /* literal pool */
 
@@ -333,12 +335,12 @@ struct macro {
 /* pseudo instruction structure */
 
 typedef struct {
-	long code;
-	long type;
-	long data;
-	long imm;
-	long arg[3];
-	int imm_type;
+	intptr_t code;
+	intptr_t type;
+	intptr_t data;
+	intptr_t imm_type;
+	intptr_t imm_data;
+	char *arg[3];
 	SYMBOL *sym;
 } INS;
 
@@ -350,20 +352,22 @@ typedef struct {
 
 struct const_array {
 	SYMBOL *sym;
-	long typ;
-	long size;
-	long data;
+	intptr_t typ;
+	intptr_t size;
+	intptr_t data;
 };
 
 /* fastcall func struct */
 
 #define MAX_FASTCALL_ARGS 8
+#define FASTCALL_NOP      0x01  // bitmask values
+#define FASTCALL_MACRO    0x04	// bitmask values
 
 struct fastcall {
 	struct fastcall *next;
 	char fname[NAMESIZE];
-	long nargs;
-	long flags;
+	intptr_t nargs;
+	intptr_t flags;
 	char argtype[MAX_FASTCALL_ARGS];
 	char argname[MAX_FASTCALL_ARGS][NAMESIZE];
 };
@@ -385,10 +389,10 @@ SYMBOL *find_member (TAG_SYMBOL *tag, char *sname);
 
 struct lvalue {
 	SYMBOL *symbol;
-	long indirect;
-	long ptr_type;
+	intptr_t indirect;
+	intptr_t ptr_type;
 	SYMBOL *symbol2;
-	long value;
+	intptr_t value;
 	TAG_SYMBOL *tagsym;
 	int ptr_order;
 	int type;

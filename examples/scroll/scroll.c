@@ -114,7 +114,7 @@ main()
 
 	/*  init map */
 	set_map_data(demo_map, MAP_WIDTH, MAP_HEIGHT);
-	set_tile_data(tile_gfx, NB_TILE, tile_pal_ref);
+	set_tile_data(tile_gfx, NB_TILE, tile_pal_ref, 16);
 	load_tile(TILE_VRAM);
 	load_palette(TILE_PAL, tile_pal, 1);
 	load_map(0, 0, 0, 0, 17, 12);

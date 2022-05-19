@@ -379,12 +379,16 @@
     -----------
 
         All the subroutines take their arguments from pseudo registers
-        placed in ZP. There are six 16-bit registers, ax, bx, cx, dx,
-        si and di. The first four registers can also be used as pair
-        of 8-bit registers, ax is split into al and ah, bx into
-        bl and bh, etc...
+        placed in ZP. There are six 16-bit registers, __ax, __bx, __cx,
+        __dx, __si and __di. The first four registers can also be used
+        as pairs of 8-bit registers, __ax is split into __al and __ah,
+        __bx into __bl and __bh, etc...
 
-        Those registers are defined in the 'EQU.INC' include file.
+        Those have a double underscore to follow standard C convention
+        and mark them as special implementation-defined variables, and
+        not user-defined variables.
+
+        The registers are defined in the 'EQU.INC' include file.
 
 
         set_read
@@ -395,7 +399,7 @@
 
             Takes one argument:
 
-                di, the VRAM address
+                __di, the VRAM address
 
             Associated macro is: 
 
@@ -410,7 +414,7 @@
 
             Takes one argument:
 
-                di, the VRAM address
+                __di, the VRAM address
 
             Associated macro is: 
 
@@ -430,10 +434,10 @@
 
             The subroutine takes four arguments:
 
-                al, the palette block index (0-31)
-                bl, the bank index of the color data
-                si, the memory address of the color data
-                cl, the number of palette block to set
+                __al, the palette block index (0-31)
+                __bl, the bank index of the color data
+                __si, the memory address of the color data
+                __cl, the number of palette block to set
 
             Two macros are associated with this subroutine:
 
@@ -456,10 +460,10 @@
             Transfer a memory region to VRAM. This subroutine takes four
             arguments:
 
-                di = destination address in VRAM
-                bl = source bank index
-                si = source memory address
-                cx = number of 16-bit words to copy
+                __di = destination address in VRAM
+                __bl = source bank index
+                __si = source memory address
+                __cx = number of 16-bit words to copy
 
             One macro is associated to this subroutine:
 
@@ -496,11 +500,11 @@
             Transfer a background attribute table (BAT) from memory to VRAM.
             This subroutine takes five arguments:
 
-                di = the destination base address in VRAM
-                bl = source bank index
-                si = source memory address
-                cl = the number of character column to transfer
-                ch = the number of row to transfer
+                __di = the destination base address in VRAM
+                __bl = source bank index
+                __si = source memory address
+                __cl = the number of character column to transfer
+                __ch = the number of row to transfer
 
             Associated macro is:
 
@@ -518,12 +522,12 @@
 
             The subroutine takes six arguments:
 
-                di = VRAM destination address
-                bl = font bank index
-                si = font memory address
-                al = foreground (0-15)
-                ah = background (0-15)
-                cl = number of characters to copy
+                __di = VRAM destination address
+                __bl = font bank index
+                __si = font memory address
+                __al = foreground (0-15)
+                __ah = background (0-15)
+                __cl = number of characters to copy
 
             Associated macro is:
 

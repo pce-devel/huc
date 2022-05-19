@@ -10,12 +10,12 @@
 /*
  *	Unused test. single 24bit argument passing.
  */
-#pragma fastcall test( dword cl:ax|bx  ) nop;
+#pragma fastcall test( dword __cl:__ax|__bx  ) nop;
 
 
 /*
- *	Arcade card address reg function: 24bit value, 1 byte(high) and 1 word(mid/low). 
- */ 
+ *	Arcade card address reg function: 24bit value, 1 byte(high) and 1 word(mid/low).
+ */
 
 void __fastcall __nop ac_addr_reg0( unsigned char high<ac_reg_1_high>, unsigned int low<ac_reg_1_low> );
 void __fastcall __nop ac_addr_reg1( unsigned char high<ac_reg_2_high>, unsigned int low<ac_reg_2_low> );
@@ -64,20 +64,20 @@ void __fastcall __nop ac_control_reg3( unsigned char control<ac_reg_4_control_l>
 /*
  *	CD sector to Arcade card transfer.
  */
-void __fastcall ac_cd_xfer( unsigned char ac_reg<bl>, unsigned char sector_addr_h<cl>, unsigned int sector_addr_l<dx>, unsigned char sectors<al> );
+void __fastcall ac_cd_xfer( unsigned char ac_reg<__bl>, unsigned char sector_addr_h<__cl>, unsigned int sector_addr_l<__dx>, unsigned char sectors<__al> );
 
-void __fastcall ac_vram_xfer(unsigned char ac_reg<al>, unsigned int vram_addr<bx>, unsigned int num_bytes<cx>, unsigned char size<dl> );
-void __fastcall ac_vram_xfer(unsigned char ac_reg<al>, unsigned int vram_addr<bx>, unsigned int num_bytes<cx>, unsigned char size<dl>, unsigned char flags<ah> );
+void __fastcall ac_vram_xfer(unsigned char ac_reg<__al>, unsigned int vram_addr<__bx>, unsigned int num_bytes<__cx>, unsigned char size<__dl> );
+void __fastcall ac_vram_xfer(unsigned char ac_reg<__al>, unsigned int vram_addr<__bx>, unsigned int num_bytes<__cx>, unsigned char size<__dl>, unsigned char flags<__ah> );
 
-void __fastcall ac_vram_dma( unsigned char ac_reg<al>, unsigned int vram_addr<bx>, unsigned int num_bytes<cx> );
-void __fastcall ac_vram_dma( unsigned char ac_reg<al>, unsigned int vram_addr<bx>, unsigned int num_bytes<cx>, unsigned char flags<ah> );
-
-
-void __fastcall ac_vram_copy( unsigned char ac_reg<al>, unsigned int vram_addr<bx>, unsigned int bytes<cx> );
-void __fastcall ac_vram_copy( unsigned char ac_reg<al>, unsigned int vram_addr<bx>, unsigned int bytes<cx>, unsigned char flags<ah> );
+void __fastcall ac_vram_dma( unsigned char ac_reg<__al>, unsigned int vram_addr<__bx>, unsigned int num_bytes<__cx> );
+void __fastcall ac_vram_dma( unsigned char ac_reg<__al>, unsigned int vram_addr<__bx>, unsigned int num_bytes<__cx>, unsigned char flags<__ah> );
 
 
-void __fastcall ac_vce_copy( unsigned char ac_reg<al>, unsigned int start_color<bx>, unsigned int num_colors<cx> );
+void __fastcall ac_vram_copy( unsigned char ac_reg<__al>, unsigned int vram_addr<__bx>, unsigned int bytes<__cx> );
+void __fastcall ac_vram_copy( unsigned char ac_reg<__al>, unsigned int vram_addr<__bx>, unsigned int bytes<__cx>, unsigned char flags<__ah> );
+
+
+void __fastcall ac_vce_copy( unsigned char ac_reg<__al>, unsigned int start_color<__bx>, unsigned int num_colors<__cx> );
 
 
 /*

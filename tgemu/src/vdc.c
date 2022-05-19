@@ -202,7 +202,7 @@ int vdc_init(void)
 void vdc_reset(void)
 {
     memset(vram, 0, 0x10000);
-    memset(reg, 0, 0x20);
+    memset(reg, 0, sizeof(reg));
     status = latch = 0;
     addr_inc = 1;
     dvssr_trigger = 0;

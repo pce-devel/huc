@@ -14,22 +14,22 @@
 ; ----
 
 divu8:
-	lda	<al
+	lda	<__al
 	asl a
-	sta	<cl
+	sta	<__cl
 	cla
 	ldy	#8
 .l1:
 	rol a
-	cmp	<bl
+	cmp	<__bl
 	bcc	.l2
-	sbc	<bl
+	sbc	<__bl
 .l2:
-	rol	<cl
+	rol	<__cl
 	dey
 	bne	.l1
 
-	sta	<dl
+	sta	<__dl
 	rts
 
 
@@ -45,14 +45,14 @@ divu8:
 divu10:
 	ldy	#16
 	cla
-	asl	<dl
-	rol	<dh
+	asl	<__dl
+	rol	<__dh
 .l1:	rol	a
 	cmp	#10
 	blo	.l2
 	sbc	#10
-.l2:	rol	<dl
-	rol	<dh
+.l2:	rol	<__dl
+	rol	<__dh
 	dey
 	bne	.l1
 	rts
@@ -69,23 +69,23 @@ divu10:
 ; ----
 
 mulu8:
-	lda	<bl
-	sta	<ch
+	lda	<__bl
+	sta	<__ch
 
 	cla
 	ldy	#8
 .l1:
 	asl a
-	rol	<ch
+	rol	<__ch
 	bcc	.next
-	add	<al
+	add	<__al
 	bcc	.next
-	inc	<ch
+	inc	<__ch
 .next:
 	dey
 	bne	.l1
 
-	sta	<cl
+	sta	<__cl
 	rts
 
 
@@ -98,24 +98,24 @@ mulu8:
 ; ----
 
 mulu16:
-	lda	<ah
-	ora	<bh
+	lda	<__ah
+	ora	<__bh
 	bne	.l1
 
-	stwz	<dx		; 8-bit multiplication
+	stwz	<__dx		; 8-bit multiplication
 	jmp	mulu8
 
-.l1:	stw	<bx,<dx	; 16-bit multiplication
-	stwz	<cx
+.l1:	stw	<__bx,<__dx	; 16-bit multiplication
+	stwz	<__cx
 	ldy	#16
 
-.l2:	aslw	<cx
-	rolw	<dx
+.l2:	aslw	<__cx
+	rolw	<__dx
 	bcc	.l3
 
-	addw	<ax,<cx
+	addw	<__ax,<__cx
 	bcc	.l3
-	incw	<dx
+	incw	<__dx
 
 .l3:	dey
 	bne	.l2
@@ -133,20 +133,20 @@ mulu16:
 ; ----
 
 mulu32:
-	stw	<cx,<si
-	stw	<dx,<di
-	stwz	<cx
-	stwz	<dx
+	stw	<__cx,<__si
+	stw	<__dx,<__di
+	stwz	<__cx
+	stwz	<__dx
 	ldy	#32
 .loop:
-	aslw	<cx
-	rolw	<dx
-	rolw	<si
-	rolw	<di
+	aslw	<__cx
+	rolw	<__dx
+	rolw	<__si
+	rolw	<__di
 	bcc	.next
 
-	addw	<ax,<cx
-	adcw	<bx,<dx
+	addw	<__ax,<__cx
+	adcw	<__bx,<__dx
 .next:
 	dey
 	bne	.loop
@@ -169,8 +169,8 @@ rndn2		.ds 1
 
 	.code
 srand:
-	stw	<cx,rndptr
-	stw	<dx,rndn1
+	stw	<__cx,rndptr
+	stw	<__dx,rndn1
 	lda	rndptr+1
 	ora	#$e0
 	sta	rndptr+1
@@ -195,7 +195,7 @@ rndzp	.ds	2
 
 	.code
 rand:	jsr	randomize
-	stw	rndn1,<dx
+	stw	rndn1,<__dx
 	rts
 
 randomize:
@@ -261,15 +261,15 @@ random:
 	cmp	#128
 	blo	.l1
 
-	lda	<dh
+	lda	<__dh
 	and	#$7f
 	rts
 
 .l1:	; asl a
-	sta	<al
-	lda	<dl
-	sta	<bl
+	sta	<__al
+	lda	<__dl
+	sta	<__bl
 	jsr	mulu8
 
-	lda	<ch
+	lda	<__ch
 	rts

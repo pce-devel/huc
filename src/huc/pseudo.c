@@ -2,6 +2,7 @@
  * pseudo.c
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include "data.h"
@@ -19,11 +20,11 @@
 
 /* local array to store internal strings */
 static char str_buf[0x10000];
-static long str_idx;
+static intptr_t str_idx;
 
 /* protos */
-char *new_string (long und, char *a);
-void  do_inc_ex (long type);
+char *new_string (intptr_t und, char *a);
+void  do_inc_ex (intptr_t type);
 
 /*
  * This source file includes all kind of stuff used to 'simulate' pseudo code
@@ -31,15 +32,14 @@ void  do_inc_ex (long type);
  */
 void dopsdinc (void)
 {
-	long dummy;		/* Used in the qstr function, I don't know its utility yet */
-	long numericarg = 0;	/* Number of numeric arg to test validity */
+	intptr_t dummy;		/* Used in the qstr function, I don't know its utility yet */
+	intptr_t numericarg = 0;	/* Number of numeric arg to test validity */
 
 	if (amatch("pal", 3)) {
 		if (!match("("))
 			error("missing (");
 
 		ol(".data");
-		ol(".dw $0");
 
 		readstr();	/* read the label name */
 		prefix();
@@ -93,13 +93,12 @@ void dopsdinc (void)
 			error("missing (");
 
 		ol(".data");
-		ol(".dw $0");
 
 		readstr();	/* read the label name */
 		prefix();
 		outstr(litq2);
 		outstr(":\n");
-		addglb_far(litq2, CCHAR);
+		addglb_far(litq2, CUCHAR);
 
 		if (!match(",")) {
 			error("missing ,");
@@ -130,7 +129,6 @@ void dopsdinc (void)
 			error("missing (");
 
 		ol(".data");
-		ol(".dw $0");
 
 		readstr();	/* read the label name */
 		prefix();
@@ -185,7 +183,6 @@ void dopsdinc (void)
 			error("missing (");
 
 		ol(".data");
-		ol(".dw $0");
 
 		readstr();	/* read the label name */
 		prefix();
@@ -235,12 +232,65 @@ void dopsdinc (void)
 		kill();
 	}
 	else
+	if (amatch("sprpal", 6)) {
+		if (!match("("))
+			error("missing (");
+
+		ol(".data");
+
+		readstr();	/* read the label name */
+		prefix();
+		outstr(litq2);
+		outstr(":\n");
+		addglb_far(litq2, CINT);
+
+		if (!match(",")) {
+			error("missing ,");
+			kill();
+			return;
+		}
+
+		ot(".incsprpal \"");
+
+		if (readqstr() == 0) {
+			error("bad filename in incsprpal");
+			kill();
+			return;
+		}
+
+		outstr(litq2);
+		outstr("\"");
+
+		if (match(","))
+			outstr(",");
+
+		numericarg = 0;
+
+		while (!match(")")) {
+			numericarg++;
+
+			number(&dummy);
+			outdec(dummy);
+			if (match(","))
+				outstr(",");
+		}
+
+		nl();
+		ol(".code");
+
+		if ((numericarg != 0) &&
+		    (numericarg != 2) &&
+		    (numericarg != 4))
+			error("Either 0,2 or 4 numeric arguments are needed for incsprpal statement");
+
+		kill();
+	}
+	else
 	if (amatch("chr", 3)) {
 		if (!match("("))
 			error("missing (");
 
 		ol(".data");
-		ol(".dw $0800");
 
 		readstr();	/* read the label name */
 		prefix();
@@ -290,6 +340,60 @@ void dopsdinc (void)
 		kill();
 	}
 	else
+	if (amatch("chrpal", 6)) {
+		if (!match("("))
+			error("missing (");
+
+		ol(".data");
+
+		readstr();	/* read the label name */
+		prefix();
+		outstr(litq2);
+		outstr(":\n");
+		addglb_far(litq2, CINT);
+
+		if (!match(",")) {
+			error("missing ,");
+			kill();
+			return;
+		}
+
+		ot(".incchrpal \"");
+
+		if (readqstr() == 0) {
+			error("bad filename in incchrpal");
+			kill();
+			return;
+		}
+
+		outstr(litq2);
+		outstr("\"");
+
+		if (match(","))
+			outstr(",");
+
+		numericarg = 0;
+
+		while (!match(")")) {
+			numericarg++;
+
+			number(&dummy);
+			outdec(dummy);
+			if (match(","))
+				outstr(",");
+		}
+
+		nl();
+		ol(".code");
+
+		if ((numericarg != 0) &&
+		    (numericarg != 2) &&
+		    (numericarg != 4))
+			error("Either 0,2 or 4 numeric arguments are needed for incchrpal statement");
+
+		kill();
+	}
+	else
 	if (amatch("chr_ex", 6))
 		do_inc_ex(8);
 	else
@@ -298,7 +402,6 @@ void dopsdinc (void)
 			error("missing (");
 
 		ol(".data");
-		ol(".dw $1000");
 
 		readstr();	/* read the label name */
 		prefix();
@@ -348,12 +451,134 @@ void dopsdinc (void)
 		kill();
 	}
 	else
+	if (amatch("tilepal", 7)) {
+		if (!match("("))
+			error("missing (");
+
+		ol(".data");
+
+		readstr();	/* read the label name */
+		prefix();
+		outstr(litq2);
+		outstr(":\n");
+		addglb_far(litq2, CINT);
+
+		if (!match(",")) {
+			error("missing ,");
+			kill();
+			return;
+		}
+
+		ot(".inctilepal \"");
+
+		if (readqstr() == 0) {
+			error("bad filename in inctilepal");
+			kill();
+			return;
+		}
+
+		outstr(litq2);
+		outstr("\"");
+
+		if (match(","))
+			outstr(",");
+
+		numericarg = 0;
+
+		while (!match(")")) {
+			numericarg++;
+
+			number(&dummy);
+			outdec(dummy);
+			if (match(","))
+				outstr(",");
+		}
+
+		nl();
+		ol(".code");
+
+		if ((numericarg != 0) &&
+		    (numericarg != 2) &&
+		    (numericarg != 4))
+			error("Either 0,2 or 4 numeric arguments are needed for inctilepal statement");
+
+		kill();
+	}
+	else
 	if (amatch("tile_ex", 7))
 		do_inc_ex(16);
+	else
+	if (amatch("asmlabel", 8)) {
+		if (!match("("))
+			error("missing (");
+
+		// .data first!
+		nl();
+		ol(".code");
+
+		// Get the label, but save it for later.
+		readstr();
+		strcpy(str_buf, litq2);
+		addglb_far(litq2, CUCHAR);
+
+		if (!match(",")) {
+			error("asmlabel missing ,");
+			kill();
+			return;
+		}
+
+		// Get the file name
+		if (readqstr() == 0) {
+			error("bad filename in incasm");
+			kill();
+			return;
+		}
+
+		// If page argument, then get it. Else default it.
+		if (match(",")) {
+			if (number(&dummy) != 0) {
+				ot(".page ");
+				if (dummy > 8)
+					outdec(dummy / 0x2000);
+				else
+					outdec(dummy);
+				nl();
+			}
+			else {
+				error("missing page number/address");
+				kill();
+				return;
+			}
+		}
+		else {
+			ol(".page 2");
+		}
+
+		// Output the label name:
+		prefix();
+		outstr(str_buf);
+		outstr(":\n");
+
+		ot(".include \"");
+		outstr(litq2);
+		outstr("\"");
+		nl();
+
+		if (!match(")"))
+			error("missing )");
+		nl();
+		kill();
+	}
 	else
 	if (amatch("asm", 3)) {
 		if (!match("("))
 			error("missing (");
+
+		readstr();	/* read the label name */
+		prefix();
+		outstr(litq2);
+		outstr(":\n");
+		addglb_far(litq2, CINT);
 
 		ol(".data");
 
@@ -401,10 +626,10 @@ void dopsdinc (void)
 
 void dopsddef (void)
 {
-	long numericarg = 0;
-	long dummy;
-	long dummy_array[16];
-	long i;
+	intptr_t numericarg = 0;
+	intptr_t dummy;
+	intptr_t dummy_array[16];
+	intptr_t i;
 
 	if (amatch("pal", 3)) {
 		if (!match("("))
@@ -582,7 +807,7 @@ void dopsddef (void)
 }
 
 
-long outcomma (void)
+intptr_t outcomma (void)
 {
 	if (!match(",")) {
 		error("missing ,");
@@ -595,7 +820,7 @@ long outcomma (void)
 	return (0);
 }
 
-long outnameunderline (void)
+intptr_t outnameunderline (void)
 {
 	char n[NAMESIZE];
 
@@ -611,9 +836,9 @@ long outnameunderline (void)
 	return (0);
 }
 
-long outconst (void)
+intptr_t outconst (void)
 {
-	long dummy;
+	intptr_t dummy;
 
 	number(&dummy);
 	outbyte('#');
@@ -746,7 +971,7 @@ void doload_backgroundstatement (void)
 	needbrack(")");
 }
 
-void do_asm_func (long type)
+void do_asm_func (intptr_t type)
 {
 	/* syntax is
 	   name of the data : identifier
@@ -769,15 +994,15 @@ void do_asm_func (long type)
 
 	/* gen code */
 	if (ptr)
-		out_ins(I_LDWI, type, (long)ptr);
+		out_ins(I_LDWI, type, (intptr_t)ptr);
 	else
 		error("out of memory");
 }
 
-char *new_string (long und, char *a)
+char *new_string (intptr_t und, char *a)
 {
-	long len;
-	long tmp;
+	intptr_t len;
+	intptr_t tmp;
 
 	if (a == NULL)
 		return (NULL);
@@ -795,12 +1020,12 @@ char *new_string (long und, char *a)
 	return (&str_buf[tmp]);
 }
 
-void do_inc_ex (long type)
+void do_inc_ex (intptr_t type)
 {
-	long end;
-	long i;
-	long j;
-	long num;
+	intptr_t end;
+	intptr_t i;
+	intptr_t j;
+	intptr_t num;
 	int nb_tile;
 	char label[NAMESIZE];
 	char label2[NAMESIZE];
@@ -808,7 +1033,7 @@ void do_inc_ex (long type)
 
 	struct {
 		char fname[FILENAMESIZE];
-		long arg[5];
+		intptr_t arg[5];
 	} tiles[16];
 
 	if (!match("(")) {
@@ -835,7 +1060,7 @@ void do_inc_ex (long type)
 	num = 0;
 	nb_tile = 0;
 	while (!end) {
-		if (match("\\")) ;
+		if (match("\\")) {};
 		if (!readqstr()) {
 			error("not a file name");
 			kill();
@@ -849,7 +1074,7 @@ void do_inc_ex (long type)
 		strcpy(tiles[num].fname, litq2);
 
 		for (i = 0; i < 5; i++) {
-			if (match("\\")) ;
+			if (match("\\")) {};
 			if (!number(&tiles[num].arg[i])) {
 				error("not a number");
 				kill();
@@ -924,10 +1149,6 @@ void do_inc_ex (long type)
 
 	/* dump incchr/tile cmds */
 	ol(".data");
-	if (type == 8)
-		ol(".dw $0800");
-	else
-		ol(".dw $1000");
 	prefix();
 	outstr(label2);
 	outstr(":\n");

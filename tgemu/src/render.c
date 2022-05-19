@@ -1,4 +1,3 @@
-
 #include "shared.h"
 
 /* Bit 0 : BG enable, Bit 1 : OBJ enable */
@@ -57,7 +56,7 @@ int render_init(void)
     ptr = malloc(0x400);
     if(!ptr) return (0);
     memset(ptr, 0, 0x400);
-    xlat[0] = (uint8 *)(((unsigned long)ptr + 0x200) & ~0x1FF);
+    xlat[0] = (uint8 *)(((size_t)ptr + 0x200) & ~0x1FF);
     xlat[1] = xlat[0] + 0x100;
 
     /* Make VCE data to raw pixel look-up table */

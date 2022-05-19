@@ -3,6 +3,8 @@
 ;
 .list
 
+.include "lib_exclude.asm"
+
 .ifdef _SGX
 HAVE_LIB3 = 1
 .endif
@@ -24,33 +26,6 @@ SUPPORT_MOUSE	.equ	1
 .include  "standard.inc" ; HUCARD
 
 ; ----
-; setup flexible boundaries for startup code
-; and user program's "main".
-;
-START_BANK	.equ	0
-LIB1_BANK	.equ	START_BANK
-LIB2_BANK	.equ	START_BANK+1
-.ifdef HAVE_LIB3
-LIB3_BANK	.equ	START_BANK+2
-.endif
-
-.ifdef HUC
-FONT_BANK	.equ	START_BANK+1
-
-.ifdef HAVE_LIB3
-CONST_BANK	 .equ	START_BANK+3
-.else
-CONST_BANK	 .equ	START_BANK+2
-.endif
-DATA_BANK	 .equ	CONST_BANK+1
-
-.else ; HUC
-; HuC (because of .proc/.endp) does not use MAIN_BANK
-MAIN_BANK	.equ	START_BANK+2
-.endif	; HUC
-
-
-; ----
 ; if FONT_VADDR is not specified, then specify it
 ; (VRAM address to load font into)
 ;
@@ -67,7 +42,7 @@ zp_ptr1:	.ds 2
 
 		.bss
 
- .if  (CDROM)	; CDROM def's in system.inc
+.if  (CDROM)	; CDROM def's in system.inc
 
  .include  "system.inc"
 
@@ -109,7 +84,16 @@ scr_h:		.ds 1
 		.org	$2284
 soft_reset:	.ds 2	; soft reset jump loc (run+select)
 
-		.org	$2680
+		; include sound driver variables
+
+		.include  "sound.inc"
+
+		; sound.inc sets the starting location for these HuC variables
+		;
+		; this is normally $2680, but can be lower if a custom
+		; sound driver is used that doesn't need all of the
+		; standard System Card allocation of sound RAM.
+
 vsync_cnt:	.ds 1	; counter for 'wait_vsync' routine
 
 joybuf:		.ds 5	; 'delta' pad values collector
@@ -131,6 +115,15 @@ joybuf6:	.ds 5
 joytmp:		.ds 5
 joytmp6:	.ds 5
 
+color_queue_r:	.ds 1	; ring buffer index for read
+color_queue_w:	.ds 1	; ring buffer index for write
+color_index:	.ds 8	; ring buffer - palette index
+color_count:	.ds 8	; ring buffer - palette count
+color_bank:	.ds 8	; ring buffer - data bank
+color_addr_l:	.ds 8	; ring buffer - data addr lo
+color_addr_h:	.ds 8	; ring buffer - data addr hi
+color_tia:	.ds 8	; self-modifying RAM tia function
+
 .if (CDROM)
 
 ovl_running	.ds   1 ; overlay # that is currently running
@@ -142,26 +135,33 @@ ram_hsync_hndl	.ds   25
 
 .endif	; (CDROM)
 
-.ifdef HUC
-
-.ifdef HAVE_IRQ
-user_vsync_hooks .ds	8
-user_hsync_hook	.ds	2
-huc_context	.ds	8
-
-.ifdef HAVE_SIRQ
-huc_fc_context	.ds	20
+; ----
+; setup flexible boundaries for startup code
+; and user program's "main".
+;
+		.rsset	0
+START_BANK	.rs	0
+LIB1_BANK	.rs	1
+LIB2_BANK	.rs	1
+.ifdef HAVE_LIB3
+LIB3_BANK	.rs	1
 .endif
 
-		.ds	32
-huc_irq_stack:
+.if (NEED_SOUND_BANK)
+SOUND_BANK	.rs	1
+.endif ; defined in sound.inc if needed
 
-		.zp
-huc_irq_enable	.ds	1
-
-.endif ; HAVE_IRQ
-
-.endif ; HUC
+.ifdef HUC
+FONT_BANK	.equ	LIB2_BANK
+CONST_BANK	.rs	1
+.ifdef HUC_RESERVE_BANKS
+HUC_USER_RESERVED .rs HUC_RESERVE_BANKS
+.endif
+DATA_BANK	.rs	1
+.else ; HUC
+; HuC (because of .proc/.endp) does not use MAIN_BANK
+MAIN_BANK	.rs	1
+.endif	; HUC
 
 ; [ STARTUP CODE ]
 
@@ -197,15 +197,24 @@ huc_irq_enable	.ds	1
 	.bank CONST_BANK,"Constants"
 	.org  $4000
 
+.ifdef HUC_RESERVE_BANKS
+	.code
+	.bank HUC_USER_RESERVED,"Huc User Reserved Banks"
+	.org  $4000
+.endif
+
 	.data
 	.bank DATA_BANK,"User Program"
 	.org  $6000
 
 ;
 ; place overlay array here
-; 50 entries, each containing
-; 2 bytes for start sector,
-; 2 bytes for # sectors
+; 100 entries, stored as 100
+; lo-bytes of the starting
+; sector num, followed by 100
+; hi-bytes for a 128MB range
+; all files are contiguous, so
+; the # sectors is calculated
 ;
 ovlarray:	.ds	200
 
@@ -315,7 +324,7 @@ ovlentry:
 .ifndef SMALL
 	stw  #$4000,<__sp
 .else
-	stw  #$3f00,<__sp
+	stw  #$3fff,<__sp
 .endif
 	ldx  #$ff
 	txs
@@ -353,17 +362,19 @@ cdrom_err_load:
 	ldy	cderr_overlay_num
 	lda	#DATA_BANK+$80
 	tam	#3
-	ldx	ovlarray,Y++
-	lda	ovlarray,Y++
-	stz	<cl		; sector (offset from base of track)
-	sta	<ch
-	stx	<dl
 	lda	ovlarray,Y
-	sta	<al		; # sectors
+	ldx	ovlarray + 100,Y
+	stz	<__cl		; sector (offset from base of track)
+	stx	<__ch
+	sta	<__dl
+	sec
+	eor	#$FF
+	adc	ovlarray + 1,Y
+	sta	<__al		; # sectors
 	lda	#$80
-	sta	<bl		; bank #
+	sta	<__bl		; bank #
 	lda	#3
-	sta	<dh		; MPR #
+	sta	<__dh		; MPR #
 	jsr	cd_read
 	cmp	#0
 	bne	.error
@@ -389,18 +400,24 @@ cdrom_err_load:
 ;       base memory at MMR $68 if appropriate
 ;
 .if (CDROM = SUPER_CD)
-	 jsr   ex_getver	; check if SCD program running
-	 stx   cd_super		; on SCD hardware
-	 cpx   #3		; don't copy to _bank_base if
-	 bne   .nocopy		; memory doesn't exist there
+	jsr   ex_getver		; check if SCD program running
+	cpx   #3		; on SCD hardware
+	bcc   .nocopy		; don't copy to _bank_base if
+	stx   cd_super		; memory doesn't exist there
+	tma   #6		; don't copy if SCD RAM mapped
+	tax			; i.e. somebody else loaded us
+	bpl   .copied		; completely
 
-	 lda   #_bank_base+1	; copy bank 2 to proper location
-	 tam   #6
-	 tii   $6000,$C000,$2000
-	 tam   #3		; FONT_BANK now lives in SCD area ($69 exactly)
-	 lda   #_bank_base	; then copy bank 1
-	 tam   #6
-	 tii   $4000,$C000,$2000 ; then load rest of program
+	lda   #_bank_base+1	; copy bank 2 to proper location
+	tam   #6
+	tii   $6000,$C000,$2000
+	tam   #3		; FONT_BANK now lives in SCD area ($69 exactly)
+	lda   #_bank_base	; then copy bank 1
+	tam   #6
+	tii   $4000,$C000,$2000 ; then load rest of program
+
+.copied:jmp   $C000 + (.nocopy & $1FFF)
+
 .nocopy:
 .endif	; (CDROM = SUPER_CD)
 
@@ -430,17 +447,27 @@ reset:
 	jsr   ex_rcroff
 	jsr   ex_irqoff
 	jsr   ad_reset
+	tma   #6		; Get LIB1_BANK.
 .else
 	stz   timer_ctrl	; init timer
+	tma   #7		; Get LIB1_BANK.
 .endif	; (CDROM)
 
-	jsr   init_psg		; init sound
-	jsr   init_vdc		; init video
+	inc   a			; Map LIB2_BANK into MPR5.
+	tam   #5
+	jsr   lib2_init_psg	; init sound
+	jsr   lib2_init_vdc	; init video
 .ifdef _SGX
-	jsr   init_sgx_vdc
+	jsr   lib2_init_sgx_vdc
 .endif
+
 	lda   #$1F		; init joypad
 	sta   joyena
+
+    ; ----
+    ; initialize the sound driver
+
+	__sound_init
 
     ; ----
     ; initialize interrupt vectors
@@ -476,7 +503,7 @@ reset:
 
 	vreg  #5
 	lda   #$C8
-	sta  <vdc_crl
+	sta   <vdc_crl
 	sta   video_data_l
 	st2   #$00
 	lda   #$01
@@ -497,15 +524,14 @@ reset:
 
 	lda   #1
 	jsr   wait_vsync	; wait for one frame & randomize rndseed2
-	stw   #$03E7,<cx	; set random seed
-	stw   rndseed2,<dx
+	stw   #$03E7,<__cx	; set random seed
+	stw   rndseed2,<__dx
 	jsr   srand
 
 .if (CDROM)
 .if (CDROM = SUPER_CD)
 	 lda   cd_super		; don't load the program if SCD
-	 cmp   #3		; program not running on SCD hrdware
-	 beq   loadprog
+	 bne   loadprog		; program not running on SCD hrdware
 	 lda   cderr_override
 	 lbeq  dontloadprog
 	 jmp   cdrom_err_load
@@ -522,23 +548,25 @@ reset:
 loadprog:
 	lda   ovlentry+1	; current overlay (as written by ISOLINK)
 	cmp   #1		; is it initial overlay ?
-	lbne  init_go		; if not initial overlay, somebody else already
-				; loaded us completely; do not try to load remainder
+	beq   .load		; if not initial overlay, somebody else already
+.run:	jmp   init_go		; loaded us completely; do not try to load remainder
 				; (ie. executing CDROM error overlay)
 
-	stz   <cl		; initial boot doesn't load complete program;
-	stz   <ch		; prepare to load remainder
+.load:	stz   <__cl		; initial boot doesn't load complete program;
+	stz   <__ch		; prepare to load remainder
 	lda   #10		; 10th sector (0-1 are boot;
-				; 2-9 are this library...)
-	sta   <dl
+	sta   <__dl		; 2-9 are this library...)
 	lda   #3		; load mode (consecutive banks; use MPR 3)
-	sta   <dh
-	stw   #(_bank_base+2),<bx	; 2 banks are boot/base library
-	stw   #(_nb_bank-2)*4,<ax
+	sta   <__dh
+	lda   #(_bank_base+2)	; 2 banks are boot/base library
+	sta   <__bl
+	stz   <__bh
+	lda   #(_nb_bank-2)*4	; 512k maximum
+	sta   <__al
+	stz   <__ah
 	jsr   cd_read
-	cmp   #$00
-	lbeq  init_go
-
+	tax
+	beq   .run
 	; ----
 	jmp   cd_boot		; reset
 
@@ -561,7 +589,7 @@ vsync_irq_ramhndlr:
 	pha			; 1
 	tma   #6		; 2
 	sta   irq_storea	; 3
-	lda   #BANK(vsync_hndl) ;  2
+	lda   #BANK(vsync_hndl) ; 2
 	tam   #6		; 2
 	pla			; 1
 	pha			; 1
@@ -577,7 +605,7 @@ hsync_irq_ramhndlr:
 	pha			; 1
 	tma   #6		; 2
 	sta   irq_storeb	; 3
-	lda   #BANK(hsync_hndl) ;  2
+	lda   #BANK(hsync_hndl) ; 2
 	tam   #6		; 2
 	pla			; 1
 	pha			; 1
@@ -609,10 +637,10 @@ dontloadprog:
 .ifndef SMALL
 	stw   #$4000,<__sp	; init stack ptr first
 .else
-	stw   #$3f00,<__sp
+	stw   #$3fff,<__sp
 .endif
 
-	stw   #FONT_VADDR,<di	; Load Font @ VRAM addr
+	stw   #FONT_VADDR,<__di	; Load Font @ VRAM addr
 
 	;
 	; this section of font loading was stolen
@@ -622,30 +650,32 @@ dontloadprog:
 	; so we need to trick the segment pointer
 	; with a reliable one
 	;
-      __ldw   <di	; stolen from _load_default_font
+      __ldw   <__di	; stolen from _load_default_font
 			; because segment# default not reliable
 
 	jsr   _set_font_addr		; set VRAM
 
 .if (CDROM)
-	stb   #FONT_BANK+$80,<bl	; guarantee FONT_BANK even if
-					; SCD on regular CDROM system
+;	stb   #FONT_BANK+$80,<__bl	; guarantee FONT_BANK even if
+;					; SCD on regular CDROM system
+	tma   #5			; guarantee FONT_BANK even if
+	sta   <__bl			; SCD on regular CDROM system
 .else
-	stb   #FONT_BANK+_bank_base,<bl
+	stb   #FONT_BANK+_bank_base,<__bl
 .endif
 
-	stb   #96,<cl
-	stb   font_color+1,<ah
+	stb   #96,<__cl
+	stb   font_color+1,<__ah
 	lda   font_color
 	bne   .fntld
 	inc   A
-.fntld:	sta   <al
+.fntld:	sta   <__al
 	clx
 	lda   font_table,X
-	sta   <si
+	sta   <__si
 	inx
 	lda   font_table,X
-	sta   <si+1
+	sta   <__si+1
 
 
 	; Now, load the font
@@ -655,19 +685,9 @@ dontloadprog:
 	; The 'REAL' mapping for the lib2_load_font function
 	; maybe doesn't exist yet (we are executing from bank $80,
 	; not from $68 if it's a Super CDROM)
-	;
-	; So we must map the version at bank ($80 + LIB2_BANK)
-	; before executing it.  We remap the bank after completion,
-	; 'just in case'
 
 .if  (CDROM)
-	tma   #page(lib2_load_font)
-	pha
-	lda   #LIB2_BANK+$80
-	tam   #page(lib2_load_font)
 	jsr   lib2_load_font
-	pla
-	tam   #page(lib2_load_font)
 .else
 	jsr   load_font
 .endif
@@ -676,6 +696,8 @@ dontloadprog:
 	; END stolen font-load
 	;
 
+	lda   #1
+	jsr   wait_vsync ; cure screen flash
 	jsr   _cls
 
 	stz  color_reg	; set color #0 = 0/0/0 rgb
@@ -696,29 +718,24 @@ dontloadprog:
 
 .if (CDROM)
 .if (CDROM = SUPER_CD)
-	  lda  cd_super
-	  cmp  #3
-	  lbeq  .ok	; SCD running on Super system
+	  lda	  cd_super
+	  lbne	  .ok	; SCD running on Super system
 
-	  lda	  #FONT_BANK+$80	; guarantee FONT_BANK even if
-					; SCD on regular CDROM system
-	  tam	  #PAGE(scdmsg1)
+	  __stwi  <__si, scdmsg1
+	  __ldwi  $0181
+	  jsr     _put_string.2
 
-	  __stwi  <si, scdmsg1
-	  __ldwi  $0180
-	  call    _put_string.2
+	  __stwi  <__si, scdmsg2
+	  __ldwi  $0201
+	  jsr     _put_string.2
 
-	  __stwi  <si, scdmsg2
-	  __ldwi  $0200
-	  call    _put_string.2
+	  __stwi  <__si, scdmsg3
+	  __ldwi  $0384
+	  jsr     _put_string.2
 
-	  __stwi  <si, scdmsg3
-	  __ldwi  $0383
-	  call    _put_string.2
-
-	  __stwi  <si, scdmsg4
-	  __ldwi  $0403
-	  call    _put_string.2
+	  __stwi  <__si, scdmsg4
+	  __ldwi  $0404
+	  jsr     _put_string.2
 
 	  bra  *		; otherwise loop on blank screen
 
@@ -863,9 +880,8 @@ system:
 	sta   joyena
 	lda   #$07		; set interrupt mask
 	sta   irq_disable
-	stz   irq_status		; reset timer interrupt
-	lda   #$80		; disable sound driver
-	sta   <$20E7
+	stz   irq_status	; reset timer interrupt
+
 	st0   #5		; enable display and vsync interrupt
 	lda   #$C8
 	sta  <vdc_crl
@@ -959,13 +975,6 @@ irq1:
 user_irq1:
 	jmp   [irq1_jmp]
 
-.ifdef HAVE_IRQ
-user_hsync:
-	jmp   [user_hsync_hook]
-user_vsync:
-	jmp   [user_vsync_hooks, x]
-.endif
-
 
 ; ----
 ; vsync_hndl
@@ -995,41 +1004,14 @@ vsync_hndl:
 .m1:	jsr	ex_dspoff
 .endif
 
-.l1:	jsr   rcr_init		; init display list
+.l1:	jsr   xfer_palette	; transfer queued palettes
+
+	jsr   rcr_init		; init display list
 
 .l2:	st0   #7		; scrolling
 	stw   bg_x1,video_data
 	st0   #8
 	stw   bg_y1,video_data
-
-.ifdef HAVE_IRQ
-
-	bbr3 <huc_irq_enable,.disabled
-	tii	__sp, huc_context, 8
-.ifdef HAVE_SIRQ
-        tii	bp, huc_fc_context, 20
-.endif
-
-	stw   #huc_irq_stack, <__sp
-
-	clx
-.loop	lda   user_vsync_hooks+1, x
-	beq   .end_user
-	phx
-	jsr   user_vsync		; call user vsync routine
-	plx
-	inx
-	inx
-	bra .loop
-
-.end_user:
-	tii	huc_context, __sp, 8
-.ifdef HAVE_SIRQ
-        tii	huc_fc_context, bp, 20
-.endif
-.disabled:
-
-       .endif ; HAVE_IRQ
 
 	; --
 	lda   clock_tt		; keep track of time
@@ -1061,6 +1043,10 @@ vsync_hndl:
 	jsr   randomize
 .endif
 
+	; invoke the sound driver's vsync irq code
+
+	__sound_vsync
+
 .ifdef SUPPORT_MOUSE
 	lda   msflag		; if mouse supported, and exists
 	beq  .l3		; then read mouse instead of pad
@@ -1081,15 +1067,6 @@ vsync_hndl:
     ; hsync scrolling handler
     ;
 hsync_hndl:
-
-.ifdef HAVE_IRQ
-	bbr4 <huc_irq_enable,.disabled
-	tii	__sp, huc_context, 8
-	stw   #huc_irq_stack, <__sp
-	jsr  user_hsync		; call user handler
-	tii	huc_context, __sp, 8
-.disabled:
-.endif
 
 	ldy   s_idx
 	bpl  .r1
@@ -1237,20 +1214,23 @@ __rcr_off:
 
 .if  !(CDROM)
 
-timer_user:
-	jmp   [timer_jmp]
-timer:
-	bbs2 <irq_m,timer_user
-	pha
-	phx
-	phy
+timer_user:	jmp		[timer_jmp]
 
-	sta   irq_status	; acknowledge interrupt
+timer:		bbs2		<irq_m,timer_user
+		pha
+		phx
+		phy
 
-.exit:	ply
-	plx
-	pla
-	rti
+		sta		irq_status	; acknowledge interrupt
+
+		; invoke the sound driver's timer irq code
+
+		__sound_timer
+
+		ply
+		plx
+		pla
+		rti
 
 .endif	; !(CDROM)
 
@@ -1314,12 +1294,20 @@ font_table:
 .endif	; HUC
 
 .ifdef SUPPORT_MOUSE
-.include "mouse.asm"
+ .include "mouse.asm"
 .endif	; SUPPORT_MOUSE
 
 .if (CDROM)
-.include "cdrom.asm"
-.endif   ; CDROM
+ .include "cdrom.asm"
+.endif	; CDROM
+
+.if (NEED_SOUND_CODE)
+ .include "sound.asm"
+.endif ; defined in sound.inc if needed
+
+;
+;
+;
 
 ; ----
 ; disp_on
@@ -1476,10 +1464,10 @@ wait_vsync:
 
 	lda   joycallback+1	; get events for all the 
 	beq  .t3		; selected joypads
-	sta  <al
+	sta  <__al
 	cly
 	cla
-.t1:    lsr  <al
+.t1:    lsr  <__al
 	bcc  .t2
 	ora   joybuf,Y
 .t2:	iny

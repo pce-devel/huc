@@ -8,6 +8,7 @@
    like pointer arithmetic, and probably many non-trivial expressions.
    Needs a rewrite. */
 
+#include <stdint.h>
 #include <stdio.h>
 #include "defs.h"
 #include "data.h"
@@ -35,7 +36,7 @@ void new_const (void)
  *	add a const array
  *
  */
-void add_const (long typ)
+void add_const (intptr_t typ)
 {
 	if ((const_data_idx >= MAX_CONST_DATA) || (const_val_idx >= MAX_CONST_VALUE))
 		error("too much constant data (> 8KB)");
@@ -57,11 +58,11 @@ void add_const (long typ)
  *	array initializer
  *
  */
-long array_initializer (long typ, long id, long stor)
+intptr_t array_initializer (intptr_t typ, intptr_t id, intptr_t stor)
 {
-	long nb;
-	long k;
-	long i;
+	intptr_t nb;
+	intptr_t k;
+	intptr_t i;
 
 	nb = 0;
 	k = needsub();
@@ -123,9 +124,9 @@ long array_initializer (long typ, long id, long stor)
  *	scalar initializer
  *
  */
-long scalar_initializer (long typ, long id, long stor)
+intptr_t scalar_initializer (intptr_t typ, intptr_t id, intptr_t stor)
 {
-	long i;
+	intptr_t i;
 
 	if (stor == CONST)
 		new_const();
@@ -157,9 +158,9 @@ long scalar_initializer (long typ, long id, long stor)
  *  add a string to the literal pool and return a pointer (index) to it
  *
  */
-long get_string_ptr (long typ)
+intptr_t get_string_ptr (intptr_t typ)
 {
-	long num[1];
+	intptr_t num[1];
 
 	if (typ == CINT || typ == CUINT)
 		error("incompatible pointer type");
@@ -174,14 +175,14 @@ long get_string_ptr (long typ)
  *  get value raw text
  *
  */
-long get_raw_value (char sep)
+intptr_t get_raw_value (char sep)
 {
 	char c;
 	char tmp[LINESIZE + 1];
 	char *ptr;
-	long level;
-	long flag;
-	long start;
+	intptr_t level;
+	intptr_t flag;
+	intptr_t start;
 	int is_address = 0;
 	int had_address = 0;
 
@@ -356,10 +357,10 @@ char *get_const (SYMBOL *s)
  */
 void dump_const (void)
 {
-	long i, j, k;
-	long size;
+	intptr_t i, j, k;
+	intptr_t size;
 
-/*	long c; */
+/*	intptr_t c; */
 
 	if (const_nb) {
 		const_ptr = const_var;

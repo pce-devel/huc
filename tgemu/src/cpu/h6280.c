@@ -80,7 +80,7 @@ static  h6280_Regs  h6280;
 
 /*****************************************************************************/
 
-void h6280_reset(void *param)
+void h6280_reset(void *param __attribute__ ((unused)))
 {
 	int i;
 

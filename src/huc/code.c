@@ -3,8 +3,10 @@
  *
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <time.h>
+#include <string.h>
 
 #include "defs.h"
 #include "data.h"
@@ -16,10 +18,10 @@
 #include "optimize.h"
 
 /* locals */
-long segment;
+intptr_t segment;
 
 /* externs */
-extern long arg_stack_flag;
+extern intptr_t arg_stack_flag;
 
 /*
  *	print all assembler info before any code is generated
@@ -113,9 +115,11 @@ void defword (void)
  *	output instructions
  *
  */
-void out_ins (long code, long type, long data)
+void out_ins (intptr_t code, intptr_t type, intptr_t data)
 {
 	INS tmp;
+
+	memset(&tmp, 0, sizeof(INS));
 
 	tmp.code = code;
 	tmp.type = type;
@@ -123,21 +127,25 @@ void out_ins (long code, long type, long data)
 	gen_ins(&tmp);
 }
 
-void out_ins_ex (long code, long type, long data, int imm_type, long imm)
+void out_ins_ex (intptr_t code, intptr_t type, intptr_t data, intptr_t imm_type, intptr_t imm_data)
 {
 	INS tmp;
+
+	memset(&tmp, 0, sizeof(INS));
 
 	tmp.code = code;
 	tmp.type = type;
 	tmp.data = data;
-	tmp.imm = imm;
 	tmp.imm_type = imm_type;
+	tmp.imm_data = imm_data;
 	gen_ins(&tmp);
 }
 
-void out_ins_sym (long code, long type, long data, SYMBOL *sym)
+void out_ins_sym (intptr_t code, intptr_t type, intptr_t data, SYMBOL *sym)
 {
 	INS tmp;
+
+	memset(&tmp, 0, sizeof(INS));
 
 	tmp.code = code;
 	tmp.type = type;
@@ -158,7 +166,7 @@ void gen_ins (INS *tmp)
 	}
 }
 
-static void out_type (long type, long data)
+static void out_type (intptr_t type, intptr_t data)
 {
 	switch (type) {
 	case T_VALUE:
@@ -196,7 +204,7 @@ static void out_type (long type, long data)
 	}
 }
 
-static void out_addr (long type, long data)
+static void out_addr (intptr_t type, intptr_t data)
 {
 	switch (type) {
 	case T_LABEL:
@@ -235,15 +243,17 @@ void dump_ins (INS *tmp)
  */
 void gen_code (INS *tmp)
 {
-	long code;
-	long type;
-	long data;
-	long imm;
+	intptr_t code;
+	intptr_t type;
+	intptr_t data;
+	intptr_t imm_type;
+	intptr_t imm_data;
 
 	code = tmp->code;
 	type = tmp->type;
 	data = tmp->data;
-	imm = tmp->imm;
+	imm_type = tmp->imm_type;
+	imm_data = tmp->imm_data;
 
 	if (type == T_NOP)
 		return;
@@ -261,9 +271,9 @@ void gen_code (INS *tmp)
 			break;
 		}
 		outstr(",");
-		outstr((char *)tmp->arg[0]);
+		outstr(tmp->arg[0]);
 		outstr(",");
-		outstr((char *)tmp->arg[1]);
+		outstr(tmp->arg[1]);
 		nl();
 		break;
 
@@ -271,17 +281,17 @@ void gen_code (INS *tmp)
 		ot("__farptr_i\t");
 		outsymbol((char *)data);
 		outstr(",");
-		outstr((char *)tmp->arg[0]);
+		outstr(tmp->arg[0]);
 		outstr(",");
-		outstr((char *)tmp->arg[1]);
+		outstr(tmp->arg[1]);
 		nl();
 		break;
 
 	case I_FARPTR_GET:
 		ot("__farptr_get\t");
-		outstr((char *)tmp->arg[0]);
+		outstr(tmp->arg[0]);
 		outstr(",");
-		outstr((char *)tmp->arg[1]);
+		outstr(tmp->arg[1]);
 		nl();
 		break;
 
@@ -312,12 +322,6 @@ void gen_code (INS *tmp)
 
 	case I_VPUTW:
 		ol("__stw\tvideo_data");
-		break;
-
-	case I_NARGS:
-		ot("  ldy\t#");
-		outdec(data);
-		nl();
 		break;
 
 	case I_LDB:
@@ -368,7 +372,6 @@ void gen_code (INS *tmp)
 
 	case I_LDWI:
 		ot("__ldwi\t");
-
 		out_type(type, data);
 		nl();
 		break;
@@ -410,7 +413,8 @@ void gen_code (INS *tmp)
 		else
 			ot("__stbi\t");
 		out_type(type, data);
-		outstr(", "); out_type(tmp->imm_type, imm);
+		outstr(", ");
+		out_type(imm_type, imm_data);
 		nl();
 		break;
 
@@ -624,9 +628,9 @@ void gen_code (INS *tmp)
 		case T_SYMBOL:
 			ot("  call\t");
 			outsymbol((char *)data);
-			if (imm) {
+			if (imm_data) {
 				outstr(".");
-				outdec(imm);
+				outdec(imm_data);
 			}
 			break;
 		case T_LIB:
@@ -637,12 +641,30 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case I_MACRO:
+		switch (type) {
+		case T_SYMBOL:
+			ot("  \t");
+			outsymbol((char *)data);
+			if (imm_data) {
+				outstr(".");
+				outdec(imm_data);
+			}
+			break;
+		case T_LIB:
+			ot("  \t");
+			outstr((char *)data);
+			break;
+		}
+		nl();
+		break;
+
 	case I_MAPCBANK:
 		ot("__map_callbank\t");
 		outsymbol((char *)data);
-		if (imm) {
+		if (imm_data) {
 			outstr(".");
-			outdec(imm);
+			outdec(imm_data);
 		}
 		nl();
 		break;
@@ -650,9 +672,9 @@ void gen_code (INS *tmp)
 	case I_UNMAPCBANK:
 		ot("__unmap_callbank\t");
 		outsymbol((char *)data);
-		if (imm) {
+		if (imm_data) {
 			outstr(".");
-			outdec(imm);
+			outdec(imm_data);
 		}
 		nl();
 		break;
@@ -800,7 +822,7 @@ void gen_code (INS *tmp)
 	case I_DEF:
 		outstr((char *)data);
 		outstr(" .equ ");
-		outdec(imm);
+		outdec(imm_data);
 		nl();
 		break;
 

@@ -3,6 +3,7 @@
  *
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include "defs.h"
 #include "data.h"
@@ -37,7 +38,7 @@ void junk (void)
 	blanks();
 }
 
-long endst (void)
+intptr_t endst (void)
 {
 	blanks();
 	return ((streq(line + lptr, ";") | (ch() == 0)));
@@ -57,7 +58,7 @@ void needbrack (char *str)
  *	test if given character is alpha
  *
  */
-long alpha (char c)
+intptr_t alpha (char c)
 {
 	c = c & 127;
 	return (((c >= 'a') && (c <= 'z')) |
@@ -69,7 +70,7 @@ long alpha (char c)
  *	test if given character is numeric
  *
  */
-long numeric (char c)
+intptr_t numeric (char c)
 {
 	c = c & 127;
 	return ((c >= '0') && (c <= '9'));
@@ -79,19 +80,19 @@ long numeric (char c)
  *	test if given character is alphanumeric
  *
  */
-long an (char c)
+intptr_t an (char c)
 {
 	return ((alpha(c)) | (numeric(c)));
 }
 
-long sstreq (char *str1)
+intptr_t sstreq (char *str1)
 {
 	return (streq(line + lptr, str1));
 }
 
-long streq (char *str1, char *str2)
+intptr_t streq (char *str1, char *str2)
 {
-	long k;
+	intptr_t k;
 
 	k = 0;
 	while (str2[k]) {
@@ -103,9 +104,9 @@ long streq (char *str1, char *str2)
 	return (k);
 }
 
-long astreq (char *str1, char *str2, long len)
+intptr_t astreq (char *str1, char *str2, intptr_t len)
 {
-	long k;
+	intptr_t k;
 
 	k = 0;
 	while (k < len) {
@@ -126,9 +127,9 @@ long astreq (char *str1, char *str2, long len)
 	return (k);
 }
 
-long match (char *lit)
+intptr_t match (char *lit)
 {
-	long k;
+	intptr_t k;
 
 	blanks();
 	k = streq(line + lptr, lit);
@@ -139,9 +140,9 @@ long match (char *lit)
 	return (0);
 }
 
-long amatch (char *lit, long len)
+intptr_t amatch (char *lit, intptr_t len)
 {
-	long k;
+	intptr_t k;
 
 	blanks();
 	k = astreq(line + lptr, lit, len);

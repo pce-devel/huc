@@ -1,0 +1,450 @@
+                        ; ****************************************************************************
+                        ; ****************************************************************************
+                        ;
+                        ; SUMMARY OF RECENT CHANGES IN PCEAS 3.25 (2021-12-31)
+                        ;
+                        ; ****************************************************************************
+                        ; ****************************************************************************
+
+
+                        ; ****************************************************************************
+                        ;
+                        ; Defining data (traditional PCEAS pseudo-ops) ...
+                        ;
+
+01:6000  01 02 03 04                    db      1,2,3,4,"hello",0
+01:6004  68 65 6C 6C
+01:6008  6F 00
+01:600A  01 02 03 04                    .db     1,2,3,4,"hello",0
+01:600E  68 65 6C 6C
+01:6012  6F 00
+
+01:6014  34 12                          dw      $1234,$5678
+01:6016  78 56
+01:6018  34 12                          .dw     $1234,$5678
+01:601A  78 56
+
+01:601C  34                             dwl     $1234,$5678
+01:601D  78
+01:601E  34                             .dwl    $1234,$5678
+01:601F  78
+
+01:6020  12                             dwh     $1234,$5678
+01:6021  56
+01:6022  12                             .dwh    $1234,$5678
+01:6023  56
+
+01:6024  78 56 34 12                    dd      $12345678,$8765 ; <-- new!
+01:6028  65 87 00 00
+01:602C  78 56 34 12                    .dd     $12345678,$8765 ; <-- added in 2020
+01:6030  65 87 00 00
+
+01:6034  00 00 00 00                    ds      8
+01:6038  00 00 00 00
+01:603C  00 00 00 00                    .ds     8
+01:6040  00 00 00 00
+
+01:6044  FF FF FF FF                    ds      8,255           ; <-- new syntax!
+01:6048  FF FF FF FF
+01:604C  FF FF FF FF                    .ds     8,255           ; <-- new syntax!
+01:6050  FF FF FF FF
+
+
+                        ; ****************************************************************************
+                        ;
+                        ; Defining data (for compatibility with other assemblers) ...
+                        ;
+
+01:6054  68 65 6C 6C                    .text   "hello"         ; <-- new!
+01:6058  6F
+
+01:6059  01 02 03 04                    .byte   1,2,3,4,"hello",0
+01:605D  68 65 6C 6C
+01:6061  6F 00
+
+01:6063  34 12                          .word   $1234,$5678
+01:6065  78 56
+
+01:6067  78 56 34 12                    .dword  $12345678,$8765 ; <-- new!
+01:606B  65 87 00 00
+
+01:606F  00 00 00 00                    .fill   8               ; <-- new!
+01:6073  00 00 00 00
+
+01:6077  FF FF FF FF                    .fill   8,255           ; <-- new!
+01:607B  FF FF FF FF
+
+
+                        ; ****************************************************************************
+                        ;
+                        ; New pseudo instructions (that currently do nothing) ...
+                        ;
+
+                                        .cpu    _65c02
+
+                                        .encoding "ascii"       ; For data in ".text"
+
+
+                        ; ****************************************************************************
+                        ;
+                        ; New pseudo instructions (that actually do something) ...
+                        ;
+
+         6000                           *       = $6000         ; Same as a ".org"
+         6003                           *       = * + 3         ; Same as a ".org"
+
+         6004                           align   4               ; Like a ".org"
+         6010                           .align  16
+
+         6010                           align   4
+         6010                           .align  16
+
+         0008                           .const  myconst = 8     ; Same as a ".equ"
+         0020                           .label  mylabel = 32    ; Same as a ".equ"
+
+         2004                           .segment zp             ; Same as a ".zp"
+         22FD                           .segment Bss            ; Same as a ".bss"
+         E000                           .segment Data           ; Same as a ".data"
+         6010                           .segment Code           ; Same as a ".code"
+
+         0003           mycounter       .set    3               ; ".set" allows a label to change
+         0004           mycounter       .set    mycounter + 1
+         0006           mycounter       .set    mycounter + 2
+
+         0008                           .var    mycounter = 8   ; So does ".var"
+
+                                        .kickc                  ; Switch to KickC mode
+                                        .pceas                  ; Switch to PCEAS mode
+
+
+                        ; ****************************************************************************
+                        ;
+                        ; New support for KickAssembler's style of "multi-labels" ...
+                        ;
+                        ; A "multi-label" is a location label that can be declared more than once.
+                        ;
+                        ; These are useful to prevent name conflicts between labels.  A multi-label
+                        ; starts with a ‘!’ and when you reference it you have to end with a '+' to
+                        ; refer to the next multi-label or '-' to refer to the previous one.
+                        ;
+                        ; Applying more than one '+' or '-' will skip labels, so '+++' will jump to
+                        ; the third label.
+                        ;
+                        ; Multi-labels are global labels, and so references can be made to them from
+                        ; outside the current local label scope, which they do not affect.
+                        ;
+
+01:6010  4C 29 60                       jmp     !+              ; Multi-labels are global.
+
+01:6013  EA             new_locals:     nop                     ; New scope for local labels.
+
+01:6014  AD 29 60       .label1:        lda     !+ +0           ; You can do math on them.
+
+01:6017  BD 2B 60       !skip:          lda     !+++,x
+01:601A  4C 1A 60       !skip:          jmp     !skip-
+01:601D  4C 2B 60       !skip:          jmp     !+++
+01:6020  4C 2A 60                       jmp     !++
+01:6023  4C 29 60                       jmp     !+
+
+01:6026  4C 35 60                       jmp     .label2         ; Still available!
+
+01:6029  EA             !:              nop
+01:602A  EA             !:              nop
+01:602B  EA             !:              nop
+
+01:602C  80 FD                          bra     !-
+01:602E  80 FA                          bra     !--
+01:6030  80 F7                          bra     !---
+
+01:6032  4C 14 60                       jmp     .label1         ; Still available!
+
+01:6035  4C 17 60       .label2:        jmp     !skip---
+
+01:6038  EA             more_locals:    nop                     ; New scope for local labels.
+
+                        ;               jmp     .label2         ; Error, not defined in new scope.
+01:6039  4C 20 60                       jmp     !skip- +3       ; Still works!
+
+
+                        ; ****************************************************************************
+                        ;
+                        ; New support for KickAssembler's style of "label scopes" ...
+                        ;
+                        ; If you declare a scope, by using '{' and '}' after a label, then you can
+                        ; access the labels inside the scope as fields on the declared label.
+                        ;
+                        ; This is a way to make the labels in your functions seem to be local, but
+                        ; still have them accessible in global scope.
+                        ;
+                        ; Note: In ".pceas" mode, this "label scope" functionality is made available
+                        ;       as ".struct/.ends".
+                        ;
+                        ;       The "{}" syntax is only available in ".kickc" mode, because it wraps
+                        ;       compiled C functions, where it also implies ".proc/.endp" and changes
+                        ;       the handling of JSR and RTS instructions.
+                        ;
+
+         0004           stringLen       =       4               ; Define the length of a string
+01:603C  00 00 00 00    string:         .ds     stringLen       ; Global variable.
+
+01:6040  A9 20                          lda     #' '
+01:6042  8D 4A 60                       sta     clearString1.fillbyte + 1
+01:6045  20 49 60                       jsr     clearString1
+01:6048  60                             rts
+
+                        clearString1:   .struct                 ; Open scope on "clearString1"
+
+01:6049  A9 00          fillbyte:       lda     #0              ; Defined as "clearString1.fillbyte"
+01:604B  A2 03                          ldx     #stringLen - 1  ; Access the global label
+01:604D  9D FD 22       !loop:          sta     string, x       ; Access the version in this scope
+01:6050  CA                             dex
+01:6051  10 FA                          bpl     !loop-
+01:6053  60                             rts
+
+         22FD                           .bss                    ; Section can be changed.
+
+--:22FD                 string:         .ds     stringLen       ; Defined as "clearString1.string"
+
+         6054                           .ends                   ; Close scope of "clearString1"
+
+
+                                        ; The above code fills the string with spaces.  The code that
+                                        ; calls the clearString1 subroutine use clearString1.fillbyte
+                                        ; to access the fillbyte label.
+                                        ;
+                                        ; If you use the label directive to define the fillbyte label,
+                                        ; the code can be a cleaner ...
+
+01:6054  A9 61                          lda     #'a'
+01:6056  8D 5E 60                       sta     clearString2.fillbyte
+01:6059  20 5D 60                       jsr     clearString2
+01:605C  60                             rts
+
+                        clearString2:   .struct                 ; Open scope on "clearString2"
+
+         605E                           .label  fillbyte = *+1  ; Defined as "clearString2.fillbyte"
+01:605D  A9 00                          lda     #0
+01:605F  A2 03                          ldx     #stringLen - 1
+01:6061  9D 3C 60       !loop:          sta     string, x               ; Either the global variable
+01:6064  9D FD 22                       sta     clearString1.string, x  ; Or the one in clearString1
+01:6067  CA                             dex
+01:6068  10 F7                          bpl     !loop-
+01:606A  60                             rts
+
+         E000                           .data                   ; Section can be changed.
+
+01:E000  5E 60                          .dw     fillbyte        ; To show that it's the local one.
+
+         606B                           .ends                   ; Close scope of "clearString2"
+
+
+                        ; ****************************************************************************
+                        ;
+                        ; The 'A'-for-accumulator in ASL/DEC/INC/LSR/ROL/ROR is now optional ...
+                        ;
+
+01:606B  1A                             inc     a
+01:606C  1A                             inc
+01:606D  2A                             rol     a
+01:606E  2A                             rol
+
+
+                        ; ****************************************************************************
+                        ;
+                        ; C-style line and block comments are available with ".opt c+" ...
+                        ;
+                        ; This is not a true pre-processor, it is line oriented, and so it
+                        ; can only handle block comments at the beginning and end of lines.
+                        ;
+
+                                        .opt    c+              ; Enable the option
+
+01:606F  82             clear_bat:      clx                     // Offset to PCE VDC.
+
+                                /*
+                                ** Block comments are OK.
+                                **
+01:6070  64 F0                  */      stz.z   __di + 0        /* Set VDC or SGX destination
+01:6072  64 F1                  */      stz.z   __di + 1        /* address. */
+01:6074  20 34 E1                       jsr     __di_to_vram
+
+                        //              lda.z   __bl            // Xvert hi-byte of # words
+01:6077  4A                             lsr                     // in screen to loop count.
+
+01:6078  C2                             cly
+01:6079  48             .bat_loop:      pha
+01:607A  A5 F8                          lda.z   __ax + 0        /* Redundant */ /* comment */
+01:607C  9D 02 02                       sta     VDC_DL, x
+01:607F  A5 F9                          lda.z   __ax + 1
+01:6081  9D 03 02       .bat_pair:      sta     VDC_DH, x       /* Write 1st word. */
+01:6084  9D 03 02                       sta     VDC_DH, x       // Write 2nd word.
+01:6087  88                             dey
+01:6088  D0 F7                          bne     .bat_pair       /*
+                                        pla                     // In block comment, so do */
+01:608A  3A                             dec                     // Line comment, so ignore /*
+01:608B  D0 EC                          bne     .bat_loop
+
+01:608D  60             /* Why??? */    rts                     // Because we can!
+
+
+                        ; ****************************************************************************
+                        ;
+                        ; The traditional 6502-assembler usage of '()' for indirect addressing is
+                        ; now supported, but only as an option, because it can change the meaning
+                        ; of instructions ...
+                        ;
+
+                                        .opt    i+              ; Enable the option, which is also
+                                        .kickc                  ; done when switching to KickC mode
+
+01:608E  B1 F8                          lda     (__ax),y        ; Indirect addressing
+01:6090  B1 F8                          lda     [__ax],y        ; Indirect addressing
+
+                                        .opt    i-              ; Disable the option, which is also
+                                        .pceas                  ; done when switching to PCEAS mode
+
+01:6092  B9 F8 20                       lda     (__ax),y        ; Absolute addressing
+01:6095  B1 F8                          lda     [__ax],y        ; Indirect addressing
+
+
+                        ; ****************************************************************************
+                        ;
+                        ; The traditional 6502-assembler usage of zero-page addressing when a symbol
+                        ; has been previously defined is supported, but only as an option, because
+                        ; it can change the meaning of instructions ...
+                        ;
+
+                                        .opt    a+              ; Enable auto-zp addressing.
+
+01:6097  9C 80 20                       stz     mysymbol        ; Symbol is unknown here, so
+01:609A  9D 80 20                       sta     mysymbol,x      ; use absolute addressing.
+01:609D  99 80 20                       sta     mysymbol,y
+01:60A0  96 80                          stx     mysymbol,y      ; Unless ZP is only option.
+
+         2080           mysymbol        =       $2080           ; Tell PCEAS that it is ZP.
+
+01:60A2  64 80                          stz     mysymbol        ; Symbol is defined now, so
+01:60A4  95 80                          sta     mysymbol,x      ; PCEAS uses ZP addressing.
+01:60A6  99 80 20                       sta     mysymbol,y      ; Unless ABS is only option.
+01:60A9  96 80                          stx     mysymbol,y
+
+                                        .opt    a-              ; Traditional PCEAS behavior.
+
+01:60AB  9C 80 20                       stz     mysymbol        ; Absolute addressing is used
+01:60AE  9D 80 20                       sta     mysymbol,x      ; unless specifically told to
+01:60B1  99 80 20                       sta     mysymbol,y      ; use ZP addressing.
+                        ;               stx     mysymbol,y      ; !Incorrect addressing mode!
+
+
+                        ; ****************************************************************************
+                        ;
+                        ; New ".z" and ".a" instruction suffixes for addressing modes, to add to
+                        ; the existing, but undocumented, ".l" and ".h" suffixes from v3.21 ...
+                        ;
+
+                        ;               lda     #__ax           ; Error, because __ax > $FF.
+01:60B4  A9 F8                          lda     #<__ax          ; One method to get lo-byte.
+01:60B6  A9 20                          lda     #>__ax          ; One method to get hi-byte.
+01:60B8  A9 F8                          lda.l   #__ax           ; Or ... lo-byte of a word.
+01:60BA  A9 20                          lda.h   #__ax           ; Or ... hi-byte of a word.
+
+01:60BC  B9 F8 20                       lda     __ax, y         ; Default is absolute mode.
+01:60BF  B9 F8 20                       lda.l   __ax, y         ; Addr+0 for lo-byte of a word.
+01:60C2  B9 F9 20                       lda.h   __ax, y         ; Addr+1 for hi-byte of a word.
+
+01:60C5  B5 F8                          lda     <__ax, x        ; Force zero-page mode.
+01:60C7  B5 F8                          lda.l   <__ax, x        ; Addr+0 for lo-byte of a word.
+01:60C9  B5 F9                          lda.h   <__ax, x        ; Addr+1 for hi-byte of a word.
+
+01:60CB  BD F8 20                       lda     >__ax, x        ; Force absolute mode.
+01:60CE  BD F8 20                       lda.l   >__ax, x        ; Addr+0 for lo-byte of a word.
+01:60D1  BD F9 20                       lda.h   >__ax, x        ; Addr+1 for hi-byte of a word.
+
+                                        .opt    a-              ; Traditional PCEAS behavior.
+
+01:60D4  BD F8 20                       lda     __ax, x         ; Default is absolute mode.
+01:60D7  BD F8 20                       lda.a   __ax, x         ; Force absolute mode.
+01:60DA  B5 F8                          lda.z   __ax, x         ; Force zero-page mode.
+
+                                        .opt    a+              ; Enable auto-zp addressing.
+
+01:60DC  B5 F8                          lda     __ax, x         ; Symbol known, so zero-page mode.
+01:60DE  BD F8 20                       lda.a   __ax, x         ; Force absolute mode.
+01:60E1  B5 F8                          lda.z   __ax, x         ; Force zero-page mode.
+
+
+                        ; ****************************************************************************
+                        ;
+                        ; Out-of-Range branches can be converted to long-branches with ".opt b+" ...
+                        ;
+                        ; The conversion changes the assembled instruction into a short-branch and an
+                        ; absolute jump.
+                        ;
+                        ; Note: In order to be converted a branch must be directly to a label, and
+                        ;       when inside a label-scope, then only global labels defined within
+                        ;       that scope can be converted.
+                        ;
+
+01:60E3  60             !:              rts
+01:60E4  60             long:           rts
+01:60E5  60             .big:           rts
+
+01:60E6  00 00 00 00                    ds      128             ; Add some distance.
+
+01:6166  80 2D                          bra     !+
+01:6168  44 2A                          bsr     short
+01:616A  F0 28                          beq     short
+01:616C  D0 26                          bne     short
+01:616E  0F 12 23                       bbr0    <$12, short
+01:6171  8F 12 20                       bbs0    <$12, short
+
+                                        .opt    b-              ; Disable long-branch (default).
+
+                        ;               bra     !-              ; Error, out of range!
+                        ;               bsr     long            ; Error, out of range!
+                        ;               beq     long            ; Error, out of range!
+                        ;               bne     long            ; Error, out of range!
+                        ;               bbr0    <$12, .big      ; Error, out of range!
+                        ;               bbs0    <$12, .big      ; Error, out of range!
+
+                                        .opt    b+              ; Enable long-branch conversion.
+
+01:6174  4C E3 60                       bra     !-              ; Converted to "jmp".
+01:6177  20 E4 60                       bsr     long            ; Converted to "jsr".
+01:617A  D0 03 4C E4                    beq     long            ; Converted to "bne and jmp".
+01:617E  60
+01:617F  F0 03 4C E4                    bne     long            ; Converted to "beq and jmp".
+01:6183  60
+01:6184  8F 12 03 4C                    bbr0    <$12, .big      ; Converted to "bbs and jmp".
+01:6188  E5 60
+01:618A  0F 12 03 4C                    bbs0    <$12, .big      ; Converted to "bbr and jmp".
+01:618E  E5 60
+
+01:6190  80 01                          bra     * + 3           ; Complex target address expressions
+01:6192  80 01                          bra     short + 1       ; with math are never converted.
+                        ;               bra     long - 1        ; Error, out of range!
+
+01:6194  60             short:          rts
+01:6195  60             !:              rts
+
+                                        ; In ".struct" and KickC "{}" scoped-labels can only be
+                                        ; converted to long-branches if they are defined in the
+                                        ; current scope.
+
+                        myfunc          .struct                 ; Open new label scope "myfunc".
+
+01:6196  4C 23 62                       bra     .exit           ; Local and multi-labels can be
+01:6199  4C E3 60                       bra     !--             ; converted within a scope.
+
+01:619C  F0 03 4C 24                    bne     _exit           ; Convert scoped-label "myfunc._exit".
+01:61A0  62
+
+01:61A1  80 F1                          bra     short           ; Label not in scope, so assume short.
+                        ;               bra     long            ; Error, out of range!
+
+01:61A3  00 00 00 00                    ds      128             ; Add some distance.
+
+01:6223  60             .exit:          rts
+01:6224  60             _exit:          rts
+
+         6225                           .ends

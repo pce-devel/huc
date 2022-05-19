@@ -220,44 +220,44 @@ lib2_sgx_satb_update:
 .l2:	cpx	#0
 	beq	.l4
 	; --
-.l3:	stx	<al	; number of sprites
+.l3:	stx	<__al	; number of sprites
 	txa
 	dec a		; round up to the next group of 4 sprites
 	lsr a
 	lsr a
 	inc a
-	sta	<cl
+	sta	<__cl
 
 ; Use TIA, but BLiT 16 words at a time (32 bytes)
 ; Because interrupt must not deferred too much
 ;
 	stw	#32, ram_hdwr_tia_size
 	stw	#sgx_video_data, ram_hdwr_tia_dest
-	stw	#_sgx_satb, <si
+	stw	#_sgx_satb, <__si
 
-	stw	#$7F00, <di
+	stw	#$7F00, <__di
 	jsr	sgx_set_write
 
-.l3a:	stw	<si, ram_hdwr_tia_src
+.l3a:	stw	<__si, ram_hdwr_tia_src
 	jsr	ram_hdwr_tia
-	addw	#32,<si
-	dec	<cl
+	addw	#32,<__si
+	dec	<__cl
 	bne	.l3a
 
-;.l3:	stx	<al
-;	stw	#_sgx_satb,<si
-;	stb	#BANK(_sgx_satb),<bl
-;	stw	#$7F00,<di
+;.l3:	stx	<__al
+;	stw	#_sgx_satb,<__si
+;	stb	#BANK(_sgx_satb),<__bl
+;	stw	#$7F00,<__di
 ;	txa
-;	stz	<ch
+;	stz	<__ch
 ;	asl a
 ;	asl a
-;	rol	<ch
-;	sta	<cl
+;	rol	<__ch
+;	sta	<__cl
 ;	jsr	sgx_load_vram
 
 	; --
-	ldx	<al
+	ldx	<__al
 .l4:	cla
 	rts
 	.bank	LIB1_BANK
@@ -430,14 +430,14 @@ lib2_sgx_spr_get_pattern:
 	rts
 
 
-; sgx_spr_ctrl(char mask [al], char value)
+; sgx_spr_ctrl(char mask [__al], char value)
 ; ----
 
 lib2_sgx_spr_ctrl.2:
 	txa
-	and	<al
+	and	<__al
 	sta	<__temp
-	lda	<al
+	lda	<__al
 	eor	#$FF
 	ldy	#7
 	and	[sgx_spr_ptr],Y
@@ -508,13 +508,13 @@ _sgx_vreg.1:
 	rts
 
 _sgx_vreg.2:
-	ldx	<al
+	ldx	<__al
 	stx	<sgx_vdc_reg
 	stx sgx_video_reg
 
-	lda	<cl
+	lda	<__cl
 	sta sgx_video_data
-	lda	<ch
+	lda	<__ch
 	sta sgx_video_data+1
 	rts
 
@@ -530,12 +530,12 @@ _sgx_vreg.2:
 sgx_set_write:
 	lda	#$00
 	sta sgx_video_reg
-	lda	<di
+	lda	<__di
 	sta	sgx_video_data_l
 .ifdef HUC
 	sta	_sgx_vdc
 .endif
-	lda	<di+1
+	lda	<__di+1
 	sta	sgx_video_data_h
 .ifdef HUC
 	sta	_sgx_vdc+1
@@ -575,10 +575,10 @@ lib2_sgx_load_vram.3:
 	; (instruction setup done during bootup...)
 
 	stw	#sgx_video_data, ram_hdwr_tia_dest
-;	stw	<si, ram_hdwr_tia_src
+;	stw	<__si, ram_hdwr_tia_src
 ;
-;	asl	<cl	; change from words to bytes (# to xfer)
-;	rol	<ch
+;	asl	<__cl	; change from words to bytes (# to xfer)
+;	rol	<__ch
 
 	; ----
 	; set vram address
@@ -589,48 +589,48 @@ lib2_sgx_load_vram.3:
 	; copy data
 	;
 	cly
-	ldx	<cl
+	ldx	<__cl
 	beq	.l3
 	; --
-.l1:	lda	[si],Y
+.l1:	lda	[__si],Y
 	sta	sgx_video_data_l
 	iny
-	lda	[si],Y
+	lda	[__si],Y
 	sta	sgx_video_data_h
 	iny
 	bne	.l2
-	inc	<si+1
+	inc	<__si+1
 	; --
 .l2:	dex
 	bne	.l1
 	; --
 	jsr	remap_data
 	; --
-.l3:	dec	<ch
+.l3:	dec	<__ch
 	bpl	.l1
 
-;.l1:	lda	<ch	; if zero-transfer, exit
-;	ora	<cl
+;.l1:	lda	<__ch	; if zero-transfer, exit
+;	ora	<__cl
 ;	beq	.out
 ;
-;	lda	<ch
+;	lda	<__ch
 ;	cmp	#$20	; if more than $2000, repeat xfers of $2000
 ;	blo	.l2	; while adjusting banks
 ;	sub	#$20	; reduce remaining transfer amount
-;	sta	<ch
+;	sta	<__ch
 ;
 ;	stw	#$2000, ram_hdwr_tia_size
 ;	jsr	ram_hdwr_tia
 ;
-;	lda	<si+1	; force bank adjust
+;	lda	<__si+1	; force bank adjust
 ;	add	#$20	; and next move starts at same location
-;	sta	<si+1
+;	sta	<__si+1
 ;
 ;	jsr	remap_data	; adjust banks
 ;	bra	.l1
 ;
 ;.l2:	sta	HIGH_BYTE ram_hdwr_tia_size	; 'remainder' transfer of < $2000
-;	lda	<cl
+;	lda	<__cl
 ;	sta	LOW_BYTE  ram_hdwr_tia_size
 ;	jsr	ram_hdwr_tia
 
@@ -659,17 +659,17 @@ init_sgx_vdc:
 ; ----
 
 lib2_init_sgx_vdc:
-	stw	#_sgx_init_point,<si	; register table address in 'si'
+	stw	#_sgx_init_point,<__si	; register table address in 'si'
 	cly
 
 .sgx_init_LL1:
-	lda	[si],y
+	lda	[__si],y
 	sta sgx_video_reg
 	iny
-	lda	[si],y
+	lda	[__si],y
 	sta sgx_video_data
 	iny
-	lda	[si],y
+	lda	[__si],y
 	sta sgx_video_data+1
 	iny
 	cpy	#$24
@@ -756,10 +756,10 @@ lib2_init_sgx_vdc:
 	stz sgx_video_data+1
 
 	;reset scroll registers
-	stz	<al
-	stz	<ah
-	stz	<bl
-	stz	<bh
+	stz	<__al
+	stz	<__ah
+	stz	<__bl
+	stz	<__bh
 	jsr	_sgx_scroll.2
 
 	rts
@@ -912,13 +912,13 @@ lib2_sgx_bg_off:
 ; ----
 ;
 _vpc_win_size.2:
-	lda	<al
+	lda	<__al
 	and	#$01
 	asl a
 	tay
-	lda	<bl
+	lda	<__bl
 	sta	$000A, y
-	lda	<bh
+	lda	<__bh
 	sta	$000A+1, y
 	rts
 
@@ -936,7 +936,7 @@ _vpc_win_reg.2:
 	.bank	LIB2_BANK
 ; ----
 lib2_vpc_win_reg.2:
-	lda	<al
+	lda	<__al
 	beq	.win_a
 	cmp	#$01
 	beq	.win_b
@@ -945,59 +945,59 @@ lib2_vpc_win_reg.2:
 	;else
 
 .win_none:
-	lda	<bl
+	lda	<__bl
 	asl a
 	asl a
 	asl a
 	asl a
-	sta	<bl
+	sta	<__bl
 
 	lda vpc_win_blk_2
 	and	#0x0F
 	clc
-	adc	<bl
+	adc	<__bl
 	sta vpc_win_blk_2
 	sta vpc_ctrl_2
 	rts
 
 .win_a:
-	lda	<bl
+	lda	<__bl
 	and	#$0F
-	sta	<bl
+	sta	<__bl
 
 	lda vpc_win_blk_2
 	and	#0xF0
 	clc
-	adc	<bl
+	adc	<__bl
 	sta vpc_win_blk_2
 	sta vpc_ctrl_2
 	rts
 
 .win_b:
-	lda	<bl
+	lda	<__bl
 	asl a
 	asl a
 	asl a
 	asl a
-	sta	<bl
+	sta	<__bl
 
 	lda vpc_win_blk_1
 	and	#0x0F
 	clc
-	adc	<bl
+	adc	<__bl
 	sta vpc_win_blk_1
 	sta vpc_ctrl_1
 	rts
 
 .win_ab:
-	lda	<bl
+	lda	<__bl
 	and	#$0F
-	sta	<bl
+	sta	<__bl
 
 	lda vpc_win_blk_1
 	and	#0xF0
 	clc
-	adc	<bl
+	adc	<__bl
 	sta vpc_win_blk_1
 	sta vpc_ctrl_1
 	rts
@@ -1008,7 +1008,7 @@ lib2_vpc_win_reg.2:
 
 ; [BACKGROUND CODE]
 
-; sgx_load_map(char x [al], char y [ah], int mx, int my, char w [dl], char h [dh])
+; sgx_load_map(char x [__al], char y [__ah], int mx, int my, char w [__dl], char h [__dh])
 ; ----
 
 _sgx_load_map.6:
@@ -1025,32 +1025,32 @@ lib2_sgx_load_map.6
 	; ----
 	; adjust map y coordinate
 	;
-	lda	<bh
+	lda	<__bh
 	bmi	.l2
-.l1:	cmpw	sgx_mapheight,<bx
+.l1:	cmpw	sgx_mapheight,<__bx
 	blo	.l3
-	subw	sgx_mapheight,<bx
+	subw	sgx_mapheight,<__bx
 	bra	.l1
 	; --
-.l2:	lda	<bh
+.l2:	lda	<__bh
 	bpl	.l3
-	addw	sgx_mapheight,<bx
+	addw	sgx_mapheight,<__bx
 	bra	.l2
 
 	; ----
 	; adjust map x coordinate
 	;
-.l3:	stb	<bl,<ch
-	lda	<di+1
+.l3:	stb	<__bl,<__ch
+	lda	<__di+1
 	bmi	.l5
-.l4:	cmpw	sgx_mapwidth,<di
+.l4:	cmpw	sgx_mapwidth,<__di
 	blo	.l7
-	subw	sgx_mapwidth,<di
+	subw	sgx_mapwidth,<__di
 	bra	.l4
 	; --
-.l5:	lda	<di+1
+.l5:	lda	<__di+1
 	bpl	.l7
-	addw	sgx_mapwidth,<di
+	addw	sgx_mapwidth,<__di
 	bra	.l5
 
 	; ----
@@ -1061,7 +1061,7 @@ lib2_sgx_load_map.6
 	; ----
 	; ok
 	;
-.l7:	stb	<di,<cl
+.l7:	stb	<__di,<__cl
 	jmp	sgx_load_map
 
 .include "sgx_load_map.asm"
@@ -1069,7 +1069,7 @@ lib2_sgx_load_map.6
 	.bank	LIB1_BANK
 
 
-;	sgx_scroll( int X [ax], int Y [bx])
+;	sgx_scroll( int X [__ax], int Y [__bx])
 ; ----
 ;	updates the SGX background scroll registers
 ; ----
@@ -1084,20 +1084,20 @@ lib2_sgx_scroll.2:
 	lda	#$07
 	sta	<sgx_vdc_sts
 	sta sgx_video_reg
-	lda	<al
+	lda	<__al
 	sta sgx_video_data_l
 	sta	<_sgx_scroll_x
-	lda	<ah
+	lda	<__ah
 	sta sgx_video_data_h
 	sta	<_sgx_scroll_x+1
 
 	lda	#$08
 	sta	<sgx_vdc_sts
 	sta sgx_video_reg
-	lda	<bl
+	lda	<__bl
 	sta sgx_video_data_l
 	sta	<_sgx_scroll_y
-	lda	<bh
+	lda	<__bh
 	sta sgx_video_data_h
 	sta	<_sgx_scroll_y+1
 
@@ -1130,23 +1130,23 @@ lib2_sgx_load_bat:
 	cly
 	; --
 .l1:	jsr	sgx_set_write
-	ldx	<cl
+	ldx	<__cl
 	; --
-.l2:	lda	[si],Y
+.l2:	lda	[__si],Y
 	sta	sgx_video_data_l
 	iny
-	lda	[si],Y
+	lda	[__si],Y
 	sta	sgx_video_data_h
 	iny
 	bne	.l3
-	inc	<si+1
+	inc	<__si+1
 .l3:	dex
 	bne	.l2
 	; --
 	jsr	remap_data
 	; --
-	addw	sgx_bat_width,<di
-	dec	<ch
+	addw	sgx_bat_width,<__di
+	dec	<__ch
 	bne	.l1
 
 	; ----
@@ -1221,8 +1221,8 @@ _sgx_set_screen_size.1:
 
 
 ; sgx_set_map_data(int *ptr)
-; sgx_set_map_data(char *map [bl:si], int w [ax], int h)
-; sgx_set_map_data(char *map [bl:si], int w [ax], int h [dx], char wrap)
+; sgx_set_map_data(char *map [__bl:__si], int w [__ax], int h)
+; sgx_set_map_data(char *map [__bl:__si], int w [__ax], int h [__dx], char wrap)
 ; ----
 ; map,	map base address
 ; w,	map width
@@ -1242,7 +1242,7 @@ _sgx_set_map_data.4:
 _sgx_set_tile_data.1:
 	ldy	#3
 	bra	lib3_group_1
-_sgx_set_tile_data.3:
+_sgx_set_tile_data.4:
 	ldy	#4
 	bra	lib3_group_1
 _sgx_load_tile:
@@ -1261,13 +1261,13 @@ lib3_group_select_1:
 	bcc	lib3_group_case_3 ;lib3_sgx_set_map_data.4
 	beq	lib3_group_case_4 ;lib3_sgx_set_tile_data.1
 	cpy	#5
-	bcc	lib3_group_case_5 ;lib3_sgx_set_tile_data.3
+	bcc	lib3_group_case_5 ;lib3_sgx_set_tile_data.4
 	bcs	lib3_group_case_6 ;lib3_sgx_load_tile
 
 lib3_group_case_6:
 	jmp lib3_sgx_load_tile
 lib3_group_case_5:
-	jmp lib3_sgx_set_tile_data.3
+	jmp lib3_sgx_set_tile_data.4
 lib3_group_case_4:
 	jmp lib3_sgx_set_tile_data.1
 lib3_group_case_3:
@@ -1277,33 +1277,33 @@ lib3_group_case_2:
 lib3_group_case_1:
 
 lib3_sgx_set_map_data.1:
-	__stw	<si
-	ora	<si
+	__stw	<__si
+	ora	<__si
 	beq	.l1
 	; -- calculate width
-	lda	[si].4
-	sub	[si]
+	lda	[__si].4
+	sub	[__si]
 	sta	sgx_mapwidth
-	lda	[si].5
-	sbc	[si].1
+	lda	[__si].5
+	sbc	[__si].1
 	sta	sgx_mapwidth+1
 	incw	sgx_mapwidth
 	; -- calculate height
-	lda	[si].6
-	sub	[si].2
+	lda	[__si].6
+	sub	[__si].2
 	sta	sgx_mapheight
-	lda	[si].7
-	sbc	[si].3
+	lda	[__si].7
+	sbc	[__si].3
 	sta	sgx_mapheight+1
 	incw	sgx_mapheight
 	; -- get map bank
-	lda	[si].8
+	lda	[__si].8
 	sta	sgx_mapbank
 	; -- get map addr
-	lda	[si].10
+	lda	[__si].10
 	sta	sgx_mapaddr
 	iny
-	lda	[si]
+	lda	[__si]
 	sta	sgx_mapaddr+1
 	; -- no wrap
 	stz	sgx_mapwrap
@@ -1317,78 +1317,60 @@ lib3_sgx_set_map_data.1:
 	rts
 lib3_sgx_set_map_data.4:
 	stx	sgx_mapwrap
-	__ldw	<dx
+	__ldw	<__dx
 	bra	sgx_set_map_data.main
 lib3_sgx_set_map_data.3:
 	stz	sgx_mapwrap
 	inc	sgx_mapwrap
 sgx_set_map_data.main:
 	__stw	sgx_mapheight
-	stw	<ax,sgx_mapwidth
-	stb	<bl,sgx_mapbank
-	stw	<si,sgx_mapaddr
+	stw	<__ax,sgx_mapwidth
+	stb	<__bl,sgx_mapbank
+	stw	<__si,sgx_mapaddr
 	rts
 	.bank	LIB1_BANK
 
 
-; sgx_set_tile_data(char *tile_ex [di])
-; sgx_set_tile_data(char *tile [bl:si], int nb_tile [cx], char *ptable [al:dx])
+; sgx_set_tile_data(char *tile_ex [__di])
+; sgx_set_tile_data(char *tile [__bl:__si], int nb_tile [__cx], char *ptable [__al:__dx], char type [__ah])
 ; ----
 ; tile,	tile base index
 ; nb_tile, number of tile
 ; ptable,	tile palette table address
+; type, tile type (8 or 16)
 ; ----
 
 	.bank	LIB2_BANK
 lib3_sgx_set_tile_data.1:
 	cly
-	lda	[di],Y++
+	lda	[__di],Y++
 	sta	sgx_mapnbtile
-	lda	[di],Y++
+	lda	[__di],Y++
 	sta	sgx_mapnbtile+1
-	lda	[di],Y++
+	lda	[__di],Y++
 	sta	sgx_maptiletype
 	iny
-	lda	[di],Y++
+	lda	[__di],Y++
 	sta	sgx_maptilebank
 	iny
-	lda	[di],Y++
+	lda	[__di],Y++
 	sta	sgx_maptileaddr
-	lda	[di],Y++
+	lda	[__di],Y++
 	sta	sgx_maptileaddr+1
 	lda	#(CONST_BANK+_bank_base)
 	sta	sgx_mapctablebank
-	lda	[di],Y++
+	lda	[__di],Y++
 	sta	sgx_mapctable
-	lda	[di],Y
+	lda	[__di],Y
 	sta	sgx_mapctable+1
 	rts
-lib3_sgx_set_tile_data.3:
-	stb	<bl,sgx_maptilebank
-	stw	<si,sgx_maptileaddr
-	stw	<cx,sgx_mapnbtile
-	stb	<al,sgx_mapctablebank
-	stw	<dx,sgx_mapctable
-	; --
-	ldy	<bl	; get tile format (8x8 or 16x16)
-	lda	<si+1
-	and	#$1F
-	tax
-	lda	<si
-	bne	.l2
-	cpx	#$0
-	bne	.l1
-	dey
-	ldx	#$20
-.l1:	dex
-.l2:	dec a
-	txa
-	ora	#$60
-	sta	<si+1
-	tya
-	tam	#3
-	lda	[si]
-	sta	sgx_maptiletype
+lib3_sgx_set_tile_data.4:
+	stb	<__bl,sgx_maptilebank
+	stw	<__si,sgx_maptileaddr
+	stw	<__cx,sgx_mapnbtile
+	stb	<__al,sgx_mapctablebank
+	stw	<__dx,sgx_mapctable
+	stb	<__ah,sgx_maptiletype
 	rts
 	.bank	LIB1_BANK
 
@@ -1398,32 +1380,32 @@ lib3_sgx_set_tile_data.3:
 ; ----
 
 lib3_sgx_load_tile:
-	__stw	<di
-	stx	<al
+	__stw	<__di
+	stx	<__al
 	lsr a
-	ror	<al
+	ror	<__al
 	lsr a
-	ror	<al
+	ror	<__al
 	lsr a
-	ror	<al
+	ror	<__al
 	lsr a
-	ror	<al
+	ror	<__al
 	sta	sgx_maptilebase+1
-	stb	<al,sgx_maptilebase
+	stb	<__al,sgx_maptilebase
 	; --
-	stw	sgx_mapnbtile,<cx
+	stw	sgx_mapnbtile,<__cx
 	ldx	#4
 	lda	sgx_maptiletype
 	cmp	#8
 	beq	.l1
 	ldx	#6
-.l1:	asl	<cl
-	rol	<ch
+.l1:	asl	<__cl
+	rol	<__ch
 	dex
 	bne	.l1
 	; --
-	stb	sgx_maptilebank,<bl
-	stw	sgx_maptileaddr,<si
+	stb	sgx_maptilebank,<__bl
+	stw	sgx_maptileaddr,<__si
 	jmp	lib3_sgx_load_vram
 
 	.bank	LIB1_BANK

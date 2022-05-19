@@ -3,6 +3,7 @@
  *
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -18,44 +19,11 @@
 #include "const.h"
 #include "error.h"
 
-static char *needargs[] = {
-	"vreg",
-	"vsync",
-	"spr_hide", "spr_show",
-	"satb_update",
-	"map_load_tile",
-	NULL
-};
-
-/*
- *	gen arg count
- *
- */
-void gnargs (char *name, long nb)
-{
-	char *ptr;
-	long i;
-
-	if (name == NULL)
-		return;
-
-	for (i = 0;; i++) {
-		ptr = needargs[i];
-
-		if (ptr == NULL)
-			break;
-		if (strcmp(name, ptr) == 0) {
-			out_ins(I_NARGS, T_VALUE, nb);
-			break;
-		}
-	}
-}
-
 /*
  *	return next available internal label number
  *
  */
-long getlabel (void)
+intptr_t getlabel (void)
 {
 	return (nxtlab++);
 }
@@ -74,15 +42,15 @@ void getmem (SYMBOL *sym)
 		if ((sym->storage & ~WRITTEN) == LSTATIC)
 			out_ins(op, T_LABEL, glint(sym));
 		else
-			out_ins(op, T_SYMBOL, (long)(sym->name));
+			out_ins(op, T_SYMBOL, (intptr_t)(sym->name));
 	}
 	else {
 		if ((sym->storage & ~WRITTEN) == LSTATIC)
 			out_ins(I_LDW, T_LABEL, glint(sym));
 		else if ((sym->storage & ~WRITTEN) == CONST && (data = get_const(sym)))
-			out_ins(I_LDWI, T_LITERAL, (long)data);
+			out_ins(I_LDWI, T_LITERAL, (intptr_t)data);
 		else
-			out_ins(I_LDW, T_SYMBOL, (long)(sym->name));
+			out_ins(I_LDW, T_SYMBOL, (intptr_t)(sym->name));
 	}
 }
 
@@ -91,11 +59,11 @@ void getmem (SYMBOL *sym)
  */
 void getio (SYMBOL *sym)
 {
-	out_ins(I_CALL, T_LIB, (long)"getvdc");
+	out_ins(I_CALL, T_LIB, (intptr_t)"getvdc");
 }
 void getvram (SYMBOL *sym)
 {
-	out_ins(I_CALL, T_LIB, (long)"readvram");
+	out_ins(I_CALL, T_LIB, (intptr_t)"readvram");
 }
 
 /*
@@ -104,7 +72,7 @@ void getvram (SYMBOL *sym)
  */
 void getloc (SYMBOL *sym)
 {
-	long value;
+	intptr_t value;
 
 	if ((sym->storage & ~WRITTEN) == LSTATIC)
 		out_ins(I_LDWI, T_LABEL, glint(sym));
@@ -112,9 +80,11 @@ void getloc (SYMBOL *sym)
 		value = glint(sym);
 		if (norecurse && value < 0) {
 			/* XXX: bit of a memory leak, but whatever... */
-			char *locsym = (char *)malloc(strlen(current_fn) + 16);
-			sprintf(locsym, "_%s_lend-%ld", current_fn, -value);
-			out_ins(I_LDWI, T_SYMBOL, (long)locsym);
+			SYMBOL * locsym = copysym(sym);
+			if (NAMEALLOC <=
+				sprintf(locsym->name, "_%s_lend-%ld", current_fn, (long) -value))
+				error("norecurse local name too intptr_t");
+			out_ins(I_LDWI, T_SYMBOL, (intptr_t)locsym);
 		}
 		else {
 			value -= stkp;
@@ -129,7 +99,7 @@ void getloc (SYMBOL *sym)
  */
 void putmem (SYMBOL *sym)
 {
-	long code;
+	intptr_t code;
 
 	/* XXX: What about 1-byte structs? */
 	if ((sym->ident != POINTER) & (sym->type == CCHAR || sym->type == CUCHAR))
@@ -140,7 +110,7 @@ void putmem (SYMBOL *sym)
 	if ((sym->storage & ~WRITTEN) == LSTATIC)
 		out_ins(code, T_LABEL, glint(sym));
 	else
-		out_ins(code, T_SYMBOL, (long)(sym->name));
+		out_ins(code, T_SYMBOL, (intptr_t)(sym->name));
 }
 
 /*
@@ -151,9 +121,9 @@ void putmem (SYMBOL *sym)
 void putstk (char typeobj)
 {
 	if (typeobj == CCHAR || typeobj == CUCHAR)
-		out_ins(I_STBPS, (long)NULL, (long)NULL);
+		out_ins(I_STBPS, (intptr_t)NULL, (intptr_t)NULL);
 	else
-		out_ins(I_STWPS, (long)NULL, (long)NULL);
+		out_ins(I_STWPS, (intptr_t)NULL, (intptr_t)NULL);
 	stkp = stkp + INTSIZE;
 }
 
@@ -164,12 +134,12 @@ void putstk (char typeobj)
  */
 void putio (SYMBOL *sym)
 {
-	out_ins(I_JSR, T_LIB, (long)"setvdc");
+	out_ins(I_JSR, T_LIB, (intptr_t)"setvdc");
 	stkp = stkp + INTSIZE;
 }
 void putvram (SYMBOL *sym)
 {
-	out_ins(I_JSR, T_LIB, (long)"writevram");
+	out_ins(I_JSR, T_LIB, (intptr_t)"writevram");
 	stkp = stkp + INTSIZE;
 }
 
@@ -180,23 +150,23 @@ void putvram (SYMBOL *sym)
  */
 void indirect (char typeobj)
 {
-	out_ins(I_STW, T_PTR, (long)NULL);
+	out_ins(I_STW, T_PTR, (intptr_t)NULL);
 	if (typeobj == CCHAR)
-		out_ins(I_LDBP, T_PTR, (long)NULL);
+		out_ins(I_LDBP, T_PTR, (intptr_t)NULL);
 	else if (typeobj == CUCHAR)
-		out_ins(I_LDUBP, T_PTR, (long)NULL);
+		out_ins(I_LDUBP, T_PTR, (intptr_t)NULL);
 	else
-		out_ins(I_LDWP, T_PTR, (long)NULL);
+		out_ins(I_LDWP, T_PTR, (intptr_t)NULL);
 }
 
 void farpeek (SYMBOL *ptr)
 {
 	if (ptr->type == CCHAR)
-		out_ins(I_FGETB, T_SYMBOL, (long)ptr);
+		out_ins(I_FGETB, T_SYMBOL, (intptr_t)ptr);
 	else if (ptr->type == CUCHAR)
-		out_ins(I_FGETUB, T_SYMBOL, (long)ptr);
+		out_ins(I_FGETUB, T_SYMBOL, (intptr_t)ptr);
 	else
-		out_ins(I_FGETW, T_SYMBOL, (long)ptr);
+		out_ins(I_FGETW, T_SYMBOL, (intptr_t)ptr);
 }
 
 /*
@@ -204,7 +174,7 @@ void farpeek (SYMBOL *ptr)
  *	the primary register
  *
  */
-void immed (long type, long data)
+void immed (intptr_t type, intptr_t data)
 {
 	if (type == T_VALUE && (data < -32768 || data > 65535))
 		warning(W_GENERAL, "large integer truncated");
@@ -228,7 +198,7 @@ void gpush (void)
  *	push the primary register onto the stack
  *
  */
-void gpusharg (long size)
+void gpusharg (intptr_t size)
 {
 	out_ins(I_PUSHW, T_SIZE, size);
 	stkp = stkp - size;
@@ -240,7 +210,7 @@ void gpusharg (long size)
  */
 void gpop (void)
 {
-	out_ins(I_POPW, (long)NULL, (long)NULL);
+	out_ins(I_POPW, (intptr_t)NULL, (intptr_t)NULL);
 	stkp = stkp + INTSIZE;
 }
 
@@ -250,20 +220,29 @@ void gpop (void)
  */
 void swapstk (void)
 {
-	out_ins(I_SWAPW, (long)NULL, (long)NULL);
+	out_ins(I_SWAPW, (intptr_t)NULL, (intptr_t)NULL);
 }
 
 /*
  *	call the specified subroutine name
  *
  */
-void gcall (char *sname, long nargs)
+void gcall (char *sname, intptr_t nargs)
 {
 	if (need_map_call_bank)
-		out_ins_ex(I_MAPCBANK, T_SYMBOL, (long)sname, T_VALUE, nargs);
-	out_ins_ex(I_CALL, T_SYMBOL, (long)sname, T_VALUE, nargs);
+		out_ins_ex(I_MAPCBANK, T_SYMBOL, (intptr_t)sname, T_VALUE, nargs);
+	out_ins_ex(I_CALL, T_SYMBOL, (intptr_t)sname, T_VALUE, nargs);
 	if (need_map_call_bank)
-		out_ins_ex(I_UNMAPCBANK, T_SYMBOL, (long)sname, T_VALUE, nargs);
+		out_ins_ex(I_UNMAPCBANK, T_SYMBOL, (intptr_t)sname, T_VALUE, nargs);
+}
+
+/*
+ *	call the specified macro name
+ *
+ */
+void gmacro (char *sname, intptr_t nargs)
+{
+	out_ins_ex(I_MACRO, T_SYMBOL, (intptr_t)sname, T_VALUE, nargs);
 }
 
 /*
@@ -282,14 +261,14 @@ void gbank (unsigned char bank, unsigned short offset)
  */
 void gret (void)
 {
-	out_ins(I_RTS, (long)NULL, (long)NULL);
+	out_ins(I_RTS, (intptr_t)NULL, (intptr_t)NULL);
 }
 
 /*
  *	perform subroutine call to value on top of stack
  *
  */
-void callstk (long nargs)
+void callstk (intptr_t nargs)
 {
 	if (nargs <= INTSIZE)
 		out_ins(I_CALLS, T_STACK, 0);
@@ -303,7 +282,7 @@ void callstk (long nargs)
  *	jump to specified internal label number
  *
  */
-void jump (long label)
+void jump (intptr_t label)
 {
 	out_ins(I_LBRA, T_LABEL, label);
 }
@@ -312,9 +291,9 @@ void jump (long label)
  *	test the primary register and jump if false to label
  *
  */
-void testjump (long label, long ft)
+void testjump (intptr_t label, intptr_t ft)
 {
-	out_ins(I_TSTW, (long)NULL, (long)NULL);
+	out_ins(I_TSTW, (intptr_t)NULL, (intptr_t)NULL);
 	if (ft)
 		out_ins(I_LBNE, T_LABEL, label);
 	else
@@ -325,9 +304,9 @@ void testjump (long label, long ft)
  *	modify the stack pointer to the new value indicated
  *      Is it there that we decrease the value of the stack to add local vars ?
  */
-long modstk (long newstkp)
+intptr_t modstk (intptr_t newstkp)
 {
-	long k;
+	intptr_t k;
 
 //	k = galign(newstkp - stkp);
 	k = newstkp - stkp;
@@ -343,7 +322,7 @@ long modstk (long newstkp)
  */
 void gaslint (void)
 {
-	out_ins(I_ASLW, (long)NULL, (long)NULL);
+	out_ins(I_ASLW, (intptr_t)NULL, (intptr_t)NULL);
 }
 
 /*
@@ -351,7 +330,7 @@ void gaslint (void)
  */
 void gasrint (void)
 {
-	out_ins(I_ASRW, (long)NULL, (long)NULL);
+	out_ins(I_ASRW, (intptr_t)NULL, (intptr_t)NULL);
 }
 
 /*
@@ -359,7 +338,7 @@ void gasrint (void)
  */
 void gjcase (void)
 {
-	out_ins(I_JMP, T_SYMBOL, (long)"__case");
+	out_ins(I_JMP, T_SYMBOL, (intptr_t)"__case");
 }
 
 /*
@@ -370,11 +349,11 @@ void gadd (LVALUE *lval, LVALUE *lval2)
 {
 	/* XXX: isn't this done in expr.c already? */
 	if (dbltest(lval2, lval))
-		out_ins(I_ASLWS, (long)NULL, (long)NULL);
+		out_ins(I_ASLWS, (intptr_t)NULL, (intptr_t)NULL);
 	if (lval && lval2 && is_byte(lval) && is_byte(lval2))
-		out_ins(I_ADDBS, (long)NULL, (long)NULL);
+		out_ins(I_ADDBS, (intptr_t)NULL, (intptr_t)NULL);
 	else
-		out_ins(I_ADDWS, (long)NULL, (long)NULL);
+		out_ins(I_ADDWS, (intptr_t)NULL, (intptr_t)NULL);
 	stkp = stkp + INTSIZE;
 }
 
@@ -384,7 +363,7 @@ void gadd (LVALUE *lval, LVALUE *lval2)
  */
 void gsub (void)
 {
-	out_ins(I_SUBWS, (long)NULL, (long)NULL);
+	out_ins(I_SUBWS, (intptr_t)NULL, (intptr_t)NULL);
 	stkp = stkp + INTSIZE;
 }
 
@@ -396,15 +375,15 @@ void gsub (void)
 void gmult (int is_unsigned)
 {
 	if (is_unsigned)
-		out_ins(I_JSR, T_LIB, (long)"umul");
+		out_ins(I_JSR, T_LIB, (intptr_t)"umul");
 	else
-		out_ins(I_JSR, T_LIB, (long)"smul");
+		out_ins(I_JSR, T_LIB, (intptr_t)"smul");
 	stkp = stkp + INTSIZE;
 }
 
 void gmult_imm (int value)
 {
-	out_ins(I_MULWI, T_VALUE, (long)value);
+	out_ins(I_MULWI, T_VALUE, (intptr_t)value);
 }
 
 /*
@@ -415,9 +394,9 @@ void gmult_imm (int value)
 void gdiv (int is_unsigned)
 {
 	if (is_unsigned)
-		out_ins(I_JSR, T_LIB, (long)"udiv");
+		out_ins(I_JSR, T_LIB, (intptr_t)"udiv");
 	else
-		out_ins(I_JSR, T_LIB, (long)"sdiv");
+		out_ins(I_JSR, T_LIB, (intptr_t)"sdiv");
 	stkp = stkp + INTSIZE;
 }
 
@@ -437,9 +416,9 @@ void gdiv_imm (int value)
 void gmod (int is_unsigned)
 {
 	if (is_unsigned)
-		out_ins(I_JSR, T_LIB, (long)"umod");
+		out_ins(I_JSR, T_LIB, (intptr_t)"umod");
 	else
-		out_ins(I_JSR, T_LIB, (long)"smod");
+		out_ins(I_JSR, T_LIB, (intptr_t)"smod");
 	stkp = stkp + INTSIZE;
 }
 
@@ -449,7 +428,7 @@ void gmod (int is_unsigned)
  */
 void gor (void)
 {
-	out_ins(I_ORWS, (long)NULL, (long)NULL);
+	out_ins(I_ORWS, (intptr_t)NULL, (intptr_t)NULL);
 	stkp = stkp + INTSIZE;
 }
 
@@ -459,7 +438,7 @@ void gor (void)
  */
 void gxor (void)
 {
-	out_ins(I_EORWS, (long)NULL, (long)NULL);
+	out_ins(I_EORWS, (intptr_t)NULL, (intptr_t)NULL);
 	stkp = stkp + INTSIZE;
 }
 
@@ -469,7 +448,7 @@ void gxor (void)
  */
 void gand (void)
 {
-	out_ins(I_ANDWS, (long)NULL, (long)NULL);
+	out_ins(I_ANDWS, (intptr_t)NULL, (intptr_t)NULL);
 	stkp = stkp + INTSIZE;
 }
 
@@ -482,9 +461,9 @@ void gand (void)
 void gasr (int is_unsigned)
 {
 	if (is_unsigned)
-		out_ins(I_JSR, T_LIB, (long)"lsr");
+		out_ins(I_JSR, T_LIB, (intptr_t)"lsr");
 	else
-		out_ins(I_JSR, T_LIB, (long)"asr");
+		out_ins(I_JSR, T_LIB, (intptr_t)"asr");
 	stkp = stkp + INTSIZE;
 }
 
@@ -496,7 +475,7 @@ void gasr (int is_unsigned)
  */
 void gasl (void)
 {
-	out_ins(I_JSR, T_LIB, (long)"asl");
+	out_ins(I_JSR, T_LIB, (intptr_t)"asl");
 	stkp = stkp + INTSIZE;
 }
 
@@ -506,7 +485,7 @@ void gasl (void)
  */
 void gneg (void)
 {
-	out_ins(I_NEGW, (long)NULL, (long)NULL);
+	out_ins(I_NEGW, (intptr_t)NULL, (intptr_t)NULL);
 }
 
 /*
@@ -515,7 +494,7 @@ void gneg (void)
  */
 void gcom (void)
 {
-	out_ins(I_COMW, (long)NULL, (long)NULL);
+	out_ins(I_COMW, (intptr_t)NULL, (intptr_t)NULL);
 }
 
 /*
@@ -524,7 +503,7 @@ void gcom (void)
  */
 void gbool (void)
 {
-	out_ins(I_BOOLW, (long)NULL, (long)NULL);
+	out_ins(I_BOOLW, (intptr_t)NULL, (intptr_t)NULL);
 }
 
 /*
@@ -533,12 +512,12 @@ void gbool (void)
  */
 void glneg (void)
 {
-	out_ins(I_NOTW, (long)NULL, (long)NULL);
+	out_ins(I_NOTW, (intptr_t)NULL, (intptr_t)NULL);
 }
 
 /*
  *	increment the primary register by 1 if char, INTSIZE if
- *      long
+ *      intptr_t
  */
 void ginc (LVALUE *lval)
 {
@@ -555,7 +534,7 @@ void ginc (LVALUE *lval)
 
 /*
  *	decrement the primary register by one if char, INTSIZE if
- *	long
+ *	intptr_t
  */
 void gdec (LVALUE *lval)
 {
@@ -585,9 +564,9 @@ void gdec (LVALUE *lval)
 void geq (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_JSR, T_LIB, (long)"eqb");
+		out_ins(I_JSR, T_LIB, (intptr_t)"eqb");
 	else
-		out_ins(I_JSR, T_LIB, (long)"eq");
+		out_ins(I_JSR, T_LIB, (intptr_t)"eq");
 	stkp = stkp + INTSIZE;
 }
 
@@ -598,9 +577,9 @@ void geq (int is_byte)
 void gne (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_JSR, T_LIB, (long)"neb");
+		out_ins(I_JSR, T_LIB, (intptr_t)"neb");
 	else
-		out_ins(I_JSR, T_LIB, (long)"ne");
+		out_ins(I_JSR, T_LIB, (intptr_t)"ne");
 	stkp = stkp + INTSIZE;
 }
 
@@ -608,13 +587,13 @@ void gne (int is_byte)
  *	less than (signed)
  *
  */
-/*void glt (long lvl) */
+/*void glt (intptr_t lvl) */
 void glt (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_JSR, T_LIB, (long)"ltb");
+		out_ins(I_JSR, T_LIB, (intptr_t)"ltb");
 	else
-		out_ins(I_JSR, T_LIB, (long)"lt");
+		out_ins(I_JSR, T_LIB, (intptr_t)"lt");
 	stkp = stkp + INTSIZE;
 }
 
@@ -625,9 +604,9 @@ void glt (int is_byte)
 void gle (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_JSR, T_LIB, (long)"leb");
+		out_ins(I_JSR, T_LIB, (intptr_t)"leb");
 	else
-		out_ins(I_JSR, T_LIB, (long)"le");
+		out_ins(I_JSR, T_LIB, (intptr_t)"le");
 	stkp = stkp + INTSIZE;
 }
 
@@ -638,9 +617,9 @@ void gle (int is_byte)
 void ggt (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_JSR, T_LIB, (long)"gtb");
+		out_ins(I_JSR, T_LIB, (intptr_t)"gtb");
 	else
-		out_ins(I_JSR, T_LIB, (long)"gt");
+		out_ins(I_JSR, T_LIB, (intptr_t)"gt");
 	stkp = stkp + INTSIZE;
 }
 
@@ -651,9 +630,9 @@ void ggt (int is_byte)
 void gge (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_JSR, T_LIB, (long)"geb");
+		out_ins(I_JSR, T_LIB, (intptr_t)"geb");
 	else
-		out_ins(I_JSR, T_LIB, (long)"ge");
+		out_ins(I_JSR, T_LIB, (intptr_t)"ge");
 	stkp = stkp + INTSIZE;
 }
 
@@ -661,13 +640,13 @@ void gge (int is_byte)
  *	less than (unsigned)
  *
  */
-/*void gult (long lvl)*/
+/*void gult (intptr_t lvl)*/
 void gult (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_JSR, T_LIB, (long)"ublt");
+		out_ins(I_JSR, T_LIB, (intptr_t)"ublt");
 	else
-		out_ins(I_JSR, T_LIB, (long)"ult");
+		out_ins(I_JSR, T_LIB, (intptr_t)"ult");
 	stkp = stkp + INTSIZE;
 }
 
@@ -678,9 +657,9 @@ void gult (int is_byte)
 void gule (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_JSR, T_LIB, (long)"uble");
+		out_ins(I_JSR, T_LIB, (intptr_t)"uble");
 	else
-		out_ins(I_JSR, T_LIB, (long)"ule");
+		out_ins(I_JSR, T_LIB, (intptr_t)"ule");
 	stkp = stkp + INTSIZE;
 }
 
@@ -691,9 +670,9 @@ void gule (int is_byte)
 void gugt (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_JSR, T_LIB, (long)"ubgt");
+		out_ins(I_JSR, T_LIB, (intptr_t)"ubgt");
 	else
-		out_ins(I_JSR, T_LIB, (long)"ugt");
+		out_ins(I_JSR, T_LIB, (intptr_t)"ugt");
 	stkp = stkp + INTSIZE;
 }
 
@@ -704,13 +683,13 @@ void gugt (int is_byte)
 void guge (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_JSR, T_LIB, (long)"ubge");
+		out_ins(I_JSR, T_LIB, (intptr_t)"ubge");
 	else
-		out_ins(I_JSR, T_LIB, (long)"uge");
+		out_ins(I_JSR, T_LIB, (intptr_t)"uge");
 	stkp = stkp + INTSIZE;
 }
 
-void scale_const (int type, int otag, long *size)
+void scale_const (int type, int otag, intptr_t *size)
 {
 	switch (type) {
 	case CINT:

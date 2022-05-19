@@ -11,7 +11,7 @@ sgx_test.iso: $(SRC)
 	$(CC) $(CFLAGS) $(CDFLAGS) $(SRC) $(LIBS)
 sgx_test.sgx: $(SRC)
 	$(CC) $(CFLAGS) $(SRC) $(LIBS)
-	mv sgx_test.pce $@
+	mv -f sgx_test.pce $@
 
 clean:
 	rm -f *.pce *.sgx *.lst *.sym *.s *.iso

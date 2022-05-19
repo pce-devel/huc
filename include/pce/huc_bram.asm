@@ -58,7 +58,7 @@ bm_error:	.ds 1
 _bm_check:
 	jsr	_bm_unlock
 
-	stw	#$8000,<di	; test area at $8000
+	stw	#$8000,<__di	; test area at $8000
 	jsr	_bm_testram
 
 	; -- result
@@ -88,21 +88,21 @@ _bm_check:
 _bm_testram:
 	; -- swap bits
 	ldy	#7
-.l1:	lda	[di],Y
+.l1:	lda	[__di],Y
 	eor	#$FF
-	sta	ax,Y
-	sta	[di],Y
+	sta	__ax,Y
+	sta	[__di],Y
 	dey
 	bpl	.l1
 	; -- cmp
 	clx
 	ldy	#7
-.l2:	lda	ax,Y
-	cmp	[di],Y
+.l2:	lda	__ax,Y
+	cmp	[__di],Y
 	beq	.l3
 	inx
 .l3:	eor	#$FF
-	sta	[di],Y
+	sta	[__di],Y
 	dey
 	bpl	.l2
 
@@ -128,18 +128,18 @@ _bm_format:
 	stz	$8010
 	stz	$8011
 
-	stw	#$8000,<di	; test area at $8000
+	stw	#$8000,<__di	; test area at $8000
 .l2:	jsr	_bm_testram
 	cpx	#0
 	bne	.setsz
-	lda	<di+1
+	lda	<__di+1
 	cmp	#$A0		; and keep going until either
 	beq	.setsz		; (a) bad memory, or
 	inc	A		; (b) next bank
-	sta	<di+1
+	sta	<__di+1
 	bra	.l2
 
-.setsz:	lda	<di+1
+.setsz:	lda	<__di+1
 	sta	$8005
 
 	; -- ok
@@ -161,16 +161,16 @@ _bm_free:
 	jsr	_bm_enable
 	bcs	.err
 	; -- calculate free space
-	stw	$8004,<cx
-	subw	$8006,<cx
-	subw	#$12,<cx
-	lda	<ch
+	stw	$8004,<__cx
+	subw	$8006,<__cx
+	subw	#$12,<__cx
+	lda	<__ch
 	bpl	.ok
-	stwz	<cx
+	stwz	<__cx
 	; -- ok
 .ok:	jsr	_bm_disable
 	stz	bm_error
-	__ldw	<cx
+	__ldw	<__cx
 	clc
 	rts
 	; -- error, bram not formatted
@@ -191,18 +191,18 @@ _bm_size:
 	jsr	_bm_enable
 	bcs	.err
 	; -- calculate free space
-	stw	$8004,<cx
-	subw	#$8000,<cx
-	lda	<ch
+	stw	$8004,<__cx
+	subw	#$8000,<__cx
+	lda	<__ch
 	cmp	#$21
 	bcs	.err1
-	lda	<ch
+	lda	<__ch
 	bpl	.ok
-	stwz	<cx
+	stwz	<__cx
 	; -- ok
 .ok:	jsr	_bm_disable
 	stz	bm_error
-	__ldw	<cx
+	__ldw	<__cx
 	clc
 	rts
 	; -- error, bram not formatted
@@ -221,14 +221,14 @@ _bm_size:
 ; Automatically handles mapping of memory ; and address range
 ;
 _bm_rawread:
-	__stw	<bx
-	lda	<bh
+	__stw	<__bx
+	lda	<__bh
 	and	#$1F
 	ora	#$80
-	sta	<bh
+	sta	<__bh
 	jsr	_bm_enable
 	bcs	.err
-	lda	[bx]
+	lda	[__bx]
 	sax
 	stz	bm_error
 	jsr	_bm_disable
@@ -241,21 +241,21 @@ _bm_rawread:
 	rts
 
 
-; bm_rawwrite(int location [bx], char val [reg acc])
+; bm_rawwrite(int location [__bx], char val [reg acc])
 ; ---
 ; Similar to peek(), but for BRAM
 ; Automatically handles mapping of memory ; and address range
 ;
 _bm_rawwrite.2:
-	__stw	<ax
-	lda	<bh
+	__stw	<__ax
+	lda	<__bh
 	and	#$1F
 	ora	#$80
-	sta	<bh
+	sta	<__bh
 	jsr	_bm_enable
 	bcs	.err
-	lda	<al
-	sta	[bx]
+	lda	<__al
+	sta	[__bx]
 	stz	bm_error
 	jsr	_bm_disable
 	cla
@@ -277,7 +277,7 @@ _bm_rawwrite.2:
 ;
 
 _bm_exist:
-	__stw	<bx
+	__stw	<__bx
 	jsr	_bm_open
 	bcs	.l1
 	jsr	_bm_disable
@@ -298,14 +298,14 @@ _bm_exist:
 ;
 
 _bm_sizeof:
-	__stw	<bx
+	__stw	<__bx
 	jsr	_bm_open
 	bcs	.l1
-	subw	#$10,<cx
+	subw	#$10,<__cx
 	jsr	_bm_disable
 	stz	bm_error
-	ldx	<cl
-	lda	<ch
+	ldx	<__cl
+	lda	<__ch
 	rts
 .l1:	clx
 	cla
@@ -330,7 +330,7 @@ _bm_id:
 
 ; ------------------------
 
-; bm_getptr(int ptr [bp], char *namebuf [reg acc])
+; bm_getptr(int ptr [__bp], char *namebuf [reg acc])
 ; ---
 ; Given a pointer with the BRAM, obtain the name of the entry
 ; and the pointer to the next entry
@@ -352,7 +352,7 @@ _bm_delete:
 	rts
 
 
-; bm_read(char *buf [di], char *name [bx], int offset [bp], int nb)
+; bm_read(char *buf [__di], char *name [__bx], int offset [__bp], int nb)
 ; ---
 ; Given a name of a file, grab some info from the file
 ;
@@ -362,7 +362,7 @@ _bm_read.4:
 	rts
 
 
-; bm_write(char *buf [di], char *name [bx], int offset [bp], int nb)
+; bm_write(char *buf [__di], char *name [__bx], int offset [__bp], int nb)
 ; ---
 ; Given the name of a BRAM file, update some info inside of it
 ;
@@ -372,7 +372,7 @@ _bm_write.4:
 	rts
 
 
-; bm_create(char *name [bx], int size)
+; bm_create(char *name [__bx], int size)
 ; ---
 ; Create a new BRAM file, given the name and size
 
@@ -381,7 +381,7 @@ _bm_create.2:
 	rts
 
 
-; bm_open(char *name [bx])
+; bm_open(char *name [__bx])
 ; ---
 ; Internal function to obtain access to a named file
 
@@ -431,7 +431,7 @@ _bm_unlock:
 
 	.bank	LIB2_BANK
 
-; bm_getptr(int ptr [bp], char *namebuf [reg acc])
+; bm_getptr(int ptr [__bp], char *namebuf [reg acc])
 ; ---
 ; Given a pointer with the BRAM, obtain the name of the entry
 ; and the pointer to the next entry
@@ -439,34 +439,34 @@ _bm_unlock:
 ;
 
 lib2_bm_getptr.2:
-	__stw	<di		; namebuf is destination of a copy
+	__stw	<__di		; namebuf is destination of a copy
 	jsr	lib2_bm_enable
 	bcs	.x2
 
-	tstw	<bp		; error - 0 input
+	tstw	<__bp		; error - 0 input
 	beq	.x2
-	lda	[bp]
-	sta	<cl
+	lda	[__bp]
+	sta	<__cl
 	ldy	#1
-	lda	[bp],Y
-	sta	<ch		; <cx is length of entry
-	tstw	<cx
+	lda	[__bp],Y
+	sta	<__ch		; <__cx is length of entry
+	tstw	<__cx
 	beq	.empty
 
-	addw	#4,<bp,<si	; <si is now ptr to name of current entry
+	addw	#4,<__bp,<__si	; <__si is now ptr to name of current entry
 	cla
 	ldx	#12
 	jsr	_memcpy.3	; copy 12 bytes of name to namebuf
-	addw	<cx,<bp,<ax	; next pointer
+	addw	<__cx,<__bp,<__ax	; next pointer
 	jsr	lib2_bm_disable
 	stz	bm_error
-	lda	<ah
-	ldx	<al
+	lda	<__ah
+	ldx	<__al
 	clc
 	rts
 
 .empty:	cla
-	
+
 	; -- error, bram not formatted
 .x2:	sta	bm_error
 	jsr	lib2_bm_disable
@@ -482,17 +482,17 @@ lib2_bm_getptr.2:
 ;
 
 lib2_bm_delete:
-	__stw	<ax
+	__stw	<__ax
 	jsr	lib2_bm_open
 	bcs	.out
-	stw	$8006,<bx	; ptr to end
-	stw	<si,<di	; setup currptr as dest
-	stw	<dx,<si	; setup nextptr as src
-	subw	<dx,<bx	; #bytes = end-next + 2
-	addw	#2,<bx
-	subw	<cx,$8006	; adjust ptr to end
-	lda	<bh
-	ldx	<bl
+	stw	$8006,<__bx	; ptr to end
+	stw	<__si,<__di	; setup currptr as dest
+	stw	<__dx,<__si	; setup nextptr as src
+	subw	<__dx,<__bx	; #bytes = end-next + 2
+	addw	#2,<__bx
+	subw	<__cx,$8006	; adjust ptr to end
+	lda	<__bh
+	ldx	<__bl
 	jsr	_memcpy.3
 	jsr	lib2_bm_disable
 	stz	bm_error
@@ -502,46 +502,46 @@ lib2_bm_delete:
 .out:	rts
 
 
-; bm_read(char *buf [di], char *name [bx], int offset [bp], int nb)
+; bm_read(char *buf [__di], char *name [__bx], int offset [__bp], int nb)
 ; ---
 ; Given a name of a file, grab some info from the file
 ;
 
 lib2_bm_read.4:
-	__stw	<ax
+	__stw	<__ax
 	; -- open file
 	jsr	lib2_bm_open
 	bcs	.x2
 	; -- checksum test
 	jsr	lib2_bm_checksum
 	ldy	#2
-	lda	[si],Y
-	add	<dl
-	sta	<dl
+	lda	[__si],Y
+	add	<__dl
+	sta	<__dl
 	iny
-	lda	[si],Y
-	adc	<dh
-	ora	<dl
+	lda	[__si],Y
+	adc	<__dh
+	ora	<__dl
 	bne	.x1
 	; -- setup ptr
 	jsr	lib2_bm_setup_ptr
 	bcs	.ok
 	; -- read
 	cly
-.l1:	lda	[dx],Y
-	sta	[di],Y
+.l1:	lda	[__dx],Y
+	sta	[__di],Y
 	iny
 	bne	.l2
-	inc	<dx+1
-	inc	<di+1
-.l2:	dec	<cl
+	inc	<__dx+1
+	inc	<__di+1
+.l2:	dec	<__cl
 	bne	.l1
-	dec	<ch
+	dec	<__ch
 	bpl	.l1
 	; -- ok
 .ok:	jsr	lib2_bm_disable
 	stz	bm_error
-	__ldw	<ax
+	__ldw	<__ax
 	clc
 	rts
 	; -- error, bad file checksum
@@ -554,13 +554,13 @@ lib2_bm_read.4:
 .x2:	rts
 
 
-; bm_write(char *buf [di], char *name [bx], int offset [bp], int nb)
+; bm_write(char *buf [__di], char *name [__bx], int offset [__bp], int nb)
 ; ---
 ; Given the name of a BRAM file, update some info inside of it
 ;
 
 lib2_bm_write.4:
-	__stw	<ax
+	__stw	<__ax
 	; -- open file
 	jsr	lib2_bm_open
 	bcs	.x1
@@ -569,40 +569,40 @@ lib2_bm_write.4:
 	bcs	.ok
 	; -- write data
 	cly
-.l1:	lda	[di],Y
-	sta	[dx],Y
+.l1:	lda	[__di],Y
+	sta	[__dx],Y
 	iny
 	bne	.l2
-	inc	<dx+1
-	inc	<di+1
-.l2:	dec	<cl
+	inc	<__dx+1
+	inc	<__di+1
+.l2:	dec	<__cl
 	bne	.l1
-	dec	<ch
+	dec	<__ch
 	bpl	.l1
 	; -- update checksum
 	jsr	lib2_bm_checksum
 	ldy	#2
 	cla
-	sub	<dl
-	sta	[si],Y
+	sub	<__dl
+	sta	[__si],Y
 	iny
 	cla
-	sbc	<dh
-	sta	[si],Y
+	sbc	<__dh
+	sta	[__si],Y
 	; -- ok
 .ok:	jsr	lib2_bm_disable
 	stz	bm_error
-	__ldw	<ax
+	__ldw	<__ax
 	clc
 .x1:	rts
 
 
-; bm_create(char *name [bx], int size)
+; bm_create(char *name [__bx], int size)
 ; ---
 ; Create a new BRAM file, given the name and size
 
 lib2_bm_create.2:
-	__stw	<ax
+	__stw	<__ax
 	jsr	lib2_bm_enable
 	bcc	.go
 	bra	.x2
@@ -616,67 +616,67 @@ lib2_bm_create.2:
 	sec
 	rts
 	; -- check free space
-.go:	addw	#$12,$8006,<dx
-	addw	<ax,<dx
-	cmpw	<dx,$8004
+.go:	addw	#$12,$8006,<__dx
+	addw	<__ax,<__dx
+	cmpw	<__dx,$8004
 	blo	.x1
 	; -- create file
-	stw	$8006,<si
+	stw	$8006,<__si
 	ldy	#1
-	lda	<al
+	lda	<__al
 	add	#$10
-	sta	[si]
-	lda	<ah
+	sta	[__si]
+	lda	<__ah
 	adc	#$00
-	sta	[si],Y
+	sta	[__si],Y
 	; --
 	lda	$8006
-	add	[si]
-	sta	<dl
+	add	[__si]
+	sta	<__dl
 	sta	$8006
 	lda	$8007
-	adc	[si],Y
-	sta	<dh
+	adc	[__si],Y
+	sta	<__dh
 	sta	$8007
 	cla
-	sta	[dx]
-	sta	[dx],Y
+	sta	[__dx]
+	sta	[__dx],Y
 	; -- copy name
 	clx
 	ldy	#4
 .l1:	sxy
-	lda	[bx],Y
+	lda	[__bx],Y
 	sxy
-	sta	[si],Y
+	sta	[__si],Y
 	iny
 	inx
 	cpx	#12
 	bne	.l1
 	; -- clear file
-	lda	<al
-	ora	<ah
+	lda	<__al
+	ora	<__ah
 	beq	.sum
-	stw	<si,<bx
+	stw	<__si,<__bx
 	ldy	#16
 	cla
-.l2:	sta	[bx],Y
+.l2:	sta	[__bx],Y
 	iny
 	bne	.l3
-	inc	<bh
-.l3:	dec	<al
+	inc	<__bh
+.l3:	dec	<__al
 	bne	.l2
-	dec	<ah
+	dec	<__ah
 	bpl	.l2
 	; -- update checksum
 .sum:	jsr	lib2_bm_checksum
 	ldy	#2
 	cla
-	sub	<dl
-	sta	[si],Y
+	sub	<__dl
+	sta	[__si],Y
 	iny
 	cla
-	sbc	<dh
-	sta	[si],Y
+	sbc	<__dh
+	sta	[__si],Y
 	; -- ok
 .ok:	jsr	lib2_bm_disable
 	stz	bm_error
@@ -686,7 +686,7 @@ lib2_bm_create.2:
 	rts
 
 
-; bm_open(char *name [bx])
+; bm_open(char *name [__bx])
 ; ---
 ; Internal function to obtain access to a named file
 
@@ -694,25 +694,25 @@ lib2_bm_open:
 	jsr	lib2_bm_enable
 	bcs	.x2
 	; -- get dir entry
-	stw	#$8010,<si
-.l1:	lda	[si]
-	sta	<cl
+	stw	#$8010,<__si
+.l1:	lda	[__si]
+	sta	<__cl
 	ldy	#1
-	lda	[si],Y
-	sta	<ch
-	ora	<cl
+	lda	[__si],Y
+	sta	<__ch
+	ora	<__cl
 	beq	.x1
-	addw	<cx,<si,<dx
-	cmpw	<dx,$8004
+	addw	<__cx,<__si,<__dx
+	cmpw	<__dx,$8004
 	blo	.x3
-	cmpw	#16,<cx
+	cmpw	#16,<__cx
 	blo	.x3
 	; -- compare names
 	cly
 	ldx	#4
-.l2:	lda	[bx],Y
+.l2:	lda	[__bx],Y
 	sxy
-	cmp	[si],Y
+	cmp	[__si],Y
 	bne	.next
 	sxy
 	inx
@@ -720,9 +720,9 @@ lib2_bm_open:
 	cpy	#12
 	blo	.l2
 	; -- check file size
-	lda	<ch
+	lda	<__ch
 	bne	.ok
-	lda	<cl
+	lda	<__cl
 	cmp	#16
 	beq	.x4
 	; -- ok
@@ -730,7 +730,7 @@ lib2_bm_open:
 	clc
 	rts
 	; -- next entry
-.next:	addw	<cx,<si
+.next:	addw	<__cx,<__si
 	bra	.l1
 	; -- error, file not found
 .x1:	lda	#1
@@ -781,11 +781,15 @@ lib2_bm_unlock:
 	lda	#$F7
 	tam	#4
 	csl
+	lda	#$48
+	sta	bram_unlock
+	lda	#$75
+	sta	bram_unlock
 	lda	#$80
 	sta	bram_unlock
 	rts
 
-	
+
 ; bm_disable()
 ; ---
 ; This internal function handles the fixup of BRAM segment/locking
@@ -799,76 +803,76 @@ lib2_bm_disable:
 	rts
 
 
-; bm_checksum(char *fcb [si])
+; bm_checksum(char *fcb [__si])
 ; ---
 ; Internal function to generate checksum
 ;
 
 lib2_bm_checksum:
-	stwz	<dx
+	stwz	<__dx
 	; -- get file size
-	lda	[si]
+	lda	[__si]
 	sub	#4
-	sta	<cl
+	sta	<__cl
 	ldy	#1
-	lda	[si],Y
+	lda	[__si],Y
 	sbc	#0
-	sta	<ch
-	stw	<si,<bx
+	sta	<__ch
+	stw	<__si,<__bx
 	; -- calc checksum
 	ldy	#4
-.l1:	lda	[bx],Y
-	add	<dl
-	sta	<dl
+.l1:	lda	[__bx],Y
+	add	<__dl
+	sta	<__dl
 	bcc	.l2
-	inc	<dh
+	inc	<__dh
 .l2:	iny
 	bne	.l3
-	inc	<bh
-.l3:	dec	<cl
+	inc	<__bh
+.l3:	dec	<__cl
 	bne	.l1
-	dec	<ch
+	dec	<__ch
 	bpl	.l1
 	rts
 
 
-; bm_setup_ptr(char *fcb [si], char *buf [di], int offset [bp], int nb [ax])
+; bm_setup_ptr(char *fcb [__si], char *buf [__di], int offset [__bp], int nb [__ax])
 ; ---
 
 lib2_bm_setup_ptr:
 	; -- check length
-	tstw	<ax
+	tstw	<__ax
 	beq	.x1
 	; -- check ptr
-	tstw	<di
+	tstw	<__di
 	beq	.x1
 	; -- check offset
-	addw	#16,<bp,<bx
+	addw	#16,<__bp,<__bx
 	ldy	#1
-	lda	<bh
-	cmp	[si],Y
+	lda	<__bh
+	cmp	[__si],Y
 	bne	.l1
-	lda	<bl
-	cmp	[si]
+	lda	<__bl
+	cmp	[__si]
 .l1:	blo	.l2
 	; -- eof
-.x1:	stwz	<ax
+.x1:	stwz	<__ax
 	sec
 	rts
 	; -- set base ptr
-.l2:	addw	<bx,<si,<dx
+.l2:	addw	<__bx,<__si,<__dx
 	; -- check length
-	addw	<ax,<bx
-	lda	[si]
-	sub	<bl
-	sta	<bl
-	lda	[si],Y
-	sbc	<bh
-	sta	<bh
+	addw	<__ax,<__bx
+	lda	[__si]
+	sub	<__bl
+	sta	<__bl
+	lda	[__si],Y
+	sbc	<__bh
+	sta	<__bh
 	bpl	.ok
 	; -- adjust size
-	addw	<bx,<ax
-.ok:	stw	<ax,<cx
+	addw	<__bx,<__ax
+.ok:	stw	<__ax,<__cx
 	clc
 	rts
 
@@ -877,4 +881,3 @@ lib2_bm_setup_ptr:
 ; in LIB1_BANK
 ;
 	.bank	LIB1_BANK
-

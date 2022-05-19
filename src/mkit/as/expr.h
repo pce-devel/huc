@@ -4,7 +4,6 @@
 #define T_BINARY	2
 #define T_CHAR		3
 #define T_SYMBOL	4
-#define T_PC		5
 
 /* operators */
 #define OP_START	0
@@ -36,17 +35,33 @@
 #define OP_VRAM		26
 #define OP_PAL		27
 #define OP_SIZEOF	28
+#define OP_dotLO	29
+#define OP_dotHI	30
 
 /* operator priority */
 const int op_pri[] = {
-	0 /* START */, 0 /* OPEN  */,
-	7 /* ADD   */, 7 /* SUB   */, 8	/* MUL   */, 8 /* DIV   */,
-	8 /* MOD   */, 10 /* NEG   */, 6 /* SHL   */, 6	/* SHR   */,
-	1 /* OR    */, 2 /* XOR   */, 3	/* AND   */, 10	/* COM   */,
-	9 /* NOT   */, 4 /* =     */, 4	/* <>    */, 5 /* <     */,
-	5 /* <=    */, 5 /* >     */, 5	/* >=    */,
-	10 /* DEFIN.*/, 10 /* HIGH  */, 10 /* LOW   */, 10 /* PAGE  */,
-	10 /* BANK  */, 10 /* VRAM  */, 10 /* PAL   */, 10	/* SIZEOF*/
+	 0 /* START */,  0 /* OPEN  */,
+	 8 /* ADD   */,  8 /* SUB   */,  9 /* MUL   */,  9 /* DIV   */,
+	 9 /* MOD   */, 11 /* NEG   */,  7 /* SHL   */,  7 /* SHR   */,
+	 1 /* OR    */,  2 /* XOR   */,  3 /* AND   */, 11 /* COM   */,
+	10 /* NOT   */,  4 /* ==    */,  4 /* <>    */,  5 /* <     */,
+	 5 /* <=    */,  5 /* >     */,  5 /* >=    */,
+	11 /* DEFIN.*/, 11 /* HIGH  */, 11 /* LOW   */, 11 /* PAGE  */,
+	11 /* BANK  */, 11 /* VRAM  */, 11 /* PAL   */, 11 /* SIZEOF*/,
+	 6 /* dotLO */,  6 /* dotHI */
+};
+
+/* second argument */
+const int op_2nd[] = {
+	 0 /* START */,  0 /* OPEN  */,
+	 1 /* ADD   */,  1 /* SUB   */,  1 /* MUL   */,  1 /* DIV   */,
+	 1 /* MOD   */,  0 /* NEG   */,  1 /* SHL   */,  1 /* SHR   */,
+	 1 /* OR    */,  1 /* XOR   */,  1 /* AND   */,  0 /* COM   */,
+	 0 /* NOT   */,  1 /* ==    */,  1 /* <>    */,  1 /* <     */,
+	 1 /* <=    */,  1 /* >     */,  1 /* >=    */,
+	 0 /* DEFIN.*/,  0 /* HIGH  */,  0 /* LOW   */,  0 /* PAGE  */,
+	 0 /* BANK  */,  0 /* VRAM  */,  0 /* PAL   */,  0 /* SIZEOF*/,
+	 0 /* dotLO */,  0 /* dotHI */
 };
 
 unsigned int op_stack[64] = {
@@ -57,8 +72,11 @@ int op_idx, val_idx;		/* index in the operator and value stacks */
 int need_operator;		/* when set await an operator, else await a value */
 char *expr;			/* pointer to the expression string */
 char *expr_stack[16];		/* expression stack */
-struct t_symbol *expr_lablptr;	/* pointer to the lastest label */
+struct t_symbol *expr_toplabl;	/* pointer to the innermost scope-label */
+struct t_symbol *expr_lablptr;	/* pointer to the last-referenced label */
 int expr_lablcnt;		/* number of label seen in an expression */
+int expr_valbank;		/* last-defined bank# in an expression */
+int complex_expr;		/* NZ if an expression contains operators */
 const char *keyword[8] = {	/* predefined functions */
 	"\7DEFINED",
 	"\4HIGH", "\3LOW",

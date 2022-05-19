@@ -19,15 +19,15 @@ void doundef (void);
 
 void preprocess (void);
 
-void doifdef (long ifdef);
+void doifdef (intptr_t ifdef);
 
-long ifline (void);
+intptr_t ifline (void);
 
 void noiferr (void);
 
-long cpp (int);
+intptr_t cpp (int);
 
-long keepch (char c);
+intptr_t keepch (char c);
 
 void defmac (char *s);
 
@@ -37,7 +37,7 @@ void delmac (struct macro *mp);
 
 struct macro *findmac (char *sname);
 
-void toggle (char name, long onoff);
+void toggle (char name, intptr_t onoff);
 
 char **include_dirs (void);
 

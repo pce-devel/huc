@@ -620,9 +620,8 @@ MML_EXT:
 		if(ch[i]==ON)
 			fprintf(outfile, "\tdw\t\tSTART_CH%1d\n",i);
 	
-#ifndef osx	/* damn BSD */
-	fcloseall();
-#endif
+	fclose(infile);
+	fclose(outfile);
 	return 0;
 }
 

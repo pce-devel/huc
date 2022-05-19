@@ -21,7 +21,6 @@ OBJ	=       obj/h6280.oa	\
 		obj/vce.o	\
 		obj/psg.o	\
 		obj/system.o    \
-		obj/unzip.o     \
 		obj/fileio.o
 OBJ	+=	obj/dos.o	\
 		obj/blur.o	\

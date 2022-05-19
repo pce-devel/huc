@@ -32,6 +32,39 @@ symhash(void)
 
 
 /* ----
+ * addscope()
+ * ----
+ * prepend the scope chain to the front of a symbol.
+ */
+
+int
+addscope(struct t_symbol * curscope, int i)
+{
+	char * string;
+
+	/* stop at the end of scope chain */
+	if (curscope == NULL) {
+		return i;
+	}
+
+	/* recurse if not at root */
+	if (curscope->scope != NULL) {
+		i = addscope(curscope->scope, i);
+	}
+
+	string = curscope->name + 1;
+
+	while (*string != '\0') {
+		if (i < (SBOLSZ - 1)) { symbol[++i] = *string++; }
+	}
+
+	if (i < (SBOLSZ - 1)) { symbol[++i] = '.'; }
+
+	return i;
+}
+
+
+/* ----
  * colsym()
  * ----
  * collect a symbol from prlnbuf into symbol[],
@@ -40,31 +73,46 @@ symhash(void)
  */
 
 int
-colsym(int *ip)
+colsym(int *ip, int flag)
 {
 	int err = 0;
 	int i = 0;
+	int j;
 	char c;
-	char local_check;
+
+	/* prepend the current scope? */
+	c = prlnbuf[*ip];
+	if ((flag != 0) && (scopeptr != NULL) && (c != '.') && (c != '@') && (c != '!')) {
+		i = addscope(scopeptr, i);
+	}
+
+	/* remember where the symbol itself starts */
+	j = i;
 
 	/* get the symbol */
-	local_check = prlnbuf[*ip];
 	for (;;) {
 		c = prlnbuf[*ip];
-		if (isdigit(c) && (i == 0))
+		if (i == j && isdigit(c))
 			break;
-		if (!isalnum(c) && (c != '_') && (c != '.')) {
-			if ((local_check == '.') && ((c == '-') || (c == '+'))) {
-			}
-			else break;
+		if (isalnum(c) || (c == '_') || (c == '.') || (i == j && (c == '@' || c == '!'))) {
+			if (i < (SBOLSZ - 1)) { symbol[++i] = c; }
+			(*ip)++;
+		} else {
+			break;
 		}
-		if (i < (SBOLSZ - 1))
-			symbol[++i] = c;
-		(*ip)++;
 	}
+
+	if (i == j) { i = 0; }
 
 	symbol[0] = i;
 	symbol[i + 1] = '\0';
+
+	if (i >= SBOLSZ - 1) {
+		char errorstr[512];
+		snprintf(errorstr, 512, "Symbol name too long ('%s' is %d chars long, max is %d)", symbol + 1, i, SBOLSZ - 2);
+		fatal_error(errorstr);
+		return (0);
+	}
 
 	/* check if it's a reserved symbol */
 	if (i == 1) {
@@ -101,14 +149,13 @@ colsym(int *ip)
  */
 
 struct t_symbol *
-stlook(int flag)
+stlook(int type)
 {
 	struct t_symbol *sym;
-	int sym_flag = 0;
 	int hash;
 
 	/* local symbol */
-	if (symbol[1] == '.') {
+	if (symbol[1] == '.' || symbol[1] == '@') {
 		if (glablptr) {
 			/* search the symbol in the local list */
 			sym = glablptr->local;
@@ -120,15 +167,12 @@ stlook(int flag)
 			}
 
 			/* new symbol */
-			if (sym == NULL) {
-				if (flag == 1) {
-					sym = stinstall(0, 1);
-					sym_flag = 1;
-				}
+			if ((sym == NULL) && (type != SYM_CHK)) {
+				sym = stinstall(0, 1);
 			}
 		}
 		else {
-			if (flag != 2)
+			if (type != SYM_CHK)
 				error("Local symbol not allowed here!");
 			return (NULL);
 		}
@@ -146,18 +190,14 @@ stlook(int flag)
 		}
 
 		/* new symbol */
-		if (sym == NULL) {
-			if (flag == 1) {
-				sym = stinstall(hash, 0);
-				sym_flag = 1;
-			}
+		if ((sym == NULL) && (type != SYM_CHK)) {
+			sym = stinstall(hash, 0);
 		}
 	}
 
-	/* incremente symbol reference counter */
-	if (sym_flag == 0) {
-		if (sym)
-			sym->refcnt++;
+	/* increment symbol reference counter */
+	if ((sym != NULL) && (type == SYM_REF)) {
+		sym->refcnt++;
 	}
 
 	/* ok */
@@ -186,13 +226,16 @@ stinstall(int hash, int type)
 	sym->type = if_expr ? IFUNDEF : UNDEF;
 	sym->value = 0;
 	sym->local = NULL;
+	sym->scope = NULL;
 	sym->proc = NULL;
+	sym->section = -1;
 	sym->bank = RESERVED_BANK;
 	sym->nb = 0;
 	sym->size = 0;
 	sym->page = -1;
 	sym->vram = -1;
 	sym->pal = -1;
+	sym->defcnt = 0;
 	sym->refcnt = 0;
 	sym->reserved = 0;
 	sym->data_type = -1;
@@ -224,7 +267,7 @@ stinstall(int hash, int type)
  */
 
 int
-labldef(int lval, int flag)
+labldef(int lval, int lbnk, int lsrc)
 {
 	char c;
 
@@ -233,8 +276,49 @@ labldef(int lval, int flag)
 		return (0);
 
 	/* adjust symbol address */
-	if (flag)
-		lval = (lval & 0x1FFF) | (page << 13);
+	if (lsrc == LOCATION) {
+		/* is this a multi-label? */
+		if (lablptr->name[1] == '!') {
+			char tail [10];
+
+			/* sanity check */
+			if (lablptr->type != UNDEF) {
+				fatal_error("How did this multi-label get defined!");
+				return (-1);
+			}
+
+			/* define the next multi-label instance */
+			strcpy(symbol, lablptr->name);
+			sprintf(tail, "!%d", 0x7FFFF & ++(lablptr->defcnt));
+			strncat(symbol, tail, SBOLSZ - 1 - strlen(symbol));
+			symbol[0] = strlen(&symbol[1]);
+			if ((lablptr = stlook(SYM_DEF)) == NULL) {
+				fatal_error("Out of memory!");
+				return (-1);
+			}
+		}
+
+		/* fix location after crossing bank */
+		if (loccnt >= 0x2000) {
+			loccnt &= 0x1FFF;
+			page++;
+			bank++;
+		}
+
+		lval = ((loccnt + (page << 13)) & 0xFFFF);
+
+		if (bank >= RESERVED_BANK)
+			lbnk = bank;
+		else
+			lbnk = bank_base + bank;
+
+		/* KickC can't call bank(), so put it in the label */
+		if (kickc_mode)
+			lval += lbnk << 23;
+	}
+
+	/* record definition */
+	lablptr->defcnt = 1;
 
 	/* first pass */
 	if (pass == FIRST_PASS) {
@@ -243,6 +327,7 @@ labldef(int lval, int flag)
 		case UNDEF:
 		case IFUNDEF:
 			lablptr->type = DEFABS;
+			lablptr->bank = lbnk;
 			lablptr->value = lval;
 			break;
 
@@ -274,33 +359,38 @@ labldef(int lval, int flag)
 		}
 	}
 
-	/* second pass */
+	/* branch pass */
+	else if (pass != LAST_PASS) {
+		if (lablptr->type == DEFABS) {
+			lablptr->bank = lbnk;
+			lablptr->value = lval;
+		}
+	}
+
+	/* last pass */
 	else {
 		if ((lablptr->value != lval) ||
-		    ((flag) && (bank < bank_limit) && (lablptr->bank != bank_base + bank))) {
-			fatal_error("Internal error[1]!");
+		    ((lsrc == LOCATION) && (bank < bank_limit) && (lablptr->bank != bank_base + bank))) {
+			fatal_error("Symbol's bank or address changed in final pass!");
 			return (-1);
 		}
 	}
 
 	/* update symbol data */
-	if (flag) {
+	if (lsrc == LOCATION) {
+		lablptr->section = section;
+
 		if (section == S_CODE)
 			lablptr->proc = proc_ptr;
 
-		if ((section == S_BSS) || (section == S_ZP)) {
-			lablptr->bank = bank;
-		}
-		else {
-			lablptr->bank = bank_base + bank;
-		}
 		lablptr->page = page;
 
 		/* check if it's a local or global symbol */
 		c = lablptr->name[1];
-		if (c == '.')
+		if (c == '.' || c == '@' || c == '!') {
 			/* local */
 			lastlabl = NULL;
+		}
 		else {
 			/* global */
 			glablptr = lablptr;
@@ -330,11 +420,12 @@ lablset(char *name, int val)
 	if (len) {
 		symbol[0] = len;
 		strcpy(&symbol[1], name);
-		lablptr = stlook(1);
+		lablptr = stlook(SYM_DEF);
 
 		if (lablptr) {
 			lablptr->type = DEFABS;
 			lablptr->value = val;
+			lablptr->defcnt = 1;
 			lablptr->reserved = 1;
 		}
 	}
@@ -361,7 +452,7 @@ lablexists(char *name)
 	if (len) {
 		symbol[0] = len;
 		strcpy(&symbol[1], name);
-		lablptr = stlook(1);
+		lablptr = stlook(SYM_CHK);
 
 		if (lablptr) {
 			return (1);
@@ -371,6 +462,7 @@ lablexists(char *name)
 }
 
 
+#if 0
 /* ----
  * lablremap()
  * ----
@@ -410,6 +502,8 @@ lablremap(void)
 		}
 	}
 }
+#endif
+
 
 /* ----
  * dumplabl()
@@ -429,10 +523,13 @@ labldump(FILE *fp)
 
 	/* browse the symbol table */
 	for (i = 0; i < 256; i++) {
-		sym = hash_tbl[i];
-		while (sym) {
+		for (sym = hash_tbl[i]; sym != NULL; sym = sym->next) {
+			/* skip undefined symbols and stripped symbols */
+			if ((sym->type != DEFABS) || (sym->bank == STRIPPED_BANK) || (sym->name[1] == '!'))
+				continue;
+
 			/* dump the label */
-			fprintf(fp, "%2.2x\t%4.4x\t", sym->bank, sym->value);
+			fprintf(fp, "%2.2x\t%4.4x\t", sym->bank, sym->value & 0xFFFF);
 			fprintf(fp, "%s\t", &(sym->name[1]));
 			if (strlen(&(sym->name[1])) < 8)
 				fprintf(fp, "\t");
@@ -447,7 +544,7 @@ labldump(FILE *fp)
 				local = sym->local;
 
 				while (local) {
-					fprintf(fp, "%2.2x\t%4.4x\t", local->bank, local->value);
+					fprintf(fp, "%2.2x\t%4.4x\t", local->bank, local->value & 0xFFFF);
 					fprintf(fp, "\t%s\t", &(local->name[1]));
 					if (strlen(&(local->name[1])) < 8)
 						fprintf(fp, "\t");
@@ -459,10 +556,43 @@ labldump(FILE *fp)
 					local = local->next;
 				}
 			}
+		}
+	}
+}
+
+
+/* ----
+ * lablresetdefcnt
+ * ----
+ * clear the defcnt on all the multi-labels
+ */
+
+void
+lablresetdefcnt(void)
+{
+	struct t_symbol *sym;
+	int i;
+
+	/* browse the symbol table */
+	for (i = 0; i < 256; i++) {
+		sym = hash_tbl[i];
+		while (sym) {
+			sym->defcnt = 0;
+
+			/* local symbols */
+			if (sym->local) {
+				struct t_symbol * local = sym->local;
+
+				while (local) {
+					local->defcnt = 0;
+
+					/* next */
+					local = local->next;
+				}
+			}
 
 			/* next */
 			sym = sym->next;
 		}
 	}
 }
-

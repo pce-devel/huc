@@ -7,14 +7,14 @@
 
 void dopsdinc (void);
 void dopsddef (void);
-long outcomma (void);
-long outnameunderline (void);
-long outconst (void);
+intptr_t outcomma (void);
+intptr_t outnameunderline (void);
+intptr_t outconst (void);
 void doset_bgpalstatement (void);
 void doset_sprpalstatement (void);
 void doload_spritesstatement (void);
 void doload_backgroundstatement (void);
-void do_asm_func (long type);
-char *new_string (long und, char *a);
+void do_asm_func (intptr_t type);
+char *new_string (intptr_t und, char *a);
 
 #endif

@@ -10,10 +10,10 @@ void dopragma (void);
 void defpragma (void);
 void parse_pragma (void);
 void new_fastcall (void);
-long fastcall_look (const char *fname, long nargs, struct fastcall **p);
-long symhash (const char *sym);
-long symget (char *sname);
-long strmatch (char *lit);
+intptr_t fastcall_look (const char *fname, intptr_t nargs, struct fastcall **p);
+intptr_t symhash (const char *sym);
+intptr_t symget (char *sname);
+intptr_t strmatch (char *lit);
 void skip_blanks (void);
 
 extern struct fastcall *fastcall_tbl[256];

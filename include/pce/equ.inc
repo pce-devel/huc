@@ -27,58 +27,39 @@ _vreg	= $20F7
 ; areas (in zero-page) for subroutines.
 ;
 
-bp	= $20EC	; base pointer
-si	= $20EE	; source address
-di	= $20F0	; destination address
-ax	= $20F8
-al	= $20F8
-ah	= $20F9
-bx	= $20FA
-bl	= $20FA
-bh	= $20FB
-cx	= $20FC
-cl	= $20FC
-ch	= $20FD
-dx	= $20FE
-dl	= $20FE
-dh	= $20FF
-
-.ifdef C_REGS
-; C aliases
-___bp	= bp
-___si	= si
-___di	= di
-___ax	= ax
-___al	= al
-___ah	= ah
-___bx	= bx
-___bl	= bl
-___bh	= bh
-___cx	= cx
-___cl	= cl
-___ch	= ch
-___dx	= dx
-___dl	= dl
-___dh	= dh
-.endif
+__bp	= $20EC	; base pointer
+__si	= $20EE	; source address
+__di	= $20F0	; destination address
+__ax	= $20F8
+__al	= $20F8
+__ah	= $20F9
+__bx	= $20FA
+__bl	= $20FA
+__bh	= $20FB
+__cx	= $20FC
+__cl	= $20FC
+__ch	= $20FD
+__dx	= $20FE
+__dl	= $20FE
+__dh	= $20FF
 
 .ifdef DEPRECATED
 ; aliases for old assembler code
-_bp	= bp
-_si	= si
-_di	= di
-_ax	= ax
-_al	= al
-_ah	= ah
-_bx	= bx
-_bl	= bl
-_bh	= bh
-_cx	= cx
-_cl	= cl
-_ch	= ch
-_dx	= dx
-_dl	= dl
-_dh	= dh
+_bp	= __bp
+_si	= __si
+_di	= __di
+_ax	= __ax
+_al	= __al
+_ah	= __ah
+_bx	= __bx
+_bl	= __bl
+_bh	= __bh
+_cx	= __cx
+_cl	= __cl
+_ch	= __ch
+_dx	= __dx
+_dl	= __dl
+_dh	= __dh
 .endif
 
 

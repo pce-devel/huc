@@ -39,6 +39,10 @@ const char defdirs_nes[] =
 #endif
 ;
 
+
+extern struct t_opcode m6502_inst[];
+extern struct t_opcode undoc_inst[];
+
 /* NES machine description */
 struct t_machine nes = {
 	MACHINE_NES,		/* type */
@@ -52,7 +56,8 @@ struct t_machine nes = {
 	0,			/* ram_base */
 	0,			/* ram_page */
 	RESERVED_BANK,		/* ram_bank */
-	NULL,			/* inst */
+	m6502_inst,		/* base_inst */
+	undoc_inst,		/* plus_inst */
 	nes_pseudo,		/* pseudo_inst */
 	nes_pack_8x8_tile,	/* pack_8x8_tile */
 	NULL,			/* pack_16x16_tile */

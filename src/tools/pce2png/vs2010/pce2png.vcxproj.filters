@@ -1,0 +1,174 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{36af1a95-44af-4f10-bc1a-03b53ab9ca2e}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{57297685-eb89-483d-8762-df4f0b0a7f94}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{8c50d9ad-a001-42d4-b1ea-67e89ca0d96d}</UniqueIdentifier>
+      <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
+    </Filter>
+    <Filter Include="Header Files\pngwrite">
+      <UniqueIdentifier>{dda2ee14-af14-40ce-9d78-5cb5b776c491}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\pngwrite">
+      <UniqueIdentifier>{56911f0a-b985-4b94-a63e-e7aa23934107}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\pce2png.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\errorcode.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sysid.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\lexer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pxlmap.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\bmpfile.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcxfile.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngfile.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngwrite\zutil.c">
+      <Filter>Source Files\pngwrite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngwrite\png.c">
+      <Filter>Source Files\pngwrite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngwrite\pngerror.c">
+      <Filter>Source Files\pngwrite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngwrite\pngget.c">
+      <Filter>Source Files\pngwrite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngwrite\pngmem.c">
+      <Filter>Source Files\pngwrite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngwrite\pngset.c">
+      <Filter>Source Files\pngwrite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngwrite\pngtrans.c">
+      <Filter>Source Files\pngwrite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngwrite\pngwio.c">
+      <Filter>Source Files\pngwrite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngwrite\pngwrite.c">
+      <Filter>Source Files\pngwrite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngwrite\pngwtran.c">
+      <Filter>Source Files\pngwrite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngwrite\pngwutil.c">
+      <Filter>Source Files\pngwrite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngwrite\trees.c">
+      <Filter>Source Files\pngwrite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngwrite\adler32.c">
+      <Filter>Source Files\pngwrite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngwrite\compress.c">
+      <Filter>Source Files\pngwrite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngwrite\crc32.c">
+      <Filter>Source Files\pngwrite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngwrite\deflate.c">
+      <Filter>Source Files\pngwrite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mappedfile.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\pce2png.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\elmer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\errorcode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sysid.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\lexer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pxlmap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bmpfile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcxfile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngfile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngwrite\crc32.h">
+      <Filter>Header Files\pngwrite</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngwrite\deflate.h">
+      <Filter>Header Files\pngwrite</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngwrite\png.h">
+      <Filter>Header Files\pngwrite</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngwrite\pngusr.h">
+      <Filter>Header Files\pngwrite</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngwrite\pngconf.h">
+      <Filter>Header Files\pngwrite</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngwrite\pngdebug.h">
+      <Filter>Header Files\pngwrite</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngwrite\pnginfo.h">
+      <Filter>Header Files\pngwrite</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngwrite\pnglibconf.h">
+      <Filter>Header Files\pngwrite</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngwrite\pngpriv.h">
+      <Filter>Header Files\pngwrite</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngwrite\pngstruct.h">
+      <Filter>Header Files\pngwrite</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngwrite\trees.h">
+      <Filter>Header Files\pngwrite</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngwrite\zconf.h">
+      <Filter>Header Files\pngwrite</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngwrite\zlib.h">
+      <Filter>Header Files\pngwrite</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngwrite\zutil.h">
+      <Filter>Header Files\pngwrite</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mappedfile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

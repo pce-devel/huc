@@ -1,0 +1,14 @@
+{
+    "description": "NEC PC Engine (assembles with PCEAS).",
+    "cpu": "HUC6280",
+    "interrupt": "hardware_all",
+    "link": "pce.ld",
+    "encoding": "ascii",
+    "start_address": "0xA000",
+    "zp_reserve": [ "0x00..0x3F", "0xEC..0xFF" ],
+    "extension": "bin",
+    "emulator": "mednafen",
+    "defines": {
+        "__PCE__": 1
+    }
+}

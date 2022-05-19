@@ -1,9 +1,8 @@
-/* Sample game for HuC, using new language features and SimpleTracker.
+/* Sample game for HuC, using new language features (and NOT SimpleTracker).
  * Based on the sample game at http://obeybrew.com/tutorials.html
  */
 
 #include <huc.h>
-#include <st.h>
 
 #incspr(bonk,"charwalk.pcx",0,0,2,8)
 #incpal(bonkpal,"charwalk.pcx")
@@ -14,9 +13,9 @@
 #incspr(explosion,"explosion.pcx",0,0,2,16)
 #incpal(explosionpal,"explosion.pcx")
 
-#incchr(scene_chr,"scene.pcx")
-#incpal(scene_pal,"scene.pcx")
-#incbat(scene_bat,"scene.pcx",0x1000,32,28)
+#incchr(scene_chr,"scene.png")
+#incpal(scene_pal,"scene.png")
+#incbat(scene_bat,"scene.png",0x1000,32,28)
 
 #define SPEED_X 2
 #define SPEED_Y 2
@@ -48,18 +47,15 @@ struct ship ships[MAX_SHIPS];
 unsigned int frames;
 unsigned int score, hiscore;
 
-#incasm("bgm.asm")
-extern struct st_header bgm[];
-
-const unsigned char snd_bullet_env[] = {
-	31, 31, 31, 31, 31, 31, 31, 30, 30, 29, 29, 28, 27, 26, 25, 23
-};
-const unsigned char snd_bullet_wave[] = {
-	0x1d, 0x0f, 0x09, 0x05, 0x03, 0x01, 0x03, 0x05,
-	0x09, 0x0f, 0x15, 0x19, 0x1b, 0x1d, 0x1b, 0x19,
-	0x15, 0x0f, 0x07, 0x03, 0x01, 0x03, 0x07, 0x0f,
-	0x17, 0x1b, 0x1d, 0x1b, 0x17, 0x0f, 0x01, 0x0f
-};
+//const unsigned char snd_bullet_env[] = {
+//	31, 31, 31, 31, 31, 31, 31, 30, 30, 29, 29, 28, 27, 26, 25, 23
+//};
+//const unsigned char snd_bullet_wave[] = {
+//	0x1d, 0x0f, 0x09, 0x05, 0x03, 0x01, 0x03, 0x05,
+//	0x09, 0x0f, 0x15, 0x19, 0x1b, 0x1d, 0x1b, 0x19,
+//	0x15, 0x0f, 0x07, 0x03, 0x01, 0x03, 0x07, 0x0f,
+//	0x17, 0x1b, 0x1d, 0x1b, 0x17, 0x0f, 0x01, 0x0f
+//};
 
 void do_ships(void)
 {
@@ -125,9 +121,9 @@ void do_ships(void)
 							spr_x(-16);
 							spr_y(0);
 							score += SCORE_SHIP;
-							st_effect_noise(5, 15, 20);
-							st_set_vol(5, 15, 15);
-							st_set_env(5, snd_bullet_env);
+//							st_effect_noise(5, 15, 20);
+//							st_set_vol(5, 15, 15);
+//							st_set_env(5, snd_bullet_env);
 						}
 					}
 				}
@@ -166,8 +162,8 @@ void main(void)
 
 	hiscore = 0;
 
-	st_init();
-	st_set_song(bank(bgm), bgm);
+//	st_init();
+//	st_set_song(bank(bgm), bgm);
 
 	/* no goto yet, so we have to use this instead */
 	for (;;) {
@@ -181,11 +177,11 @@ void main(void)
 	bullet_wait = 0;
 	bonk_dir = 1;
 
-	st_reset();
-	st_set_env(3, snd_bullet_env);
-	st_load_wave(3, snd_bullet_wave);
-	st_set_vol(3, 15, 15);
-	st_play_song();
+//	st_reset();
+//	st_set_env(3, snd_bullet_env);
+//	st_load_wave(3, snd_bullet_wave);
+//	st_set_vol(3, 15, 15);
+//	st_play_song();
 
 	init_satb();
 	spr_set(0);
@@ -277,7 +273,7 @@ void main(void)
 						spr_ctrl(FLIP_X_MASK, FLIP_X);
 					else
 						spr_ctrl(FLIP_X_MASK, NO_FLIP_X);
-					st_effect_wave(3, 800, 16);
+//					st_effect_wave(3, 800, 16);
 					break;
 				}
 			}

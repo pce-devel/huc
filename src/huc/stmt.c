@@ -3,6 +3,7 @@
  *
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -33,7 +34,7 @@
  *	must be compound, and must contain "statement_list" (even if
  *	"declaration_list" is omitted)
  */
-long statement (long func)
+intptr_t statement (intptr_t func)
 {
 	if ((ch() == 0) & feof(input))
 		return (0);
@@ -58,7 +59,7 @@ long statement (long func)
 /*
  *	declaration
  */
-long stdecl (void)
+intptr_t stdecl (void)
 {
 	if (amatch("register", 8))
 		doldcls(DEFAUTO);
@@ -73,7 +74,7 @@ long stdecl (void)
 	return (YES);
 }
 
-long doldcls (long stclass)
+intptr_t doldcls (intptr_t stclass)
 {
 	struct type t;
 
@@ -192,9 +193,9 @@ void stst (void)
  *	'func' is true if we are in a "function_statement", which
  *	must contain "statement_list"
  */
-void compound (long func)
+void compound (intptr_t func)
 {
-	long decls;
+	intptr_t decls;
 
 	decls = YES;
 	ncmp++;
@@ -223,7 +224,7 @@ void compound (long func)
  */
 void doif (void)
 {
-	long fstkp, flab1, flab2;
+	intptr_t fstkp, flab1, flab2;
 	SYMBOL *flev;
 
 	flev = locptr;
@@ -250,9 +251,9 @@ void doif (void)
  */
 void dowhile (void)
 {
-	long ws[7];
+	intptr_t ws[7];
 
-	ws[WSSYM] = (long)locptr;
+	ws[WSSYM] = (intptr_t)locptr;
 	ws[WSSP] = stkp;
 	ws[WSTYP] = WSWHILE;
 	ws[WSTEST] = getlabel();
@@ -273,9 +274,9 @@ void dowhile (void)
  */
 void dodo (void)
 {
-	long ws[7];
+	intptr_t ws[7];
 
-	ws[WSSYM] = (long)locptr;
+	ws[WSSYM] = (intptr_t)locptr;
 	ws[WSSP] = stkp;
 	ws[WSTYP] = WSDO;
 	ws[WSBODY] = getlabel();
@@ -301,10 +302,10 @@ void dodo (void)
  */
 void dofor (void)
 {
-	long ws[7],
+	intptr_t ws[7],
 	*pws;
 
-	ws[WSSYM] = (long)locptr;
+	ws[WSSYM] = (intptr_t)locptr;
 	ws[WSSP] = stkp;
 	ws[WSTYP] = WSFOR;
 	ws[WSTEST] = getlabel();
@@ -349,10 +350,10 @@ void dofor (void)
  */
 void doswitch (void)
 {
-	long ws[7];
-	long *ptr;
+	intptr_t ws[7];
+	intptr_t *ptr;
 
-	ws[WSSYM] = (long)locptr;
+	ws[WSSYM] = (intptr_t)locptr;
 	ws[WSSP] = stkp;
 	ws[WSTYP] = WSSWITCH;
 	ws[WSCASEP] = swstp;
@@ -382,7 +383,7 @@ void doswitch (void)
  */
 void docase (void)
 {
-	long val;
+	intptr_t val;
 	char n[NAMESIZE];
 
 	val = 0;
@@ -404,7 +405,7 @@ void docase (void)
  */
 void dodefault (void)
 {
-	long *ptr,
+	intptr_t *ptr,
 	      lab;
 
 	ptr = readswitch();
@@ -441,7 +442,7 @@ void doreturn (void)
  */
 void dobreak (void)
 {
-	long *ptr;
+	intptr_t *ptr;
 
 	if ((ptr = readwhile()) == 0)
 		return;
@@ -455,7 +456,7 @@ void dobreak (void)
  */
 void docont (void)
 {
-	long *ptr;
+	intptr_t *ptr;
 
 	if ((ptr = findwhile()) == 0)
 		return;
@@ -479,13 +480,13 @@ void dolabel (char *name)
 			   the goto to here. */
 			sprintf(name, "LL%d_stkp", clabels[i].label);
 			/* XXX: memleak */
-			out_ins_ex(I_DEF, T_LITERAL, (long)strdup(name),
+			out_ins_ex(I_DEF, T_LITERAL, (intptr_t)strdup(name),
 				   T_VALUE, stkp - clabels[i].stkp);
 			/* From now on, clabel::stkp contains the relative
 			   stack pointer at the location of the label. */
 			clabels[i].stkp = stkp;
 			gnlabel(clabels[i].label);
-			printf("old label %s stkp %ld\n", clabels[i].name, stkp);
+			printf("old label %s stkp %ld\n", clabels[i].name, (long) stkp);
 			return;
 		}
 	}
@@ -495,7 +496,7 @@ void dolabel (char *name)
 	strcpy(clabels[clabel_ptr].name, name);
 	clabels[clabel_ptr].stkp = stkp;
 	clabels[clabel_ptr].label = getlabel();
-	printf("new label %s id %d stkp %ld\n", name, clabels[clabel_ptr].label, stkp);
+	printf("new label %s id %d stkp %ld\n", name, clabels[clabel_ptr].label, (long) stkp);
 	gnlabel(clabels[clabel_ptr].label);
 	clabel_ptr++;
 }
@@ -533,7 +534,7 @@ void dogoto (void)
 	clabels[i].label = getlabel();
 	sprintf(sname, "LL%d_stkp", clabels[i].label);
 	/* XXX: memleak */
-	out_ins(I_ADDMI, T_LITERAL, (long)strdup(sname));
+	out_ins(I_ADDMI, T_LITERAL, (intptr_t)strdup(sname));
 	jump(clabels[i].label);
 	clabel_ptr++;
 }
@@ -542,10 +543,10 @@ void dogoto (void)
 /*
  *	dump switch table
  */
-void dumpsw (long *ws)
-/*long	ws[];*/
+void dumpsw (intptr_t *ws)
+/*intptr_t	ws[];*/
 {
-	long i, j;
+	intptr_t i, j;
 
 //	gdata ();
 	gnlabel(ws[WSTAB]);
@@ -556,9 +557,9 @@ void dumpsw (long *ws)
 			defword();
 			i = 4;
 			while (i--) {
-				outdec(swstcase[j]);
+				outlabel(swstlab[j]);
 				outbyte(',');
-				outlabel(swstlab[j++]);
+				outdec(swstcase[j++]);
 				if ((i == 0) | (j >= swstp)) {
 					nl();
 					break;
@@ -568,14 +569,14 @@ void dumpsw (long *ws)
 		}
 	}
 	defword();
+	outstr("0,");
 	outlabel(ws[WSDEF]);
-	outstr(",0");
 	nl();
 //	gtext ();
 }
 
-void test (long label, long ft)
-/* long	label,
+void test (intptr_t label, intptr_t ft)
+/* intptr_t	label,
         ft; */
 {
 	needbrack("(");

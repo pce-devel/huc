@@ -1,8 +1,14 @@
-#define NES_ASM_VERSION ("NES Assembler (v 3.23-" GIT_VERSION " Beta, " GIT_DATE ")")
-#define PCE_ASM_VERSION ("PC Engine Assembler (v 3.23-" GIT_VERSION ", " GIT_DATE ")")
+#ifndef DEFS_H
+#define DEFS_H
+
+#include "version.h"
+
+#define NES_ASM_VERSION ("NES Assembler (v 3.25-" GIT_VERSION " Beta, " GIT_DATE ")")
+#define PCE_ASM_VERSION ("PC Engine Assembler (v 3.25-" GIT_VERSION ", " GIT_DATE ")")
+#define FUJI_ASM_VERSION ("Fuji Assembler for Atari (v 3.25-" GIT_VERSION " Beta, " GIT_DATE ")")
 
 /* path separator */
-#if defined(DJGPP) || defined(MSDOS) || defined(WIN32)
+#if defined(WIN32)
 #define PATH_SEPARATOR		'\\'
 #define PATH_SEPARATOR_STRING	"\\"
 #else
@@ -13,11 +19,13 @@
 /* machine */
 #define MACHINE_PCE	0
 #define MACHINE_NES	1
+#define MACHINE_FUJI	2
 
 /* reserved bank index */
 #define RESERVED_BANK	0xF0
 #define PROC_BANK	0xF1
 #define GROUP_BANK	0xF2
+#define STRIPPED_BANK	0xF3
 
 /* tile format for encoder */
 #define CHUNKY_TILE	1
@@ -25,7 +33,7 @@
 
 /* line buffer length */
 #define LAST_CH_POS	158
-#define SFIELD		26
+#define SFIELD		29
 #define SBOLSZ		64
 
 /* macro argument types */
@@ -42,74 +50,101 @@
 #define S_BSS	1
 #define S_CODE	2
 #define S_DATA	3
+#define S_PROC	4	/* trampolines for .proc */
 
 /* assembler options */
 #define OPT_LIST	0
 #define OPT_MACRO	1
 #define OPT_WARNING	2
 #define OPT_OPTIMIZE	3
+#define OPT_CCOMMENT	4
+#define OPT_INDPAREN	5
+#define OPT_ZPDETECT	6
+#define OPT_LBRANCH	7
 
 /* assembler directives */
 #define P_DB		0	// .db
 #define P_DW		1	// .dw
-#define P_DS		2	// .ds
-#define P_EQU		3	// .equ
-#define P_ORG		4	// .org
-#define P_PAGE		5	// .page
-#define P_BANK		6	// .bank
-#define P_INCBIN	7	// .incbin
-#define P_INCLUDE	8	// .include
-#define P_INCCHR	9	// .incchr
-#define P_INCSPR	10	// .incspr
-#define P_INCPAL	11	// .incpal
-#define P_INCBAT	12	// .incbat
-#define P_MACRO		13	// .macro
-#define P_ENDM		14	// .endm
-#define P_LIST		15	// .list
-#define P_MLIST		16	// .mlist
-#define P_NOLIST	17	// .nolist
-#define P_NOMLIST	18	// .nomlist
-#define P_RSSET		19	// .rsset
-#define P_RS		20	// .rs
-#define P_IF		21	// .if
-#define P_ELSE		22	// .else
-#define P_ENDIF		23	// .endif
-#define P_FAIL		24	// .fail
-#define P_ZP		25	// .zp
-#define P_BSS		26	// .bss
-#define P_CODE		27	// .code
-#define P_DATA		28	// .data
-#define P_DEFCHR	29	// .defchr
-#define P_FUNC		30	// .func
-#define P_IFDEF		31	// .ifdef
-#define P_IFNDEF	32	// .ifndef
-#define P_VRAM		33	// .vram
-#define P_PAL		34	// .pal
-#define P_DEFPAL	35	// .defpal
-#define P_DEFSPR	36	// .defspr
-#define P_INESPRG	37	// .inesprg
-#define P_INESCHR	38	// .ineschr
-#define P_INESMAP	39	// .inesmap
-#define P_INESMIR	40	// .inesmir
-#define P_OPT		41	// .opt
-#define P_INCTILE	42	// .inctile
-#define P_INCMAP	43	// .incmap
-#define P_MML		44	// .mml
-#define P_PROC		45	// .proc
-#define P_ENDP		46	// .endp
-#define P_PGROUP	47	// .procgroup
-#define P_ENDPG		48	// .endprocgroup
-#define P_CALL		49	// .call
-#define P_DWL		50	// lsb of a WORD
-#define P_DWH		51	// lsb of a WORD
+#define P_DD		2	// .dd
+#define P_DS		3	// .ds
+#define P_EQU		4	// .equ
+#define P_ORG		5	// .org
+#define P_PAGE		6	// .page
+#define P_BANK		7	// .bank
+#define P_INCBIN	8	// .incbin
+#define P_INCLUDE	9	// .include
+#define P_INCCHR	10	// .incchr
+#define P_INCSPR	11	// .incspr
+#define P_INCPAL	12	// .incpal
+#define P_INCBAT	13	// .incbat
+#define P_MACRO		14	// .macro
+#define P_ENDM		15	// .endm
+#define P_LIST		16	// .list
+#define P_MLIST		17	// .mlist
+#define P_NOLIST	18	// .nolist
+#define P_NOMLIST	19	// .nomlist
+#define P_RSSET		20	// .rsset
+#define P_RS		21	// .rs
+#define P_IF		22	// .if
+#define P_ELSE		23	// .else
+#define P_ENDIF		24	// .endif
+#define P_FAIL		25	// .fail
+#define P_ZP		26	// .zp
+#define P_BSS		27	// .bss
+#define P_CODE		28	// .code
+#define P_DATA		29	// .data
+#define P_DEFCHR	30	// .defchr
+#define P_FUNC		31	// .func
+#define P_IFDEF		32	// .ifdef
+#define P_IFNDEF	33	// .ifndef
+#define P_VRAM		34	// .vram
+#define P_PAL		35	// .pal
+#define P_DEFPAL	36	// .defpal
+#define P_DEFSPR	37	// .defspr
+#define P_INESPRG	38	// .inesprg
+#define P_INESCHR	39	// .ineschr
+#define P_INESMAP	40	// .inesmap
+#define P_INESMIR	41	// .inesmir
+#define P_OPT		42	// .opt
+#define P_INCTILE	43	// .inctile
+#define P_INCMAP	44	// .incmap
+#define P_MML		45	// .mml
+#define P_PROC		46	// .proc
+#define P_ENDP		47	// .endp
+#define P_PGROUP	48	// .procgroup
+#define P_ENDPG		49	// .endprocgroup
+#define P_CALL		50	// .call
+#define P_DWL		51	// lsb of a WORD
+#define P_DWH		52	// lsb of a WORD
+#define P_INCCHRPAL	53	// .incchrpal
+#define P_INCSPRPAL	54	// .incsprpal
+#define P_INCTILEPAL	55	// .inctilepal
+#define P_CARTRIDGE	56	// .cartridge
+#define P_ALIGN		57	// .align
+#define P_KICKC		58	// .kickc
+#define P_CPU		59	// .cpu
+#define P_SEGMENT	60	// .segment
+#define P_LABEL		61	// .label or .const
+#define P_ENCODING	62	// .encoding
+#define P_STRUCT	63	// .struct
+#define P_ENDS		64	// .ends
 
 /* symbol flags */
-#define MDEF	3	/* multiply defined */
 #define UNDEF	1	/* undefined - may be zero page */
 #define IFUNDEF 2	/* declared in a .if expression */
+#define MDEF	3	/* multiply defined */
 #define DEFABS	4	/* defined - two byte address */
 #define MACRO	5	/* used for a macro name */
 #define FUNC	6	/* used for a function */
+
+/* symbol lookup flags */
+#define SYM_CHK	0	/* does it exist? */
+#define SYM_DEF 1	/* symbol definition */
+#define SYM_REF	2	/* symbol reference */
+
+/* symbol definition source */
+#define CONSTANT 0	/* constant value */
+#define LOCATION 1	/* location (current PC) */
 
 /* operation code flags */
 #define PSEUDO		0x0008000
@@ -138,7 +173,8 @@
 
 /* pass flags */
 #define FIRST_PASS	0
-#define LAST_PASS	1
+#define BRANCH_PASS	1
+#define LAST_PASS	2
 
 /* structs */
 typedef struct t_opcode {
@@ -161,35 +197,51 @@ typedef struct t_proc {
 	struct t_proc *next;
 	struct t_proc *link;
 	struct t_proc *group;
+	struct t_symbol *label;
+	struct t_symbol *old_glablptr;
 	int old_bank;
+	int old_page;
+	int old_loccnt;
 	int bank;
 	int org;
 	int base;
 	int size;
 	int call;
 	int type;
-	int refcnt;
+	int kickc;
+	int defined;
 	char name[SBOLSZ];
 } t_proc;
 
 typedef struct t_symbol {
 	struct t_symbol *next;
 	struct t_symbol *local;
+	struct t_symbol *scope;
 	struct t_proc *proc;
 	int type;
 	int value;
+	int section;
 	int bank;
 	int page;
 	int nb;
 	int size;
 	int vram;
 	int pal;
+	int defcnt;
 	int refcnt;
 	int reserved;
 	int data_type;
 	int data_size;
 	char name[SBOLSZ];
 } t_symbol;
+
+typedef struct t_branch {
+	struct t_branch *next;
+	struct t_symbol *label;
+	int  addr;
+	char checked;
+	char convert;
+} t_branch;
 
 typedef struct t_line {
 	struct t_line *next;
@@ -227,7 +279,8 @@ typedef struct t_machine {
 	unsigned int ram_base;
 	unsigned int ram_page;
 	unsigned int ram_bank;
-	struct t_opcode *inst;
+	struct t_opcode *base_inst;
+	struct t_opcode *plus_inst;
 	struct t_opcode *pseudo_inst;
 	int (*pack_8x8_tile)(unsigned char *, void *, int, int);
 	int (*pack_16x16_tile)(unsigned char *, void *, int, int);
@@ -235,3 +288,4 @@ typedef struct t_machine {
 	void (*write_header)(FILE *, int);
 } MACHINE;
 
+#endif // DEFS_H

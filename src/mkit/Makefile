@@ -2,7 +2,7 @@
 # Makefile for HuC sources
 #
 
-SUBDIRS = as develo
+SUBDIRS = as
 
 all clean:
 	@$(MAKE) $(SUBDIRS) "COMMAND=$@"

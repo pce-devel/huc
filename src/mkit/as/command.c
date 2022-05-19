@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <strings.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include "defs.h"
@@ -8,12 +8,13 @@
 
 /* pseudo instructions section flag */
 char pseudo_flag[] = {
-	0x0C, 0x0C, 0x0F, 0x0F, 0x0F, 0x0C, 0x0C, 0x0C, 0x0F, 0x0C,
-	0x0C, 0x0C, 0x0C, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F,
-	0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0C,
-	0x0F, 0x0F, 0x0F, 0x0C, 0x0C, 0x0C, 0x0C, 0x0F, 0x0F, 0x0F,
-	0x0F, 0x0F, 0x0C, 0x0C, 0x0C, 0x04, 0x04, 0x04, 0x0C, 0x0C,
-	0x0C, 0x0C
+	0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0C, 0x0C, 0x0C, 0x0F,
+	0x0C, 0x0C, 0x0C, 0x0C, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F,
+	0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F,
+	0x0C, 0x0F, 0x0F, 0x0F, 0x0C, 0x0C, 0x0C, 0x0C, 0x0F, 0x0F,
+	0x0F, 0x0F, 0x0F, 0x0C, 0x0C, 0x0C, 0x04, 0x0F, 0x04, 0x0F,
+	0x04, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x0F, 0x0F, 0x0F, 0x0F,
+	0x0F, 0x0F, 0x0F, 0x0F, 0x0F
 };
 
 
@@ -48,6 +49,8 @@ do_pseudo(int *ip)
 
 	case P_DB:
 	case P_DW:
+	case P_DD:
+	case P_DS:
 	case P_DWL:
 	case P_DWH:
 		if (lastlabl) {
@@ -168,21 +171,28 @@ void
 do_db(int *ip)
 {
 	unsigned char c;
+	unsigned char h;
 
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* output infos */
 	data_loccnt = loccnt;
 	data_level = 2;
 
-	/* skip spaces */
-	while (isspace(prlnbuf[++(*ip)])) ;
-
 	/* get bytes */
 	for (;;) {
+		/* skip spaces */
+		while (isspace(prlnbuf[++(*ip)])) {}
+
 		/* ASCII string */
 		if (prlnbuf[*ip] == '\"') {
+			/* check for non-zero value in ZP or BSS sections */
+			if (section == S_ZP || section == S_BSS) {
+				error("Cannot store non-zero data in .zp or .bss sections!");
+				return;
+			}
+
 			for (;;) {
 				c = prlnbuf[++(*ip)];
 				if (c == '\"')
@@ -194,30 +204,100 @@ do_db(int *ip)
 				if (c == '\\') {
 					c = prlnbuf[++(*ip)];
 					switch (c) {
-					case 'r':
-						c = '\r';
+
+					case '\\':
+						c = '\\';
+						break;
+					case '\"':
+						c = '\"';
+						break;
+					case '\'':
+						c = '\'';
+						break;
+					case '0':
+						c = 0;
+						break;
+					case 'a':
+						c = '\a';
+						break;
+					case 'b':
+						c = '\b';
+						break;
+					case 'e':
+						c = 0x1B;
+						break;
+					case 'f':
+						c = '\f';
 						break;
 					case 'n':
 						c = '\n';
 						break;
+					case 'r':
+						c = '\r';
+						break;
 					case 't':
 						c = '\t';
 						break;
+					case 'v':
+						c = '\v';
+						break;
+					case 'x':
+						c = prlnbuf[++(*ip)];
+
+						if ((c >= '0') && (c <= '8'))
+							h = (c - '0');
+						else
+						if ((c >= 'A') && (c <= 'F'))
+							h = (c + 10 - 'A');
+						else
+						if ((c >= 'a') && (c <= 'f'))
+							h = (c + 10 - 'a');
+						else {
+							error("Illegal character in hex escape sequence!");
+							return;
+						}
+
+						for (;;) {
+							c = prlnbuf[++(*ip)];
+
+							if ((c >= '0') && (c <= '8'))
+								h = (h << 4) + (c - '0');
+							else
+							if ((c >= 'A') && (c <= 'F'))
+								h = (h << 4) + (c + 10 - 'A');
+							else
+							if ((c >= 'a') && (c <= 'f'))
+								h = (h << 4) + (c + 10 - 'a');
+							else {
+								--(*ip);
+								break;
+							}
+						}
+
+						c = h;
+						break;
+					default:
+						error("Illegal character in escape sequence!");
+						return;
+//						/* just pass it on, breaking the C standard */
+//						break;
 					}
 				}
 				/* store char on last pass */
-				if (pass == LAST_PASS)
+				if (pass == LAST_PASS) {
+					/* store character */
 					putbyte(loccnt, c);
+				}
 
 				/* update location counter */
 				loccnt++;
 			}
-			(*ip)++;
+			while (isspace(prlnbuf[++(*ip)])) {}
 		}
 		/* bytes */
 		else {
 			/* get a byte */
-			if (!evaluate(ip, 0))
+			if (!evaluate(ip, 0, 0))
 				return;
 
 			/* update location counter */
@@ -225,8 +305,14 @@ do_db(int *ip)
 
 			/* store byte on last pass */
 			if (pass == LAST_PASS) {
+				/* check for non-zero value in ZP or BSS sections */
+				if ((value != 0) && (section == S_ZP || section == S_BSS)) {
+					error("Cannot store non-zero data in .zp or .bss sections!");
+					return;
+				}
+
 				/* check for overflow */
-				if ((value > 0xFF) && (value < 0xFFFFFF80)) {
+				if (((value & 0x007FFFFF) > 0xFF) && ((value & 0x007FFFFF) < 0x007FFF80)) {
 					error("Overflow error!");
 					return;
 				}
@@ -237,7 +323,7 @@ do_db(int *ip)
 		}
 
 		/* check if there's another byte */
-		c = prlnbuf[(*ip)++];
+		c = prlnbuf[*ip];
 
 		if (c != ',')
 			break;
@@ -262,8 +348,14 @@ do_db(int *ip)
 	}
 
 	/* output line */
-	if (pass == LAST_PASS)
+	if (pass == LAST_PASS) {
+		/* just output an address in S_ZP and S_BSS, else show the data */
+		if (section == S_ZP || section == S_BSS) {
+			loadlc(data_loccnt, 0);
+			data_loccnt = -1;
+		}
 		println();
+	}
 }
 
 
@@ -279,7 +371,7 @@ do_dw(int *ip)
 	char c;
 
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* output infos */
 	data_loccnt = loccnt;
@@ -289,7 +381,7 @@ do_dw(int *ip)
 	/* get data */
 	for (;;) {
 		/* get a word */
-		if (!evaluate(ip, 0))
+		if (!evaluate(ip, 0, 0))
 			return;
 
 		/* update location counter */
@@ -297,8 +389,14 @@ do_dw(int *ip)
 
 		/* store word on last pass */
 		if (pass == LAST_PASS) {
+			/* check for non-zero value in ZP or BSS sections */
+			if ((value != 0) && (section == S_ZP || section == S_BSS)) {
+				error("Cannot store non-zero data in .zp or .bss sections!");
+				return;
+			}
+
 			/* check for overflow */
-			if ((value > 0xFFFF) && (value < 0xFFFF8000)) {
+			if (((value & 0x007FFFFF) > 0xFFFF) && ((value & 0x007FFFFF) < 0x007F8000)) {
 				error("Overflow error!");
 				return;
 			}
@@ -333,15 +431,21 @@ do_dw(int *ip)
 	}
 
 	/* output line */
-	if (pass == LAST_PASS)
+	if (pass == LAST_PASS) {
+		/* just output an address in S_ZP and S_BSS, else show the data */
+		if (section == S_ZP || section == S_BSS) {
+			loadlc(data_loccnt, 0);
+			data_loccnt = -1;
+		}
 		println();
+	}
 }
 
 
 /* ----
  * do_dwl()
  * ----
- * .db pseudo
+ * .dwl pseudo
  */
 
 void
@@ -350,7 +454,7 @@ do_dwl(int *ip)
 	char c;
 
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* output infos */
 	data_loccnt = loccnt;
@@ -360,7 +464,7 @@ do_dwl(int *ip)
 	/* get data */
 	for (;;) {
 		/* get a word */
-		if (!evaluate(ip, 0))
+		if (!evaluate(ip, 0, 0))
 			return;
 
 		/* update location counter */
@@ -368,8 +472,14 @@ do_dwl(int *ip)
 
 		/* store word on last pass */
 		if (pass == LAST_PASS) {
+			/* check for non-zero value in ZP or BSS sections */
+			if ((value != 0) && (section == S_ZP || section == S_BSS)) {
+				error("Cannot store non-zero data in .zp or .bss sections!");
+				return;
+			}
+
 			/* check for overflow */
-			if ((value > 0xFFFF) && (value < 0xFFFF8000)) {
+			if (((value & 0x007FFFFF) > 0xFFFF) && ((value & 0x007FFFFF) < 0x007F8000)) {
 				error("Overflow error!");
 				return;
 			}
@@ -404,11 +514,22 @@ do_dwl(int *ip)
 	}
 
 	/* output line */
-	if (pass == LAST_PASS)
+	if (pass == LAST_PASS) {
+		/* just output an address in S_ZP and S_BSS, else show the data */
+		if (section == S_ZP || section == S_BSS) {
+			loadlc(data_loccnt, 0);
+			data_loccnt = -1;
+		}
 		println();
+	}
 }
 
 
+/* ----
+ * do_dwh()
+ * ----
+ * .dwh pseudo
+ */
 
 void
 do_dwh(int *ip)
@@ -416,7 +537,7 @@ do_dwh(int *ip)
 	char c;
 
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* output infos */
 	data_loccnt = loccnt;
@@ -426,7 +547,7 @@ do_dwh(int *ip)
 	/* get data */
 	for (;;) {
 		/* get a word */
-		if (!evaluate(ip, 0))
+		if (!evaluate(ip, 0, 0))
 			return;
 
 		/* update location counter */
@@ -434,8 +555,14 @@ do_dwh(int *ip)
 
 		/* store word on last pass */
 		if (pass == LAST_PASS) {
+			/* check for non-zero value in ZP or BSS sections */
+			if ((value != 0) && (section == S_ZP || section == S_BSS)) {
+				error("Cannot store non-zero data in .zp or .bss sections!");
+				return;
+			}
+
 			/* check for overflow */
-			if ((value > 0xFFFF) && (value < 0xFFFF8000)) {
+			if (((value & 0x007FFFFF) > 0xFFFF) && ((value & 0x007FFFFF) < 0x007F8000)) {
 				error("Overflow error!");
 				return;
 			}
@@ -470,8 +597,91 @@ do_dwh(int *ip)
 	}
 
 	/* output line */
-	if (pass == LAST_PASS)
+	if (pass == LAST_PASS) {
+		/* just output an address in S_ZP and S_BSS, else show the data */
+		if (section == S_ZP || section == S_BSS) {
+			loadlc(data_loccnt, 0);
+			data_loccnt = -1;
+		}
 		println();
+	}
+}
+
+
+/* ----
+ * do_dd()
+ * ----
+ * .dd pseudo
+ */
+
+void
+do_dd(int *ip)
+{
+	char c;
+
+	/* define label */
+	labldef(0, 0, LOCATION);
+
+	/* output infos */
+	data_loccnt = loccnt;
+	data_size = 4;
+	data_level = 2;
+
+	/* get data */
+	for (;;) {
+		/* get a word */
+		if (!evaluate(ip, 0, 0))
+			return;
+
+		/* update location counter */
+		loccnt += 4;
+
+		/* store dword on last pass */
+		if (pass == LAST_PASS) {
+			/* check for non-zero value in ZP or BSS sections */
+			if ((value != 0) && (section == S_ZP || section == S_BSS)) {
+				error("Cannot store non-zero data in .zp or .bss sections!");
+				return;
+			}
+
+			/* store word */
+			putdword(loccnt - 4, value);
+		}
+
+		/* check if there's another word */
+		c = prlnbuf[(*ip)++];
+
+		if (c != ',')
+			break;
+	}
+
+	/* check error */
+	if (c != ';' && c != '\0') {
+		error("Syntax error!");
+		return;
+	}
+
+	/* size */
+	if (lablptr) {
+		lablptr->data_type = P_DB;
+		lablptr->data_size = loccnt - data_loccnt;
+	}
+	else {
+		if (lastlabl) {
+			if (lastlabl->data_type == P_DB)
+				lastlabl->data_size += loccnt - data_loccnt;
+		}
+	}
+
+	/* output line */
+	if (pass == LAST_PASS) {
+		/* just output an address in S_ZP and S_BSS, else show the data */
+		if (section == S_ZP || section == S_BSS) {
+			loadlc(data_loccnt, 0);
+			data_loccnt = -1;
+		}
+		println();
+	}
 }
 
 
@@ -485,12 +695,34 @@ do_dwh(int *ip)
 void
 do_equ(int *ip)
 {
+	/* check symbol */
+	if (lablptr == NULL) {
+		fatal_error("Label name missing from equate!");
+		return;
+	}
+	if (lablptr->name[1] == '!') {
+		fatal_error("A multi-label must be a location, not an equate!");
+		return;
+	}
+
 	/* get value */
-	if (!evaluate(ip, ';'))
+	if (!evaluate(ip, ';', 1))
 		return;
 
-	/* assign value to the label */
-	labldef(value, 0);
+	/* check for undefined symbol - they are not allowed in .set */
+	if ((optype == 1) && (undef != 0)) {
+		error("Undefined symbol in operand field!");
+		return;
+	}
+
+	/* allow ".set" to change a label's value */
+	if ((optype == 1) && (lablptr->type == DEFABS)) {
+		lablptr->value = value;
+		lablptr->bank = expr_valbank;
+	} else {
+		/* assign value to the label */
+		labldef(value, expr_valbank, CONSTANT);
+	}
 
 	/* output line */
 	if (pass == LAST_PASS) {
@@ -516,10 +748,10 @@ do_page(int *ip)
 	}
 
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* get page index */
-	if (!evaluate(ip, ';'))
+	if (!evaluate(ip, ';', 0))
 		return;
 	if (value > 7) {
 		error("Invalid page index!");
@@ -545,7 +777,7 @@ void
 do_org(int *ip)
 {
 	/* get the .org value */
-	if (!evaluate(ip, ';'))
+	if (!evaluate(ip, ';', 0))
 		return;
 
 	/* check for undefined symbol - they are not allowed in .org */
@@ -558,7 +790,7 @@ do_org(int *ip)
 	switch (section) {
 	case S_ZP:
 		/* zero page section */
-		if ((value & 0xFFFFFF00) && ((value & 0xFFFFFF00) != machine->ram_base)) {
+		if ((value & 0x007FFF00) && ((value & 0x007FFF00) != machine->ram_base)) {
 			error("Invalid address!");
 			return;
 		}
@@ -566,7 +798,7 @@ do_org(int *ip)
 
 	case S_BSS:
 		/* ram section */
-		if ((value < machine->ram_base) || (value >= (machine->ram_base + machine->ram_limit))) {
+		if (((value & 0x007FFFFF) < machine->ram_base) || ((value & 0x007FFFFF) >= (machine->ram_base + machine->ram_limit))) {
 			error("Invalid address!");
 			return;
 		}
@@ -581,7 +813,7 @@ do_org(int *ip)
 		}
 
 		/* code and data section */
-		if (value & 0xFFFF0000) {
+		if (value & 0x007F0000) {
 			error("Invalid address!");
 			return;
 		}
@@ -592,8 +824,11 @@ do_org(int *ip)
 	/* set location counter */
 	loccnt = (value & 0x1FFF);
 
+	/* signal discontiguous change in loccnt */
+	discontiguous = 1;
+
 	/* set label value if there was one */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* output line on last pass */
 	if (pass == LAST_PASS) {
@@ -621,10 +856,10 @@ do_bank(int *ip)
 	}
 
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* get bank index */
-	if (!evaluate(ip, 0))
+	if (!evaluate(ip, 0, 0))
 		return;
 	if (value > bank_limit) {
 		error("Bank index out of range!");
@@ -677,6 +912,9 @@ do_bank(int *ip)
 	loccnt = bank_loccnt[section][bank];
 	glablptr = bank_glabl[section][bank];
 
+	/* signal discontiguous change in loccnt */
+	discontiguous = 1;
+
 	/* update the max bank counter */
 	if (max_bank < bank)
 		max_bank = bank;
@@ -720,11 +958,16 @@ do_incbin(int *ip)
 				if (pce_load_map(fname, 0))
 					return;
 			}
+			/* check if it's a stm file */
+			if (!strcasecmp(p, ".stm")) {
+				if (pce_load_stm(fname, 0))
+					return;
+			}
 		}
 	}
 
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -880,7 +1123,7 @@ do_mx(char *fname)
 				/* define label */
 				if (flag == 0) {
 					flag = 1;
-					labldef(loccnt, 1);
+					labldef(0, 0, LOCATION);
 
 					/* output */
 					if (pass == LAST_PASS)
@@ -905,7 +1148,7 @@ do_mx(char *fname)
 
 	/* define label */
 	if (flag == 0) {
-		labldef(loccnt, 1);
+		labldef(0, 0, LOCATION);
 
 		/* output */
 		if (pass == LAST_PASS)
@@ -931,6 +1174,31 @@ do_mx(char *fname)
 
 
 /* ----
+ * forget_included_files()
+ * ----
+ * keep a list of the .include files during each pass
+ */
+
+typedef struct t_filelist {
+	struct t_filelist * next;
+	int size;
+	char name[128];
+} t_filelist;
+
+t_filelist * included_files = NULL;
+
+void
+forget_included_files(void)
+{
+	t_filelist * list = included_files;
+	while ((list = included_files) != NULL) {
+		included_files = list->next;
+		free(list);
+	}
+}
+
+
+/* ----
  * do_include()
  * ----
  * .include pseudo
@@ -940,18 +1208,52 @@ void
 do_include(int *ip)
 {
 	char fname[128];
+	int fsize;
+	int found_include;
+	t_filelist * list;
 
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
+
+	/* avoid problems */
+	if (expand_macro) {
+		error("Cannot use INCLUDE inside a macro!");
+		return;
+	}
 
 	/* get file name */
 	if (!getstring(ip, fname, 127))
 		return;
 
-	/* open file */
-	if (open_input(fname) == -1) {
-		fatal_error("Can not open file!");
-		return;
+	/* have we already included this file on this pass? */
+	fsize = strlen(fname);
+	found_include = 0;
+
+	for (list = included_files; list != NULL; list = list->next) {
+		if ((list->size == fsize) && (strcasecmp(list->name, fname) == 0)) {
+			found_include = 1;
+			break;
+		}
+	}
+
+	/* do not include the file a 2nd time on this pass */
+	if (!found_include) {
+		/* remember include file name */
+		if ((list = malloc(sizeof(t_filelist) + fsize - 127)) == NULL) {
+			fatal_error("Out of memory!");
+			return;
+		}
+
+		strcpy(list->name, fname);
+		list->size = fsize;
+		list->next = included_files;
+		included_files = list;
+
+		/* open file */
+		if (open_input(fname) == -1) {
+			fatal_error("Can not open file!");
+			return;
+		}
 	}
 
 	/* output line */
@@ -970,18 +1272,19 @@ void
 do_rsset(int *ip)
 {
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* get value */
-	if (!evaluate(ip, ';'))
+	if (!evaluate(ip, ';', 1))
 		return;
-	if (value & 0xFFFF0000) {
+	if (value & 0x007F0000) {
 		error("Address out of range!");
 		return;
 	}
 
-	/* set 'rs' base */
-	rsbase = value;
+	/* set 'rs' base and bank */
+	rsbase = value & 0xFFFF;
+	rsbank = expr_valbank;
 
 	/* output line */
 	if (pass == LAST_PASS) {
@@ -1000,11 +1303,13 @@ do_rsset(int *ip)
 void
 do_rs(int *ip)
 {
+	int oldrs = rsbase;
+
 	/* define label */
-	labldef(rsbase, 0);
+	labldef(rsbase, rsbank, CONSTANT);
 
 	/* get the number of bytes to reserve */
-	if (!evaluate(ip, ';'))
+	if (!evaluate(ip, ';', 0))
 		return;
 
 	/* ouput line */
@@ -1015,8 +1320,16 @@ do_rs(int *ip)
 
 	/* update 'rs' base */
 	rsbase += value;
-	if (rsbase & 0xFFFF0000)
+	if (rsbase & 0x007F0000)
 		error("Address out of range!");
+
+	/* update 'rs' bank */
+	if (rsbank != RESERVED_BANK) {
+		while ((oldrs & 0xE000) != (rsbase & 0xE000)) {
+			oldrs += 0x2000;
+			++rsbank;
+		}
+	}
 }
 
 
@@ -1031,13 +1344,47 @@ do_ds(int *ip)
 {
 	int limit = 0;
 	int addr;
+	unsigned int nbytes;
+	unsigned int filler = 0;
+	unsigned char c;
 
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
+
+	/* output infos */
+	data_loccnt = loccnt;
+	data_level = 2;
 
 	/* get the number of bytes to reserve */
-	if (!evaluate(ip, ';'))
+	if (!evaluate(ip, 0, 0))
 		return;
+
+	/* check for undefined symbol - they are not allowed in .ds */
+	if (undef != 0) {
+		error("Undefined symbol in operand field!");
+		return;
+	}
+
+	nbytes = value;
+
+	c = prlnbuf[(*ip)++];
+
+	/* check if there's another word */
+	if (c == ',') {
+		/* get the filler byte */
+		if (!evaluate(ip, 0, 0))
+			return;
+
+		filler = value & 255;
+
+		c = prlnbuf[(*ip)++];
+	}
+
+	/* check error */
+	if (c != ';' && c != '\0') {
+		error("Syntax error!");
+		return;
+	}
 
 	/* section switch */
 	switch (section) {
@@ -1059,13 +1406,13 @@ do_ds(int *ip)
 	}
 
 	/* check range */
-	if ((loccnt + value) > limit) {
+	if ((loccnt + nbytes) > limit) {
 		error("Out of range!");
 		return;
 	}
 
 	/* update max counter for zp and bss sections */
-	addr = loccnt + value;
+	addr = loccnt + nbytes;
 
 	switch (section) {
 	case S_ZP:
@@ -1083,21 +1430,46 @@ do_ds(int *ip)
 
 	/* output line on last pass */
 	if (pass == LAST_PASS) {
-		switch (section) {
-		case S_CODE:
-		case S_DATA:
-			memset(&rom[bank][loccnt], 0, value);
-			memset(&map[bank][loccnt], section + (page << 5), value);
+		if (filler != 0) {
+			if (section == S_ZP)
+				error("Cannot fill .ZP section with non-zero data!");
+			else
+			if (section == S_BSS)
+				error("Cannot fill .BSS section with non-zero data!");
+		}
+
+		if (section == S_CODE || section == S_DATA) {
+			memset(&rom[bank][loccnt], filler, nbytes);
+			memset(&map[bank][loccnt], section + (page << 5), nbytes);
 			if (bank > max_bank)
 				max_bank = bank;
-			break;
 		}
-		loadlc(loccnt, 0);
-		println();
 	}
 
 	/* update location counter */
-	loccnt += value;
+	loccnt += nbytes;
+
+	/* size */
+	if (lablptr) {
+		lablptr->data_type = P_DB;
+		lablptr->data_size = loccnt - data_loccnt;
+	}
+	else {
+		if (lastlabl) {
+			if (lastlabl->data_type == P_DB)
+				lastlabl->data_size += loccnt - data_loccnt;
+		}
+	}
+
+	/* output line */
+	if (pass == LAST_PASS) {
+		/* just output an address in S_ZP and S_BSS, else show the data */
+		if (section == S_ZP || section == S_BSS) {
+			loadlc(data_loccnt, 0);
+			data_loccnt = -1;
+		}
+		println();
+	}
 }
 
 
@@ -1123,12 +1495,14 @@ do_fail(int *ip)
 void
 do_section(int *ip)
 {
-	if (proc_ptr) {
+/*
+	if (proc_ptr && (scopeptr == NULL)) {
 		if (optype == S_DATA) {
 			fatal_error("No data segment in procs!");
 			return;
 		}
 	}
+*/
 	if (section != optype) {
 		/* backup current section data */
 		section_bank[section] = bank;
@@ -1144,6 +1518,9 @@ do_section(int *ip)
 		page = bank_page[section][bank];
 		loccnt = bank_loccnt[section][bank];
 		glablptr = bank_glabl[section][bank];
+
+		/* signal discontiguous change in loccnt */
+		discontiguous = 1;
 	}
 
 	/* output line */
@@ -1171,7 +1548,7 @@ do_incchr(int *ip)
 	int size;
 
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -1191,7 +1568,8 @@ do_incchr(int *ip)
 			ty = y + (i << 3);
 
 			/* get tile */
-			size = pcx_pack_8x8_tile(buffer, tx, ty);
+			pcx_pack_8x8_tile(buffer, tx, ty);
+			size = (machine->type == MACHINE_PCE) ? 32 : 16;
 			total += size;
 
 			/* store tile */
@@ -1229,7 +1607,6 @@ do_opt(int *ip)
 	char c;
 	char flag;
 	char name[32];
-	int opt;
 	int i;
 
 	for (;;) {
@@ -1238,60 +1615,466 @@ do_opt(int *ip)
 			(*ip)++;
 
 		/* get char */
-		c = prlnbuf[(*ip)++];
-
-		/* no option */
-		if (c == ',')
-			continue;
-
-		/* end of line */
-		if (c == ';' || c == '\0')
-			break;
+		c = prlnbuf[(*ip)];
 
 		/* extract option */
 		i = 0;
-		for (;;) {
-			if (c == ' ')
-				continue;
-			if (c == ',' || c == ';' || c == '\0')
-				break;
+		while (!isspace(c) && (c != ',') && (c != ';') && (c != '\0')) {
 			if (i > 31) {
 				error("Syntax error!");
 				return;
 			}
 			name[i++] = c;
-			c = prlnbuf[(*ip)++];
+			c = prlnbuf[++(*ip)];
 		}
 
 		/* get option flag */
+		flag = (i != 0) ? name[--i] : '\0';
 		name[i] = '\0';
-		flag = name[--i];
-		name[i] = '\0';
+
+		/* set option */
+		if (flag == '+')
+			i = 1;
+		else if (flag == '-')
+			i = 0;
+		else {
+			error("Syntax error!");
+			return;
+		}
 
 		/* search option */
 		if (!strcasecmp(name, "l"))
-			opt = OPT_LIST;
+			asm_opt[OPT_LIST] = i;
 		else if (!strcasecmp(name, "m"))
-			opt = OPT_MACRO;
+			asm_opt[OPT_MACRO] = i;
 		else if (!strcasecmp(name, "w"))
-			opt = OPT_WARNING;
+			asm_opt[OPT_WARNING] = i;
 		else if (!strcasecmp(name, "o"))
-			opt = OPT_OPTIMIZE;
+			asm_opt[OPT_OPTIMIZE] = i;
+		else if (!strcasecmp(name, "c"))
+			asm_opt[OPT_CCOMMENT] = i;
+		else if (!strcasecmp(name, "i"))
+			asm_opt[OPT_INDPAREN] = i;
+		else if (!strcasecmp(name, "a"))
+			asm_opt[OPT_ZPDETECT] = i;
+		else if (!strcasecmp(name, "b"))
+			asm_opt[OPT_LBRANCH] = i;
 		else {
 			error("Unknown option!");
 			return;
 		}
 
-		/* set option */
-		if (flag == '+')
-			asm_opt[opt] = 1;
-		if (flag == '-')
-			asm_opt[opt] = 0;
+		/* skip spaces */
+		while (isspace(prlnbuf[*ip]))
+			(*ip)++;
+
+		/* get char */
+		c = prlnbuf[(*ip)++];
+
+		/* end of line */
+		if (c == ';' || c == '\0')
+			break;
+
+		/* skip comma */
+		if (c != ',') {
+			error("Syntax error!");
+			return;
+		}
 	}
 
 	/* output */
 	if (pass == LAST_PASS)
 		println();
+}
+
+
+/* ----
+ * do_align()
+ * ----
+ * .align pseudo
+ */
+
+void
+do_align(int *ip)
+{
+	int offset;
+
+	/* get the .align value */
+	if (!evaluate(ip, ';', 0))
+		return;
+
+	/* check for undefined symbol - they are not allowed in .align */
+	if (undef != 0) {
+		error("Undefined symbol in operand field!");
+		return;
+	}
+
+	/* check for power-of-two, 1 bank maximum */
+	if ((value > 8192) || (value == 0) || ((value & (value - 1)) != 0)) {
+		error(".align value must be a power-of-two, with a maximum of 8192!");
+		return;
+	}
+
+	/* did the previous instruction fill up the current bank? */
+	if (loccnt >= 0x2000) {
+		loccnt &= 0x1FFF;
+		page++;
+		bank++;
+	}
+
+	/* are we already aligned to the request boundary? */
+	if ((offset = loccnt & (value - 1)) != 0) {
+		/* update location counter */
+		loccnt = (loccnt + value - offset) & 0x1fff;
+
+		if (loccnt == 0) {
+			page++;
+			bank++;
+		}
+
+		/* signal discontiguous change in loccnt */
+		discontiguous = 1;
+	}
+
+	/* set label value if there was one */
+	labldef(0, 0, LOCATION);
+
+	/* output line on last pass */
+	if (pass == LAST_PASS) {
+		loadlc(loccnt + (page << 13), 1);
+		println();
+	}
+}
+
+
+/* ----
+ * do_kickc()
+ * ----
+ * .pceas pseudo
+ * .kickc pseudo
+ */
+
+void
+do_kickc(int *ip)
+{
+	/* define label */
+	labldef(0, 0, LOCATION);
+
+	/* check end of line */
+	if (!check_eol(ip))
+		return;
+
+	/* enable/disable KickC mode */
+	kickc_mode = optype;
+
+	/* enable () for indirect addressing in KickC mode */
+	asm_opt[OPT_INDPAREN] = optype;
+
+	/* enable auto-detect ZP addressing in KickC mode */
+	asm_opt[OPT_ZPDETECT] = optype;
+
+	/* enable long-branch support in KickC mode */
+	asm_opt[OPT_LBRANCH] = optype;
+
+	/* output line */
+	if (pass == LAST_PASS)
+		println();
+}
+
+
+/* ----
+ * do_cpu()
+ * ----
+ * .cpu pseudo (ignored, only for compatibility with KickC)
+ */
+
+void
+do_cpu(int *ip)
+{
+	/* define label */
+	labldef(0, 0, LOCATION);
+
+	/* skip spaces */
+	while (isspace(prlnbuf[*ip]))
+		(*ip)++;
+
+	/* extract name */
+	if (!colsym(ip, 0)) {
+		if (symbol[0] == 0)
+			fatal_error("Syntax error!");
+		return;
+	}
+
+	/* check end of line */
+	if (!check_eol(ip))
+		return;
+
+	/* output line */
+	if (pass == LAST_PASS)
+		println();
+}
+
+
+/* ----
+ * do_segment()
+ * ----
+ * .segment pseudo (for KickC code)
+ */
+
+void
+do_segment(int *ip)
+{
+	/* define label */
+	labldef(0, 0, LOCATION);
+
+	/* skip spaces */
+	while (isspace(prlnbuf[*ip]))
+		(*ip)++;
+
+	/* extract name */
+	if (!colsym(ip, 0)) {
+		if (symbol[0] == 0)
+			fatal_error("Syntax error!");
+		return;
+	}
+
+	/* check end of line */
+	if (!check_eol(ip))
+		return;
+
+	/* which segment? */
+	if (!strcasecmp(&symbol[1], "ZP"))
+		optype = S_ZP;
+	else
+	if (!strcasecmp(&symbol[1], "BSS"))
+		optype = S_BSS;
+	else
+	if (!strcasecmp(&symbol[1], "CODE"))
+		optype = S_CODE;
+	else
+	if (!strcasecmp(&symbol[1], "DATA"))
+		optype = S_DATA;
+	else {
+		fatal_error("Segment can only be CODE, DATA, BSS or ZP!");
+		return;
+	}
+
+	/* handle this as a PCEAS section type */
+	do_section(ip);
+}
+
+
+/* ----
+ * do_star()
+ * ----
+ * '*' pseudo (for KickC code)
+ */
+
+void
+do_star(int *ip)
+{
+	/* skip spaces */
+	while (isspace(prlnbuf[*ip]))
+		(*ip)++;
+
+	if (prlnbuf[(*ip)++] != '=') {
+		fatal_error("Syntax error!");
+		return;
+	}
+
+	/* handle the rest of this as a PCEAS ".org" */
+	do_org(ip);
+}
+
+
+/* ----
+ * do_label()
+ * ----
+ * .label & .const pseudo (for KickC code)
+ */
+
+void
+do_label(int *ip)
+{
+	/* define label */
+	labldef(0, 0, LOCATION);
+
+	/* skip spaces */
+	while (isspace(prlnbuf[*ip]))
+		(*ip)++;
+
+	/* extract name */
+	if (!colsym(ip, 1)) {
+		if (symbol[0] == 0)
+			fatal_error("Syntax error!");
+		return;
+	}
+
+	/* skip spaces */
+	while (isspace(prlnbuf[*ip]))
+		(*ip)++;
+
+	if (prlnbuf[(*ip)++] != '=') {
+		fatal_error("Syntax error!");
+		return;
+	}
+
+	/* create the symbol */
+	if ((lablptr = stlook(SYM_DEF)) == NULL)
+		return;
+
+	/* handle the rest of this as a PCEAS ".equ" */
+	do_equ(ip);
+}
+
+
+/* ----
+ * do_encoding()
+ * ----
+ * .encoding pseudo (ignored, only for compatibility with KickC)
+ */
+
+void
+do_encoding(int *ip)
+{
+	/* define label */
+	labldef(0, 0, LOCATION);
+
+	/* skip spaces */
+	while (isspace(prlnbuf[*ip]))
+		(*ip)++;
+
+#if 0
+	/* extract name */
+	if (!colsym(ip, 0)) {
+		if (symbol[0] == 0)
+			fatal_error("Syntax error!");
+		return;
+	}
+
+	/* check end of line */
+	if (!check_eol(ip))
+		return;
+#endif
+
+	/* output line */
+	if (pass == LAST_PASS)
+		println();
+}
+
+
+/* ----
+ * do_struct()
+ * ----
+ * '.struct' pseudo
+ */
+
+void
+do_struct(int *ip)
+{
+	/* the code is written to handle nesting, but try */
+	/* this temporarily, while we see if it is needed */
+	if (scopeptr != NULL) {
+		fatal_error("Cannot nest .struct scopes!");
+		return;
+	}
+
+	/* do not mix different types of label-scope */
+	if (proc_ptr) {
+		fatal_error("Cannot declare a .struct inside a .proc/.procgroup!");
+			return;
+	}
+
+	/* check symbol */
+	if (lablptr == NULL) {
+		fatal_error("Label name missing from .struct!");
+		return;
+	}
+	if (lablptr->name[1] == '.' || lablptr->name[1] == '@') {
+		fatal_error("Cannot open .struct scope on a local label!");
+		return;
+	}
+	if (lablptr->name[1] == '!') {
+		fatal_error("Cannot open .struct scope on a multi-label!");
+		return;
+	}
+
+	/* define label */
+	labldef(0, 0, LOCATION);
+
+	/* check end of line */
+	if (!check_eol(ip))
+		return;
+
+	lablptr->scope = scopeptr;
+	scopeptr = lablptr;
+
+	/* output line */
+	if (pass == LAST_PASS)
+		println();
+}
+
+
+/* ----
+ * do_ends()
+ * ----
+ * '.ends' pseudo
+ */
+
+void
+do_ends(int *ip)
+{
+	/* remember the current label */
+	struct t_symbol *curlabl = lablptr;
+	int i;
+
+	/* sanity check */
+	if (scopeptr == NULL) {
+		fatal_error("Unexpected '.ends'!");
+		return;
+	}
+
+	/* check end of line */
+	if (!check_eol(ip))
+		return;
+
+	/* restore the scope's original section */
+	optype = scopeptr->section;
+	do_section(ip);
+
+	/* define label */
+	labldef(0, 0, LOCATION);
+
+	/* remember the size of the scope */
+	scopeptr->data_type = P_STRUCT;
+	scopeptr->data_size = (loccnt + (bank << 13)) - ((scopeptr->value & 0x1FFF) + (scopeptr->bank << 13));
+
+	/* add a label with the scope size */
+	i = addscope(scopeptr, 0);
+	symbol[++i] = '\0';
+
+	if (i > (SBOLSZ - 1 - 7)) {
+		fatal_error("Struct name too long to create \"_sizeof\" label!");
+		return;
+	}
+	strncat(&symbol[i], "_sizeof", SBOLSZ - 1 - i);
+
+	/* create the "_sizeof" label */
+	if ((lablptr = stlook(SYM_DEF)) == NULL)
+		return;
+
+	/* assign value to the label */
+	labldef(scopeptr->data_size, RESERVED_BANK, CONSTANT);
+
+	/* restore the previous label */
+	lablptr = curlabl;
+
+	/* return to previous scope */
+	scopeptr = scopeptr->scope;
+
+//	/* output line */
+//	if (pass == LAST_PASS)
+//		println();
 }
 
 
@@ -1323,4 +2106,3 @@ htoi(char *str, int nb)
 	/* ok */
 	return (val);
 }
-

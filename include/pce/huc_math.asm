@@ -17,67 +17,67 @@ _abs:
 .l1:
 	rts
 
-; mov32(void *dst [di], void *src)
+; mov32(void *dst [__di], void *src)
 ; ----
 
 _mov32.2:
-	__stw	<si
+	__stw	<__si
 _mov32.sub:
 	ldy	#3
-.l1:	lda	[si],Y
-	sta	[di],Y
+.l1:	lda	[__si],Y
+	sta	[__di],Y
 	dey
 	bpl	.l1
 	rts
 
-; add32(void *dst [di], void *src) /* ax|bx */
+; add32(void *dst [__di], void *src) /* ax|bx */
 ; ----
 
 _add32.2:
-	__stw	<si
+	__stw	<__si
 	clc
 	cly
 	ldx	#4
-.l1:	lda	[di],Y
-	adc	[si],Y
-	sta	[di],Y
+.l1:	lda	[__di],Y
+	adc	[__si],Y
+	sta	[__di],Y
 	iny
 	dex
 	bne	.l1
 	rts
 
-; sub32(void *dst [di], void *src)
+; sub32(void *dst [__di], void *src)
 ; ----
 
 _sub32.2:
-	__stw	<si
+	__stw	<__si
 	sec
 	cly
 	ldx	#4
-.l1:	lda	[di],Y
-	sbc	[si],Y
-	sta	[di],Y
+.l1:	lda	[__di],Y
+	sbc	[__si],Y
+	sta	[__di],Y
 	iny
 	dex
 	bne	.l1
 	rts
 
-; mul32(void *dst [bp], void *src)
+; mul32(void *dst [__bp], void *src)
 ; ----
 
 _mul32.2:
-	__stw	<si
-	stw	#ax,<di
+	__stw	<__si
+	stw	#__ax,<__di
 	jsr	_mov32.sub
-	stw	<bp,<si
-	stw	#cx,<di
+	stw	<__bp,<__si
+	stw	#__cx,<__di
 	jsr	_mov32.sub
 	jsr	mulu32
-	stw	<bp,<di
-	stw	#cx,<si
+	stw	<__bp,<__di
+	stw	#__cx,<__si
 	jmp	_mov32.sub
 
-; div32(void *dst [di], void *src)
+; div32(void *dst [__di], void *src)
 ; ----
 
 _div32.2:
@@ -87,23 +87,23 @@ _div32.2:
 ; ----
 
 _com32.1:
-	__stw	<di
+	__stw	<__di
 	ldy	#3
-.l1:	lda	[di],Y
+.l1:	lda	[__di],Y
 	eor	#$FF
-	sta	[di],Y
+	sta	[__di],Y
 	dey
 	bpl	.l1
 	rts
 	
-; cmp32(void *dst [di], void *src)
+; cmp32(void *dst [__di], void *src)
 ; ----
 
 _cmp32.2:
-	__stw	<si
+	__stw	<__si
 	ldy	#3
-.l1:	lda	[di],Y
-	cmp	[si],Y
+.l1:	lda	[__di],Y
+	cmp	[__si],Y
 	bne	.l2
 	dey
 	bpl	.l1
@@ -124,7 +124,7 @@ _cmp32.2:
 
 .ifdef BCD
 
-; bcd_init(char *dst [bx], char digits)
+; bcd_init(char *dst [__bx], char digits)
 ; ----
 
 _bcd_init.2:
@@ -136,35 +136,35 @@ _bcd_init.2:
 .l1:	inc	A
 	lsr	A
 	ora	#$80
-	sta	[bx]
+	sta	[__bx]
 _bcd_init.clear:
 	; -- clear bcd number
-	lda	[bx]
+	lda	[__bx]
 	and	#$1F
 	tay
 	cla
-.l2:	sta	[bx],Y
+.l2:	sta	[__bx],Y
 	dey
 	bne	.l2
 	rts
 
-; bcd_set(char *dst [bx], char *src)
-; bcd_mov(char *dst [bx], char *src)
+; bcd_set(char *dst [__bx], char *src)
+; bcd_mov(char *dst [__bx], char *src)
 ; ----
 
 _bcd_set.2:
 _bcd_mov.2:
-	__stw	<si
-	ora	<si
+	__stw	<__si
+	ora	<__si
 	beq	_bcd_init.clear
 	; -- check dst
-	lda	[bx]
+	lda	[__bx]
 	bpl	.x1
 	and	#$1F
 	beq	.x1
 	tax
 	; -- check src type
-	lda	[si]
+	lda	[__si]
 	bpl	_bcd_set.ascii
 	bra	_bcd_set.bcd
 .x1:	rts
@@ -174,7 +174,7 @@ _bcd_mov.2:
 _bcd_set.ascii:
 	; -- get string length
 	cly
-.l1:	lda	[si],Y
+.l1:	lda	[__si],Y
 	cmp	#48
 	blo	.l2
 	cmp	#58
@@ -188,20 +188,20 @@ _bcd_set.ascii:
 .l3:	cla
 	dey
 	bmi	.l4
-	lda	[si],Y
+	lda	[__si],Y
 	sub	#48
-	sta	<dl
+	sta	<__dl
 	dey
 	bmi	.l4
-	lda	[si],Y
+	lda	[__si],Y
 	sub	#48
 	asl	A
 	asl	A
 	asl	A
 	asl	A
-	ora	<dl
+	ora	<__dl
 .l4:	sxy
-	sta	[bx],Y
+	sta	[__bx],Y
 	sxy
 	dex
 	bne	.l3
@@ -212,15 +212,15 @@ _bcd_set.ascii:
 	;
 _bcd_set.bcd:
 	; -- get src size
-	lda	[si]
+	lda	[__si]
 	bpl	.x1
 	and	#$1F
 	beq	.x1
 	tay
 	; -- copy number
-.l1:	lda	[si],Y
+.l1:	lda	[__si],Y
 	sxy
-	sta	[bx],Y
+	sta	[__bx],Y
 	dey
 	beq	.x1
 	sxy
@@ -229,34 +229,34 @@ _bcd_set.bcd:
 	; -- adjust number
 	sxy
 	cla
-.l2:	sta	[bx],Y
+.l2:	sta	[__bx],Y
 	dey
 	bne	.l2
 .x1:	rts
 
-; bcd_add(char *dst [di], char *src)
+; bcd_add(char *dst [__di], char *src)
 ; ----
 
 _bcd_add.2:
-	__stw	<si
-	ora	<si
+	__stw	<__si
+	ora	<__si
 	beq	.x1
 	; -- check dst
-	lda	[di]
+	lda	[__di]
 	bpl	.x1
 	and	#$1F
 	beq	.x1
 	tax
-	stx	<cl
+	stx	<__cl
 	; -- check src
-	lda	[si]
+	lda	[__si]
 	bmi	.l1
 	; -- convert ascii string
-	stw	#__temp,<bx
+	stw	#__temp,<__bx
 	jsr	_bcd_set.ascii
-	stw	#__temp,<si
-	ldx	<cl
-	ldy	<cl
+	stw	#__temp,<__si
+	ldx	<__cl
+	ldy	<__cl
 	bra	.l2
 	; -- get src size
 .l1:	and	#$1F
@@ -265,10 +265,10 @@ _bcd_add.2:
 	; -- add numbers
 	clc
 	sed
-.l2:	lda	[di],Y
+.l2:	lda	[__di],Y
 	sxy
-	adc	[di],Y
-	sta	[di],Y
+	adc	[__di],Y
+	sta	[__di],Y
 	dex
 	beq	.l4
 	sxy
@@ -278,9 +278,9 @@ _bcd_add.2:
 .x1:	cld
 	rts
 	; -- carry
-.l3:	lda	[di],Y
+.l3:	lda	[__di],Y
 	adc	#0
-	sta	[di],Y
+	sta	[__di],Y
 .l4:	bcc	.x1
 	dey
 	bne	.l3

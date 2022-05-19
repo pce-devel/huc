@@ -3,6 +3,7 @@
  *
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include "defs.h"
 #include "data.h"
@@ -11,10 +12,10 @@
 #include "io.h"
 #include "while.h"
 
-void addwhile (long *ptr)
-/*long	ptr[];*/
+void addwhile (intptr_t *ptr)
+/*intptr_t	ptr[];*/
 {
-	long k;
+	intptr_t k;
 
 	if (wsptr == WSMAX) {
 		error("too many active whiles");
@@ -31,7 +32,7 @@ void delwhile (void)
 		wsptr = wsptr - WSSIZ;
 }
 
-long *readwhile (void)
+intptr_t *readwhile (void)
 {
 	if (wsptr == ws) {
 		error("no active do/for/while/switch");
@@ -41,9 +42,9 @@ long *readwhile (void)
 		return (wsptr - WSSIZ);
 }
 
-long *findwhile (void)
+intptr_t *findwhile (void)
 {
-	long *ptr;
+	intptr_t *ptr;
 
 	for (ptr = wsptr; ptr != ws;) {
 		ptr = ptr - WSSIZ;
@@ -54,9 +55,9 @@ long *findwhile (void)
 	return (NULL);
 }
 
-long *readswitch (void)
+intptr_t *readswitch (void)
 {
-	long *ptr;
+	intptr_t *ptr;
 
 	ptr = readwhile();
 	if (ptr)
@@ -66,9 +67,9 @@ long *readswitch (void)
 	return (0);
 }
 
-void addcase (long val)
+void addcase (intptr_t val)
 {
-	long lab;
+	intptr_t lab;
 
 	if (swstp == SWSTSZ)
 		error("too many case labels");

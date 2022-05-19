@@ -6,7 +6,7 @@
 #include "protos.h"
 
 /* locals */
-static unsigned char buffer[512];
+static unsigned char buffer[256*4];
 
 
 /* ----
@@ -42,7 +42,7 @@ pce_load_map(char *fname, int mode)
 		header[7] - 4;
 
 	if (memcmp(header, "FORM", 4) || memcmp(&header[8], "FMAP", 4)) {
-		/* incorrect header */
+		/* incorrect header - load it as pure binary data */
 		if (mode)
 			fatal_error("Invalid FMP format!");
 		fclose(fp);
@@ -50,7 +50,7 @@ pce_load_map(char *fname, int mode)
 	}
 
 	/* define label */
-	labldef(loccnt, 1);
+	labldef(0, 0, LOCATION);
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -75,8 +75,12 @@ pce_load_map(char *fname, int mode)
 				/* read chunk */
 				while (size) {
 					/* read a block */
-					nb = (size > 512) ? 512 : size;
-					fread(buffer, 1, nb, fp);
+					nb = (size > sizeof(buffer)) ? sizeof(buffer) : size;
+					if (fread(buffer, 1, nb, fp) != nb) {
+						error("FMP map data missing, file is too short!");
+						fclose(fp);
+						return (0);
+					}
 					size -= nb;
 					nb >>= 1;
 
@@ -104,6 +108,108 @@ pce_load_map(char *fname, int mode)
 		if (fsize < 0)
 			break;
 	}
+
+	/* close file */
+	fclose(fp);
+
+	/* size */
+	if (lablptr) {
+		lablptr->data_type = P_INCBIN;
+		lablptr->data_size = cnt;
+	}
+	else {
+		if (lastlabl) {
+			if (lastlabl->data_type == P_INCBIN)
+				lastlabl->data_size += cnt;
+		}
+	}
+
+	/* output line */
+	if (pass == LAST_PASS)
+		println();
+
+	/* ok */
+	return (1);
+}
+
+
+/* ----
+ * pce_load_stm()
+ * ----
+ */
+
+int
+pce_load_stm(char *fname, int mode)
+{
+	FILE *fp;
+	unsigned char header[8];
+	int w, h;
+	int size;
+	int nb;
+	int cnt;
+	int i, j;
+
+	/* init */
+	cnt = 0;
+
+	/* open the file */
+	if ((fp = open_file(fname, "rb")) == NULL) {
+		fatal_error("Can not open file!");
+		return (1);
+	}
+
+	/* check STM header */
+	fread(header, 1, 8, fp);
+	if (memcmp(header, "STMP", 4)) {
+		/* incorrect header - load it as pure binary data */
+		if (mode)
+			fatal_error("Invalid STM format!");
+		fclose(fp);
+		return (mode);
+	}
+
+	/* define label */
+	labldef(0, 0, LOCATION);
+
+	/* output */
+	if (pass == LAST_PASS)
+		loadlc(loccnt, 0);
+
+	/* check size range */
+	w = (header[5] << 8) + header[4];
+	h = (header[7] << 8) + header[6];
+	if ((w > 256) || (h > 256)) {
+		error("STM map size too big, max. 256x256!");
+		fclose(fp);
+		return (0);
+	}
+	cnt = w*h;
+
+	/* output */
+	if (pass == LAST_PASS) {
+		size = cnt*4;
+		/* read map */
+		while (size) {
+			/* read a block */
+			nb = (size > sizeof(buffer)) ? sizeof(buffer) : size;
+			if (fread(buffer, 1, nb, fp) != nb) {
+				error("STM map data missing, file is too short!");
+				fclose(fp);
+				return (0);
+			}
+			size -= nb;
+			nb >>= 2;
+
+			/* convert long -> byte */
+			for (i = 0, j = 0; i < nb; i++, j += 4)
+				buffer[i] = (buffer[j] + (buffer[j + 1] << 8));
+
+			/* output buffer */
+			putbuffer(buffer, nb);
+		}
+	}
+	else
+		putbuffer(NULL, cnt);
 
 	/* close file */
 	fclose(fp);
@@ -171,3 +277,16 @@ pce_load_map(char *fname, int mode)
 //        These are the same size and format as BODY, and allow object
 //        layers to be used.
 
+
+
+
+// The STM file format
+// The first 8 bytes are as follows:
+// 4bytes ASCII = 'STMP'
+// word int = width
+// word int = height
+//
+// Then width*height number of 4byte structs:
+// word int = tile index
+// byte int = NZ if tile is horizontally flipped
+// byte int = NZ if tile is vertically flipped

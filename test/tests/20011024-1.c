@@ -12,10 +12,12 @@ char buf[50];
 static void foo (void)
 {
   int l;
-  if (memcpy (buf, "abc", 4) != buf) abort ();
+  // N.B. HuC has a non-standard return value.
+  if (memcpy (buf, "abc", 4) != buf + 4) abort (); /* standard wants : buf */
   if (strcmp (buf, "abc")) abort ();
   l = strlen("abcdefgh") + 1;
   memcpy (buf, "abcdefgh", /* strlen ("abcdefgh") + 1 */ l);
+  if (strcmp (buf, "abcdefgh")) abort ();
 }
 
 int main (void)

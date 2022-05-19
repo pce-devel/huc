@@ -9,7 +9,7 @@
 int mopt;
 int in_macro;
 int expand_macro;
-char marg[8][10][80];
+char marg[8][10][256];
 int midx;
 int mcounter, mcntmax;
 int mcntstack[8];
@@ -25,8 +25,13 @@ do_macro(int *ip)
 {
 	if (pass == LAST_PASS)
 		println();
-	else {
+	else
+	if (pass == FIRST_PASS) {
 		/* error checking */
+		if (scopeptr) {
+			fatal_error("Cannot define a macro inside a label scope!");
+			return;
+		}
 		if (expand_macro) {
 			error("Can not nest macro definitions!");
 			return;
@@ -37,16 +42,24 @@ do_macro(int *ip)
 				(*ip)++;
 
 			/* search a label after the .macro */
-			if (colsym(ip) == 0) {
+			if (colsym(ip, 0) == 0) {
 				error("No name for this macro!");
 				return;
 			}
 
 			/* put the macro name in the symbol table */
-			if ((lablptr = stlook(1)) == NULL)
+			if ((lablptr = stlook(SYM_DEF)) == NULL)
 				return;
 		}
-		if (lablptr->refcnt) {
+		if (lablptr->name[1] == '.' || lablptr->name[1] == '@') {
+			fatal_error("Macro name cannot be a local label!");
+			return;
+		}
+		if (lablptr->name[1] == '!') {
+			fatal_error("Macro name cannot be a multi-label!");
+			return;
+		}
+		if (lablptr->defcnt || lablptr->refcnt) {
 			switch (lablptr->type) {
 			case MACRO:
 				fatal_error("Macro already defined!");
@@ -61,6 +74,7 @@ do_macro(int *ip)
 				return;
 			}
 		}
+
 		if (!check_eol(ip))
 			return;
 
@@ -96,11 +110,9 @@ macro_look(int *ip)
 	hash = 0;
 	for (;;) {
 		c = prlnbuf[*ip];
-		if (c == '\0' || c == ' ' || c == '\t' || c == ';')
+		if ((c == '\0') || (c == ' ') || (c == '\t') || (c == ';'))
 			break;
-
-		if (!isalnum(c) && c != '_')
-			if (c != 0x2e)
+		if (!isalnum(c) && (c != '_') && (c != '.'))
 				return (NULL);
 		if (l == 0) {
 			if (isdigit(c))
@@ -183,12 +195,14 @@ macro_getargs(int ip)
 					error("Unterminated string!");
 					return (0);
 				}
-				if (i == 80) {
-					error("String too long, max. 80 characters!");
+				if (i == 256) {
+					error("String too long, max. 256 characters!");
 					return (0);
 				}
-				if (t == c)
-					break;
+				if (t == c) {
+					if ((c != '\"') || (ptr[i - 1] != '\\'))
+						break;
+				}
 				ptr[i++] = t;
 			}
 			if (c == '\"')
@@ -239,7 +253,7 @@ macro_getargs(int ip)
 					return (0);
 
 				/* rewind line pointer and continue */
-				ip = SFIELD;
+				ip = preproc_sfield;
 				break;
 			}
 
@@ -297,17 +311,16 @@ macro_getargs(int ip)
 					    (strcasecmp(ptr, "y++") == 0) ||
 					    (strlen(ptr) == 1)) {
 						arg--;
-						ptr = marg[midx][arg];
+						ptr = marg[midx][arg] + strlen(marg[midx][arg]);
 
 						/* check string length */
-						if (strlen(ptr) > 75) {
+						if ((marg[midx][arg + 1] - ptr) < 5) {
 							error("Macro argument string too long, max. 80 characters!");
 							return (0);
 						}
 
 						/* attach current arg to the previous one */
-						strcat(ptr, ",");
-						strcat(ptr, marg[midx][arg + 1]);
+						snprintf(ptr, (marg[midx][arg + 1] - ptr), ",%s", marg[midx][arg + 1]);
 						ptr = marg[midx][arg + 1];
 						ptr[0] = '\0';
 					}
@@ -329,6 +342,7 @@ macro_install(void)
 
 	/* mark the macro name as reserved */
 	lablptr->type = MACRO;
+	lablptr->defcnt = 1;
 
 	/* check macro name syntax */
 	/*
@@ -398,13 +412,15 @@ macro_getargtype(char *arg)
 
 	default:
 		/* symbol */
-		c = arg[0];
-		for (i = 0; i < SBOLSZ; i++) {
+		for (i = 0;;) {
 			c = arg[i];
-			if (isdigit(c) && (i == 0))
+			if (i == 0 && isdigit(c))
 				break;
-			if ((!isalnum(c)) && (c != '_') && (c != '.'))
+			if (isalnum(c) || (c == '_') || (c == '.') || (i == 0 && c == '@')) {
+				i++;
+			} else {
 				break;
+			}
 		}
 
 		if (i == 0)
@@ -413,11 +429,11 @@ macro_getargtype(char *arg)
 			if (c != '\0')
 				return (ARG_ABS);
 			else {
-				strncpy(&symbol[1], arg, i);
+				memcpy(&symbol[1], arg, i);
 				symbol[0] = i;
 				symbol[i + 1] = '\0';
 
-				if ((sym = stlook(0)) == NULL)
+				if ((sym = stlook(SYM_REF)) == NULL)
 					return (ARG_LABEL);
 				else {
 					if ((sym->type == UNDEF) || (sym->type == IFUNDEF))
@@ -431,4 +447,3 @@ macro_getargtype(char *arg)
 		}
 	}
 }
-
