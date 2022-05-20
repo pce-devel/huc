@@ -45,5 +45,9 @@ src/tools/sym2inc/sym2inc
 src/tools/sym2inc/sym2inc.exe
 src/tools/wav2vox/wav2vox
 src/tools/wav2vox/wav2vox.exe
+src/tools/pce2png/pce2png
+src/tools/pce2png/pce2png.exe
+src/tools/pce2png/pngwrite/pngwrite.a
+src/tools/pce2png/pngwrite/pngwrite.lib
 tgemu/tgemu*
 src/version.h
