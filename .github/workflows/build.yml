@@ -7,7 +7,7 @@ on:
   push:
   pull_request:
     branches:
-      - master  
+      - master
   # activating dispatch to allow manual runs
   # workflow_dispatch:
 
