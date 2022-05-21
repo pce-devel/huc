@@ -5,9 +5,12 @@ name: build
 
 on: 
   push:
+  pull_request:
+    branches:
+      - master
   # activating dispatch to allow manual runs
   workflow_dispatch:
-  
+
 env:
   MSYS2_INSTALL_FOLDER: C:\msys64\ # provided by GitHub Actions VMs
 
