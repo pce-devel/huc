@@ -49,7 +49,7 @@ package:
 	find examples/asm -type f -name '*.bin' -delete
 	mv tmp/* bin/
 	rm -d tmp
-	rm -f huc-$(DATE).zip
-	zip -r huc-$(DATE) * -x *.zip -x .*
+	rm -f huc-$(DATE)-$(shell uname).zip
+	zip -r huc-$(DATE)-$(shell uname).zip * -x *.zip -x .*
 
 examples: src
