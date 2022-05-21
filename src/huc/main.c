@@ -41,7 +41,7 @@
 #include "sym.h"
 #include "struct.h"
 
-static char **link_libs = 0;
+static char **li   nk_libs = 0;
 static int link_lib_ptr;
 static char **infiles = 0;
 static int infile_ptr;
