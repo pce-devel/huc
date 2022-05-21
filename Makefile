@@ -35,6 +35,12 @@ check:
 	md5sum -c < examples/checksum.txt
 
 DATE = $(shell date +%F)
+ifneq ($(OS),Windows_NT)
+	PLATFORMSUFFIX = $(shell uname)
+else
+	PLATFORMSUFFIX = Win64
+endif
+
 
 package:
 	mkdir -p tmp
@@ -49,7 +55,7 @@ package:
 	find examples/asm -type f -name '*.bin' -delete
 	mv tmp/* bin/
 	rm -d tmp
-	rm -f huc-$(DATE)-$(shell uname).zip
-	zip -r huc-$(DATE)-$(shell uname).zip * -x *.zip -x .*
+	rm -f huc-$(DATE)-$(PLATFORMSUFFIX).zip
+	zip -r huc-$(DATE)-$(PLATFORMSUFFIX).zip * -x *.zip -x .*
 
 examples: src
