@@ -34,7 +34,6 @@ jobs:
           name: toolchain-${{ matrix.os }}
           path: |
             bin
-            include
             examples/**/*.iso
             examples/**/*.pce
             examples/**/*.sgx
@@ -82,7 +81,6 @@ jobs:
           name: toolchain-${{ matrix.os }}
           path: |
             bin
-            include
             examples/**/*.iso
             examples/**/*.pce
             examples/**/*.sgx
@@ -104,7 +102,6 @@ jobs:
           name: toolchain-mingw64
           path: |
             bin
-            include
             examples/**/*.iso
             examples/**/*.pce
             examples/**/*.sgx
