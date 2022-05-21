@@ -178,7 +178,7 @@ jobs:
   publish_package:
     runs-on: ubuntu-latest
     needs: [package_msys2_windows_2022, package_macos_12, package_ubuntu-20-04]
-    #if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
     steps:
       - name: Check out code from the repository
         uses: actions/checkout@v3
@@ -196,9 +196,6 @@ jobs:
           name: package-ubuntu-20.04
         # https://github.com/pyTooling/Actions/tree/main/releaser
         # need to use composite on windows, since docker isn't available
-      - name: Debug step
-        run: |
-          echo ${{ github.ref_name }}
       - name: publish package
         uses: pyTooling/Actions/releaser@r0
         with:
