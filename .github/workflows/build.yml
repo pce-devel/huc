@@ -196,6 +196,9 @@ jobs:
           name: package-ubuntu-20.04
         # https://github.com/pyTooling/Actions/tree/main/releaser
         # need to use composite on windows, since docker isn't available
+      - name: Debug step
+        run: |
+          echo ${{ github.ref_name }}
       - name: publish package
         uses: pyTooling/Actions/releaser@r0
         with:
