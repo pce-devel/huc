@@ -86,6 +86,7 @@ jobs:
             examples/**/*.iso
             examples/**/*.pce
             examples/**/*.sgx
+          if-no-files-found: error
 
   build_msys2_windows_2022:
     runs-on: windows-2022
@@ -107,6 +108,7 @@ jobs:
             examples/**/*.iso
             examples/**/*.pce
             examples/**/*.sgx
+          if-no-files-found: error
 
   package_msys2_windows_2022:
     runs-on: windows-2022
@@ -131,6 +133,7 @@ jobs:
           name: package-mingw64
           path: |
             *.zip
+          if-no-files-found: error
 
   package_macos_12:
     runs-on: macos-12
@@ -153,6 +156,7 @@ jobs:
           name: package-macos-12
           path: |
             *.zip
+          if-no-files-found: error
 
   package_ubuntu-20-04:
     runs-on: ubuntu-20.04
@@ -174,6 +178,7 @@ jobs:
           name: package-ubuntu-20.04
           path: |
             *.zip
+          if-no-files-found: error
 
   publish_package:
     runs-on: ubuntu-latest
