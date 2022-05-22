@@ -9,7 +9,7 @@ on:
     branches:
       - master
   # activating dispatch to allow manual runs
-  workflow_dispatch:
+  # workflow_dispatch:
 
 env:
   MSYS2_INSTALL_FOLDER: C:\msys64\ # provided by GitHub Actions VMs
@@ -34,7 +34,33 @@ jobs:
           name: toolchain-${{ matrix.os }}
           path: |
             bin
-            include
+            examples/**/*.iso
+            examples/**/*.pce
+            examples/**/*.sgx
+            src/huc/huc
+            tgemu/tgemu
+
+  test_linux:
+    strategy:
+      matrix:
+        os: [ubuntu-18.04, ubuntu-20.04]
+    runs-on: ${{ matrix.os }}
+    needs: build_linux
+    steps:
+      - name: Check out code from the repository
+        uses: actions/checkout@v3
+      - name: Get previoulsy built artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: toolchain-${{ matrix.os }}
+      - name: Test
+        run: |
+          chmod +x bin/* # Github Action artifacts don't keep exec flags https://github.com/actions/upload-artifact#permission-loss'
+          chmod +x src/huc/huc
+          chmod +x tgemu/tgemu
+          make check
+          make test
+          echo Test Complete
 
   build_mac:
     strategy:
@@ -55,7 +81,10 @@ jobs:
           name: toolchain-${{ matrix.os }}
           path: |
             bin
-            include
+            examples/**/*.iso
+            examples/**/*.pce
+            examples/**/*.sgx
+          if-no-files-found: error
 
   build_msys2_windows_2022:
     runs-on: windows-2022
@@ -73,5 +102,108 @@ jobs:
           name: toolchain-mingw64
           path: |
             bin
-            include
+            examples/**/*.iso
+            examples/**/*.pce
+            examples/**/*.sgx
+          if-no-files-found: error
+
+  package_msys2_windows_2022:
+    runs-on: windows-2022
+    needs: build_msys2_windows_2022
+    steps:
+      - name: Check out code from the repository
+        uses: actions/checkout@v3
+      - name: Get previoulsy built artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: toolchain-mingw64
+      - name: Package
+        run: |
+          ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -c "pacman -S mingw-w64-x86_64-binutils make git zip --noconfirm"
+          ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -where %CD% -c "make package"
+          echo Package Complete
+        # https://github.com/pyTooling/Actions/tree/main/releaser
+        # need to use composite on windows, since docker isn't available
+      - name: Archive package
+        uses: actions/upload-artifact@v3
+        with:
+          name: package-mingw64
+          path: |
+            *.zip
+          if-no-files-found: error
+
+  package_macos_12:
+    runs-on: macos-12
+    needs: build_mac
+    steps:
+      - name: Check out code from the repository
+        uses: actions/checkout@v3
+      - name: Get previoulsy built artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: toolchain-macos-12
+      - name: Package
+        run: |
+          brew install make # need gnumake
+          gmake package
+          echo Package Complete
+      - name: Archive package
+        uses: actions/upload-artifact@v3
+        with:
+          name: package-macos-12
+          path: |
+            *.zip
+          if-no-files-found: error
+
+  package_ubuntu-20-04:
+    runs-on: ubuntu-20.04
+    needs: build_linux
+    steps:
+      - name: Check out code from the repository
+        uses: actions/checkout@v3
+      - name: Get previoulsy built artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: toolchain-ubuntu-20.04
+      - name: Package
+        run: |
+          make package
+          echo Package Complete
+      - name: Archive package
+        uses: actions/upload-artifact@v3
+        with:
+          name: package-ubuntu-20.04
+          path: |
+            *.zip
+          if-no-files-found: error
+
+  publish_package:
+    runs-on: ubuntu-latest
+    needs: [package_msys2_windows_2022, package_macos_12, package_ubuntu-20-04]
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+    steps:
+      - name: Check out code from the repository
+        uses: actions/checkout@v3
+      - name: Get previoulsy built artifacts win64
+        uses: actions/download-artifact@v3
+        with:
+          name: package-mingw64
+      - name: Get previoulsy built artifacts macos
+        uses: actions/download-artifact@v3
+        with:
+          name: package-macos-12
+      - name: Get previoulsy built artifacts linux
+        uses: actions/download-artifact@v3
+        with:
+          name: package-ubuntu-20.04
+        # https://github.com/pyTooling/Actions/tree/main/releaser
+        # need to use composite on windows, since docker isn't available
+      - name: publish package
+        uses: pyTooling/Actions/releaser@r0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref_name }}
+          rm: true # do not keep old latest artifacts
+          files: |
+            *.zip
 
