@@ -1,0 +1,47 @@
+Here are the HuC6280 opcodes in numeric order ...
+
+----------------------------------------------------------------------------------------------
+|    | x0       | x1       | x2       | x3       | x4       | x5       | x6       | x7       |
+----------------------------------------------------------------------------------------------
+| 0x | BRK  nul | ORA  izx |:SXY  nul |:ST0  val | TSB  zp  | ORA  zp  | ASL  zp  | RMB0  zp |
+| 1x | BPL  rel | ORA  izy | ORA  izp |:ST1  val | TRB  zp  | ORA  zpx | ASL  zpx | RMB1  zp |
+| 2x | JSR  abs | AND  izx |:SAX  nul |:ST2  val | BIT  zp  | AND  zp  | ROL  zp  | RMB2  zp |
+| 3x | BMI  rel | AND  izy | AND  izp | ???  bad | BIT  zpx | AND  zpx | ROL  zpx | RMB3  zp |
+| 4x | RTI  nul | EOR  izx |:SAY  nul |:TMA  val |:BSR  rel | EOR  zp  | LSR  zp  | RMB4  zp |
+| 5x | BVC  rel | EOR  izy | EOR  izp |:TAM  val |:CSL  nul | EOR  zpx | LSR  zpx | RMB5  zp |
+| 6x | RTS  nul | ADC  izx |:CLA  nul | ???  bad | STZ  zp  | ADC  zp  | ROR  zp  | RMB6  zp |
+| 7x | BVS  rel | ADC  izy | ADC  izp |:TII  blk | STZ  zpx | ADC  zpx | ROR  zpx | RMB7  zp |
+| 8x | BRA  rel | STA  izx |:CLX  nul |:TST  vzp | STY  zp  | STA  zp  | STX  zp  | SMB0  zp |
+| 9x | BCC  rel | STA  izy | STA  izp |:TST  vab | STY  zpx | STA  zpx | STX  zpy | SMB1  zp |
+| Ax | LDY  val | LDA  izx | LDX  val |:TST  vzx | LDY  zp  | LDA  zp  | LDX  zp  | SMB2  zp |
+| Bx | BCS  rel | LDA  izy | LDA  izp |:TST  vax | LDY  zpx | LDA  zpx | LDX  zpy | SMB3  zp |
+| Cx | CPY  val | CMP  izx |:CLY  nul |:TDD  blk | CPY  zp  | CMP  zp  | DEC  zp  | SMB4  zp |
+| Dx | BNE  rel | CMP  izy | CMP  izp |:TIN  blk |:CSH  nul | CMP  zpx | DEC  zpx | SMB5  zp |
+| Ex | CPX  val | SBC  izx | ???  bad |:TIA  blk | CPX  zp  | SBC  zp  | INC  zp  | SMB6  zp |
+| Fx | BEQ  rel | SBC  izy | SBC  izp |:TAI  blk |:SET  nul | SBC  zpx | INC  zpx | SMB7  zp |
+----------------------------------------------------------------------------------------------
+|    | OPC addr | OPC addr | OPC addr | OPC addr | OPC addr | OPC addr | OPC addr | OPC addr |
+----------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------
+|    | x8       | x9       | xA       | xB       | xC       | xD       | xE       | xF       |
+----------------------------------------------------------------------------------------------
+| 0x | PHP  nul | ORA  val | ASL  acc | ???  bad | TSB  abs | ORA  abs | ASL  abs | BBR0 zpr |
+| 1x | CLC  nul | ORA  aby | INC  acc | ???  bad | TRB  abs | ORA  abx | ASL  abx | BBR1 zpr |
+| 2x | PLP  nul | AND  val | ROL  acc | ???  bad | BIT  abs | AND  abs | ROL  abs | BBR2 zpr |
+| 3x | SEC  nul | AND  aby | DEC  acc | ???  bad | BIT  abx | AND  abx | ROL  abx | BBR3 zpr |
+| 4x | PHA  nul | EOR  val | LSR  acc | ???  bad | JMP  abs | EOR  abs | LSR  abs | BBR4 zpr |
+| 5x | CLI  nul | EOR  aby | PHY  nul | ???  bad | ???  bad | EOR  abx | LSR  abx | BBR5 zpr |
+| 6x | PLA  nul | ADC  val | ROR  acc | ???  bad | JMP  iab | ADC  abs | ROR  abs | BBR6 zpr |
+| 7x | SEI  nul | ADC  aby | PLY  nul | ???  bad | JMP  iax | ADC  abx | ROR  abx | BBR7 zpr |
+| 8x | DEY  nul | BIT  val | TXA  nul | ???  bad | STY  abs | STA  abs | STX  abs | BBS0 zpr |
+| 9x | TYA  nul | STA  aby | TXS  nul | ???  bad | STZ  abs | STA  abx | STZ  abx | BBS1 zpr |
+| Ax | TAY  nul | LDA  val | TAX  nul | ???  bad | LDY  abs | LDA  abs | LDX  abs | BBS2 zpr |
+| Bx | CLV  nul | LDA  aby | TSX  nul | ???  bad | LDY  abx | LDA  abx | LDX  aby | BBS3 zpr |
+| Cx | INY  nul | CMP  val | DEX  nul | ???  bad | CPY  abs | CMP  abs | DEC  abs | BBS4 zpr |
+| Dx | CLD  nul | CMP  aby | PHX  nul | ???  bad | ???  bad | CMP  abx | DEC  abx | BBS5 zpr |
+| Ex | INX  nul | SBC  val | NOP  nul | ???  bad | CPX  abs | SBC  abs | INC  abs | BBS6 zpr |
+| Fx | SED  nul | SBC  aby | PLX  nul | ???  bad | ???  bad | SBC  abx | INC  abx | BBS7 zpr |
+----------------------------------------------------------------------------------------------
+|    | OPC addr | OPC addr | OPC addr | OPC addr | OPC addr | OPC addr | OPC addr | OPC addr |
+----------------------------------------------------------------------------------------------
