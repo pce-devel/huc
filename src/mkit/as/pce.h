@@ -106,15 +106,15 @@ struct t_opcode pce_pseudo[29] = {
 
 const char defdirs_pce[] =
 #ifdef WIN32
-	"c:\\huc\\include\\pce"
+	"c:\\huc\\include\\huc"
 #else
-	"/usr/local/lib/huc/include/pce;" \
-	"/usr/local/huc/include/pce;" \
-	"/usr/local/share/huc/include/pce;" \
-	"/usr/local/include/pce;" \
-	"/usr/lib/huc/include/pce;" \
-	"/usr/share/huc/include/pce;" \
-	"/usr/include/pce"
+	"/usr/local/lib/huc/include/huc;" \
+	"/usr/local/huc/include/huc;" \
+	"/usr/local/share/huc/include/huc;" \
+	"/usr/local/include/huc;" \
+	"/usr/lib/huc/include/huc;" \
+	"/usr/share/huc/include/huc;" \
+	"/usr/include/huc"
 #endif
 ;
 

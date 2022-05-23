@@ -1,5 +1,5 @@
 #!/bin/bash
-export PCE_INCLUDE=`pwd`/../include/pce
+export PCE_INCLUDE=`pwd`/../include/huc
 export PCE_PCEAS=`pwd`/../bin/pceas
 echo $PCE_INCLUDE $PCE_PCEAS
 tests="$@"

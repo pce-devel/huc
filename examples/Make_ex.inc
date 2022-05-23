@@ -1,1 +1,1 @@
-CC = PCE_INCLUDE=../../include/pce PCE_PCEAS=../../bin/pceas ../../bin/huc
+CC = PCE_INCLUDE=../../include/huc PCE_PCEAS=../../bin/pceas ../../bin/huc

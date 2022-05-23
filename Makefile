@@ -19,8 +19,8 @@ $(SUBDIRS):
 
 install:
 	cp -p bin/* /usr/local/bin
-	mkdir -p /usr/include/pce
-	cp -pr include/pce/* /usr/include/pce/
+	mkdir -p /usr/include/huc
+	cp -pr include/huc/* /usr/include/huc/
 
 test:
 ifneq ($(shell uname -s),Linux)

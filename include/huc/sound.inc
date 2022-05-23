@@ -5,7 +5,7 @@
 ; version of this file, and then have startup.asm use the new
 ; definitions just by including the new sound driver's path
 ; in the PCE_INCLUDE environment variable BEFORE the standard
-; "huc/include/pce" path.
+; "huc/include/huc" path.
 ;
 ; This default version is comptabile with the CDROM System Card usage.
 ;
