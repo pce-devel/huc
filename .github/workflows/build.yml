@@ -69,7 +69,6 @@ jobs:
         if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
         run: |
           chmod +x bin/* # Github Action artifacts don't keep exec flags https://github.com/actions/upload-artifact#permission-loss'
-          chmod +x src/huc/huc
           chmod +x tgemu/tgemu
       - name: Run tests on Linux
         if: startsWith(matrix.os, 'ubuntu')
@@ -158,7 +157,7 @@ jobs:
       - name: Package ${{ matrix.os }}
         if: startsWith(matrix.os, 'windows')
         run: |
-          ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -c "pacman -S  make git zip --noconfirm"
+          ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -c "pacman -S  binutils make git zip --noconfirm"
           ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -where %CD% -c "make package"
           echo Package Complete
       - name: Package ${{ matrix.os }}
