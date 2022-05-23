@@ -619,7 +619,7 @@ ERRORCODE BmpDumpPxlmap (
   h = sizeof(BMPHEAD_T);
   i = sizeof(BMPVER3_T);
 
-  m = pPxlmap->m_iPxmH * pPxlmap->m_iPxmLineSize;
+  m = (size_t)pPxlmap->m_iPxmH * pPxlmap->m_iPxmLineSize;
 
   x.m_cHead.m_uType[0] = 'B';
   x.m_cHead.m_uType[1] = 'M';

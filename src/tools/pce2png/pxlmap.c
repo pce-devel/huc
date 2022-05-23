@@ -164,7 +164,7 @@ ERRORCODE PxlmapClear (
   if ((pPxm->m_pPxmPixels != NULL) && (pPxm->m_iPxmW != 0) && (pPxm->m_iPxmH != 0)) {
     //
 
-    memset(pPxm->m_pPxmPixels, 0, pPxm->m_iPxmLineSize * pPxm->m_iPxmH);
+    memset(pPxm->m_pPxmPixels, 0, (size_t)pPxm->m_iPxmLineSize * pPxm->m_iPxmH);
   }
 
   // Return with success code.
