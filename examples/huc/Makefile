@@ -2,7 +2,7 @@
 # Makefile for examples
 #
 
-SUBDIRS = huc asm
+SUBDIRS = acd promotion scroll sgx shmup overlay
 
 all clean:
 	@$(MAKE) $(SUBDIRS) "COMMAND=$@"

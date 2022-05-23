@@ -17,7 +17,7 @@ cderr.ovl: cderr.c
 	$(CC) $(CFLAGS) -scd $<
 
 overlay.iso: $(OBJ) cderr.ovl
-	../../bin/isolink $@ $(OBJ) $(DATA) -cderr cderr.ovl
+	../../../bin/isolink $@ $(OBJ) $(DATA) -cderr cderr.ovl
 
 clean:
 	rm -f *.pce *.lst *.sym *.s *.iso *.ovl
