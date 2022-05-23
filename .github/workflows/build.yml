@@ -129,7 +129,7 @@ jobs:
       - name: Get previoulsy built artifacts
         uses: actions/download-artifact@v3
         with:
-          name: toolchain-mingw64
+          name: toolchain-windows-2022
       - name: Package
         run: |
           ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -c "pacman -S mingw-w64-x86_64-binutils make git zip --noconfirm"
@@ -200,7 +200,7 @@ jobs:
       - name: Get previoulsy built artifacts win64
         uses: actions/download-artifact@v3
         with:
-          name: package-mingw64
+          name: package-windows-2022
       - name: Get previoulsy built artifacts macos
         uses: actions/download-artifact@v3
         with:
