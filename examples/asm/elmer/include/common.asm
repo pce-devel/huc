@@ -21,9 +21,9 @@
 ;
 
 	.ifndef	_si_bank
-_si_bank	=	_dh
-_di_bank	=	_dh
-_bp_bank	=	_dh
+_si_bank	=	_bank
+_di_bank	=	_bank
+_bp_bank	=	_bank
 	.endif
 
 ;
