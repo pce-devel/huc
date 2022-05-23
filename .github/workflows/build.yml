@@ -16,17 +16,30 @@ env:
 
 
 jobs:
-  build_linux:
+  build:
     strategy:
       matrix:
-        os: [ubuntu-18.04, ubuntu-20.04]
+        os: [ubuntu-18.04, ubuntu-20.04, macos-11, macos-12, windows-2022]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Check out code from the repository
         uses: actions/checkout@v3
-      - name: Build
+      - name: Build on Linux
+        if: startsWith(matrix.os, 'ubuntu')
         run: |
           make
+          echo Build Complete
+      - name: Build on Windows
+        if: startsWith(matrix.os, 'windows')
+        run: |
+          ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -c "pacman -S base-devel mingw-w64-x86_64-gcc git --noconfirm"
+          ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -where %CD% -c "make"
+          echo Build Complete
+      - name: Build on Mac
+        if: startsWith(matrix.os, 'macos')
+        run: |
+          brew install make # need gnumake
+          gmake
           echo Build Complete
       - name: Archive toolchain
         uses: actions/upload-artifact@v3
@@ -45,7 +58,7 @@ jobs:
       matrix:
         os: [ubuntu-18.04, ubuntu-20.04]
     runs-on: ${{ matrix.os }}
-    needs: build_linux
+    needs: build
     steps:
       - name: Check out code from the repository
         uses: actions/checkout@v3
@@ -62,54 +75,54 @@ jobs:
           make test
           echo Test Complete
 
-  build_mac:
-    strategy:
-      matrix:
-        os: [macos-11, macos-12]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - name: Check out code from the repository
-        uses: actions/checkout@v3
-      - name: Build
-        run: |
-          brew install make # need gnumake
-          gmake
-          echo Build Complete
-      - name: Archive toolchain
-        uses: actions/upload-artifact@v3
-        with:
-          name: toolchain-${{ matrix.os }}
-          path: |
-            bin
-            examples/**/*.iso
-            examples/**/*.pce
-            examples/**/*.sgx
-          if-no-files-found: error
-
-  build_msys2_windows_2022:
-    runs-on: windows-2022
-    steps:
-      - name: Check out code from the repository
-        uses: actions/checkout@v3
-      - name: Build
-        run: |
-          ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -c "pacman -S base-devel mingw-w64-x86_64-gcc git --noconfirm"
-          ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -where %CD% -c "make"
-          echo Build Complete
-      - name: Archive toolchain
-        uses: actions/upload-artifact@v3
-        with:
-          name: toolchain-mingw64
-          path: |
-            bin
-            examples/**/*.iso
-            examples/**/*.pce
-            examples/**/*.sgx
-          if-no-files-found: error
+  #build_mac:
+  #  strategy:
+  #    matrix:
+  #      os: [macos-11, macos-12]
+  #  runs-on: ${{ matrix.os }}
+  #  steps:
+  #    - name: Check out code from the repository
+  #      uses: actions/checkout@v3
+  #    - name: Build
+  #      run: |
+  #        brew install make # need gnumake
+  #        gmake
+  #        echo Build Complete
+  #    - name: Archive toolchain
+  #      uses: actions/upload-artifact@v3
+  #      with:
+  #        name: toolchain-${{ matrix.os }}
+  #        path: |
+  #          bin
+  #          examples/**/*.iso
+  #          examples/**/*.pce
+  #          examples/**/*.sgx
+  #        if-no-files-found: error
+  #
+  #build_msys2_windows_2022:
+  #  runs-on: windows-2022
+  #  steps:
+  #    - name: Check out code from the repository
+  #      uses: actions/checkout@v3
+  #    - name: Build
+  #      run: |
+  #        ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -c "pacman -S base-devel mingw-w64-x86_64-gcc git --noconfirm"
+  #        ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -where %CD% -c "make"
+  #        echo Build Complete
+  #    - name: Archive toolchain
+  #      uses: actions/upload-artifact@v3
+  #      with:
+  #        name: toolchain-mingw64
+  #        path: |
+  #          bin
+  #          examples/**/*.iso
+  #          examples/**/*.pce
+  #          examples/**/*.sgx
+  #        if-no-files-found: error
 
   package_msys2_windows_2022:
     runs-on: windows-2022
-    needs: build_msys2_windows_2022
+    needs: build
     steps:
       - name: Check out code from the repository
         uses: actions/checkout@v3
@@ -134,7 +147,7 @@ jobs:
 
   package_macos_12:
     runs-on: macos-12
-    needs: build_mac
+    needs: build
     steps:
       - name: Check out code from the repository
         uses: actions/checkout@v3
