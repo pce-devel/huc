@@ -1068,6 +1068,8 @@ intptr_t assemble (char *s)
 		strcat_s(buf, sizeof(buf), "-S -l 3 -m ");
 	}
 
+	strcat_s(buf, sizeof(buf), "-O ");
+
 	strcat_s(buf, sizeof(buf), "\"");
 	strcat_s(buf, sizeof(buf), s);
 	buf[strlen(buf) - 1] = 's';
@@ -1083,7 +1085,7 @@ intptr_t assemble (char *s)
 
 	char *exe;
 	char buf[256];
-	char *opts[10];
+	char *opts[12];
 	intptr_t i = 0;
 
 	exe = getenv("PCE_PCEAS");
@@ -1110,16 +1112,14 @@ intptr_t assemble (char *s)
 		opts[i++] = "-over";	/* compile as overlay */
 
 	if (verboseflag) {
-		opts[i++] = "-S";		/* asm: display full segment map */
-		if (verboseflag > 1) {
-			opts[i++] = "-l 3";	/* top listing output */
-			opts[i++] = "-m";	/* force macros also */
-		}
-		else
-			opts[i++] = "-l 0";
+		opts[i++] = "-S";	/* asm: display full segment map */
+		opts[i++] = "-l 3";	/* top listing output */
+		opts[i++] = "-m";	/* force macros also */
 	}
 	else
 		opts[i++] = "-l 0";
+
+	opts[i++] = "-O";		/* optimize procedure packing */
 
 	strcpy(buf, s);
 	buf[strlen(buf) - 1] = 's';
