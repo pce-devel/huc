@@ -140,7 +140,7 @@ jobs:
       - name: Archive package
         uses: actions/upload-artifact@v3
         with:
-          name: package-mingw64
+          name: package-windows-2022
           path: |
             *.zip
           if-no-files-found: error
