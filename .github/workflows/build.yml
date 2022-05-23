@@ -170,7 +170,7 @@ jobs:
 
   package_ubuntu-20-04:
     runs-on: ubuntu-20.04
-    needs: build_linux
+    needs: build
     steps:
       - name: Check out code from the repository
         uses: actions/checkout@v3
