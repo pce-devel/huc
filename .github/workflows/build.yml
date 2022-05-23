@@ -53,10 +53,10 @@ jobs:
             src/huc/huc
             tgemu/tgemu
 
-  test_linux:
+  test:
     strategy:
       matrix:
-        os: [ubuntu-18.04, ubuntu-20.04]
+        os: [ubuntu-18.04, ubuntu-20.04, macos-11, macos-12, windows-2022]
     runs-on: ${{ matrix.os }}
     needs: build
     steps:
@@ -66,14 +66,32 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: toolchain-${{ matrix.os }}
-      - name: Test
+      - name: Restore Execute Flags
+        if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
         run: |
           chmod +x bin/* # Github Action artifacts don't keep exec flags https://github.com/actions/upload-artifact#permission-loss'
           chmod +x src/huc/huc
           chmod +x tgemu/tgemu
+      - name: Run tests on Linux
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
           make check
           make test
           echo Test Complete
+      - name: Run tests on Windows
+        if: startsWith(matrix.os, 'windows')
+        run: |
+          ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -c "pacman -S base-devel mingw-w64-x86_64-gcc git --noconfirm"
+          ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -where %CD% -c "make check"
+          ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -where %CD% -c "make test"
+          echo Build Complete
+      - name: Run tests on Mac
+        if: startsWith(matrix.os, 'macos')
+        run: |
+          brew install make # need gnumake
+          gmake check
+          gmake test
+          echo Build Complete
 
   #build_mac:
   #  strategy:
