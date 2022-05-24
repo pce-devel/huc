@@ -23,7 +23,15 @@ LDFLAGS = -g
 ROOTDIR=$(subst d ,/,$(BASEDIR))
 BINDIR=$(ROOTDIR)/bin
 MAKETARG=$(ROOTDIR)/src/Maketarg.inc
-EXESUFFIX = 
+EXESUFFIX =
+ifeq ($(OS),Windows_NT)
+	EXESUFFIX=.exe
+endif
 CP = cp
 RM = rm -f
 CC = gcc
+ifeq ($(OS),Darwin)
+	OBJCOPY = gobjcopy
+else
+	OBJCOPY = objcopy
+endif
