@@ -44,7 +44,7 @@ endif
 
 package:
 	mkdir -p tmp
-	strip bin/*
+	#strip bin/*
 	mv bin/* tmp/
 	$(MAKE) --directory=src   clean > /dev/null
 	$(MAKE) --directory=tgemu clean > /dev/null
@@ -55,6 +55,7 @@ package:
 	find examples/asm -type f -name '*.bin' -delete
 	mv tmp/* bin/
 	rm -d tmp
+	rm bin/*.debug # do not package debug info
 	rm -f huc-$(DATE)-$(PLATFORMSUFFIX).zip
 	zip -r huc-$(DATE)-$(PLATFORMSUFFIX).zip * -x *.zip -x .*
 
