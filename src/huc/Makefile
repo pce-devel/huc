@@ -21,7 +21,10 @@ all: $(EXE)
 
 $(EXE): $(OBJS) $(LIBS) $(HDRS)
 	$(CC) $(LDFLAGS) $(OBJS) $(LIBS) -o $@
-	$(CP) $(EXE) $(BINDIR)
+	objcopy --only-keep-debug  $(EXE)  $(EXE).debug
+	strip --strip-debug --strip-unneeded $(EXE)
+	objcopy --add-gnu-debuglink=$(EXE).debug $(EXE)
+	$(CP) $(EXE) $(EXE).debug $(BINDIR)
 
 $(OBJS): code.h data.h defs.h error.h io.h
 
