@@ -30,7 +30,8 @@ endif
 CP = cp
 RM = rm -f
 CC = gcc
-ifeq ($(OS),Darwin)
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
 	OBJCOPY = gobjcopy
 else
 	OBJCOPY = objcopy
