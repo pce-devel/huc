@@ -22,7 +22,7 @@ all: $(EXE)
 $(EXE): $(OBJS) $(LIBS) $(HDRS)
 	$(CC) $(LDFLAGS) $(OBJS) $(LIBS) -o $@
 	#$(OBJCOPY) --only-keep-debug  $(EXE)  $(EXE).debug
-	strip --only-keep-debug -f $(EXE).debug $(EXE)
+	strip --only-keep-debug -o $(EXE).debug $(EXE)
 	strip --strip-debug --strip-unneeded $(EXE)
 	$(OBJCOPY) --add-gnu-debuglink=$(EXE).debug $(EXE)
 	$(CP) $(EXE) $(EXE).debug $(BINDIR)
