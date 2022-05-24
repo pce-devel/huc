@@ -38,8 +38,7 @@ jobs:
       - name: Build on Mac
         if: startsWith(matrix.os, 'macos')
         run: |
-          brew install make binutils # need gnumake and gobjdump
-          export PATH="/usr/local/opt/binutils/bin:$PATH"
+          brew install make # need gnumake and gobjdump
           gmake
           echo Build Complete
       - name: Archive toolchain
