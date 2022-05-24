@@ -19,7 +19,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-18.04, ubuntu-20.04, macos-11, macos-12, windows-2022]
+        os: [ubuntu-18.04, ubuntu-20.04, windows-2022]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Check out code from the repository
@@ -55,7 +55,7 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [ubuntu-18.04, ubuntu-20.04, macos-11, macos-12, windows-2022]
+        os: [ubuntu-18.04, ubuntu-20.04, windows-2022]
     runs-on: ${{ matrix.os }}
     needs: build
     steps:
@@ -94,7 +94,7 @@ jobs:
   package:
     strategy:
       matrix:
-        os: [ubuntu-20.04, macos-12, windows-2022]
+        os: [ubuntu-20.04, windows-2022]
     runs-on: ${{ matrix.os }}
     needs: build
     steps:
@@ -140,10 +140,10 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: package-windows-2022
-      - name: Get previoulsy built artifacts macos
-        uses: actions/download-artifact@v3
-        with:
-          name: package-macos-12
+      #- name: Get previoulsy built artifacts macos
+      #  uses: actions/download-artifact@v3
+      #  with:
+      #    name: package-macos-12
       - name: Get previoulsy built artifacts linux
         uses: actions/download-artifact@v3
         with:
