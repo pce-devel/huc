@@ -32,7 +32,7 @@ RM = rm -f
 CC = gcc
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
-	OBJCOPY = gobjcopy
+	OBJCOPY = objcopy
 else
 	OBJCOPY = objcopy
 endif
