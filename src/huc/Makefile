@@ -24,7 +24,7 @@ $(EXE): $(OBJS) $(LIBS) $(HDRS)
 	#$(OBJCOPY) --only-keep-debug  $(EXE)  $(EXE).debug
 	strip --only-keep-debug -o $(EXE).debug $(EXE)
 	strip --strip-debug --strip-unneeded $(EXE)
-	$(OBJCOPY) --add-gnu-debuglink=$(EXE).debug $(EXE)
+	#$(OBJCOPY) --add-gnu-debuglink=$(EXE).debug $(EXE)
 	$(CP) $(EXE) $(EXE).debug $(BINDIR)
 
 $(OBJS): code.h data.h defs.h error.h io.h
