@@ -79,7 +79,7 @@ jobs:
       - name: Run tests on Windows
         if: startsWith(matrix.os, 'windows')
         run: |
-          ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -c "pacman -S base-devel mingw-w64-x86_64-gcc git --noconfirm"
+          ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -c "pacman -S coreutils make git --noconfirm"
           ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -where %CD% -c "make check"
           ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -where %CD% -c "make test"
           echo Build Complete

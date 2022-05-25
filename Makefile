@@ -27,7 +27,7 @@ test:
 
 check:
 	@echo ''
-	md5sum -c < examples/huc/checksum.txt
+	md5sum --strict -c < examples/huc/checksum.txt
 
 DATE = $(shell date +%F)
 ifneq ($(OS),Windows_NT)
