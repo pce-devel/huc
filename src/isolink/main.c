@@ -19,7 +19,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include "main.h"
-#include "../../include/overlay.h"
+#include "../mkit/as/overlay.h"
 
 
 /*************/

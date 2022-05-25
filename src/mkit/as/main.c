@@ -34,7 +34,7 @@
 #include "protos.h"
 #include "vars.h"
 #include "inst.h"
-#include "../../../include/overlay.h"
+#include "overlay.h"
 
 /* defines */
 #define STANDARD_CD	1
