@@ -60,9 +60,9 @@ jobs:
     needs: build
     steps:
       - name: Check out code from the repository
-        run: |
-          git config --system core.autocrlf false
-          git config --system core.eol lf
+        #run: |
+        #  git config --system core.autocrlf false
+        #  git config --system core.eol lf
         uses: actions/checkout@v3
       - name: Get previoulsy built artifacts
         uses: actions/download-artifact@v3
