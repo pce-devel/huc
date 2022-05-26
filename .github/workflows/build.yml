@@ -73,6 +73,7 @@ jobs:
       - name: Run tests on Linux
         if: startsWith(matrix.os, 'ubuntu')
         run: |
+          sudo apt-get update && sudo apt-get install -y dos2unix
           make check
           make test
           echo Test Complete
