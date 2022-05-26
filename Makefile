@@ -23,15 +23,11 @@ install:
 	cp -pr include/huc/* /usr/include/huc/
 
 test:
-ifneq ($(shell uname -s),Linux)
-	@echo ''
-	@echo 'Note: "make test" only runs on a linux platform!'
-else
 	cd test ; ./mk
-endif
 
 check:
 	@echo ''
+	dos2unix examples/huc/checksum.txt
 	md5sum -c < examples/huc/checksum.txt
 
 DATE = $(shell date +%F)
