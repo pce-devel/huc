@@ -1,7 +1,7 @@
 # Known MD5 checksums for the compiled HuC examples
 # which can be used to check for toolchain breakage.
 #
-3f465ce25df42e348bdd420d2a245683 *examples/huc/acd/ac_test.iso
+2f465ce25df42e348bdd420d2a245683 *examples/huc/acd/ac_test.iso
 df6786bd799becd0b874a140cb420261 *examples/huc/overlay/overlay.iso
 336d03645a452a36de6bfa08c0de9f06 *examples/huc/promotion/promotion.pce
 cafa0f90b98fcdc7837efc595fdafdee *examples/huc/scroll/scroll.pce
