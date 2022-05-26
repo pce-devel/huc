@@ -77,12 +77,19 @@ jobs:
           make check
           make test
           echo Test Complete
+      - name: Setup Msys2
+        if: startsWith(matrix.os, 'windows')
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: coreutils make git dos2unix
       - name: Run tests on Windows
         if: startsWith(matrix.os, 'windows')
+        shell: msys2 {0}
         run: |
-          ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -c "pacman -S coreutils make git dos2unix --noconfirm"
-          ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -where %CD% -c "make check"
-          ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -where %CD% -c "make test"
+          make check
+          make test
           echo Build Complete
       - name: Run tests on Mac
         if: startsWith(matrix.os, 'macos')
