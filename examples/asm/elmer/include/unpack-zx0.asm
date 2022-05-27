@@ -292,7 +292,7 @@ zx0_to_vdc	.proc
 		pha
 
 		jsr	set_si_to_mpr3		; Map zx0_srcptr to MPR3.
-		jsr	set_di_to_vram		; Map zx0_dstptr to VRAM.
+		jsr	set_di_to_mawr		; Map zx0_dstptr to VRAM.
 
 		lda	#$40			; Initialize bit-buffer.
 		sta	<zx0_bitbuf

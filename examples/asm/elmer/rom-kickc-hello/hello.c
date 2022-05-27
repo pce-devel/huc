@@ -133,13 +133,13 @@ void main()
 	load_palette( 0, cpc464_colors, 1 );
 
 	// Destination VRAM address.
-	set_di_to_vdc( (12*64 + 10) );
+	vdc_di_to_mawr( (12*64 + 10) );
 
 	// Display the classic "hello, world" on the screen.
 	print_message( message1 );
 
 	// Destination VRAM address.
-	set_di_to_vdc( (14*64 + 8) );
+	vdc_di_to_mawr( (14*64 + 8) );
 
 	// Display a 2nd message on the screen.
 	print_message( message2 );

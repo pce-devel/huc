@@ -244,7 +244,7 @@ __trampolineptr =	$5FFF			; are in MPR2, tell PCEAS to
 
 CORE_BANK	=	bank(*) - _bank_base	; It isn't always zero! ;-)
 
-core_boot:
+core_boot:	jmp	* + 3			; Allow someone to patch this.
 
 	.if	CDROM
 

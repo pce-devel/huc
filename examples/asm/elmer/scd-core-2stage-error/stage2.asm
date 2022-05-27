@@ -168,7 +168,7 @@ core_main:	; Turn the display off and initialize the screen mode.
 		sta.l	<_di
 		lda.h	#(13*64 + 10)
 		sta.h	<_di
-		call	set_di_to_vdc
+		call	vdc_di_to_mawr
 
 		cly				; Display the message.
 		bsr	.print_message

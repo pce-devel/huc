@@ -63,10 +63,10 @@ inline void dropfnt8x8_vdc (byte * font, word vram, byte count, byte plane2, byt
 	{{ jsr dropfnt8x8_vdc }}
 }
 
-inline void set_di_to_vdc (word vram) {
+inline void vdc_di_to_mawr (word vram) {
 	*__di = (word) vram;
 	kickasm( clobbers "AXY" )
-	{{ jsr set_di_to_vdc }}
+	{{ jsr vdc_di_to_mawr }}
 }
 
 inline void set_dspon(void) {

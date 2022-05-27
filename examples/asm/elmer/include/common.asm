@@ -135,55 +135,38 @@ inc.h_si_mpr3:	inc.h	<_si			; Increment hi-byte of _si.
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; Put the _si data pointer into the VDC's MARR register.
+; Put the _di data pointer into the VDC's MARR or MAWR register.
 ;
 
 	.if	SUPPORT_SGX
-set_si_to_sgx:	ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+sgx_di_to_marr:	ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
 		db	$E0			; Turn "clx" into a "cpx #".
 	.endif
 
-set_si_to_vdc:	clx				; Offset to PCE VDC.
+vdc_di_to_marr:	clx				; Offset to PCE VDC.
 
-set_si_to_vram:	lda	#VDC_MARR		; Set VDC or SGX destination
+set_di_to_marr	lda	#VDC_MARR		; Set VDC or SGX destination
 		sta	<vdc_reg, x		; address.
-
 		sta	VDC_AR, x
-		lda	<_si + 0
-		sta	VDC_DL, x
-		lda	<_si + 1
-		sta	VDC_DH, x
-
-		lda	#VDC_VRR		; Select the VRR data-read
-		sta	<vdc_reg, x		; register.
-		sta	VDC_AR, x
-		rts
-
-
-
-; ***************************************************************************
-; ***************************************************************************
-;
-; Put the _di data pointer into the VDC's MAWR register.
-;
+		bra	!+
 
 	.if	SUPPORT_SGX
-set_di_to_sgx:	ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+sgx_di_to_mawr:	ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
 		db	$E0			; Turn "clx" into a "cpx #".
 	.endif
 
-set_di_to_vdc:	clx				; Offset to PCE VDC.
+vdc_di_to_mawr:	clx				; Offset to PCE VDC.
 
-set_di_to_vram;	lda	#VDC_MAWR		; Set VDC or SGX destination
+set_di_to_mawr;	lda	#VDC_MAWR		; Set VDC or SGX destination
 		stz	<vdc_reg, x		; address.
-
 		stz	VDC_AR, x
-		lda	<_di + 0
+
+!:		lda	<_di + 0
 		sta	VDC_DL, x
 		lda	<_di + 1
 		sta	VDC_DH, x
 
-		lda	#VDC_VWR		; Select the VWR data-write
+		lda	#VDC_VWR		; Select the VRR/VWR data
 		sta	<vdc_reg, x		; register.
 		sta	VDC_AR, x
 		rts
