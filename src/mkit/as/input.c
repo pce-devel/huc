@@ -100,6 +100,7 @@ init_path(void)
 
 	/* Get env variable holding PCE path*/
 	p = getenv(machine->include_env);
+	printf("%s = \"%s\"\n\n", machine->include_env, p);
 
 	if (p == NULL)
 		return 2;
