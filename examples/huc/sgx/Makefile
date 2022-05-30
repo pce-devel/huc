@@ -9,9 +9,7 @@ CDFLAGS = -scd
 
 sgx_test.iso: $(SRC)
 	$(CC) $(CFLAGS) $(CDFLAGS) $(SRC) $(LIBS)
+
 sgx_test.sgx: $(SRC)
 	$(CC) $(CFLAGS) $(SRC) $(LIBS)
-	mv -f sgx_test.pce $@
-
-clean:
-	rm -f *.pce *.sgx *.lst *.sym *.s *.iso
+	$(MV) sgx_test.pce $@

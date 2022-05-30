@@ -8,6 +8,3 @@ CFLAGS ?= -fno-recursive -msmall
 
 scroll.pce: $(SRC)
 	$(CC) $(CFLAGS) $(SRC) $(LIBS)
-
-clean:
-	rm -f *.pce *.lst *.sym *.s
