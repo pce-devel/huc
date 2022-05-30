@@ -64,10 +64,10 @@ void __fastcall __nop ac_control_reg3( unsigned char control<ac_reg_4_control_l>
 /*
  *	CD sector to Arcade card transfer.
  */
-void __fastcall ac_cd_xfer( unsigned char ac_reg<__bl>, unsigned char sector_addr_h<__cl>, unsigned int sector_addr_l<__dx>, unsigned char sectors<__al> );
+void __fastcall ac_cd_xfer( unsigned char ac_reg<__al>, unsigned int ovl_index<__bx>, unsigned int sector_offset<__cx>, unsigned char sectors<__ah> );
 
-void __fastcall ac_vram_xfer(unsigned char ac_reg<__al>, unsigned int vram_addr<__bx>, unsigned int num_bytes<__cx>, unsigned char size<__dl> );
-void __fastcall ac_vram_xfer(unsigned char ac_reg<__al>, unsigned int vram_addr<__bx>, unsigned int num_bytes<__cx>, unsigned char size<__dl>, unsigned char flags<__ah> );
+void __fastcall ac_vram_xfer( unsigned char ac_reg<__al>, unsigned int vram_addr<__bx>, unsigned int num_bytes<__cx>, unsigned char size<__dl> );
+void __fastcall ac_vram_xfer( unsigned char ac_reg<__al>, unsigned int vram_addr<__bx>, unsigned int num_bytes<__cx>, unsigned char size<__dl>, unsigned char flags<__ah> );
 
 void __fastcall ac_vram_dma( unsigned char ac_reg<__al>, unsigned int vram_addr<__bx>, unsigned int num_bytes<__cx> );
 void __fastcall ac_vram_dma( unsigned char ac_reg<__al>, unsigned int vram_addr<__bx>, unsigned int num_bytes<__cx>, unsigned char flags<__ah> );

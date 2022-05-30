@@ -1,9 +1,12 @@
-
 /*
 	Arcade card and SGX library example.
-	
 */
 
+#define	OVL_BOOT	0
+#define	OVL_PROG	1
+#define	OVL_CHR		2
+#define	OVL_BAT		3
+#define	OVL_PAL		4
 
 #include <huc.h>
 #include <AC.h>
@@ -69,14 +72,12 @@ main()
 			put_string("CD->AC xfer... ", 2, 5);
 
 			/* transfer 8k at a time from CD to AC memory via AC reg #0 */
-			ac_cd_xfer(AC_REG0,0,0x1c2,4);
-			ac_cd_xfer(AC_REG0,0,0x1c6,4);
-			ac_cd_xfer(AC_REG0,0,0x1ca,4);
-			ac_cd_xfer(AC_REG0,0,0x1ce,4);
-			ac_cd_xfer(AC_REG0,0,0x1d2,4);
-			ac_cd_xfer(AC_REG0,0,0x1d6,4);
-			ac_cd_xfer(AC_REG0,0,0x1da,4);
-			ac_cd_xfer(AC_REG0,0,0x1de,4);
+			ac_cd_xfer(AC_REG0,OVL_CHR,0,4);
+			ac_cd_xfer(AC_REG0,OVL_CHR,4,4);
+			ac_cd_xfer(AC_REG0,OVL_CHR,8,4);
+			ac_cd_xfer(AC_REG0,OVL_CHR,12,4);
+			ac_cd_xfer(AC_REG0,OVL_BAT,0,1);
+			ac_cd_xfer(AC_REG0,OVL_PAL,0,1);
 
 			put_string("finished.", 17, 5);
 						
@@ -91,7 +92,6 @@ main()
 
 			ac_addr_reg0(0x00,0x8800);
 			ac_vce_copy( AC_REG0, 0x00, 0x100 );
-			
 
 			vsync(60);
 			vsync(60);

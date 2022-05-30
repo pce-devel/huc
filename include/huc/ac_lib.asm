@@ -230,32 +230,36 @@ lib3_ac_vce_copy.3:
 	.bank	LIB3_BANK
 ; ----
 lib3_ac_cd_xfer.4:
-
-	ldx	<__dh ;->mid
-	stx	<__ch ; mid->ch
+	ldx	<__bx
+	cla
+	jsr	prep_rdsect
+	__addw	<__cx
+	stz	<__cl
+	sta	<__ch
+	stx	<__dl
 
 	; setup for MPR5
 	lda	#$05
 	sta	<__dh
 
 	; setup AC bank
-	stz	<__bh
-	lda	<__bl
+	lda	<__al
 	and	#$03
 	ora	#$40
 	sta	<__bl
+	stz	<__bh
 
 	; make sure not more than 4 sectors(8k) are transfered
-	lda	<__al
+	lda	<__ah
 	cmp	#$05
 	bcc	.skip
 	lda	#$04
-.skip
-	sta	<__al
+.skip	sta	<__al
 	stz	<__ah
 
-	jsr	$E009
-
+	jsr	cd_read
+	tax
+	cla
 	rts
 	.bank	LIB1_BANK
 
