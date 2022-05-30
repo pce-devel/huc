@@ -218,7 +218,7 @@ bool ReadBinaryFile ( const char * pName, void ** pBuffer, size_t * pLength )
   if ((fstat( hFile, &cStat ) != 0) || (!S_ISREG( cStat.st_mode )))
     goto errorExit;
 
-  if (cStat.st_size > SSIZE_MAX)
+  if (cStat.st_size > 0x7FFFFFFF)
     goto errorExit;
 
   uSize = cStat.st_size;

@@ -452,9 +452,9 @@ intptr_t cpp (int subline)
 		llptr = lptr = 0;	/* do the whole line */
 
 	while (ch()) {
-		if ((ch() == ' ') | (ch() == 9)) {
+		if ((ch() == ' ') || (ch() == 9)) {
 			keepch(' ');
-			while ((ch() == ' ') | (ch() == 9))
+			while ((ch() == ' ') || (ch() == 9))
 				gch();
 		}
 		else if (ch() == '"') {
@@ -485,10 +485,10 @@ intptr_t cpp (int subline)
 			gch();
 			keepch('\'');
 		}
-		else if ((ch() == '/') & (nch() == '*')) {
+		else if ((ch() == '/') && (nch() == '*')) {
 			inchar();
 			inchar();
-			while ((((c = ch()) == '*') & (nch() == '/')) == 0)
+			while ((((c = ch()) == '*') && (nch() == '/')) == 0)
 				if (c == '$') {
 					inchar();
 					tog = TRUE;
