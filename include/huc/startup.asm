@@ -348,6 +348,7 @@ ovlentry:
 
 cderr_override:		.db	0
 cderr_overlay_num:	.db	0
+overlay_data_sector:	.db	bank( ovlarray )-_bank_base
 
 cdrom_err_load:
 
@@ -384,6 +385,7 @@ cdrom_err_load:
 
 .error:	jmp	cd_boot		; Can't load - reboot CDROM system card
 	
+	ds	$4070 - *	; Fail if this gets too big!
 
 ;
 ; Proper Boot-time entry point

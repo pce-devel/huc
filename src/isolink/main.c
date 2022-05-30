@@ -366,6 +366,7 @@ file_write(FILE *outfile, FILE *infile, char *filename, int curr_filenum)
    int bytes_read, bytes_written;
    int i, j;
    int code;
+   int data_sector = -1;
 
    code = 0;
    if ((asm_flag == 0) &&
@@ -405,11 +406,16 @@ file_write(FILE *outfile, FILE *infile, char *filename, int curr_filenum)
 
             buffer[1] = curr_filenum;
 
+            /* This byte is the place where the overlay declares */
+            /* which bank to use to store the CD directory */
+
+            data_sector = (8192 / 2048) * (int) buffer[(OVL_DATA_SECTOR & 0x07FF)];
+
             if ((cderr_flag == 1) && (curr_filenum == 1)) {
                buffer[(CDERR_OVERRIDE & 0x07FF)] = 1;
                buffer[(CDERR_OVERLAY_NUM & 0x07FF)] = cderr_ovl;
             }
-         } else if (i == DATA_SECTOR)   {
+         } else if (i == data_sector)   {
             for (j = 0; j < 100; j++) {
 
                /* sector_array[0] is ipl.bin which is a segment    */
@@ -420,6 +426,8 @@ file_write(FILE *outfile, FILE *infile, char *filename, int curr_filenum)
                buffer[j +   0] = (sector_array[j]) & 255;
                buffer[j + 100] = (sector_array[j]) >> 8;
             }
+            buffer[  0] = 0;
+            buffer[100] = 0;
          }
       }
 
