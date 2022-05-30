@@ -19,6 +19,7 @@ main()
 	char i,j,k,l,m,n;
 	
 	disp_off();
+	vsync();
 	spr_set();
 	spr_hide();
 	load_default_font();
@@ -40,7 +41,6 @@ main()
 	
 	set_font_pal(4);
 	set_font_color(14,0);
-	load_default_font();
 	put_string("SGX hardware found", 2, 3);
 	
 	sgx_set_screen_size(SCR_SIZE_32x32);
