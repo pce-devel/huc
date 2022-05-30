@@ -810,7 +810,7 @@ static int XvertAdpcmToPcm ( WAV_FILE *pWave )
 
   // Create the 'frmt' chunk.
 
-  if ((cNext.pFrmt = (FRMT_EXTEND *) malloc(sizeof(FRMT_PCM))) == NULL)
+  if ((cNext.pFrmt = (FRMT_EXTEND *) malloc(sizeof(FRMT_EXTEND))) == NULL)
   {
     sprintf(aErrorMessage, "wav2vox - Not enough memory !\n");
     iErrorCode = ERROR_NO_MEMORY;
