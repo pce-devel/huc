@@ -664,13 +664,13 @@ lib2_init_sgx_vdc:
 
 .sgx_init_LL1:
 	lda	[__si],y
-	sta sgx_video_reg
+	sta	sgx_video_reg
 	iny
 	lda	[__si],y
-	sta sgx_video_data
+	sta	sgx_video_data
 	iny
 	lda	[__si],y
-	sta sgx_video_data+1
+	sta	sgx_video_data+1
 	iny
 	cpy	#$24
 	bne	.sgx_init_LL1
@@ -678,73 +678,59 @@ lib2_init_sgx_vdc:
 	; ----
 	; clear the video RAM
 	;
-	stz	$0010
-	stz	$0012
-	stz	$0013
+	stz	sgx_video_reg
+	stz	sgx_video_data
+	stz	sgx_video_data+1
 	lda	#2
-	sta	$0010
+	sta	sgx_video_reg
 
 	ldx	#128
 .l2:	cly
-.l3:	stz	$0012
-	stz	$0013
+	stz	sgx_video_data
+.l3:	stz	sgx_video_data+1
 	dey
 	bne	.l3
 	dex
 	bne	.l2
 
-	stz	$0010	; Write SGX2 to VDC 2 vram
-	stz	$0012
-	stz	$0013
-	lda	#2
-	sta	$0010
-	lda	#$53
-	sta	$0012
-	lda	#$47
-	sta	$0013
-	lda	#$58
-	sta	$0012
-	lda	#$32
-	sta	$0013
+	ldx	#<$7FFF		; It's safe to write to VRAM $7FFF
+	ldy	#>$7FFF		; where the screen won't glitch.
 
-	stz vdc_reg	; write PCE1 to VDC 1 vram
-	st0	#0
-	st1	#0
-	st2	#0
+	stz	sgx_video_reg	; Write $00FF to VDC 2 vram @$7FFF
+	stx	sgx_video_data
+	sty	sgx_video_data+1
 	lda	#2
-	sta vdc_reg
-	st0	#2
-	st1	#$50
-	st2	#$43
-	st1	#$45
-	st2	#$31
+	sta	sgx_video_reg
+	stx	sgx_video_data
+	stz	sgx_video_data+1
 
-	lda	#1
-	sta	$0010
-	stz	$0012
-	stz	$0013
-	lda	#2
-	sta	$0010
+	stz	<vdc_reg	; Write $0000 to VDC 1 vram @$7FFF
+	stz	video_reg
+	stx	video_data
+	sty	video_data+1
+	sta	<vdc_reg
+	sta	video_reg
+	stz	video_data
+	stz	video_data+1
 
-	lda	$0012
-	cmp	#$53
-	bne	.no_sgx
-	lda	$0013
-	cmp	#$47
-	bne	.no_sgx
-	lda	$0012
-	cmp	#$58
-	bne	.no_sgx
-	lda	$0013
-	cmp	#$32
-	bne	.no_sgx
-	bra	.yes_sgx
-.no_sgx:
-	stz	sgx_init_detect
-	rts
-.yes_sgx:
-	lda	#1
+	dec	a		; Check $xxxx at VDC 2 vram @$7FFF
+	stz	sgx_video_reg
+	stx	sgx_video_data
+	sty	sgx_video_data+1
+	inc	a
+	sta	sgx_video_reg
+	lda	sgx_video_data
+	and	#1
 	sta	sgx_init_detect
+	beq	.done		; Finished if no SGX!
+
+	stz	sgx_video_reg	; Write $0000 to VDC 2 vram @$7FFF
+	stx	sgx_video_data
+	sty	sgx_video_data+1
+	ldy	#2
+	sty	sgx_video_reg
+	stz	sgx_video_data
+	stz	sgx_video_data+1
 
 	;disable display and interrupts and update offline status
 	stz	<sgx_vdc_cr
@@ -762,7 +748,7 @@ lib2_init_sgx_vdc:
 	stz	<__bh
 	jsr	_sgx_scroll.2
 
-	rts
+.done:	rts
 
 	.bank	LIB1_BANK
 
