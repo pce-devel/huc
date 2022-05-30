@@ -574,12 +574,6 @@ void dopsdinc (void)
 		if (!match("("))
 			error("missing (");
 
-		readstr();	/* read the label name */
-		prefix();
-		outstr(litq2);
-		outstr(":\n");
-		addglb_far(litq2, CINT);
-
 		ol(".data");
 
 		if (readqstr() == 0) {

@@ -64,7 +64,7 @@ _load_vram	.proc
 		pha
 
 		jsr	set_si_to_mpr34
-		jsr	set_di_to_vdc
+		jsr	vdc_di_to_mawr
 
 		tii	.vdc_tai, ram_tia, 8
 
@@ -157,7 +157,7 @@ _load_bat	.proc
 		ldy.l	<_si
 		stz.l	<_si
 
-.line_loop:	jsr	set_di_to_vdc
+.line_loop:	jsr	vdc_di_to_mawr
 
 		ldx	<_al
 .tile_loop:	lda	[_si], y
@@ -231,7 +231,7 @@ _satb_update	.proc
 		lda.h	#$0800			; but we put it here instead
 		stz.l	<_di
 		sta.h	<_di
-		jsr	set_di_to_vdc
+		jsr	vdc_di_to_mawr
 
 		ldx	spr_max
 
@@ -546,7 +546,7 @@ _put_xy:	cla
 		sta.l	<_di
 		lda	<_ah
 		sta.h	<_di
-		jmp	set_di_to_vdc
+		jmp	vdc_di_to_mawr
 
 
 

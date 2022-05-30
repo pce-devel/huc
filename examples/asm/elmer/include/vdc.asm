@@ -145,7 +145,7 @@ clear_bat_vdc	.proc
 
 clear_bat_x:	stz	<_di + 0		; Set VDC or SGX destination
 		stz	<_di + 1		; address.
-		jsr	set_di_to_vram
+		jsr	set_di_to_mawr
 
 		lda	<_bl			; Xvert hi-byte of # words
 		lsr	a			; in screen to loop count.
@@ -233,12 +233,13 @@ set_mode_vdc	.proc
 		iny
 		bcc	.not_vdc_cr
 
-		sta	<vdc_crl, x		; Save VDC_CR shadow register.
-
 	.if	SUPPORT_SGX
-		rmb3	<sgx_crl		; We only need 1 vblank IRQ!
-		lda	<vdc_crl, x		; Reload in case it was SGX.
+		cpx	#0			; Writing to the VDC or SGX?
+		beq	.save_crl
+		and	#$F7			; We only need 1 vblank IRQ!
 	.endif
+
+.save_crl:	sta	<vdc_crl, x		; Save VDC_CR shadow register.
 
 .not_vdc_cr:	sta	VDC_DL, x		; Write to VDC.
 
@@ -274,6 +275,51 @@ set_mode_vdc	.proc
 ; ***************************************************************************
 ; ***************************************************************************
 ;
+; sgx_detect - Detect whether we're running on a SuperGrafx.
+;
+; Note that this corrupts VRAM address $7F7F in both the VDC and SGX.
+;
+
+	.if	SUPPORT_SGX
+sgx_detect	.proc
+
+		ldy	#$7F			; Use VRAM address $7F7F
+		sty.h	<_di			; because it won't cause
+		sty.l	<_di			; a screen glitch.
+
+		jsr	sgx_di_to_mawr		; Write $007F to SGX VRAM.
+		sty	SGX_DL
+		stz	SGX_DH
+
+		jsr	vdc_di_to_mawr		; Write $0000 to VDC VRAM.
+		stz	VDC_DL
+		stz	VDC_DH
+
+		jsr	sgx_di_to_marr		; Check value in SGX VRAM.
+		ldy	SGX_DL
+		sty	sgx_detected
+
+		jsr	sgx_di_to_mawr		; Write $0000 to SGX VRAM.
+		stz	SGX_DL
+		stz	SGX_DH
+
+		leave				; All done, phew!
+
+		.endp
+
+	.ifndef	sgx_detected			; Could be defined in CORE.
+		.bss
+sgx_detected:	ds	1			; NZ if SuperGrafx detected.
+		.code
+	.endif
+
+	.endif	SUPPORT_SGX
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
 ; init_256x224 - An example of initializing screen and VRAM.
 ;
 ; This can be used as-is, or copied to your own program and modified.
@@ -289,19 +335,6 @@ init_256x224	.proc
 
 		call	clear_vce		; Clear all palettes.
 
-		lda.l	#.mode_256x224		; Disable BKG & SPR layers but
-		sta.l	<_si			; enable RCR & VBLANK IRQ.
-		lda.h	#.mode_256x224
-		sta.h	<_si
-		lda	#^.mode_256x224
-		sta	<_si_bank
-		call	set_mode_vdc
-	.if	SUPPORT_SGX
-		call	set_mode_sgx
-	.endif
-
-		call	wait_vsync		; Wait for the next VBLANK.
-
 		lda.l	#.CHR_0x20		; Tile # of ' ' CHR.
 		sta.l	<_ax
 		lda.h	#.CHR_0x20
@@ -314,6 +347,22 @@ init_256x224	.proc
 	.if	SUPPORT_SGX
 		call	clear_vram_sgx
 	.endif
+
+		lda.l	#.mode_256x224		; Disable BKG & SPR layers but
+		sta.l	<_si			; enable RCR & VBLANK IRQ.
+		lda.h	#.mode_256x224
+		sta.h	<_si
+		lda	#^.mode_256x224
+		sta	<_si_bank
+
+	.if	SUPPORT_SGX
+		call	sgx_detect		; Are we really on an SGX?
+		beq	!+
+		call	set_mode_sgx		; Set SGX 1st, with no VBL.
+	.endif
+!:		call	set_mode_vdc		; Set VDC 2nd, VBL allowed.
+
+		call	wait_vsync		; Wait for the next VBLANK.
 
 		leave				; All done, phew!
 
@@ -370,19 +419,6 @@ init_512x224	.proc
 
 		call	clear_vce		; Clear all palettes.
 
-		lda.l	#.mode_512x224		; Disable BKG & SPR layers but
-		sta.l	<_si			; enable RCR & VBLANK IRQ.
-		lda.h	#.mode_512x224
-		sta.h	<_si
-		lda	#^.mode_512x224
-		sta	<_si_bank
-		call	set_mode_vdc
-	.if	SUPPORT_SGX
-		call	set_mode_sgx
-	.endif
-
-		call	wait_vsync		; Wait for the next VBLANK.
-
 		lda.l	#.CHR_0x20		; Tile # of ' ' CHR.
 		sta.l	<_ax
 		lda.h	#.CHR_0x20
@@ -395,6 +431,22 @@ init_512x224	.proc
 	.if	SUPPORT_SGX
 		call	clear_vram_sgx
 	.endif
+
+		lda.l	#.mode_512x224		; Disable BKG & SPR layers but
+		sta.l	<_si			; enable RCR & VBLANK IRQ.
+		lda.h	#.mode_512x224
+		sta.h	<_si
+		lda	#^.mode_512x224
+		sta	<_si_bank
+
+	.if	SUPPORT_SGX
+		call	sgx_detect		; Are we really on an SGX?
+		beq	!+
+		call	set_mode_sgx		; Set SGX 1st, with no VBL.
+	.endif
+!:		call	set_mode_vdc		; Set VDC 2nd, VBL allowed.
+
+		call	wait_vsync		; Wait for the next VBLANK.
 
 		leave				; All done, phew!
 

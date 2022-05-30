@@ -446,9 +446,6 @@ proc_reloc(void)
 	if (proc_nb == 0)
 		return;
 
-	/* sort procedures by size (largest first) for better packing */
-	proc_sortlist();
-
 	/* init */
 	bank_free = (int*) malloc(sizeof(int) * (bank_limit+1));
 	if (!bank_free) {
@@ -459,6 +456,12 @@ proc_reloc(void)
 	for (i = 0; i <= bank_limit; i++) {
 		bank_free[i] = 0x2000 - bank_maxloc[i];
 	}
+
+	/* sort procedures by size (largest first) for better packing */
+	if (asm_opt[OPT_OPTIMIZE])
+		proc_sortlist();
+	else
+		bank_free[max_bank] = 0;
 
 	new_bank = max_bank + 1;
 
@@ -493,7 +496,9 @@ proc_reloc(void)
 
 				while (reloc_bank == -1)
 				{
-					for (check_bank = 0; check_bank <= max_bank; check_bank++)
+					check_bank = (asm_opt[OPT_OPTIMIZE]) ? 0 : max_bank;
+
+					for (; check_bank <= max_bank; check_bank++)
 					{
 						/* don't use a full bank, even if proc_ptr->size==0 */
 						if ((bank_free[check_bank] != 0) && (bank_free[check_bank] >= proc_ptr->size))

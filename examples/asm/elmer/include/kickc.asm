@@ -36,8 +36,8 @@
 ;      MPR0 = bank $FF : PCE hardware
 ;      MPR1 = bank $F8 : PCE RAM with ZP & Stack (BSS segment)
 ;      MPR2 = bank $01 : TED2 RAM
-;      MPR3 = bank $xx : Freely mapped data, init to $03 (DATA segment)
-;      MPR4 = bank $xx : Freely mapped data, init to $04
+;      MPR3 = bank $xx : Freely mapped data, init to $04 (DATA segment)
+;      MPR4 = bank $xx : Freely mapped data, init to $05
 ;      MPR5 = bank $03 : KickC permanent code & data (CODE segment)
 ;      MPR6 = bank $xx : Banked ASM library & KickC procedures
 ;      MPR7 = bank $02 : CORE(not TM) base code & call-trampolines

@@ -1,0 +1,11 @@
+# Known MD5 checksums for the compiled HuC examples
+# which can be used to check for toolchain breakage.
+#
+2e52e5ac12e0336629081a14fb137d12 *examples/huc/acd/ac_test.iso
+986c07d46154be97465dd554ba7629cd *examples/huc/overlay/overlay.iso
+336d03645a452a36de6bfa08c0de9f06 *examples/huc/promotion/promotion.pce
+cafa0f90b98fcdc7837efc595fdafdee *examples/huc/scroll/scroll.pce
+ef681abac30da34939b7ad7aed790b1f *examples/huc/sgx/sgx_test.iso
+ec5d15a364cc2cba215d98736a6a5cdb *examples/huc/sgx/sgx_test.sgx
+b6d7fa2a06def72747f598646b336943 *examples/huc/shmup/shmup.iso
+b0aa5bc10d2c251049e713a3d4c91264 *examples/huc/shmup/shmup.pce

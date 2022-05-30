@@ -12,7 +12,7 @@
 set -e
 
 export PATH="../../bin:$PATH"
-export PCE_INCLUDE="../../include/pce"
+export PCE_INCLUDE="../../include/huc"
 export PCE_PCEAS="../../bin/pceas"
 
 HUC=huc

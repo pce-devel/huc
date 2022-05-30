@@ -314,6 +314,10 @@ irq1_handler:	pha				; Save all registers.
 
 sound_mutex:	ds	1			; NZ when controller port busy.
 
+	.if	SUPPORT_SGX
+sgx_detected:	ds	1			; NZ if SuperGrafx detected.
+	.endif
+
 		.code
 
 

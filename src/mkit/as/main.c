@@ -34,7 +34,7 @@
 #include "protos.h"
 #include "vars.h"
 #include "inst.h"
-#include "../../../include/overlay.h"
+#include "overlay.h"
 
 /* defines */
 #define STANDARD_CD	1
@@ -220,7 +220,7 @@ main(int argc, char **argv)
 	int ram_bank;
 	int cd_type;
 	int pass_count = 0;
-	const char *cmd_line_options = "sSl:mhI:o:";
+	const char *cmd_line_options = "sSl:mhI:o:O";
 	const struct option cmd_line_long_options[] = {
 		{"segment",     0, 0,           's'},
 		{"fullsegment", 0, 0,           'S'},
@@ -345,6 +345,10 @@ main(int argc, char **argv)
 				strcpy(out_fname, optarg);
 				break;
 
+			case 'O':
+				asm_opt[OPT_OPTIMIZE] = 1;
+				break;
+
 			case 'h':
 				help();
 				return 0;
@@ -370,6 +374,9 @@ main(int argc, char **argv)
 		padding_opt = 0;
 		overlayflag = 0;
 	}
+
+	/* enable optimized procedure packing if stripping */
+	asm_opt[OPT_OPTIMIZE] |= strip_opt;
 
 	/* check for missing asm file */
 	if(optind == argc)
@@ -558,7 +565,6 @@ main(int argc, char **argv)
 		asm_opt[OPT_LIST] = 0;
 		asm_opt[OPT_MACRO] = mlist_opt;
 		asm_opt[OPT_WARNING] = 0;
-		asm_opt[OPT_OPTIMIZE] = 0;
 		asm_opt[OPT_CCOMMENT] = kickc_opt;
 		asm_opt[OPT_INDPAREN] = 0;
 		asm_opt[OPT_ZPDETECT] = 0;
@@ -940,6 +946,7 @@ help(void)
 		printf("-ipl       : create a custom CD-ROM IPL file\n");
 		printf("-dev       : assemble and run on the Develo Box\n");
 		printf("-mx        : create a Develo MX file\n");
+		printf("-O         : optimize .proc packing (compared to HuC v3.21)\n");
 		printf("-strip     : strip unused .proc & .procgroup\n");
 		printf("-newproc   : run .proc code in MPR6, instead of MPR5\n");
 	}

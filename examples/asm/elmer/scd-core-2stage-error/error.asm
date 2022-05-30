@@ -164,7 +164,7 @@ core_main:	; Turn the display off and initialize the screen mode.
 		sta.l	<_di			; to the SATB in VRAM.
 		lda.h	#$0834
 		sta.h	<_di
-		jsr	set_di_to_vdc
+		call	vdc_di_to_mawr
 		tia	saz_satb0, VDC_DL, 32	; Frame 1 of 2.
 
 		ldy	#30			; Wait for 30 frames.
@@ -174,7 +174,7 @@ core_main:	; Turn the display off and initialize the screen mode.
 		sta.l	<_di			; to the SATB in VRAM.
 		lda.h	#$0834
 		sta.h	<_di
-		jsr	set_di_to_vdc
+		call	vdc_di_to_mawr
 		tia	saz_satb1, VDC_DL, 32	; Frame 2 of 2.
 
 		bra	.animate		; Wait for user to reboot.

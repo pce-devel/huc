@@ -19,22 +19,24 @@ $(SUBDIRS):
 
 install:
 	cp -p bin/* /usr/local/bin
-	mkdir -p /usr/include/pce
-	cp -pr include/pce/* /usr/include/pce/
+	mkdir -p /usr/include/huc
+	cp -pr include/huc/* /usr/include/huc/
 
 test:
-ifneq ($(shell uname -s),Linux)
-	@echo ''
-	@echo 'Note: "make test" only runs on a linux platform!'
-else
 	cd test ; ./mk
-endif
 
 check:
 	@echo ''
-	md5sum -c < examples/checksum.txt
+	dos2unix examples/huc/checksum.txt
+	md5sum -c < examples/huc/checksum.txt
 
 DATE = $(shell date +%F)
+ifneq ($(OS),Windows_NT)
+	PLATFORMSUFFIX = $(shell uname)
+else
+	PLATFORMSUFFIX = Win64
+endif
+
 
 package:
 	mkdir -p tmp
@@ -49,7 +51,7 @@ package:
 	find examples/asm -type f -name '*.bin' -delete
 	mv tmp/* bin/
 	rm -d tmp
-	rm -f huc-$(DATE).zip
-	zip -r huc-$(DATE) * -x *.zip -x .*
+	rm -f huc-$(DATE)-$(PLATFORMSUFFIX).zip
+	zip -r huc-$(DATE)-$(PLATFORMSUFFIX).zip * -x *.zip -x .*
 
 examples: src

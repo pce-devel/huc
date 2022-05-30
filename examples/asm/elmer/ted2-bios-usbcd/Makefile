@@ -1,4 +1,4 @@
-all: ted2usbcd.pce
+all: ../include/ted2usbcd.pce
 
 include ../Make_ex.inc
 
@@ -8,7 +8,17 @@ AFLAGS ?= -raw -m -l 2 -S
 
 ted2usbcd.pce: $(SRC)
 	$(AS) $(AFLAGS) ted2usbcd.asm
-	cp ted2usbcd.pce ../include/ted2usbcd.pce
 
-clean:
-	rm -f ../include/ted2usbcd.pce ted2usbcd.pce *.lst *.sym
+../include/ted2usbcd.pce: ted2usbcd.pce
+ifeq ($(CP),copy)
+	$(CP) ted2usbcd.pce ..\include\ted2usbcd.pce
+else
+	$(CP) ted2usbcd.pce ../include/ted2usbcd.pce
+endif
+
+# Add this to the list of TARGETS to clean.
+#
+# Windows CMD.EXE will fail if the specified file does not exist,
+# and so any files added here *MUST* be in the form of wildcards!
+
+TARGETS += ../include/ted2usbcd.p*

@@ -26,17 +26,17 @@
 #if defined(WIN32)
 #define PATH_SEPARATOR '\\'
 #define PATH_SEPARATOR_STRING "\\"
-#define DEFAULT_DIRS "c:\\huc\\include\\pce"
+#define DEFAULT_DIRS "c:\\huc\\include\\huc"
 #else
 #define PATH_SEPARATOR '/'
 #define PATH_SEPARATOR_STRING "/"
-#define DEFAULT_DIRS "/usr/local/lib/huc/include/pce;" \
-	"/usr/local/huc/include/pce;" \
-	"/usr/local/share/huc/include/pce;" \
-	"/usr/local/include/pce;" \
-	"/usr/lib/huc/include/pce;" \
-	"/usr/share/huc/include/pce;" \
-	"/usr/include/pce"
+#define DEFAULT_DIRS "/usr/local/lib/huc/include/huc;" \
+	"/usr/local/huc/include/huc;" \
+	"/usr/local/share/huc/include/huc;" \
+	"/usr/local/include/huc;" \
+	"/usr/lib/huc/include/huc;" \
+	"/usr/share/huc/include/huc;" \
+	"/usr/include/huc"
 #endif
 
 /* locals */

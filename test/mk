@@ -1,5 +1,5 @@
 #!/bin/bash
-export PCE_INCLUDE=`pwd`/../include/pce
+export PCE_INCLUDE=`pwd`/../include/huc
 export PCE_PCEAS=`pwd`/../bin/pceas
 echo $PCE_INCLUDE $PCE_PCEAS
 tests="$@"
@@ -7,6 +7,12 @@ test -z "$tests" && tests="tests/*.c dg/*.c"
 test -n "$1" && tests="$@"
 fails=0
 nocompiles=0
+exesuffix=
+
+if [[ "$OS" == "Windows_NT" ]]; then
+	exesuffix=.exe
+fi
+
 for d in large small norec noopt
 do
 	fails=0
@@ -20,14 +26,14 @@ do
 	for i in $tests
 	do
 		echo -en "$d\t$i: "
-		if ! ../src/huc/huc -DNO_LABEL_VALUES $opt $i -lmalloc >/dev/null ; then
+		if ! ../bin/huc${exesuffix} -DNO_LABEL_VALUES $opt $i -lmalloc >/dev/null ; then
 			echo NOCOMPILE
-			../src/huc/huc $opt $i
+			../bin/huc${exesuffix} $opt $i
 			exit
 			nocompiles=$((nocompiles + 1))
 			continue
 		fi
-		#if ../tgemu/tgemu "${i%.c}.pce" 2>/dev/null >/dev/null ; then
+		#if ../tgemu/tgemu${exesuffix} "${i%.c}.pce" 2>/dev/null >/dev/null ; then
 			echo PASS
 			passes=$((passes + 1))
 		#else

@@ -66,7 +66,7 @@ dropfnt8x8_vdc	.proc
 		pha
 
 		jsr	set_si_to_mpr3		; Map font to MPR3.
-		jsr	set_di_to_vram		; Map _di to VRAM.
+		jsr	set_di_to_mawr		; Map _di to VRAM.
 
 		; Generate shadowed glyph.
 
@@ -182,7 +182,7 @@ dropfnt8x16_vdc	.proc
 		pha
 
 		jsr	set_si_to_mpr3		; Map font to MPR3.
-		jsr	set_di_to_vram		; Map _di to VRAM.
+		jsr	set_di_to_mawr		; Map _di to VRAM.
 
 		; Generate shadowed glyph.
 

@@ -1,4 +1,4 @@
-all: ted2romcd.pce
+all: ../include/ted2romcd.pce
 
 include ../Make_ex.inc
 
@@ -8,7 +8,17 @@ AFLAGS ?= -raw -m -l 2 -S
 
 ted2romcd.pce: $(SRC)
 	$(AS) $(AFLAGS) ted2romcd.asm
-	cp ted2romcd.pce ../include/ted2romcd.pce
 
-clean:
-	rm -f ../include/ted2romcd.pce ted2romcd.pce *.lst *.sym
+../include/ted2romcd.pce: ted2romcd.pce
+ifeq ($(CP),copy)
+	$(CP) ted2romcd.pce ..\include\ted2romcd.pce
+else
+	$(CP) ted2romcd.pce ../include/ted2romcd.pce
+endif
+
+# Add this to the list of TARGETS to clean.
+#
+# Windows CMD.EXE will fail if the specified file does not exist,
+# and so any files added here *MUST* be in the form of wildcards!
+
+TARGETS += ../include/ted2romcd.p*

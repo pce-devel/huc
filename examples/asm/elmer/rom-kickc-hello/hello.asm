@@ -90,7 +90,7 @@ main: {
     lda #>set_di_to_vdc1_vram
     sta.z __di+1
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:68
-    jsr set_di_to_vdc 
+    jsr vdc_di_to_mawr
     // /mnt/huc/huc/examples/asm/elmer/rom-kickc-hello/hello.c:139
     // Display the classic "hello, world" on the screen.
     lda #<message1
@@ -104,7 +104,7 @@ main: {
     lda #>set_di_to_vdc2_vram
     sta.z __di+1
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:68
-    jsr set_di_to_vdc 
+    jsr vdc_di_to_mawr
     // /mnt/huc/huc/examples/asm/elmer/rom-kickc-hello/hello.c:145
     // Display a 2nd message on the screen.
     lda #<message2

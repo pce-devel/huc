@@ -1,5 +1,6 @@
+all: bios-hello-error.iso
+
 include ../Make_ex.inc
-VPATH = ../include ../font
 
 AFLAGS ?= -newproc -strip -m -l 2 -S -overlay
 
@@ -11,8 +12,6 @@ ERR_OVL = error.asm
 
 SRC_ISO = hello.ovl
 
-all: bios-hello-error.iso
-
 bios-hello-error.iso: $(SRC_ISO) error.ovl
 	$(IL) bios-hello-error.iso -boot="../include/ipl-scd.dat" -ipl="SuperCD Error" -asm $(SRC_ISO) -cderr error.ovl
 
@@ -23,6 +22,3 @@ hello.ovl: $(SRC_OVL) $(SRC_INC)
 
 error.ovl: $(ERR_OVL) $(ERR_INC)
 	$(AS) $(AFLAGS) -cd error.asm
-
-clean:
-	rm -f *.iso *.ovl *.bin *.lst *.sym *.s

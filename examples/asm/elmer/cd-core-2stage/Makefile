@@ -1,5 +1,6 @@
+all: core-2stage.iso
+
 include ../Make_ex.inc
-VPATH = ../include ../font
 
 AFLAGS ?= -newproc -strip -m -l 2 -S -overlay
 
@@ -10,8 +11,6 @@ SRC2_INC = pceas.inc pcengine.inc core.inc core-startup.asm core-kernel.asm joyp
 SRC2_OVL = stage2.asm core-config.inc
 
 SRC_ISO  = core-stage1.bin stage2.ovl
-
-all: core-2stage.iso
 
 core-2stage.iso: $(SRC_ISO)
 	$(IL) core-2stage.iso -ipl="2-Stage CD",0x4000,0x4000,0,1,2,3,4 -asm $(SRC_ISO)
@@ -24,6 +23,3 @@ core-stage1.s: core-stage1.s2i core-stage1.sym
 
 stage2.ovl: $(SRC2_OVL) $(SRC2_INC) core-stage1.s
 	$(AS) $(AFLAGS) -cd stage2.asm
-
-clean:
-	rm -f *.iso *.ovl *.bin *.lst *.sym *.s

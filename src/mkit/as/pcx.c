@@ -414,7 +414,7 @@ pcx_load(char *name)
 	}
 
 	/* malloc a buffer */
-	pcx_buf = malloc(pcx_w * pcx_h);
+	pcx_buf = malloc((size_t)pcx_w * pcx_h);
 	if (pcx_buf == NULL) {
 		error("Can not load file, not enough memory!");
 		return (0);
@@ -660,7 +660,7 @@ bmp_load(char *name)
 	}
 
 	/* malloc a buffer */
-	pcx_buf = malloc(pcx_w * pcx_h);
+	pcx_buf = malloc((size_t)pcx_w * pcx_h);
 	if (pcx_buf == NULL) {
 		error("Can not load file, not enough memory!");
 		goto errorCleanup;
@@ -826,7 +826,7 @@ png_load(char *name)
 	}
 
 	/* malloc a buffer */
-	pcx_buf = malloc(pcx_w * pcx_h);
+	pcx_buf = malloc((size_t)pcx_w * pcx_h);
 	if (pcx_buf == NULL) {
 		error("Can not load file, not enough memory!");
 		goto errorCleanup;

@@ -1,5 +1,6 @@
+all: core-1stage-error.iso
+
 include ../Make_ex.inc
-VPATH = ../include ../font ../data
 
 AFLAGS ?= -newproc -strip -m -l 2 -S -overlay
 
@@ -11,8 +12,6 @@ ERR_OVL = error.asm core-config.inc saz_vdc.zx0 saz_vce.zx0
 
 SRC_ISO = stage1.ovl
 
-all: core-1stage-error.iso
-
 core-1stage-error.iso: $(SRC_ISO) error.ovl
 	$(IL) core-1stage-error.iso -boot="../include/ipl-scd.dat" -ipl="1-Stage-cderr CD" -asm $(SRC_ISO) -cderr error.ovl
 
@@ -23,6 +22,3 @@ stage1.ovl: $(SRC_OVL) $(SRC_INC)
 
 error.ovl: $(ERR_OVL) $(ERR_INC)
 	$(AS) $(AFLAGS) -cd error.asm
-
-clean:
-	rm -f *.iso *.ovl *.bin *.lst *.sym *.s
