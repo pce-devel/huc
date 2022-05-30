@@ -283,9 +283,9 @@ set_mode_vdc	.proc
 	.if	SUPPORT_SGX
 sgx_detect	.proc
 
-		ldy	#$7F			; Use VRAM address $7F7F.
-		sty.h	<_di
-		sty.l	<_di
+		ldy	#$7F			; Use VRAM address $7F7F
+		sty.h	<_di			; because it won't cause
+		sty.l	<_di			; a screen glitch.
 
 		jsr	sgx_di_to_mawr		; Write $007F to SGX VRAM.
 		sty	SGX_DL
@@ -298,6 +298,10 @@ sgx_detect	.proc
 		jsr	sgx_di_to_marr		; Check value in SGX VRAM.
 		ldy	SGX_DL
 		sty	sgx_detected
+
+		jsr	sgx_di_to_mawr		; Write $0000 to SGX VRAM.
+		stz	SGX_DL
+		stz	SGX_DH
 
 		leave				; All done, phew!
 
