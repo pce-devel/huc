@@ -13,7 +13,11 @@ OBJS    = adler32.o compress.o crc32.o deflate.o trees.o zutil.o\
 LIB     = pngwrite.a
 EXE     = $(LIB)
 
-CFLAGS += -DPNG_USER_CONFIG -DNO_GZCOMPRESS -DZ_SOLO -DNO_GZIP -Wno-multistatement-macros
+CFLAGS += -DPNG_USER_CONFIG -DNO_GZCOMPRESS -DZ_SOLO -DNO_GZIP
+
+ifneq ($(shell $(CC) -v 2>&1 | grep -c "clang version"), 1)
+CFLAGS += -Wno-multistatement-macros
+endif
 
 #
 #

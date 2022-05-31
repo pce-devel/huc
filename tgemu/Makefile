@@ -30,4 +30,4 @@ clean:
 	find ../test -type f -name '*.pce' -delete
 	find ../test -type f -name '*.sym' -delete
 
-CC = gcc
+CC = cc

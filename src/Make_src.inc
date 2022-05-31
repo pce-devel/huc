@@ -26,4 +26,4 @@ MAKETARG=$(ROOTDIR)/src/Maketarg.inc
 EXESUFFIX = 
 CP = cp
 RM = rm -f
-CC = gcc
+CC = cc
