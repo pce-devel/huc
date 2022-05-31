@@ -33,15 +33,15 @@ do
 			nocompiles=$((nocompiles + 1))
 			continue
 		fi
-		#if ../tgemu/tgemu${exesuffix} "${i%.c}.pce" 2>/dev/null >/dev/null ; then
+		if ../tgemu/tgemu${exesuffix} "${i%.c}.pce" 2>/dev/null >/dev/null ; then
 			echo PASS
 			passes=$((passes + 1))
-		#else
-		#	echo "FAIL (exit code $?)"
-		#	mkdir -p failtraces
-		#	mv "${i%.c}".{sym,s,pce} failtraces/
-		#	fails=$((fails + 1))
-		#fi
+		else
+			echo "FAIL (exit code $?)"
+			mkdir -p failtraces
+			mv "${i%.c}".{sym,s,pce} failtraces/
+			fails=$((fails + 1))
+		fi
 	done
 	echo "$d passes: $passes; fails: $fails, nocompiles: $nocompiles"
 	total_fails=$((total_fails + fails))

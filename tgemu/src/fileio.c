@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <stdio.h>
 
 #include "shared.h"
 #include "pcecrc.h"
@@ -22,32 +21,33 @@ int load_rom(char *filename, int split, int flip)
     strcpy(game_name, filename);
 
     {
-        FILE* gd;
+        int gd = 0;
 
         /* Open file */
-        if ((gd = fopen(filename, "rb")) == NULL)
+        if ((gd = open(filename, O_RDONLY, &gd)) < 0)
           return (2);
 
-        size = fseek(gd, 0, SEEK_END);
-        rewind(gd);
+        struct stat st;
+        fstat(gd, &st);
+        /* Get file size */
+        size = st.st_size; //gzsize(gd);
 
         /* Allocate file data buffer */
         buf = malloc(size);
         if(!buf) {
-            fclose(gd);
+            close(gd);
             return (0);
         }
 
         /* Read file data */
-        int numBytes = 0;
-        numBytes = fread(buf, 1, size, gd);
+        int res = 0;
 
-        if (numBytes != size) {
+        res = read(gd, buf, size);
+        if (res != size)
             return 42;
-        }
 
         /* Close file */
-        fclose(gd);
+        close(gd);
     }
 
     /* Check for 512-byte header */

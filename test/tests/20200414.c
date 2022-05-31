@@ -9,7 +9,7 @@ char aa;
 _test_1_aa.1 .macro
 
     lda #2
-    sta __ax
+    sta [__ax]
   .endm
 
 #endasm
