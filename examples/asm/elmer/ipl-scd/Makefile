@@ -15,10 +15,3 @@ ifeq ($(CP),copy)
 else
 	$(CP) ipl-scd.out ../include/ipl-scd.dat
 endif
-
-# Add this to the list of TARGETS to clean.
-#
-# Windows CMD.EXE will fail if the specified file does not exist,
-# and so any files added here *MUST* be in the form of wildcards!
-
-TARGETS += ../include/ipl-scd.d*
