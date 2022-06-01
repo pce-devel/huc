@@ -23,12 +23,7 @@ install:
 	cp -pr include/huc/* /usr/include/huc/
 
 test:
-ifneq ($(shell uname -s),Linux)
-	@echo ''
-	@echo 'Note: "make test" only runs on a linux platform!'
-else
 	cd test ; ./mk
-endif
 
 check:
 	@echo ''

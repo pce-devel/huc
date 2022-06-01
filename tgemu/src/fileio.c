@@ -5,6 +5,11 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
+#ifndef O_BINARY
+  #define O_BINARY 0
+  #define O_TEXT   0
+#endif
+
 /* Name of the loaded file */
 char game_name[0x100];
 
@@ -24,7 +29,7 @@ int load_rom(char *filename, int split, int flip)
         int gd = 0;
 
         /* Open file */
-        if ((gd = open(filename, O_RDONLY, &gd)) < 0)
+        if ((gd = open(filename, O_BINARY | O_RDONLY, &gd)) < 0)
           return (2);
 
         struct stat st;
