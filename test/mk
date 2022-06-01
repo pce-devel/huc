@@ -38,6 +38,8 @@ do
 			passes=$((passes + 1))
 		else
 			echo "FAIL (exit code $?)"
+			../tgemu/tgemu${exesuffix} "${i%.c}.pce"
+			exit
 			mkdir -p failtraces
 			mv "${i%.c}".{sym,s,pce} failtraces/
 			fails=$((fails + 1))
@@ -49,3 +51,4 @@ do
 	total_passes=$((total_passes + passes))
 done
 echo "Total passes: $total_passes; fails: $total_fails, nocompiles: $total_nocompiles"
+exit $((total_fails + total_nocompiles))
