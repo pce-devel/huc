@@ -38,8 +38,7 @@ jobs:
       - name: Build on Mac
         if: startsWith(matrix.os, 'macos')
         run: |
-          brew install make # need gnumake
-          gmake
+          make
           echo Build Complete
       - name: Archive toolchain
         uses: actions/upload-artifact@v3
@@ -50,7 +49,7 @@ jobs:
             examples/**/*.iso
             examples/**/*.pce
             examples/**/*.sgx
-            tgemu/tgemu
+            tgemu/tgemu*
 
   test:
     strategy:
