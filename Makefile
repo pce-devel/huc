@@ -23,14 +23,11 @@ install:
 	cp -pr include/huc/* /usr/include/huc/
 
 test:
-	@cd test ; ./test_compiler.sh
+	@cd test ; /bin/sh ./test_compiler.sh
 
 check:
-	@cd test ; ./test_examples.sh
+	@cd test ; /bin/sh ./test_examples.sh
 
-#	@echo ''
-#	dos2unix examples/huc/checksum.txt
-#	md5sum -c < examples/huc/checksum.txt
 
 DATE = $(shell date +%F)
 ifneq ($(OS),Windows_NT)
