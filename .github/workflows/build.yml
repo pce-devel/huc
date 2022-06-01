@@ -93,9 +93,9 @@ jobs:
       - name: Run tests on Mac
         if: startsWith(matrix.os, 'macos')
         run: |
-          brew install make md5sha1sum dos2unix # need gnumake and md5sum to run make check
-          gmake check
-          gmake test
+          brew install md5sha1sum dos2unix # need md5sum to run make check
+          make check
+          make test
           echo Build Complete
 
   package:
@@ -125,8 +125,7 @@ jobs:
       - name: Package ${{ matrix.os }}
         if: startsWith(matrix.os, 'macos')
         run: |
-          brew install make # need gnumake
-          gmake package
+          make package
           echo Package Complete
       - name: Archive package
         uses: actions/upload-artifact@v3
