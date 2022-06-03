@@ -27,7 +27,8 @@
   .label __al = $f8
   .label __ah = $f9
   .label __bl = $fa
-  .label __dh = $ff
+  // CORE(not TM) library variable!
+  .label __bank = 2
 .segment Code
 __start: {
     jsr main
@@ -40,8 +41,8 @@ main: {
     .const dropfnt8x8_vdc1_plane3 = 0
     .const load_palette1_palnum = 0
     .const load_palette1_palcnt = 1
-    .const set_di_to_vdc1_vram = $c*$40+$a
-    .const set_di_to_vdc2_vram = $e*$40+8
+    .const vdc_di_to_mawr1_vram = $c*$40+$a
+    .const vdc_di_to_mawr2_vram = $e*$40+8
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:51
     jsr init_256x224 
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:56
@@ -51,7 +52,7 @@ main: {
     sta.z __si+1
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:57
     lda #$ff&my_font>>$17
-    sta.z __dh
+    sta.z __bank
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:58
     lda #<dropfnt8x8_vdc1_vram
     sta.z __di
@@ -75,7 +76,7 @@ main: {
     sta.z __si+1
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:79
     lda #$ff&cpc464_colors>>$17
-    sta.z __dh
+    sta.z __bank
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:80
     lda #load_palette1_palnum
     sta.z __al
@@ -85,12 +86,12 @@ main: {
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:82
     jsr load_palettes 
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:67
-    lda #<set_di_to_vdc1_vram
+    lda #<vdc_di_to_mawr1_vram
     sta.z __di
-    lda #>set_di_to_vdc1_vram
+    lda #>vdc_di_to_mawr1_vram
     sta.z __di+1
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:68
-    jsr vdc_di_to_mawr
+    jsr vdc_di_to_mawr 
     // /mnt/huc/huc/examples/asm/elmer/rom-kickc-hello/hello.c:139
     // Display the classic "hello, world" on the screen.
     lda #<message1
@@ -99,12 +100,12 @@ main: {
     sta.z print_message.string+1
     jsr print_message
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:67
-    lda #<set_di_to_vdc2_vram
+    lda #<vdc_di_to_mawr2_vram
     sta.z __di
-    lda #>set_di_to_vdc2_vram
+    lda #>vdc_di_to_mawr2_vram
     sta.z __di+1
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:68
-    jsr vdc_di_to_mawr
+    jsr vdc_di_to_mawr 
     // /mnt/huc/huc/examples/asm/elmer/rom-kickc-hello/hello.c:145
     // Display a 2nd message on the screen.
     lda #<message2

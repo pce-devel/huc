@@ -54,7 +54,7 @@ inline void init_256x224(void) {
 
 inline void dropfnt8x8_vdc (byte * font, word vram, byte count, byte plane2, byte plane3) {
 	*__si = (word) font;
-	*__si_bank = (byte) (font >> 23);
+	*__bank = (byte) (font >> 23);
 	*__di = vram;
 	*__al = plane2;
 	*__ah = plane3;
@@ -76,7 +76,7 @@ inline void set_dspon(void) {
 
 inline void load_palette (byte palnum, word * data, byte palcnt) {
 	*__si = (word) data;
-	*__si_bank = (byte) (data >> 23);
+	*__bank = (byte) (data >> 23);
 	*__al = palnum;
 	*__ah = palcnt;
 	kickasm( clobbers "AXY" )

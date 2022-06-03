@@ -40,7 +40,8 @@
   .label __bx = $fa
   .label __bl = $fa
   .label __cl = $fc
-  .label __dh = $ff
+  // CORE(not TM) library variable!
+  .label __bank = 2
   // 1
   .label joynow = $2228
   // 5	officially called joy
@@ -153,7 +154,7 @@ main: {
     sta.z __si+1
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:79
     lda #$ff&bonkpal>>$17
-    sta.z __dh
+    sta.z __bank
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:80
     lda #load_palette1_palnum
     sta.z __al
@@ -169,7 +170,7 @@ main: {
     sta.z __si+1
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:79
     lda #$ff&bulletpal>>$17
-    sta.z __dh
+    sta.z __bank
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:80
     lda #load_palette2_palnum
     sta.z __al
@@ -185,7 +186,7 @@ main: {
     sta.z __si+1
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:79
     lda #$ff&shippal>>$17
-    sta.z __dh
+    sta.z __bank
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:80
     lda #load_palette3_palnum
     sta.z __al
@@ -201,7 +202,7 @@ main: {
     sta.z __si+1
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:79
     lda #$ff&explosionpal>>$17
-    sta.z __dh
+    sta.z __bank
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:80
     lda #load_palette4_palnum
     sta.z __al
@@ -216,7 +217,7 @@ main: {
     lda #>bonkspr
     sta.z __si+1
     lda #$ff&bonkspr>>$17
-    sta.z __dh
+    sta.z __bank
     lda #<$5000
     sta.z __di
     lda #>$5000
@@ -232,7 +233,7 @@ main: {
     lda #>bulletspr
     sta.z __si+1
     lda #$ff&bulletspr>>$17
-    sta.z __dh
+    sta.z __bank
     lda #<$5400
     sta.z __di
     lda #>$5400
@@ -248,7 +249,7 @@ main: {
     lda #>shipspr
     sta.z __si+1
     lda #$ff&shipspr>>$17
-    sta.z __dh
+    sta.z __bank
     lda #<$5500
     sta.z __di
     lda #>$5500
@@ -264,7 +265,7 @@ main: {
     lda #>explosionspr
     sta.z __si+1
     lda #$ff&explosionspr>>$17
-    sta.z __dh
+    sta.z __bank
     lda #<$5900
     sta.z __di
     lda #>$5900
@@ -282,7 +283,7 @@ main: {
     lda #>scene_chr
     sta.z __si+1
     lda #$ff&scene_chr>>$17
-    sta.z __dh
+    sta.z __bank
     lda #<$1000
     sta.z __di
     lda #>$1000
@@ -301,7 +302,7 @@ main: {
     sta.z __si+1
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:79
     lda #$ff&scene_pal>>$17
-    sta.z __dh
+    sta.z __bank
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:80
     lda #load_palette5_palnum
     sta.z __al
@@ -316,7 +317,7 @@ main: {
     lda #>scene_bat
     sta.z __si+1
     lda #$ff&scene_bat>>$17
-    sta.z __dh
+    sta.z __bank
     lda #<0
     sta.z __di
     sta.z __di+1
@@ -332,7 +333,7 @@ main: {
     sta.z __si+1
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:57
     lda #$ff&my_font>>$17
-    sta.z __dh
+    sta.z __bank
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:58
     lda #<dropfnt8x8_vdc1_vram
     sta.z __di
@@ -356,7 +357,7 @@ main: {
     sta.z __si+1
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:79
     lda #$ff&textpal>>$17
-    sta.z __dh
+    sta.z __bank
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:80
     lda #load_palette6_palnum
     sta.z __al

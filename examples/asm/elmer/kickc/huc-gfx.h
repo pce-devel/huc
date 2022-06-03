@@ -48,7 +48,7 @@ inline byte get_joytrg (byte which) {
 
 #define load_vram(addr, data, size) \
 	*__si = (word) (data); \
-	*__si_bank = (byte) ((data) >> 23); \
+	*__bank = (byte) ((data) >> 23); \
 	*__di = (word) (addr); \
 	*__ax = (word) (size); \
 	kickasm( clobbers "AXY" ) \
@@ -56,7 +56,7 @@ inline byte get_joytrg (byte which) {
 
 #define load_bat(addr, data, w, h) \
 	*__si = (word) (data); \
-	*__si_bank = (byte) ((data) >> 23); \
+	*__bank = (byte) ((data) >> 23); \
 	*__di = (word) (addr); \
 	*__al = (byte) (w); \
 	*__ah = (byte) (h); \

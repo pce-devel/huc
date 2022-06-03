@@ -357,9 +357,8 @@ word * const	_dx		= (word *) 0x20FE;
 byte * const	_dl		= (byte *) 0x20FE;
 byte * const	_dh		= (byte *) 0x20FF;
 
-byte * const	_si_bank	= _dh;
-byte * const	_di_bank	= _dh;
-byte * const	_bp_bank	= _dh;
+word * const	_temp		= (word *) 0x2000;	// CORE(not TM) library variable!
+byte * const	_bank		= (byte *) 0x2002;	// CORE(not TM) library variable!
 
 
 
@@ -394,9 +393,8 @@ word * const	__dx		= (word *) 0xFE;
 byte * const	__dl		= (byte *) 0xFE;
 byte * const	__dh		= (byte *) 0xFF;
 
-byte * const	__si_bank	= __dh;
-byte * const	__di_bank	= __dh;
-byte * const	__bp_bank	= __dh;
+word * const	__temp		= (word *) 0x00;	// CORE(not TM) library variable!
+byte * const	__bank		= (byte *) 0x02;	// CORE(not TM) library variable!
 
 
 
