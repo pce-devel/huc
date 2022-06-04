@@ -6,7 +6,6 @@
 
 #define	OVL_ENTRY_POINT		0xC000	/* overlay 're-entry' point in startup */
 #define	BOOT_ENTRY_POINT	0x4070	/* initial entry point in startup */
-#define	CDERR_OVERRIDE		0x402F	/* flag to use CDROM prog instead of err text */
-#define	CDERR_OVERLAY_NUM	0x4030	/* CDROM overlay # to use instead of err text */
-#define	OVL_DATA_SECTOR		0x4031	/* Bank offset (from 0) to hack the directory */
-
+#define	OVL_DATA_SECTOR		0x4030	/* Bank offset (from 0) to hack the directory */
+#define	CDERR_LENGTH		0x4031	/* CDROM overlay length# instead of err text */
+#define	CDERR_SECTOR		0x4032	/* CDROM overlay sector# instead of err text */

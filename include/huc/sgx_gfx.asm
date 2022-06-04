@@ -746,7 +746,7 @@ lib2_init_sgx_vdc:
 	stz	<__ah
 	stz	<__bl
 	stz	<__bh
-	jsr	_sgx_scroll.2
+	jmp	lib2_sgx_scroll.2
 
 .done:	rts
 

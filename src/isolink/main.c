@@ -412,8 +412,9 @@ file_write(FILE *outfile, FILE *infile, char *filename, int curr_filenum)
             data_sector = (8192 / 2048) * (int) buffer[(OVL_DATA_SECTOR & 0x07FF)];
 
             if ((cderr_flag == 1) && (curr_filenum == 1)) {
-               buffer[(CDERR_OVERRIDE & 0x07FF)] = 1;
-               buffer[(CDERR_OVERLAY_NUM & 0x07FF)] = cderr_ovl;
+               buffer[0x07FF & (CDERR_SECTOR + 0)] = sector_array[cderr_ovl] & 255;
+               buffer[0x07FF & (CDERR_SECTOR + 1)] = sector_array[cderr_ovl] >> 8;
+               buffer[0x07FF & (CDERR_LENGTH + 0)] = sector_array[cderr_ovl+1] - sector_array[cderr_ovl];
             }
          } else if (i == data_sector)   {
             for (j = 0; j < 100; j++) {

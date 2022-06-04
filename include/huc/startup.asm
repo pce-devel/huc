@@ -344,11 +344,11 @@ ovlentry:
 ;
 ; CDROM error message alternate load entry point
 ;
-	.org  $402F
+	.org  $4030
 
-cderr_override:		.db	0
-cderr_overlay_num:	.db	0
-overlay_data_sector:	.db	bank( ovlarray )-_bank_base
+overlay_data_sector:	.db	bank( ovlarray ) - _bank_base
+cderr_length:		.db	0
+cderr_sector:		.dw	0
 
 cdrom_err_load:
 
@@ -360,18 +360,13 @@ cdrom_err_load:
 	jmp	ram_vsync_hndl
 
 .load_cd_ovl:
-	ldy	cderr_overlay_num
-	lda	#DATA_BANK+$80
-	tam	#3
-	lda	ovlarray,Y
-	ldx	ovlarray + 100,Y
-	stz	<__cl		; sector (offset from base of track)
+	lda	cderr_sector + 0
+	ldx	cderr_sector + 1
+	ldy	cderr_length
+	sta	<__dl		; sector (offset from base of track)
 	stx	<__ch
-	sta	<__dl
-	sec
-	eor	#$FF
-	adc	ovlarray + 1,Y
-	sta	<__al		; # sectors
+	stz	<__cl
+	sty	<__al		; # sectors
 	lda	#$80
 	sta	<__bl		; bank #
 	lda	#3
@@ -534,7 +529,7 @@ reset:
 .if (CDROM = SUPER_CD)
 	 lda   cd_super		; don't load the program if SCD
 	 bne   loadprog		; program not running on SCD hrdware
-	 lda   cderr_override
+	 lda   cderr_length
 	 lbeq  dontloadprog
 	 jmp   cdrom_err_load
 .endif	; (SUPER_CD)
