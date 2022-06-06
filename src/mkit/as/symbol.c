@@ -301,11 +301,15 @@ labldef(int lval, int lbnk, int lsrc)
 		/* fix location after crossing bank */
 		if (loccnt >= 0x2000) {
 			loccnt &= 0x1FFF;
-			page++;
-			bank++;
+			bank = (bank + 1);
+			if (section != S_DATA || asm_opt[OPT_DATAPAGE] == 0)
+				page = (page + 1) & 7;
 		}
 
-		lval = ((loccnt + (page << 13)) & 0xFFFF);
+
+
+
+		lval = loccnt + (page << 13);
 
 		if (bank >= RESERVED_BANK)
 			lbnk = bank;

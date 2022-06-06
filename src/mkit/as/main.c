@@ -73,7 +73,7 @@ int mx_opt;
 int mlist_opt;		/* macro listing main flag */
 int xlist;		/* listing file main flag */
 int list_level;		/* output level */
-int asm_opt[8];		/* assembler options */
+int asm_opt[9];		/* assembler options */
 int zero_need;		/* counter for trailing empty sectors on CDROM */
 int rom_used;
 int rom_free;
@@ -631,10 +631,16 @@ main(int argc, char **argv)
 			if (!discontiguous) {
 				/* N.B. $2000 is a legal loccnt that says that the bank is full! */
 				if (loccnt > 0x2000) {
-					loccnt &= 0x1fff;
-					page++;
-					bank++;
-					if (pass == FIRST_PASS) {
+					loccnt &= 0x1FFF;
+					bank = (bank + 1);
+					if (section != S_DATA || asm_opt[OPT_DATAPAGE] == 0)
+						page = (page + 1) & 7;
+
+					if (section == S_CODE && page == 0) {
+						error("CODE section wrapped from MPR7 to MPR0!");
+					}
+
+					if (asm_opt[OPT_WARNING] && pass == LAST_PASS) {
 						printf("   (Warning. Opcode crossing page boundary $%04X, bank $%02X)\n", (page * 0x2000), bank);
 					}
 				}
