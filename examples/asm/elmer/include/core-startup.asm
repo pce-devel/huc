@@ -545,4 +545,5 @@ DATA_BANK	=	CORE_BANK + 1 + RESERVE_BANKS
 		.data
 		.bank	DATA_BANK
 		.org	$6000
+		.opt	d+			; Force DATA labels to MPR3.
 		.code
