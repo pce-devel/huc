@@ -595,8 +595,8 @@ push_val(int type)
 				pc_symbol.bank = bank + bank_base;
 
 			if (pc_symbol.value >= 0x2000) {
-				pc_symbol.bank += 1;
-				pc_symbol.page += 1;
+				pc_symbol.bank = (pc_symbol.bank + 1);
+				pc_symbol.page = (pc_symbol.page + 1) & 7;
 			}
 
 			pc_symbol.value += (page << 13);
@@ -893,6 +893,8 @@ check_keyword(void)
 		op = OP_BANK;
 	else if (symbol[0] == keyword[7][0] && !strcasecmp(symbol, keyword[7]))
 		op = OP_SIZEOF;
+	else if (symbol[0] == keyword[8][0] && !strcasecmp(symbol, keyword[8]))
+		op = OP_LINEAR;
 	else {
 		if (machine->type == MACHINE_PCE) {
 			/* PCE specific functions */
@@ -913,6 +915,7 @@ check_keyword(void)
 	case OP_VRAM:
 	case OP_PAL:
 	case OP_SIZEOF:
+	case OP_LINEAR:
 		expr_lablptr = NULL;
 		expr_lablcnt = 0;
 		break;
@@ -961,6 +964,7 @@ do_op(void)
 {
 	int val[2];
 	int op;
+	int exbank;
 
 	/* operator */
 	op = op_stack[op_idx--];
@@ -975,6 +979,24 @@ do_op(void)
 		val[1] = 0;
 
 	switch (op) {
+	/* LINEAR */
+	case OP_LINEAR:
+		if (!check_func_args("LINEAR"))
+			return (0);
+		if (pass == LAST_PASS) {
+			if (expr_lablptr->bank >= RESERVED_BANK) {
+				error("No LINEAR index for this symbol!");
+				val[0] = 0;
+				break;
+			}
+		}
+		/* complicated math to deal with LINEAR(label+value) */
+		exbank = (expr_lablptr->bank + (val[0] / 8192) - (expr_lablptr->value / 8192));
+		if (expr_lablptr->bank < RESERVED_BANK)
+			exbank -= bank_base;
+		val[0] = (exbank << 13) + (val[0] & 0x1FFF);
+		break;
+
 	/* BANK */
 	case OP_BANK:
 		if (!check_func_args("BANK"))
@@ -986,14 +1008,16 @@ do_op(void)
 				break;
 			}
 		}
-		val[0] = expr_lablptr->bank + (val[0] / 8192) - (expr_lablptr->value / 8192);
+		/* complicated math to deal with BANK(label+value) */
+		val[0] = (expr_lablptr->bank + (val[0] / 8192) - (expr_lablptr->value / 8192));
 		break;
 
 	/* PAGE */
 	case OP_PAGE:
 		if (!check_func_args("PAGE"))
 			return (0);
-		val[0] = expr_lablptr->page + (val[0] / 8192) - (expr_lablptr->value / 8192);
+		/* complicated math to deal with PAGE(label+value) */
+		val[0] = (expr_lablptr->page + (val[0] / 8192) - (expr_lablptr->value / 8192)) & 7;
 		break;
 
 	/* VRAM */
