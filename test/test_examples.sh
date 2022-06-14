@@ -17,28 +17,29 @@ fi
 echo ''
 echo Checking compiled example projects against known-good SHA1 values ...
 echo ''
+
 test_file ../examples/huc/acd/ac_test.iso \
- "SHA1(../examples/huc/acd/ac_test.iso)= 8e69b870dca009afdd5a0b7e1bc1517d08377510"
-
+ "SHA1(../examples/huc/acd/ac_test.iso)= d2941fd5ace435a74fb83f7d170f0a95dff35033"
+ 
 test_file ../examples/huc/overlay/overlay.iso \
- "SHA1(../examples/huc/overlay/overlay.iso)= a91dd4e7ddc8362995f77a6d6ad6e34b81628a75"
-
+ "SHA1(../examples/huc/overlay/overlay.iso)= 8c05afb5c50ad835a371bfe9bb2f0cbfd32951ae"
+ 
 test_file ../examples/huc/promotion/promotion.pce \
- "SHA1(../examples/huc/promotion/promotion.pce)= 965bf4dcc434c2c145f3a82e33f5abeda93420dc"
-
+ "SHA1(../examples/huc/promotion/promotion.pce)= c90902e93cfc9d15a9d0b3991f6152a6fc085abb"
+ 
 test_file ../examples/huc/scroll/scroll.pce \
- "SHA1(../examples/huc/scroll/scroll.pce)= 8a4e7c910e7f4901415e06654f1f4cbfb2e52ce3"
-
+ "SHA1(../examples/huc/scroll/scroll.pce)= 14d16f5e1d3bab981b659f930b95857cbb3f85c8"
+ 
 test_file ../examples/huc/sgx/sgx_test.iso \
- "SHA1(../examples/huc/sgx/sgx_test.iso)= 30d45b601cf0e4bfb0c1af81801b3ca8b29454c2"
-
+ "SHA1(../examples/huc/sgx/sgx_test.iso)= b1a54443cad932b7ff4ac0a6112cbe68ffb9a79e"
+ 
 test_file ../examples/huc/sgx/sgx_test.sgx \
- "SHA1(../examples/huc/sgx/sgx_test.sgx)= 132833d582fa72fc36ef1b1ef295678ba1fba05f"
-
+ "SHA1(../examples/huc/sgx/sgx_test.sgx)= 4a4d861be0489f3c58e464accbed69e59036355b"
+ 
 test_file ../examples/huc/shmup/shmup.iso \
- "SHA1(../examples/huc/shmup/shmup.iso)= 6ca2cf2cb57decc7f230ba1e995ac279a332d47a"
-
+ "SHA1(../examples/huc/shmup/shmup.iso)= 33451cbb41b6896aec4ecc17c2a13c1500b4c548"
+ 
 test_file ../examples/huc/shmup/shmup.pce \
- "SHA1(../examples/huc/shmup/shmup.pce)= 0871470fd364a80d4aa78076bd7dc8db1fbd1007"
-
+ "SHA1(../examples/huc/shmup/shmup.pce)= bd897f4e1c9deba94c9d9c9171b37dbd28736bb1"
+ 
 exit $result
