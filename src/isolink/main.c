@@ -51,7 +51,7 @@ int ipl_mpr2 = 0x00;
 int ipl_mpr3 = 0x01;
 int ipl_mpr4 = 0x02;
 int ipl_mpr5 = 0x03;
-int ipl_mpr6 = 0x00;
+int ipl_mpr6 = 0x04;
 int ipl_mode = 0x60;
 char * ipl_file = NULL;
 char * ipl_name = "isoLink";
@@ -401,20 +401,25 @@ file_write(FILE *outfile, FILE *infile, char *filename, int curr_filenum)
 
       if (code == 1) {
          if (i == 0) {  /* ie. boot segment */
-            /* This byte is the place where the overlay entry point */
-            /* declares "I am overlay number <n>", and now running  */
+            /* Confirm that this is really a HuC overlay */
+            if (buffer[3] != 'H' || buffer[4] != 'u' || buffer[5] != 'C') {
+               code = 0;
+            } else {
+               /* This byte is the place where the overlay entry point */
+               /* declares "I am overlay number <n>", and now running  */
 
-            buffer[1] = curr_filenum;
+               buffer[0x07FF & (OVL_ENTRY_POINT + 1)] = curr_filenum;
 
-            /* This byte is the place where the overlay declares */
-            /* which bank to use to store the CD directory */
+               /* This byte is the place where the overlay declares */
+               /* which bank to use to store the CD directory */
 
-            data_sector = (8192 / 2048) * (int) buffer[(OVL_DATA_SECTOR & 0x07FF)];
+               data_sector = (8192 / 2048) * (int) buffer[(OVL_DATA_SECTOR & 0x07FF)];
 
-            if ((cderr_flag == 1) && (curr_filenum == 1)) {
-               buffer[0x07FF & (CDERR_SECTOR + 0)] = sector_array[cderr_ovl] & 255;
-               buffer[0x07FF & (CDERR_SECTOR + 1)] = sector_array[cderr_ovl] >> 8;
-               buffer[0x07FF & (CDERR_LENGTH + 0)] = sector_array[cderr_ovl+1] - sector_array[cderr_ovl];
+               if ((cderr_flag == 1) && (curr_filenum == 1)) {
+                  buffer[0x07FF & (CDERR_LENGTH + 0)] = sector_array[cderr_ovl+1] - sector_array[cderr_ovl];
+                  buffer[0x07FF & (CDERR_SECTOR + 0)] = sector_array[cderr_ovl] & 255;
+                  buffer[0x07FF & (CDERR_SECTOR + 2)] = sector_array[cderr_ovl] >> 8;
+               }
             }
          } else if (i == data_sector)   {
             for (j = 0; j < 100; j++) {

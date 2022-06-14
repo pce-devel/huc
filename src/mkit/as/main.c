@@ -732,7 +732,7 @@ main(int argc, char **argv)
 
 				/* nb sectors */
 				if (lablexists("HUC")) {
-					ipl_buffer[0x803] = 16;
+					ipl_buffer[0x803] = 16; /* 4 banks */
 				} else {
 					ipl_buffer[0x803] = (max_bank + 1) * 8192 / 2048;
 				}
@@ -750,7 +750,7 @@ main(int argc, char **argv)
 				ipl_buffer[0x809] = 0x01;
 				ipl_buffer[0x80A] = 0x02;
 				ipl_buffer[0x80B] = 0x03;
-				ipl_buffer[0x80C] = 0x00;	/* boot loader @ $C000 */
+				ipl_buffer[0x80C] = 0x04;
 
 				/* load mode */
 				ipl_buffer[0x80D] = 0x60;
