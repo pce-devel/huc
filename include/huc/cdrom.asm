@@ -320,7 +320,7 @@ lib3_cd_execoverlay:
 	jsr	cd_overlay
 	cmp	#0
 	bne	.error
-	jmp	$C000		; loaded fine... now run it
+	jmp	ovlentry	; loaded fine... now run it
 .error:	pha
 	ldx	ovl_running	; failed; reload old segment for error recovery
 	jsr	cd_overlay
