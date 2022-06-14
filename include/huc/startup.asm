@@ -1207,20 +1207,6 @@ nmi:		bbs3	<irq_m,.user
 	.endif	!(CDROM)
 
 
-; [DATA]
-
-; ----
-; font
-; ----
-
-	.ifdef	HUC
-font_table:	.dw	font_1
-		.dw	font_2
-		.dw	font_1
-		.dw	font_1
-	.endif	HUC
-
-
 ; [LIBRARY]
 
 ; ----
