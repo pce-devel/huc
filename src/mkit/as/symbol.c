@@ -283,7 +283,7 @@ labldef(int lval, int lbnk, int lsrc)
 
 			/* sanity check */
 			if (lablptr->type != UNDEF) {
-				fatal_error("How did this multi-label get defined!");
+				fatal_error("How did this base multi-label get defined, that should never happen!");
 				return (-1);
 			}
 
@@ -306,9 +306,6 @@ labldef(int lval, int lbnk, int lsrc)
 				page = (page + 1) & 7;
 		}
 
-
-
-
 		lval = loccnt + (page << 13);
 
 		if (bank >= RESERVED_BANK)
@@ -319,6 +316,13 @@ labldef(int lval, int lbnk, int lsrc)
 		/* KickC can't call bank(), so put it in the label */
 		if (kickc_mode)
 			lval += lbnk << 23;
+	} else {
+		/* is this a multi-label? */
+		if (lablptr->name[1] == '!') {
+			/* sanity check */
+			fatal_error("A multi-label can only be a location!");
+			return (-1);
+		}
 	}
 
 	/* record definition */

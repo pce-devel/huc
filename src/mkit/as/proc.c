@@ -37,8 +37,9 @@ do_call(int *ip)
 	struct t_proc *proc;
 	int value;
 
-	/* define label */
-	labldef(0, 0, LOCATION);
+	/* define label, unless already defined in classC() instruction flow */
+	if (opflg == PSEUDO)
+		labldef(0, 0, LOCATION);
 
 	/* update location counter */
 	data_loccnt = loccnt;
@@ -153,7 +154,10 @@ do_call(int *ip)
 		}
 
 		/* opcode */
-		putbyte(data_loccnt, 0x20);
+		if ((opflg == PSEUDO) || (opval == 0x14))
+			putbyte(data_loccnt, 0x20); /* JSR */
+		else
+			putbyte(data_loccnt, 0x4C); /* JMP */
 		putword(data_loccnt+1, value);
 
 		/* output line */

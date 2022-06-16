@@ -17,7 +17,7 @@ static struct t_branch * getbranch(int opcode_length);
 /* ----
  * classC()
  * ----
- * choose "jsr" or "call" processing for a "jsr" instruction
+ * choose "call" or "jsr/jmp" processing for a "jsr/jmp" instruction
  */
 
 void
@@ -37,7 +37,7 @@ classC(int *ip)
 		}
 	}
 
-	/* default to traditional "jsr" behavior */
+	/* default to traditional "jsr" and "jmp" behavior */
 	class4(ip);
 }
 
