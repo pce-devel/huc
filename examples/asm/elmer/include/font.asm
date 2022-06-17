@@ -53,7 +53,7 @@ tmp_normal_buf	equ	$2101			; Interleaved 16 lines.
 dropfnt8x8_sgx	.proc
 
 		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$E0			; Turn "clx" into a "cpx #".
+		db	$F0			; Turn "clx" into a "beq".
 
 		.endp
 	.endif
@@ -65,8 +65,11 @@ dropfnt8x8_vdc	.proc
 		tma3				; Preserve MPR3.
 		pha
 
-		jsr	set_si_to_mpr3		; Map font to MPR3.
-		jsr	set_di_to_mawr		; Map _di to VRAM.
+		tya				; Map memory block to MPR3.
+		beq	!+
+		tam3
+
+!:		jsr	set_di_to_mawr		; Map _di to VRAM.
 
 		; Generate shadowed glyph.
 
@@ -170,7 +173,7 @@ dropfnt8x8_vdc	.proc
 dropfnt8x16_sgx	.proc
 
 		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$E0			; Turn "clx" into a "cpx #".
+		db	$F0			; Turn "clx" into a "beq".
 
 		.endp
 	.endif
@@ -181,8 +184,11 @@ dropfnt8x16_vdc	.proc
 		tma3				; Preserve MPR3.
 		pha
 
-		jsr	set_si_to_mpr3		; Map font to MPR3.
-		jsr	set_di_to_mawr		; Map _di to VRAM.
+		tya				; Map memory block to MPR3.
+		beq	!+
+		tam3
+
+!:		jsr	set_di_to_mawr		; Map _di to VRAM.
 
 		; Generate shadowed glyph.
 

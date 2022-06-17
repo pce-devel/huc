@@ -134,29 +134,30 @@ color_bank:	ds	8			; Ring buffer - Data Ptr (bank).
 ;
 ; load_palettes - Queue a set of palettes to upload to the VCE next VBLANK.
 ;
-; Args: _si, _si_bank = _farptr to data table mapped into MPR3 & MPR4.
 ; Args: _al = Palette index (0..15 for BG, 16..31 for SPR).
 ; Args: _ah = Palette count (0..32).
+; Args: _si = Pointer to palette data.
+; Args:   Y = Bank to map into MPR3 & MPR4, or zero to leave unchanged.
+;
+; N.B. Y==0 is only useful if the palette data is permanently mapped!
 ;
 
 load_palettes	.proc
 
-		ldy	color_queue_w		; Get the queue's write index.
+		ldx	color_queue_w		; Get the queue's write index.
 
-		lda	<_si + 0		; Add this set of palettes to
-		sta	color_addr_l, y		; the queue.
-		lda	<_si + 1
-		and	#$1F
-		ora	#$60
-		sta	color_addr_h, y
-		lda	<_si_bank
-		sta	color_bank,y
+		lda.l	<_si			; Add this set of palettes to
+		sta	color_addr_l, x		; the queue.
+		lda.h	<_si
+		sta	color_addr_h, x
+		tya
+		sta	color_bank, x
 		lda	<_al
-		sta	color_index, y
+		sta	color_index, x
 		lda	<_ah
-		sta	color_count, y
+		sta	color_count, x
 
-		tya				; Increment the queue index.
+		txa				; Increment the queue index.
 		inc	a
 		and	#7
 
@@ -184,8 +185,9 @@ clear_vce	.proc
 		cly
 		stz	VCE_CTA+0		; Set VCE write address.
 		stz	VCE_CTA+1
+.loop:		stz	VCE_CTW+0		; Set lo-byte of color.
+		stz	VCE_CTW+1		; Write 1 color value.
 		stz	VCE_CTW+0		; Set lo-byte of color.
-.loop:		stz	VCE_CTW+1		; Write 1 color value.
 		stz	VCE_CTW+1		; Write 1 color value.
 		dey
 		bne	.loop

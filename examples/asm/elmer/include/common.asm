@@ -17,16 +17,6 @@
 ; ***************************************************************************
 
 ;
-; Overload this System Card variable for use by a far data pointer argument.
-;
-
-	.ifndef	_si_bank
-_si_bank	=	_bank
-_di_bank	=	_bank
-_bp_bank	=	_bank
-	.endif
-
-;
 ; Useful variables.
 ;
 
@@ -70,42 +60,25 @@ wait_nvsync:	bsr	wait_vsync		; # of VBLANK IRQs to wait in
 ; Map the _si data far-pointer into MPR3 (& MPR4).
 ;
 
-xay_to_si_mpr34:bsr	xay_to_si_mpr3		; Remap ptr to MPR3.
-		inc	a			; Put next bank into MPR4.
-		tam4
-		rts
-
-xay_to_si_mpr3:	stx.l	<_si			; Remap ptr to MPR3.
-;		say
-		and.h	#$1F00
+set_si_to_mpr3:	tya				; Put bank into MPR3.
+		beq	!+
+		tam3
+		lda.h	<_si			; Remap ptr to MPR3.
+		and.h	#$1FFF
 		ora.h	#$6000
 		sta.h	<_si
+!:		rts
 
-		tya				; Put bank into MPR3.
+set_si_to_mpr34:tya				; Put bank into MPR3.
+		beq	!+
 		tam3
-		rts
-
-
-
-; ***************************************************************************
-; ***************************************************************************
-;
-; Map the _si data far-pointer into MPR3 (& MPR4).
-;
-
-set_si_to_mpr34:bsr	set_si_to_mpr3		; Remap ptr to MPR3.
-		inc	a			; Put next bank into MPR4.
+		inc	a			; Put next into MPR4.
 		tam4
-		rts
-
-set_si_to_mpr3:	lda.h	<_si			; Remap ptr to MPR3.
-		and.h	#$1F00
+		lda.h	<_si			; Remap ptr to MPR3.
+		and.h	#$1FFF
 		ora.h	#$6000
 		sta.h	<_si
-
-		lda	<_si_bank		; Put bank into MPR3.
-		tam3
-		rts
+!:		rts
 
 
 
@@ -140,7 +113,7 @@ inc.h_si_mpr3:	inc.h	<_si			; Increment hi-byte of _si.
 
 	.if	SUPPORT_SGX
 sgx_di_to_marr:	ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$E0			; Turn "clx" into a "cpx #".
+		db	$F0			; Turn "clx" into a "beq".
 	.endif
 
 vdc_di_to_marr:	clx				; Offset to PCE VDC.
@@ -152,7 +125,7 @@ set_di_to_marr	lda	#VDC_MARR		; Set VDC or SGX destination
 
 	.if	SUPPORT_SGX
 sgx_di_to_mawr:	ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$E0			; Turn "clx" into a "cpx #".
+		db	$F0			; Turn "clx" into a "beq".
 	.endif
 
 vdc_di_to_mawr:	clx				; Offset to PCE VDC.

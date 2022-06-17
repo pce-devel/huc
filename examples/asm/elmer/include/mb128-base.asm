@@ -97,7 +97,7 @@ mb1_detected:	ds	1			; NZ if MB128 ever detected.
 ;
 ; mb1_read_data - Read sectors of data into memory from the MB128.
 ;
-; Args: _si, _si_bank = _farptr to page-aligned buffer memory in MPR3.
+; Args: _si, Y = _farptr to page-aligned buffer memory in MPR3.
 ; Args: _al = Sector address (0..255).
 ; Args: _ah = Sector count (0..255).
 ;
@@ -115,7 +115,7 @@ mb1_read_data	.proc
 ;		php				; Disable interrupts during
 ;		sei				; this function.
 
-		jsr	set_si_to_mpr3		; Map data to read into MPR3.
+		jsr	set_si_to_mpr3		; Map memory block to MPR3.
 
 		jsr	mb1_wakeup		; Wakeup the MB128 interface.
 		bne	.finished		; Return error code.
@@ -185,7 +185,7 @@ mb1_read_data	.proc
 ;
 ; mb1_write_data - Write sectors of data from memory to the MB128.
 ;
-; Args: _si, _si_bank = _farptr to page-aligned buffer memory in MPR3.
+; Args: _si, Y = _farptr to page-aligned buffer memory in MPR3.
 ; Args: _al = Sector address (0..255).
 ; Args: _ah = Sector count (0..255).
 ;
@@ -203,7 +203,7 @@ mb1_write_data	.proc
 ;		php				; Disable interrupts during
 ;		sei				; this function.
 
-		jsr	set_si_to_mpr3		; Map data to check into MPR3.
+		jsr	set_si_to_mpr3		; Map memory block to MPR3.
 
 		jsr	mb1_wakeup		; Wakeup the MB128 interface.
 		bne	.finished		; Return error code.
@@ -275,7 +275,7 @@ mb1_write_data	.proc
 ;
 ; mb1_check_data - Check that sectors of data from the MB128 match memory.
 ;
-; Args: _si, _si_bank = _farptr to page-aligned buffer memory in MPR3.
+; Args: _si, Y = _farptr to page-aligned buffer memory in MPR3.
 ; Args: _al = Sector address (0..255).
 ; Args: _ah = Sector count (0..255).
 ;
@@ -293,7 +293,7 @@ mb1_check_data	.proc
 ;		php				; Disable interrupts during
 ;		sei				; this function.
 
-		jsr	set_si_to_mpr3		; Map data to check into MPR3.
+		jsr	set_si_to_mpr3		; Map memory block to MPR3.
 
 		jsr	mb1_wakeup		; Wakeup the MB128 interface.
 		bne	.finished		; Return error code.

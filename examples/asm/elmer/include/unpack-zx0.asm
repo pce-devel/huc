@@ -81,9 +81,15 @@ zx0_to_ram	.proc
 		tma3				; Preserve MPR3.
 		pha
 
+	.ifdef	_KICKC
 		jsr	set_si_to_mpr3		; Map zx0_srcptr to MPR3.
+	.else
+		tya				; Map zx0_srcptr to MPR3.
+		beq	!+
+		tam3
+	.endif
 
-		ldx	#$40			; Initialize bit-buffer.
+!:		ldx	#$40			; Initialize bit-buffer.
 
 		ldy	#$FF			; Initialize offset to $FFFF.
 		sty	<zx0_offset + 0
@@ -280,7 +286,7 @@ zx0_to_ram	.proc
 	.if	SUPPORT_SGX
 zx0_to_sgx	.proc
 		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$E0			; Turn "clx" into a "cpx #".
+		db	$F0			; Turn "clx" into a "beq".
 		.endp
 	.endif
 
@@ -291,8 +297,15 @@ zx0_to_vdc	.proc
 		tma3				; Preserve MPR3.
 		pha
 
+	.ifdef	_KICKC
 		jsr	set_si_to_mpr3		; Map zx0_srcptr to MPR3.
-		jsr	set_di_to_mawr		; Map zx0_dstptr to VRAM.
+	.else
+		tya				; Map zx0_srcptr to MPR3.
+		beq	!+
+		tam3
+	.endif
+
+!:		jsr	set_di_to_mawr		; Map zx0_dstptr to VRAM.
 
 		lda	#$40			; Initialize bit-buffer.
 		sta	<zx0_bitbuf

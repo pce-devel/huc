@@ -1040,7 +1040,7 @@ f32_nxt_entry	.proc
 ;
 ; f32_find_name - Locate a specifc named entry in the current directory.
 ;
-; Args: _si, _si_bank = _farptr to filename string to map into MPR3.
+; Args: _si, Y = _farptr to filename string to map into MPR3.
 ;
 ; N.B. This filename string MUST NOT cross a bank boundary!
 ;

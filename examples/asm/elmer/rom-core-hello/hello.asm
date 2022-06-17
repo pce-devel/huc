@@ -85,13 +85,6 @@ core_main:	; Turn the display off and initialize the screen mode.
 
 		; Upload the font to VRAM.
 
-		lda	#<my_font		; Address of font data.
-		sta	<_si + 0
-		lda	#>my_font
-		sta	<_si + 1
-		lda	#^my_font
-		sta	<_si_bank
-
 		stz	<_di + 0		; Destination VRAM address.
 		lda	#>(CHR_0x10 * 16)
 		sta	<_di + 1
@@ -102,6 +95,12 @@ core_main:	; Turn the display off and initialize the screen mode.
 
 		lda	#16 + 96		; 16 graphics + 96 ASCII.
 		sta	<_bl
+
+		lda	#<my_font		; Address of font data.
+		sta	<_si + 0
+		lda	#>my_font
+		sta	<_si + 1
+		ldy	#^my_font
 
 		call	dropfnt8x8_vdc		; Upload font to VRAM.
 
@@ -116,8 +115,7 @@ core_main:	; Turn the display off and initialize the screen mode.
 		lda	#>cpc464_colors
 		sta	<_si + 1
 		lda	#^cpc464_colors
-		sta	<_si_bank
-		jsr	set_si_to_mpr3		; Map data to MPR3 & MPR4.
+		tam3
 
 		stz	VCE_CTA + 0		; Set VCE write address.
 		stz	VCE_CTA + 1
@@ -141,15 +139,14 @@ core_main:	; Turn the display off and initialize the screen mode.
 		;
 		; This method does the same thing using library functions.
 
+		stz	<_al			; Start at palette 0 (BG).
+		lda	#1			; Copy 1 palette of 16 colors.
+		sta	<_ah
 		lda	#<cpc464_colors		; Set the ptr to the palette
 		sta	<_si + 0		; data.
 		lda	#>cpc464_colors
 		sta	<_si + 1
-		lda	#^cpc464_colors
-		sta	<_si_bank
-		stz	<_al			; Start at palette 0 (BG).
-		lda	#1			; Copy 1 palette of 16 colors.
-		sta	<_ah
+		ldy	#^cpc464_colors
 		call	load_palettes		; Add to the palette queue.
 
 		call	xfer_palettes		; Transfer queue to VCE now.
@@ -219,7 +216,7 @@ core_main:	; Turn the display off and initialize the screen mode.
 ;  $6 = yellow font
 ;
 
-		WORD_ALIGN
+		align	2
 cpc464_colors:	dw	$0000,$0001,$01B2,$01B2,$0002,$004C,$0169,$01B2
 		dw	$0000,$0000,$0000,$0000,$0000,$0000,$0000,$0000
 

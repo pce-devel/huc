@@ -92,9 +92,12 @@ calc_crc32	.proc
 
 		tma3				; Preserve MPR3.
 		pha
-		jsr	set_si_to_mpr3		; Map memory block to MPR3.
 
-		lda	#$FF			; Initialize CRC-32.
+		tya				; Map memory block to MPR3.
+		beq	!+
+		tam3
+
+!:		lda	#$FF			; Initialize CRC-32.
 		sta	<_cx + 0
 		sta	<_cx + 1
 		sta	<_cx + 2

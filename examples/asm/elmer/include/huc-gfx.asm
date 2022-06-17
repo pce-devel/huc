@@ -63,8 +63,13 @@ _load_vram	.proc
 		tma4
 		pha
 
-		jsr	set_si_to_mpr34
-		jsr	vdc_di_to_mawr
+		tya				; Map memory block to MPR3.
+		beq	!+
+		tam3
+		inc	a
+		tam4
+
+!:		jsr	vdc_di_to_mawr
 
 		tii	.vdc_tai, ram_tia, 8
 
@@ -152,9 +157,11 @@ _load_bat	.proc
 		tma3
 		pha
 
-		jsr	set_si_to_mpr3
+		tya				; Map memory block to MPR3.
+		beq	!+
+		tam3
 
-		ldy.l	<_si
+!:		ldy.l	<_si
 		stz.l	<_si
 
 .line_loop:	jsr	vdc_di_to_mawr

@@ -82,9 +82,11 @@ lzsa1_to_ram	.proc
 		tma3				; Preserve MPR3.
 		pha
 
-		jsr	set_si_to_mpr3		; Map lzsa1_srcptr to MPR3.
+		tya				; Map lzsa1_srcptr to MPR3.
+		beq	!+
+		tam3
 
-		clx				; Initialize hi-byte of length.
+!:		clx				; Initialize hi-byte of length.
 		cly				; Initialize source index.
 
 		;

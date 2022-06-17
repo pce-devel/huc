@@ -83,9 +83,11 @@ lzsa2_to_ram	.proc
 		tma3				; Preserve MPR3.
 		pha
 
-		jsr	set_si_to_mpr3		; Map lzsa2_srcptr to MPR3.
+		tya				; Map lzsa2_srcptr to MPR3.
+		beq	!+
+		tam3
 
-		clx				; Hi-byte of length or offset.
+!:		clx				; Hi-byte of length or offset.
 		cly				; Initialize source index.
 		stz	<lzsa2_nibflg		; Initialize nibble buffer.
 

@@ -111,28 +111,20 @@ core_main:	; Turn the display off and initialize the screen mode.
 
 		; Decompress the font data.
 
-		lda.l	#my_font		; Address of font data.
-		sta.l	<_si
-		lda.h	#my_font
-		sta.h	<_si
-		lda	#^my_font
-		sta	<_si_bank
-
 		lda.l	#FONT_BUFFER		; Destination buffer.
 		sta.l	<_di
 		lda.h	#FONT_BUFFER
 		sta.h	<_di
 
+		lda.l	#my_font		; Address of font data.
+		sta.l	<_si
+		lda.h	#my_font
+		sta.h	<_si
+		ldy	#^my_font
+
 		call	zx0_to_ram		; Decompress the font.
 
 		; Upload the font to VRAM.
-
-		lda.l	#FONT_BUFFER		; Address of font data.
-		sta.l	<_si
-		lda.h	#FONT_BUFFER
-		sta.h	<_si
-		lda	#$F8			; RAM bank.
-		sta	<_si_bank
 
 		stz.l	<_di			; Destination VRAM address.
 		lda	#>(CHR_0x20 * 16)
@@ -145,19 +137,24 @@ core_main:	; Turn the display off and initialize the screen mode.
 		lda	#96			; 96 ASCII.
 		sta	<_bl
 
+		lda.l	#FONT_BUFFER		; Address of font data.
+		sta.l	<_si
+		lda.h	#FONT_BUFFER
+		sta.h	<_si
+		cly				; Do not change MPR3.
+
 		call	dropfnt8x8_vdc		; Upload font to VRAM.
 
 		; Upload the palette data to the VCE.
 
-		lda.l	#cpc464_colors		; Set the ptr to the palette
-		sta.l	<_si			; data.
-		lda.h	#cpc464_colors
-		sta.h	<_si
-		lda	#^cpc464_colors
-		sta	<_si_bank
 		stz	<_al			; Start at palette 0 (BG).
 		lda	#1			; Copy 1 palette of 16 colors.
 		sta	<_ah
+		lda	#<cpc464_colors		; Set the ptr to the palette
+		sta.l	<_si			; data.
+		lda	#>cpc464_colors
+		sta.h	<_si
+		ldy	#^cpc464_colors
 		call	load_palettes		; Add to the palette queue.
 
 		call	xfer_palettes		; Transfer queue to VCE now.
@@ -225,7 +222,7 @@ core_main:	; Turn the display off and initialize the screen mode.
 ;  $6 = yellow font
 ;
 
-		WORD_ALIGN
+		align	2
 cpc464_colors:	dw	$0000,$0001,$01B2,$01B2,$0002,$004C,$0169,$01B2
 		dw	$0000,$0000,$0000,$0000,$0000,$0000,$0000,$0000
 

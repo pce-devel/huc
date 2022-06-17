@@ -80,14 +80,17 @@ calc_crc16	.proc
 
 		tma3				; Preserve MPR3.
 		pha
-		jsr	set_si_to_mpr3		; Map memory block to MPR3.
+
+		tya				; Map memory block to MPR3.
+		beq	!+
+		tam3
 
 	.if	1
-		lda	#$FF			; For CCITT.
+!:		lda	#$FF			; For CCITT.
 		sta	<_cx + 0
 		sta	<_cx + 1
 	.else
-		stz	<_cx + 0		; For XMODEM.
+!:		stz	<_cx + 0		; For XMODEM.
 		stz	<_cx + 1
 	.endif
 

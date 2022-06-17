@@ -367,6 +367,8 @@ byte * const	_bank		= (byte *) 0x2002;	// CORE(not TM) library variable!
 // System Card's Zero Page Variables (6502-style zero-page addresses).
 //
 
+#if 0
+
 word * const	__bp		= (word *) 0xEC;		// base pointer
 word * const	__si		= (word *) 0xEE;		// source address
 word * const	__di		= (word *) 0xF0;		// destination address
@@ -396,6 +398,39 @@ byte * const	__dh		= (byte *) 0xFF;
 word * const	__temp		= (word *) 0x00;	// CORE(not TM) library variable!
 byte * const	__bank		= (byte *) 0x02;	// CORE(not TM) library variable!
 
+#else
+
+__export __address(0xEC) volatile word __bp;
+__export __address(0xEE) volatile word __si;
+__export __address(0xF0) volatile word __di;
+__export __address(0xF2) volatile byte __cdi_b;
+__export __address(0xF3) volatile byte __vdc_crl;
+__export __address(0xF4) volatile byte __vdc_crh;
+__export __address(0xF5) volatile byte __irq_vec;
+__export __address(0xF6) volatile byte __vdc_sr;
+__export __address(0xF7) volatile byte __vdc_reg;
+
+__export __address(0xF8) volatile word __ax;
+__export __address(0xF8) volatile byte __al;
+__export __address(0xF9) volatile byte __ah;
+
+__export __address(0xFA) volatile word __bx;
+__export __address(0xFA) volatile byte __bl;
+__export __address(0xFB) volatile byte __bh;
+
+__export __address(0xFC) volatile word __cx;
+__export __address(0xFC) volatile byte __cl;
+__export __address(0xFD) volatile byte __ch;
+
+__export __address(0xFE) volatile word __dx;
+__export __address(0xFE) volatile byte __dl;
+__export __address(0xFF) volatile byte __dh;
+
+__export __address(0x00) volatile word __temp;
+__export __address(0x02) volatile byte __bank;
+
+#endif
+
 
 
 // **************************************************************************
@@ -403,7 +438,9 @@ byte * const	__bank		= (byte *) 0x02;	// CORE(not TM) library variable!
 // System Card's Main RAM Variables.
 //
 
-word * const	irq2_hook	= (word *) 0x2200; // 2	officially called irq2_jmp
+__export __address(0x2200) word irq2_hook;	// = (word *) 0x2200; // 2	officially called irq2_jmp
+
+// word * const	irq2_hook	= (word *) 0x2200; // 2	officially called irq2_jmp
 word * const	irq1_hook	= (word *) 0x2202; // 2	officially called irq_jmp
 word * const	timer_hook	= (word *) 0x2204; // 2	officially called tim_jmp
 word * const	nmi_hook	= (word *) 0x2206; // 2	officially called nmi_jmp

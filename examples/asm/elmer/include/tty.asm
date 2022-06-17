@@ -122,16 +122,14 @@ PRINTF		.macro
 
 		.code
 		ldx	#<!string-
-		ldy	#>!string-
-		lda	#^!string-
-		sta	<_si_bank
-		call	tty_printf
+		lda	#>!string-
+		ldy	#^!string-
+		jsr	tty_printf
 	.else
 		ldx	#<\1
-		ldy	#>\1
-		lda	#^\1
-		sta	<_si_bank
-		call	tty_printf
+		lda	#>\1
+		ldy	#^\1
+		jsr	tty_printf
 	.endif	\?1 == ARG_STRING
 		.endm
 
@@ -159,6 +157,29 @@ tty_outmax:	ds	1			; Maximum output width.
 tty_outstk:	ds	1                       ;
 
 		.code
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; tty_printf - A formatted-print routine for text output.
+;
+; Args: _si, _si_bank = _farptr to string that will be mapped into MPR3.
+;
+; Uses: _si, _di, _ax, _bx, _cx, _dx
+;
+; Preserves: _bp
+;
+; This is NOT a standard C "printf", so do not expect it to behave like one!
+;
+; But it provides a lot of similar functionality, with a different syntax.
+;
+;
+
+tty_printf:	stx.l	<_si			; Preserve message pointer.
+		sta.h	<_si
+		jmp	tty_printf_huc		; Map in the procedure code.
 
 
 
@@ -260,13 +281,6 @@ tty_outstk:	ds	1                       ;
 ;   '#','D','U','X','C','S' all use the current data-pointer in <_di
 ;
 
-tty_printf	.proc				; ASM entry point.
-
-		stx.l	<_si			; Preserve message pointer.
-		sty.h	<_si
-
-		.endp
-
 tty_printf_huc	.proc				; HuC entry point.
 
 		tma4				; Preserve MPR4.
@@ -274,9 +288,13 @@ tty_printf_huc	.proc				; HuC entry point.
 		tma3				; Preserve MPR3.
 		pha
 
-		jsr	set_si_to_mpr34		; Map _si farptr to MPR3.
+		tya				; Map farptr to MPR3.
+		beq	!+
+		tam3
+		inc	a
+		tam4
 
-		stz	tty_xyok		; Make sure VRAM addr is set!
+!:		stz	tty_xyok		; Make sure VRAM addr is set!
 
 		lda	[_si]			; Get string length from the
 		inc	a			; PASCAL-format string, the

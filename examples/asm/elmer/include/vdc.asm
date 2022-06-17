@@ -79,7 +79,7 @@ set_dspoff:	lda	#$C0			; Disable BG & SPR layers.
 clear_vram_sgx	.proc
 
 		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$E0			; Turn "clx" into a "cpx #".
+		db	$F0			; Turn "clx" into a "beq".
 
 		.endp
 	.endif
@@ -126,7 +126,7 @@ clear_vram_x:	bsr	clear_bat_x		; Clear the BAT.
 clear_bat_sgx	.proc
 
 		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$E0			; Turn "clx" into a "cpx #".
+		db	$F0			; Turn "clx" into a "beq".
 
 		.endp
 	.endif
@@ -186,7 +186,7 @@ clear_bat_x:	stz	<_di + 0		; Set VDC or SGX destination
 set_mode_sgx	.proc
 
 		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$E0			; Turn "clx" into a "cpx #".
+		db	$F0			; Turn "clx" into a "beq".
 
 		.endp
 	.endif
@@ -200,9 +200,13 @@ set_mode_vdc	.proc
 		tma4				; Preserve MPR4.
 		pha
 
-		jsr	set_si_to_mpr34		; Map data to MPR3 & MPR4.
+		tya				; Map data to MPR3 & MPR4.
+		beq	!+
+		tam3
+		inc	a
+		tam4
 
-		php				; Disable interrupts.
+!:		php				; Disable interrupts.
 		sei
 
 		cly				; Table size is < 256 bytes.
@@ -299,8 +303,8 @@ sgx_detect	.proc
 		ldy	SGX_DL
 		sty	sgx_detected
 
-		jsr	sgx_di_to_mawr		; Write $0000 to SGX VRAM.
-		stz	SGX_DL
+		jsr	sgx_di_to_mawr		; Write $0000 to SGX VRAM
+		stz	SGX_DL			; to clean VRAM contents.
 		stz	SGX_DH
 
 		leave				; All done, phew!
@@ -314,6 +318,90 @@ sgx_detected:	ds	1			; NZ if SuperGrafx detected.
 	.endif
 
 	.endif	SUPPORT_SGX
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; init_240x224 - An example of initializing screen and VRAM.
+;
+; This can be used as-is, or copied to your own program and modified.
+;
+
+init_240x224	.proc
+
+.BAT_SIZE	=	32 * 32
+.SAT_ADDR	=	.BAT_SIZE		; SAT takes 16 tiles of VRAM.
+.CHR_ZERO	=	.BAT_SIZE / 16		; 1st tile # after the BAT.
+.CHR_0x10	=	.CHR_ZERO + 16		; 1st tile # after the SAT.
+.CHR_0x20	=	.CHR_ZERO + 32		; ASCII ' ' CHR tile #.
+
+		call	clear_vce		; Clear all palettes.
+
+		lda.l	#.CHR_0x20		; Tile # of ' ' CHR.
+		sta.l	<_ax
+		lda.h	#.CHR_0x20
+		sta.h	<_ax
+
+		lda	#>.BAT_SIZE		; Size of BAT in words.
+		sta	<_bl
+
+		call	clear_vram_vdc		; Clear VRAM.
+	.if	SUPPORT_SGX
+		call	clear_vram_sgx
+	.endif
+
+		lda.l	#mpr3(.mode_240x224)	; Disable BKG & SPR layers but
+		sta.l	<_si			; enable RCR & VBLANK IRQ.
+		lda.h	#mpr3(.mode_240x224)
+		sta.h	<_si
+
+	.if	SUPPORT_SGX
+		call	sgx_detect		; Are we really on an SGX?
+		beq	!+
+		ldy	#^.mode_240x224		; Set SGX 1st, with no VBL.
+		call	set_mode_sgx
+	.endif
+!:		ldy	#^.mode_240x224		; Set VDC 2nd, VBL allowed.
+		call	set_mode_vdc
+
+		call	wait_vsync		; Wait for the next VBLANK.
+
+		leave				; All done, phew!
+
+		; A reduced 240x224 screen to save VRAM.
+
+.mode_240x224:	db	$80			; VCE Control Register.
+		db	VCE_CR_5MHz		; Video Clock
+
+		db	VDC_MWR			; Memory-access Width Register
+		dw	VDC_MWR_32x32 + VDC_MWR_1CYCLE
+		db	VDC_HSR			; Horizontal Sync Register
+		dw	VDC_HSR_240
+		db	VDC_HDR			; Horizontal Display Register
+		dw	VDC_HDR_240
+		db	VDC_VPR			; Vertical Sync Register
+		dw	VDC_VPR_224
+		db	VDC_VDW			; Vertical Display Register
+		dw	VDC_VDW_224
+		db	VDC_VCR			; Vertical Display END position Register
+		dw	VDC_VCR_224
+		db	VDC_DCR			; DMA Control Register
+		dw	$0010			;   Enable automatic VRAM->SATB
+		db	VDC_DVSSR		; VRAM->SATB address $0400
+		dw	$0400
+		db	VDC_BXR			; Background X-Scroll Register
+		dw	$0000
+		db	VDC_BYR			; Background Y-Scroll Register
+		dw	$0000
+		db	VDC_RCR			; Raster Counter Register
+		dw	$0000			;   Never occurs!
+		db	VDC_CR			; Control Register
+		dw	$000C			;   Enable VSYNC & RCR IRQ
+		db	0
+
+		.endp
 
 
 
@@ -348,19 +436,19 @@ init_256x224	.proc
 		call	clear_vram_sgx
 	.endif
 
-		lda.l	#.mode_256x224		; Disable BKG & SPR layers but
+		lda.l	#mpr3(.mode_256x224)	; Disable BKG & SPR layers but
 		sta.l	<_si			; enable RCR & VBLANK IRQ.
-		lda.h	#.mode_256x224
+		lda.h	#mpr3(.mode_256x224)
 		sta.h	<_si
-		lda	#^.mode_256x224
-		sta	<_si_bank
 
 	.if	SUPPORT_SGX
 		call	sgx_detect		; Are we really on an SGX?
 		beq	!+
-		call	set_mode_sgx		; Set SGX 1st, with no VBL.
+		ldy	#^.mode_256x224		; Set SGX 1st, with no VBL.
+		call	set_mode_sgx
 	.endif
-!:		call	set_mode_vdc		; Set VDC 2nd, VBL allowed.
+!:		ldy	#^.mode_256x224		; Set VDC 2nd, VBL allowed.
+		call	set_mode_vdc
 
 		call	wait_vsync		; Wait for the next VBLANK.
 
@@ -377,6 +465,90 @@ init_256x224	.proc
 		dw	VDC_HSR_256
 		db	VDC_HDR			; Horizontal Display Register
 		dw	VDC_HDR_256
+		db	VDC_VPR			; Vertical Sync Register
+		dw	VDC_VPR_224
+		db	VDC_VDW			; Vertical Display Register
+		dw	VDC_VDW_224
+		db	VDC_VCR			; Vertical Display END position Register
+		dw	VDC_VCR_224
+		db	VDC_DCR			; DMA Control Register
+		dw	$0010			;   Enable automatic VRAM->SATB
+		db	VDC_DVSSR		; VRAM->SATB address $0800
+		dw	$0800
+		db	VDC_BXR			; Background X-Scroll Register
+		dw	$0000
+		db	VDC_BYR			; Background Y-Scroll Register
+		dw	$0000
+		db	VDC_RCR			; Raster Counter Register
+		dw	$0000			;   Never occurs!
+		db	VDC_CR			; Control Register
+		dw	$000C			;   Enable VSYNC & RCR IRQ
+		db	0
+
+		.endp
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; init_352x224 - An example of initializing screen and VRAM.
+;
+; This can be used as-is, or copied to your own program and modified.
+;
+
+init_352x224	.proc
+
+.BAT_SIZE	=	64 * 32
+.SAT_ADDR	=	.BAT_SIZE		; SAT takes 16 tiles of VRAM.
+.CHR_ZERO	=	.BAT_SIZE / 16		; 1st tile # after the BAT.
+.CHR_0x10	=	.CHR_ZERO + 16		; 1st tile # after the SAT.
+.CHR_0x20	=	.CHR_ZERO + 32		; ASCII ' ' CHR tile #.
+
+		call	clear_vce		; Clear all palettes.
+
+		lda.l	#.CHR_0x20		; Tile # of ' ' CHR.
+		sta.l	<_ax
+		lda.h	#.CHR_0x20
+		sta.h	<_ax
+
+		lda	#>.BAT_SIZE		; Size of BAT in words.
+		sta	<_bl
+
+		call	clear_vram_vdc		; Clear VRAM.
+	.if	SUPPORT_SGX
+		call	clear_vram_sgx
+	.endif
+
+		lda.l	#mpr3(.mode_352x224)	; Disable BKG & SPR layers but
+		sta.l	<_si			; enable RCR & VBLANK IRQ.
+		lda.h	#mpr3(.mode_352x224)
+		sta.h	<_si
+
+	.if	SUPPORT_SGX
+		call	sgx_detect		; Are we really on an SGX?
+		beq	!+
+		ldy	#^.mode_352x224		; Set SGX 1st, with no VBL.
+		call	set_mode_sgx
+	.endif
+!:		ldy	#^.mode_352x224		; Set VDC 2nd, VBL allowed.
+		call	set_mode_vdc
+
+		call	wait_vsync		; Wait for the next VBLANK.
+
+		leave				; All done, phew!
+
+		; A standard 352x224 screen with overscan.
+
+.mode_352x224:	db	$80			; VCE Control Register.
+		db	VCE_CR_7MHz + 4		;   Video Clock + Artifact Reduction
+
+		db	VDC_MWR			; Memory-access Width Register
+		dw	VDC_MWR_64x32 + VDC_MWR_1CYCLE
+		db	VDC_HSR			; Horizontal Sync Register
+		dw	VDC_HSR_352
+		db	VDC_HDR			; Horizontal Display Register
+		dw	VDC_HDR_352
 		db	VDC_VPR			; Vertical Sync Register
 		dw	VDC_VPR_224
 		db	VDC_VDW			; Vertical Display Register
@@ -432,19 +604,19 @@ init_512x224	.proc
 		call	clear_vram_sgx
 	.endif
 
-		lda.l	#.mode_512x224		; Disable BKG & SPR layers but
+		lda.l	#mpr3(.mode_512x224)	; Disable BKG & SPR layers but
 		sta.l	<_si			; enable RCR & VBLANK IRQ.
-		lda.h	#.mode_512x224
+		lda.h	#mpr3(.mode_512x224)
 		sta.h	<_si
-		lda	#^.mode_512x224
-		sta	<_si_bank
 
 	.if	SUPPORT_SGX
 		call	sgx_detect		; Are we really on an SGX?
 		beq	!+
-		call	set_mode_sgx		; Set SGX 1st, with no VBL.
+		ldy	#^.mode_512x224		; Set SGX 1st, with no VBL.
+		call	set_mode_sgx
 	.endif
-!:		call	set_mode_vdc		; Set VDC 2nd, VBL allowed.
+!:		ldy	#^.mode_512x224		; Set VDC 2nd, VBL allowed.
+		call	set_mode_vdc
 
 		call	wait_vsync		; Wait for the next VBLANK.
 
@@ -482,146 +654,3 @@ init_512x224	.proc
 		db	0
 
 		.endp
-
-
-
-; ***************************************************************************
-; ***************************************************************************
-;
-; mode_240x224 - Example 240x224 screen mode to copy to your own program.
-; mode_256x224 - Example 256x224 screen mode to copy to your own program.
-; mode_352x224 - Example 352x224 screen mode to copy to your own program.
-; mode_512x224 - Example 512x224 screen mode to copy to your own program.
-;
-; See "pcengine.inc" for other common settings that can be used, and read the
-; HuC6270 Video Display Controller manual to understand what the values mean,
-; and how you might change them to create different special effects.
-;
-
-	.if	0
-
-		; A reduced 240x224 screen to save VRAM.
-
-mode_240x224:	db	$80			; VCE Control Register.
-		db	VCE_CR_5MHz		; Video Clock
-
-		db	VDC_MWR			; Memory-access Width Register
-		dw	VDC_MWR_32x32 + VDC_MWR_1CYCLE
-		db	VDC_HSR			; Horizontal Sync Register
-		dw	VDC_HSR_240
-		db	VDC_HDR			; Horizontal Display Register
-		dw	VDC_HDR_240
-		db	VDC_VPR			; Vertical Sync Register
-		dw	VDC_VPR_224
-		db	VDC_VDW			; Vertical Display Register
-		dw	VDC_VDW_224
-		db	VDC_VCR			; Vertical Display END position Register
-		dw	VDC_VCR_224
-		db	VDC_DCR			; DMA Control Register
-		dw	$0010			;   Enable automatic VRAM->SATB
-		db	VDC_DVSSR		; VRAM->SATB address $0400
-		dw	$0400
-		db	VDC_BXR			; Background X-Scroll Register
-		dw	$0000
-		db	VDC_BYR			; Background Y-Scroll Register
-		dw	$0000
-		db	VDC_RCR			; Raster Counter Register
-		dw	$0000			;   Never occurs!
-		db	VDC_CR			; Control Register
-		dw	$000C			;   Enable VSYNC & RCR IRQ
-		db	0
-
-		; A standard 256x224 screen with overscan.
-
-mode_256x224:	db	$80			; VCE Control Register.
-		db	VCE_CR_5MHz		; Video Clock
-
-		db	VDC_MWR			; Memory-access Width Register
-		dw	VDC_MWR_64x32 + VDC_MWR_1CYCLE
-		db	VDC_HSR			; Horizontal Sync Register
-		dw	VDC_HSR_256
-		db	VDC_HDR			; Horizontal Display Register
-		dw	VDC_HDR_256
-		db	VDC_VPR			; Vertical Sync Register
-		dw	VDC_VPR_224
-		db	VDC_VDW			; Vertical Display Register
-		dw	VDC_VDW_224
-		db	VDC_VCR			; Vertical Display END position Register
-		dw	VDC_VCR_224
-		db	VDC_DCR			; DMA Control Register
-		dw	$0010			;   Enable automatic VRAM->SATB
-		db	VDC_DVSSR		; VRAM->SATB address $0800
-		dw	$0800
-		db	VDC_BXR			; Background X-Scroll Register
-		dw	$0000
-		db	VDC_BYR			; Background Y-Scroll Register
-		dw	$0000
-		db	VDC_RCR			; Raster Counter Register
-		dw	$0000			;   Never occurs!
-		db	VDC_CR			; Control Register
-		dw	$000C			;   Enable VSYNC & RCR IRQ
-		db	0
-
-		; A standard 352x224 screen with overscan.
-
-mode_352x224:	db	$80			; VCE Control Register.
-		db	VCE_CR_7MHz + 4		;   Video Clock + Artifact Reduction
-
-		db	VDC_MWR			; Memory-access Width Register
-		dw	VDC_MWR_64x32 + VDC_MWR_1CYCLE
-		db	VDC_HSR			; Horizontal Sync Register
-		dw	VDC_HSR_352
-		db	VDC_HDR			; Horizontal Display Register
-		dw	VDC_HDR_352
-		db	VDC_VPR			; Vertical Sync Register
-		dw	VDC_VPR_224
-		db	VDC_VDW			; Vertical Display Register
-		dw	VDC_VDW_224
-		db	VDC_VCR			; Vertical Display END position Register
-		dw	VDC_VCR_224
-		db	VDC_DCR			; DMA Control Register
-		dw	$0010			;   Enable automatic VRAM->SATB
-		db	VDC_DVSSR		; VRAM->SATB address $0800
-		dw	$0800
-		db	VDC_BXR			; Background X-Scroll Register
-		dw	$0000
-		db	VDC_BYR			; Background Y-Scroll Register
-		dw	$0000
-		db	VDC_RCR			; Raster Counter Register
-		dw	$0000			;   Never occurs!
-		db	VDC_CR			; Control Register
-		dw	$000C			;   Enable VSYNC & RCR IRQ
-		db	0
-
-		; A standard 512x224 screen with overscan.
-
-mode_512x224:	db	$80			; VCE Control Register.
-		db	VCE_CR_10MHz + 4	;   Video Clock + Artifact Reduction
-
-		db	VDC_MWR			; Memory-access Width Register
-		dw	VDC_MWR_64x32 + VDC_MWR_2CYCLE
-		db	VDC_HSR			; Horizontal Sync Register
-		dw	VDC_HSR_512
-		db	VDC_HDR			; Horizontal Display Register
-		dw	VDC_HDR_512
-		db	VDC_VPR			; Vertical Sync Register
-		dw	VDC_VPR_224
-		db	VDC_VDW			; Vertical Display Register
-		dw	VDC_VDW_224
-		db	VDC_VCR			; Vertical Display END position Register
-		dw	VDC_VCR_224
-		db	VDC_DCR			; DMA Control Register
-		dw	$0010			;   Enable automatic VRAM->SATB
-		db	VDC_DVSSR		; VRAM->SATB address $0800
-		dw	$0800
-		db	VDC_BXR			; Background X-Scroll Register
-		dw	$0000
-		db	VDC_BYR			; Background Y-Scroll Register
-		dw	$0000
-		db	VDC_RCR			; Raster Counter Register
-		dw	$0000			;   Never occurs!
-		db	VDC_CR			; Control Register
-		dw	$000C			;   Enable VSYNC & RCR IRQ
-		db	0
-
-	.endif

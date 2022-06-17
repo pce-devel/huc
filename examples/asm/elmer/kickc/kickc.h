@@ -40,7 +40,7 @@ inline byte rand (void) {
 inline byte rand210 (void) {
 	kickasm( clobbers "AY" )
 	{{ jsr _random210 }}
-	return *__al;
+	return __al;
 }
 
 //
@@ -52,33 +52,86 @@ inline void init_256x224(void) {
 	{{ jsr init_256x224 }}
 }
 
+#if 0
+
 inline void dropfnt8x8_vdc (byte * font, word vram, byte count, byte plane2, byte plane3) {
-	*__si = (word) font;
-	*__bank = (byte) (font >> 23);
-	*__di = vram;
-	*__al = plane2;
-	*__ah = plane3;
-	*__bl = count;
+	__di = vram;
+	__al = plane2;
+	__ah = plane3;
+	__bl = count;
+	__si = (word) font;
+	__bank = (byte) (font >> 23);
+	asm( clobbers "Y" )
+	{ ldy #font >> 23 }
 	kickasm( clobbers "AXY" )
 	{{ jsr dropfnt8x8_vdc }}
 }
 
+	asm( clobbers "Y" ) \
+	{ ldy #font >> 23 } \
+
+	*__bl = (byte) (count); \
+
+#else
+
+#define dropfnt8x8_vdc( font, vram, count, plane2, plane3 ) \
+	__di = (word) (vram); \
+	__al = (byte) (plane2); \
+	__ah = (byte) (plane3); \
+	__bl = (byte) (count); \
+	__si = (word) (font); \
+	__bank = (byte) ((font) >> 23); \
+	kickasm( clobbers "Y" ) \
+	{{ ldy.z __bank }} \
+	kickasm( clobbers "AXY" ) \
+	{{ jsr dropfnt8x8_vdc }}
+
+#endif
+
+#if 0
+
 inline void vdc_di_to_mawr (word vram) {
-	*__di = (word) vram;
+	__di = (word) vram;
 	kickasm( clobbers "AXY" )
 	{{ jsr vdc_di_to_mawr }}
 }
+
+#else
+
+#define vdc_di_to_mawr( vram ) \
+	__di = (word) (vram); \
+	kickasm( clobbers "AXY" ) \
+	{{ jsr vdc_di_to_mawr }}
+
+#endif
 
 inline void set_dspon(void) {
 	kickasm( clobbers "A" )
 	{{ jsr set_dspon }}
 }
 
+#if 0
+
 inline void load_palette (byte palnum, word * data, byte palcnt) {
-	*__si = (word) data;
-	*__bank = (byte) (data >> 23);
-	*__al = palnum;
-	*__ah = palcnt;
+	__al = palnum;
+	__ah = palcnt;
+	__si = (word) data;
+	asm( clobbers "Y" )
+	{ ldy #data >> 23 }
 	kickasm( clobbers "AXY" )
 	{{ jsr load_palettes }}
 }
+
+#else
+
+#define load_palette( palnum, data, palcnt ) \
+	__al = (palnum); \
+	__ah = (palcnt); \
+	__si = (word) (data); \
+	__bank = (byte) ((data) >> 23); \
+	kickasm( clobbers "Y" ) \
+	{{ ldy.z __bank }} \
+	kickasm( clobbers "AXY" ) \
+	{{ jsr load_palettes }}
+
+#endif
