@@ -27,15 +27,13 @@ void           proc_sortlist(void);
 /* ----
  * do_call()
  * ----
- * call pseudo
+ * call pseudo - this handles both jsr and jmp!
  */
 
 void
 do_call(int *ip)
 {
-	struct t_symbol *target;
 	struct t_proc *proc;
-	int value;
 
 	/* define label, unless already defined in classC() instruction flow */
 	if (opflg == PSEUDO)
@@ -45,29 +43,16 @@ do_call(int *ip)
 	data_loccnt = loccnt;
 	loccnt += 3;
 
-	/* skip spaces */
-	while (isspace(prlnbuf[*ip]))
-		(*ip)++;
-
-	/* extract name */
-	if (!colsym(ip, 0)) {
-		if (symbol[0] == 0)
-			fatal_error("Syntax error!");
-		return;
-	}
-
-	/* check end of line */
-	if (!check_eol(ip))
-		return;
-
-	/* increment procedure refcnt */
-	if ((target = stlook(SYM_REF)) == NULL)
+	/* get value */
+	if (!evaluate(ip, ';', 0))
 		return;
 
 	/* generate code */
 	if (pass == LAST_PASS) {
 		/* lookup proc table */
-		if((proc = proc_look())) {
+		if ((expr_lablcnt == 1) && (complex_expr == 0) && (expr_lablptr != NULL) &&
+		    ((proc = expr_lablptr->proc) != NULL) && (proc->label == expr_lablptr)) {
+
 			/* check banks */
 			if ((newproc_opt == 0) && (bank == proc->bank)) {
 				/* same bank */
@@ -140,24 +125,33 @@ do_call(int *ip)
 
 					proc->call = value;
 				}
+
+				/* special handling for a jmp between procedures */
+				if ((newproc_opt != 0) && (optype == 1)) {
+					if (proc_ptr) {
+						/* don't save tma6 again if already in a procedure */
+						if (bank == proc->bank)
+							value = proc->org + 0xC000;
+						else
+							value = value + 3;
+					}
+				}
 			}
 		}
 		else {
-			/* target is a label, not a procedure */
-			if (target->type != DEFABS) {
-				fatal_error("Undefined destination!");
+			/* do not reference a procedure in this way! */
+			if ((expr_lablptr != NULL) && (expr_lablptr->proc != NULL) && (expr_lablptr->proc->label == expr_lablptr)) {
+				error("Illegal entry point to procedure label!");
 				return;
 			}
-
-			/* get symbol value */
-			value = target->value;
 		}
 
 		/* opcode */
-		if ((opflg == PSEUDO) || (opval == 0x14))
+		if (optype == 0)
 			putbyte(data_loccnt, 0x20); /* JSR */
 		else
 			putbyte(data_loccnt, 0x4C); /* JMP */
+
 		putword(data_loccnt+1, value);
 
 		/* output line */

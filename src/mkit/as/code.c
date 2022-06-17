@@ -32,6 +32,7 @@ classC(int *ip)
 
 		/* if the operand looks like a global label */
 		if (isalpha(prlnbuf[*ip]) || (prlnbuf[*ip] == '_')) {
+			if (opval == 0x40) { optype = 1; }
 			do_call(ip);
 			return;
 		}
