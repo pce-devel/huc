@@ -219,7 +219,7 @@ struct tag_symbol {
 #define NULL_TAG 0
 
 // Define the structure member table parameters
-#define NUMMEMB         128
+#define NUMMEMB         256
 
 /* possible entries for "ident" */
 
