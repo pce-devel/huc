@@ -15,7 +15,7 @@
 
 #include "version.h"
 
-#define HUC_VERSION     "HuC (v3.99-" GIT_VERSION ", " GIT_DATE ")"
+#define HUC_VERSION     "HuC (v4.00-" GIT_VERSION ", " GIT_DATE ")"
 
 void FEvers (void);
 void usage (char *exename);
