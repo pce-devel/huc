@@ -65,19 +65,11 @@ VDC_DVSSR	= 19		; VRAM-SATB Block Transfer Source
 ; HuC6202 - Video Priority Controller (SGX-only)
 ;
 
-VPC_CR		= $FF:0208
-VPC_CRL		= $FF:0208
-VPC_CRH		= $FF:0209
-
-VPC_WIN1	= $FF:020A
-VPC_WIN1L	= $FF:020A
-VPC_WIN1H	= $FF:020B
-
-VPC_WIN2	= $FF:020C
-VPC_WIN2L	= $FF:020C
-VPC_WIN2H	= $FF:020D
-
-VPC_VDC_REDIR	= $FF:020E
+VPC_CR		= $FF:0208	; Defaults to $1111
+VPC_WINDOW1	= $FF:020A	; Defaults to $0000
+VPC_WINDOW2	= $FF:020C	; Defaults to $0000
+VPC_STMODE	= $FF:020E	; Defaults to $00=VDC ($01=SGX)
+VPC_UNKNOWN	= $FF:020F	; Defaults to $00
 
 
 

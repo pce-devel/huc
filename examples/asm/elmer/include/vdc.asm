@@ -7,7 +7,7 @@
 ;
 ; These should be located in permanently-accessible memory!
 ;
-; Copyright John Brandwood 2021.
+; Copyright John Brandwood 2021-2022.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -159,6 +159,7 @@ clear_bat_x:	stz	<_di + 0		; Set VDC or SGX destination
 		sta	VDC_DH, x
 		dey
 		bne	.bat_pair
+
 		pla
 		dec	a
 		bne	.bat_loop
@@ -179,7 +180,7 @@ clear_bat_x:	stz	<_di + 0		; Set VDC or SGX destination
 ; set_mode_sgx - Set video hardware registers from a data table.
 ; set_mode_vdc - Set video hardware registers from a data table.
 ;
-; Args: _si, _si_bank = _farptr to data table mapped into MPR3 & MPR4.
+; Args: _si, Y = _farptr to data table mapped into MPR3 & MPR4.
 ;
 
 	.if	SUPPORT_SGX
@@ -200,13 +201,9 @@ set_mode_vdc	.proc
 		tma4				; Preserve MPR4.
 		pha
 
-		tya				; Map data to MPR3 & MPR4.
-		beq	!+
-		tam3
-		inc	a
-		tam4
+		jsr	set_si_to_mpr34		; Map data to MPR3 & MPR4.
 
-!:		php				; Disable interrupts.
+		php				; Disable interrupts.
 		sei
 
 		cly				; Table size is < 256 bytes.
@@ -279,9 +276,65 @@ set_mode_vdc	.proc
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; sgx_detect - Detect whether we're running on a SuperGrafx.
+; sgx_detect - Detect whether we're running on a SuperGrafx (and init VPC).
 ;
-; Note that this corrupts VRAM address $7F7F in both the VDC and SGX.
+; Note that this clears VRAM address $7F7F in both the VDC and SGX.
+;
+; ***************************************************************************
+;
+; https://web.archive.org/web/20161129055659/http://cgfm2.emuviews.com/txt/sgxtech.txt
+;
+; ***************************************************************************
+;
+; HuC6202 VIDEO PRIORITY CONTROLLER (huge thanks to Charles MacDonald!)
+;
+; VPC registers $0008 and $0009 make up four 4-bit values that define the
+; enabled layers and priority setting for the four possible window areas.
+;
+; Bits 3-0 of $0008 are for the region where Window 1 and 2 overlap
+; Bits 7-4 of $0008 are for the region occupied by only Window 2
+; Bits 3-0 of $0009 are for the region occupied by only Window 1
+; Bits 7-4 of $0009 are for the region where no Window is present
+;
+;  Each 4-bit value has the same format:
+;
+;  Bit 0: VDC #1 graphics are 0=disabled, 1=enabled
+;  Bit 1: VDC #2 graphics are 0=disabled, 1=enabled
+;  Bit 2: Bit 0 of priority setting
+;  Bit 3: Bit 1 of priority setting
+;
+;   Priority Setting $00xx: (useful when VDC #1 is a fullscreen HUD)
+;
+;    FRONT
+;     SP1'= VDC #1 high priority sprites
+;     BG1 = VDC #1 background
+;     SP1 = VDC #1 low priority sprites
+;     SP2'= VDC #2 high priority sprites
+;     BG2 = VDC #2 background
+;     SP2 = VDC #2 low priority sprites
+;    BACK
+;
+;   Priority Setting $01xx: (useful for parallax backgrounds)
+;
+;    FRONT
+;     SP1'= VDC #1 high priority sprites
+;     SP2'= VDC #2 high priority sprites
+;     BG1 = VDC #1 background
+;     SP1 = VDC #1 low priority sprites
+;     BG2 = VDC #2 background
+;     SP2 = VDC #2 low priority sprites
+;    BACK
+;
+;   Priority Setting $10xx: (only useful for special effects)
+;
+;    FRONT
+;     BG1 = VDC #1 background (with holes for sprites)
+;     SP2'= VDC #2 high priority sprites
+;     BG2 = VDC #2 background
+;     SP2 = VDC #2 low priority sprites
+;     SP1'= VDC #1 high priority sprites
+;     SP1 = VDC #1 low priority sprites
+;    BACK
 ;
 
 	.if	SUPPORT_SGX
@@ -300,22 +353,35 @@ sgx_detect	.proc
 		stz	VDC_DH
 
 		jsr	sgx_di_to_marr		; Check value in SGX VRAM.
-		ldy	SGX_DL
+		ldy	SGX_DL			; $7F if found, $00 if not.
 		sty	sgx_detected
+		beq	!+			; Skip the rest if not SGX.
 
 		jsr	sgx_di_to_mawr		; Write $0000 to SGX VRAM
 		stz	SGX_DL			; to clean VRAM contents.
 		stz	SGX_DH
 
-		leave				; All done, phew!
+		tii	.vpc_mode, VPC_CR, 8	; Initialize the HuC6202 VPC.
+
+!:		leave				; All done, phew!
+
+	.ifndef	SGX_PARALLAX
+SGX_PARALLAX	=	1			; The most common default.
+	.endif
+
+	.if	SGX_PARALLAX
+.vpc_mode:	dw	$7000			; Use SGX as a parallax layer
+		dw	$0000			; behind a VDC background.
+		dw	$0000
+		dw	$0000
+	.else
+.vpc_mode:	dw	$3000			; Use SGX as the background
+		dw	$0000			; behind a fullscreen HUD.
+		dw	$0000
+		dw	$0000
+	.endif	SGX_PARALLAX
 
 		.endp
-
-	.ifndef	sgx_detected			; Could be defined in CORE.
-		.bss
-sgx_detected:	ds	1			; NZ if SuperGrafx detected.
-		.code
-	.endif
 
 	.endif	SUPPORT_SGX
 
@@ -352,9 +418,9 @@ init_240x224	.proc
 		call	clear_vram_sgx
 	.endif
 
-		lda.l	#mpr3(.mode_240x224)	; Disable BKG & SPR layers but
+		lda	#<.mode_240x224		; Disable BKG & SPR layers but
 		sta.l	<_si			; enable RCR & VBLANK IRQ.
-		lda.h	#mpr3(.mode_240x224)
+		lda	#>.mode_240x224
 		sta.h	<_si
 
 	.if	SUPPORT_SGX
@@ -436,9 +502,9 @@ init_256x224	.proc
 		call	clear_vram_sgx
 	.endif
 
-		lda.l	#mpr3(.mode_256x224)	; Disable BKG & SPR layers but
+		lda	#<.mode_256x224		; Disable BKG & SPR layers but
 		sta.l	<_si			; enable RCR & VBLANK IRQ.
-		lda.h	#mpr3(.mode_256x224)
+		lda	#>.mode_256x224
 		sta.h	<_si
 
 	.if	SUPPORT_SGX
@@ -520,9 +586,9 @@ init_352x224	.proc
 		call	clear_vram_sgx
 	.endif
 
-		lda.l	#mpr3(.mode_352x224)	; Disable BKG & SPR layers but
+		lda	#<.mode_352x224		; Disable BKG & SPR layers but
 		sta.l	<_si			; enable RCR & VBLANK IRQ.
-		lda.h	#mpr3(.mode_352x224)
+		lda	#>.mode_352x224
 		sta.h	<_si
 
 	.if	SUPPORT_SGX
@@ -604,9 +670,9 @@ init_512x224	.proc
 		call	clear_vram_sgx
 	.endif
 
-		lda.l	#mpr3(.mode_512x224)	; Disable BKG & SPR layers but
+		lda	#<.mode_512x224		; Disable BKG & SPR layers but
 		sta.l	<_si			; enable RCR & VBLANK IRQ.
-		lda.h	#mpr3(.mode_512x224)
+		lda	#>.mode_512x224
 		sta.h	<_si
 
 	.if	SUPPORT_SGX
