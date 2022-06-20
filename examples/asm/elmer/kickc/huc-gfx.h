@@ -47,22 +47,22 @@ inline byte get_joytrg (byte which) {
  */
 
 #define load_vram(addr, data, size) \
-	__di = (word) (addr); \
-	__ax = (word) (size); \
-	__si = (word) (data); \
-	__si = (word) (data); \
-	__bank = (byte) ((data) >> 23); \
+	*__di = (word) (addr); \
+	*__ax = (word) (size); \
+	*__si = (word) (data); \
+	*__si = (word) (data); \
+	*__bank = (byte) ((data) >> 23); \
 	kickasm( clobbers "Y" ) \
 	{{ ldy.z __bank }} \
 	kickasm( clobbers "AXY" ) \
 	{{ jsr _load_vram }}
 
 #define load_bat(addr, data, w, h) \
-	__di = (word) (addr); \
-	__al = (byte) (w); \
-	__ah = (byte) (h); \
-	__si = (word) (data); \
-	__bank = (byte) ((data) >> 23); \
+	*__di = (word) (addr); \
+	*__al = (byte) (w); \
+	*__ah = (byte) (h); \
+	*__si = (word) (data); \
+	*__bank = (byte) ((data) >> 23); \
 	kickasm( clobbers "Y" ) \
 	{{ ldy.z __bank }} \
 	kickasm( clobbers "AXY" ) \
@@ -81,17 +81,17 @@ inline byte get_joytrg (byte which) {
  */
 
 #define put_string(addr, x, y) \
-	__al = (byte) (x); \
-	__ah = (byte) (y); \
-	__si = (word) (addr); \
+	*__al = (byte) (x); \
+	*__ah = (byte) (y); \
+	*__si = (word) (addr); \
 	kickasm( clobbers "AXY" ) \
 	{{ jsr _put_string }}
 
 #define put_number(value, n, x, y) \
-	__al = (byte) (x); \
-	__ah = (byte) (y); \
-	__bx = (word) (value); \
-	__cl = (byte) (n); \
+	*__al = (byte) (x); \
+	*__ah = (byte) (y); \
+	*__bx = (word) (value); \
+	*__cl = (byte) (n); \
 	kickasm( clobbers "AXY" ) \
 	{{ jsr _put_number }}
 
@@ -134,7 +134,7 @@ inline void satb_update (void) {
 } 
 
 #define spr_set(num) { \
-	__al = (byte) (num); \
+	*__al = (byte) (num); \
 	kickasm( clobbers "A" ) \
 	{{ jsr _spr_set }} } 
 
@@ -147,32 +147,32 @@ inline void satb_update (void) {
 	{{ jsr _spr_show }} }
 
 #define spr_x(x_val) { \
-	__ax = (word) (x_val); \
+	*__ax = (word) (x_val); \
 	kickasm( clobbers "AY" ) \
 	{{ jsr _spr_x }} }
 
 #define spr_y(y_val) { \
-	__ax = (word) (y_val); \
+	*__ax = (word) (y_val); \
 	kickasm( clobbers "AY" ) \
 	{{ jsr _spr_y }} }
 
 #define spr_pattern(vaddr) { \
-	__ax = (word) (vaddr); \
+	*__ax = (word) (vaddr); \
 	kickasm( clobbers "AY" ) \
 	{{ jsr _spr_pattern }} }
 
 #define spr_pal(pal) { \
-	__al = (byte) (pal); \
+	*__al = (byte) (pal); \
 	kickasm( clobbers "AY" ) \
 	{{ jsr _spr_pal }} }
 
 #define spr_pri(pri) { \
-	__al = (byte) (pri); \
+	*__al = (byte) (pri); \
 	kickasm( clobbers "AY" ) \
 	{{ jsr _spr_pri }} }
 
 #define spr_ctrl(mask, value) { \
-	__al = (byte) ~(mask); \
-	__ah = (byte) ((value) & (mask)); \
+	*__al = (byte) ~(mask); \
+	*__ah = (byte) ((value) & (mask)); \
 	kickasm( clobbers "AY" ) \
 	{{ jsr _spr_ctrl }} }
