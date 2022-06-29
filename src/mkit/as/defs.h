@@ -32,7 +32,7 @@
 #define PACKED_TILE	2
 
 /* line buffer length */
-#define LAST_CH_POS	158
+#define LAST_CH_POS	512
 #define SFIELD		29
 #define SBOLSZ		64
 
