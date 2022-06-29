@@ -52,56 +52,56 @@ PRINTF		.macro
 !end:		db	0
 
 		.if	\?2 != 0
-		.if	\?2 == ARG_ABSOLUTE
+		.if	(\?2 == ARG_LABEL) | (\?2 == ARG_ABSOLUTE)
 		dw	\2
 		.else
 		.fail	All arguments to printf macro must be pointers!
 		.endif
 
 		.if	\?3 != 0
-		.if	\?3 == ARG_ABSOLUTE
+		.if	(\?3 == ARG_LABEL) | (\?3 == ARG_ABSOLUTE)
 		dw	\3
 		.else
 		.fail	All arguments to printf macro must be pointers!
 		.endif
 
 		.if	\?4 != 0
-		.if	\?4 == ARG_ABSOLUTE
+		.if	(\?4 == ARG_LABEL) | (\?4 == ARG_ABSOLUTE)
 		dw	\4
 		.else
 		.fail	All arguments to printf macro must be pointers!
 		.endif
 
 		.if	\?5 != 0
-		.if	\?5 == ARG_ABSOLUTE
+		.if	(\?5 == ARG_LABEL) | (\?5 == ARG_ABSOLUTE)
 		dw	\5
 		.else
 		.fail	All arguments to printf macro must be pointers!
 		.endif
 
 		.if	\?6 != 0
-		.if	\?6 == ARG_ABSOLUTE
+		.if	(\?6 == ARG_LABEL) | (\?6 == ARG_ABSOLUTE)
 		dw	\6
 		.else
 		.fail	All arguments to printf macro must be pointers!
 		.endif
 
 		.if	\?7 != 0
-		.if	\?7 == ARG_ABSOLUTE
+		.if	(\?7 == ARG_LABEL) | (\?7 == ARG_ABSOLUTE)
 		dw	\7
 		.else
 		.fail	All arguments to printf macro must be pointers!
 		.endif
 
 		.if	\?8 != 0
-		.if	\?8 == ARG_ABSOLUTE
+		.if	(\?8 == ARG_LABEL) | (\?8 == ARG_ABSOLUTE)
 		dw	\8
 		.else
 		.fail	All arguments to printf macro must be pointers!
 		.endif
 
 		.if	\?9 != 0
-		.if	\?9 == ARG_ABSOLUTE
+		.if	(\?9 == ARG_LABEL) | (\?9 == ARG_ABSOLUTE)
 		dw	\9
 		.else
 		.fail	All arguments to printf macro must be pointers!

@@ -59,7 +59,7 @@ wait_nvsync:	bsr	wait_vsync		; # of VBLANK IRQs to wait in
 ;
 ; Map the _si data far-pointer into MPR3 (& MPR4).
 ;
-; Because the 16KB RAM region at $2000-$5FFF is composed to two separate
+; Because the 16KB RAM region at $2000-$5FFF is composed of two separate
 ; banks, with the 2nd bank having no specific relation to the 1st, there
 ; is no way to deal with a bank-increment, so do not map that region.
 ;
@@ -96,8 +96,6 @@ set_si_to_mpr34:lda.h	<_si			; Do not remap a ptr to RAM,
 
 inc.h_si_mpr3:	inc.h	<_si			; Increment hi-byte of _si.
 		bpl	!+			; OK if within MPR0-MPR3.
-;		tst	#$7F, <_si + 1		; OK unless $80.
-;		bne	!+
 		pha				; Increment the bank in MPR3,
 		tma3				; usually when pointer moves
 		inc	a			; from $7FFF -> $8000.
@@ -106,6 +104,30 @@ inc.h_si_mpr3:	inc.h	<_si			; Increment hi-byte of _si.
 		sta.h	<_si
 		pla
 !:		rts
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; Increment the hi-byte of _si and change TMA3 and TMA4 if necessary.
+;
+
+	.if	0				; Save memory, for now.
+
+inc.h_si_mpr34:	inc.h	<_si			; Increment hi-byte of _si.
+		bpl	!+			; OK if within MPR0-MPR3.
+		pha				; Increment the bank in MPR3,
+		tma4				; usually when pointer moves
+		tam3				; from $7FFF -> $8000.
+		inc	a
+		tam4
+		lda	#$60
+		sta.h	<_si
+		pla
+!:		rts
+
+	.endif
 
 
 

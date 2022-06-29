@@ -341,8 +341,8 @@ set_mode_vdc	.proc
 sgx_detect	.proc
 
 		ldy	#$7F			; Use VRAM address $7F7F
-		sty.h	<_di			; because it won't cause
-		sty.l	<_di			; a screen glitch.
+		sty.l	<_di			; because it won't cause
+		sty.h	<_di			; a screen glitch.
 
 		jsr	sgx_di_to_mawr		; Write $007F to SGX VRAM.
 		sty	SGX_DL

@@ -65,11 +65,8 @@ dropfnt8x8_vdc	.proc
 		tma3				; Preserve MPR3.
 		pha
 
-		tya				; Map memory block to MPR3.
-		beq	!+
-		tam3
-
-!:		jsr	set_di_to_mawr		; Map _di to VRAM.
+		jsr	set_si_to_mpr3		; Map memory block to MPR3.
+		jsr	set_di_to_mawr		; Map _di to VRAM.
 
 		; Generate shadowed glyph.
 
@@ -184,11 +181,8 @@ dropfnt8x16_vdc	.proc
 		tma3				; Preserve MPR3.
 		pha
 
-		tya				; Map memory block to MPR3.
-		beq	!+
-		tam3
-
-!:		jsr	set_di_to_mawr		; Map _di to VRAM.
+		jsr	set_si_to_mpr3		; Map memory block to MPR3.
+		jsr	set_di_to_mawr		; Map _di to VRAM.
 
 		; Generate shadowed glyph.
 
