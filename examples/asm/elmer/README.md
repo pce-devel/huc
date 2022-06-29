@@ -14,6 +14,9 @@ This directory contains a number of example programs and utilities for developin
 * ted2-bios-usbcd
   - A modified System Card 3.0 HuCARD that runs a CD-ROM overlay uploaded through USB, rather than loading it from CD-ROM.
 
+* rom-bare-vdctest
+  - A HuCARD ROM to compare a PC Engine emulator's VDC RCR interrupt handling with real PC Engine console hardware.
+
 
 ## Using the System Card BIOS
 
