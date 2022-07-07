@@ -85,7 +85,7 @@ dropfnt8x8_vdc	.proc
 		lsr	a
 	.endif
 
-	.if	0
+	.if	1
 		ora	[_si]			; Composite font and shadow
 		sta	tmp_shadow_buf + 2, x	; planes (wide shadow).
 	.else
@@ -201,7 +201,7 @@ dropfnt8x16_vdc	.proc
 		lsr	a
 	.endif
 
-	.if	0
+	.if	1
 		ora	[_si]			; Composite font and shadow
 		sta	tmp_shadow_buf + 2, x	; planes (wide shadow).
 	.else

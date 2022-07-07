@@ -44,6 +44,15 @@ TTY_NO_0HEX	=	0	; Remove final '0' from a 0 hex value.
 ; A macro to make it easier to call ...
 ;
 
+STRING		.macro
+	.if	\?1 == ARG_STRING
+;		.data
+!string:	db	(!end+ - !string-)
+		db	\1
+!end:		db	0
+	.endif	\?1 == ARG_STRING
+		.endm
+
 PRINTF		.macro
 	.if	\?1 == ARG_STRING
 		.data
@@ -387,6 +396,10 @@ tty_printf_huc	.proc				; HuC entry point.
 
 .finished:	stz	tty_8x16		; Reset VRAM increment.
 		jsr	!tty_increment+
+
+		lda	#VDC_VWR
+		sta	<vdc_reg
+		st0	#VDC_VWR
 
 		pla				; Restore MPR3.
 		tam3
@@ -882,12 +895,12 @@ tty_printf_huc	.proc				; HuC entry point.
 		bne	.escape_lo
 
 		jsr	.read_decimal		; Box width.
-		cmp	','
+		cmp	#','
 		bne	.box_done		; Abort if parameter missing.
 		lda	<_temp
 		sta	<_al
 		jsr	.read_decimal		; Box height.
-		cmp	','
+		cmp	#','
 		bne	.box_done		; Abort if parameter missing.
 		lda	<_temp
 		sta	<_ah

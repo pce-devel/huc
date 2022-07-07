@@ -55,6 +55,15 @@ CHR_0x10	=	CHR_ZERO + 16		; 1st tile # after the SAT.
 CHR_0x20	=	CHR_ZERO + 32		; ASCII ' ' CHR tile #.
 
 		;
+		; You would normally just set this in your project's local
+		; "core-config.inc", but this shows another way to achieve
+		; the same result.
+		;
+
+SUPPORT_6BUTTON	=	1			; Support 6BUTTON just to test
+SUPPORT_MOUSE	=	0			; the library still builds.
+
+		;
 		; Include the library, reading the project's configuration
 		; settings from the local "core-config.inc", if it exists.
 		;

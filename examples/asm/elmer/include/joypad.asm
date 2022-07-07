@@ -65,6 +65,26 @@ SUPPORT_2BUTTON	=	0
 MAX_PADS	=	5
 	.endif
 
+;
+; Remove Phantom Mice?
+;
+; If there is no multitap, and one mouse in port 1, then the code will
+; detect mice in every port.
+;
+; Setting this adds a check for this case, which then sets the maximum
+; number of ports to 1.
+;
+; Note that it is actually possible to have mice in every port, but it
+; is so unlikely that it is easier to use this setting to take care of
+; the far-more-common case of having a single mouse and no multitap.
+;
+
+	.ifndef DETECT_PHANTOMS
+DETECT_PHANTOMS	=	1
+	.endif
+
+
+
 		.list
 
 ;
@@ -266,7 +286,12 @@ read_joypads:
 
 		ldx	#MAX_PADS - 1
 
-.pressed_loop:	lda	joynow, x		; Calc which buttons have just
+.pressed_loop:	lda	joy6now, x		; Calc which buttons have just
+		eor	joy6old, x		; been pressed (6-button).
+		and	joy6now, x
+		sta	joy6trg, x
+
+		lda	joynow, x		; Calc which buttons have just
 		tay                             ; been pressed (2-button).
 		eor	joyold, x
 		and	joynow, x
@@ -322,9 +347,9 @@ read_joypads:
 		dey
 		bne	.detect_loop
 
-		sta	mouse_flg		; Report mouse detection.
+		tay				; Preserve mouse detection.
 
-.skip_port:	lda	#$01			; CLR lo, SEL hi for d-pad.
+.ignore_port:	lda	#$01			; CLR lo, SEL hi for d-pad.
 		sta	IO_PORT			; Wait 1.25us (9 cycles).
 		pha
 		pla
@@ -336,16 +361,30 @@ read_joypads:
 		asl	a
 		asl	a
 		cpx	#6			; Keep looping until port #6
-		bne	.skip_port		; to detect an NEC multitap.
+		bne	.ignore_port		; to detect an NEC multitap.
 
 		sta	joytrg			; Get buttons of 2-btn pad.
 		lda	IO_PORT
 		and	#$0F
 		ora	joytrg
-		bne	.calc_pressed		; NEC multitap if zero.
+		sta	port6
+		bne	.no_multitap		; NEC multitap if zero.
 
-		lda	#$40			; Report multitap detection.
-		tsb	mouse_flg
+		tya				; Restore mouse detection.
+		ora	#$40			; Signal multitap present.
+		db	$F0			; Turn "tya" into a "beq".
+
+.no_multitap:	tya				; Restore mouse detection.
+
+	.if	DETECT_PHANTOMS
+		cmp	#(1 << MAX_PADS) + 127	; If we find a mouse in every
+		bne	.detect_done		; port, then assume mirrored!
+		lda	#1			; Report a single mouse in a
+		sta	num_ports		; single port.
+		lda	#$81
+	.endif	DETECT_PHANTOMS
+
+.detect_done:	sta	mouse_flg		; Report mouse detection.
 		jmp	.calc_pressed
 
 		;
@@ -425,6 +464,8 @@ read_joypads:
 		stz	IO_PORT			; CLR lo, SEL lo for buttons.
 		and	#$0F			; Wait 1.25us (9 cycles).
 		ora	mouse_x, y		; Add port's X-hi nibble.
+		eor	#$FF			; Negate so LEFT is -ve.
+		inc	a
 		sta	mouse_x, y
 		bra	.next_port
 
@@ -441,6 +482,8 @@ read_joypads:
 		stz	IO_PORT			; CLR lo, SEL lo for buttons.
 		and	#$0F			; Wait 1.25us (9 cycles).
 		ora	mouse_y, y		; Add port's Y-hi nibble.
+		eor	#$FF			; Negate so UP is -ve.
+		inc	a
 		sta	mouse_y, y
 		bra	.next_port
 
@@ -457,6 +500,7 @@ read_joypads:
 port_mutex:	ds	1			; NZ when controller port busy.
 num_ports:	ds	1			; Set to 1 if no multitap.
 mouse_flg:	ds	1			; Which ports are mice?
+port6:		ds	1			; Contents of port6.
 joy6now:	ds	MAX_PADS
 joy6old:	ds	MAX_PADS
 joy6trg:	ds	MAX_PADS
@@ -491,9 +535,6 @@ mouse_y:	ds	MAX_PADS
 ; bit 5 (ie $20) = RIGHT
 ; bit 6 (ie $40) = DOWN
 ; bit 7 (ie $80) = LEFT
-;
-; This version of the code also detects whether an NEC MultiTap is being used
-; by reading its 6th port, which returns $00 (all buttons pressed).
 ;
 
 		.code
@@ -577,31 +618,16 @@ read_joypads:
 		dey
 		bne	.detect_loop
 
-		sta	mouse_flg		; Report mouse detection.
+	.if	DETECT_PHANTOMS
+		cmp	#(1 << MAX_PADS) + 127	; If we find a mouse in every
+		bne	.detect_done		; port, then assume mirrored!
+		lda	#1			; Report a single mouse in a
+		sta	num_ports		; single port.
+		lda	#$81
+	.endif
 
-.skip_port:	lda	#$01			; CLR lo, SEL hi for d-pad.
-		sta	IO_PORT			; Wait 1.25us (9 cycles).
-		pha
-		pla
-		inx
-		lda	IO_PORT			; Read direction-pad bits.
-		stz	IO_PORT			; CLR lo, SEL lo for buttons.
-		asl	a			; Wait 1.25us (9 cycles).
-		asl	a
-		asl	a
-		asl	a
-		cpx	#6			; Keep looping until port #6
-		bne	.skip_port		; to detect an NEC multitap.
-
-		sta	joytrg			; Get buttons of 2-btn pad.
-		lda	IO_PORT
-		and	#$0F
-		ora	joytrg
-		bne	.calc_pressed		; NEC multitap if zero.
-
-		lda	#$40			; Report multitap detection.
-		tsb	mouse_flg
-		jmp	.calc_pressed
+.detect_done:	sta	mouse_flg		; Report mouse detection.
+		bra	.calc_pressed
 
 		;
 		; Read all of the devices attached to the MultiTap.
@@ -674,6 +700,8 @@ read_joypads:
 		stz	IO_PORT			; CLR lo, SEL lo for buttons.
 		and	#$0F			; Wait 1.25us (9 cycles).
 		ora	mouse_x, y		; Add port's X-hi nibble.
+		eor	#$FF			; Negate so LEFT is -ve.
+		inc	a
 		sta	mouse_x, y
 		bra	.next_port
 
@@ -690,6 +718,8 @@ read_joypads:
 		stz	IO_PORT			; CLR lo, SEL lo for buttons.
 		and	#$0F			; Wait 1.25us (9 cycles).
 		ora	mouse_y, y		; Add port's Y-hi nibble.
+		eor	#$FF			; Negate so UP is -ve.
+		inc	a
 		sta	mouse_y, y
 		bra	.next_port
 
@@ -801,7 +831,15 @@ read_joypads:
 		dey
 		bne	.detect_loop
 
-		sta	mouse_flg		; Report mouse detection.
+;	.if	DETECT_PHANTOMS
+;		cmp	#(1 << MAX_PADS) + 127	; If we find a mouse in every
+;		bne	.detect_done		; port, then assume mirrored!
+;		lda	#1			; Report a single mouse in a
+;		sta	num_ports		; single port.
+;		lda	#$81
+;	.endif
+
+.detect_done:	sta	mouse_flg		; Report mouse detection.
 
 		; See what has just been pressed, and check for soft-reset.
 
@@ -916,6 +954,8 @@ read_joypads:
 		stz	IO_PORT			; CLR lo, SEL lo for buttons.
 		and	#$0F			; Wait 1.25us (9 cycles).
 		ora	mouse_x, y		; Add port's X-hi nibble.
+;		eor	#$FF			; Negate so LEFT is -ve.
+;		inc	a
 		sta	mouse_x, y
 		bra	.next_port
 

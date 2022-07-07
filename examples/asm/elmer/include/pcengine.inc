@@ -133,14 +133,18 @@ TIMER_CR	= $FF:0C01	; Timer Control
 
 IO_PORT		= $FF:1000
 
-JOY_L		= $80
-JOY_D		= $40
-JOY_R		= $20
-JOY_U		= $10
-JOY_RUN		= $08
-JOY_SEL		= $04
-JOY_B2		= $02
-JOY_B1		= $01
+JOY_L		= $0080
+JOY_D		= $0040
+JOY_R		= $0020
+JOY_U		= $0010
+JOY_RUN		= $0008
+JOY_SEL		= $0004
+JOY_B2		= $0002
+JOY_B1		= $0001
+JOY_B3		= $0100
+JOY_B4		= $0200
+JOY_B5		= $0400
+JOY_B6		= $0800
 
 PORT_CLR	= $02
 PORT_SEL	= $01
