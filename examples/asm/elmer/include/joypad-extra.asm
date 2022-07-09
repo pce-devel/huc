@@ -119,10 +119,10 @@ detect_ports	.proc
 .chk_pressed:	lda	joy6trg, x
 		and	#$0F
 		ora	joytrg, x
-		bne	.check_port1
+		bne	.btn_pressed
 	.else
 .chk_pressed:	lda	joytrg, x
-		bne	.check_port1
+		bne	.btn_pressed
 	.endif
 		inx
 		cpx	#MAX_PADS
@@ -134,6 +134,8 @@ detect_ports	.proc
 		; A button has been pressed, so check for mirrors.
 
 	.if	SUPPORT_6BUTTON
+
+.btn_pressed:	ldx	#MAX_PADS		; Default result.
 
 .check_port1:	lda	joy6trg			; Has a button been pressed
 		and	#$0F			; on port 1?
@@ -166,8 +168,10 @@ detect_ports	.proc
 
 	.else
 
-.test_port1:	lda	joytrg			; Has a button been pressed
-		beq	.test_port2		; on port 1?
+.btn_pressed:	ldx	#MAX_PADS		; Default result.
+
+.check_port1:	lda	joytrg			; Has a button been pressed
+		beq	.check_port2:		; on port 1?
 
 		ldx	#1			; Test if port 1 is mirrored
 .test_loop:	cmp	joytrg, x		; as port 2,3,4 or 5.
@@ -176,7 +180,7 @@ detect_ports	.proc
 		cpx	#MAX_PADS
 		bcc	.test_loop
 
-.test_port2:	lda	joytrg + 2		; Has a button been pressed
+.check_port2:	lda	joytrg + 2		; Has a button been pressed
 		beq	.got_result		; on port 2?
 
 		cmp	joytrg + 4		; Test if port 2 is mirrored
