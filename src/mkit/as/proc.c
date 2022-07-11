@@ -848,7 +848,7 @@ check_trampolines(void)
 	}
 
 	if (first_bad >= 0) {
-		printf(".proc trampolines between $%04X-$%04X are overwritten by code or data!\n\n",
+		printf("Error: .proc trampolines between $%04X-$%04X are overwritten by code or data!\n\nTrampoline Bank ...\n",
 			first_bad, final_bad);
 		dump_seg = 2;
 		show_bnk_usage(call_bank);

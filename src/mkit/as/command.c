@@ -761,7 +761,7 @@ do_page(int *ip)
 
 	/* output line */
 	if (pass == LAST_PASS) {
-		loadlc(value << 13, 1);
+		loadlc(loccnt + (page << 13), 1);
 		println();
 	}
 }

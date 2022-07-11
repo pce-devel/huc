@@ -633,6 +633,9 @@ main(int argc, char **argv)
 				if (loccnt > 0x2000) {
 					loccnt &= 0x1FFF;
 					bank = (bank + 1);
+					if (bank > max_bank) {
+						max_bank = bank;
+					}
 					if (section != S_DATA || asm_opt[OPT_DATAPAGE] == 0)
 						page = (page + 1) & 7;
 
@@ -706,11 +709,6 @@ main(int argc, char **argv)
 
 	/* close input file */
 	fclose(in_fp);
-
-	/* check for corrupted trampolines */
-	if (check_trampolines()) {
-		exit(1);
-	}
 
 	/* dump the rom */
 	if (errcnt == 0) {
@@ -903,6 +901,11 @@ main(int argc, char **argv)
 	/* dump the bank table */
 	if (dump_seg)
 		show_seg_usage();
+
+	/* check for corrupted trampolines */
+	if (check_trampolines()) {
+		exit(1);
+	}
 
 	/* warn about 384KB hucard rom size */
 	if (cd_opt == 0 && scd_opt == 0 && padding_opt == 0) {

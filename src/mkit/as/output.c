@@ -177,8 +177,14 @@ putbyte(int offset, int data)
 		return;
 	}
 
-	if (((addr - 1) >> 13) > max_bank)
+	if (((addr - 1) >> 13) > max_bank) {
+		if (pass == LAST_PASS) {
+			fatal_error("Cannot change ROM size in LAST_PASS!");
+			return;
+		}
+		/* N.B. putbyte() is ONLY called in LAST_PASS, so this is redundant! */
 		max_bank = ((addr - 1) >> 13);
+	}
 
 	rom[bank][offset] = 0xFF & (data);
 
@@ -212,8 +218,14 @@ putword(int offset, int data)
 		return;
 	}
 
-	if (((addr - 1) >> 13) > max_bank)
+	if (((addr - 1) >> 13) > max_bank) {
+		if (pass == LAST_PASS) {
+			fatal_error("Cannot change ROM size in LAST_PASS!");
+			return;
+		}
+		/* N.B. putword() is ONLY called in LAST_PASS, so this is redundant! */
 		max_bank = ((addr - 1) >> 13);
+	}
 
 	rom[bank][offset + 0] = 0xFF & (data);
 	rom[bank][offset + 1] = 0xFF & (data >> 8);
@@ -249,8 +261,14 @@ putdword(int offset, int data)
 		return;
 	}
 
-	if (((addr - 1) >> 13) > max_bank)
+	if (((addr - 1) >> 13) > max_bank) {
+		if (pass == LAST_PASS) {
+			fatal_error("Cannot change ROM size in LAST_PASS!");
+			return;
+		}
+		/* N.B. putdword() is ONLY called in LAST_PASS, so this is redundant! */
 		max_bank = ((addr - 1) >> 13);
+	}
 
 	rom[bank][offset + 0] = 0xFF & (data);
 	rom[bank][offset + 1] = 0xFF & (data >> 8);
