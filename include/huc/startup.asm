@@ -189,7 +189,7 @@ MAIN_BANK	.rs	1
 		.include "font.inc"
 		.code
 		.bank	LIB2_BANK
-		.org	$A600
+		.org	$A300
 
 	.ifdef HAVE_LIB3
 		.code
