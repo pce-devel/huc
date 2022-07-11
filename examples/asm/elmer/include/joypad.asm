@@ -18,6 +18,32 @@
 ;
 ; ***************************************************************************
 ; ***************************************************************************
+;
+; With SUPPORT_MOUSE ..... 2602 cycles to read 5 ports with 5 mice
+;
+; With HuC library code .. 2442 cycles to read 5 ports with 5 pads (2-button)
+; With HuC library code .. 2442 cycles to read 5 ports with 5 pads (6-button)
+;
+; With SUPPORT_MOUSE ....  2016 cycles to read 5 ports with 5 pads (2-button)
+; With SUPPORT_MOUSE ..... 1976 cycles to read 5 ports with 5 pads (6-button)
+;
+; With SUPPORT_MOUSE ....  1618 cycles to read 3 ports with 3 mice
+; With SUPPORT_MOUSE ..... 1462 cycles to read 3 ports with 2 mice
+; With SUPPORT_MOUSE ..... 1306 cycles to read 3 ports with 1 mouse
+;
+; With SUPPORT_6BUTTON ... 1235 cycles to read 5 ports with 5 pads (2-button)
+; With SUPPORT_6BUTTON ... 1215 cycles to read 5 ports with 5 pads (6-button)
+;
+; With SUPPORT_MOUSE ..... 1126 cycles to read 2 ports with 2 mice
+; With SUPPORT_MOUSE ...... 970 cycles to read 2 ports with 1 mouse
+;
+; Only SUPPORT_2BUTTON .... 971 cycles to read 5 ports with 5 pads (2-button)
+; Only SUPPORT_2BUTTON .... 861 cycles to read 5 ports with 5 pads (6-button)
+;
+; With SUPPORT_MOUSE ...... 634 cycles to read 1 port  with 1 mouse
+;
+; ***************************************************************************
+; ***************************************************************************
 
 		.nolist
 

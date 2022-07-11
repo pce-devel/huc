@@ -60,8 +60,8 @@ CHR_0x20	=	CHR_ZERO + 32		; ASCII ' ' CHR tile #.
 		; the same result.
 		;
 
-SUPPORT_6BUTTON	=	1			; Support 6BUTTON just to test
-SUPPORT_MOUSE	=	0			; the library still builds.
+SUPPORT_6BUTTON	=	0			; Support MOUSE just to test
+SUPPORT_MOUSE	=	1			; the library still builds.
 
 		;
 		; Include the library, reading the project's configuration

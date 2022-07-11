@@ -65,9 +65,6 @@ CHR_0x20	=	CHR_ZERO + 32		; ASCII ' ' CHR tile #.
 
 USING_STAGE1	=	1
 
-SUPPORT_6BUTTON	=	0			; Support MOUSE just to test
-SUPPORT_MOUSE	=	1			; the library still builds.
-
 		;
 		; Include the library, reading the project's configuration
 		; settings from the local "core-config.inc", if it exists.

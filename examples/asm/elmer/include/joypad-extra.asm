@@ -171,7 +171,7 @@ detect_ports	.proc
 .btn_pressed:	ldx	#MAX_PADS		; Default result.
 
 .check_port1:	lda	joytrg			; Has a button been pressed
-		beq	.check_port2:		; on port 1?
+		beq	.check_port2		; on port 1?
 
 		ldx	#1			; Test if port 1 is mirrored
 .test_loop:	cmp	joytrg, x		; as port 2,3,4 or 5.
