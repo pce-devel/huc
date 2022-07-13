@@ -74,7 +74,7 @@ init_crc32	.proc
 		inx
 		bne	.byte_loop		; Do next byte
 
-		leave
+		leave				; All done!
 
 		.endp
 
@@ -87,15 +87,24 @@ init_crc32	.proc
 ;
 ; CRC-32 as used by ZIP/PNG/ZMODEM/etc.
 ;
+; Args: _si, Y = _farptr to data in MPR3.
+; Args: _ax, _bl = 23-bit length (0-8MB).
+;
+; Returns: _cx, _dx = 32-bit CRC.
+;
 
 calc_crc32	.proc
 
 		tma3				; Preserve MPR3.
 		pha
 
+	.ifdef	_KICKC
+		jsr	set_si_to_mpr3		; Map memory block to MPR3.
+	.else
 		tya				; Map memory block to MPR3.
 		beq	!+
 		tam3
+	.endif
 
 !:		lda	#$FF			; Initialize CRC-32.
 		sta	<_cx + 0
@@ -103,9 +112,9 @@ calc_crc32	.proc
 		sta	<_cx + 2
 		sta	<_cx + 3
 
+		inc	<_ax + 1		; +1 for bytes in last page.
 		ldy	<_ax + 0
-		beq	.byte_loop
-		inc	<_ax + 1
+		beq	.next_page
 
 .byte_loop:	lda	[_si]
 
@@ -124,15 +133,17 @@ calc_crc32	.proc
 		sta	<_cx + 3
 
 		inc	<_si + 0
-		beq	.next_page
+		beq	.inc_page
 
 .next_byte:	dey
 		bne	.byte_loop
-		dec	<_ax + 1		; Next page.
-		bne	.byte_loop
+.next_page:	dec	<_ax + 1		; Is there a full page still
+		bne	.byte_loop              ; left to CRC?
+.next_64kb:	dec	<_ax + 2		; Is there a full 64KB block
+		bpl	.byte_loop		; still left to CRC?
 
 		ldx	#3			; Complement CRC-32 when done
-.flip_bits:	lda	<_cx, x		; to follow standard.
+.flip_bits:	lda	<_cx, x			; to follow standard.
 		eor	#$FF
 		sta	<_cx, x
 		dex
@@ -141,9 +152,9 @@ calc_crc32	.proc
 		pla				; Restore MPR3.
 		tam3
 
-		leave
+		leave				; All done!
 
-.next_page:	jsr	inc.h_si_mpr3
+.inc_page:	jsr	inc.h_si_mpr3
 		bra	.next_byte
 
 		.endp
