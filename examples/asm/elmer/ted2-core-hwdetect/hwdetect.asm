@@ -130,7 +130,10 @@ core_main:	; Turn the display off and initialize the screen mode.
 
 		call	init_320x208		; Initialize VDC & VRAM.
 
-		; Upload the font to VRAM in colors 0-3.
+		; Upload the 8x8 font to VRAM in colors 0-3, with box tiles
+		; using colors 4-7.
+		;
+		; Thus we call dropfntbox_vdc() instead of dropfnt8x8_vdc()!
 
 		stz	<_di + 0		; Destination VRAM address.
 		lda	#>(CHR_0x10 * 16)
@@ -149,32 +152,11 @@ core_main:	; Turn the display off and initialize the screen mode.
 		sta	<_si + 1
 		ldy	#^my_font
 
-		call	dropfnt8x8_vdc		; Upload font to VRAM.
+		call	dropfntbox_vdc		; Upload font to VRAM.
 
 		; Upload the mouse pointer sprites to VRAM after the font.
 
 		tia	pointer_spr, VDC_DL, 128*5
-
-		; Upload the box to VRAM in colors 4-7.
-
-		stz	<_di + 0		; Destination VRAM address.
-		lda	#>(CHR_0x10 * 16)
-		sta	<_di + 1
-
-		lda	#$FF			; Put font in colors 4-7,
-		sta	<_al			; so bitplane 2 = $FF and
-		stz	<_ah			; bitplane 3 = $00.
-
-		lda	#8			; 8 box graphics
-		sta	<_bl
-
-		lda	#<my_font		; Address of font data.
-		sta	<_si + 0
-		lda	#>my_font
-		sta	<_si + 1
-		ldy	#^my_font
-
-		call	dropfnt8x8_vdc		; Upload font to VRAM.
 
 		; Upload the tall font to VRAM.
 
@@ -861,34 +843,46 @@ texture_chr:	incbin	"texture.chr"
 ; bkg_palette - Palette data
 ; spr_palette - Palette data
 ;
+; Note: DEFPAL palette data is in RGB format, 4-bits per value.
+; Note: Packed palette data is in GRB format, 3-bits per value.
+;
 
 		align	2
 
-bkg_palette:	dw	$0040,$0000,$01B2,$FFFF,$00C0,$0080,$01B2,$FFFF
-		dw	$FFFF,$FFFF,$FFFF,$FFFF,$FFFF,$0048,$0050,$0090
+none		=	$000
 
-		dw	$FFFF,$0000,$01FF,$FFFF,$FFFF,$FFFF,$FFFF,$FFFF
-		dw	$FFFF,$FFFF,$FFFF,$FFFF,$FFFF,$FFFF,$FFFF,$FFFF
+bkg_palette:	defpal	$010,$000,$662,none,$030,$010,$662,none
+		defpal	none,none,none,none,none,$110,$210,$220
 
-		dw	$FFFF,$0000,$016D,$FFFF,$FFFF,$FFFF,$FFFF,$FFFF
-		dw	$FFFF,$FFFF,$FFFF,$FFFF,$FFFF,$FFFF,$FFFF,$FFFF
+		defpal	none,$000,$777,none,none,none,none,none
+		defpal	none,none,none,none,none,none,none,none
 
-		dw	$FFFF,$0000,$00C8,$FFFF,$FFFF,$FFFF,$FFFF,$FFFF
-		dw	$FFFF,$FFFF,$FFFF,$FFFF,$FFFF,$FFFF,$FFFF,$FFFF
+		defpal	none,$000,$555,none,none,none,none,none
+		defpal	none,none,none,none,none,none,none,none
 
-		dw	$FFFF,$0000,$01E3,$FFFF,$FFFF,$FFFF,$FFFF,$FFFF
-		dw	$FFFF,$FFFF,$FFFF,$FFFF,$FFFF,$FFFF,$FFFF,$FFFF
+		defpal	none,$000,$130,none,none,none,none,none
+		defpal	none,none,none,none,none,none,none,none
 
-spr_palette:	dw	$00C0,$0000,$0082,$01D7,$01FF,$FFFF,$FFFF,$FFFF
-		dw	$FFFF,$FFFF,$FFFF,$FFFF,$FFFF,$FFFF,$FFFF,$FFFF
+		defpal	none,$000,$473,none,none,none,none,none
+		defpal	none,none,none,none,none,none,none,none
+
+spr_palette:	defpal	$030,$000,$022,$277,$777,none,none,none
+		defpal	none,none,none,none,none,none,none,none
 
 
 
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; It's the font data, nothing exciting to see here!
+; It's the font data, and there is actually something exciting to see here!
+;
+; We want the box tiles to use a different colors, so the font begins with
+; an array of 1-bit-per-tile flags to signal which are the box tiles.
+;
+; Then we upload with dropfntbox_vdc() instead of dropfnt8x8_vdc().
 ;
 
-my_font:	incbin	"font8x8-ascii-bold-short.dat"
+my_font:	db	%11111111,%00001000,0,0,0,0,0,0,0,0,0,0,0,0
+		incbin	"font8x8-ascii-bold-short.dat"
+
 my_tall:	incbin	"font8x16-syscard-bold.dat"
