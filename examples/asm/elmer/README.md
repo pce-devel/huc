@@ -56,6 +56,9 @@ The "CORE(not TM)" PC Engine library is a small and configurable set of library 
 * ted2-core-hwdetect
   - An example of detecting PC Engine hardware and testing the Joypads and Mice attached to the console.
 
+* ted2-core-sdcard
+  - An example of reading and writing a file from the SDcard on a Turbo EverDrive v2.
+
 
 ## Getting started with the KickC compiler
 
