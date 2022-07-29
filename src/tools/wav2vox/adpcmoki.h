@@ -89,16 +89,16 @@ extern int iBiasValue;
 //
 
 extern void EncodeAdpcmOki4 (
-  int16_t *pSrc, uint8_t *pDst, int iLen, OKI_ADPCM *pState );
+  int16_t *pSrc, uint8_t *pDst, int iSrcLen, int iDstLen, OKI_ADPCM *pState );
 
 extern void DecodeAdpcmOki4 (
-  uint8_t *pSrc, int16_t *pDst, int iLen, OKI_ADPCM *pState );
+  uint8_t *pSrc, int16_t *pDst, int iSrcLen, OKI_ADPCM *pState );
 
 extern void EncodeAdpcmPcfx (
-  int16_t *pSrc, uint8_t *pDst, int iLen, OKI_ADPCM *pState );
+  int16_t *pSrc, uint8_t *pDst, int iSrcLen, int iDstLen, OKI_ADPCM *pState );
 
 extern void DecodeAdpcmPcfx (
-  uint8_t *pSrc, int16_t *pDst, int iLen, OKI_ADPCM *pState );
+  uint8_t *pSrc, int16_t *pDst, int iSrcLen, OKI_ADPCM *pState );
 
 //
 // End of __ADPCMOKI_h

@@ -6,7 +6,7 @@
 // ADPCM Compressor/Decompressor for the OKI MSM5205 and Hudson HuC6230,
 // which are used in NEC's PC Engine CD-ROM and NEC's PC-FX consoles.
 //
-// Copyright John Brandwood 2016-2021.
+// Copyright John Brandwood 2016-2022.
 //
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
@@ -33,7 +33,7 @@
   #define GIT_DATE __DATE__
 #endif
 
-#define VERSION_STR "wav2vox (v1.80-" GIT_VERSION ", " GIT_DATE ")"
+#define VERSION_STR "wav2vox (v1.81-" GIT_VERSION ", " GIT_DATE ")"
 
 #define ERROR_NONE         0
 #define ERROR_DIAGNOSTIC  -1
@@ -125,6 +125,8 @@ bool bShowInfo = true;
 bool bShowFrmt = true;
 
 bool bIcmtLoop = true;
+
+bool bPadVOX = false;
 
 //
 // STATIC FUNCTION PROTOTYPES
@@ -295,6 +297,7 @@ int ProcessOption ( char * pOption )
                 "             -b<bias>      Add/Remove DC bias (default 200 if MSM5205)\n"
                 "             -f[<type>]    Select compression format (default MSM5205)\n"
                 "             -r<rate>      Sample rate of VOX input files (default 16000)\n"
+                "             -p            Pad VOX output to next CD sector boundary\n"
                 "             -vi           Display WAV file information\n"
                 "             -vf           Display WAV file structure\n"
                 "\n"
@@ -313,7 +316,15 @@ int ProcessOption ( char * pOption )
       return (ERROR_DIAGNOSTIC);
     }
 
-    // Select DC Bias to add/remove during compression/decompression .
+    // Pad to sample to CD sector size.
+
+    case 'p':
+    {
+      bPadVOX = true;
+      break;
+    }
+
+    // Select DC Bias to add/remove during compression/decompression.
     // N.B. This only applies to the OKI and MSM5205 formats.
 
     case 'b':
@@ -662,6 +673,11 @@ static int XvertPcmToAdpcm ( WAV_FILE *pWave )
 
   m = (l + 1) >> 1;
 
+  if (bPadVOX)
+  {
+    m = (m + 2047) & ~2047;
+  }
+
   if ((cNext.pData = (uint8_t *) malloc(m)) == NULL)
   {
     sprintf(aErrorMessage, "wav2vox - Not enough memory !\n");
@@ -688,14 +704,14 @@ static int XvertPcmToAdpcm ( WAV_FILE *pWave )
 
   if (uFormat == WAV_TAG_HUC6230)
   {
-    EncodeAdpcmPcfx((int16_t *) pSrc, pDst, l, &cState);
+    EncodeAdpcmPcfx((int16_t *) pSrc, pDst, l, m * 2, &cState);
 
     printf( "Compressed %ld samples, min=%d, max=%d.\n",
       l, (cState.minvalue << 1) - 32768, (cState.maxvalue << 1) - 32768);
   }
   else
   {
-    EncodeAdpcmOki4((int16_t *) pSrc, pDst, l, &cState);
+    EncodeAdpcmOki4((int16_t *) pSrc, pDst, l, m * 2, &cState);
 
     printf( "Compressed %ld samples, min=%d, max=%d.\n",
       l, (cState.minvalue << 4) - 32768, (cState.maxvalue << 4) - 32768);
