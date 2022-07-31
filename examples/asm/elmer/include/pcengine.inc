@@ -104,15 +104,16 @@ PSG_R8		= $FF:0808	; LFO Frequency
 PSG_R9		= $FF:0809	; LFO Control
 
 PSG_AR		= $FF:0800	; Channel Select
-PSG_MAL		= $FF:0801	; Main Amplitude Level
-PSG_FL		= $FF:0802	; Frequency Low
-PSG_FH		= $FF:0803	; Frequency High
-PSG_CR		= $FF:0804	; Control & Channel Amplitude
-PSG_LRAL	= $FF:0805	; L/R Amplitude Level
-PSG_WF		= $FF:0806	; Waveform
-PSG_NZ		= $FF:0807	; Noise
-PSG_LFO_FRQ	= $FF:0808	; LFO Frequency
-PSG_LFO_CR	= $FF:0809	; LFO Control
+PSG_VOL		= $FF:0801	; Main Amplitude Level
+PSG_FREQ	= $FF:0802	; Frequency Low
+PSG_FREQ_LO	= $FF:0802	; Frequency Low
+PSG_FREQ_HI	= $FF:0803	; Frequency High
+PSG_CTRL	= $FF:0804	; Control & Channel Amplitude
+PSG_PAN		= $FF:0805	; L/R Amplitude Level
+PSG_WAVEFORM	= $FF:0806	; Waveform
+PSG_NOISE	= $FF:0807	; Noise
+PSG_LFO_FREQ	= $FF:0808	; LFO Frequency
+PSG_LFO_CTRL	= $FF:0809	; LFO Control
 
 
 
@@ -167,38 +168,51 @@ IRQ_ACK		= $FF:1403	; Interrupt Acknowledge
 ; CDROM/ADPCM hardware registers.
 ;
 
-IFU_SCSI_CTRL	= $FF:1800	; -W : SCSI control signals out.
-IFU_SCSI_FLGS	= $FF:1800	; R- : SCSI control signals in.
-IFU_SCSI_DATA	= $FF:1801	; RW : SCSI data bus.
-IFU_SCSI_ACK	= $FF:1802
+IFU_SCSI_CTL	= $FF:1800	; _W : SCSI control signals out.
+IFU_SCSI_FLG	= $FF:1800	; R_ : SCSI control signals in.
+IFU_SCSI_DAT	= $FF:1801	; RW : SCSI data bus.
 
-IFU_IRQ_CTL	= $FF:1802
-IFU_IRQ_FLG	= $FF:1803	; flags reporting CD/ADPCM info.
+IFU_SCSI_ACK	= $FF:1802	; RW : Top bit of IFU_IRQ_MSK!
+IFU_IRQ_MSK	= $FF:1802	; RW : Interrupt mask, 0=disabled.
 
-IFU_HW_RESET	= $FF:1804
+IFU_IRQ_FLG	= $FF:1803	; R_ : Interrupt flags.
 
-IFU_SCSI_AUTO	= $FF:1808	; RO - SCSI auto-handshake read.
+IFU_HW_RESET	= $FF:1804	; _W : Set bit 1 to reset.
 
-IFU_ADPCM_LSB	= $FF:1808
-IFU_ADPCM_MSB	= $FF:1809
-IFU_ADPCM_DAT	= $FF:180A
-IFU_ADPCM_DMA	= $FF:180B
-IFU_ADPCM_FLG	= $FF:180C
-IFU_ADPCM_CTL	= $FF:180D
-IFU_ADPCM_SPD	= $FF:180E
+IFU_AUDIO_LSB	= $FF:1805	; R_ : Current CD audio.
+IFU_AUDIO_MSB	= $FF:1806	; R_ : Current CD audio.
+IFU_SUBCODE	= $FF:1807	; R_ : Current subcode.
 
-IFU_AUDIO_FADE	= $FF:180F
+IFU_SCSI_AUTO	= $FF:1808	; R_ : SCSI auto-handshake read.
 
-IFU_BRAM_LOCK	= $FF:1803
-IFU_BRAM_UNLOCK	= $FF:1807
+IFU_ADPCM_LSB	= $FF:1808	; _W : Temporary address latch.
+IFU_ADPCM_MSB	= $FF:1809	; _W : Temporary address latch.
+IFU_ADPCM_DAT	= $FF:180A	; RW : ADPCM RAM data.
+IFU_ADPCM_DMA	= $FF:180B	; RW : ADPCM DMA control (bits 0 & 1).
+IFU_ADPCM_FLG	= $FF:180C	; R- : ADPCM status.
+IFU_ADPCM_CTL	= $FF:180D	; RW : ADPCM control.
+IFU_ADPCM_SPD	= $FF:180E	; RW : ADPCM playback clock.
+
+IFU_AUDIO_FADE	= $FF:180F	; RW : IFU audio fade control/status.
+
+IFU_BRAM_LOCK	= $FF:1803	; .W :
+IFU_BRAM_UNLOCK	= $FF:1807	; .W :
 
 ; IFU interrupt bits in IFU_IRQ_CTL/IFU_IRQ_FLG
 
 IFU_INT_HALF	= $04		; ADPCM < 50% remaining.
 IFU_INT_STOP	= $08		; ADPCM finished.
-IFU_INT_SUB	= $10
+IFU_INT_SUBC	= $10		; SUBCODE read.
 IFU_INT_MSG_IN	= $20		; SCSI MIN phase.
 IFU_INT_DAT_IN	= $40		; SCSI DIN phase.
+
+; IFU audio fade bits in IFU_AUDIO_FADE.
+
+IFU_FADE_MUTE	= $01
+IFU_FADE_TYPE	= $02		; ADPCM or CDAUDIO
+IFU_FADE_SELN	= $04		; ?
+IFU_FADE_TRIG	= $08		; Trigger a fade-out.
+IFU_FADE_TEST	= $80		; ?
 
 ; ADPCM control bits in IFU_ADPCM_CTL
 
@@ -400,11 +414,11 @@ rndl		= $F8:2249 ; 1
 rndh		= $F8:224A ; 1
 rndm		= $F8:224B ; 1
 rndm		= $F8:224B ; 1
-scsisend	= $F8:224C ; 10	*UNDOCUMENTED* buffer for SCSI cmd send
-scsirecv	= $F8:2256 ; 10	*UNDOCUMENTED* buffer for SCSI cmd recv
-paramcpy	= $F8:2260 ; 8	*UNDOCUMENTED* stored _ax,_bx,_cx,_dx
+scsi_send_buf	= $F8:224C ; 10	*UNDOCUMENTED* buffer for SCSI cmd send
+scsi_recv_buf	= $F8:2256 ; 10	*UNDOCUMENTED* buffer for SCSI cmd recv
+parameter_buf	= $F8:2260 ; 8	*UNDOCUMENTED* stored _ax,_bx,_cx,_dx
 initialmpr	= $F8:2268 ; 1	*UNDOCUMENTED*
-;?		= $F8:2269 ; ?
+;?		= $F8:2269 ; ?	*UNDOCUMENTED* subcode
 tnomin		= $F8:226A ; 1
 tnomax		= $F8:226B ; 1
 outmin		= $F8:226C ; 1
@@ -424,14 +438,29 @@ recbase1_l	= $F8:2279 ; 1
 scsiphs		= $F8:227A ; 1	*UNDOCUMENTED* SCSI command phase
 scsists		= $F8:227B ; 1
 suberrc		= $F8:227C ; 1
-scsisns		= $F8:227D ; 1	*UNDOCUMENTED* SCSI "sense" return code
-subcode		= $F8:227E ; 1
+scsisns		= $F8:227D ; 1	*UNDOCUMENTED* unused SCSI "sense" return code
+subcode		= $F8:227E ; 1  WRITE-ONLY!
+;?		= $F8:227F ; 1	*UNDOCUMENTED* unused, never accessed!
 
 reset_hook	= $F8:2284 ; 2	*UNDOCUMENTED* joypad soft-reset hook
 color_tia	= $F8:2286 ; 8	*UNDOCUMENTED* self-mod TIA used by ex_colorcmd
 ;?		= $F8:228E ; 3	*UNDOCUMENTED* self-mod TMA/TAM used by cd_read/ad_read/ad_write
 ;?		= $F8:2291 ; 10	*UNDOCUMENTED* copy of scsisend made by cd_read (never read)
-;?		= $F8:229B ; ?
+reset_cdrom	= $F8:229B ; 1	*UNDOCUMENTED* NZ if CD reset is needed 
+cdplay_mode	= $F8:229C ; 1	*UNDOCUMENTED* 
+
+cplay_siz_l	= $F8:229D ; 1	*UNDOCUMENTED* ad_cplay streaming sector load size (low)
+cplay_len_l	= $F8:229E ; 1	*UNDOCUMENTED* ad_cplay streaming length (low/mid/high)
+cplay_len_m	= $F8:229F ; 1	*UNDOCUMENTED* ad_cplay streaming length (low/mid/high)
+cplay_len_h	= $F8:22A0 ; 1	*UNDOCUMENTED* ad_cplay streaming length (low/mid/high)
+cplay_lba_h	= $F8:22A1 ; 1	*UNDOCUMENTED* ad_cplay streaming sector (high/mid/low)
+cplay_lba_m	= $F8:22A2 ; 1	*UNDOCUMENTED* ad_cplay streaming sector (high/mid/low)
+cplay_lba_l	= $F8:22A3 ; 1	*UNDOCUMENTED* ad_cplay streaming sector (high/mid/low)
+bios_cd_mutex	= $F8:22A4 ; 1	*UNDOCUMENTED* NZ if BIOS is using the CD in the background
+ad_play_mode	= $F8:22A5 ; 1	*UNDOCUMENTED*
+ad_play_size	= $F8:22A6 ; 2	*UNDOCUMENTED*
+ad_play_addr	= $F8:22A8 ; 2	*UNDOCUMENTED*
+ad_play_rate	= $F8:22AA ; 1	*UNDOCUMENTED*
 
 ;mprsav		= $F8:22B5 ; 8 backups of MPR when BIOS needs major bank swapping.
 

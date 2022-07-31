@@ -345,3 +345,6 @@ prepare_print:	st0	#VDC_MAWR
 		rts
 
 		ds	$DAE0-*, 255		; Generate error if too long.
+
+		.bank	32			; Expand beyond 256KB so that
+		nop				; TEOS will not patch it!

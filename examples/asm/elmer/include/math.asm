@@ -25,7 +25,7 @@
 ; Args: _bl = Multiplier
 ;
 
-mul8u		.proc
+mul8u_16:	.proc
 
 		cla				; Clear Result.
 		clx
@@ -43,6 +43,37 @@ mul8u		.proc
 		bne	.loop
 		sta	<_al			; Save Result.
 		stx	<_ah
+
+		leave
+
+		.endp
+
+		;
+
+mul8u_24:	.proc
+
+		cla				; Clear Result.
+		clx
+		lsr	<_bh			; Shift and test multiplier.
+		bcc	.loop
+
+.add:		clc				; Add _ax to the Result.
+		adc	<_ax + 0
+		sax				; x = lo, a = middle
+		adc	<_ax + 1
+		sax
+		say
+		adc	<_ax + 2
+		say
+.loop:		asl	<_ax + 0		; _ax = _ax * 2
+		rol	<_ax + 1
+		rol	<_ax + 2
+		lsr	<_bh			; Shift and test multiplier.
+		bcs	.add
+		bne	.loop
+		sta	<_ax + 0		; Save Result.
+		stx	<_ax + 1
+		sty	<_ax + 2
 
 		leave
 

@@ -390,12 +390,12 @@ SGX_PARALLAX	=	1			; The most common default.
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; init_240x224 - An example of initializing screen and VRAM.
+; init_240x208 - An example of initializing screen and VRAM.
 ;
 ; This can be used as-is, or copied to your own program and modified.
 ;
 
-init_240x224	.proc
+init_240x208	.proc
 
 .BAT_SIZE	=	32 * 32
 .SAT_ADDR	=	.BAT_SIZE		; SAT takes 16 tiles of VRAM.
@@ -436,7 +436,7 @@ init_240x224	.proc
 
 		leave				; All done, phew!
 
-		; A reduced 240x224 screen to save VRAM.
+		; A reduced 240x208 screen to save VRAM.
 
 .mode_240x224:	db	$80			; VCE Control Register.
 		db	VCE_CR_5MHz		; Video Clock
@@ -448,11 +448,11 @@ init_240x224	.proc
 		db	VDC_HDR			; Horizontal Display Register
 		dw	VDC_HDR_240
 		db	VDC_VPR			; Vertical Sync Register
-		dw	VDC_VPR_224
+		dw	VDC_VPR_208
 		db	VDC_VDW			; Vertical Display Register
-		dw	VDC_VDW_224
+		dw	VDC_VDW_208
 		db	VDC_VCR			; Vertical Display END position Register
-		dw	VDC_VCR_224
+		dw	VDC_VCR_208
 		db	VDC_DCR			; DMA Control Register
 		dw	$0010			;   Enable automatic VRAM->SATB
 		db	VDC_DVSSR		; VRAM->SATB address $0400

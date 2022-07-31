@@ -117,6 +117,16 @@ SUPPORT_SGX	=	0	; (0 or 1)
 	.endif
 
 ;
+; Support development for the Arcade Card?
+;
+; This enables Arcade Card support in certain library functions.
+;
+
+	.ifndef	SUPPORT_ACD
+SUPPORT_ACD	=	0	; (0 or 1)
+	.endif
+
+;
 ; Select which version of the joystick library code to include, only one of
 ; these can be set to '1' ...
 ;
