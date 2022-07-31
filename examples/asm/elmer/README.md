@@ -53,6 +53,9 @@ The "CORE(not TM)" PC Engine library is a small and configurable set of library 
 * scd-core-2stage-error
   - An expansion of scd-core-2stage, using an error overlay to show a pretty screen when run with System Card 2.0 or earlier.
 
+* scd-core-fastcd
+  - An example of CD-ROM initialization, reading files and streaming ADPCM using the "fast" CD routines.
+
 * ted2-core-hwdetect
   - An example of detecting PC Engine hardware and testing the Joypads and Mice attached to the console.
 
