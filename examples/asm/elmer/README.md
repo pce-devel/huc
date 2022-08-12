@@ -65,6 +65,9 @@ The "CORE(not TM)" PC Engine library is a small and configurable set of library 
 * ted2-core-sdcard
   - An example of reading and writing a file from the SDcard on a Turbo EverDrive v2.
 
+* ted2-core-gulliver
+  - An example of playing a HuVIDEO movie from Hudson's GulliverBoy CD-ROM game.
+
 
 ## Getting started with the KickC compiler
 

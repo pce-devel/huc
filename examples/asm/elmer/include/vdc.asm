@@ -24,8 +24,27 @@
 		include "vce.asm"		; Useful VCE routines.
 
 ;
-; Enable BG & SPR layers.
+; Choose how much to transfer to VRAM in a single chunk, normally 16-bytes.
 ;
+; 32-byte TIA takes 270/364 cycles in 5MHz, 242/312 cycles in 7MHz. (8.44 cycles-per-byte best-case at 5MHz.)
+; 24-byte TIA takes 210/298 cycles in 5MHz, 186/256 cycles in 7MHz. (8.75 cycles-per-byte best-case at 5MHz.)
+; 16-byte TIA takes 142/234 cycles in 5MHz, 128/200 cycles in 7MHz. (8.88 cycles-per-byte best-case at 5MHz.)
+;
+; If a user wishes to be able to put RCR interrupts one-line-after-another,
+; then it is only safe to use 32-byte chunks if there are no TIMER or IRQ2
+; interrupts ... which is almost-impossible to rely on in library code.
+;
+
+	.ifndef	VRAM_XFER_SIZE
+VRAM_XFER_SIZE	=	16
+	.endif
+
+;
+; Enable BG & SPR layers, and RCR interrupt.
+;
+
+set_rcron:	lda	#$04			; Enable RCR interrupt.
+		bra	!+
 
 set_bgon:	lda	#$80			; Enable BG layer.
 		bra	!+
@@ -42,8 +61,11 @@ set_dspon:	lda	#$C0			; Enable BG & SPR layers.
 		rts
 
 ;
-; Disable BG & SPR layers.
+; Disable BG & SPR layers, and RCR interrupt.
 ;
+
+set_rcroff:	lda	#$04			; Disable RCR interrupt.
+		bra	!+
 
 set_bgoff:	lda	#$80			; Disable BG layer.
 		bra	!+
@@ -384,6 +406,145 @@ SGX_PARALLAX	=	1			; The most common default.
 		.endp
 
 	.endif	SUPPORT_SGX
+
+;
+;
+;
+
+		.procgroup			; These routines share code!
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; copy_to_sgx - Copy data from CPU memory to VRAM.
+; copy_to_vdc - Copy data from CPU memory to VRAM.
+;
+; Args: _si, Y = _farptr to data table mapped into MPR3 & MPR4.
+; Args: _di = VRAM destination address.
+; Args: _ax = Number of VRAM_XFER_SIZE chunks to copy.
+;
+
+	.if	SUPPORT_SGX
+copy_to_sgx	.proc
+
+		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		db	$F0			; Turn "clx" into a "beq".
+
+		.endp
+	.endif
+
+copy_to_vdc	.proc
+
+		clx				; Offset to PCE VDC.
+
+		tma3				; Preserve MPR3.
+		pha
+		tma4				; Preserve MPR4.
+		pha
+
+		jsr	set_si_to_mpr34		; Map data to MPR3 & MPR4.
+
+		jsr	set_di_to_mawr		; Set VRAM write address.
+
+	.if	SUPPORT_SGX
+		inx				; Set VDC or SGX destination.
+		inx
+		stx	tia_to_vram_tia + 3
+	.endif
+
+		lda.l	<_si			; Source address in CPU RAM.
+		ldy.h	<_si
+		ldx.l	<_ax			; Number of chunks (lo-byte).
+
+	.if	CDROM
+		bne	tia_to_vram		; On CD-ROM, the code is close.
+	.else
+		bne	.execute		; On HuCARD, the code is far.
+	.endif
+
+		dec.h	<_ax			; Number of chunks (hi-byte).
+
+.execute:	jmp	tia_to_vram		; Execute the copy.
+
+		;
+		; This routine does the core of the transfer.
+		;
+		; Because it self-modifies, it needs to be in RAM on a HuCARD.
+		;
+
+tia_to_vram_rom:
+
+.next_page:	iny				; Increment source page.
+		bpl	.same_bank		; Still in MPR3?
+.next_bank:	tay
+		tma4
+		tam3
+		inc	a
+		tam4
+		tya
+		ldy.h	#$6000
+.same_bank:	dex				; Number of chunks (lo-byte).
+		beq	.next_block
+
+		; The routine starts here!
+
+.entry_point:	clc
+		sty.h	tia_to_vram_tia + 2	; TIA source address hi-byte.
+.chunk_loop:	sta.l	tia_to_vram_tia + 1	; TIA source address lo-byte.
+		tia	$1234, VDC_DL, VRAM_XFER_SIZE
+		adc	#VRAM_XFER_SIZE		; Increment source address.
+		bcs	.next_page
+.same_page:	dex				; Number of chunks (lo-byte).
+		bne	.chunk_loop
+.next_block:	dec.h	<_ax			; Number of chunks (hi-byte).
+		bpl	.entry_point
+
+		pla				; Restore MPR4.
+		tam4
+		pla				; Restore MPR3.
+		tam3
+
+		leave				; All done, phew!
+
+tia_to_vram_len	=	(* - .next_page)
+tia_to_vram_off	=	(.entry_point - .next_page)
+
+	.if	CDROM
+tia_to_vram_ram	=	tia_to_vram_rom		; CD-ROM can just self-modify.
+	.else
+		.bss
+tia_to_vram_ram:ds	tia_to_vram_len		; HuCARD must put code in RAM.
+		.code
+	.endif
+
+tia_to_vram	=	tia_to_vram_ram + tia_to_vram_off
+tia_to_vram_tia	=	tia_to_vram + 7
+
+		.endp
+
+
+
+	.if	!CDROM
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; init_vram_copy - Initialize the copy-to-vram subroutine in PCE RAM.
+;
+; N.B. Only needed on HuCARD, because SCD/ACD can just modify in-place.
+;
+
+init_vram_copy	.proc
+
+		tii	tia_to_vram_rom, tia_to_vram_ram, tia_to_vram_len
+
+		leave				; All done, phew!
+
+		.endp
+
+	.endif	!CDROM
+
+		.endprocgroup
 
 
 

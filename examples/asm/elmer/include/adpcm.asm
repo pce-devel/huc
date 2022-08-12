@@ -45,13 +45,70 @@
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; Reset ADPCM hardware (UNUSED HERE).
+; adpcm_reset - Reset ADPCM hardware (BIOS AD_RESET).
 ;
 
 adpcm_reset:	lda	#ADPCM_RESET
-		tsb	IFU_ADPCM_CTL
+		sta	IFU_ADPCM_CTL
+		stz	IFU_ADPCM_CTL
+
+		stz	IFU_ADPCM_DMA		; Stops DMA from CD ... ???
+
+		lda	#$6F			; All except IFU_INT_SUBC!
+		trb	IFU_IRQ_MSK
+
+		stz	IFU_ADPCM_SPD		; 2KHz playback, hah!
+		rts
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; adpcm_stop -	(BIOS AD_STOP).
+;
+; N.B. Use cdr_ad_stop() on a CD/SCD game which also handles ADPCM streaming.
+;
+
+	.if	!CDROM
+
+adpcm_stop:	lda	#IFU_INT_HALF + IFU_INT_STOP
+		trb	IFU_IRQ_MSK
+
+		lda	#ADPCM_PLAY + ADPCM_INCR
 		trb	IFU_ADPCM_CTL
 		rts
+
+	.endif
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; adpcm_stat - (BIOS AD_STAT).
+;
+; returns:
+;  A = $00 if not busy (not playing or ended)
+;  X = $00 playing and more than 50% left
+;      $01 playback stopped
+;      $04 playing and less than 50% left
+;
+
+adpcm_stat:	lda	IFU_ADPCM_FLG		; $01 if playback stopped
+		and	#ADPCM_AD_END
+		bne	.skip0
+		lda	IFU_IRQ_FLG		; $04 if playing and less than 50% left
+		and	#IFU_INT_HALF
+.skip0:		tax
+
+		lda     IFU_ADPCM_CTL		; $20 if playing or ended (don't know which)
+		and	#ADPCM_PLAY
+		bne	.exit
+
+		lda     IFU_ADPCM_FLG		; $08 if playing or ended (don't know which)
+		and	#ADPCM_AD_BSY
+.exit:		rts
 
 
 

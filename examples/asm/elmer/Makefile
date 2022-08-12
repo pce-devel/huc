@@ -6,7 +6,8 @@ SUBDIRS = rom-bare-tiatest rom-bare-vdctest scd-bios-hello scd-bios-hello-error 
           rom-core-hello \
           cd-core-1stage cd-core-2stage scd-core-1stage scd-core-1stage-error \
           scd-core-2stage scd-core-2stage-error scd-core-fastcd \
-          rom-kickc-hello rom-kickc-shmup ted2-core-hwdetect ted2-core-sdcard
+          rom-kickc-hello rom-kickc-shmup ted2-core-hwdetect ted2-core-sdcard \
+          ted2-core-gulliver
 
 all clean:
 	@$(MAKE) $(PREREQS) "COMMAND=$@"

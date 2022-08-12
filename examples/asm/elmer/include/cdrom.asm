@@ -36,10 +36,10 @@
 ;
 ; cdr_init_disc  - Initialize the CD drive and scan the CD TOC.
 ;
-; cdr_reset	 - Reset CD drive (BIOS CD_RESET).
-; cdr_stat	 - Check CD drive status (BIOS CD_STAT).
-; cdr_contents	 - Scan the disc's TOC to find the layout (BIOS CD_CONTENTS).
-; cdr_dinfo	 - Read the disc's TOC (Table Of Contents) (BIOS CD_DINFO).
+; cdr_reset      - Reset CD drive (BIOS CD_RESET).
+; cdr_stat       - Check CD drive status (BIOS CD_STAT).
+; cdr_contents   - Scan the disc's TOC to find the layout (BIOS CD_CONTENTS).
+; cdr_dinfo      - Read the disc's TOC (Table Of Contents) (BIOS CD_DINFO).
 ;
 ; ***************************************************************************
 ; ***************************************************************************
@@ -47,10 +47,6 @@
 ;
 ; Configure Library ...
 ;
-
-	.ifndef	SUPPORT_HUVIDEO
-SUPPORT_HUVIDEO	=	1
-	.endif
 
 	.ifndef	SUPPORT_ACD
 SUPPORT_ACD	=	1
@@ -66,6 +62,14 @@ SUPPORT_CDVRAM	=	1
 
 	.ifndef	SUPPORT_ADPCM
 SUPPORT_ADPCM	=	1
+	.endif
+
+	.ifndef	SUPPORT_HUVIDEO
+SUPPORT_HUVIDEO	=	0
+	.endif
+
+	.ifndef	SUPPORT_TIMING
+SUPPORT_TIMING	=	0
 	.endif
 
 ;
@@ -151,16 +155,16 @@ CDERR_RESET	=	$06
 CDERR_NO_DISC	=	$0B
 CDERR_NO_COVER	=	$0D
 CDERR_BAD_ECC	=	$11
-CDERR_SEEK	=	$15
-CDERR_HEADER	=	$16
+CDERR_BAD_SEEK	=	$15
+CDERR_NO_HEADER	=	$16
 CDERR_NOT_AUDIO	=	$1C
 CDERR_NOT_DATA	=	$1D
 CDERR_BAD_CDB	=	$20
 CDERR_BAD_ADDR	=	$21
 CDERR_BAD_PARAM	=	$22
-CDERR_VOLUME	=	$25
-CDERR_BAD_LIST	=	$2A	; a.k.a. CDERR_BAD_PARAM_LIST
-CDERR_BAD_PLAY	=	$2C	; a.k.a. CDERR_BAD_AUDIO_PLAY
+CDERR_DISC_END	=	$25
+CDERR_BAD_LIST	=	$2A
+CDERR_BAD_PLAY	=	$2C
 
 ; CDROM library errors, not actually SCSI.
 
@@ -192,6 +196,11 @@ cplay_status:	ds	1			; Result of last CD read.
 cplay_scsi_buf	=	scsi_send_buf		; Reuse the SCSI buffer.
 	.endif	SUPPORT_ADPCM
 
+	.if	SUPPORT_TIMING
+scsi_stat_indx:	ds	1			; Track CD-ROM loading speed
+scsi_stat_time:	ds	256			; (cdr_read_bnk & 
+	.endif	SUPPORT_TIMING
+
 		.code
 
 
@@ -213,7 +222,7 @@ cplay_scsi_buf	=	scsi_send_buf		; Reuse the SCSI buffer.
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; scsi_handshake - Synchronously clock a byte of data on the SCSI bus.
+; scsi_handshake - Clock a byte of data onto the SCSI bus.
 ;
 ; N.B. On a HuCARD, this must be available for cdr_cplay_irq2!
 ;
@@ -368,7 +377,7 @@ cdr_cplay_irq2:	pha
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; scsi_handshake - Synchronously clock a byte of data on the SCSI bus.
+; scsi_handshake - Clock a byte of data onto the SCSI bus.
 ;
 ; On a CDROM, this can be in the same bank as the rest!
 ;
@@ -392,7 +401,7 @@ scsi_handshake:	lda	#SCSI_ACK		; Send SCSI_ACK signal.
 ; scsi_get_phase - As a subroutine this helps provide a delay between reads!
 ;
 
-scsi_get_phase: lda	IFU_SCSI_FLG
+scsi_get_phase:	lda	IFU_SCSI_FLG
 		and	#SCSI_MSK
 		rts
 
@@ -401,7 +410,7 @@ scsi_get_phase: lda	IFU_SCSI_FLG
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; scsi_delay - Delay A * 500us.
+; scsi_delay - Delay 500us * A.
 ;
 
 scsi_delay:	clx				; The inner loop takes 3584
@@ -448,7 +457,7 @@ scsi_initiate:	bsr	scsi_select_cd		; Acquire the SCSI bus.
 
 .test_scsi_bus:	ldy	#18			; Wait for up to 20ms for the
 		clx				; CD-ROM to acknowledge.
-.wait_scsi_bus: bsr	scsi_get_phase
+.wait_scsi_bus:	bsr	scsi_get_phase
 		and	#SCSI_BSY
 		bne	.ready
 		dex
@@ -646,6 +655,8 @@ scsi_get_status:cly				; In case no PHASE_STAT_IN!
 ; Return byte $08 = ???
 ; Return byte $09 = Previous error code
 ;
+; Returns: Y,Z-flag,N-flag = CDSTS_GOOD ($00) or an error code.
+;
 ; N.B. FOR INTERNAL USE ONLY, THIS IS NOT A PUBLIC FUNCTION!
 ;
 
@@ -665,11 +676,11 @@ scsi_req_sense:	jsr	scsi_initiate		; Acquire the SCSI bus.
 
 		; SCSI command done.
 
-.command_done:	jsr	scsi_get_status
+.command_done:	jsr	scsi_get_status		; Returns code in Y & A.
 ;		cmp	#CDSTS_GOOD
 		bne	scsi_req_sense
 
-		lda	scsi_recv_buf + 9	; Return the final byte of the
+		ldy	scsi_recv_buf + 9	; Return the final byte of the
 		rts				; REQUEST SENSE reply.
 
 		; Send SCSI command.
@@ -706,7 +717,7 @@ scsi_req_sense:	jsr	scsi_initiate		; Acquire the SCSI bus.
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; Read reply data from CD-ROM.
+; Read reply data from CD-ROM and put it in scsi_recv_buf.
 ;
 ; Y = # bytes in SCSI reply.
 ;
@@ -735,36 +746,36 @@ scsi_recv_reply:clx				; Receive buffer index.
 ; Use return code from scsi_req_sense() to decide what to do.
 ;
 
-choose_recbase:	cmp	#CDERR_NO_DISC
+choose_recbase:	cpy	#CDERR_NO_DISC
 		beq	.keep_recbase
-		cmp	#CDERR_NO_COVER
+		cpy	#CDERR_NO_COVER
 		beq	.keep_recbase
-		cmp	#CDERR_NOT_AUDIO
+		cpy	#CDERR_NOT_AUDIO
 		beq	.keep_recbase
-		cmp	#CDERR_NOT_DATA
+		cpy	#CDERR_NOT_DATA
 		beq	.keep_recbase
-		cmp	#CDERR_BAD_CDB
+		cpy	#CDERR_BAD_CDB
 		beq	.keep_recbase
-		cmp	#CDERR_BAD_ADDR
+		cpy	#CDERR_BAD_ADDR
 		beq	.keep_recbase
-		cmp	#CDERR_BAD_PARAM
+		cpy	#CDERR_BAD_PARAM
 		beq	.keep_recbase
-		cmp	#CDERR_VOLUME
+		cpy	#CDERR_DISC_END
 		beq	.keep_recbase
-		cmp	#CDERR_BAD_LIST
+		cpy	#CDERR_BAD_LIST
 		beq	.keep_recbase
-		cmp	#CDERR_BAD_PLAY
+		cpy	#CDERR_BAD_PLAY
 		beq	.keep_recbase
 
-;		cmp	#CDERR_BAD_SENSE	; Redundant code!
+;		cpy	#CDERR_BAD_SENSE	; Redundant code!
 ;		beq	.swap_recbase
-;		cmp	#CDERR_NOT_READY
+;		cpy	#CDERR_NOT_READY
 ;		beq	.swap_recbase
-;		cmp	#CDERR_BAD_ECC
+;		cpy	#CDERR_BAD_ECC
 ;		beq	.swap_recbase
-;		cmp	#CDERR_SEEK
+;		cpy	#CDERR_BAD_SEEK
 ;		beq	.swap_recbase
-;		cmp	#CDERR_HEADER
+;		cpy	#CDERR_NO_HEADER
 ;		beq	.swap_recbase
 
 .swap_recbase:	lda	recbase			; Swap to alternate track.
@@ -806,13 +817,13 @@ cdr_read_ram	.proc
 
 		; SCSI command done.
 
-.command_done:	jsr	scsi_get_status
+.command_done:	jsr	scsi_get_status		; Returns code in Y & A.
 		cmp	#CDSTS_CHECK
 		beq	.read_error
 
 		leave				; All Done!
 
-.read_error:	jsr	scsi_req_sense		; Clear error, get code in A.
+.read_error:	jsr	scsi_req_sense		; Clear error, get code in Y.
 		jsr	choose_recbase		; Code selects next recbase.
 		bra	.retry_command
 
@@ -850,6 +861,11 @@ cdr_read_bnk	.proc
 .wait_busy:	lda	bios_cd_mutex		; Wait until any background
 		bne	.wait_busy		; BIOS access is finished.
 
+	.if	SUPPORT_TIMING
+		stz	irq_cnt			; Track loading speed.
+		stz	scsi_stat_indx
+	.endif	SUPPORT_TIMING
+
 		stz	recbase			; Reset data track to use.
 
 		tma2				; Preserve current MPR2.
@@ -871,7 +887,7 @@ cdr_read_bnk	.proc
 
 		; SCSI command done.
 
-.command_done:	jsr	scsi_get_status
+.command_done:	jsr	scsi_get_status		; Returns code in Y & A.
 		cmp	#CDSTS_CHECK
 		beq	.read_error
 
@@ -880,7 +896,7 @@ cdr_read_bnk	.proc
 
 		leave				; All Done!
 
-.read_error:	jsr	scsi_req_sense		; Clear error, get code in A.
+.read_error:	jsr	scsi_req_sense		; Clear error, get code in Y.
 		jsr	choose_recbase		; Code selects next recbase.
 		bra	.retry_command
 
@@ -898,13 +914,23 @@ cdr_read_bnk	.proc
 
 		; Read SCSI reply.
 
-.get_response:	jsr	scsi_to_ram		; Read a sector's data.
+	.if	SUPPORT_TIMING
+.get_response:	jsr	slow_to_ram		; Read a sector's data.
 
-.test_bank:	lda.h	<scsi_ram_ptr
+		ldx	scsi_stat_indx		; Track loading speed.
+		lda	irq_cnt
+		sta	scsi_stat_time, x
+		inx
+		stx	scsi_stat_indx
+	.else
+.get_response:	jsr	scsi_to_ram		; Read a sector's data.
+	.endif	SUPPORT_TIMING
+
+		lda.h	<scsi_ram_ptr		; Wrapped bank?
 		and	#$1F
 		bne	.proc_scsi_loop
 
-.next_bank:	tma2
+		tma2				; Move on to next bank.
 		inc	a
 		tam2
 		lda	#>$4000
@@ -915,6 +941,8 @@ cdr_read_bnk	.proc
 
 ;
 ; Fast-copy 2048 byte sector to RAM.
+;
+; It takes approx 55,000 cycles to read a sector.
 ;
 
 scsi_to_ram:	ldx	#$07
@@ -970,6 +998,47 @@ scsi_to_ram:	ldx	#$07
 		rts
 
 
+	.if	SUPPORT_TIMING
+
+;
+; Slow-copy 2048 byte sector to RAM.
+;
+; This is the equivalent of the System Card's code, used to test timing.
+;
+; It takes approx 79,000 cycles to read a sector.
+;
+
+		.zp
+scsi_dummy:	ds	2
+		.code
+
+slow_to_ram:	cly
+		ldx	#$08
+		stx.h	<scsi_dummy
+		stz.l	<scsi_dummy
+
+!loop:		lda	IFU_SCSI_AUTO
+		sta	[scsi_ram_ptr], y
+
+		lda.l	<scsi_dummy
+		bne	!+
+		dec.h	<scsi_dummy
+!:		dec	a
+		sta.l	<scsi_dummy
+		ora.h	<scsi_dummy
+;		beq	.finished
+		nop
+		iny
+		bne	!loop-
+		inc.h	<scsi_ram_ptr
+		dex
+		bne	!loop-
+
+.finished:	rts
+
+	.endif
+
+
 
 	.if	SUPPORT_CDVRAM
 
@@ -1004,13 +1073,13 @@ cdr_read_vram	.proc
 
 		; SCSI command done.
 
-.command_done:	jsr	scsi_get_status
+.command_done:	jsr	scsi_get_status		; Returns code in Y & A.
 		cmp	#CDSTS_CHECK
 		beq	.read_error
 
 		leave				; All Done!
 
-.read_error:	jsr	scsi_req_sense		; Clear error, get code in A.
+.read_error:	jsr	scsi_req_sense		; Clear error, get code in Y.
 		jsr	choose_recbase		; Code selects next recbase.
 		bra	.retry_command
 
@@ -1149,13 +1218,13 @@ cdr_read_acd	.proc
 
 		; SCSI command done.
 
-.command_done:	jsr	scsi_get_status
+.command_done:	jsr	scsi_get_status		; Returns code in Y & A.
 		cmp	#CDSTS_CHECK
 		beq	.read_error
 
 		leave				; All Done!
 
-.read_error:	jsr	scsi_req_sense		; Clear error, get code in A.
+.read_error:	jsr	scsi_req_sense		; Clear error, get code in Y.
 		jsr	choose_recbase		; Code selects next recbase.
 		bra	.retry_command
 
@@ -1273,7 +1342,7 @@ cdr_ad_trans	.proc
 
 		; SCSI command done.
 
-.command_done:	jsr	scsi_get_status
+.command_done:	jsr	scsi_get_status		; Returns code in Y & A.
 		cmp	#CDSTS_CHECK
 		beq	.read_error
 
@@ -1281,7 +1350,7 @@ cdr_ad_trans	.proc
 
 		leave				; All Done!
 
-.read_error:	jsr	scsi_req_sense		; Clear error, get code in A.
+.read_error:	jsr	scsi_req_sense		; Clear error, get code in Y.
 		jsr	choose_recbase		; Code selects next recbase.
 		bra	.retry_command
 
@@ -1417,7 +1486,7 @@ cdr_cplay_next	.proc
 
 		ldy	#19			; Wait for up to 20ms for the
 		clx				; CD-ROM to acknowledge.
-.wait_scsi_bus: jsr	scsi_get_phase
+.wait_scsi_bus:	jsr	scsi_get_phase
 		and	#SCSI_BSY
 		bne	.proc_scsi_loop
 		dex
@@ -1443,7 +1512,7 @@ cdr_cplay_next	.proc
 
 	.if	(cplay_scsi_buf == scsi_send_buf)
 		ldy	#6			; Send SCSI command stored in
-		jsr	scsi_send_cmd           ; cplay_scsi_buf to the drive.
+		jsr	scsi_send_cmd		; cplay_scsi_buf to the drive.
 	.else
 		ldx	#1			; Send SCSI command stored in
 .send_byte:	lda	IFU_SCSI_FLG		; cplay_scsi_buf to the drive.
@@ -1463,7 +1532,7 @@ cdr_cplay_next	.proc
 
 		jsr	cdr_incdec_len		; Update cplay len and lba.
 
-		clc	        		; Signal that we're OK.
+		clc				; Signal that we're OK.
 
 .finished:	leave				; All Done!
 
@@ -1508,118 +1577,126 @@ cdr_ad_stop	.proc
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; cdr_stream_ram - with CPU memory as destination (like CD_READ to RAM).
+; cdr_stream_ram - with CPU memory as destination (like CD_READ to BNK).
+;
+; Returns: Y,Z-flag,N-flag = $00 or an error code.
 ;
 
-huv_error_flag:	db	0
+	.ifndef	HUV_RETRY_ERROR
+HUV_RETRY_ERROR	=	1
+	.endif
 
-cdr_stream_ram:	stz	recbase			; Reset data track to use.
+cdr_stream_ram:	.proc
 
-.retry_command:	jsr	scsi_initiate		; Acquire the SCSI bus.
+	.if	HUV_RETRY_ERROR
+		lda	<huv_load_pages		; Preserve destination frame
+		sta	<_ah			; information for a retry.
+		lda.l	<huv_load_frame
+		sta.l	<_bx
+		lda.h	<huv_load_frame
+		sta.h	<_bx
+	.endif	HUV_RETRY_ERROR
 
-.scsi_ready:	jsr	scsi_get_phase		;
-		cmp	#PHASE_COMMAND		;
-		bne	.scsi_ready		;
+	.if	SUPPORT_TIMING
+		stz	irq_cnt			; Track loading speed.
+		stz	scsi_stat_indx
+	.endif	SUPPORT_TIMING
 
-		; Send SCSI command.
-
-.send_command:	jsr	scsi_read_cmd
-		rts				; Return instead of loop!
-
-		; Process single SCSI phase/sector.
-
-cdr_ram_phase:	stz	huv_error_flag		; Reset error flag.
-
-		; Process SCSI phases.
-
-.proc_scsi_loop:jsr	scsi_get_phase		;
-		cmp	#PHASE_DATA_IN		;
-		beq	.get_response		;
-;		cmp	#PHASE_COMMAND		;
-;		beq	.send_command		;
-		cmp	#PHASE_STAT_IN		;
-		bne	.proc_scsi_loop		;
-
-		; SCSI command done.
-
-.command_done:	jsr	scsi_get_status		;
-		cmp	#CDSTS_CHECK		;
-		beq	.read_error		;
-
-		rts				; Return instead of loop!
-
-.read_error:	jsr	scsi_req_sense		; cdrom_error()
-;		jsr	choose_recbase		; VIDEO IS ONLY IN 1ST TRACK!
-
-		dec	huv_error_flag		; Signal read-error.
-		rts				; Return instead of loop!
-
-		; Read SCSI reply.
-
-.get_response:	jsr	scsi_to_ram
-		rts				; Return instead of loop!
-
-
-
-	.if	SUPPORT_ACD
-
-; ***************************************************************************
-; ***************************************************************************
-;
-; cdr_stream_acd - with ACD memory as destination (like CD_READ to ACD).
-;
-
-cdr_stream_acd:	stz	recbase			; Reset data track to use.
+		stz	recbase			; Reset data track to use.
 
 		; Initiate CD-ROM command.
 
 .retry_command:	jsr	scsi_initiate		; Acquire the SCSI bus.
 
-.scsi_ready:	jsr	scsi_get_phase		;
-		cmp	#PHASE_COMMAND		;
-		bne	.scsi_ready		;
-
-		; Send SCSI command.
-
-.send_command:	jsr	scsi_read_cmd
-		rts				; Return instead of loop!
-
-		;
-		; Process single SCSI phase/sector.
-		;
-
-cdr_acd_phase:	stz	huv_error_flag		; Reset error flag.
-
 		; Process SCSI phases.
 
-.proc_scsi_loop:jsr	scsi_get_phase		;
-		cmp	#PHASE_DATA_IN		;
-		beq	.get_response		;
-;		cmp	#PHASE_COMMAND		;
-;		beq	.send_command		;
-		cmp	#PHASE_STAT_IN		;
-		bne	.proc_scsi_loop		;
+.proc_scsi_loop:jsr	scsi_get_phase
+		cmp	#PHASE_COMMAND
+		beq	.send_command
+		cmp	#PHASE_DATA_IN
+		beq	.get_response
+		cmp	#PHASE_STAT_IN
+		bne	.proc_scsi_loop
 
 		; SCSI command done.
 
-.command_done:	jsr	scsi_get_status		;
-		cmp	#CDSTS_CHECK		;
-		beq	.read_error		;
+.command_done:	jsr	scsi_get_status		; Returns code in Y & A.
+		cmp	#CDSTS_CHECK
+		bne	.finished
 
-		rts				; Return instead of loop!
-
-.read_error:	jsr	scsi_req_sense		; cdrom_error()
+.read_error:	jsr	scsi_req_sense		; Clear error, get code in Y.
 ;		jsr	choose_recbase		; VIDEO IS ONLY IN 1ST TRACK!
 
-		dec	huv_error_flag		; Signal read-error.
-		rts				; Return instead of loop!
+	.if	HUV_RETRY_ERROR
+		lda	<_ah			; Restore destination frame
+		sta	<huv_load_pages		; information for a retry.
+		php
+		sei
+		lda.l	<_bx
+		sta.l	<huv_load_frame
+		lda.h	<_bx
+		sta.h	<huv_load_frame
+		plp
+		bra	.retry_command
+	.endif	HUV_RETRY_ERROR
+
+.finished:	leave				; All Done!
+
+		; Send SCSI command.
+
+.send_command:	lda	#BUFFER_1ST_BANK
+		tam2
+		stz.l	<scsi_ram_ptr
+		lda	#>$4000
+		sta.h	<scsi_ram_ptr
+
+		jsr	scsi_read_cmd
+		bra	.proc_scsi_loop
 
 		; Read SCSI reply.
 
-.get_response:	jsr	scsi_to_acd
-		rts				; Return instead of loop!
+	.if	SUPPORT_ACD
+.get_response:	jsr	scsi_to_acd		; Read a sector's data.
+	.else
+.get_response:	jsr	scsi_to_ram		; Read a sector's data.
+	.endif
 
-	.endif	SUPPORT_ACD
+	.if	SUPPORT_TIMING
+		ldx	scsi_stat_indx		; Track loading speed.
+		lda	irq_cnt
+		sta	scsi_stat_time, x
+		inx
+		stx	scsi_stat_indx
+	.endif	SUPPORT_TIMING
+
+		lda.h	<scsi_ram_ptr		; Keep the destination addr
+		and	#$1F			; within MPR2.
+		bne	!+
+		tma2
+		inc	a
+		tam2
+		lda	#>$4000
+		sta.h	<scsi_ram_ptr
+
+!:		clc				; Delay acknowledging the new
+		lda.h	#$0800			; frame by a sector or two to
+		adc	<huv_load_pages		; make sure it loaded OK.
+		sta	<huv_load_pages
+		cmp.h	#BYTES_PER_FRAME + ($0800 * 2)
+		bcc	.proc_scsi_loop
+
+		php				; Disable interrupts while
+		sei				; changing huv_load_frame!
+		sbc.h	#BYTES_PER_FRAME
+		inc.l	<huv_load_frame
+		bne	!+
+		inc.h	<huv_load_frame
+!:		sta	<huv_load_pages
+		plp
+		bra	.proc_scsi_loop
+
+		.endp
+
 	.endif	SUPPORT_HUVIDEO
 
 
@@ -1749,6 +1826,7 @@ cdr_stat	.proc
 
 		lda	IFU_SCSI_FLG		; $80 if drive BUSY, or $00.
 		and	#SCSI_BSY
+		tay
 		bra	.finished
 
 		; Initiate CD-ROM command.
@@ -1765,15 +1843,13 @@ cdr_stat	.proc
 
 		; SCSI command done.
 
-.command_done:	jsr	scsi_get_status
+.command_done:	jsr	scsi_get_status		; Returns code in Y & A.
 ;		cmp	#CDSTS_GOOD
 		beq	.finished
 
-		jsr	scsi_req_sense		; Clear error, get code in A.
+		jsr	scsi_req_sense		; Clear error, get code in Y.
 
-.finished:	tay				; $00= READY
-
-		leave				; All Done!
+.finished:	leave				; All Done!
 
 		; Send SCSI command.
 
@@ -1994,15 +2070,13 @@ cdr_dinfo	.proc
 
 		; SCSI command done.
 
-.command_done:	jsr	scsi_get_status
+.command_done:	jsr	scsi_get_status		; Returns code in Y & A.
 ;		cmp	#CDSTS_GOOD
 		beq	.finished
 
-		jsr	scsi_req_sense		; Clear error, get code in A.
+		jsr	scsi_req_sense		; Clear error, get code in Y.
 
-.finished:	tay				; Set return-code.
-
-		leave				; All Done!
+.finished:	leave				; All Done!
 
 		; Send SCSI command.
 

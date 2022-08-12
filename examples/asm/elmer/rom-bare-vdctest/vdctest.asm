@@ -213,16 +213,19 @@ bare_main:	; Turn the display off and initialize the screen mode.
 		sta	irq_cnt			; update.
 
 .next_frame:	lda	#41 - 8 ; Exclude 8-cycle IRQ response!
+		lda	#41	; Include 8-cycle IRQ response!
 		clc
 		adc	<delay_count
 		sta	byr_cycle
 
 		lda	#51 - 8 ; Exclude 8-cycle IRQ response!
+		lda	#51	; Include 8-cycle IRQ response!
 		clc
 		adc	<delay_count
 		sta	bxr_cycle
 
 		lda	#61 - 8 ; Exclude 8-cycle IRQ response!
+		lda	#61	; Include 8-cycle IRQ response!
 		clc
 		adc	<delay_count
 		sta	crl_cycle
