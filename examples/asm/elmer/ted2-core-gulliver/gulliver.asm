@@ -3,7 +3,7 @@
 ;
 ; gulliver.asm
 ;
-; Example of HuVIDEO playback using Hudson's Gulliver Boy CD.
+; Example of HuVIDEO playback using Hudson's GulliverBoy CD.
 ;
 ; Copyright John Brandwood 2022.
 ;
@@ -14,11 +14,11 @@
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; This is an example of a simple HuCARD ROM that uses the "CORE(not TM)"
-; library to provide interrupt-handling and joypad reading.
+; This is an example of a playing back HuVIDEO, which uses a 240KB RAM buffer
+; in its SCD configuration, and so the playback code must fit within 2 banks.
 ;
-; It is running on a HuCARD, with Turbo Everdrive support, so the setup is
-; a bit more complicated than usual!
+; If it is running as a HuCARD, with Turbo Everdrive support, the setup is a
+; a bit simpler because of the extra RAM available on the TED2.
 ;
 ; The PC Engine's memory map is set to ...
 ;
@@ -30,6 +30,42 @@
 ;   MPR5 = bank $05 : HuCard ROM
 ;   MPR6 = bank $xx : HuCard ROM banked ASM library procedures.
 ;   MPR7 = bank $02 : HuCard ROM with "CORE(not TM)" kernel and IRQ vectors.
+;
+; ***************************************************************************
+; ***************************************************************************
+;
+; ===========================================
+; Gulliver CD
+; ===========================================
+; 00 00 02 03 00 3A 00 3A 00 01 02 03 04
+; 47 75 6C 6C 69 76 65 72 20 20 20 20 20 20 20 20
+; 48 75 64 73 6F 6E
+;
+; LBA $0002D858
+; HuVideo
+; E0 03 C0 00 70 00 10 00 06 -> 192x112, 16-palette, 10fps
+;
+; ===========================================
+; Yuna2 game CD (both FAAT and FABT versions)
+; ===========================================
+; 00 00 02 0C 00 40 00 40 00 01 02 03 04
+; 8B E2 89 CD 82 A8 8F EC 97 6C 93 60 90 E0 20 20
+; 83 86 83 69 87 55
+;
+; LBA $0B83F000
+; HuVideo
+; C6 02 A0 00 80 00 10 00 06 -> 160x128, 16-palette, 10fps
+;
+; ===========================================
+; Yuna HuVIUDEO CD
+; ===========================================
+; 00 00 02 0C 00 40 06 40 00 01 02 03 04
+; 8B E2 89 CD 82 A8 8F EC 97 6C 93 60 90 E0 20 20
+; 83 86 83 69 87 55
+;
+; LBA $0B83F000
+; HuVideo
+; C6 02 A0 00 80 00 10 00 06 -> 160x128, 16-palette, 10fps
 ;
 ; ***************************************************************************
 ; ***************************************************************************
@@ -59,7 +95,7 @@ BAT_NULL	=	CHR_0x20 + (0 << 12)	; Default BAT tile & palette.
 		;
 
 	.if	CDROM
-SUPPORT_ACD	=	0	; Support the Arcade Card.
+SUPPORT_ACD	=	1	; Support the Arcade Card.
 	.else
 SUPPORT_TED2	=	1	; Support the Turbo Everdrive's use of bank0.
 	.endif
@@ -83,7 +119,9 @@ SUPPORT_TIMING	=	1	; Include the HuVIDEO timing information.
 		include	"tty.asm"		; Useful TTY print routines.
 		include	"movie.asm"		; HuVIDEO movie playback.
 
-	.if	!CDROM
+	.if	CDROM
+		include	"acd.asm"		; ArcadeCard routines.
+	.else
 		include	"ted2.asm"		; TED2 hardware routines.
 	.endif
 
@@ -225,8 +263,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 
 		; Play the "GulliverBoy" title HuVIDEO.
 
-!:		lda	#$24			; Star Boy
-;		lda	#$22			; Title Movie
+!:
+;		lda	#$24			; Star Boy
+		lda	#$22			; Title Movie
 		sta	<_al
 		call	play_huvideo
 		beq	!+			; Are we ready?
@@ -315,11 +354,12 @@ core_main:	; Turn the display off and initialize the screen mode.
 .main_loop:	call	wait_vsync		; Wait for VBLANK.
 	.endif
 
+		bra	.main_loop		; Wait for user to reboot.
+
 .size:		db	90 / 2, 240 / 2
 
 		; All done for this frame, keep on looping!
 
-		bra	.main_loop		; Wait for user to reboot.
 
 		; Simple VBLANK IRQ handler for the CORE library.
 
@@ -544,6 +584,3 @@ spr_palettes:	defpal	none,none,none,none,none,none,none,none
 ;
 
 my_font:	incbin	"font8x8-ascii-bold-short.dat"
-
-
-

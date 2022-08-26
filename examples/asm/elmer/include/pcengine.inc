@@ -239,81 +239,41 @@ ADPCM_RD_BSY	= $80
 ; Arcade Card
 ;
 
-ACD_DAT0	= $FF:1A00	; 2
-ACD_ADR0	= $FF:1A02	; 2
-ACD_OFF0	= $FF:1A05	; 2
-ACD_INC0	= $FF:1A07	; 2
-ACD_CTL0	= $FF:1A09	; 1
-ACD_TRG0	= $FF:1A0A	; 1
+ACD0_DATA	= $FF:1A00	; RW : 2
+ACD0_BASE	= $FF:1A02	; RW : 3
+ACD0_INDX	= $FF:1A05	; RW : 2
+ACD0_INCR	= $FF:1A07	; RW : 2
+ACD0_CTRL	= $FF:1A09	; RW : 1
+ACD0_TRIG	= $FF:1A0A	; _W : 1
 
-ACD_D0L		= $FF:1A00	; 1
-ACD_D0H		= $FF:1A01	; 1
-ACD_A0L		= $FF:1A02	; 1
-ACD_A0M		= $FF:1A03	; 1
-ACD_A0H		= $FF:1A04	; 1
-ACD_O0L		= $FF:1A05	; 1
-ACD_O0H		= $FF:1A06	; 1
-ACD_I0L		= $FF:1A07	; 1
-ACD_I0H		= $FF:1A08	; 1
+ACD1_DATA	= $FF:1A10	; RW : 2
+ACD1_BASE	= $FF:1A12	; RW : 3
+ACD1_INDX	= $FF:1A15	; RW : 2
+ACD1_INCR	= $FF:1A17	; RW : 2
+ACD1_CTRL	= $FF:1A19	; RW : 1
+ACD1_TRIG	= $FF:1A1A	; _W : 1
 
-ACD_DAT1	= $FF:1A10	; 2
-ACD_ADR1	= $FF:1A12	; 3
-ACD_OFF1	= $FF:1A15	; 2
-ACD_INC1	= $FF:1A17	; 2
-ACD_CTL1	= $FF:1A19	; 1
-ACD_TRG1	= $FF:1A1A	; 1
+ACD2_DATA	= $FF:1A20	; RW : 2
+ACD2_BASE	= $FF:1A22	; RW : 3
+ACD2_INDX	= $FF:1A25	; RW : 2
+ACD2_INCR	= $FF:1A27	; RW : 2
+ACD2_CTRL	= $FF:1A29	; RW : 1
+ACD2_TRIG	= $FF:1A2A	; _W : 1
 
-ACD_D1L		= $FF:1A10	; 1
-ACD_D1H		= $FF:1A11	; 1
-ACD_A1L		= $FF:1A12	; 1
-ACD_A1M		= $FF:1A13	; 1
-ACD_A1H		= $FF:1A14	; 1
-ACD_O1L		= $FF:1A15	; 1
-ACD_O1H		= $FF:1A16	; 1
-ACD_I1L		= $FF:1A17	; 1
-ACD_I1H		= $FF:1A18	; 1
+ACD3_DATA	= $FF:1A30	; RW : 2
+ACD3_BASE	= $FF:1A32	; RW : 3
+ACD3_INDX	= $FF:1A35	; RW : 2
+ACD3_INCR	= $FF:1A37	; RW : 2
+ACD3_CTRL	= $FF:1A39	; RW : 1 (the bottom 7-bits are readable)
+ACD3_TRIG	= $FF:1A3A	; _W : 1
 
-ACD_DAT2	= $FF:1A20	; 2
-ACD_ADR2	= $FF:1A22	; 3
-ACD_OFF2	= $FF:1A25	; 2
-ACD_INC2	= $FF:1A27	; 2
-ACD_CTL2	= $FF:1A29	; 1
-ACD_TRG2	= $FF:1A2A	; 1
+ACD_SHIFT	= $FF:1AE0	; RW : 4 bytes
+ACD_ASL		= $FF:1AE4	; RW : positive = shift left (the bottom 4-bits are readable)
+ACD_ROL		= $FF:1AE5	; RW : positive = shift left (the bottom 4-bits are readable)
 
-ACD_D2L		= $FF:1A20	; 1
-ACD_D2H		= $FF:1A21	; 1
-ACD_A2L		= $FF:1A22	; 1
-ACD_A2M		= $FF:1A23	; 1
-ACD_A2H		= $FF:1A24	; 1
-ACD_O2L		= $FF:1A25	; 1
-ACD_O2H		= $FF:1A26	; 1
-ACD_I2L		= $FF:1A27	; 1
-ACD_I2H		= $FF:1A28	; 1
-
-ACD_DAT3	= $FF:1A30	; 2
-ACD_ADR3	= $FF:1A32	; 3
-ACD_OFF3	= $FF:1A35	; 2
-ACD_INC3	= $FF:1A37	; 2
-ACD_CTL3	= $FF:1A39	; 1
-ACD_TRG3	= $FF:1A3A	; 1
-
-ACD_D3L		= $FF:1A30	; 1
-ACD_D3H		= $FF:1A31	; 1
-ACD_A3L		= $FF:1A32	; 1
-ACD_A3M		= $FF:1A33	; 1
-ACD_A3H		= $FF:1A34	; 1
-ACD_O3L		= $FF:1A35	; 1
-ACD_O3H		= $FF:1A36	; 1
-ACD_I3L		= $FF:1A37	; 1
-ACD_I3H		= $FF:1A38	; 1
-
-ACD_SHIFTREG	= $FF:1AE0	; 4 bytes
-ACD_ASL_CNT	= $FF:1AE4	; positive = shift left
-ACD_ROL_CNT	= $FF:1AE5	; positive = shift left
-
-ACD_VERL	= $FF:1AFD
-ACD_VERH	= $FF:1AFE
-ACD_FLAG	= $FF:1AFF
+ACD_VERL	= $FF:1AFD	; R_ :
+ACD_VERH	= $FF:1AFE	; R_ :
+ACD_FLAG	= $FF:1AFF	; R_ :
 
 ACD_ID		= $51		; if ac_identflag = AC_IDENT, then AC in use
 
@@ -446,8 +406,8 @@ reset_hook	= $F8:2284 ; 2	*UNDOCUMENTED* joypad soft-reset hook
 color_tia	= $F8:2286 ; 8	*UNDOCUMENTED* self-mod TIA used by ex_colorcmd
 ;?		= $F8:228E ; 3	*UNDOCUMENTED* self-mod TMA/TAM used by cd_read/ad_read/ad_write
 ;?		= $F8:2291 ; 10	*UNDOCUMENTED* copy of scsisend made by cd_read (never read)
-reset_cdrom	= $F8:229B ; 1	*UNDOCUMENTED* NZ if CD reset is needed 
-cdplay_mode	= $F8:229C ; 1	*UNDOCUMENTED* 
+reset_cdrom	= $F8:229B ; 1	*UNDOCUMENTED* NZ if CD reset is needed
+cdplay_mode	= $F8:229C ; 1	*UNDOCUMENTED*
 
 cplay_siz_l	= $F8:229D ; 1	*UNDOCUMENTED* ad_cplay streaming sector load size (low)
 cplay_len_l	= $F8:229E ; 1	*UNDOCUMENTED* ad_cplay streaming length (low/mid/high)

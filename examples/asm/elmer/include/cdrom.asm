@@ -1233,9 +1233,15 @@ cdr_read_acd	.proc
 .send_command:	ldx	<_ah			; output_l
 		ldy	<_bl			; output_m
 		lda	<_bh			; output_h
-		stx	ACD_A0L
-		sty	ACD_A0M
-		sta	ACD_A0H
+		stx	ACD0_BASE + 0
+		sty	ACD0_BASE + 1
+		sta	ACD0_BASE + 2
+
+		lda	#1
+		sta.l	ACD0_INCR
+		stz.h	ACD0_INCR
+		lda	#$11			; BASE, with INCR of BASE.
+		sta	ACD0_CTRL
 
 		jsr	scsi_read_cmd
 		bra	.proc_scsi_loop
@@ -1254,7 +1260,7 @@ cdr_read_acd	.proc
 scsi_to_acd:	ldy	#$F6
 		ldx	#$08
 !loop:		lda	IFU_SCSI_AUTO
-		sta	ACD_DAT0
+		sta	ACD0_DATA
 		nop
 		nop
 		nop
@@ -1267,7 +1273,7 @@ scsi_to_acd:	ldy	#$F6
 		php
 		sei
 		lda	IFU_SCSI_AUTO
-		sta	ACD_DAT0
+		sta	ACD0_DATA
 		nop
 		nop
 		nop
@@ -1278,7 +1284,7 @@ scsi_to_acd:	ldy	#$F6
 		lda	IFU_SCSI_AUTO
 		plp
 
-		sta	ACD_DAT0
+		sta	ACD0_DATA
 		nop
 		nop
 		nop
@@ -1287,7 +1293,7 @@ scsi_to_acd:	ldy	#$F6
 
 		ldx	#$08
 !loop:		lda	IFU_SCSI_AUTO
-		sta	ACD_DAT0
+		sta	ACD0_DATA
 		nop
 		nop
 		nop

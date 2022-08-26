@@ -335,6 +335,10 @@ sound_mutex:	ds	1			; NZ when controller port busy.
 sgx_detected:	ds	1			; NZ if SuperGrafx detected.
 	.endif
 
+	.if	SUPPORT_ACD
+acd_detected:	ds	1			; NZ if ArcadeCard detected.
+	.endif
+
 		.code
 
 

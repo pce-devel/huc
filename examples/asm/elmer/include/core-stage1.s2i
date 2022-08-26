@@ -54,6 +54,7 @@ port_mutex
 sound_mutex
 
 ?sgx_detected
+?acd_detected
 
 core_clr_hooks
 core_sw_reset

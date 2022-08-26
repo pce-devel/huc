@@ -300,6 +300,8 @@ set_mode_vdc	.proc
 ;
 ; sgx_detect - Detect whether we're running on a SuperGrafx (and init VPC).
 ;
+; Returns: Y,Z-flag,N-flag, and "sgx_detected" = NZ if detected.
+;
 ; Note that this clears VRAM address $7F7F in both the VDC and SGX.
 ;
 ; ***************************************************************************
@@ -404,6 +406,12 @@ SGX_PARALLAX	=	1			; The most common default.
 	.endif	SGX_PARALLAX
 
 		.endp
+
+	.ifndef	CORE_VERSION			; CORE has this in the kernel.
+		.bss
+sgx_detected:	ds	1			; NZ if SuperGrafx detected.
+		.code
+	.endif	CORE_VERSION
 
 	.endif	SUPPORT_SGX
 
