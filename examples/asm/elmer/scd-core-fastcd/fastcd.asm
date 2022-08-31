@@ -64,6 +64,8 @@ SUPPORT_ACD	=	1	; Support the Arcade Card.
 SUPPORT_TED2	=	1	; Support the Turbo Everdrive's use of bank0.
 	.endif
 
+SUPPORT_ADPCM	=	1	; Support the replacement ADPCM functions.
+
 		;
 		; Include the library, reading the project's configuration
 		; settings from the local "core-config.inc", if it exists.

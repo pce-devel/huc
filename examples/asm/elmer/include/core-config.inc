@@ -84,7 +84,7 @@ MAX_DIRSIZE	=	64	; (4..256)
 
 ;
 ; Use the System Card's PSG driver code instead of a modern alternative
-; sound driver like a DefleMask player?
+; sound driver like a DefleMask or Furnace player?
 ;
 
 	.ifndef	USING_PSGDRIVER
@@ -109,7 +109,7 @@ SUPPORT_TED2	=	0	; (0 or 1)
 ;
 ; Support development for the SuperGrafx?
 ;
-; This enables SGX hardware support in certain library functions.
+; This enables SuperGrafx support in certain library functions.
 ;
 
 	.ifndef	SUPPORT_SGX
@@ -117,13 +117,24 @@ SUPPORT_SGX	=	0	; (0 or 1)
 	.endif
 
 ;
-; Support development for the Arcade Card?
+; Support development for the ArcadeCard?
 ;
-; This enables Arcade Card support in certain library functions.
+; This enables ArcadeCard support in certain library functions.
 ;
 
 	.ifndef	SUPPORT_ACD
 SUPPORT_ACD	=	0	; (0 or 1)
+	.endif
+
+;
+; Support development for the IFU's ADPCM hardware?
+;
+; Developers would normally just use the System Card functions for ADPCM, but
+; enabling this adds alternative functions, and allows ADPCM use on a HuCARD.
+;
+
+	.ifndef	SUPPORT_ADPCM
+SUPPORT_ADPCM	=	0	; (0 or 1)
 	.endif
 
 ;

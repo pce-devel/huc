@@ -95,7 +95,8 @@ SUPPORT_HUVIDEO	=	1
 ; Include dependancies ...
 ;
 
-		include "cdrom.asm"		; Common helpers.
+		include "adpcm.asm"		; ADPCM functions.
+		include "cdrom.asm"		; CDROM functions.
 
 
 
@@ -726,7 +727,7 @@ huv_enable_rcr:	jsr	wait_vsync
 huv_show_stats:	php
 		sei
 
-		lda	scsi_stat_time + 0	; 
+		lda	scsi_stat_time + 0	;
 		sta	<huv_buffer_1st
 		eor	#$FF
 		sec
@@ -1294,19 +1295,12 @@ huv_write_adpcm:tma3
 		lda	#BUFFER_1ST_BANK
 !:		tam5
 
-		lda.l	<huv_audio_pcm
-		sta	.selfmod + 1
-		lda.h	<huv_audio_pcm
-		sta	.selfmod + 2
-
 		cly
-
-.write_loop:	tst	#ADPCM_WR_BSY, IFU_ADPCM_FLG
-		bne	.write_loop
-
-.selfmod:	lda	$0000, y
-		iny
-		sta	IFU_ADPCM_DAT
+.write_loop:	lda	[huv_audio_pcm], y
+.write_wait:	tst	#ADPCM_WR_BUSY, IFU_ADPCM_FLG
+		bne	.write_wait		; 30-cycles-per-byte is the
+		sta	IFU_ADPCM_DAT		; maximum safe rate without
+		iny				; triggering a BUSY delay.
 		dex
 		bne	.write_loop
 

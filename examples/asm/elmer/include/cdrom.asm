@@ -61,7 +61,7 @@ SUPPORT_CDVRAM	=	1
 	.endif
 
 	.ifndef	SUPPORT_ADPCM
-SUPPORT_ADPCM	=	1
+SUPPORT_ADPCM	=	0
 	.endif
 
 	.ifndef	SUPPORT_HUVIDEO
@@ -410,7 +410,7 @@ scsi_get_phase:	lda	IFU_SCSI_FLG
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; scsi_delay - Delay 500us * A.
+; scsi_delay - Delay 500us * Y.
 ;
 
 scsi_delay:	clx				; The inner loop takes 3584
@@ -914,17 +914,7 @@ cdr_read_bnk	.proc
 
 		; Read SCSI reply.
 
-	.if	SUPPORT_TIMING
-.get_response:	jsr	slow_to_ram		; Read a sector's data.
-
-		ldx	scsi_stat_indx		; Track loading speed.
-		lda	irq_cnt
-		sta	scsi_stat_time, x
-		inx
-		stx	scsi_stat_indx
-	.else
 .get_response:	jsr	scsi_to_ram		; Read a sector's data.
-	.endif	SUPPORT_TIMING
 
 		lda.h	<scsi_ram_ptr		; Wrapped bank?
 		and	#$1F
@@ -996,47 +986,6 @@ scsi_to_ram:	ldx	#$07
 		inc.h	<scsi_ram_ptr
 		cla
 		rts
-
-
-	.if	SUPPORT_TIMING
-
-;
-; Slow-copy 2048 byte sector to RAM.
-;
-; This is the equivalent of the System Card's code, used to test timing.
-;
-; It takes approx 79,000 cycles to read a sector.
-;
-
-		.zp
-scsi_dummy:	ds	2
-		.code
-
-slow_to_ram:	cly
-		ldx	#$08
-		stx.h	<scsi_dummy
-		stz.l	<scsi_dummy
-
-!loop:		lda	IFU_SCSI_AUTO
-		sta	[scsi_ram_ptr], y
-
-		lda.l	<scsi_dummy
-		bne	!+
-		dec.h	<scsi_dummy
-!:		dec	a
-		sta.l	<scsi_dummy
-		ora.h	<scsi_dummy
-;		beq	.finished
-		nop
-		iny
-		bne	!loop-
-		inc.h	<scsi_ram_ptr
-		dex
-		bne	!loop-
-
-.finished:	rts
-
-	.endif
 
 
 
@@ -1403,7 +1352,7 @@ cdr_ad_cplay	.proc
 		tii	_al, cplay_len_l, 3	; Save # sectors left to load.
 
 		lda	<_dh			; Set playback rate.
-		jsr	adpcm_set_spd
+		sta	IFU_ADPCM_SPD
 
 		lda	#(65536 / 2048)		; 32 * 2KB sectors.
 		sta	<_al
@@ -1433,15 +1382,17 @@ cdr_ad_cplay	.proc
 		clx
 		jsr	adpcm_set_src
 
-		lda	#$FF			; Set 64KB playback length.
-		tax
-		tay
-		jsr	adpcm_set_len
+		ldx	#<$FFFF			; Set 64KB playback length.
+		ldy	#>$FFFF			; This clears IFU_INT_STOP,
+		jsr	adpcm_set_len		; but not IFU_INT_HALF.
+
+		lda	#ADPCM_INCR
+		tsb	IFU_ADPCM_CTL		; N.B. BIOS uses a STA!
 
 		lda	#IFU_INT_HALF + IFU_INT_STOP
 		tsb	IFU_IRQ_MSK
 
-		lda	#ADPCM_PLAY + ADPCM_INCR
+		lda	#ADPCM_PLAY
 		tsb	IFU_ADPCM_CTL		; N.B. BIOS uses a STA!
 
 		stz	cplay_filling		; Signal ADPCM not loading.

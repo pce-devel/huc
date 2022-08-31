@@ -100,9 +100,6 @@ SUPPORT_ACD	=	1	; Support the Arcade Card.
 SUPPORT_TED2	=	1	; Support the Turbo Everdrive's use of bank0.
 	.endif
 
-SUPPORT_HUVIDEO	=	1	; Include the HuVIDEO 
-SUPPORT_TIMING	=	1	; Include the HuVIDEO timing information.
-
 		;
 		; Include the library, reading the project's configuration
 		; settings from the local "core-config.inc", if it exists.
@@ -117,6 +114,10 @@ SUPPORT_TIMING	=	1	; Include the HuVIDEO timing information.
 		include	"vdc.asm"		; Useful VDC routines.
 		include	"font.asm"		; Useful font routines.
 		include	"tty.asm"		; Useful TTY print routines.
+
+;SUPPORT_HUVIDEO	=	1	; Include the HuVIDEO playback functions.
+SUPPORT_TIMING	=	1	; Include the HuVIDEO timing information.
+
 		include	"movie.asm"		; HuVIDEO movie playback.
 
 	.if	CDROM

@@ -227,10 +227,10 @@ ADPCM_RESET	= $80
 
 ; ADPCM status bits in IFU_ADPCM_FLG
 
-ADPCM_AD_END	= $01
-ADPCM_WR_BSY	= $04
-ADPCM_AD_BSY	= $08
-ADPCM_RD_BSY	= $80
+ADPCM_AD_STOP	= $01
+ADPCM_WR_BUSY	= $04
+ADPCM_AD_BUSY	= $08
+ADPCM_RD_BUSY	= $80
 
 
 
@@ -307,7 +307,7 @@ zpg_sys_top	= $F8:20EC
 _bp		= $F8:20EC	; base pointer
 _si		= $F8:20EE	; source address
 _di		= $F8:20F0	; destination address
-cdi_b		= $F8:20F2	; ???
+cdi_b		= $F8:20F2	; IRQ2 interrupt status (like vdc_sr)
 vdc_crl		= $F8:20F3	; shadow of VDC control register (lo-byte)
 vdc_crh		= $F8:20F4	; shadow of VDC control register (hi-byte)
 irq_vec		= $F8:20F5	; interrupt vector control mask

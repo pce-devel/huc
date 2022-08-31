@@ -1,0 +1,74 @@
+; ***************************************************************************
+; PC ENGINE ADPCM HARDWARE NOTES
+; ***************************************************************************
+
+/* Mednafen - Multi-system Emulator
+ *
+ * Copyright notice for this file:
+ *  Copyright (C) 2004 Ki
+ *  Copyright (C) 2007-2011 Mednafen Team
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+
+Reading from IFU_ADPCM_DAT decrements LENGTH. Appears to saturate at 0x0000.
+
+  Side effects include at least setting IFU_INT_HALF.
+
+  When the IFU_INT_STOP flags are set by a read from IFU_ADPCM_DAT, then the
+  IFU_INT_HALF flag appears to be cleared.
+  This is different from normal ADPCM playback, where both IFU_INT_STOP and
+  IFU_INT_HALF flags are set by the end of playback.
+
+  Note that if ADPCM_INCR of IFU_ADPCM_CTL is cleared, then the IFU_INT_HALF
+  flag seems to be cleared on the next sample clock, either intentionally or
+  due to some kind of length underflow, I don't know; but the behavior when
+  ADPCM_INCR cleared is buggy, and I doubt games rely on any of its weirder
+  nuances.
+
+Writing to IFU_ADPCM_DAT increments LENGTH. Appears to saturate at 0xFFFF.
+
+  Side effects include at least setting/clearing IFU_INT_HALF.
+
+For IFU_ADPCM_DAT port read/write accesses at least, the IFU_INT_HALF flag
+is set by (LENGTH < 32768), evaluated before LENGTH is either decremented
+or incremented.
+
+ADPCM RAM reads due to playback apparently aren't reflected in IFU_ADPCM_FLG
+as the ADPCM_RD_BUSY state.
+Unknown if it shares the same buffer as IFU_ADPCM_DAT port reads though.
+
+Setting ADPCM_SET_SZ in IFU_ADPCM_CTL clears both the ADPCM_AD_STOP and the
+IFU_INT_STOP flags, and they will not be set as long as ADPCM_SET_SZ is set.
+It doesn't clear the IFU_INT_HALF flag though.
+Short of resetting the ADPCM hardware, this was the only way I could find to
+clear the ADPCM_AD_STOP and IFU_INT_STOP flags via software.
+
+Setting ADPCM_SET_SZ in IFU_ADPCM_CTL does NOT stop the IFU_INT_HALF flag
+from being set (at least not during reads/writes to IFU_ADPCM_DAT).
+
+Setting ADPCM_SET_RD in IFU_ADPCM_CTL clears the IFU_INT_HALF flag.
+
+ADPCM playback doesn't seem to start when the ADPCM_AD_STOP and IFU_INT_STOP
+flags are set and 0x60 (ADPCM_PLAY+ADPCM_INCR) is written to IFU_ADPCM_CTL,
+but starts if only ADPCM_PLAY is written (i.e. ADPCM_INCR is clear).
+More investigation is needed (unlikely to affect games though).
+
+ADPCM playback starting is likely delayed (or at certain intervals) compared
+to writes to IFU_ADPCM_CTL.
+Investigation is needed, but emulating a non-constant granularity-related
+delay may be undesirable due to the potential of triggering race conditions
+in game code.

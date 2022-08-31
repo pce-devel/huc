@@ -125,6 +125,22 @@ core_irq2:	bbs0	<irq_vec, .hook		; 8 cycles if taken.
 .fake:		php				; Turn BSR into a fake IRQ2
 		jmp	[$FFF6]			; without fixing return PC!
 	.else
+		; Does this HuCARD support the IFU's ADPCM hardware?
+
+	.if	SUPPORT_ADPCM
+		pha				; Handle IFU_INT_STOP so that
+		lda	IFU_IRQ_MSK		; adpcm_play() stops playback
+		and	IFU_IRQ_FLG		; properly.
+		bit	#IFU_INT_STOP
+		beq	!+
+
+		lda  	#IFU_INT_STOP + IFU_INT_HALF
+		trb  	IFU_IRQ_MSK
+		lda	#ADPCM_PLAY + ADPCM_INCR
+		trb	IFU_ADPCM_CTL
+!:		pla
+	.endif	SUPPORT_ADPCM
+
 		rti				; No IRQ2 hardware on HuCARD.
 
 .hook:		jmp	[irq2_hook]		; 7 cycles.
