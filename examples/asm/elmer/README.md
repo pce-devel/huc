@@ -20,6 +20,9 @@ This directory contains a number of example programs and utilities for developin
 * rom-bare-vdctest
   - A HuCARD ROM to compare a PC Engine emulator's VDC RCR interrupt handling with real PC Engine console hardware.
 
+* rom-core-okitest
+  - A HuCARD ROM to compare a PC Engine emulator's ADPCM playback flags and ADPCM write speed with real PC Engine console hardware.
+
 
 ## Using the System Card BIOS
 
