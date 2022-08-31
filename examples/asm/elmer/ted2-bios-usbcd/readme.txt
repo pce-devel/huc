@@ -28,11 +28,6 @@ To do that ...
 
   2) "make" your own game's SuperCD overlay using PCEAS as normal.
 
-  3) Concatenate both files into a single test HuCard image.
-
-     In a Windows Command Prompt, this can be done with ...
-     "copy /b ted2romcd.pce + mygame.ovl test.pce"
-     
   3) Upload ted2usb.pce to your TED2 with Krikzz's "turbo-usb.exe".
 
      The System Card will startup, then automatically boot the CD that is
