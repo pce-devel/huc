@@ -23,26 +23,26 @@
 ; Values of IFU_ADPCM_CTL ($180D), IFU_ADPCM_FLG ($180C), IFU_IRQ_FLG ($1803)
 ;
 ; A) After 1st playback is finished
-; B) After clear ADPCM_PLAY and ADPCM_INCR
-; C) After clear ADPCM_PLAY and ADPCM_INCR + 1 millisecond
+; B) After clear ADPCM_PLAY and ADPCM_AUTO
+; C) After clear ADPCM_PLAY and ADPCM_AUTO + 1 millisecond
 ; D) After set new ADPCM read address (which clears IFU_INT_HALF bit)
-; E) After set new ADPCM length (which clears IFU_INT_STOP bit)
-; F) After set ADPCM_INCR
-; G) After set ADPCM_INCR + 1 millisecond
+; E) After set new ADPCM length (which clears IFU_INT_END bit)
+; F) After set ADPCM_AUTO
+; G) After set ADPCM_AUTO + 1 millisecond
 ; H) After set ADPCM_PLAY
 ; I) After set ADPCM_PLAY + 1 millisecond
 ; J) After playing for 1.5 seconds
 ; K) After 2nd playback flags change
 ; L) After 2nd playback is finished
-; M) After clear ADPCM_PLAY and ADPCM_INCR
-; N) After clear ADPCM_PLAY and ADPCM_INCR and ADPCM_AD_BUSY is clear
+; M) After clear ADPCM_PLAY and ADPCM_AUTO
+; N) After clear ADPCM_PLAY and ADPCM_AUTO and ADPCM_AD_BSY is clear
 ; O) After 3rd playback is started
 ; P) After playing for 1 second
 ; Q) After adpcm_reset() to terminate playback early
-; R) After adpcm_reset() and ADPCM_AD_BUSY is clear (approx 500us at 16KHz)
+; R) After adpcm_reset() and ADPCM_AD_BSY is clear (approx 500us at 16KHz)
 ; S) After 4th playback is started
 ; T) After 4th playback is finished
-; U) After clear ADPCM_PLAY and ADPCM_INCR
+; U) After clear ADPCM_PLAY and ADPCM_AUTO
 ;
 ; ***************************************************************************
 ; ***************************************************************************
@@ -208,28 +208,13 @@ core_main:	; Turn the display off and initialize the screen mode.
 		ldy	#^adpcm_data
 		call	adpcm_write		; Write the ADPCM data.
 
-		lda.l	#adpcm_size		; ADPCM size.
-		sta.l	<_ax
-		lda.h	#adpcm_size
-		sta.h	<_ax
-		lda.l	#adpcm_size * 2		; ADPCM addr.
-		sta.l	<_bx
-		lda.h	#adpcm_size * 2
-		sta.h	<_bx
-		lda	#<adpcm_data		; Source addr.
-		sta	<_si + 0
-		lda	#>adpcm_data
-		sta	<_si + 1
-		ldy	#^adpcm_data
-		call	adpcm_write		; Write the ADPCM data.
+		; Set the rest of ADPCM RAM to $08 (silence).
 
-		; Set the rest of ADPCM RAM to $08.
-
-		ldy.h	#65536 - (adpcm_size * 3)
-		ldx.l	#65536 - (adpcm_size * 3)
+		ldy.h	#65536 - (adpcm_size * 2)
+		ldx.l	#65536 - (adpcm_size * 2)
 		beq	.fill
 		iny
-.fill:		lda	#ADPCM_WR_BUSY
+.fill:		lda	#ADPCM_WR_BSY
 !:		bit	IFU_ADPCM_FLG
 		bne	!-
 		lda	#$08
@@ -238,6 +223,24 @@ core_main:	; Turn the display off and initialize the screen mode.
 		bne	.fill
 		dey
 		bne	.fill
+
+		;
+
+		lda.l	#adpcm_size		; ADPCM size.
+		sta.l	<_ax
+		lda.h	#adpcm_size
+		sta.h	<_ax
+		lda.l	#adpcm_size * 1		; ADPCM addr.
+		sta.l	<_bx
+		lda.h	#adpcm_size * 1
+		sta.h	<_bx
+		lda	#<adpcm_data		; Source addr.
+		sta	<_si + 0
+		lda	#>adpcm_data
+		sta	<_si + 1
+		ldy	#^adpcm_data
+		call	adpcm_check		; Check the ADPCM data.
+!:		bne	!-
 
 		; Turn on the BG & SPR layers, then wait for a soft-reset.
 
@@ -456,7 +459,7 @@ core_main:	; Turn the display off and initialize the screen mode.
 ; check_flags - Check the ADPCM flag states during playback.
 ;
 
-check_flags:	PRINTF	"\e<\f\eX1\eY1\eP0**PC ENGINE ADPCM PLAY FLAGS**\eP1\eX9\eY3RUN\eP0:Other Test\n\n"
+check_flags:	PRINTF	"\e<\f\eXL0\eX1\eY1\eP0**PC ENGINE ADPCM PLAY FLAGS**\eP1\eX9\eY3RUN\eP0:Other Test\n\n"
 
 		jsr	adpcm_reset
 
@@ -472,19 +475,16 @@ check_flags:	PRINTF	"\e<\f\eX1\eY1\eP0**PC ENGINE ADPCM PLAY FLAGS**\eP1\eX9\eY3
 
 		ldx.l	#adpcm_size * 0		; Set playback address.
 		ldy.h	#adpcm_size * 0		; This clears IFU_INT_HALF,
-		jsr	adpcm_set_src		; but not IFU_INT_STOP.
+		jsr	adpcm_set_src		; but not IFU_INT_END.
 
 		ldx.l	#adpcm_size * 1		; Set playback length.
-		ldy.h	#adpcm_size * 1		; This clears IFU_INT_STOP,
+		ldy.h	#adpcm_size * 1		; This clears IFU_INT_END,
 		jsr	adpcm_set_len		; but not IFU_INT_HALF.
 
-;		lda	#IFU_INT_STOP		; Enable interrupt when done.
-;		tsb	IFU_IRQ_MSK
-
-		lda	#ADPCM_PLAY + ADPCM_INCR; Start sample playback.
+		lda	#ADPCM_PLAY + ADPCM_AUTO; Start sample playback.
 		sta	IFU_ADPCM_CTL
 
-!:		tst	#ADPCM_AD_STOP, IFU_ADPCM_FLG
+!:		tst	#ADPCM_AD_END, IFU_ADPCM_FLG
 		beq	!-
 
 		lda	IFU_ADPCM_CTL		; State A
@@ -495,7 +495,7 @@ check_flags:	PRINTF	"\e<\f\eX1\eY1\eP0**PC ENGINE ADPCM PLAY FLAGS**\eP1\eX9\eY3
 		and	#$0C
 		sta	array + 0 * 4 + 2
 
-		lda	#ADPCM_PLAY + ADPCM_INCR; Stop sample playback.
+		lda	#ADPCM_PLAY + ADPCM_AUTO; Stop sample playback.
 		trb	IFU_ADPCM_CTL
 
 		lda	IFU_ADPCM_CTL		; State B
@@ -508,6 +508,11 @@ check_flags:	PRINTF	"\e<\f\eX1\eY1\eP0**PC ENGINE ADPCM PLAY FLAGS**\eP1\eX9\eY3
 
 		ldy	#2			; 1ms delay.
 		jsr	.delay
+
+		lda	IFU_ADPCM_DAT		; This clears IFU_INT_HALF!
+		ldx	#4			; 24-cycle delay, what a
+!:		dex				; coincidence!
+		bne	!-
 
 		lda	IFU_ADPCM_CTL		; State C
 		sta	array + 2 * 4 + 0
@@ -523,7 +528,7 @@ check_flags:	PRINTF	"\e<\f\eX1\eY1\eP0**PC ENGINE ADPCM PLAY FLAGS**\eP1\eX9\eY3
 
 		ldx.l	#adpcm_size * 0		; Set playback address.
 		ldy.h	#adpcm_size * 0		; This clears IFU_INT_HALF,
-		jsr	adpcm_set_src           ; but not IFU_INT_STOP.
+		jsr	adpcm_set_src           ; but not IFU_INT_END.
 
 		lda	IFU_ADPCM_CTL		; State D
 		sta	array + 3 * 4 + 0
@@ -534,7 +539,7 @@ check_flags:	PRINTF	"\e<\f\eX1\eY1\eP0**PC ENGINE ADPCM PLAY FLAGS**\eP1\eX9\eY3
 		sta	array + 3 * 4 + 2
 
 		ldx.l	#adpcm_size * 2		; Set playback length.
-		ldy.h	#adpcm_size * 2		; This clears IFU_INT_STOP,
+		ldy.h	#adpcm_size * 2		; This clears IFU_INT_END,
 		jsr	adpcm_set_len           ; but not IFU_INT_HALF.
 
 		lda	IFU_ADPCM_CTL		; State E
@@ -545,7 +550,7 @@ check_flags:	PRINTF	"\e<\f\eX1\eY1\eP0**PC ENGINE ADPCM PLAY FLAGS**\eP1\eX9\eY3
 		and	#$0C
 		sta	array + 4 * 4 + 2
 
-		lda	#ADPCM_INCR
+		lda	#ADPCM_AUTO
 		tsb	IFU_ADPCM_CTL
 
 		lda	IFU_ADPCM_CTL		; State F
@@ -613,7 +618,7 @@ check_flags:	PRINTF	"\e<\f\eX1\eY1\eP0**PC ENGINE ADPCM PLAY FLAGS**\eP1\eX9\eY3
 		and	#$0C
 		sta	array + 10 * 4 + 2
 
-!:		tst	#ADPCM_AD_STOP, IFU_ADPCM_FLG
+!:		tst	#ADPCM_AD_END, IFU_ADPCM_FLG
 		beq	!-
 
 		lda	IFU_ADPCM_CTL		; State L
@@ -624,7 +629,7 @@ check_flags:	PRINTF	"\e<\f\eX1\eY1\eP0**PC ENGINE ADPCM PLAY FLAGS**\eP1\eX9\eY3
 		and	#$0C
 		sta	array + 11 * 4 + 2
 
-		lda	#ADPCM_PLAY + ADPCM_INCR; Stop sample playback.
+		lda	#ADPCM_PLAY + ADPCM_AUTO; Stop sample playback.
 		trb	IFU_ADPCM_CTL
 
 		lda	IFU_ADPCM_CTL		; State M
@@ -635,7 +640,7 @@ check_flags:	PRINTF	"\e<\f\eX1\eY1\eP0**PC ENGINE ADPCM PLAY FLAGS**\eP1\eX9\eY3
 		and	#$0C
 		sta	array + 12 * 4 + 2
 
-!:		tst	#ADPCM_AD_BUSY, IFU_ADPCM_FLG
+!:		tst	#ADPCM_AD_BSY, IFU_ADPCM_FLG
 		bne	!-
 
 		lda	IFU_ADPCM_CTL		; State N
@@ -655,16 +660,13 @@ check_flags:	PRINTF	"\e<\f\eX1\eY1\eP0**PC ENGINE ADPCM PLAY FLAGS**\eP1\eX9\eY3
 
 		ldx.l	#adpcm_size * 0		; Set playback address.
 		ldy.h	#adpcm_size * 0		; This clears IFU_INT_HALF,
-		jsr	adpcm_set_src		; but not IFU_INT_STOP.
+		jsr	adpcm_set_src		; but not IFU_INT_END.
 
 		ldx.l	#adpcm_size * 1		; Set playback length.
-		ldy.h	#adpcm_size * 1		; This clears IFU_INT_STOP,
+		ldy.h	#adpcm_size * 1		; This clears IFU_INT_END,
 		jsr	adpcm_set_len		; but not IFU_INT_HALF.
 
-;		lda	#IFU_INT_STOP		; Enable interrupt when done.
-;		tsb	IFU_IRQ_MSK
-
-		lda	#ADPCM_PLAY + ADPCM_INCR; Start sample playback.
+		lda	#ADPCM_PLAY + ADPCM_AUTO; Start sample playback.
 		sta	IFU_ADPCM_CTL
 
 		lda	IFU_ADPCM_CTL		; State O
@@ -700,7 +702,7 @@ check_flags:	PRINTF	"\e<\f\eX1\eY1\eP0**PC ENGINE ADPCM PLAY FLAGS**\eP1\eX9\eY3
 ;		ldy	#1			; Need somewhere between < 500us delay @ 16KHz
 ;		jsr	.delay
 
-!:		tst	#ADPCM_AD_BUSY, IFU_ADPCM_FLG
+!:		tst	#ADPCM_AD_BSY, IFU_ADPCM_FLG
 		bne	!-
 
 		lda	IFU_ADPCM_CTL		; State R
@@ -711,8 +713,6 @@ check_flags:	PRINTF	"\e<\f\eX1\eY1\eP0**PC ENGINE ADPCM PLAY FLAGS**\eP1\eX9\eY3
 		and	#$0C
 		sta	array + 17 * 4 + 2
 
-	.if	1
-
 		;
 		; Play back the 4th sample (one loop "You're all going to die").
 		;
@@ -722,16 +722,13 @@ check_flags:	PRINTF	"\e<\f\eX1\eY1\eP0**PC ENGINE ADPCM PLAY FLAGS**\eP1\eX9\eY3
 
 		ldx.l	#adpcm_size * 0		; Set playback address.
 		ldy.h	#adpcm_size * 0		; This clears IFU_INT_HALF,
-		jsr	adpcm_set_src		; but not IFU_INT_STOP.
+		jsr	adpcm_set_src		; but not IFU_INT_END.
 
 		ldx.l	#adpcm_size * 1		; Set playback length.
-		ldy.h	#adpcm_size * 1		; This clears IFU_INT_STOP,
+		ldy.h	#adpcm_size * 1		; This clears IFU_INT_END,
 		jsr	adpcm_set_len		; but not IFU_INT_HALF.
 
-;		lda	#IFU_INT_STOP		; Enable interrupt when done.
-;		tsb	IFU_IRQ_MSK
-
-		lda	#ADPCM_PLAY + ADPCM_INCR; Start sample playback.
+		lda	#ADPCM_PLAY + ADPCM_AUTO; Start sample playback.
 		sta	IFU_ADPCM_CTL
 
 		lda	IFU_ADPCM_CTL		; State S
@@ -742,7 +739,7 @@ check_flags:	PRINTF	"\e<\f\eX1\eY1\eP0**PC ENGINE ADPCM PLAY FLAGS**\eP1\eX9\eY3
 		and	#$0C
 		sta	array + 18 * 4 + 2
 
-!:		tst	#ADPCM_AD_STOP, IFU_ADPCM_FLG
+!:		tst	#ADPCM_AD_END, IFU_ADPCM_FLG
 		beq	!-
 
 		lda	IFU_ADPCM_CTL		; State T
@@ -753,7 +750,7 @@ check_flags:	PRINTF	"\e<\f\eX1\eY1\eP0**PC ENGINE ADPCM PLAY FLAGS**\eP1\eX9\eY3
 		and	#$0C
 		sta	array + 19 * 4 + 2
 
-		lda	#ADPCM_PLAY + ADPCM_INCR; Stop sample playback.
+		lda	#ADPCM_PLAY + ADPCM_AUTO; Stop sample playback.
 		trb	IFU_ADPCM_CTL
 
 		lda	IFU_ADPCM_CTL		; State U
@@ -763,8 +760,6 @@ check_flags:	PRINTF	"\e<\f\eX1\eY1\eP0**PC ENGINE ADPCM PLAY FLAGS**\eP1\eX9\eY3
 		lda	IFU_IRQ_FLG
 		and	#$0C
 		sta	array + 20 * 4 + 2
-
-	.endif
 
 		; Display the results.
 
@@ -785,7 +780,7 @@ check_flags:	PRINTF	"\e<\f\eX1\eY1\eP0**PC ENGINE ADPCM PLAY FLAGS**\eP1\eX9\eY3
 		lda	<array + 2, x
 		sta	<array + 2
 
-		PRINTF	"  %1c) CTL=$%0hx FLG=$%0hx IRQ=$%0hx\n", state, array + 0, array + 1, array + 2
+		PRINTF	"   %1c) CTL=$%0hx FLG=$%0hx IRQ=$%0hx\n", state, array + 0, array + 1, array + 2
 
 		pla
 		inc	a

@@ -131,12 +131,12 @@ core_irq2:	bbs0	<irq_vec, .hook		; 8 cycles if taken.
 		pha				; Handle IFU_INT_STOP so that
 		lda	IFU_IRQ_MSK		; adpcm_play() stops playback
 		and	IFU_IRQ_FLG		; properly.
-		bit	#IFU_INT_STOP
+		bit	#IFU_INT_END
 		beq	!+
 
-		lda  	#IFU_INT_STOP + IFU_INT_HALF
+		lda  	#IFU_INT_END + IFU_INT_HALF
 		trb  	IFU_IRQ_MSK
-		lda	#ADPCM_PLAY + ADPCM_INCR
+		lda	#ADPCM_PLAY + ADPCM_AUTO
 		trb	IFU_ADPCM_CTL
 !:		pla
 	.endif	SUPPORT_ADPCM

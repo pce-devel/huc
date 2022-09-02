@@ -28,15 +28,15 @@ Reading from IFU_ADPCM_DAT decrements LENGTH. Appears to saturate at 0x0000.
 
   Side effects include at least setting IFU_INT_HALF.
 
-  When the IFU_INT_STOP flags are set by a read from IFU_ADPCM_DAT, then the
+  When the IFU_INT_END flags are set by a read from IFU_ADPCM_DAT, then the
   IFU_INT_HALF flag appears to be cleared.
-  This is different from normal ADPCM playback, where both IFU_INT_STOP and
+  This is different from normal ADPCM playback, where both IFU_INT_END and
   IFU_INT_HALF flags are set by the end of playback.
 
-  Note that if ADPCM_INCR of IFU_ADPCM_CTL is cleared, then the IFU_INT_HALF
+  Note that if ADPCM_AUTO of IFU_ADPCM_CTL is cleared, then the IFU_INT_HALF
   flag seems to be cleared on the next sample clock, either intentionally or
   due to some kind of length underflow, I don't know; but the behavior when
-  ADPCM_INCR cleared is buggy, and I doubt games rely on any of its weirder
+  ADPCM_AUTO cleared is buggy, and I doubt games rely on any of its weirder
   nuances.
 
 Writing to IFU_ADPCM_DAT increments LENGTH. Appears to saturate at 0xFFFF.
@@ -44,27 +44,25 @@ Writing to IFU_ADPCM_DAT increments LENGTH. Appears to saturate at 0xFFFF.
   Side effects include at least setting/clearing IFU_INT_HALF.
 
 For IFU_ADPCM_DAT port read/write accesses at least, the IFU_INT_HALF flag
-is set by (LENGTH < 32768), evaluated before LENGTH is either decremented
+is set by (LENGTH < $8000), evaluated before LENGTH is either decremented
 or incremented.
 
 ADPCM RAM reads due to playback apparently aren't reflected in IFU_ADPCM_FLG
-as the ADPCM_RD_BUSY state.
+as the ADPCM_RD_BSY state.
 Unknown if it shares the same buffer as IFU_ADPCM_DAT port reads though.
 
-Setting ADPCM_SET_SZ in IFU_ADPCM_CTL clears both the ADPCM_AD_STOP and the
-IFU_INT_STOP flags, and they will not be set as long as ADPCM_SET_SZ is set.
+Setting ADPCM_SET_SZ in IFU_ADPCM_CTL clears both the ADPCM_AD_END and the
+IFU_INT_END flags, and they will not be set as long as ADPCM_SET_SZ is set.
 It doesn't clear the IFU_INT_HALF flag though.
 Short of resetting the ADPCM hardware, this was the only way I could find to
-clear the ADPCM_AD_STOP and IFU_INT_STOP flags via software.
+clear the ADPCM_AD_END and IFU_INT_END flags via software.
 
 Setting ADPCM_SET_SZ in IFU_ADPCM_CTL does NOT stop the IFU_INT_HALF flag
 from being set (at least not during reads/writes to IFU_ADPCM_DAT).
 
-Setting ADPCM_SET_RD in IFU_ADPCM_CTL clears the IFU_INT_HALF flag.
-
-ADPCM playback doesn't seem to start when the ADPCM_AD_STOP and IFU_INT_STOP
-flags are set and 0x60 (ADPCM_PLAY+ADPCM_INCR) is written to IFU_ADPCM_CTL,
-but starts if only ADPCM_PLAY is written (i.e. ADPCM_INCR is clear).
+ADPCM playback doesn't seem to start when the ADPCM_AD_END and IFU_INT_END
+flags are set and 0x60 (ADPCM_PLAY+ADPCM_AUTO) is written to IFU_ADPCM_CTL,
+but starts if only ADPCM_PLAY is written (i.e. ADPCM_AUTO is clear).
 More investigation is needed (unlikely to affect games though).
 
 ADPCM playback starting is likely delayed (or at certain intervals) compared

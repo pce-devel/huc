@@ -195,13 +195,13 @@ IFU_ADPCM_SPD	= $FF:180E	; RW : ADPCM playback clock.
 
 IFU_AUDIO_FADE	= $FF:180F	; RW : IFU audio fade control/status.
 
-IFU_BRAM_LOCK	= $FF:1803	; .W :
-IFU_BRAM_UNLOCK	= $FF:1807	; .W :
+IFU_BRAM_LOCK	= $FF:1803	; _W :
+IFU_BRAM_UNLOCK	= $FF:1807	; _W :
 
 ; IFU interrupt bits in IFU_IRQ_CTL/IFU_IRQ_FLG
 
-IFU_INT_HALF	= $04		; ADPCM < 50% remaining.
-IFU_INT_STOP	= $08		; ADPCM finished.
+IFU_INT_HALF	= $04		; Set if ADPCM LENGTH <= $7FFF.
+IFU_INT_END	= $08		; Set if ADPCM LENGTH == 0 (when ADPCM_AUTO).
 IFU_INT_SUBC	= $10		; SUBCODE read.
 IFU_INT_MSG_IN	= $20		; SCSI MIN phase.
 IFU_INT_DAT_IN	= $40		; SCSI DIN phase.
@@ -221,16 +221,16 @@ ADPCM_SET_WR	= $02
 ADPCM_RD_CLK	= $04
 ADPCM_SET_RD	= $08
 ADPCM_SET_SZ	= $10
-ADPCM_PLAY	= $20
-ADPCM_INCR	= $40
+ADPCM_PLAY	= $20		; Start playback.
+ADPCM_AUTO	= $40		; Automatically stop when ADPCM LENGTH == 0.
 ADPCM_RESET	= $80
 
 ; ADPCM status bits in IFU_ADPCM_FLG
 
-ADPCM_AD_STOP	= $01
-ADPCM_WR_BUSY	= $04
-ADPCM_AD_BUSY	= $08
-ADPCM_RD_BUSY	= $80
+ADPCM_AD_END	= $01
+ADPCM_WR_BSY	= $04
+ADPCM_AD_BSY	= $08
+ADPCM_RD_BSY	= $80
 
 
 
@@ -264,18 +264,18 @@ ACD3_DATA	= $FF:1A30	; RW : 2
 ACD3_BASE	= $FF:1A32	; RW : 3
 ACD3_INDX	= $FF:1A35	; RW : 2
 ACD3_INCR	= $FF:1A37	; RW : 2
-ACD3_CTRL	= $FF:1A39	; RW : 1 (the bottom 7-bits are readable)
+ACD3_CTRL	= $FF:1A39	; RW : 1 (the bottom 7-bits are readable).
 ACD3_TRIG	= $FF:1A3A	; _W : 1
 
 ACD_SHIFT	= $FF:1AE0	; RW : 4 bytes
-ACD_ASL		= $FF:1AE4	; RW : positive = shift left (the bottom 4-bits are readable)
-ACD_ROL		= $FF:1AE5	; RW : positive = shift left (the bottom 4-bits are readable)
+ACD_ASL		= $FF:1AE4	; RW : 4-bit signed shift (positive is left).
+ACD_ROL		= $FF:1AE5	; RW : 4-bit signed shift (positive is left).
 
 ACD_VERL	= $FF:1AFD	; R_ :
 ACD_VERH	= $FF:1AFE	; R_ :
 ACD_FLAG	= $FF:1AFF	; R_ :
 
-ACD_ID		= $51		; if ac_identflag = AC_IDENT, then AC in use
+ACD_ID		= $51		; If ACD_FLAG == ACD_ID, then ACD exists.
 
 
 
@@ -658,7 +658,3 @@ VDC_MWR_64x64	= $0050
 
 VDC_MWR_128x32	= $0020
 VDC_MWR_128x64	= $0060
-
-;
-;
-;

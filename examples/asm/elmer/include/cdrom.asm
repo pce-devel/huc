@@ -257,7 +257,7 @@ cdr_cplay_irq2:	pha
 		bne	.got_int_dat
 		bit	#IFU_INT_MSG_IN
 		bne	.got_int_msg
-		bit	#IFU_INT_STOP
+		bit	#IFU_INT_END
 		bne	.got_int_stop
 		bra	.irq2_done
 
@@ -314,7 +314,7 @@ cdr_cplay_irq2:	pha
 
 		;
 
-.got_int_stop:	lda	#IFU_INT_STOP		; Disable IFU_INT_STOP.
+.got_int_stop:	lda	#IFU_INT_END		; Disable IFU_INT_END.
 		trb	IFU_IRQ_MSK
 
 		lda	#$01			; Disable IRQ2 vector.
@@ -1383,13 +1383,13 @@ cdr_ad_cplay	.proc
 		jsr	adpcm_set_src
 
 		ldx	#<$FFFF			; Set 64KB playback length.
-		ldy	#>$FFFF			; This clears IFU_INT_STOP,
+		ldy	#>$FFFF			; This clears IFU_INT_END,
 		jsr	adpcm_set_len		; but not IFU_INT_HALF.
 
-		lda	#ADPCM_INCR
+		lda	#ADPCM_AUTO
 		tsb	IFU_ADPCM_CTL		; N.B. BIOS uses a STA!
 
-		lda	#IFU_INT_HALF + IFU_INT_STOP
+		lda	#IFU_INT_HALF + IFU_INT_END
 		tsb	IFU_IRQ_MSK
 
 		lda	#ADPCM_PLAY
@@ -1511,10 +1511,10 @@ cdr_ad_stop	.proc
 .wait:		lda	cplay_filling		; Wait for the current load
 		bne	.wait			; to finished.
 
-		lda	#IFU_INT_HALF + IFU_INT_STOP
+		lda	#IFU_INT_HALF + IFU_INT_END
 		trb	IFU_IRQ_MSK
 
-		lda	#ADPCM_PLAY + ADPCM_INCR
+		lda	#ADPCM_PLAY + ADPCM_AUTO
 		trb	IFU_ADPCM_CTL
 
 		rmb0	<irq_vec		; Disable IRQ2 vector.
