@@ -1297,10 +1297,10 @@ huv_write_adpcm:tma3
 
 		cly
 .write_loop:	lda	[huv_audio_pcm], y
-.write_wait:	tst	#ADPCM_WR_BUSY, IFU_ADPCM_FLG
+.write_wait:	tst	#ADPCM_WR_BSY, IFU_ADPCM_FLG
 		bne	.write_wait		; 30-cycles-per-byte is the
 		sta	IFU_ADPCM_DAT		; maximum safe rate without
-		iny				; triggering a BUSY delay.
+		iny				; triggering a BSY delay.
 		dex
 		bne	.write_loop
 
