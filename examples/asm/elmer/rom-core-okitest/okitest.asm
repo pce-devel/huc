@@ -17,7 +17,10 @@
 ; The purpose of this example is to compare the accuracy of emulation with
 ; real console hardware.
 ;
-; The ADPCM PLAY FLAGS test plays back sample multiple times, and then shows
+; ***************************************************************************
+; ***************************************************************************
+;
+; The ADPCM PLAY FLAGS test #1 plays back sample 4 times, and then shows
 ; the control and status flags at various stages.
 ;
 ; Values of IFU_ADPCM_CTL ($180D), IFU_ADPCM_FLG ($180C), IFU_IRQ_FLG ($1803)
@@ -43,6 +46,37 @@
 ; S) After 4th playback is started
 ; T) After 4th playback is finished
 ; U) After clear ADPCM_PLAY and ADPCM_AUTO
+;
+; ***************************************************************************
+; ***************************************************************************
+;
+; The ADPCM PLAY FLAGS test #2 plays back sample once, and then read/writes
+; bytes and changes the LENGTH in order to check when INT_END and INT_HALF
+; change.
+;
+; Values of IFU_ADPCM_CTL ($180D), IFU_ADPCM_FLG ($180C), IFU_IRQ_FLG ($1803)
+;
+; A) After 1st playback is finished
+; B) After clear ADPCM_PLAY and ADPCM_AUTO
+; C) After clear ADPCM_PLAY and ADPCM_AUTO + 1 millisecond
+; D) After reading a byte, which clears IFU_INT_HALF bit. (LENGTH = $FFFF?)
+; E) After setting LENGTH=$0002
+; F) After reading a byte. (LENGTH = $0001?)
+; G) After reading a byte. (LENGTH = $0000?)
+; H) After reading a byte. (LENGTH = $FFFF?)
+; I) After setting LENGTH=$8002
+; J) After reading a byte. (LENGTH = $8001?)
+; K) After reading a byte. (LENGTH = $8000?)
+; L) Immediately after reading a byte. (LENGTH = $7FFF?)
+; M) 24-cycles later. (LENGTH = $7FFF?) INT_HALF changes AFTER IFU reads.
+; N) After reading a byte. (LENGTH = $7FFE?)
+; O) After setting LENGTH=$7FFE
+; P) After writing a byte. (LENGTH = $7FFF?)
+; Q) Immediately after writing a byte. (LENGTH = $8000?)
+; R) 36-cycles later. (LENGTH = $8000?)
+; S) Immediately after writing a byte. (LENGTH = $8001?)
+; T) 36-cycles later. (LENGTH = $8001?) INT_HALF cleared AFTER IFU writes.
+; U)
 ;
 ; ***************************************************************************
 ; ***************************************************************************
@@ -104,15 +138,16 @@ xfer_size:	ds	2
 
 which_rcr:	ds	1
 
-adpcm_flg0:	ds	1
-adpcm_ctl0:	ds	1
-adpcm_flg1:	ds	1
-adpcm_ctl1:	ds	1
+;adpcm_flg0:	ds	1
+;adpcm_ctl0:	ds	1
+;adpcm_flg1:	ds	1
+;adpcm_ctl1:	ds	1
 
 min_cycles	ds	2
 max_cycles	ds	2
 num_cycles	ds	2 * 2
 
+screen		ds	1
 state		ds	1
 array		ds	4 * 26
 
@@ -224,7 +259,7 @@ core_main:	; Turn the display off and initialize the screen mode.
 		dey
 		bne	.fill
 
-		;
+		; Confirm correct read/write.
 
 		lda.l	#adpcm_size		; ADPCM size.
 		sta.l	<_ax
@@ -461,6 +496,8 @@ core_main:	; Turn the display off and initialize the screen mode.
 
 check_flags:	PRINTF	"\e<\f\eXL0\eX1\eY1\eP0**PC ENGINE ADPCM PLAY FLAGS**\eP1\eX9\eY3RUN\eP0:Other Test\n\n"
 
+		tai	const_0000, array, 4 * 26
+
 		jsr	adpcm_reset
 
 !:		jsr	adpcm_stat		; Is the ADPCM busy?
@@ -487,46 +524,268 @@ check_flags:	PRINTF	"\e<\f\eXL0\eX1\eY1\eP0**PC ENGINE ADPCM PLAY FLAGS**\eP1\eX
 !:		tst	#ADPCM_AD_END, IFU_ADPCM_FLG
 		beq	!-
 
-		lda	IFU_ADPCM_CTL		; State A
-		sta	array + 0 * 4 + 0
-		lda	IFU_ADPCM_FLG
-		sta	array + 0 * 4 + 1
+		ldx	IFU_ADPCM_CTL		; State A
+		ldy	IFU_ADPCM_FLG
 		lda	IFU_IRQ_FLG
+		stx	array + 0 * 4 + 0
+		sty	array + 0 * 4 + 1
 		and	#$0C
 		sta	array + 0 * 4 + 2
 
 		lda	#ADPCM_PLAY + ADPCM_AUTO; Stop sample playback.
 		trb	IFU_ADPCM_CTL
 
-		lda	IFU_ADPCM_CTL		; State B
-		sta	array + 1 * 4 + 0
-		lda	IFU_ADPCM_FLG
-		sta	array + 1 * 4 + 1
+		ldx	IFU_ADPCM_CTL		; State B
+		ldy	IFU_ADPCM_FLG
 		lda	IFU_IRQ_FLG
+		stx	array + 1 * 4 + 0
+		sty	array + 1 * 4 + 1
 		and	#$0C
 		sta	array + 1 * 4 + 2
 
 		ldy	#2			; 1ms delay.
 		jsr	.delay
 
-		lda	IFU_ADPCM_DAT		; This clears IFU_INT_HALF!
+		ldx	IFU_ADPCM_CTL		; State C
+		ldy	IFU_ADPCM_FLG
+		lda	IFU_IRQ_FLG
+		stx	array + 2 * 4 + 0
+		sty	array + 2 * 4 + 1
+		and	#$0C
+		sta	array + 2 * 4 + 2
+
+		;
+		;
+		;
+
+		lda	<screen
+		eor	#1
+		sta	<screen
+		beq	.test0
+		jmp	.test1
+
+.test0:		lda	IFU_ADPCM_DAT
 		ldx	#4			; 24-cycle delay, what a
 !:		dex				; coincidence!
 		bne	!-
 
-		lda	IFU_ADPCM_CTL		; State C
-		sta	array + 2 * 4 + 0
-		lda	IFU_ADPCM_FLG
-		sta	array + 2 * 4 + 1
+;		ldx	IFU_ADPCM_CTL		; State D ($FFFF)
+		ldy	IFU_ADPCM_FLG
 		lda	IFU_IRQ_FLG
+		stz	array + 3 * 4 + 0
+		sty	array + 3 * 4 + 1
 		and	#$0C
-		sta	array + 2 * 4 + 2
+		sta	array + 3 * 4 + 2
+
+		ldx.l	#$0002			; Set playback length.
+		ldy.h	#$0002
+		jsr	adpcm_set_len
+
+;		ldx	IFU_ADPCM_CTL		; State E ($0002)
+		ldy	IFU_ADPCM_FLG
+		lda	IFU_IRQ_FLG
+		stz	array + 4 * 4 + 0
+		sty	array + 4 * 4 + 1
+		and	#$0C
+		sta	array + 4 * 4 + 2
+
+		lda	IFU_ADPCM_DAT
+		ldx	#4			; 24-cycle delay, what a
+!:		dex				; coincidence!
+		bne	!-
+
+;		ldx	IFU_ADPCM_CTL		; State F ($0001)
+		ldy	IFU_ADPCM_FLG
+		lda	IFU_IRQ_FLG
+		stz	array + 5 * 4 + 0
+		sty	array + 5 * 4 + 1
+		and	#$0C
+		sta	array + 5 * 4 + 2
+
+		lda	IFU_ADPCM_DAT
+		ldx	#4			; 24-cycle delay, what a
+!:		dex				; coincidence!
+		bne	!-
+
+;		ldx	IFU_ADPCM_CTL		; State G ($0000)
+		ldy	IFU_ADPCM_FLG
+		lda	IFU_IRQ_FLG
+		stz	array + 6 * 4 + 0
+		sty	array + 6 * 4 + 1
+		and	#$0C
+		sta	array + 6 * 4 + 2
+
+		lda	IFU_ADPCM_DAT
+		ldx	#4			; 24-cycle delay, what a
+!:		dex				; coincidence!
+		bne	!-
+
+;		ldx	IFU_ADPCM_CTL		; State H ($FFFF)
+		ldy	IFU_ADPCM_FLG
+		lda	IFU_IRQ_FLG
+		stz	array + 7 * 4 + 0
+		sty	array + 7 * 4 + 1
+		and	#$0C
+		sta	array + 7 * 4 + 2
+
+		ldx.l	#$8002			; Set playback length.
+		ldy.h	#$8002
+		jsr	adpcm_set_len
+
+;		ldx	IFU_ADPCM_CTL		; State I ($8002)
+		ldy	IFU_ADPCM_FLG
+		lda	IFU_IRQ_FLG
+		stz	array + 8 * 4 + 0
+		sty	array + 8 * 4 + 1
+		and	#$0C
+		sta	array + 8 * 4 + 2
+
+		lda	IFU_ADPCM_DAT
+		ldx	#4			; 24-cycle delay, what a
+!:		dex				; coincidence!
+		bne	!-
+
+;		ldx	IFU_ADPCM_CTL		; State J ($8001)
+		ldy	IFU_ADPCM_FLG
+		lda	IFU_IRQ_FLG
+		stz	array + 9 * 4 + 0
+		sty	array + 9 * 4 + 1
+		and	#$0C
+		sta	array + 9 * 4 + 2
+
+		lda	IFU_ADPCM_DAT
+		ldx	#4			; 24-cycle delay, what a
+!:		dex				; coincidence!
+		bne	!-
+
+;		ldx	IFU_ADPCM_CTL		; State K ($8000)
+		ldy	IFU_ADPCM_FLG
+		lda	IFU_IRQ_FLG
+		stz	array + 10 * 4 + 0
+		sty	array + 10 * 4 + 1
+		and	#$0C
+		sta	array + 10 * 4 + 2
+
+		lda	IFU_ADPCM_DAT
+;		ldx	#4			; 24-cycle delay, what a
+;!:		dex				; coincidence!
+;		bne	!-
+
+;		ldx	IFU_ADPCM_CTL		; State L ($7FFF)
+		ldy	IFU_ADPCM_FLG
+		lda	IFU_IRQ_FLG
+		stz	array + 11 * 4 + 0
+		sty	array + 11 * 4 + 1
+		and	#$0C
+		sta	array + 11 * 4 + 2
+
+		ldx	#4			; 24-cycle delay, what a
+!:		dex				; coincidence!
+		bne	!-
+
+;		ldx	IFU_ADPCM_CTL		; State M ($7FFF)
+		ldy	IFU_ADPCM_FLG
+		lda	IFU_IRQ_FLG
+		stz	array + 12 * 4 + 0
+		sty	array + 12 * 4 + 1
+		and	#$0C
+		sta	array + 12 * 4 + 2
+
+		lda	IFU_ADPCM_DAT
+		ldx	#4			; 24-cycle delay, what a
+!:		dex				; coincidence!
+		bne	!-
+
+;		ldx	IFU_ADPCM_CTL		; State N ($7FFE)
+		ldy	IFU_ADPCM_FLG
+		lda	IFU_IRQ_FLG
+		stz	array + 13 * 4 + 0
+		sty	array + 13 * 4 + 1
+		and	#$0C
+		sta	array + 13 * 4 + 2
+
+		ldx.l	#$7FFE			; Set playback length.
+		ldy.h	#$7FFE
+		jsr	adpcm_set_len
+
+;		ldx	IFU_ADPCM_CTL		; State O ($7FFE)
+		ldy	IFU_ADPCM_FLG
+		lda	IFU_IRQ_FLG
+		stz	array + 14 * 4 + 0
+		sty	array + 14 * 4 + 1
+		and	#$0C
+		sta	array + 14 * 4 + 2
+
+		stz	IFU_ADPCM_DAT
+		ldx	#4			; 24-cycle delay, what a
+!:		dex				; coincidence!
+		bne	!-
+
+;		ldx	IFU_ADPCM_CTL		; State P ($7FFF)
+		ldy	IFU_ADPCM_FLG
+		lda	IFU_IRQ_FLG
+		stz	array + 15 * 4 + 0
+		sty	array + 15 * 4 + 1
+		and	#$0C
+		sta	array + 15 * 4 + 2
+
+		stz	IFU_ADPCM_DAT
+;		ldx	#4			; 24-cycle delay, what a
+;!:		dex				; coincidence!
+;		bne	!-
+
+;		ldx	IFU_ADPCM_CTL		; State Q ($8000)
+		ldy	IFU_ADPCM_FLG
+		lda	IFU_IRQ_FLG
+		stz	array + 16 * 4 + 0
+		sty	array + 16 * 4 + 1
+		and	#$0C
+		sta	array + 16 * 4 + 2
+
+		ldx	#6			; 36-cycle delay.
+!:		dex
+		bne	!-
+
+;		ldx	IFU_ADPCM_CTL		; State R ($8000)
+		ldy	IFU_ADPCM_FLG
+		lda	IFU_IRQ_FLG
+		stz	array + 17 * 4 + 0
+		sty	array + 17 * 4 + 1
+		and	#$0C
+		sta	array + 17 * 4 + 2
+
+		stz	IFU_ADPCM_DAT
+;		ldx	#4			; 24-cycle delay, what a
+;!:		dex				; coincidence!
+;		bne	!-
+
+;		ldx	IFU_ADPCM_CTL		; State S ($8001)
+		ldy	IFU_ADPCM_FLG
+		lda	IFU_IRQ_FLG
+		stz	array + 18 * 4 + 0
+		sty	array + 18 * 4 + 1
+		and	#$0C
+		sta	array + 18 * 4 + 2
+
+		ldx	#6			; 36-cycle delay.
+!:		dex
+		bne	!-
+
+;		ldx	IFU_ADPCM_CTL		; State T ($8001)
+		ldy	IFU_ADPCM_FLG
+		lda	IFU_IRQ_FLG
+		stz	array + 19 * 4 + 0
+		sty	array + 19 * 4 + 1
+		and	#$0C
+		sta	array + 19 * 4 + 2
+
+		jmp	.results
 
 		;
 		; Play back the 2nd sample (two loops "You're all going to die").
 		;
 
-		ldx.l	#adpcm_size * 0		; Set playback address.
+.test1:		ldx.l	#adpcm_size * 0		; Set playback address.
 		ldy.h	#adpcm_size * 0		; This clears IFU_INT_HALF,
 		jsr	adpcm_set_src           ; but not IFU_INT_END.
 
@@ -763,7 +1022,7 @@ check_flags:	PRINTF	"\e<\f\eXL0\eX1\eY1\eP0**PC ENGINE ADPCM PLAY FLAGS**\eP1\eX
 
 		; Display the results.
 
-		cla
+.results:	cla
 .loop:		pha
 		clc
 		adc	#'A'
@@ -833,7 +1092,7 @@ hsync_proc1:	pha				; 3 Save all registers.
 		st0	#VDC_VWR		; 5
 		lda	#VDC_VWR		; 2
 		sta	<vdc_reg		; 4
-		
+
 		cli				; 2
 
 		; It takes 148 cycles from RCR to get to here ...
@@ -894,8 +1153,8 @@ do_xfer:	lda.l	<xfer_size		; ADPCM size.
 
 hsync_proc2:	pha				; Save all registers.
 		phx
-		phy				
-		bit	VDC_SR			
+		phy
+		bit	VDC_SR
 
 		lda	<which_rcr		; Convert which_rcr into
 		dec	a			; an index, 0 or 2.
@@ -943,7 +1202,7 @@ hsync_proc2:	pha				; Save all registers.
 ;
 
 vsync_proc:	stz	<which_rcr		; Prepare first RCR.
-		jsr	set_next_rcr		
+		jsr	set_next_rcr
 
 		jsr	xfer_palettes		; Transfer queue to VCE now.
 

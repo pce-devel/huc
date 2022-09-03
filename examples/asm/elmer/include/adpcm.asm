@@ -221,12 +221,12 @@ adpcm_read	.proc
 
 	.if	FAST_ADPCM
 
-		; 30 cycle *minimum* for reading.
-		; 32 cycle *safer* for reading.
-
 		ldx.l	<_ax			; Fix 16-bit length for the
 		beq	!+			; decrement.
 		inc.h	<_ax
+
+		; 30 cycle *minimum* for reading.
+		; 32 cycle *safer* for reading.
 
 !:		lda	IFU_ADPCM_FLG		; Bit7 = ADPCM_RD_BSY
 		bmi	!-
@@ -245,11 +245,11 @@ adpcm_read	.proc
 
 	.else
 
-		; 37 cycle *minimum* for no ADPCM_RD_BSY loops.
-
 		ldx.l	<_ax			; Fix 16-bit length for the
 		beq	.loop			; decrement.
 		inc.h	<_ax
+
+		; 37 cycle *minimum* with no ADPCM_RD_BSY loops.
 
 .loop:		lda	IFU_ADPCM_FLG		; Bit7 = ADPCM_RD_BSY
 		bmi	.loop
@@ -343,9 +343,6 @@ adpcm_write	.proc
 
 	.else
 
-		; 29 cycle *minimum* for no ADPCM_WR_BSY loops.
-		; 30 cycle *safer* for no ADPCM_WR_BSY loops.
-
 !:		lda.l	<_ax			; Lo-byte of length.
 		eor	#$FF			; Negate the lo-byte of length.
 		tay
@@ -360,6 +357,9 @@ adpcm_write	.proc
 		sta.l	<_si
 		bcs	.loop
 		dec.h	<_si
+
+		; 29 cycle *minimum* with no ADPCM_WR_BSY loops.
+		; 30 cycle *safer* with no ADPCM_WR_BSY loops.
 
 .loop:		lda	[_si], y		; Copy data from RAM to ADPCM.
 .wait:		tst	#ADPCM_WR_BSY, IFU_ADPCM_FLG
@@ -421,12 +421,12 @@ adpcm_check	.proc
 
 	.if	FAST_ADPCM
 
-		; 30 cycle *minimum* for reading (with no compare-failures).
-		; 32 cycle *safer* for reading (with no compare-failures).
-
 		ldx.l	<_ax			; Fix 16-bit length for the
 		beq	!+			; decrement.
 		inc.h	<_ax
+
+		; 30 cycle *minimum* for reading (with no compare-failures).
+		; 32 cycle *safer* for reading (with no compare-failures).
 
 !:		lda	IFU_ADPCM_FLG		; Bit7 = ADPCM_RD_BSY
 		bmi	!-
@@ -447,11 +447,11 @@ adpcm_check	.proc
 
 	.else
 
-		; 37 cycle *minimum* for no ADPCM_RD_BSY loops.
-
 		ldx.l	<_ax			; Fix 16-bit length for the
 		beq	.loop			; decrement.
 		inc.h	<_ax
+
+		; 37 cycle *minimum* with no ADPCM_RD_BSY loops.
 
 .loop:		lda	IFU_ADPCM_FLG		; Bit7 = ADPCM_RD_BSY
 		bmi	.loop
