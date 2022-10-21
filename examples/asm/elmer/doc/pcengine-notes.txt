@@ -129,6 +129,7 @@
 ;   Safe to write BYR @ 100 cpu cycles if width=240 hdw=$1D
 ;   Safe to write BYR @  90 cpu cycles if width=248 hdw=$1E
 ;   Safe to write BYR @  79 cpu cycles if width=256 hdw=$1F
+;     (88 to BYR & CR, 90 to BXR from HW IRQ1, including 8-cycle CPU response)
 ;   Safe to write BYR @  67 cpu cycles if width=264 hdw=$20
 ;
 ;
@@ -139,6 +140,7 @@
 ;   Safe to write BYR @  90 cpu cycles if width=336 hdw=$29
 ;   Safe to write BYR @  82 cpu cycles if width=344 hdw=$2A
 ;   Safe to write BYR @  74 cpu cycles if width=352 hdw=$2B
+;     (83 to BYR, 84 to CR, 85 to BXR from HW IRQ1, including 8-cycle CPU response)
 ;
 ;
 ; 10.74MHz (with MWR = $xA)
@@ -148,6 +150,7 @@
 ;   Safe to write BYR @ 101 cpu cycles if width=496 hdw=$3D
 ;   Safe to write BYR @  96 cpu cycles if width=504 hdw=$3E
 ;   Safe to write BYR @  91 cpu cycles if width=512 hdw=$3F
+;     (100 to BYR & CR, 101 to BXR from HW IRQ1, including 8-cycle CPU response)
 ;   Safe to write BYR @  85 cpu cycles if width=520 hdw=$40
 ;   Safe to write BYR @  79 cpu cycles if width=528 hdw=$41
 ;   Safe to write BYR @  75 cpu cycles if width=536 hdw=$42
