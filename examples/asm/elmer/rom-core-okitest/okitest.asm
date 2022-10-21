@@ -209,11 +209,72 @@ core_main:	; Turn the display off and initialize the screen mode.
 
 		call	xfer_palettes		; Transfer queue to VCE now.
 
+		; Turn on the BG & SPR layers.
+
+		call	set_dspon		; Enable background.
+
 		;
 
 		call	adpcm_reset		; Reset the ADPCM hardware.
 
-		lda.l	#adpcm_size		; ADPCM size.
+.wait_busy:	call	adpcm_stat		; Wait while busy.
+		bne	.wait_busy
+
+		lda	#$0E			; Set playback rate.
+		sta	IFU_ADPCM_SPD
+
+		clx				; Set playback read address.
+		cly
+		call	adpcm_set_src
+
+		clx				; Set playback write address.
+		cly
+		call	adpcm_set_dst
+		call	adpcm_stat
+
+		ldx	#0			; Reset length to clear ADPCM_AD_END.
+		cly
+		call	adpcm_set_len
+		call	adpcm_stat
+
+		PRINTF	"\e<\eXL1\f\eX1\eY1\eP0**PC ENGINE ADPCM 17-BIT LEN**\n\n"
+
+		lda	IFU_ADPCM_FLG		; $01 if playback stopped.
+		and	#ADPCM_AD_END
+		beq	!+
+
+		PRINTF	"ADPCM_AD_END before write @0!\n"
+
+!:		sta	IFU_ADPCM_DAT
+		call	adpcm_stat
+
+		lda	IFU_ADPCM_FLG		; $01 if playback stopped.
+		and	#ADPCM_AD_END
+		beq	!+
+
+		PRINTF	"ADPCM_AD_END after write @0!\n"
+
+!:		ldx	#1			; Reset length to clear ADPCM_AD_END.
+		cly
+		call	adpcm_set_len
+		call	adpcm_stat
+
+		lda	IFU_ADPCM_FLG		; $01 if playback stopped.
+		and	#ADPCM_AD_END
+		beq	!+
+
+		PRINTF	"ADPCM_AD_END before write @1!\n"
+
+!:		sta	IFU_ADPCM_DAT
+		call	adpcm_stat
+
+		lda	IFU_ADPCM_FLG		; $01 if playback stopped.
+		and	#ADPCM_AD_END
+		beq	!+
+
+		PRINTF	"ADPCM_AD_END after write @1!\n"
+
+!:		lda.l	#adpcm_size		; ADPCM size.
 		sta.l	<_ax
 		lda.h	#adpcm_size
 		sta.h	<_ax
@@ -259,9 +320,68 @@ core_main:	; Turn the display off and initialize the screen mode.
 		dey
 		bne	.fill
 
-		; Confirm correct read/write.
+		; Overwrite the 1st sample to test the 17-bit length.
 
 		lda.l	#adpcm_size		; ADPCM size.
+		sta.l	<_ax
+		lda.h	#adpcm_size
+		sta.h	<_ax
+		lda	#$FF			; ADPCM addr.
+		sta.l	<_bx
+		sta.h	<_bx
+		lda	#<adpcm_data		; Source addr.
+		sta	<_si + 0
+		lda	#>adpcm_data
+		sta	<_si + 1
+		ldy	#^adpcm_data
+		call	adpcm_write		; Write the ADPCM data.
+
+		PRINTF	"\nPlaying sample to check LENGTH\nwrap, clamp, or 17-bit.\n\n"
+
+		lda	IFU_ADPCM_FLG		; $01 if playback stopped.
+		and	#ADPCM_AD_END
+		beq	!+
+
+		PRINTF	"ADPCM_AD_END set before play!\n"
+
+!:		lda	#ADPCM_PLAY + ADPCM_AUTO; Start sample playback.
+		sta	IFU_ADPCM_CTL
+
+		stz	irq_cnt
+.wait_play:	jsr	wait_vsync
+		lda	IFU_ADPCM_FLG		; $01 if playback stopped.
+		and	#ADPCM_AD_END
+		beq	.wait_play
+
+		lda	#ADPCM_PLAY + ADPCM_AUTO; Stop sample playback.
+		trb	IFU_ADPCM_CTL
+
+		PRINTF	"Playback finished at time $%hx.\n\n", irq_cnt
+
+		lda	irq_cnt
+		cmp	#$94			; Time is approx $28B if 17-bit.
+		bcs	!+
+
+		PRINTF	"LENGTH is a 17-bit counter!\n"
+		bra	.reported
+
+!:		cmp	#$B0			; Time is approx $0AE if wrap.
+		bcs	!+
+
+		PRINTF	"LENGTH wraps at 16-bits!\n"
+		bra	.reported
+
+!:		PRINTF	"LENGTH clamps at 16-bits!\n"
+
+.reported:	PRINTF	"\nPress \eP1RUN\eP0 for next test.\n"
+
+.wait_key:	lda	joytrg + 0		; Read the joypad.
+		bit	#JOY_RUN
+		beq	.wait_key
+
+		; Confirm correct read/write.
+
+.confirm:	lda.l	#adpcm_size		; ADPCM size.
 		sta.l	<_ax
 		lda.h	#adpcm_size
 		sta.h	<_ax
@@ -277,16 +397,13 @@ core_main:	; Turn the display off and initialize the screen mode.
 		call	adpcm_check		; Check the ADPCM data.
 !:		bne	!-
 
-		; Turn on the BG & SPR layers, then wait for a soft-reset.
-
-		call	set_dspon		; Enable background.
-
 		; Set up the TIA in ram, if it's not already done.
 
 		lda	ram_nop
-		bne	.start_test
+		beq	.init_tia
+		jmp	.start_test
 
-		php
+.init_tia:	php
 		sei
 		lda	#14
 		sta	play_rate
