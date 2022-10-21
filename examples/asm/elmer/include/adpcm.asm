@@ -296,10 +296,19 @@ adpcm_read	.proc
 
 adpcm_write	.proc
 
+	.if	FAST_ADPCM
 		tma3				; Preserve MPR3.
 		pha
 
 		jsr	set_si_to_mpr3		; Map source to MPR3.
+	.else
+		tma4				; Preserve MPR4.
+		pha
+		tma3				; Preserve MPR3.
+		pha
+
+		jsr	set_si_to_mpr34		; Map source to MPR3.
+	.endif
 
 		lda	IFU_ADPCM_DMA		; Is there DMA going on?
 		and	#$03
@@ -380,6 +389,10 @@ adpcm_write	.proc
 
 .finished:	pla				; Restore MPR3.
 		tam3
+	.if	!FAST_ADPCM
+		pla
+		tma4				; Restore MPR4.
+	.endif
 
 		leave				; All done, phew!
 

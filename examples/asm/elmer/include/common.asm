@@ -113,7 +113,7 @@ inc.h_si_mpr3:	inc.h	<_si			; Increment hi-byte of _si.
 ; Increment the hi-byte of _si and change TMA3 and TMA4 if necessary.
 ;
 
-	.if	0				; Save memory, for now.
+	.if	1				; Save memory, for now.
 
 inc.h_si_mpr34:	inc.h	<_si			; Increment hi-byte of _si.
 		bpl	!+			; OK if within MPR0-MPR3.
