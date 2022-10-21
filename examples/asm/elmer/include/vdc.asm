@@ -497,7 +497,7 @@ tia_to_vram_rom:
 		; The routine starts here!
 
 .entry_point:	clc
-		sty.h	tia_to_vram_tia + 2	; TIA source address hi-byte.
+		sty.h	tia_to_vram_tia + 1	; TIA source address hi-byte.
 .chunk_loop:	sta.l	tia_to_vram_tia + 1	; TIA source address lo-byte.
 		tia	$1234, VDC_DL, VRAM_XFER_SIZE
 		adc	#VRAM_XFER_SIZE		; Increment source address.
