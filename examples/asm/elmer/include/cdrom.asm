@@ -1682,11 +1682,13 @@ cdr_stream_ram:	.proc
 
 cdr_init_disc	.proc
 
-		; Check that the CD-ROM IFU is present.
-
-		ldy	#CDERR_NO_CDIFU
-		lda	IO_PORT
-		bmi	.finished
+;		; Check that the CD-ROM IFU is present.
+;		;
+;		; N.B. The System Card does not check this!
+;
+;		ldy	#CDERR_NO_CDIFU
+;		lda	IO_PORT
+;		bmi	.finished
 
 		; Reset the CD-ROM drive.
 
