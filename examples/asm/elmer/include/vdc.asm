@@ -202,7 +202,7 @@ clear_bat_x:	stz	<_di + 0		; Set VDC or SGX destination
 ; set_mode_sgx - Set video hardware registers from a data table.
 ; set_mode_vdc - Set video hardware registers from a data table.
 ;
-; Args: _si, Y = _farptr to data table mapped into MPR3 & MPR4.
+; Args: _bp, Y = _farptr to data table mapped into MPR3 & MPR4.
 ;
 
 	.if	SUPPORT_SGX
@@ -223,14 +223,14 @@ set_mode_vdc	.proc
 		tma4				; Preserve MPR4.
 		pha
 
-		jsr	set_si_to_mpr34		; Map data to MPR3 & MPR4.
+		jsr	set_bp_to_mpr34		; Map data to MPR3 & MPR4.
 
 		php				; Disable interrupts.
 		sei
 
 		cly				; Table size is < 256 bytes.
 
-.loop:		lda	[_si], y		; Get the register #, +ve for
+.loop:		lda	[_bp], y		; Get the register #, +ve for
 		beq	.done			; VDC, -128 for VCE.
 		bpl	.set_vdc_reg
 
@@ -238,7 +238,7 @@ set_mode_vdc	.proc
 
 .set_vce_reg:	iny
 
-		lda	[_si], y		; Get lo-byte of register.
+		lda	[_bp], y		; Get lo-byte of register.
 		iny
 		sta	VCE_CR			; Set the VCE clock speed and
 		bra	.loop			; artifact reduction.
@@ -252,7 +252,7 @@ set_mode_vdc	.proc
 		beq	.skip_cc
 		clc				; CC if not VDC_CR.
 
-.skip_cc:	lda	[_si], y		; Get lo-byte of register.
+.skip_cc:	lda	[_bp], y		; Get lo-byte of register.
 		iny
 		bcc	.not_vdc_cr
 
@@ -266,7 +266,7 @@ set_mode_vdc	.proc
 
 .not_vdc_cr:	sta	VDC_DL, x		; Write to VDC.
 
-		lda	[_si], y		; Get hi-byte of register.
+		lda	[_bp], y		; Get hi-byte of register.
 		iny
 		sta	VDC_DH, x
 		bcc	.loop			; Next register, please!
@@ -427,7 +427,7 @@ sgx_detected:	ds	1			; NZ if SuperGrafx detected.
 ; copy_to_sgx - Copy data from CPU memory to VRAM.
 ; copy_to_vdc - Copy data from CPU memory to VRAM.
 ;
-; Args: _si, Y = _farptr to data table mapped into MPR3 & MPR4.
+; Args: _bp, Y = _farptr to data table mapped into MPR3 & MPR4.
 ; Args: _di = VRAM destination address.
 ; Args: _ax = Number of VRAM_XFER_SIZE chunks to copy.
 ;
@@ -450,7 +450,7 @@ copy_to_vdc	.proc
 		tma4				; Preserve MPR4.
 		pha
 
-		jsr	set_si_to_mpr34		; Map data to MPR3 & MPR4.
+		jsr	set_bp_to_mpr34		; Map data to MPR3 & MPR4.
 
 		jsr	set_di_to_mawr		; Set VRAM write address.
 
@@ -460,8 +460,8 @@ copy_to_vdc	.proc
 		stx	tia_to_vram_tia + 3
 	.endif
 
-		lda.l	<_si			; Source address in CPU RAM.
-		ldy.h	<_si
+		lda.l	<_bp			; Source address in CPU RAM.
+		ldy.h	<_bp
 		ldx.l	<_ax			; Number of chunks (lo-byte).
 
 	.if	CDROM
@@ -588,9 +588,9 @@ init_240x208	.proc
 	.endif
 
 		lda	#<.mode_240x224		; Disable BKG & SPR layers but
-		sta.l	<_si			; enable RCR & VBLANK IRQ.
+		sta.l	<_bp			; enable RCR & VBLANK IRQ.
 		lda	#>.mode_240x224
-		sta.h	<_si
+		sta.h	<_bp
 
 	.if	SUPPORT_SGX
 		call	sgx_detect		; Are we really on an SGX?
@@ -672,9 +672,9 @@ init_256x224	.proc
 	.endif
 
 		lda	#<.mode_256x224		; Disable BKG & SPR layers but
-		sta.l	<_si			; enable RCR & VBLANK IRQ.
+		sta.l	<_bp			; enable RCR & VBLANK IRQ.
 		lda	#>.mode_256x224
-		sta.h	<_si
+		sta.h	<_bp
 
 	.if	SUPPORT_SGX
 		call	sgx_detect		; Are we really on an SGX?
@@ -756,9 +756,9 @@ init_352x224	.proc
 	.endif
 
 		lda	#<.mode_352x224		; Disable BKG & SPR layers but
-		sta.l	<_si			; enable RCR & VBLANK IRQ.
+		sta.l	<_bp			; enable RCR & VBLANK IRQ.
 		lda	#>.mode_352x224
-		sta.h	<_si
+		sta.h	<_bp
 
 	.if	SUPPORT_SGX
 		call	sgx_detect		; Are we really on an SGX?
@@ -840,9 +840,9 @@ init_512x224	.proc
 	.endif
 
 		lda	#<.mode_512x224		; Disable BKG & SPR layers but
-		sta.l	<_si			; enable RCR & VBLANK IRQ.
+		sta.l	<_bp			; enable RCR & VBLANK IRQ.
 		lda	#>.mode_512x224
-		sta.h	<_si
+		sta.h	<_bp
 
 	.if	SUPPORT_SGX
 		call	sgx_detect		; Are we really on an SGX?
@@ -926,9 +926,9 @@ init_320x208	.proc
 	.endif
 
 		lda	#<.mode_320x208		; Disable BKG & SPR layers but
-		sta.l	<_si			; enable RCR & VBLANK IRQ.
+		sta.l	<_bp			; enable RCR & VBLANK IRQ.
 		lda	#>.mode_320x208
-		sta.h	<_si
+		sta.h	<_bp
 
 	.if	SUPPORT_SGX
 		call	sgx_detect		; Are we really on an SGX?

@@ -114,9 +114,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 		stz.h	<_di
 
 		lda.l	#saz_vdc		; Address of VDC graphics.
-		sta.l	<_si
+		sta.l	<_bp
 		lda.h	#saz_vdc
-		sta.h	<_si
+		sta.h	<_bp
 		ldy	#^saz_vdc
 
 		call	zx0_to_vdc		; Decompress the graphics.
@@ -129,9 +129,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 		sta.h	<_di
 
 		lda.l	#saz_vce		; Address of font data.
-		sta.l	<_si
+		sta.l	<_bp
 		lda.h	#saz_vce
-		sta.h	<_si
+		sta.h	<_bp
 		ldy	#^saz_vce
 
 		call	zx0_to_ram		; Decompress the palettes.
@@ -142,9 +142,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 		lda	#32			; Copy 32 palette of 16 colors.
 		sta	<_ah
 		lda	#<PALETTE_BUFFER	; Set the ptr to the palette
-		sta.l	<_si			; data.
+		sta.l	<_bp			; data.
 		lda	#>PALETTE_BUFFER
-		sta.h	<_si
+		sta.h	<_bp
 		cly
 		call	load_palettes		; Add to the palette queue.
 

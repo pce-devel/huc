@@ -59,7 +59,7 @@ inline void dropfnt8x8_vdc (byte * font, word vram, byte count, byte plane2, byt
 	*__al = plane2;
 	*__ah = plane3;
 	*__bl = count;
-	*__si = (word) font;
+	*__bp = (word) font;
 	*__bank = (byte) (font >> 23);
 	kickasm( clobbers "Y" )
 	{{ ldy.z __bank }}
@@ -77,7 +77,7 @@ inline void dropfnt8x8_vdc (byte * font, word vram, byte count, byte plane2, byt
 	*__al = (byte) (plane2); \
 	*__ah = (byte) (plane3); \
 	*__bl = (byte) (count); \
-	*__si = (word) (font); \
+	*__bp = (word) (font); \
 	*__bank = (byte) ((font) >> 23); \
 	kickasm( clobbers "Y" ) \
 	{{ ldy.z __bank }} \
@@ -113,7 +113,7 @@ inline void set_dspon(void) {
 inline void load_palette (byte palnum, word * data, byte palcnt) {
 	*__al = palnum;
 	*__ah = palcnt;
-	*__si = (word) data;
+	*__bp = (word) data;
 	*__bank = (byte) ((data) >> 23);
 	kickasm( clobbers "Y" )
 	{{ ldy.z __bank }}
@@ -126,7 +126,7 @@ inline void load_palette (byte palnum, word * data, byte palcnt) {
 #define load_palette( palnum, data, palcnt ) \
 	*__al = (palnum); \
 	*__ah = (palcnt); \
-	*__si = (word) (data); \
+	*__bp = (word) (data); \
 	*__bank = (byte) ((data) >> 23); \
 	kickasm( clobbers "Y" ) \
 	{{ ldy.z __bank }} \

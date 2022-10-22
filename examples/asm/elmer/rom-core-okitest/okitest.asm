@@ -188,9 +188,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 		sta	<_bl
 
 		lda	#<my_font		; Address of font data.
-		sta	<_si + 0
+		sta	<_bp + 0
 		lda	#>my_font
-		sta	<_si + 1
+		sta	<_bp + 1
 		ldy	#^my_font
 
 		call	dropfnt8x8_vdc		; Upload font to VRAM.
@@ -201,9 +201,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 		lda	#4			; Copy 4 palettes of 16 colors.
 		sta	<_ah
 		lda	#<screen_pal		; Set the ptr to the palette
-		sta	<_si + 0		; data.
+		sta	<_bp + 0		; data.
 		lda	#>screen_pal
-		sta	<_si + 1
+		sta	<_bp + 1
 		ldy	#^screen_pal
 		call	load_palettes		; Add to the palette queue.
 
@@ -283,9 +283,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 		lda.h	#adpcm_size * 0
 		sta.h	<_bx
 		lda	#<adpcm_data		; Source addr.
-		sta	<_si + 0
+		sta	<_bp + 0
 		lda	#>adpcm_data
-		sta	<_si + 1
+		sta	<_bp + 1
 		ldy	#^adpcm_data
 		call	adpcm_write		; Write the ADPCM data.
 
@@ -298,9 +298,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 		lda.h	#adpcm_size * 1
 		sta.h	<_bx
 		lda	#<adpcm_data		; Source addr.
-		sta	<_si + 0
+		sta	<_bp + 0
 		lda	#>adpcm_data
-		sta	<_si + 1
+		sta	<_bp + 1
 		ldy	#^adpcm_data
 		call	adpcm_write		; Write the ADPCM data.
 
@@ -330,9 +330,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 		sta.l	<_bx
 		sta.h	<_bx
 		lda	#<adpcm_data		; Source addr.
-		sta	<_si + 0
+		sta	<_bp + 0
 		lda	#>adpcm_data
-		sta	<_si + 1
+		sta	<_bp + 1
 		ldy	#^adpcm_data
 		call	adpcm_write		; Write the ADPCM data.
 
@@ -390,9 +390,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 		lda.h	#adpcm_size * 1
 		sta.h	<_bx
 		lda	#<adpcm_data		; Source addr.
-		sta	<_si + 0
+		sta	<_bp + 0
 		lda	#>adpcm_data
-		sta	<_si + 1
+		sta	<_bp + 1
 		ldy	#^adpcm_data
 		call	adpcm_check		; Check the ADPCM data.
 !:		bne	!-
@@ -1241,9 +1241,9 @@ do_xfer:	lda.l	<xfer_size		; ADPCM size.
 		lda.h	#adpcm_size * 0
 		sta.h	<_bx
 		lda	#<adpcm_data		; Source addr.
-		sta	<_si + 0
+		sta	<_bp + 0
 		lda	#>adpcm_data
-		sta	<_si + 1
+		sta	<_bp + 1
 		ldy	#^adpcm_data
 		call	adpcm_write		; Write the ADPCM data.
 

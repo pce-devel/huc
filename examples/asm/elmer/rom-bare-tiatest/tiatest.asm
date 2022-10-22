@@ -134,9 +134,9 @@ bare_main:	jsr	bare_clr_hooks
 		sta	<_bl
 
 		lda	#<my_font		; Address of font data.
-		sta	<_si + 0
+		sta	<_bp + 0
 		lda	#>my_font
-		sta	<_si + 1
+		sta	<_bp + 1
 		ldy	#^my_font
 
 		call	dropfnt8x8_vdc		; Upload font to VRAM.
@@ -147,9 +147,9 @@ bare_main:	jsr	bare_clr_hooks
 		lda	#4			; Copy 4 palettes of 16 colors.
 		sta	<_ah
 		lda	#<screen_pal		; Set the ptr to the palette
-		sta	<_si + 0		; data.
+		sta	<_bp + 0		; data.
 		lda	#>screen_pal
-		sta	<_si + 1
+		sta	<_bp + 1
 		ldy	#^screen_pal
 		call	load_palettes		; Add to the palette queue.
 
@@ -158,9 +158,9 @@ bare_main:	jsr	bare_clr_hooks
 		lda	#4			; Copy 4 palettes of 16 colors.
 		sta	<_ah
 		lda	#<screen_pal		; Set the ptr to the palette
-		sta	<_si + 0		; data.
+		sta	<_bp + 0		; data.
 		lda	#>screen_pal
-		sta	<_si + 1
+		sta	<_bp + 1
 		ldy	#^screen_pal
 		call	load_palettes		; Add to the palette queue.
 
@@ -174,22 +174,22 @@ bare_main:	jsr	bare_clr_hooks
 		jsr	vdc_di_to_mawr
 
 		lda.l	#hex_spr
-		sta.l	<_si
+		sta.l	<_bp
 		lda.h	#hex_spr
-		sta.h	<_si
+		sta.h	<_bp
 		cly
 .loop_32x64:	ldx	#4
-.loop_32x16:	lda	[_si], y
+.loop_32x16:	lda	[_bp], y
 		sta	VDC_DL
 		iny
-		lda	[_si], y
+		lda	[_bp], y
 		sta	VDC_DH
 		iny
 		bne	.loop_32x16
 		dex
 		bne	.loop_32x16
-		inc.h	<_si
-		lda.h	<_si
+		inc.h	<_bp
+		lda.h	<_bp
 		cmp.h	#hex_spr + 16 * 128
 		bcc	.loop_32x64
 

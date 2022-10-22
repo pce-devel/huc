@@ -29,8 +29,11 @@
   .const OFFSET_STRUCT_SHIP_Y = 2
   .const OFFSET_STRUCT_BULLET_ACTIVE = 4
   .const OFFSET_STRUCT_BULLET_Y = 2
-  // base pointer
-  .label __si = $ee
+  // **************************************************************************
+  //
+  // System Card's Zero Page Variables (6502-style zero-page addresses).
+  //
+  .label __bp = $ec
   // source address
   .label __di = $f0
   // shadow of VDC register index
@@ -107,7 +110,7 @@ main: {
     // /mnt/huc/huc/examples/asm/elmer/rom-kickc-shmup/shmup.c:314
     sta score
     sta score+1
-    // /mnt/huc/huc/examples/asm/elmer/kickc/huc-gfx.h:122
+    // /mnt/huc/huc/examples/asm/elmer/kickc/huc-gfx.h:121
     jsr _init_satb 
     // /mnt/huc/huc/examples/asm/elmer/rom-kickc-shmup/shmup.c:328
     lda #0
@@ -163,9 +166,9 @@ main: {
     sta.z __ah
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:116
     lda #<bonkpal
-    sta.z __si
+    sta.z __bp
     lda #>bonkpal
-    sta.z __si+1
+    sta.z __bp+1
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:117
     lda #$ff&bonkpal>>$17
     sta.z __bank
@@ -181,9 +184,9 @@ main: {
     sta.z __ah
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:116
     lda #<bulletpal
-    sta.z __si
+    sta.z __bp
     lda #>bulletpal
-    sta.z __si+1
+    sta.z __bp+1
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:117
     lda #$ff&bulletpal>>$17
     sta.z __bank
@@ -199,9 +202,9 @@ main: {
     sta.z __ah
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:116
     lda #<shippal
-    sta.z __si
+    sta.z __bp
     lda #>shippal
-    sta.z __si+1
+    sta.z __bp+1
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:117
     lda #$ff&shippal>>$17
     sta.z __bank
@@ -217,9 +220,9 @@ main: {
     sta.z __ah
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:116
     lda #<explosionpal
-    sta.z __si
+    sta.z __bp
     lda #>explosionpal
-    sta.z __si+1
+    sta.z __bp+1
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:117
     lda #$ff&explosionpal>>$17
     sta.z __bank
@@ -237,13 +240,9 @@ main: {
     lda #>$400
     sta.z __ax+1
     lda #<bonkspr
-    sta.z __si
+    sta.z __bp
     lda #>bonkspr
-    sta.z __si+1
-    lda #<bonkspr
-    sta.z __si
-    lda #>bonkspr
-    sta.z __si+1
+    sta.z __bp+1
     lda #$ff&bonkspr>>$17
     sta.z __bank
     ldy.z __bank 
@@ -258,13 +257,9 @@ main: {
     lda #>$40
     sta.z __ax+1
     lda #<bulletspr
-    sta.z __si
+    sta.z __bp
     lda #>bulletspr
-    sta.z __si+1
-    lda #<bulletspr
-    sta.z __si
-    lda #>bulletspr
-    sta.z __si+1
+    sta.z __bp+1
     lda #$ff&bulletspr>>$17
     sta.z __bank
     ldy.z __bank 
@@ -279,13 +274,9 @@ main: {
     lda #>$400
     sta.z __ax+1
     lda #<shipspr
-    sta.z __si
+    sta.z __bp
     lda #>shipspr
-    sta.z __si+1
-    lda #<shipspr
-    sta.z __si
-    lda #>shipspr
-    sta.z __si+1
+    sta.z __bp+1
     lda #$ff&shipspr>>$17
     sta.z __bank
     ldy.z __bank 
@@ -300,18 +291,14 @@ main: {
     lda #>$800
     sta.z __ax+1
     lda #<explosionspr
-    sta.z __si
+    sta.z __bp
     lda #>explosionspr
-    sta.z __si+1
-    lda #<explosionspr
-    sta.z __si
-    lda #>explosionspr
-    sta.z __si+1
+    sta.z __bp+1
     lda #$ff&explosionspr>>$17
     sta.z __bank
     ldy.z __bank 
     jsr _load_vram 
-    // /mnt/huc/huc/examples/asm/elmer/kickc/huc-gfx.h:132
+    // /mnt/huc/huc/examples/asm/elmer/kickc/huc-gfx.h:131
     jsr _satb_update 
     // /mnt/huc/huc/examples/asm/elmer/rom-kickc-shmup/shmup.c:369
     lda #<$1000
@@ -323,13 +310,9 @@ main: {
     lda #>$4000
     sta.z __ax+1
     lda #<scene_chr
-    sta.z __si
+    sta.z __bp
     lda #>scene_chr
-    sta.z __si+1
-    lda #<scene_chr
-    sta.z __si
-    lda #>scene_chr
-    sta.z __si+1
+    sta.z __bp+1
     lda #$ff&scene_chr>>$17
     sta.z __bank
     ldy.z __bank 
@@ -344,9 +327,9 @@ main: {
     sta.z __ah
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:116
     lda #<scene_pal
-    sta.z __si
+    sta.z __bp
     lda #>scene_pal
-    sta.z __si+1
+    sta.z __bp+1
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:117
     lda #$ff&scene_pal>>$17
     sta.z __bank
@@ -363,9 +346,9 @@ main: {
     lda #$1c
     sta.z __ah
     lda #<scene_bat
-    sta.z __si
+    sta.z __bp
     lda #>scene_bat
-    sta.z __si+1
+    sta.z __bp+1
     lda #$ff&scene_bat>>$17
     sta.z __bank
     ldy.z __bank 
@@ -386,9 +369,9 @@ main: {
     sta.z __bl
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:62
     lda #<my_font
-    sta.z __si
+    sta.z __bp
     lda #>my_font
-    sta.z __si+1
+    sta.z __bp+1
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:63
     lda #$ff&my_font>>$17
     sta.z __bank
@@ -404,9 +387,9 @@ main: {
     sta.z __ah
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:116
     lda #<textpal
-    sta.z __si
+    sta.z __bp
     lda #>textpal
-    sta.z __si+1
+    sta.z __bp+1
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:117
     lda #$ff&textpal>>$17
     sta.z __bank
@@ -667,7 +650,7 @@ main: {
     lda __103+1
     sta.z __ax+1
     jsr _spr_pattern 
-    // /mnt/huc/huc/examples/asm/elmer/kickc/huc-gfx.h:132
+    // /mnt/huc/huc/examples/asm/elmer/kickc/huc-gfx.h:131
     jsr _satb_update 
     // /mnt/huc/huc/examples/asm/elmer/rom-kickc-shmup/shmup.c:482
     lda #$1a
@@ -686,9 +669,9 @@ main: {
     sta.z __al
     sta.z __ah
     lda #<str_hi
-    sta.z __si
+    sta.z __bp
     lda #>str_hi
-    sta.z __si+1
+    sta.z __bp+1
     jsr _put_string 
     // /mnt/huc/huc/examples/asm/elmer/rom-kickc-shmup/shmup.c:485
     lda #4
@@ -866,9 +849,9 @@ main: {
     lda #4
     sta.z __ah
     lda #<str_game_over
-    sta.z __si
+    sta.z __bp
     lda #>str_game_over
-    sta.z __si+1
+    sta.z __bp+1
     jsr _put_string 
     ldx #0
   __b34:

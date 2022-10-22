@@ -174,11 +174,11 @@ tty_outstk:	ds	1                       ;
 ;
 ; tty_printf - A formatted-print routine for text output.
 ;
-; Args: _si, _si_bank = _farptr to string that will be mapped into MPR3.
+; Args: _bp, _bp_bank = _farptr to string that will be mapped into MPR3.
 ;
-; Uses: _si, _di, _ax, _bx, _cx, _dx
+; Uses: _bp, _di, _ax, _bx, _cx, _dx
 ;
-; Preserves: _bp
+; Preserves: _si
 ;
 ; This is NOT a standard C "printf", so do not expect it to behave like one!
 ;
@@ -186,8 +186,8 @@ tty_outstk:	ds	1                       ;
 ;
 ;
 
-tty_printf:	stx.l	<_si			; Preserve message pointer.
-		sta.h	<_si
+tty_printf:	stx.l	<_bp			; Preserve message pointer.
+		sta.h	<_bp
 		jmp	tty_printf_huc		; Map in the procedure code.
 
 
@@ -199,11 +199,11 @@ tty_printf:	stx.l	<_si			; Preserve message pointer.
 ;
 ; tty_printf - A formatted-print routine for text output.
 ;
-; Args: _si, _si_bank = _farptr to string that will be mapped into MPR3.
+; Args: _bp, _bp_bank = _farptr to string that will be mapped into MPR3.
 ;
-; Uses: _si, _di, _ax, _bx, _cx, _dx
+; Uses: _bp, _di, _ax, _bx, _cx, _dx
 ;
-; Preserves: _bp
+; Preserves: _si
 ;
 ; This is NOT a standard C "printf", so do not expect it to behave like one!
 ;
@@ -305,7 +305,7 @@ tty_printf_huc	.proc				; HuC entry point.
 
 !:		stz	tty_xyok		; Make sure VRAM addr is set!
 
-		lda	[_si]			; Get string length from the
+		lda	[_bp]			; Get string length from the
 		inc	a			; PASCAL-format string, the
 		sta	tty_param		; parameter pointers follow.
 
@@ -317,7 +317,7 @@ tty_printf_huc	.proc				; HuC entry point.
 
 .new_font:	jsr	!tty_increment+		; Set VRAM increment (X,Y ok!).
 
-.next_chr:	lda	[_si], y		; Read the next chr to print.
+.next_chr:	lda	[_bp], y		; Read the next chr to print.
 		iny
 
 .test_chr:	cmp	#'\e'			; Is it an escape-sequence?
@@ -443,7 +443,7 @@ tty_printf_huc	.proc				; HuC entry point.
 		; Read the format flags.
 		;
 
-.read_flag:	lda	[_si], y		; Read the next flag.
+.read_flag:	lda	[_bp], y		; Read the next flag.
 		iny
 		cmp	#'%'			; Just print a '%'.
 		beq	.got_chr
@@ -480,7 +480,7 @@ tty_printf_huc	.proc				; HuC entry point.
 .data_minimum:	jsr	.read_dataval		; Read value from the pointer.
 		sta	tty_outmin
 
-		lda	[_si], y		; Get the next character.
+		lda	[_bp], y		; Get the next character.
 		iny
 	.if	TTY_NO_DOT == 0
 		bra	.read_maximum
@@ -520,7 +520,7 @@ tty_printf_huc	.proc				; HuC entry point.
 .data_maximum:	jsr	.read_dataval		; Read value from the pointer.
 		sta	tty_outmax
 
-		lda	[_si], y		; Get the next character.
+		lda	[_bp], y		; Get the next character.
 		iny
 	.endif	TTY_NO_DOT == 0
 
@@ -543,7 +543,7 @@ tty_printf_huc	.proc				; HuC entry point.
 
 		; Read the output format specifier.
 
-.get_specifier:	lda	[_si], y		; Read char from string.
+.get_specifier:	lda	[_bp], y		; Read char from string.
 		iny
 
 .got_specifier:	phy				; Preserve string index.
@@ -801,7 +801,7 @@ tty_printf_huc	.proc				; HuC entry point.
 		; TERMINAL EMULATION
 		;
 
-.escape:	lda	[_si], y		; Read the escape sequence.
+.escape:	lda	[_bp], y		; Read the escape sequence.
 		iny
 
 		;
@@ -811,7 +811,7 @@ tty_printf_huc	.proc				; HuC entry point.
 .escape_X:	cmp	#'X'
 		bne	.escape_Y
 
-		lda	[_si], y		; Check the next character.
+		lda	[_bp], y		; Check the next character.
 		cmp	#'L'
 		beq	.set_xlhs
 
@@ -834,7 +834,7 @@ tty_printf_huc	.proc				; HuC entry point.
 .escape_Y:	cmp	#'Y'
 		bne	.escape_P
 
-		lda	[_si], y		; Check the next character.
+		lda	[_bp], y		; Check the next character.
 		cmp	#'T'
 		beq	.set_ytop
 
@@ -878,10 +878,10 @@ tty_printf_huc	.proc				; HuC entry point.
 		bne	.escape_lo
 	.endif	TTY_NO_BOX == 0
 
-		lda	[_si], y		; Read byte from string.
+		lda	[_bp], y		; Read byte from string.
 		iny
 		sta	tty_tile + 0
-		lda	[_si], y		; Read byte from string.
+		lda	[_bp], y		; Read byte from string.
 		iny
 		sta	tty_tile + 1
 		jmp	.next_chr
@@ -972,7 +972,7 @@ tty_printf_huc	.proc				; HuC entry point.
 		; Read single hex digit.
 		;
 
-.read_hex:	lda	[_si], y		; Read char from string.
+.read_hex:	lda	[_bp], y		; Read char from string.
 		iny
 		cmp	#'9'+1			; Is this a decimal digit?
 		bcs	.hex_gt_9
@@ -996,7 +996,7 @@ tty_printf_huc	.proc				; HuC entry point.
 
 .read_decimal:	stz	<_temp			; Initialize to zero.
 
-.next_decimal:	lda	[_si], y		; Read char from string.
+.next_decimal:	lda	[_bp], y		; Read char from string.
 		iny
 		cmp	#'9'+1			; Is this a decimal digit?
 		bcs	.param_exit
@@ -1022,10 +1022,10 @@ tty_printf_huc	.proc				; HuC entry point.
 		bcc	!+			; uppercase!
 
 .read_pointer:	ldy	tty_param		; Restore params index.
-		lda	[_si], y		; Read pointer lo-byte.
+		lda	[_bp], y		; Read pointer lo-byte.
 		iny
 		sta.l	<_di
-		lda	[_si], y		; Read pointer hi-byte.
+		lda	[_bp], y		; Read pointer hi-byte.
 		iny
 		sta.h	<_di
 		sty	tty_param		; Preserve params index.
@@ -1167,7 +1167,7 @@ tty_printf_huc	.proc				; HuC entry point.
 ; Args: _ah = Box height (minimum 2).
 ; Args: _bl = Box type.
 ;
-; Preserves: _bp
+; Preserves: _si
 ;
 
 tty_draw_box	.proc
@@ -1281,7 +1281,7 @@ tty_draw_box	.proc
 ; Args: X = lo-byte of address
 ; Args: Y = hi-byte of address
 ;
-; Preserves: _bp
+; Preserves: _si
 ;
 ; N.B. This is mainly a debugging function!
 ;
@@ -1315,7 +1315,7 @@ tty_dump_page	.proc
 ; Args: X = lo-byte of address
 ; Args: Y = hi-byte of address
 ;
-; Preserves: _bp
+; Preserves: _si
 ;
 ; N.B. This is mainly a debugging function!
 ;
@@ -1466,7 +1466,7 @@ tty_dump_line	.proc
 ;
 ; tty_dump_mpr - show an 8-byte hex dump of the MPR registers.
 ;
-; Preserves: _bp
+; Preserves: _si
 ;
 ; N.B. This is mainly a debugging function!
 ;

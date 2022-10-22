@@ -121,9 +121,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 		sta	<_bl
 
 		lda	#<my_font		; Address of font data.
-		sta	<_si + 0
+		sta	<_bp + 0
 		lda	#>my_font
-		sta	<_si + 1
+		sta	<_bp + 1
 		ldy	#^my_font
 
 		call	dropfnt8x8_vdc		; Upload font to VRAM.

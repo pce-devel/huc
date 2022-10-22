@@ -87,7 +87,7 @@ init_crc32	.proc
 ;
 ; CRC-32 as used by ZIP/PNG/ZMODEM/etc.
 ;
-; Args: _si, Y = _farptr to data in MPR3.
+; Args: _bp, Y = _farptr to data in MPR3.
 ; Args: _ax, _bl = 23-bit length (0-8MB).
 ;
 ; Returns: _cx, _dx = 32-bit CRC.
@@ -99,7 +99,7 @@ calc_crc32	.proc
 		pha
 
 	.ifdef	_KICKC
-		jsr	set_si_to_mpr3		; Map memory block to MPR3.
+		jsr	set_bp_to_mpr3		; Map memory block to MPR3.
 	.else
 		tya				; Map memory block to MPR3.
 		beq	!+
@@ -116,7 +116,7 @@ calc_crc32	.proc
 		ldy	<_ax + 0
 		beq	.next_page
 
-.byte_loop:	lda	[_si]
+.byte_loop:	lda	[_bp]
 
 		eor	<_cx + 0		; Update CRC-32.
 		tax
@@ -132,7 +132,7 @@ calc_crc32	.proc
 		lda	crc32_tbl_b3, x
 		sta	<_cx + 3
 
-		inc	<_si + 0
+		inc	<_bp + 0
 		beq	.inc_page
 
 .next_byte:	dey
@@ -154,7 +154,7 @@ calc_crc32	.proc
 
 		leave				; All done!
 
-.inc_page:	jsr	inc.h_si_mpr3
+.inc_page:	jsr	inc.h_bp_mpr3
 		bra	.next_byte
 
 		.endp

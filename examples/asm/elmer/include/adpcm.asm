@@ -192,7 +192,7 @@ adpcm_set_len:	stx	IFU_ADPCM_LSB
 ;
 ; adpcm_read - Read from ADPCM RAM (similar to BIOS AD_READ).
 ;
-; Args: _si, Y = _farptr to destination address to map into MPR3.
+; Args: _bp, Y = _farptr to destination address to map into MPR3.
 ; Args: _ax = #bytes of ADPCM data to copy (1-65536).
 ; Args: _bx = Source address in ADPCM RAM.
 ;
@@ -206,7 +206,7 @@ adpcm_read	.proc
 		tma3				; Preserve MPR3.
 		pha
 
-		jsr	set_si_to_mpr3		; Map destination to MPR3.
+		jsr	set_bp_to_mpr3		; Map destination to MPR3.
 
 !:		jsr	adpcm_stat		; Wait for ADPCM not busy.
 		bne	!-
@@ -232,11 +232,11 @@ adpcm_read	.proc
 		bmi	!-
 
 .loop:		lda	IFU_ADPCM_DAT		; Copy data from ADPCM to RAM.
-		sta	[_si]
+		sta	[_bp]
 
-		inc.l	<_si
+		inc.l	<_bp
 		bne	!+
-		jsr	inc.h_si_mpr3
+		jsr	inc.h_bp_mpr3
 
 !:		dec.l	<_ax
 		bne	.loop
@@ -255,12 +255,12 @@ adpcm_read	.proc
 		bmi	.loop
 
 		lda	IFU_ADPCM_DAT		; Copy data from ADPCM to RAM.
-		sta	[_si]
+		sta	[_bp]
 		nop
 
-		inc.l	<_si
+		inc.l	<_bp
 		bne	!+
-		jsr	inc.h_si_mpr3
+		jsr	inc.h_bp_mpr3
 
 !:		dex
 		bne	.loop
@@ -285,7 +285,7 @@ adpcm_read	.proc
 ;
 ; adpcm_write - Write to ADPCM RAM (similar to BIOS AD_WRITE).
 ;
-; Args: _si, Y = _farptr to source address to map into MPR3.
+; Args: _bp, Y = _farptr to source address to map into MPR3.
 ; Args: _ax = #bytes of ADPCM data to copy (1-65536).
 ; Args: _bx = Destinaion address in ADPCM RAM.
 ;
@@ -300,14 +300,14 @@ adpcm_write	.proc
 		tma3				; Preserve MPR3.
 		pha
 
-		jsr	set_si_to_mpr3		; Map source to MPR3.
+		jsr	set_bp_to_mpr3		; Map source to MPR3.
 	.else
 		tma4				; Preserve MPR4.
 		pha
 		tma3				; Preserve MPR3.
 		pha
 
-		jsr	set_si_to_mpr34		; Map source to MPR3.
+		jsr	set_bp_to_mpr34		; Map source to MPR3.
 	.endif
 
 		lda	IFU_ADPCM_DMA		; Is there DMA going on?
@@ -326,8 +326,8 @@ adpcm_write	.proc
 
 	.if	FAST_ADPCM
 
-!:		ldy.l	<_si			; Keep lo-byte of _si in Y.
-		stz.l	<_si
+!:		ldy.l	<_bp			; Keep lo-byte of _bp in Y.
+		stz.l	<_bp
 
 		ldx.l	<_ax			; Fix 16-bit length for the
 		beq	!+			; decrement.
@@ -339,11 +339,11 @@ adpcm_write	.proc
 !:		tst	#ADPCM_WR_BSY, IFU_ADPCM_FLG
 		bne	!-
 
-.loop:		lda	[_si], y		; Copy data from RAM to ADPCM.
+.loop:		lda	[_bp], y		; Copy data from RAM to ADPCM.
 		sta	IFU_ADPCM_DAT		;
 		iny				; This 24-cycle-per-byte loop
 		bne	!+			; is as fast as you can write
-		jsr	inc.h_si_mpr3		; and not check the BSY flag.
+		jsr	inc.h_bp_mpr3		; and not check the BSY flag.
 
 !:		dex
 		bne	.loop
@@ -362,15 +362,15 @@ adpcm_write	.proc
 
 		eor	#$FF			; Calc address of partial page.
 		clc
-		adc.l	<_si
-		sta.l	<_si
+		adc.l	<_bp
+		sta.l	<_bp
 		bcs	.loop
-		dec.h	<_si
+		dec.h	<_bp
 
 		; 29 cycle *minimum* with no ADPCM_WR_BSY loops.
 		; 30 cycle *safer* with no ADPCM_WR_BSY loops.
 
-.loop:		lda	[_si], y		; Copy data from RAM to ADPCM.
+.loop:		lda	[_bp], y		; Copy data from RAM to ADPCM.
 .wait:		tst	#ADPCM_WR_BSY, IFU_ADPCM_FLG
 		bne	.wait
 		sta	IFU_ADPCM_DAT
@@ -378,7 +378,7 @@ adpcm_write	.proc
 		iny
 		bne	.loop
 
-		jsr	inc.h_si_mpr34
+		jsr	inc.h_bp_mpr34
 
 		dec.h	<_ax			; Any full pages left to copy?
 		bne	.loop
@@ -405,7 +405,7 @@ adpcm_write	.proc
 ;
 ; adpcm_check - Compare RAM with ADPCM RAM (no BIOS equivalent).
 ;
-; Args: _si, Y = _farptr to source address to map into MPR3.
+; Args: _bp, Y = _farptr to source address to map into MPR3.
 ; Args: _ax = #bytes of ADPCM data to compare (1-65536).
 ; Args: _bx = Source address in ADPCM RAM.
 ;
@@ -419,7 +419,7 @@ adpcm_check	.proc
 		tma3				; Preserve MPR3.
 		pha
 
-		jsr	set_si_to_mpr3		; Map destination to MPR3.
+		jsr	set_bp_to_mpr3		; Map destination to MPR3.
 
 !:		jsr	adpcm_stat		; Wait for ADPCM not busy.
 		bne	!-
@@ -445,13 +445,13 @@ adpcm_check	.proc
 		bmi	!-
 
 .loop:		lda	IFU_ADPCM_DAT		; Compare ADPCM with RAM.
-		cmp	[_si]
+		cmp	[_bp]
 		bne	.fail
 		nop
 
-		inc.l	<_si
+		inc.l	<_bp
 		bne	!+
-		jsr	inc.h_si_mpr3
+		jsr	inc.h_bp_mpr3
 
 !:		dex
 		bne	.loop
@@ -470,12 +470,12 @@ adpcm_check	.proc
 		bmi	.loop
 
 		lda	IFU_ADPCM_DAT		; Compare ADPCM with RAM.
-		cmp	[_si]
+		cmp	[_bp]
 		bne	.fail
 
-		inc.l	<_si
+		inc.l	<_bp
 		bne	!+
-		jsr	inc.h_si_mpr3
+		jsr	inc.h_bp_mpr3
 
 !:		dex
 		bne	.loop

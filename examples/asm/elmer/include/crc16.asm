@@ -75,7 +75,7 @@ init_crc16	.proc
 ; CCITT         1021         FFFF
 ; XModem        1021         0000
 ;
-; Args: _si, Y = _farptr to data in MPR3.
+; Args: _bp, Y = _farptr to data in MPR3.
 ; Args: _ax, _bl = 23-bit length (0-8MB).
 ;
 ; Returns: _cx = 16-bit CRC.
@@ -87,7 +87,7 @@ calc_crc16	.proc
 		pha
 
 	.ifdef	_KICKC
-		jsr	set_si_to_mpr3		; Map memory block to MPR3.
+		jsr	set_bp_to_mpr3		; Map memory block to MPR3.
 	.else
 		tya				; Map memory block to MPR3.
 		beq	!+
@@ -107,7 +107,7 @@ calc_crc16	.proc
 		ldy	<_ax + 0
 		beq	.next_page
 
-.byte_loop:	lda	[_si]
+.byte_loop:	lda	[_bp]
 
 		eor	<_cx + 1		; Update CRC-16.
 		tax
@@ -117,7 +117,7 @@ calc_crc16	.proc
 		lda	crc16_tbl_lo, x
 		sta	<_cx + 0
 
-		inc	<_si + 0
+		inc	<_bp + 0
 		beq	.inc_page
 
 .next_byte:	dey
@@ -132,7 +132,7 @@ calc_crc16	.proc
 
 		leave				; All done!
 
-.inc_page:	jsr	inc.h_si_mpr3
+.inc_page:	jsr	inc.h_bp_mpr3
 		bra	.next_byte
 
 		.endp

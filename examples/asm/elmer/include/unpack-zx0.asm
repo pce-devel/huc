@@ -63,7 +63,7 @@ ZX0_WINMSK	=	($0800 - 1) >> 8	; RAM, located at $3800.
 ; Data usage is 11 bytes of zero-page, using aliases for clarity.
 ;
 
-zx0_srcptr	=	_si			; 1 word.
+zx0_srcptr	=	_bp			; 1 word.
 zx0_dstptr	=	_di			; 1 word.
 
 zx0_length	=	_ax			; 1 word.
@@ -78,10 +78,10 @@ zx0_bitbuf	=	_dl			; 1 byte.
 ;
 ; zx0_to_ram - Decompress data stored in Einar Saukas's ZX0 "classic" format.
 ;
-; Args: _si, Y = _farptr to compressed data in MPR3.
+; Args: _bp, Y = _farptr to compressed data in MPR3.
 ; Args: _di = ptr to output address in RAM.
 ;
-; Uses: _si, _di, _ax, _bx, _cx, _dh !
+; Uses: _bp, _di, _ax, _bx, _cx, _dh !
 ;
 
 zx0_to_ram	.proc
@@ -90,7 +90,7 @@ zx0_to_ram	.proc
 		pha
 
 	.ifdef	_KICKC
-		jsr	set_si_to_mpr3		; Map zx0_srcptr to MPR3.
+		jsr	set_bp_to_mpr3		; Map zx0_srcptr to MPR3.
 	.else
 		tya				; Map zx0_srcptr to MPR3.
 		beq	!+
@@ -236,16 +236,16 @@ zx0_to_ram	.proc
 		; Optimized handling of pointers crossing page-boundaries.
 		;
 
-.inc_off_src:	jsr	inc.h_si_mpr3
+.inc_off_src:	jsr	inc.h_bp_mpr3
 		bra	.off_skip1
 
-.inc_cp_src:	jsr	inc.h_si_mpr3
+.inc_cp_src:	jsr	inc.h_bp_mpr3
 		bra	.cp_skip1
 
 .inc_cp_dst:	inc	<zx0_dstptr + 1
 		bra	.cp_skip2
 
-.gamma_page:	jsr	inc.h_si_mpr3
+.gamma_page:	jsr	inc.h_bp_mpr3
 		bra	.gamma_skip1
 
 		;
@@ -283,10 +283,10 @@ zx0_to_ram	.proc
 ;
 ; zx0_to_vdc - Decompress data stored in Einar Saukas's ZX0 "classic" format.
 ;
-; Args: _si, Y = _farptr to compressed data in MPR3.
+; Args: _bp, Y = _farptr to compressed data in MPR3.
 ; Args: _di = ptr to output address in VRAM.
 ;
-; Uses: _si, _di, _ax, _bx, _cx, _dl, _dh!
+; Uses: _bp, _di, _ax, _bx, _cx, _dl, _dh!
 ;
 
 		.procgroup			; Group code in the same bank.
@@ -306,7 +306,7 @@ zx0_to_vdc	.proc
 		pha
 
 	.ifdef	_KICKC
-		jsr	set_si_to_mpr3		; Map zx0_srcptr to MPR3.
+		jsr	set_bp_to_mpr3		; Map zx0_srcptr to MPR3.
 	.else
 		tya				; Map zx0_srcptr to MPR3.
 		beq	!+
@@ -463,13 +463,13 @@ zx0_to_vdc	.proc
 		; Optimized handling of pointers crossing page-boundaries.
 		;
 
-.inc_off_src:	jsr	inc.h_si_mpr3
+.inc_off_src:	jsr	inc.h_bp_mpr3
 		bra	.off_skip1
 
 .inc_lz_dst:	bsr	.next_dstpage
 		bra	.lz_skip2
 
-.inc_cp_src:	jsr	inc.h_si_mpr3
+.inc_cp_src:	jsr	inc.h_bp_mpr3
 		bra	.cp_skip1
 
 .inc_cp_dst:	bsr	.next_dstpage
@@ -489,7 +489,7 @@ zx0_to_vdc	.proc
 		sta	<zx0_dstptr + 1
 		rts
 
-.gamma_page:	jsr	inc.h_si_mpr3
+.gamma_page:	jsr	inc.h_bp_mpr3
 		bra	.gamma_skip1
 
 		;
@@ -530,17 +530,17 @@ zx0_to_vdc	.proc
 ;
 ; zx0_acd_to_ram - Decompress data stored in ZX0 "classic" format.
 ;
-; Args: _si, Y = _farptr to compressed data in ACD0.
+; Args: _bp, Y = _farptr to compressed data in ACD0.
 ; Args: _di = ptr to output address in RAM.
 ;
-; Uses: _si, _di, _ax, _bx, _cx, _dh !
+; Uses: _bp, _di, _ax, _bx, _cx, _dh !
 ;
 
 zx0_acd_to_ram	.proc
 
-		lda.l	<_si			; Map zx0_srcptr to ACD0.
+		lda.l	<_bp			; Map zx0_srcptr to ACD0.
 		sta	ACD0_BASE + 0
-		lda.h	<_si
+		lda.h	<_bp
 		sta	ACD0_BASE + 1
 		sty	ACD0_BASE + 2
 

@@ -43,7 +43,7 @@ LZSA1_GET_SRC	.macro
 		lda	[lzsa_srcptr]
 		inc	<lzsa_srcptr + 0
 		bne	.skip\@
-		jsr	inc.h_si_mpr3
+		jsr	inc.h_bp_mpr3
 .skip\@:
 		.endm
 	.endif	LZSA1_SMALL
@@ -56,7 +56,7 @@ LZSA1_GET_SRC	.macro
 ; Data usage is 7 bytes of zero-page.
 ;
 
-lzsa1_srcptr	=	_si			; 1 word.
+lzsa1_srcptr	=	_bp			; 1 word.
 lzsa1_dstptr	=	_di			; 1 word.
 
 lzsa1_winptr	=	_ax			; 1 word.
@@ -71,10 +71,10 @@ lzsa1_offset	=	lzsa1_winptr
 ;
 ; lzsa1_to_ram - Decompress data stored in Emmanuel Marty's LZSA1 format.
 ;
-; Args: _si, _si_bank = _farptr to compressed data in MPR3.
+; Args: _bp, Y = _farptr to compressed data in MPR3.
 ; Args: _di = ptr to output address in RAM.
 ;
-; Uses: _si, _di, _ax, _bl !
+; Uses: _bp, _di, _ax, _bl !
 ;
 
 lzsa1_to_ram	.proc
@@ -118,7 +118,7 @@ lzsa1_to_ram	.proc
 
 		inc.l	<lzsa1_srcptr
 		bne	.cp_skip1
-		jsr	inc.h_si_mpr3
+		jsr	inc.h_bp_mpr3
 
 .cp_skip1:	inc.l	<lzsa1_dstptr
 		bne	.cp_skip2
@@ -199,7 +199,7 @@ lzsa1_to_ram	.proc
 .lz_offset:	lda	[lzsa1_srcptr]		; Get offset-lo.
 		inc.l	<lzsa1_srcptr
 		bne	.offset_lo
-		jsr	inc.h_si_mpr3
+		jsr	inc.h_bp_mpr3
 
 .offset_lo:	sta.l	<lzsa1_offset
 
@@ -210,7 +210,7 @@ lzsa1_to_ram	.proc
 		lda	[lzsa1_srcptr]
 		inc.l	<lzsa1_srcptr
 		bne	.offset_hi
-		jsr	inc.h_si_mpr3
+		jsr	inc.h_bp_mpr3
 
 .offset_hi:	sta.h	<lzsa1_offset
 
@@ -267,7 +267,7 @@ lzsa1_to_ram	.proc
 		adc	[lzsa1_srcptr]		; the length.
 		inc.l	<lzsa1_srcptr
 		bne	.skip_inc
-		jsr	inc.h_si_mpr3
+		jsr	inc.h_bp_mpr3
 
 .skip_inc:	bcc	.got_length		; No overflow means done.
 		clc				; MUST return CC!
@@ -301,6 +301,6 @@ lzsa1_to_ram	.proc
 		beq	.next_page
 .got_byte:	rts
 
-.next_page:	jmp	inc.h_si_mpr3		; Inc & test for bank overflow.
+.next_page:	jmp	inc.h_bp_mpr3		; Inc & test for bank overflow.
 
 		.endp

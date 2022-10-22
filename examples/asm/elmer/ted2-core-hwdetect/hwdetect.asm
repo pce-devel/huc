@@ -147,9 +147,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 		sta	<_bl
 
 		lda	#<my_font		; Address of font data.
-		sta	<_si + 0
+		sta	<_bp + 0
 		lda	#>my_font
-		sta	<_si + 1
+		sta	<_bp + 1
 		ldy	#^my_font
 
 		call	dropfntbox_vdc		; Upload font to VRAM.
@@ -172,9 +172,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 		sta	<_bl
 
 		lda	#<my_tall		; Address of font data.
-		sta	<_si + 0
+		sta	<_bp + 0
 		lda	#>my_tall
-		sta	<_si + 1
+		sta	<_bp + 1
 		ldy	#^my_tall
 
 		call	dropfnt8x16_vdc		; Upload font to VRAM.
@@ -216,9 +216,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 		lda	#5			; Copy 4 palettes of 16 colors.
 		sta	<_ah
 		lda	#<bkg_palette		; Set the ptr to the palette
-		sta	<_si + 0		; data.
+		sta	<_bp + 0		; data.
 		lda	#>bkg_palette
-		sta	<_si + 1
+		sta	<_bp + 1
 		ldy	#^bkg_palette
 		call	load_palettes		; Add to the palette queue.
 
@@ -227,9 +227,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 		lda	#1			; Copy 1 palette of 16 colors.
 		sta	<_ah
 		lda	#<spr_palette		; Set the ptr to the palette
-		sta	<_si + 0		; data.
+		sta	<_bp + 0		; data.
 		lda	#>spr_palette
-		sta	<_si + 1
+		sta	<_bp + 1
 		ldy	#^spr_palette
 		call	load_palettes		; Add to the palette queue.
 

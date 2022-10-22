@@ -117,9 +117,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 		sta.h	<_di
 
 		lda.l	#my_font		; Address of font data.
-		sta.l	<_si
+		sta.l	<_bp
 		lda.h	#my_font
-		sta.h	<_si
+		sta.h	<_bp
 		ldy	#^my_font
 
 		call	zx0_to_ram		; Decompress the font.
@@ -138,9 +138,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 		sta	<_bl
 
 		lda.l	#FONT_BUFFER		; Address of font data.
-		sta.l	<_si
+		sta.l	<_bp
 		lda.h	#FONT_BUFFER
-		sta.h	<_si
+		sta.h	<_bp
 		cly				; Do not change MPR3.
 
 		call	dropfnt8x8_vdc		; Upload font to VRAM.
@@ -151,9 +151,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 		lda	#1			; Copy 1 palette of 16 colors.
 		sta	<_ah
 		lda	#<cpc464_colors		; Set the ptr to the palette
-		sta.l	<_si			; data.
+		sta.l	<_bp			; data.
 		lda	#>cpc464_colors
-		sta.h	<_si
+		sta.h	<_bp
 		ldy	#^cpc464_colors
 		call	load_palettes		; Add to the palette queue.
 

@@ -96,7 +96,7 @@ __trampolineptr	=	$5FFF			; put them right at the end.
 		; A few definitions for readability.
 		;
 
-_si_bank	=	_dh			; Alias for far-pointers.
+_bp_bank	=	_dh			; Alias for far-pointers.
 
 CHR_SIZ		=	32			; Size in bytes.
 SPR_SIZ		=	128			; Size in bytes.
@@ -155,11 +155,11 @@ bios_main:	; Turn the display off and initialize the screen mode.
 		; Copy the BAT to VRAM (@$0000).
 
 		lda.l	#bkg_bat
-		sta.l	<_si
+		sta.l	<_bp
 		lda.h	#bkg_bat
-		sta.h	<_si
+		sta.h	<_bp
 		lda	#bank(bkg_bat)
-		sta	<_si_bank
+		sta	<_bp_bank
 		stz.l	<_di
 		stz.h	<_di
 		lda.l	#32*28
@@ -171,11 +171,11 @@ bios_main:	; Turn the display off and initialize the screen mode.
 		; Copy the CHR to VRAM (@$0800).
 
 		lda.l	#bkg_chr
-		sta.l	<_si
+		sta.l	<_bp
 		lda.h	#bkg_chr
-		sta.h	<_si
+		sta.h	<_bp
 		lda	#bank(bkg_chr)
-		sta	<_si_bank
+		sta	<_bp_bank
 		stz.l	<_di
 		lda.h	#$0800
 		sta.h	<_di
@@ -188,11 +188,11 @@ bios_main:	; Turn the display off and initialize the screen mode.
 		; Copy the SPR to VRAM (@$4000).
 
 		lda.l	#spr_spr
-		sta.l	<_si
+		sta.l	<_bp
 		lda.h	#spr_spr
-		sta.h	<_si
+		sta.h	<_bp
 		lda	#bank(spr_spr)
-		sta	<_si_bank
+		sta	<_bp_bank
 		stz.l	<_di
 		lda.h	#$4000
 		sta.h	<_di
@@ -205,11 +205,11 @@ bios_main:	; Turn the display off and initialize the screen mode.
 		; Copy the SAT to VRAM (@$7F00).
 
 		lda.l	#spr_sat
-		sta.l	<_si
+		sta.l	<_bp
 		lda.h	#spr_sat
-		sta.h	<_si
+		sta.h	<_bp
 		lda	#bank(spr_sat)
-		sta	<_si_bank
+		sta	<_bp_bank
 		stz.l	<_di
 		lda.h	#$7F00
 		sta.h	<_di
@@ -266,8 +266,8 @@ clear_vram:	cla				; Set VDC or SGX destination
 ;
 ; load_vram - Copy far-data from memory to VRAM.
 ;
-; _si		= Source memory location
-; _si_bank	= Source bank
+; _bp		= Source memory location
+; _bp_bank	= Source bank
 ; _di		= Destination VRAM address
 ; _ax		= # of words to copy
 ;
@@ -277,11 +277,11 @@ load_vram:	tma3				; Preserve MPR3 & MPR4.
 		tma4
 		pha
 
-		lda	<_si + 1		; Remap ptr to MPR3.
+		lda	<_bp + 1		; Remap ptr to MPR3.
 		and	#$1F
 		ora	#$60
-		sta	<_si + 1
-		lda	<_si_bank		; Put bank into MPR3.
+		sta	<_bp + 1
+		lda	<_bp_bank		; Put bank into MPR3.
 		tam3
 		inc	a			; Put next bank into MPR4.
 		tam4
@@ -297,9 +297,9 @@ load_vram:	tma3				; Preserve MPR3 & MPR4.
 		sta	<vdc_reg		; register.
 		sta	VDC_AR
 
-		ldx.l	<_si
+		ldx.l	<_bp
 		stx	.ram_tia + 1
-		ldy.h	<_si
+		ldy.h	<_bp
 		sty	.ram_tia + 2
 		lda	#32
 		sta	.ram_tia + 5

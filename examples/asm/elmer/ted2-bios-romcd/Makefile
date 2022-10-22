@@ -1,4 +1,4 @@
-all: ../include/ted2romcd.pce
+all: ted2romcd.pce
 
 include ../Make_ex.inc
 
@@ -8,8 +8,6 @@ AFLAGS ?= -raw -m -l 2 -S
 
 ted2romcd.pce: $(SRC)
 	$(AS) $(AFLAGS) ted2romcd.asm
-
-../include/ted2romcd.pce: ted2romcd.pce
 ifeq ($(CP),copy)
 	$(CP) ted2romcd.pce ..\include\ted2romcd.pce
 else

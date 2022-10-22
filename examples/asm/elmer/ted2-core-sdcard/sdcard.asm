@@ -132,9 +132,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 		sta	<_bl
 
 		lda	#<my_font		; Address of font data.
-		sta	<_si + 0
+		sta	<_bp + 0
 		lda	#>my_font
-		sta	<_si + 1
+		sta	<_bp + 1
 		ldy	#^my_font
 
 		call	dropfnt8x8_vdc		; Upload font to VRAM.
@@ -145,9 +145,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 		lda	#1			; Copy 1 palette of 16 colors.
 		sta	<_ah
 		lda	#<cpc464_colors		; Set the ptr to the palette
-		sta	<_si + 0		; data.
+		sta	<_bp + 0		; data.
 		lda	#>cpc464_colors
-		sta	<_si + 1
+		sta	<_bp + 1
 		ldy	#^cpc464_colors
 		call	load_palettes		; Add to the palette queue.
 
@@ -176,7 +176,7 @@ core_main:	; Turn the display off and initialize the screen mode.
 ;
 ; sdcard_example - 
 ;
-; Uses: _bp = Pointer to directory entry in cache.
+; Uses: f32_ptr = Pointer to directory entry in cache.
 ;
 ; Returns: X = F32_OK (and Z flag) or an error code.
 ;
@@ -218,9 +218,9 @@ sdcard_example	.proc				; Let PCEAS move this code!
 		bne	.cd_fail
 
 		lda	#<.dirname		; Locate the 'TBED' folder.
-		sta.l	<_si
+		sta.l	<_bp
 		lda	#>.dirname
-		sta.h	<_si
+		sta.h	<_bp
 		ldy	#^.dirname
 		call	f32_find_name
 		bne	.cd_fail
@@ -242,9 +242,9 @@ sdcard_example	.proc				; Let PCEAS move this code!
 		PRINTF	"Writing file /TBED/OS.PCE from memory.\n"
 
 		lda	#<.filename		; Locate the 'OS.PCE' file.
-		sta.l	<_si
+		sta.l	<_bp
 		lda	#>.filename
-		sta.h	<_si
+		sta.h	<_bp
 		ldy	#^.filename
 		call	f32_find_name		; Locate the named file in
 		bne	.write_fail		; the current directory.
@@ -286,9 +286,9 @@ sdcard_example	.proc				; Let PCEAS move this code!
 		PRINTF	"Reading file /TBED/OS.PCE into memory.\n"
 
 		lda	#<.filename		; Locate the 'OS.PCE' file.
-		sta.l	<_si
+		sta.l	<_bp
 		lda	#>.filename
-		sta.h	<_si
+		sta.h	<_bp
 		ldy	#^.filename
 		call	f32_find_name		; Locate the named file in
 		bne	.read_fail		; the current directory.
@@ -335,9 +335,9 @@ sdcard_example	.proc				; Let PCEAS move this code!
 		stz.l	<_ax			; L-byte of #bytes to checksum.
 		sta.h	<_ax			; M-byte of #bytes to checksum.
 		stz	<_ax + 2		; H-byte of #bytes to checksum. 
-		stz.l	<_si			; Checksum 32KB from $6000.
+		stz.l	<_bp			; Checksum 32KB from $6000.
 		lda	#$60
-		sta.h	<_si
+		sta.h	<_bp
 		ldy	#_bank_base + _nb_bank	; Bank#, set by PCEAS!
 		call	calc_crc32		; Calculate the CRC32.
 

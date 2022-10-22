@@ -20,8 +20,11 @@
 
   // Data (Read/Write) High
   .label VDC_DW = $202
-  // base pointer
-  .label __si = $ee
+  // **************************************************************************
+  //
+  // System Card's Zero Page Variables (6502-style zero-page addresses).
+  //
+  .label __bp = $ec
   // source address
   .label __di = $f0
   .label __al = $f8
@@ -68,9 +71,9 @@ main: {
     sta.z __bl
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:62
     lda #<my_font
-    sta.z __si
+    sta.z __bp
     lda #>my_font
-    sta.z __si+1
+    sta.z __bp+1
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:63
     lda #$ff&my_font>>$17
     sta.z __bank
@@ -86,9 +89,9 @@ main: {
     sta.z __ah
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:116
     lda #<cpc464_colors
-    sta.z __si
+    sta.z __bp
     lda #>cpc464_colors
-    sta.z __si+1
+    sta.z __bp+1
     // /mnt/huc/huc/examples/asm/elmer/kickc/kickc.h:117
     lda #$ff&cpc464_colors>>$17
     sta.z __bank

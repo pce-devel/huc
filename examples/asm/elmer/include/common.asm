@@ -57,29 +57,29 @@ wait_nvsync:	bsr	wait_vsync		; # of VBLANK IRQs to wait in
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; Map the _si data far-pointer into MPR3 (& MPR4).
+; Map the _bp data far-pointer into MPR3 (& MPR4).
 ;
 ; Because the 16KB RAM region at $2000-$5FFF is composed of two separate
 ; banks, with the 2nd bank having no specific relation to the 1st, there
 ; is no way to deal with a bank-increment, so do not map that region.
 ;
 
-set_si_to_mpr3:	lda.h	<_si			; Do not remap a ptr to RAM,
+set_bp_to_mpr3:	lda.h	<_bp			; Do not remap a ptr to RAM,
 		cmp	#$60			; which is $2000-$5FFF.
 		bcc	!+
 		and	#$1F			; Remap ptr to MPR3.
 		ora	#$60
-		sta.h	<_si
+		sta.h	<_bp
 		tya				; Put bank into MPR3.
 		tam3
 !:		rts
 
-set_si_to_mpr34:lda.h	<_si			; Do not remap a ptr to RAM,
+set_bp_to_mpr34:lda.h	<_bp			; Do not remap a ptr to RAM,
 		cmp	#$60			; which is $2000-$5FFF.
 		bcc	!+
 		and	#$1F			; Remap ptr to MPR3.
 		ora	#$60
-		sta.h	<_si
+		sta.h	<_bp
 		tya				; Put bank into MPR3.
 		tam3
 		inc	a			; Put next into MPR4.
@@ -91,17 +91,17 @@ set_si_to_mpr34:lda.h	<_si			; Do not remap a ptr to RAM,
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; Increment the hi-byte of _si and change TMA3 if necessary.
+; Increment the hi-byte of _bp and change TMA3 if necessary.
 ;
 
-inc.h_si_mpr3:	inc.h	<_si			; Increment hi-byte of _si.
+inc.h_bp_mpr3:	inc.h	<_bp			; Increment hi-byte of _bp.
 		bpl	!+			; OK if within MPR0-MPR3.
 		pha				; Increment the bank in MPR3,
 		tma3				; usually when pointer moves
 		inc	a			; from $7FFF -> $8000.
 		tam3
 		lda	#$60
-		sta.h	<_si
+		sta.h	<_bp
 		pla
 !:		rts
 
@@ -110,12 +110,12 @@ inc.h_si_mpr3:	inc.h	<_si			; Increment hi-byte of _si.
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; Increment the hi-byte of _si and change TMA3 and TMA4 if necessary.
+; Increment the hi-byte of _bp and change TMA3 and TMA4 if necessary.
 ;
 
 	.if	1				; Save memory, for now.
 
-inc.h_si_mpr34:	inc.h	<_si			; Increment hi-byte of _si.
+inc.h_bp_mpr34:	inc.h	<_bp			; Increment hi-byte of _bp.
 		bpl	!+			; OK if within MPR0-MPR3.
 		pha				; Increment the bank in MPR3,
 		tma4				; usually when pointer moves
@@ -123,7 +123,7 @@ inc.h_si_mpr34:	inc.h	<_si			; Increment hi-byte of _si.
 		inc	a
 		tam4
 		lda	#$60
-		sta.h	<_si
+		sta.h	<_bp
 		pla
 !:		rts
 

@@ -139,9 +139,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 		sta	<_bl
 
 		lda	#<my_font		; Address of font data.
-		sta	<_si + 0
+		sta	<_bp + 0
 		lda	#>my_font
-		sta	<_si + 1
+		sta	<_bp + 1
 		ldy	#^my_font
 
 		call	dropfnt8x8_vdc		; Upload font to VRAM.
@@ -167,9 +167,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 		lda	#1			; Copy 1 palette of 16 colors.
 		sta	<_ah
 		lda	#<cpc464_colors		; Set the ptr to the palette
-		sta.l	<_si			; data.
+		sta.l	<_bp			; data.
 		lda	#>cpc464_colors
-		sta.h	<_si
+		sta.h	<_bp
 		ldy	#^cpc464_colors
 		call	load_palettes		; Add to the palette queue.
 
@@ -388,9 +388,9 @@ load_graphics	.proc
 		lda	#15			; Copy 15 palettes of 16 colors.
 		sta	<_ah
 		lda.l	#ram_buffer + $000	; Set the ptr to the palette
-		sta.l	<_si			; data.
+		sta.l	<_bp			; data.
 		lda.h	#ram_buffer + $000
-		sta.h	<_si
+		sta.h	<_bp
 		ldy	#^ram_buffer
 		call	load_palettes		; Add to the palette queue.
 
@@ -399,9 +399,9 @@ load_graphics	.proc
 		lda	#16			; Copy 16 palettes of 16 colors.
 		sta	<_ah
 		lda.l	#ram_buffer + $200	; Set the ptr to the palette
-		sta.l	<_si			; data.
+		sta.l	<_bp			; data.
 		lda.h	#ram_buffer + $200
-		sta.h	<_si
+		sta.h	<_bp
 		ldy	#^ram_buffer
 		call	load_palettes		; Add to the palette queue.
 
@@ -411,9 +411,9 @@ load_graphics	.proc
 
 		; Write the BAT.
 
-		stz.l	<_si
+		stz.l	<_bp
 		lda.h	#$6400
-		sta.h	<_si
+		sta.h	<_bp
 
 		lda.l	#15 + (15 * 64)
 		sta.l	<_di
@@ -426,21 +426,21 @@ load_graphics	.proc
 .line_loop:	jsr	vdc_di_to_mawr
 
 		cly
-.tile_loop:	lda	[_si], y
+.tile_loop:	lda	[_bp], y
 		sta	VDC_DL
 		iny
-		lda	[_si], y
+		lda	[_bp], y
 		sta	VDC_DH
 		iny
 		cpy	#16 * 2
 		bne	.tile_loop
 
 		clc
-		lda.l	<_si
+		lda.l	<_bp
 		adc	#16 * 2
-		sta.l	<_si
+		sta.l	<_bp
 		bcc	!+
-		inc.h	<_si
+		inc.h	<_bp
 
 !:		clc
 		lda.l	<_di

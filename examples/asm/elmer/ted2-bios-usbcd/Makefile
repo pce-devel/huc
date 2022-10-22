@@ -14,8 +14,6 @@ else
 	$(CP) ted2usbcd.pce ../include/ted2usbcd.pce
 endif
 
-# ../include/ted2usbcd.pce: ./ted2usbcd.pce
-
 # Add this to the list of TARGETS to clean.
 #
 # Windows CMD.EXE will fail if the specified file does not exist,

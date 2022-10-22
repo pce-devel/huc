@@ -167,9 +167,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 		sta	<_bl
 
 		lda	#<my_font		; Address of font data.
-		sta	<_si + 0
+		sta	<_bp + 0
 		lda	#>my_font
-		sta	<_si + 1
+		sta	<_bp + 1
 		ldy	#^my_font
 
 		call	transfnt8x8_vdc		; Upload font to VRAM.
@@ -209,9 +209,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 		lda	#2			; Copy 2 palette of 16 colors.
 		sta	<_ah
 		lda	#<bkg_palettes		; Set the ptr to the palette
-		sta.l	<_si			; data.
+		sta.l	<_bp			; data.
 		lda	#>bkg_palettes
-		sta.h	<_si
+		sta.h	<_bp
 		ldy	#^bkg_palettes
 		call	load_palettes		; Add to the palette queue.
 
@@ -418,7 +418,7 @@ core_main:	; Turn the display off and initialize the screen mode.
 ; transfnt8x8_sgx - Upload an 8x8 transparent font to the SGX VDC.
 ; transfnt8x8_vdc - Upload an 8x8 transparent font to the PCE VDC.
 ;
-; Args: _si, Y = _farptr to font data (maps to MPR3).
+; Args: _bp, Y = _farptr to font data (maps to MPR3).
 ; Args: _di = ptr to output address in VRAM.
 ; Args: _bl = # of font glyphs to upload.
 ;
@@ -450,14 +450,14 @@ transfnt8x8_vdc	.proc
 		tma3				; Preserve MPR3.
 		pha
 
-		jsr	set_si_to_mpr3		; Map memory block to MPR3.
+		jsr	set_bp_to_mpr3		; Map memory block to MPR3.
 		jsr	set_di_to_mawr		; Map _di to VRAM.
 
 		; Generate inverted font in color 0, background in color 1.
 
 .tile_loop:	cly
 
-.plane01_loop:	lda	[_si], y
+.plane01_loop:	lda	[_bp], y
 		eor	#$FF
 		sta	VDC_DL, x
 		stz	VDC_DH, x
@@ -471,10 +471,10 @@ transfnt8x8_vdc	.proc
 
 		clc				; Increment ptr to font.
 		lda	#8
-		adc.l	<_si
-		sta.l	<_si
+		adc.l	<_bp
+		sta.l	<_bp
 		bcc	.next_tile
-		inc.h	<_si
+		inc.h	<_bp
 
 .next_tile:	dec	<_bl			; Upload next glyph.
 		bne	.tile_loop

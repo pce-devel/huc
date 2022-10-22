@@ -136,7 +136,7 @@ color_bank:	ds	8			; Ring buffer - Data Ptr (bank).
 ;
 ; Args: _al = Palette index (0..15 for BG, 16..31 for SPR).
 ; Args: _ah = Palette count (0..32).
-; Args: _si = Pointer to palette data.
+; Args: _bp = Pointer to palette data.
 ; Args:   Y = Bank to map into MPR3 & MPR4, or zero to leave unchanged.
 ;
 ; N.B. Y==0 is only useful if the palette data is permanently mapped!
@@ -146,9 +146,9 @@ load_palettes	.proc
 
 		ldx	color_queue_w		; Get the queue's write index.
 
-		lda.l	<_si			; Add this set of palettes to
+		lda.l	<_bp			; Add this set of palettes to
 		sta	color_addr_l, x		; the queue.
-		lda.h	<_si
+		lda.h	<_bp
 		sta	color_addr_h, x
 		tya
 		sta	color_bank, x

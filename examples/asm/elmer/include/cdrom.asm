@@ -181,7 +181,7 @@ CDERR_NO_DRIVE	=	$81
 
 		.zp
 
-scsi_ram_ptr	=	_si			; Sector write addr in RAM.
+scsi_ram_ptr	=	_bp			; Sector write addr in RAM.
 
 		.bss
 

@@ -97,9 +97,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 		sta	<_bl
 
 		lda	#<my_font		; Address of font data.
-		sta	<_si + 0
+		sta	<_bp + 0
 		lda	#>my_font
-		sta	<_si + 1
+		sta	<_bp + 1
 		ldy	#^my_font
 
 		call	dropfnt8x8_vdc		; Upload font to VRAM.
@@ -111,9 +111,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 		; This method shows writing directly to the VCE.
 
 		lda	#<cpc464_colors		; Set the ptr to the palette
-		sta	<_si + 0		; data.
+		sta	<_bp + 0		; data.
 		lda	#>cpc464_colors
-		sta	<_si + 1
+		sta	<_bp + 1
 		lda	#^cpc464_colors
 		tam3
 
@@ -121,14 +121,14 @@ core_main:	; Turn the display off and initialize the screen mode.
 		stz	VCE_CTA + 1
 
 		ldy	#16
-.color_loop:	lda	[_si]
+.color_loop:	lda	[_bp]
 		sta	VCE_CTW + 0		; Set lo-byte of color.
-		inc	<_si + 0
-		lda	[_si]
+		inc	<_bp + 0
+		lda	[_bp]
 		sta	VCE_CTW + 1		; Set hi-byte of color.
-		inc	<_si + 0
+		inc	<_bp + 0
 		bne	.color_page
-		jsr	inc.h_si_mpr3
+		jsr	inc.h_bp_mpr3
 .color_page:	dey
 
 		bne	.color_loop
@@ -143,9 +143,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 		lda	#1			; Copy 1 palette of 16 colors.
 		sta	<_ah
 		lda	#<cpc464_colors		; Set the ptr to the palette
-		sta	<_si + 0		; data.
+		sta	<_bp + 0		; data.
 		lda	#>cpc464_colors
-		sta	<_si + 1
+		sta	<_bp + 1
 		ldy	#^cpc464_colors
 		call	load_palettes		; Add to the palette queue.
 

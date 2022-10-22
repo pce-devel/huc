@@ -44,7 +44,7 @@ tmp_normal_buf	equ	$2101			; Interleaved 16 lines.
 ; dropfnt8x8_sgx - Upload an 8x8 drop-shadowed font to the SGX VDC.
 ; dropfnt8x8_vdc - Upload an 8x8 drop-shadowed font to the PCE VDC.
 ;
-; Args: _si, Y = _farptr to font data (maps to MPR3).
+; Args: _bp, Y = _farptr to font data (maps to MPR3).
 ; Args: _di = ptr to output address in VRAM.
 ; Args: _al = bitplane 2 value for the tile data ($00 or $FF).
 ; Args: _ah = bitplane 3 value for the tile data ($00 or $FF).
@@ -78,7 +78,7 @@ dropfnt8x8_vdc	.proc
 		tma3				; Preserve MPR3.
 		pha
 
-		jsr	set_si_to_mpr3		; Map memory block to MPR3.
+		jsr	set_bp_to_mpr3		; Map memory block to MPR3.
 		jsr	set_di_to_mawr		; Map _di to VRAM.
 
 		; Generate shadowed glyph.
@@ -89,30 +89,30 @@ dropfnt8x8_vdc	.proc
 		stz	tmp_shadow_buf, x	; of the glyph.
 
 	.if	FNT_SHADOW_LHS
-.line_loop:	lda	[_si]			; Drop-shadow on the LHS.
+.line_loop:	lda	[_bp]			; Drop-shadow on the LHS.
 		sta	tmp_normal_buf, x	; Font data is RHS justified.
 		asl	a
 	.else
-.line_loop:	lda	[_si]			; Drop-shadow on the RHS.
+.line_loop:	lda	[_bp]			; Drop-shadow on the RHS.
 		sta	tmp_normal_buf, x	; Font data is LHS justified.
 		lsr	a
 	.endif
 
 	.if	0
-		ora	[_si]			; Composite font and shadow
+		ora	[_bp]			; Composite font and shadow
 		sta	tmp_shadow_buf + 2, x	; planes (wide shadow).
 	.else
 		sta	tmp_shadow_buf + 2, x	; Composite font and shadow
-		ora	[_si]			; planes (normal shadow).
+		ora	[_bp]			; planes (normal shadow).
 	.endif
 
 		ora	tmp_shadow_buf, x
 		eor	tmp_normal_buf, x
 		sta	tmp_shadow_buf, x
 
-		inc	<_si			; Increment ptr to font.
+		inc	<_bp			; Increment ptr to font.
 		bne	.next_line
-		jsr	inc.h_si_mpr3
+		jsr	inc.h_bp_mpr3
 .next_line:	inx
 		inx
 		cpx	#8 * 2			; 8 lines high per glyph.
@@ -159,7 +159,7 @@ dropfnt8x8_vdc	.proc
 ; dropfnt8x16_sgx - Upload an 8x16 drop-shadowed font to the SGX VDC.
 ; dropfnt8x16_vdc - Upload an 8x16 drop-shadowed font to the PCE VDC.
 ;
-; Args: _si, Y = _farptr to font data (maps to MPR3 & MPR4).
+; Args: _bp, Y = _farptr to font data (maps to MPR3 & MPR4).
 ; Args: _di = ptr to output address in VRAM.
 ; Args: _al = bitplane 2 value for the tile data ($00 or $FF).
 ; Args: _ah = bitplane 3 value for the tile data ($00 or $FF).
@@ -193,7 +193,7 @@ dropfnt8x16_vdc	.proc
 		tma3				; Preserve MPR3.
 		pha
 
-		jsr	set_si_to_mpr3		; Map memory block to MPR3.
+		jsr	set_bp_to_mpr3		; Map memory block to MPR3.
 		jsr	set_di_to_mawr		; Map _di to VRAM.
 
 		; Generate shadowed glyph.
@@ -204,31 +204,31 @@ dropfnt8x16_vdc	.proc
 		stz	tmp_shadow_buf, x	; of the glyph.
 
 	.if	FNT_SHADOW_LHS
-.line_loop:	lda	[_si]			; Drop-shadow on the LHS.
+.line_loop:	lda	[_bp]			; Drop-shadow on the LHS.
 		sta	tmp_normal_buf, x	; Font data is RHS justified.
 		asl	a
 	.else
-.line_loop:	lda	[_si]			; Drop-shadow on the RHS.
+.line_loop:	lda	[_bp]			; Drop-shadow on the RHS.
 		sta	tmp_normal_buf, x	; Font data is LHS justified.
 		lsr	a
 	.endif
 
 	.if	0
-		ora	[_si]			; Composite font and shadow
+		ora	[_bp]			; Composite font and shadow
 		sta	tmp_shadow_buf + 2, x	; planes (wide shadow).
 	.else
 
 		sta	tmp_shadow_buf + 2, x	; Composite font and shadow
-		ora	[_si]			; planes (normal shadow).
+		ora	[_bp]			; planes (normal shadow).
 	.endif
 
 		ora	tmp_shadow_buf, x
 		eor	tmp_normal_buf, x
 		sta	tmp_shadow_buf, x
 
-		inc	<_si			; Increment ptr to font.
+		inc	<_bp			; Increment ptr to font.
 		bne	.next_line
-		jsr	inc.h_si_mpr3
+		jsr	inc.h_bp_mpr3
 .next_line:	inx
 		inx
 		cpx	#16 * 2			; 16 lines high per glyph.
@@ -293,7 +293,7 @@ dropfnt8x16_vdc	.proc
 ;
 ; The array of flags is little-endian, i.e. the 1st flag is bit 0 of byte 0.
 ;
-; Args: _si, Y = _farptr to font data (maps to MPR3 & MPR4).
+; Args: _bp, Y = _farptr to font data (maps to MPR3 & MPR4).
 ; Args: _di = ptr to output address in VRAM.
 ; Args: _al = bitplane 2 value for the tile data ($00 or $FF).
 ; Args: _ah = bitplane 3 value for the tile data ($00 or $FF).
@@ -335,12 +335,12 @@ dropfntbox_vdc	.proc
 		tma4				; Preserve MPR4.
 		pha
 
-		jsr	set_si_to_mpr34		; Map font data to MPR3 & MPR4.
+		jsr	set_bp_to_mpr34		; Map font data to MPR3 & MPR4.
 		jsr	set_di_to_mawr		; Map _di to VRAM.
 
-		lda.l	<_si			; Set _di to point to the flag
+		lda.l	<_bp			; Set _di to point to the flag
 		sta.l	<_di			; data at the beginning of the
-		lda.h	<_si			; font data.
+		lda.h	<_bp			; font data.
 		sta.h	<_di
 		stz	<_temp			; Initialize flag buffer.
 
@@ -359,10 +359,10 @@ dropfntbox_vdc	.proc
 
 .skip_flags:	tya				; Move font pointer passed the
 		clc				; flag data.
-		adc.l	<_si
-		sta.l	<_si
+		adc.l	<_bp
+		sta.l	<_bp
 		bcc	.tile_loop
-		inc.h	<_si
+		inc.h	<_bp
 
 		; Generate shadowed glyph.
 
@@ -388,17 +388,17 @@ dropfntbox_vdc	.proc
 		stz	tmp_shadow_buf, x	; of the glyph.
 
 	.if	FNT_SHADOW_LHS
-.line_loop:	lda	[_si]			; Drop-shadow on the LHS.
+.line_loop:	lda	[_bp]			; Drop-shadow on the LHS.
 		sta	tmp_normal_buf, x	; Font data is RHS justified.
 		asl	a
 	.else
-.line_loop:	lda	[_si]			; Drop-shadow on the RHS.
+.line_loop:	lda	[_bp]			; Drop-shadow on the RHS.
 		sta	tmp_normal_buf, x	; Font data is LHS justified.
 		lsr	a
 	.endif
 
 		sta	tmp_shadow_buf + 2, x	; Composite font and shadow
-		ora	[_si]			; planes (with narrow shadow).
+		ora	[_bp]			; planes (with narrow shadow).
 		bvc	.is_narrow
 		sta	tmp_shadow_buf + 2, x	; Wide shadow for box tiles.
 
@@ -406,9 +406,9 @@ dropfntbox_vdc	.proc
 		eor	tmp_normal_buf, x
 		sta	tmp_shadow_buf, x
 
-		inc.l	<_si			; Increment ptr to font.
+		inc.l	<_bp			; Increment ptr to font.
 		bne	.next_line
-		inc.h	<_si
+		inc.h	<_bp
 .next_line:	inx
 		inx
 		cpx	#8 * 2			; 8 lines high per glyph.
