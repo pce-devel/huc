@@ -38,6 +38,7 @@ jobs:
       - name: Build on Mac
         if: startsWith(matrix.os, 'macos')
         run: |
+          sudo xcode-select -s "/Applications/Xcode_13.2.1.app"
           make
           echo Build Complete
       - name: Archive toolchain
@@ -105,7 +106,7 @@ jobs:
     steps:
       - name: Check out code from the repository
         uses: actions/checkout@v3
-      - name: Get previoulsy built artifacts
+      - name: Get previously built artifacts
         uses: actions/download-artifact@v3
         with:
           name: toolchain-${{ matrix.os }}
@@ -144,11 +145,11 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: package-windows-2022
-      - name: Get previoulsy built artifacts macos
+      - name: Get previously built artifacts macos
         uses: actions/download-artifact@v3
         with:
           name: package-macos-12
-      - name: Get previoulsy built artifacts linux
+      - name: Get previously built artifacts linux
         uses: actions/download-artifact@v3
         with:
           name: package-ubuntu-20.04
