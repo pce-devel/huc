@@ -709,9 +709,14 @@ do_equ(int *ip)
 	if (!evaluate(ip, ';', 1))
 		return;
 
+#if 0
 	/* check for undefined symbol - they are not allowed in .set */
 	if ((optype == 1) && (undef != 0)) {
-		error("Undefined symbol in operand field!");
+#else
+	/* check for undefined symbol - they are not allowed in .equ or .set */
+	if (undef != 0) {
+#endif
+		error("Symbols must be defined before their use in .EQU or .SET!");
 		return;
 	}
 
