@@ -709,13 +709,8 @@ do_equ(int *ip)
 	if (!evaluate(ip, ';', 1))
 		return;
 
-#if 0
-	/* check for undefined symbol - they are not allowed in .set */
-	if ((optype == 1) && (undef != 0)) {
-#else
-	/* check for undefined symbol - they are not allowed in .equ or .set */
-	if (undef != 0) {
-#endif
+	/* check for undefined symbols - they are not allowed in .equ or .set */
+	if ((undef != 0) && (kickc_mode == 0)) {
 		error("Symbols must be defined before their use in .EQU or .SET!");
 		return;
 	}
@@ -724,6 +719,10 @@ do_equ(int *ip)
 	if ((optype == 1) && (lablptr->type == DEFABS)) {
 		lablptr->value = value;
 		lablptr->bank = expr_valbank;
+	} else
+	if (undef != 0) {
+		/* needed for KickC forward-references */
+		need_another_pass = 1;
 	} else {
 		/* assign value to the label */
 		labldef(value, expr_valbank, CONSTANT);

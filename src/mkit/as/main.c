@@ -554,6 +554,7 @@ main(int argc, char **argv)
 		scopeptr = NULL;
 		branchptr = branchlst;
 		xvertlong = 0;
+		need_another_pass = 0;
 		skip_lines = 0;
 		rsbase = 0;
 		rsbank = RESERVED_BANK;
@@ -663,10 +664,10 @@ main(int argc, char **argv)
 		/* or set it to BRANCH_PASS to run LAST_PASS next */
 		if (pass != LAST_PASS) {
 			/* fix out-of-range short-branches, return number fixed */
-			if (branchopt() == 0)
-				pass = BRANCH_PASS;
-			else
+			if ((branchopt() != 0) || (need_another_pass != 0))
 				pass = FIRST_PASS;
+			else
+				pass = BRANCH_PASS;
 		}
 
 		/* do this just before the last pass */

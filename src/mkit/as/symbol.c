@@ -328,8 +328,13 @@ labldef(int lval, int lbnk, int lsrc)
 	/* record definition */
 	lablptr->defcnt = 1;
 
-	/* first pass */
-	if (pass == FIRST_PASS) {
+	/* first pass or still undefined */
+	if ((pass == FIRST_PASS) || (lablptr->type == UNDEF)) {
+		if (pass != FIRST_PASS) {
+			/* needed for KickC forward-references */
+			need_another_pass = 1;
+		}
+
 		switch (lablptr->type) {
 		/* undefined */
 		case UNDEF:
@@ -370,6 +375,11 @@ labldef(int lval, int lbnk, int lsrc)
 	/* branch pass */
 	else if (pass != LAST_PASS) {
 		if (lablptr->type == DEFABS) {
+			if ((lablptr->value != lval) ||
+			    ((lsrc == LOCATION) && (bank < bank_limit) && (lablptr->bank != bank_base + bank))) {
+				/* needed for KickC forward-references */
+				need_another_pass = 1;
+			}
 			lablptr->bank = lbnk;
 			lablptr->value = lval;
 		}

@@ -1153,6 +1153,7 @@ branchopt(void)
 	if (xvertlong)
 		printf("Changed %d branches from short to long.\n", xvertlong);
 
-	/* do another pass if anything just changed */
-	return changed;
+	/* do another pass if anything just changed, except if KickC because */
+	/* any changes during the pass itself can change a forward-reference */
+	return ((kickc_opt) ? xvertlong : changed);
 }

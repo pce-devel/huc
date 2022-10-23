@@ -76,6 +76,7 @@ extern struct t_symbol *bank_glabl[4][256];	/* latest global label in each bank 
 extern struct t_branch *branchlst;		/* first branch instruction assembled */
 extern struct t_branch *branchptr;		/* last branch instruction assembled */
 extern int xvertlong;				/* count of branches fixed in pass */
+extern char need_another_pass;			/* NZ if another pass if required */
 extern char hex[];				/* hexadecimal character buffer */
 extern int stop_pass;				/* stop the program; set by fatal_error() */
 extern int errcnt;				/* error counter */
