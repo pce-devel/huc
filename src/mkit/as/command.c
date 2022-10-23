@@ -1256,11 +1256,13 @@ do_include(int *ip)
 	/* define label */
 	labldef(0, 0, LOCATION);
 
+#if 0 // This breaks @turboxray's code, so disable it for now.
 	/* avoid problems */
 	if (expand_macro) {
 		error("Cannot use INCLUDE inside a macro!");
 		return;
 	}
+#endif
 
 	/* get file name */
 	if (!getstring(ip, fname, 127))
