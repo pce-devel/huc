@@ -518,7 +518,7 @@ proc_reloc(void)
 
 							current = proc_ptr;
 
-							fatal_error("Not enough ROM space for procs!");
+							fatal_error("\nNot enough ROM space for procs!");
 
 							for (i = new_bank; i < max_bank; i++) {
 								printf("BANK %02X: %d bytes free\n", i, bank_free[i]);
@@ -542,6 +542,9 @@ proc_reloc(void)
 							else
 								printf("There are %d bytes that won't fit into the currently available BANK space\n", total - totfree);
 							errcnt++;
+
+							show_seg_usage();
+
 							return;
 						}
 						reloc_bank = max_bank;
