@@ -12,7 +12,7 @@ echo \ >> test_examples.sh
 }
 
 echo ''
-echo Adding new SHA1 values to end of test_examples.sh, don't forget to edit it!
+echo Adding new SHA1 values to end of test_examples.sh, do not forget to edit it!
 echo ''
 csum_file ../examples/huc/acd/ac_test.iso
 csum_file ../examples/huc/overlay/overlay.iso
