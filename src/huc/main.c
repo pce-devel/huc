@@ -191,8 +191,11 @@ int main (int argc, char *argv[])
 
 
 				case 'v':
-					verboseflag = 1;
-					ctext = 1;		/* "C" code in asm output */
+					verboseflag++;
+					if (verboseflag > 1) {
+						ctext = 1; /* "C" code in asm output (which disables the optimizer) */
+						fprintf(stderr, "\n;warning: Outputting C source to the listing file disables some optimizations!\n\n");
+					}
 					break;
 
 				case 'd': case 'D':
