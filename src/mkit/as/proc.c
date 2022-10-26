@@ -389,14 +389,20 @@ do_endp(int *ip)
 	/* define label */
 	labldef(0, 0, LOCATION);
 
+	/* sanity check */
+	if (bank != proc_ptr->bank) {
+		fatal_error(".endp/.endprocgroup is in a different bank to .proc/,procgroup!");
+		return;
+	}
+
 	/* record proc size */
 	proc_ptr->label->data_type = proc_ptr->type;
 	proc_ptr->label->data_size =
 	proc_ptr->size = loccnt - proc_ptr->base;
 
+	/* restore previous bank settings */
 	bank = proc_ptr->old_bank;
 
-	/* restore previous bank settings */
 	if (proc_ptr->group == NULL) {
 		page     = bank_page[section][bank]   = proc_ptr->old_page;
 		loccnt   = bank_loccnt[section][bank] = proc_ptr->old_loccnt;
@@ -458,10 +464,10 @@ proc_reloc(void)
 	/* sort procedures by size (largest first) for better packing */
 	if (asm_opt[OPT_OPTIMIZE])
 		proc_sortlist();
-	else
+	else {
 		bank_free[max_bank] = 0;
-
-	new_bank = max_bank + 1;
+		new_bank = max_bank + 1;
+	}
 
 	proc_ptr = proc_first;
 
@@ -518,32 +524,35 @@ proc_reloc(void)
 
 							current = proc_ptr;
 
-							fatal_error("\nNot enough ROM space for procs!");
+							fatal_error("\nThere is not enough free memory for all the procedures!\n");
+
+							if (asm_opt[OPT_OPTIMIZE] == 0) {
+								printf("Procedure optimization is currently disabled, use \"-O\" to enable.\n\n");
+							}
 
 							for (i = new_bank; i < max_bank; i++) {
 								printf("BANK %02X: %d bytes free\n", i, bank_free[i]);
 								totfree += bank_free[i];
 							}
-							printf("Total free space in all banks %d\n", totfree);
+							printf("\nTotal free space in all banks %d.\n\n", totfree);
 
 							total = 0;
 							proc_ptr = proc_first;
 							while (proc_ptr) {
-								printf("Proc: %s Bank: 0x%02X Size: %d %s\n",
-									proc_ptr->name, proc_ptr->bank == PROC_BANK ? 0 : proc_ptr->bank, proc_ptr->size,
-									proc_ptr->bank == PROC_BANK && proc_ptr == current ? " ** too big **" : proc_ptr->bank == PROC_BANK ? "** unassigned **" : "");
-								if (proc_ptr->bank == PROC_BANK)
+								if (proc_ptr->bank == PROC_BANK) {
+									printf("Proc: %s Bank: 0x%02X Size: %4d %s\n",
+										proc_ptr->name, proc_ptr->bank == PROC_BANK ? 0 : proc_ptr->bank, proc_ptr->size,
+										proc_ptr->bank == PROC_BANK && proc_ptr == current ? " ** too big **" : proc_ptr->bank == PROC_BANK ? "** unassigned **" : "");
 									total += proc_ptr->size;
+								}
 								proc_ptr = proc_ptr->link;
 							}
-							printf("\nTotal bytes that didn't fit in ROM: %d\n", total);
+							printf("\nTotal bytes that didn't fit in ROM: %d\n\n", total);
 							if (totfree > total && current)
-								printf("Try segmenting the %s procedure into smaller chunks\n", current->name);
+								printf("Try splitting the \"%s\" procedure into smaller chunks.\n\n", current->name);
 							else
-								printf("There are %d bytes that won't fit into the currently available BANK space\n", total - totfree);
+								printf("There are %d bytes that won't fit into the currently available BANK space\n\n", total - totfree);
 							errcnt++;
-
-							show_seg_usage();
 
 							return;
 						}

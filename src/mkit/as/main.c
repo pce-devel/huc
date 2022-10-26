@@ -632,6 +632,12 @@ main(int argc, char **argv)
 			if (!discontiguous) {
 				/* N.B. $2000 is a legal loccnt that says that the bank is full! */
 				if (loccnt > 0x2000) {
+					if (proc_ptr) {
+						snprintf(cmd, sizeof(cmd), ".proc/.progroup \"%s\" is larger than 8192 bytes!\n", proc_ptr->name);
+						fatal_error(cmd);
+						break;
+					}
+
 					loccnt &= 0x1FFF;
 					bank = (bank + 1);
 					if (bank > max_bank) {
@@ -656,8 +662,20 @@ main(int argc, char **argv)
 				}
 			}
 
+			/* sanity check */
+			if (max_bank > bank_limit) {
+				snprintf(cmd, sizeof(cmd), "Assembler bug ... max_bank (0x%02X) > bank_limit (0x%02X)!\n", max_bank, bank_limit);
+				fatal_error(cmd);
+			}
+
 			if (stop_pass)
 				break;
+		}
+
+		/* abort pass on errors */
+		if (errcnt) {
+			printf("# %d error(s)\n", errcnt);
+			exit(1);
 		}
 
 		/* set pass to FIRST_PASS to run BRANCH_PASS next */

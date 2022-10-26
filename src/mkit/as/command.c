@@ -865,6 +865,7 @@ do_bank(int *ip)
 	/* get bank index */
 	if (!evaluate(ip, 0, 0))
 		return;
+
 	if (value > bank_limit) {
 		error("Bank index out of range!");
 		return;
@@ -1455,7 +1456,7 @@ do_ds(int *ip)
 
 	/* check range */
 	if ((loccnt + nbytes) > limit) {
-		error("Out of range!");
+		error("The .DS is too large for the current bank or section!");
 		return;
 	}
 
