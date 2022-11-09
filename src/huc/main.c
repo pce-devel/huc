@@ -133,6 +133,7 @@ int main (int argc, char *argv[])
 			while (*++p) switch (*p) {
 				case 't': case 'T':
 					ctext = 1;
+					fprintf(stderr, "\nwarning: Outputting C source to the listing file disables some optimizations!\n\n");
 					break;
 
 				case 'c':
@@ -191,11 +192,7 @@ int main (int argc, char *argv[])
 
 
 				case 'v':
-					verboseflag++;
-					if (verboseflag > 1) {
-						ctext = 1; /* "C" code in asm output (which disables the optimizer) */
-						fprintf(stderr, "\n;warning: Outputting C source to the listing file disables some optimizations!\n\n");
-					}
+					verboseflag = 1;
 					break;
 
 				case 'd': case 'D':
@@ -468,7 +465,7 @@ void usage (char *exename)
 	fprintf(stderr, "-Asym[=val]       define symbol 'sym' to assembler\n");
 	fprintf(stderr, "\nDebugging options:\n");
 	fprintf(stderr, "-t/-T             include C source code in assembler output/listings\n");
-	fprintf(stderr, "-v/-V             increase verbosity of output files (max. 2)\n\n");
+	fprintf(stderr, "-v/-V             increase verbosity of output files\n\n");
 	exit(1);
 }
 
