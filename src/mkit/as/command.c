@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <limits.h>
 #include "defs.h"
 #include "externs.h"
 #include "protos.h"
@@ -1411,6 +1412,12 @@ do_ds(int *ip)
 	/* check for undefined symbol - they are not allowed in .ds */
 	if (undef != 0) {
 		error("Undefined symbol in operand field!");
+		return;
+	}
+
+	/* check for negative value */
+	if (value > INT_MAX) {
+		error("Negative value in operand field!");
 		return;
 	}
 
