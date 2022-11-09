@@ -397,8 +397,10 @@ do_endp(int *ip)
 
 	/* record proc size */
 	proc_ptr->label->data_type = proc_ptr->type;
-	proc_ptr->label->data_size =
-	proc_ptr->size = loccnt - proc_ptr->base;
+	if (pass != LAST_PASS) {
+		proc_ptr->label->data_size =
+		proc_ptr->size = loccnt - proc_ptr->base;
+	}
 
 	/* restore previous bank settings */
 	bank = proc_ptr->old_bank;
@@ -826,6 +828,30 @@ proc_sortlist(void)
 	}
 	proc_first = sorted_list;
 	return;
+}
+
+
+/* ----
+ * list_procs()
+ * ----
+ * dump the procedure list to the listing file
+ */
+
+void
+list_procs(void)
+{
+	struct t_proc *proc_ptr = proc_first;
+
+	if ((lst_fp != NULL) && (proc_ptr != NULL) && (fprintf(lst_fp, "\nPROCEDURE LIST (in order of size):\n\n") > 0)) {
+		while (proc_ptr) {
+			if ((proc_ptr->group == NULL) && (proc_ptr->bank < RESERVED_BANK)) {
+				if (fprintf( lst_fp, "Size: $%04X, Addr: $%02X:%04X, %s %s\n", proc_ptr->size, proc_ptr->bank, proc_ptr->label->value,
+					(proc_ptr->type == P_PGROUP) ? ".procgroup" : "     .proc" , proc_ptr->name) < 0)
+					break;
+			}
+			proc_ptr = proc_ptr->link;
+		}
+	}
 }
 
 

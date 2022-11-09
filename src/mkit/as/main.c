@@ -723,8 +723,12 @@ main(int argc, char **argv)
 	}
 
 	/* close listing file */
-	if (lst_fp)
+	if (lst_fp) {
+		if ((list_level >= 2) && (errcnt == 0)) {
+			list_procs();
+		}
 		fclose(lst_fp);
+	}
 
 	/* close input file */
 	fclose(in_fp);
