@@ -198,3 +198,69 @@ inc.h_di_mpr4:	inc.h	<_di			; Increment hi-byte of _di.
 		pla
 !:		rts
 	.endif
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; Far-call a function in another bank.
+;
+; This is compatible with PCEAS's "-newproc" procedure calls, but avoids
+; generating a 10-byte procedure trampoline.
+;
+; To use this ...
+;
+;  jsr far_call
+;  tst #bank( myfunc ), myfunc - 1
+;
+; The "TST" instruction itself is skipped and NOT executed after the call,
+; it only exists to make things easier to read in a listing/debugger.
+;
+; The called .PROC routine must exit with "jmp leave_proc" and not "rts".
+;
+; leave_proc:	pla
+;		tam6
+;		tya
+;		rts
+;
+; N.B. This costs 36 bytes, and takes 82 cycles vs 18 for the trampoline
+;      code (when you exclude preserving YA in zero-page).
+;
+; N.B. This is NOT re-entrant, and must NOT be used in an IRQ handler if
+;      _temp is not saved and restored!
+;
+
+	.if	0
+
+far_call:	sta.l	<_bp			; Preserve YA registers as
+		sty.h	<_bp			; an address parameter.
+
+		pla				; Get return address.
+		sta.l	<_temp
+		clc				; Skip the far_call()
+		adc	#4			; address parameter.
+		tay
+		pla
+		sta.h	<_temp
+		adc	#0
+		pha				; Put return address.
+		phy
+
+		tma6				; Preserve MPR6.
+		pha
+
+		ldy	#4			; Push far_call() addr.
+		lda	[_temp], y
+		pha
+		dey
+		lda	[_temp], y
+		pha
+
+		dey				; Read far_call() bank.
+		lda	[_temp], y
+		tam6
+
+		rts				; Jump to routine.
+
+	.endif
