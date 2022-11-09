@@ -2,7 +2,8 @@ name: build
 
 # Github Actions aren't supporting anchors yet
 # upvote here https://github.com/github/feedback/discussions/4501
-
+#
+# See https://github.com/marketplace/actions/setup-xcode-version
 on: 
   push:
   pull_request:
@@ -24,6 +25,8 @@ jobs:
     steps:
       - name: Check out code from the repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - name: Build on Linux
         if: startsWith(matrix.os, 'ubuntu')
         run: |
