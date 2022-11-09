@@ -415,7 +415,6 @@ core_main:	; Turn the display off and initialize the screen mode.
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; transfnt8x8_sgx - Upload an 8x8 transparent font to the SGX VDC.
 ; transfnt8x8_vdc - Upload an 8x8 transparent font to the PCE VDC.
 ;
 ; Args: _bp, Y = _farptr to font data (maps to MPR3).
@@ -431,17 +430,6 @@ core_main:	; Turn the display off and initialize the screen mode.
 ; Shadow pixels 1   5   9  13
 ; Font pixels   2   6  10  14
 ;
-
-		.procgroup			; Keep this code together!
-
-	.if	SUPPORT_SGX
-transfnt8x8_sgx	.proc
-
-		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$F0			; Turn "clx" into a "beq".
-
-		.endp
-	.endif
 
 transfnt8x8_vdc	.proc
 
@@ -485,7 +473,6 @@ transfnt8x8_vdc	.proc
 		leave				; All done, phew!
 
 		.endp
-		.endprocgroup
 
 
 

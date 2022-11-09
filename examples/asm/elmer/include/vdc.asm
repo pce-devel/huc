@@ -85,7 +85,7 @@ set_dspoff:	lda	#$C0			; Disable BG & SPR layers.
 ;
 ;
 
-		.procgroup			; These routines share code!
+vdc_clear_vram	.procgroup			; These routines share code!
 
 ; ***************************************************************************
 ; ***************************************************************************
@@ -194,7 +194,7 @@ clear_bat_x:	stz	<_di + 0		; Set VDC or SGX destination
 ;
 ;
 
-		.procgroup			; These routines share code!
+vdc_set_mode	.procgroup			; These routines share code!
 
 ; ***************************************************************************
 ; ***************************************************************************
@@ -419,7 +419,7 @@ sgx_detected:	ds	1			; NZ if SuperGrafx detected.
 ;
 ;
 
-		.procgroup			; These routines share code!
+vdc_copy_to	.procgroup			; These routines share code!
 
 ; ***************************************************************************
 ; ***************************************************************************

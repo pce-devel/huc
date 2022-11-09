@@ -60,7 +60,7 @@ tmp_normal_buf	equ	$2101			; Interleaved 16 lines.
 ; Font pixels   2   6  10  14
 ;
 
-		.procgroup			; Keep this code together!
+font_drop8x8	.procgroup			; Keep this code together!
 
 	.if	SUPPORT_SGX
 dropfnt8x8_sgx	.proc
@@ -175,7 +175,7 @@ dropfnt8x8_vdc	.proc
 ; 1 = shadow
 ; 2 = font
 
-		.procgroup			; Keep this code together!
+font_drop8x16	.procgroup 			; Keep this code together!
 
 	.if	SUPPORT_SGX
 
@@ -315,7 +315,7 @@ dropfnt8x16_vdc	.proc
 ; Font pixels   6   2  14  10
 ;
 
-		.procgroup			; Keep this code together!
+font_dropbox	.procgroup			; Keep this code together!
 
 	.if	SUPPORT_SGX
 dropfntbox_sgx	.proc

@@ -192,7 +192,7 @@ tty_printf:	stx.l	<_bp			; Preserve message pointer.
 
 
 
-		.procgroup			; Group main TTY in 1 bank!
+tty_group	.procgroup			; Group main TTY in 1 bank!
 
 ; ***************************************************************************
 ; ***************************************************************************
