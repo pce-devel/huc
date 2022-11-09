@@ -38,7 +38,7 @@
   #define GIT_DATE __DATE__
 #endif
 
-#define VERSION_STR "pce2png (v0.30-" GIT_VERSION ", " GIT_DATE ")"
+#define VERSION_STR "pce2png (" GIT_VERSION ", " GIT_DATE ")"
 
 //
 // GLOBAL VARIABLES

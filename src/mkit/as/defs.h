@@ -3,9 +3,9 @@
 
 #include "version.h"
 
-#define NES_ASM_VERSION ("NES Assembler (v 4.00-" GIT_VERSION ", " GIT_DATE ")")
-#define PCE_ASM_VERSION ("PC Engine Assembler (v 4.00-" GIT_VERSION ", " GIT_DATE ")")
-#define FUJI_ASM_VERSION ("Fuji Assembler for Atari (v 4.00-" GIT_VERSION ", " GIT_DATE ")")
+#define NES_ASM_VERSION ("NES Assembler (" GIT_VERSION ", " GIT_DATE ")")
+#define PCE_ASM_VERSION ("PC Engine Assembler (" GIT_VERSION ", " GIT_DATE ")")
+#define FUJI_ASM_VERSION ("Fuji Assembler for Atari (" GIT_VERSION ", " GIT_DATE ")")
 
 /* path separator */
 #if defined(WIN32)

@@ -33,7 +33,7 @@
   #define GIT_DATE __DATE__
 #endif
 
-#define VERSION_STR "wav2vox (v1.81-" GIT_VERSION ", " GIT_DATE ")"
+#define VERSION_STR "wav2vox (" GIT_VERSION ", " GIT_DATE ")"
 
 #define ERROR_NONE         0
 #define ERROR_DIAGNOSTIC  -1

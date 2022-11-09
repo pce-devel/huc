@@ -26,7 +26,7 @@
   #define GIT_DATE __DATE__
 #endif
 
-#define VERSION_STR "sym2inc (v1.00-" GIT_VERSION ", " GIT_DATE ")"
+#define VERSION_STR "sym2inc (" GIT_VERSION ", " GIT_DATE ")"
 
 //
 // Simple symbol table structure.
