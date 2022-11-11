@@ -1046,6 +1046,12 @@ pce_inctilepal(int *ip)
 	if (!pcx_parse_args(0, pcx_nb_args, &x, &y, &w, &h, 16))
 		return;
 
+	/* tilepal must not cross a bank boundary */
+	if ((loccnt & 0x1FFF) > 0x1F00) {
+		error("Tile palette must not cross a bank boundary!");
+		return;
+	}
+
 	/* scan tiles */
 	for (i = 0; i < h; i++) {
 		for (j = 0; j < w; j++) {
