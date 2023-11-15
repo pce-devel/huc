@@ -714,7 +714,7 @@ lib2_init_sgx_vdc:
 	stz	video_data+1
 
 	dec	a		; Check $xxxx at VDC 2 vram @$7FFF
-	stz	sgx_video_reg
+	sta	sgx_video_reg
 	stx	sgx_video_data
 	sty	sgx_video_data+1
 	inc	a
@@ -746,7 +746,7 @@ lib2_init_sgx_vdc:
 	stz	<__ah
 	stz	<__bl
 	stz	<__bh
-	jsr	_sgx_scroll.2
+	jmp	lib2_sgx_scroll.2
 
 .done:	rts
 

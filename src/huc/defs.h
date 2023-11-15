@@ -206,7 +206,7 @@ struct symbol {
 
 typedef struct symbol SYMBOL;
 
-#define NUMTAG  10
+#define NUMTAG  64
 
 struct tag_symbol {
 	char name[NAMESIZE];	// structure tag name
@@ -219,7 +219,7 @@ struct tag_symbol {
 #define NULL_TAG 0
 
 // Define the structure member table parameters
-#define NUMMEMB         128
+#define NUMMEMB         256
 
 /* possible entries for "ident" */
 

@@ -357,9 +357,8 @@ word * const	_dx		= (word *) 0x20FE;
 byte * const	_dl		= (byte *) 0x20FE;
 byte * const	_dh		= (byte *) 0x20FF;
 
-byte * const	_si_bank	= _dh;
-byte * const	_di_bank	= _dh;
-byte * const	_bp_bank	= _dh;
+word * const	_temp		= (word *) 0x2000;	// CORE(not TM) library variable!
+byte * const	_bank		= (byte *) 0x2002;	// CORE(not TM) library variable!
 
 
 
@@ -368,15 +367,17 @@ byte * const	_bp_bank	= _dh;
 // System Card's Zero Page Variables (6502-style zero-page addresses).
 //
 
-word * const	__bp		= (word *) 0xEC;		// base pointer
-word * const	__si		= (word *) 0xEE;		// source address
-word * const	__di		= (word *) 0xF0;		// destination address
-byte * const	__cdi_b		= (byte *) 0xF2;		// ???
-byte * const	__vdc_crl	= (byte *) 0xF3;		// shadow of VDC control register (lo-byte)
-byte * const	__vdc_crh	= (byte *) 0xF4;		// shadow of VDC control register (hi-byte)
-byte * const	__irq_vec	= (byte *) 0xF5;		// interrupt vector control mask
-byte * const	__vdc_sr	= (byte *) 0xF6;		// shadow of VDC status register
-byte * const	__vdc_reg	= (byte *) 0xF7;		// shadow of VDC register index
+#if 1
+
+word * const	__bp		= (word *) 0xEC;	// base pointer
+word * const	__si		= (word *) 0xEE;	// source address
+word * const	__di		= (word *) 0xF0;	// destination address
+byte * const	__cdi_b		= (byte *) 0xF2;	// ???
+byte * const	__vdc_crl	= (byte *) 0xF3;	// shadow of VDC control register (lo-byte)
+byte * const	__vdc_crh	= (byte *) 0xF4;	// shadow of VDC control register (hi-byte)
+byte * const	__irq_vec	= (byte *) 0xF5;	// interrupt vector control mask
+byte * const	__vdc_sr	= (byte *) 0xF6;	// shadow of VDC status register
+byte * const	__vdc_reg	= (byte *) 0xF7;	// shadow of VDC register index
 
 word * const	__ax		= (word *) 0xF8;
 byte * const	__al		= (byte *) 0xF8;
@@ -394,9 +395,41 @@ word * const	__dx		= (word *) 0xFE;
 byte * const	__dl		= (byte *) 0xFE;
 byte * const	__dh		= (byte *) 0xFF;
 
-byte * const	__si_bank	= __dh;
-byte * const	__di_bank	= __dh;
-byte * const	__bp_bank	= __dh;
+word * const	__temp		= (word *) 0x00;	// CORE(not TM) library variable!
+byte * const	__bank		= (byte *) 0x02;	// CORE(not TM) library variable!
+
+#else
+
+__export __address(0xEC) volatile word __bp;		// base pointer
+__export __address(0xEE) volatile word __si;		// source address
+__export __address(0xF0) volatile word __di;		// destination address
+__export __address(0xF2) volatile byte __cdi_b;		// ???
+__export __address(0xF3) volatile byte __vdc_crl;	// shadow of VDC control register (lo-byte)
+__export __address(0xF4) volatile byte __vdc_crh;	// shadow of VDC control register (hi-byte)
+__export __address(0xF5) volatile byte __irq_vec;	// interrupt vector control mask
+__export __address(0xF6) volatile byte __vdc_sr;	// shadow of VDC status register
+__export __address(0xF7) volatile byte __vdc_reg;	// shadow of VDC register index
+
+__export __address(0xF8) volatile word __ax;
+__export __address(0xF8) volatile byte __al;
+__export __address(0xF9) volatile byte __ah;
+
+__export __address(0xFA) volatile word __bx;
+__export __address(0xFA) volatile byte __bl;
+__export __address(0xFB) volatile byte __bh;
+
+__export __address(0xFC) volatile word __cx;
+__export __address(0xFC) volatile byte __cl;
+__export __address(0xFD) volatile byte __ch;
+
+__export __address(0xFE) volatile word __dx;
+__export __address(0xFE) volatile byte __dl;
+__export __address(0xFF) volatile byte __dh;
+
+__export __address(0x00) volatile word __temp;		// CORE(not TM) library variable!
+__export __address(0x02) volatile byte __bank;		// CORE(not TM) library variable!
+
+#endif
 
 
 
@@ -405,7 +438,9 @@ byte * const	__bp_bank	= __dh;
 // System Card's Main RAM Variables.
 //
 
-word * const	irq2_hook	= (word *) 0x2200; // 2	officially called irq2_jmp
+__export __address(0x2200) word irq2_hook;	// = (word *) 0x2200; // 2	officially called irq2_jmp
+
+// word * const	irq2_hook	= (word *) 0x2200; // 2	officially called irq2_jmp
 word * const	irq1_hook	= (word *) 0x2202; // 2	officially called irq_jmp
 word * const	timer_hook	= (word *) 0x2204; // 2	officially called tim_jmp
 word * const	nmi_hook	= (word *) 0x2206; // 2	officially called nmi_jmp
@@ -445,7 +480,7 @@ byte * const	scsisend	= (byte *) 0x224C; // 10	*UNDOCUMENTED* buffer for SCSI cm
 byte * const	scsirecv	= (byte *) 0x2256; // 10	*UNDOCUMENTED* buffer for SCSI cmd recv
 byte * const	paramcpy	= (byte *) 0x2260; // 8	*UNDOCUMENTED* stored _ax,_bx,_cx,_dx
 byte * const	initialmpr	= (byte *) 0x2268; // 1	*UNDOCUMENTED*
-//?		= 0x2269 // ? 
+//?		= 0x2269 // ?
 byte * const	tnomin		= (byte *) 0x226A; // 1
 byte * const	tnomax		= (byte *) 0x226B; // 1
 byte * const	outmin		= (byte *) 0x226C; // 1

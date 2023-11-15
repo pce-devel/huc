@@ -1,5 +1,5 @@
 
-#define ISOLINK_VERSION "isolink (v3.25-" GIT_VERSION ", " GIT_DATE ")"
+#define ISOLINK_VERSION "isolink (" GIT_VERSION ", " GIT_DATE ")"
 
 
 #if defined(WIN32)

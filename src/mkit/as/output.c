@@ -171,17 +171,29 @@ putbyte(int offset, int data)
 		return;
 
 	addr = offset + 1 + (bank << 13);
+
 	if (addr > rom_limit) {
 		fatal_error("ROM overflow!");
 		return;
 	}
 
-	rom[bank][offset] = (data) & 0xFF;
-	map[bank][offset] = section + (page << 5);
-
-	/* update rom size */
-	if (((addr - 1) >> 13) > max_bank)
+	if (((addr - 1) >> 13) > max_bank) {
+		if (pass == LAST_PASS) {
+			fatal_error("Cannot change ROM size in LAST_PASS!");
+			return;
+		}
+		/* N.B. putbyte() is ONLY called in LAST_PASS, so this is redundant! */
 		max_bank = ((addr - 1) >> 13);
+	}
+
+	rom[bank][offset] = 0xFF & (data);
+
+	if (section == S_DATA && asm_opt[OPT_DATAPAGE] != 0)
+		addr = (page << 13);
+	else
+		addr = (page << 13) + offset;
+
+	map[bank][offset] = section + ((addr >> 8) & 0xE0);
 }
 
 
@@ -200,22 +212,31 @@ putword(int offset, int data)
 		return;
 
 	addr = offset + 2 + (bank << 13);
+
 	if (addr > rom_limit) {
 		fatal_error("ROM overflow!");
 		return;
 	}
 
-	/* low byte */
-	rom[bank][offset] = (data) & 0xFF;
-	map[bank][offset] = section + (page << 5);
-
-	/* high byte */
-	rom[bank][offset + 1] = (data >> 8) & 0xFF;
-	map[bank][offset + 1] = section + (page << 5);
-
-	/* update rom size */
-	if (((addr - 1) >> 13) > max_bank)
+	if (((addr - 1) >> 13) > max_bank) {
+		if (pass == LAST_PASS) {
+			fatal_error("Cannot change ROM size in LAST_PASS!");
+			return;
+		}
+		/* N.B. putword() is ONLY called in LAST_PASS, so this is redundant! */
 		max_bank = ((addr - 1) >> 13);
+	}
+
+	rom[bank][offset + 0] = 0xFF & (data);
+	rom[bank][offset + 1] = 0xFF & (data >> 8);
+
+	if (section == S_DATA && asm_opt[OPT_DATAPAGE] != 0)
+		addr = (page << 13);
+	else
+		addr = (page << 13) + offset;
+
+	map[bank][offset + 0] = section + ((addr++ >> 8) & 0xE0);
+	map[bank][offset + 1] = section + ((addr++ >> 8) & 0xE0);
 }
 
 
@@ -234,29 +255,35 @@ putdword(int offset, int data)
 		return;
 
 	addr = offset + 4 + (bank << 13);
+
 	if (addr > rom_limit) {
 		fatal_error("ROM overflow!");
 		return;
 	}
 
-	/* low byte */
-	rom[bank][offset] = (data) & 0xFF;
-	map[bank][offset] = section + (page << 5);
-
-	/* high byte */
-	rom[bank][offset + 1] = (data >> 8) & 0xFF;
-	map[bank][offset + 1] = section + (page << 5);
-
-	rom[bank][offset + 2] = (data>>16) & 0xFF;
-	map[bank][offset + 2] = section + (page << 5);
-
-	/* high byte */
-	rom[bank][offset + 3] = (data >> 24) & 0xFF;
-	map[bank][offset + 3] = section + (page << 5);
-
-	/* update rom size */
-	if (((addr - 1) >> 13) > max_bank)
+	if (((addr - 1) >> 13) > max_bank) {
+		if (pass == LAST_PASS) {
+			fatal_error("Cannot change ROM size in LAST_PASS!");
+			return;
+		}
+		/* N.B. putdword() is ONLY called in LAST_PASS, so this is redundant! */
 		max_bank = ((addr - 1) >> 13);
+	}
+
+	rom[bank][offset + 0] = 0xFF & (data);
+	rom[bank][offset + 1] = 0xFF & (data >> 8);
+	rom[bank][offset + 2] = 0xFF & (data >> 16);
+	rom[bank][offset + 3] = 0xFF & (data >> 24);
+
+	if (section == S_DATA && asm_opt[OPT_DATAPAGE] != 0)
+		addr = (page << 13);
+	else
+		addr = (page << 13) + offset;
+
+	map[bank][offset + 0] = section + ((addr++ >> 8) & 0xE0);
+	map[bank][offset + 1] = section + ((addr++ >> 8) & 0xE0);
+	map[bank][offset + 2] = section + ((addr++ >> 8) & 0xE0);
+	map[bank][offset + 3] = section + ((addr++ >> 8) & 0xE0);
 }
 
 
@@ -270,6 +297,7 @@ void
 putbuffer(void *data, int size)
 {
 	int addr;
+	int step;
 
 	/* check size */
 	if (size == 0)
@@ -279,35 +307,58 @@ putbuffer(void *data, int size)
 	if (bank >= RESERVED_BANK) {
 		addr = loccnt + size;
 
-		if (addr > 0x1FFF) {
+		if (addr > 0x2000) {
 			fatal_error("PROC overflow!");
 			return;
 		}
 	}
 	else {
-		addr = loccnt + size + (bank << 13);
+		addr = (bank << 13) + loccnt;
 
-		if (addr > rom_limit) {
+		if ((addr + size) > rom_limit) {
 			fatal_error("ROM overflow!");
 			return;
 		}
 
 		/* copy the buffer */
 		if (pass == LAST_PASS) {
-			if (data) {
+			if (data)
 				memcpy(&rom[bank][loccnt], data, size);
-				memset(&map[bank][loccnt], section + (page << 5), size);
-			}
-			else {
+			else
 				memset(&rom[bank][loccnt], 0, size);
+
+			if (section == S_DATA && asm_opt[OPT_DATAPAGE] != 0)
 				memset(&map[bank][loccnt], section + (page << 5), size);
+			else {
+				int temp = (page + (loccnt >> 13)) & 7;
+				int left = size;
+
+				while (left != 0) {
+					step = 0x2000 - (addr & 0x1FFF);
+					if (step > left) { step = left; }
+					memset(&map[0][0] + addr, section + (temp << 5), step);
+					temp = (temp + 1) & 7;
+					addr += step;
+					left -= step;
+				}
 			}
 		}
 	}
 
 	/* update the location counter */
-	bank += (loccnt + size) >> 13;
+	step = (loccnt + size) >> 13;
+	bank = (bank + step);
+	if (section != S_DATA || asm_opt[OPT_DATAPAGE] == 0)
+		page = (page + step) & 7;
+
 	loccnt = (loccnt + size) & 0x1FFF;
+
+	if (loccnt == 0 && step != 0) {
+		loccnt = 0x2000;
+		bank = (bank - 1);
+		if (section != S_DATA || asm_opt[OPT_DATAPAGE] == 0)
+			page = (page - 1) & 7;
+	}
 
 	/* update rom size */
 	if (bank < RESERVED_BANK) {

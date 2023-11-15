@@ -27,12 +27,12 @@
 ;
 ; ONLY USE THESE PUBLIC INTERFACES ...
 ;
-; f32_find_name	  - Locate file/dir name in the current directory, sets _bp.
-; f32_1st_entry	  - Get 1st short entry in the current directory, sets _bp.
-; f32_nxt_entry	  - Get next short entry in the current directory, sets _bp.
-; f32_change_dir  - Change dir to one in directory entry ptr in _bp.
+; f32_find_name	  - Locate file/dir name in current directory, sets f32_ptr.
+; f32_1st_entry	  - Get 1st short entry in current directory, sets f32_ptr.
+; f32_nxt_entry	  - Get next short entry in current directory, sets f32_ptr.
+; f32_change_dir  - Change dir to one in directory entry ptr in f32_ptr.
 ;
-; f32_open_file	  - Open the file in the directory entry ptr in _bp.
+; f32_open_file	  - Open the file in the directory entry ptr in f32_ptr.
 ; f32_close_file  - Close the current file.
 ; f32_file_read	  - Load #sectors from the current file position.
 ; f32_file_write  - Save #sectors to the current file position.
@@ -57,6 +57,10 @@
 ;
 ; Data
 ;
+
+		.zp
+
+f32_ptr		ds	2			; Ptr to a directory entry.
 
 		.bss
 
@@ -573,7 +577,7 @@ f32_inc_sector: ldx	#$FC
 ;
 ; f32_nxt_cluster - Follow the FAT32 cluster chain to the next cluster.
 ;
-; Uses _bp = Pointer to the cluster number in the cached FAT.
+; Uses f32_ptr = Pointer to the cluster number in the cached FAT.
 ;
 ; Returns: Y,Z-flag,N-flag = F32_OK or an error code.
 ;
@@ -584,11 +588,11 @@ f32_nxt_cluster:lda	f32_cur_cluster		; Ptr = (cluster * 4) % 512
 		tax
 		asl	a
 		asl	a
-		sta	<_bp + 0
+		sta.l	<f32_ptr
 		cla
 		rol	a
 		adc	#>f32_cache_buf
-		sta	<_bp + 1
+		sta.h	<f32_ptr
 
 		txa				; Sec = (cluster * 4) / 512
 		asl	a			;     = (cluster * 2) / 256
@@ -622,22 +626,22 @@ f32_nxt_cluster:lda	f32_cur_cluster		; Ptr = (cluster * 4) % 512
 ;
 ; Args: None!
 ;
-; f32_change_dir  - Change dir to one in directory entry ptr in _bp.
+; f32_change_dir  - Change dir to one in directory entry ptr in f32_ptr.
 ;
-; Args: _bp = Pointer to a directory entry (usually within f32_cache_buf).
+; Args: f32_ptr = Pointer to a directory entry (usually in f32_cache_buf).
 ;
 ; Returns: Y,Z-flag,N-flag = F32_OK or an error code.
 ;
 
 f32_change_dir	.proc
 
-		lda	[_bp]			; End of directory?
+		lda	[f32_ptr]		; End of directory?
 		beq	.not_directory
 		cmp	#$E5			; Empty entry?
 		beq	.not_directory
 
 		ldy	#DIR_Attr		; Is this a directory?
-		lda	[_bp], y
+		lda	[f32_ptr], y
 		and	#ATTR_Type_Mask
 		cmp	#ATTR_Directory
 		beq	.got_directory
@@ -674,9 +678,9 @@ f32_select_root .proc
 ;
 ; f32_rewind_dir  - Goto the 1st cluster of the current directory.
 ; f32_rewind_file - Goto the 1st cluster of the current file.
-; f32_use_cluster - Calc a sector addr (from ptr to cluster # in _bp).
+; f32_use_cluster - Calc a sector addr (from ptr to cluster # in f32_ptr).
 ;
-; Uses _bp = Pointer to variable holding the cluster number.
+; Uses f32_ptr = Pointer to variable holding the cluster number.
 ;
 ; Returns: Y,Z-flag,N-flag = F32_OK or an error code.
 ;
@@ -688,23 +692,23 @@ f32_rewind_dir: lda	#$FF			; Signal no long name.
 		stz	f32_name_length		; Reset the long name length.
 
 		lda	#<f32_dir_cluster	; Goto 1st cluster in the
-		sta	<_bp + 0		; current directory.
+		sta.l	<f32_ptr		; current directory.
 		lda	#>f32_dir_cluster
-		sta	<_bp + 1
+		sta.h	<f32_ptr
 		bra	f32_use_cluster
 
 		;
 
 f32_rewind_file:lda	#<f32_fil_cluster	; Goto 1st cluster in the
-		sta	<_bp + 0		; current file.
+		sta.l	<f32_ptr		; current file.
 		lda	#>f32_fil_cluster
-		sta	<_bp + 1
+		sta.h	<f32_ptr
 ;		bra	f32_use_cluster
 
 		;
 
 f32_use_cluster:ldy	#3			; Copy the cluster # from the
-.copy:		lda	[_bp], y		; pointer in _bp.
+.copy:		lda	[f32_ptr], y		; pointer in f32_ptr.
 		and	f32_cluster_msk, y
 		sta	f32_cur_cluster, y
 		sta	f32_sector_num, y
@@ -770,20 +774,20 @@ f32_use_cluster:ldy	#3			; Copy the cluster # from the
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; f32_set_cluster - Set the cluster from the directory entry ptr in _bp.
+; f32_set_cluster - Set the cluster from the directory entry ptr in f32_ptr.
 ;
-; Uses _bp = Pointer to directory entry in cache.
+; Uses f32_ptr = Pointer to directory entry in cache.
 ;
 ; N.B. FOR INTERNAL USE ONLY, THIS IS NOT A PUBLIC FUNCTION!
 ;
 
 f32_set_cluster:clx				; Copy the cluster # from the
-		ldy	#DIR_FstClusLO		; directory entry in _bp.
-.copy_word:	lda	[_bp], y
+		ldy	#DIR_FstClusLO		; directory entry in f32_ptr.
+.copy_word:	lda	[f32_ptr], y
 		sta	f32_cur_cluster, x
 		inx
 		iny
-		lda	[_bp], y
+		lda	[f32_ptr], y
 		sta	f32_cur_cluster, x
 		inx
 		ldy	#DIR_FstClusHI
@@ -796,15 +800,15 @@ f32_set_cluster:clx				; Copy the cluster # from the
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; f32_1st_entry - Get the 1st short entry in the current directory in _bp.
-; f32_nxt_entry - Get the next short entry in the current directory in _bp.
+; f32_1st_entry - Get the 1st short entry in current directory in f32_ptr.
+; f32_nxt_entry - Get the next short entry in current directory in f32_ptr.
 ;
 ; N.B. This includes unused ($E5) and end-of-directory ($00) entries.
 ;
-; Uses: _bp = Pointer to directory entry within f32_cache_buf.
+; Uses: f32_ptr = Pointer to directory entry within f32_cache_buf.
 ; Uses: _temp = Temporary variable (trashed).
 ;
-; Returns: _bp, Y,Z-flag,N-flag = F32_OK or an error code
+; Returns: f32_ptr, Y,Z-flag,N-flag = F32_OK or an error code
 ;
 
 f32_1st_entry	.proc
@@ -819,12 +823,12 @@ f32_1st_entry	.proc
 f32_nxt_entry	.proc
 
 !nxt_entry:	clc				; Inc directory pointer.
-		lda.l	<_bp
+		lda.l	<f32_ptr
 		adc	#32
-		sta.l	<_bp
-		lda.h	<_bp
+		sta.l	<f32_ptr
+		lda.h	<f32_ptr
 		adc	#0
-		sta.h	<_bp
+		sta.h	<f32_ptr
 
 		cmp	#>(f32_cache_buf + 512) ; Any entries left in cache?
 		bne	!tst_entry+
@@ -848,19 +852,19 @@ f32_nxt_entry	.proc
 
 .error:		leave				; Return the error code.
 
-.loaded:	stz.l	<_bp			; Reset directory pointer.
+.loaded:	stz.l	<f32_ptr		; Reset directory pointer.
 		lda	#>f32_cache_buf
-		sta.h	<_bp
+		sta.h	<f32_ptr
 
 		; Test the current directory entry.
 
-!tst_entry:	lda	[_bp]			; End of Directory?
+!tst_entry:	lda	[f32_ptr]		; End of Directory?
 		beq	.no_long
 		cmp	#$E5			; Empty entry?
 		beq	.no_long
 
 		ldy	#DIR_Attr		; Part of a long name?
-		lda	[_bp], y
+		lda	[f32_ptr], y
 		and	#ATTR_Long_Mask
 		cmp	#ATTR_Long_Name
 		beq	.long_name
@@ -878,7 +882,7 @@ f32_nxt_entry	.proc
 .calc_csum:	lsr	a
 		bcc	.skip_set_hi
 		adc	#$7F
-.skip_set_hi:	adc	[_bp], y
+.skip_set_hi:	adc	[f32_ptr], y
 		iny
 		cpy	#11
 		bne	.calc_csum
@@ -891,12 +895,12 @@ f32_nxt_entry	.proc
 
 		clx
 .copy_name:	cly				; Copy the short name.
-		lda	[_bp], y
+		lda	[f32_ptr], y
 		cmp	#$05			; SJIS??? Really???
 		bne	.name_loop
 		lda	#$E5			; Repair leading SJIS.
 		bra	.sjis_name
-.name_loop:	lda	[_bp], y
+.name_loop:	lda	[f32_ptr], y
 		cmp	#$20
 		beq	.copy_extn
 .sjis_name:	sta	f32_long_name, x
@@ -906,13 +910,13 @@ f32_nxt_entry	.proc
 		bne	.name_loop
 
 .copy_extn:	ldy	#8			; Copy the short extn.
-		lda	[_bp], y
+		lda	[f32_ptr], y
 		cmp	#$20
 		beq	.copy_done
 		lda	#'.'
 		sta	f32_long_name, x
 		inx
-.extn_loop:	lda	[_bp], y
+.extn_loop:	lda	[f32_ptr], y
 		cmp	#$20
 		beq	.copy_done
 		sta	f32_long_name, x
@@ -942,7 +946,7 @@ f32_nxt_entry	.proc
 		; Got a long-name entry (with 13 UTF16 glyphs).
 		;
 
-.long_name:	lda	[_bp]			; Get the ORD#.
+.long_name:	lda	[f32_ptr]		; Get the ORD#.
 		tax
 		ldy	#LDIR_Chksum
 
@@ -951,10 +955,10 @@ f32_nxt_entry	.proc
 
 .new_long_name: and	#FLAG_Last_Ord - 1	; Save which ORD# is next.
 		sta	f32_long_next
-		lda	[_bp], y		; Save short name checksum.
+		lda	[f32_ptr], y		; Save short name checksum.
 		sta	f32_long_csum
 
-.nxt_long_part: lda	[_bp], y		; Is the checksum consistent?
+.nxt_long_part: lda	[f32_ptr], y		; Is the checksum consistent?
 		cmp	f32_long_csum
 		bne	.bad_entry
 
@@ -991,7 +995,7 @@ f32_nxt_entry	.proc
 
 		bsr	.got_part		; N.B. Does not return!
 
-.got_part:	lda	[_bp]			; Is this the last part of the
+.got_part:	lda	[f32_ptr]		; Is this the last part of the
 		bit	#FLAG_Last_Ord		; long filename?
 		beq	.next_part
 
@@ -1007,11 +1011,11 @@ f32_nxt_entry	.proc
 		jmp	!nxt_entry-		; Get the next part of it!
 
 .copy_utf16:	sta	<_temp			; Copy UTF16 glyphs to the
-.copy_loop:	lda	[_bp], y		; long name buffer.
+.copy_loop:	lda	[f32_ptr], y		; long name buffer.
 		sta	f32_long_name, x
 		iny
 		asl	a
-		lda	[_bp], y		; Get UTF16 hi-byte.
+		lda	[f32_ptr], y		; Get UTF16 hi-byte.
 		bne	.replace_utf16		; Reject UTF16 $0100..$FFFF.
 
 	.if	1				; Remove for CP1252 accents.
@@ -1040,11 +1044,11 @@ f32_nxt_entry	.proc
 ;
 ; f32_find_name - Locate a specifc named entry in the current directory.
 ;
-; Args: _si, _si_bank = _farptr to filename string to map into MPR3.
+; Args: _bp, Y = _farptr to filename string to map into MPR3.
 ;
 ; N.B. This filename string MUST NOT cross a bank boundary!
 ;
-; Sets: _bp = Pointer to directory entry within f32_cache_buf.
+; Sets: f32_ptr = Pointer to directory entry within f32_cache_buf.
 ;
 ; Returns: Y,Z-flag,N-flag = F32_OK or an error code.
 ;
@@ -1068,7 +1072,7 @@ f32_find_name	.proc
 		tma3				; Preserve MPR3.
 		pha
 
-		jsr	set_si_to_mpr3		; Map filename to MPR3.
+		jsr	set_bp_to_mpr3		; Map filename to MPR3.
 
 		call	f32_1st_entry		; Start at the top of the dir.
 		bra	.test_name
@@ -1077,7 +1081,7 @@ f32_find_name	.proc
 
 .test_name:	bmi	.finished		; Was there an error?
 
-		lda	[_bp]			; Is this the end of the directory?
+		lda	[f32_ptr]		; Is this the end of the directory?
 		beq	.not_found
 		cmp	#$E5			; Is this an empty entry?
 		beq	.next_name
@@ -1088,7 +1092,7 @@ f32_find_name	.proc
 .chr_loop:	iny				; Assume same if > 256 chrs.
 		beq	.str_same
 
-.chr_test:	lda	[_si], y		; End of name?
+.chr_test:	lda	[_bp], y		; End of name?
 		beq	.chr_last
 		bmi	.next_name		; Fail if UTF16 $80..$FF glyph.
 
@@ -1247,9 +1251,9 @@ f32_map_file:	jsr	f32_rewind_file		; Start at the beginning.
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; f32_open_file - Open the file in the directory entry ptr in _bp.
+; f32_open_file - Open the file in the directory entry ptr in f32_ptr.
 ;
-; Args: _bp = Pointer to a directory entry (usually within f32_cache_buf).
+; Args: f32_ptr = Pointer to a directory entry (usually in f32_cache_buf).
 ;
 ; Returns: Y,Z-flag,N-flag = F32_OK or an error code.
 ;
@@ -1266,13 +1270,13 @@ f32_open_file	.proc
 		lda	f32_file_mutex		; be open at once.
 		bne	!finished+
 
-		lda	[_bp]			; End of directory?
+		lda	[f32_ptr]		; End of directory?
 		beq	.not_file
 		cmp	#$E5			; Empty entry?
 		beq	.not_file
 
 		ldy	#DIR_Attr		; Is this a file?
-		lda	[_bp], y
+		lda	[f32_ptr], y
 		and	#ATTR_Type_Mask
 		beq	.got_file
 
@@ -1281,7 +1285,7 @@ f32_open_file	.proc
 
 .got_file:	ldy	#DIR_FileSize		; Save the file length.
 		ldx	#$FC
-.copy_length:	lda	[_bp], y
+.copy_length:	lda	[f32_ptr], y
 		iny
 		sta	f32_file_length -$FC, x
 		inx

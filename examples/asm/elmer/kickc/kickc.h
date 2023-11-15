@@ -52,16 +52,41 @@ inline void init_256x224(void) {
 	{{ jsr init_256x224 }}
 }
 
+#if 1
+
 inline void dropfnt8x8_vdc (byte * font, word vram, byte count, byte plane2, byte plane3) {
-	*__si = (word) font;
-	*__si_bank = (byte) (font >> 23);
 	*__di = vram;
 	*__al = plane2;
 	*__ah = plane3;
 	*__bl = count;
+	*__bp = (word) font;
+	*__bank = (byte) (font >> 23);
+	kickasm( clobbers "Y" )
+	{{ ldy.z __bank }}
 	kickasm( clobbers "AXY" )
 	{{ jsr dropfnt8x8_vdc }}
 }
+
+#else
+
+// #define ldy_bank( addr ) asm { ldy #addr >> 23 }
+// #define ldy_bank( addr ) kickasm( clobbers "Y" ) {{ ldy #bank( addr ) }}
+
+#define dropfnt8x8_vdc( font, vram, count, plane2, plane3 ) \
+	*__di = (word) (vram); \
+	*__al = (byte) (plane2); \
+	*__ah = (byte) (plane3); \
+	*__bl = (byte) (count); \
+	*__bp = (word) (font); \
+	*__bank = (byte) ((font) >> 23); \
+	kickasm( clobbers "Y" ) \
+	{{ ldy.z __bank }} \
+	kickasm( clobbers "AXY" ) \
+	{{ jsr dropfnt8x8_vdc }}
+
+#endif
+
+#if 0
 
 inline void vdc_di_to_mawr (word vram) {
 	*__di = (word) vram;
@@ -69,16 +94,43 @@ inline void vdc_di_to_mawr (word vram) {
 	{{ jsr vdc_di_to_mawr }}
 }
 
+#else
+
+#define vdc_di_to_mawr( vram ) \
+	*__di = (word) (vram); \
+	kickasm( clobbers "AXY" ) \
+	{{ jsr vdc_di_to_mawr }}
+
+#endif
+
 inline void set_dspon(void) {
 	kickasm( clobbers "A" )
 	{{ jsr set_dspon }}
 }
 
+#if 1
+
 inline void load_palette (byte palnum, word * data, byte palcnt) {
-	*__si = (word) data;
-	*__si_bank = (byte) (data >> 23);
 	*__al = palnum;
 	*__ah = palcnt;
+	*__bp = (word) data;
+	*__bank = (byte) ((data) >> 23);
+	kickasm( clobbers "Y" )
+	{{ ldy.z __bank }}
 	kickasm( clobbers "AXY" )
 	{{ jsr load_palettes }}
 }
+
+#else
+
+#define load_palette( palnum, data, palcnt ) \
+	*__al = (palnum); \
+	*__ah = (palcnt); \
+	*__bp = (word) (data); \
+	*__bank = (byte) ((data) >> 23); \
+	kickasm( clobbers "Y" ) \
+	{{ ldy.z __bank }} \
+	kickasm( clobbers "AXY" ) \
+	{{ jsr load_palettes }}
+
+#endif

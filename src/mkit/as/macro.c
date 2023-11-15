@@ -196,7 +196,7 @@ macro_getargs(int ip)
 					return (0);
 				}
 				if (i == 256) {
-					error("String too long, max. 256 characters!");
+					error("String too long, max. 255 characters!");
 					return (0);
 				}
 				if (t == c) {
@@ -310,17 +310,19 @@ macro_getargs(int ip)
 					if ((strcasecmp(ptr, "x++") == 0) ||
 					    (strcasecmp(ptr, "y++") == 0) ||
 					    (strlen(ptr) == 1)) {
+						char suffix[5];
+						strcpy(suffix, ",");
+						strcat(suffix, ptr);
 						arg--;
-						ptr = marg[midx][arg] + strlen(marg[midx][arg]);
 
 						/* check string length */
-						if ((marg[midx][arg + 1] - ptr) < 5) {
-							error("Macro argument string too long, max. 80 characters!");
+						if (strlen(marg[midx][arg]) > 255-4) {
+							error("Macro argument string too long, max. 255 characters!");
 							return (0);
+						} else {
+							strcat(marg[midx][arg], suffix);
 						}
 
-						/* attach current arg to the previous one */
-						snprintf(ptr, (marg[midx][arg + 1] - ptr), ",%s", marg[midx][arg + 1]);
 						ptr = marg[midx][arg + 1];
 						ptr[0] = '\0';
 					}

@@ -49,6 +49,9 @@
 ;
 ; Useful constants, needed by joypad library code, and used by many others.
 ;
+; The kernel starts with a non-zero byte so that core-startup.asm can check
+; whether it has already been loaded into RAM.
+;
 
 const_FFFF:	dw	$FFFF			; Useful constant for TAI.
 const_0000:	dw	$0000			; Useful constant for TAI.
@@ -122,17 +125,35 @@ core_irq2:	bbs0	<irq_vec, .hook		; 8 cycles if taken.
 .fake:		php				; Turn BSR into a fake IRQ2
 		jmp	[$FFF6]			; without fixing return PC!
 	.else
-		rti				; No IRQ2 hardware on HuCard.
+		; Does this HuCARD support the IFU's ADPCM hardware?
+
+	.if	SUPPORT_ADPCM
+		pha				; Handle IFU_INT_STOP so that
+		lda	IFU_IRQ_MSK		; adpcm_play() stops playback
+		and	IFU_IRQ_FLG		; properly.
+		bit	#IFU_INT_END
+		beq	!+
+
+		lda  	#IFU_INT_END + IFU_INT_HALF
+		trb  	IFU_IRQ_MSK
+		lda	#ADPCM_PLAY + ADPCM_AUTO
+		trb	IFU_ADPCM_CTL
+!:		pla
+	.endif	SUPPORT_ADPCM
+
+		rti				; No IRQ2 hardware on HuCARD.
 
 .hook:		jmp	[irq2_hook]		; 7 cycles.
 	.endif	CDROM
-
 
 		;
 
 core_irq1:	bbs1	<irq_vec, .hook		; 8 cycles if taken.
 
 		bit	VDC_SR			; Clear VDC interrupt.
+	.if	SUPPORT_SGX
+		bit	SGX_SR			; Clear SGX interrupt.
+	.endif	SUPPORT_SGX
 		rti
 
 .hook:		jmp	[irq1_hook]		; 7 cycles.
@@ -199,6 +220,15 @@ irq1_handler:	pha				; Save all registers.
 		phx
 		phy
 
+	.if	CDROM
+	.if	USING_MPR7
+		tma7				; Preserve MPR7.
+		pha
+		lda	<core_1stbank		; Allow users to put IRQ
+		tam7				; handlers in CORE_BANK.
+	.endif
+	.endif	CDROM
+
 		lda	VDC_SR			; Acknowledge the VDC's IRQ.
 		sta	<vdc_sr			; Remember what caused it.
 
@@ -242,7 +272,7 @@ irq1_handler:	pha				; Save all registers.
 
 ;		lda	<vdc_crh		; Do not mess with the VDC's
 ;		sta	VDC_DH			; auto-increment!!!
-	.endif
+	.endif	SUPPORT_SGX
 
 		inc	irq_cnt			; Mark that a VBLANK occurred.
 
@@ -265,13 +295,9 @@ irq1_handler:	pha				; Save all registers.
 		tsb	sound_mutex		; conflict with a delayed VBL.
 		bmi	.exit_irq1
 
-		tma7				; Call the BIOS PSG driver in
-		pha				; the System Card.
-		cla
-		tam7
+		cla				; Call the BIOS PSG driver in
+		tam7				; the System Card.
 		jsr	psg_driver
-		pla
-		tam7
 
 		stz	sound_mutex		; Release sound mutex.
 	.else
@@ -298,6 +324,13 @@ irq1_handler:	pha				; Save all registers.
 		lda	<vdc_reg		; Restore VDC_AR in case we
 		sta	VDC_AR			; changed it.
 
+	.if	CDROM
+	.if	USING_MPR7
+		pla				; Restore original MPR7.
+		tam7
+	.endif
+	.endif	CDROM
+
 		ply				; Restore all registers.
 		plx
 		pla
@@ -316,6 +349,10 @@ sound_mutex:	ds	1			; NZ when controller port busy.
 
 	.if	SUPPORT_SGX
 sgx_detected:	ds	1			; NZ if SuperGrafx detected.
+	.endif
+
+	.if	SUPPORT_ACD
+acd_detected:	ds	1			; NZ if ArcadeCard detected.
 	.endif
 
 		.code

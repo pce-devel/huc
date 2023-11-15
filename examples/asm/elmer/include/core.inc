@@ -51,10 +51,10 @@ system		.macro
 setvec		.macro
 		php
 		sei
-		lda	#<\2
-		sta	\1 + 0
-		lda	#>\2
-		sta	\1 + 1
+		lda.l	#\2
+		sta.l	\1
+		lda.h	#\2
+		sta.h	\1
 		plp
 		.endm
 

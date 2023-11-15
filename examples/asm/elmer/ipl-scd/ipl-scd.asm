@@ -251,9 +251,9 @@ ipl_scd:	jsr	ex_getver		; Get System Card version.
 		jsr	clear_vram		; Initialize VRAM.
 
 		lda	#<font_data		; Upload font data.
-		sta	<_si + 0
+		sta	<_bp + 0
 		lda	#>font_data
-		sta	<_si + 1
+		sta	<_bp + 1
 		jsr	upload_font8x8
 
 		cla				; Set up a 32x28 video
@@ -427,16 +427,16 @@ upload_font8x8: ldx	#$14			; Upload solid version to
 		stz	tmp_shadow_buf, x	; of the glyph.
 
 		.if	1
-.line_loop:	lda	[_si], y		; Drop-shadow on the LHS.
+.line_loop:	lda	[_bp], y		; Drop-shadow on the LHS.
 		sta	tmp_normal_buf, x	; Font data is RHS justified.
 		asl	a
 		.else
-.line_loop:	lda	[_si], y		; Drop-shadow on the RHS.
+.line_loop:	lda	[_bp], y		; Drop-shadow on the RHS.
 		sta	tmp_normal_buf, x	; Font data is LHS justified.
 		lsr	a
 		.endif
 
-		ora	[_si], y
+		ora	[_bp], y
 		sta	tmp_shadow_buf+2, x
 		ora	tmp_shadow_buf, x
 		eor	tmp_normal_buf, x
@@ -444,7 +444,7 @@ upload_font8x8: ldx	#$14			; Upload solid version to
 
 		iny
 		bne	.next_line
-		inc	<_si + 1
+		inc	<_bp + 1
 .next_line:	inx
 		inx
 		cpx	#2*8

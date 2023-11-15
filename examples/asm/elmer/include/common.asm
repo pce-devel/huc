@@ -17,16 +17,6 @@
 ; ***************************************************************************
 
 ;
-; Overload this System Card variable for use by a far data pointer argument.
-;
-
-	.ifndef	_si_bank
-_si_bank	=	_bank
-_di_bank	=	_bank
-_bp_bank	=	_bank
-	.endif
-
-;
 ; Useful variables.
 ;
 
@@ -67,68 +57,77 @@ wait_nvsync:	bsr	wait_vsync		; # of VBLANK IRQs to wait in
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; Map the _si data far-pointer into MPR3 (& MPR4).
+; Map the _bp data far-pointer into MPR3 (& MPR4).
+;
+; Because the 16KB RAM region at $2000-$5FFF is composed of two separate
+; banks, with the 2nd bank having no specific relation to the 1st, there
+; is no way to deal with a bank-increment, so do not map that region.
 ;
 
-xay_to_si_mpr34:bsr	xay_to_si_mpr3		; Remap ptr to MPR3.
-		inc	a			; Put next bank into MPR4.
-		tam4
-		rts
-
-xay_to_si_mpr3:	stx.l	<_si			; Remap ptr to MPR3.
-;		say
-		and.h	#$1F00
-		ora.h	#$6000
-		sta.h	<_si
-
+set_bp_to_mpr3:	lda.h	<_bp			; Do not remap a ptr to RAM,
+		cmp	#$60			; which is $2000-$5FFF.
+		bcc	!+
+		and	#$1F			; Remap ptr to MPR3.
+		ora	#$60
+		sta.h	<_bp
 		tya				; Put bank into MPR3.
 		tam3
-		rts
+!:		rts
 
-
-
-; ***************************************************************************
-; ***************************************************************************
-;
-; Map the _si data far-pointer into MPR3 (& MPR4).
-;
-
-set_si_to_mpr34:bsr	set_si_to_mpr3		; Remap ptr to MPR3.
-		inc	a			; Put next bank into MPR4.
-		tam4
-		rts
-
-set_si_to_mpr3:	lda.h	<_si			; Remap ptr to MPR3.
-		and.h	#$1F00
-		ora.h	#$6000
-		sta.h	<_si
-
-		lda	<_si_bank		; Put bank into MPR3.
+set_bp_to_mpr34:lda.h	<_bp			; Do not remap a ptr to RAM,
+		cmp	#$60			; which is $2000-$5FFF.
+		bcc	!+
+		and	#$1F			; Remap ptr to MPR3.
+		ora	#$60
+		sta.h	<_bp
+		tya				; Put bank into MPR3.
 		tam3
-		rts
+		inc	a			; Put next into MPR4.
+		tam4
+!:		rts
 
 
 
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; Increment the hi-byte of _si and change TMA3 if necessary.
+; Increment the hi-byte of _bp and change TMA3 if necessary.
 ;
 
-inc.h_si_mpr3:	inc.h	<_si			; Increment hi-byte of _si.
-
+inc.h_bp_mpr3:	inc.h	<_bp			; Increment hi-byte of _bp.
 		bpl	!+			; OK if within MPR0-MPR3.
-		tst	#$7F, <_si + 1		; OK unless $80.
-		bne	!+
-
 		pha				; Increment the bank in MPR3,
 		tma3				; usually when pointer moves
 		inc	a			; from $7FFF -> $8000.
 		tam3
-		lda.h	#$6000
-		sta.h	<_si
+		lda	#$60
+		sta.h	<_bp
 		pla
 !:		rts
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; Increment the hi-byte of _bp and change TMA3 and TMA4 if necessary.
+;
+
+	.if	1				; Save memory, for now.
+
+inc.h_bp_mpr34:	inc.h	<_bp			; Increment hi-byte of _bp.
+		bpl	!+			; OK if within MPR0-MPR3.
+		pha				; Increment the bank in MPR3,
+		tma4				; usually when pointer moves
+		tam3				; from $7FFF -> $8000.
+		inc	a
+		tam4
+		lda	#$60
+		sta.h	<_bp
+		pla
+!:		rts
+
+	.endif
 
 
 
@@ -140,7 +139,7 @@ inc.h_si_mpr3:	inc.h	<_si			; Increment hi-byte of _si.
 
 	.if	SUPPORT_SGX
 sgx_di_to_marr:	ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$E0			; Turn "clx" into a "cpx #".
+		db	$F0			; Turn "clx" into a "beq".
 	.endif
 
 vdc_di_to_marr:	clx				; Offset to PCE VDC.
@@ -152,7 +151,7 @@ set_di_to_marr	lda	#VDC_MARR		; Set VDC or SGX destination
 
 	.if	SUPPORT_SGX
 sgx_di_to_mawr:	ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$E0			; Turn "clx" into a "cpx #".
+		db	$F0			; Turn "clx" into a "beq".
 	.endif
 
 vdc_di_to_mawr:	clx				; Offset to PCE VDC.
@@ -198,4 +197,70 @@ inc.h_di_mpr4:	inc.h	<_di			; Increment hi-byte of _di.
 		sta.h	<_di
 		pla
 !:		rts
+	.endif
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; Far-call a function in another bank.
+;
+; This is compatible with PCEAS's "-newproc" procedure calls, but avoids
+; generating a 10-byte procedure trampoline.
+;
+; To use this ...
+;
+;  jsr far_call
+;  tst #bank( myfunc ), myfunc - 1
+;
+; The "TST" instruction itself is skipped and NOT executed after the call,
+; it only exists to make things easier to read in a listing/debugger.
+;
+; The called .PROC routine must exit with "jmp leave_proc" and not "rts".
+;
+; leave_proc:	pla
+;		tam6
+;		tya
+;		rts
+;
+; N.B. This costs 36 bytes, and takes 82 cycles vs 18 for the trampoline
+;      code (when you exclude preserving YA in zero-page).
+;
+; N.B. This is NOT re-entrant, and must NOT be used in an IRQ handler if
+;      _temp is not saved and restored!
+;
+
+	.if	0
+
+far_call:	sta.l	<_bp			; Preserve YA registers as
+		sty.h	<_bp			; an address parameter.
+
+		pla				; Get return address.
+		sta.l	<_temp
+		clc				; Skip the far_call()
+		adc	#4			; address parameter.
+		tay
+		pla
+		sta.h	<_temp
+		adc	#0
+		pha				; Put return address.
+		phy
+
+		tma6				; Preserve MPR6.
+		pha
+
+		ldy	#4			; Push far_call() addr.
+		lda	[_temp], y
+		pha
+		dey
+		lda	[_temp], y
+		pha
+
+		dey				; Read far_call() bank.
+		lda	[_temp], y
+		tam6
+
+		rts				; Jump to routine.
+
 	.endif

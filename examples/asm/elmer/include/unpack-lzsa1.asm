@@ -43,7 +43,7 @@ LZSA1_GET_SRC	.macro
 		lda	[lzsa_srcptr]
 		inc	<lzsa_srcptr + 0
 		bne	.skip\@
-		jsr	inc.h_si_mpr3
+		jsr	inc.h_bp_mpr3
 .skip\@:
 		.endm
 	.endif	LZSA1_SMALL
@@ -56,7 +56,7 @@ LZSA1_GET_SRC	.macro
 ; Data usage is 7 bytes of zero-page.
 ;
 
-lzsa1_srcptr	=	_si			; 1 word.
+lzsa1_srcptr	=	_bp			; 1 word.
 lzsa1_dstptr	=	_di			; 1 word.
 
 lzsa1_winptr	=	_ax			; 1 word.
@@ -71,10 +71,10 @@ lzsa1_offset	=	lzsa1_winptr
 ;
 ; lzsa1_to_ram - Decompress data stored in Emmanuel Marty's LZSA1 format.
 ;
-; Args: _si, _si_bank = _farptr to compressed data in MPR3.
+; Args: _bp, Y = _farptr to compressed data in MPR3.
 ; Args: _di = ptr to output address in RAM.
 ;
-; Uses: _si, _di, _ax, _bl !
+; Uses: _bp, _di, _ax, _bl !
 ;
 
 lzsa1_to_ram	.proc
@@ -82,9 +82,11 @@ lzsa1_to_ram	.proc
 		tma3				; Preserve MPR3.
 		pha
 
-		jsr	set_si_to_mpr3		; Map lzsa1_srcptr to MPR3.
+		tya				; Map lzsa1_srcptr to MPR3.
+		beq	!+
+		tam3
 
-		clx				; Initialize hi-byte of length.
+!:		clx				; Initialize hi-byte of length.
 		cly				; Initialize source index.
 
 		;
@@ -114,13 +116,13 @@ lzsa1_to_ram	.proc
 .cp_byte:	lda	[lzsa1_srcptr]		; CC throughout the execution of
 		sta	[lzsa1_dstptr]		; of this .cp_page loop.
 
-		inc	<lzsa1_srcptr + 0
+		inc.l	<lzsa1_srcptr
 		bne	.cp_skip1
-		jsr	inc.h_si_mpr3
+		jsr	inc.h_bp_mpr3
 
-.cp_skip1:	inc	<lzsa1_dstptr + 0
+.cp_skip1:	inc.l	<lzsa1_dstptr
 		bne	.cp_skip2
-		inc	<lzsa1_dstptr + 1
+		inc.h	<lzsa1_dstptr
 
 .cp_skip2:	dex
 		bne	.cp_byte
@@ -142,8 +144,8 @@ lzsa1_to_ram	.proc
 
 .lz_offset:	jsr	.get_byte		; Get offset-lo.
 
-.offset_lo:	adc	<lzsa1_dstptr + 0	; Always CC from .cp_page loop.
-		sta	<lzsa1_winptr + 0
+.offset_lo:	adc.l	<lzsa1_dstptr		; Always CC from .cp_page loop.
+		sta.l	<lzsa1_winptr
 
 		lda	#$FF
 		bit	<lzsa1_cmdbuf
@@ -151,8 +153,8 @@ lzsa1_to_ram	.proc
 
 		jsr	.get_byte		; Get offset-hi.
 
-.offset_hi:	adc	<lzsa1_dstptr + 1	; lzsa1_winptr < lzsa1_dstptr, so
-		sta	<lzsa1_winptr + 1	; always leaves CS.
+.offset_hi:	adc.h	<lzsa1_dstptr		; lzsa1_winptr < lzsa1_dstptr, so
+		sta.h	<lzsa1_winptr		; always leaves CS.
 
 .lz_length:	lda	<lzsa1_cmdbuf		; X=0 from previous loop.
 		and	#$0F
@@ -168,13 +170,13 @@ lzsa1_to_ram	.proc
 .lz_byte:	lda	[lzsa1_winptr]		; CC throughout the execution of
 		sta	[lzsa1_dstptr]		; of this .lz_page loop.
 
-		inc	<lzsa1_winptr + 0
+		inc.l	<lzsa1_winptr
 		bne	.lz_skip1
-		inc	<lzsa1_winptr + 1
+		inc.h	<lzsa1_winptr
 
-.lz_skip1:	inc	<lzsa1_dstptr + 0
+.lz_skip1:	inc.l	<lzsa1_dstptr
 		bne	.lz_skip2
-		inc	<lzsa1_dstptr + 1
+		inc.h	<lzsa1_dstptr
 
 .lz_skip2:	dex
 		bne	.lz_byte
@@ -195,22 +197,22 @@ lzsa1_to_ram	.proc
 		;
 
 .lz_offset:	lda	[lzsa1_srcptr]		; Get offset-lo.
-		inc	<lzsa1_srcptr + 0
+		inc.l	<lzsa1_srcptr
 		bne	.offset_lo
-		jsr	inc.h_si_mpr3
+		jsr	inc.h_bp_mpr3
 
-.offset_lo:	sta	<lzsa1_offset + 0
+.offset_lo:	sta.l	<lzsa1_offset
 
 		lda	#$FF
 		bit	<lzsa1_cmdbuf		; Get offset-hi.
 		bpl	.offset_hi
 
 		lda	[lzsa1_srcptr]
-		inc	<lzsa1_srcptr + 0
+		inc.l	<lzsa1_srcptr
 		bne	.offset_hi
-		jsr	inc.h_si_mpr3
+		jsr	inc.h_bp_mpr3
 
-.offset_hi:	sta	<lzsa1_offset + 1
+.offset_hi:	sta.h	<lzsa1_offset
 
 .lz_length:	lda	<lzsa1_cmdbuf		; X=0 from previous loop.
 		and	#$0F
@@ -226,31 +228,31 @@ lzsa1_to_ram	.proc
 		tay
 		eor	#$FF
 
-.get_lz_dst:	adc	<lzsa1_dstptr + 0	; Calc address of partial page.
-		sta	<lzsa1_dstptr + 0	; Always CC from previous CMP.
+.get_lz_dst:	adc.l	<lzsa1_dstptr		; Calc address of partial page.
+		sta.l	<lzsa1_dstptr		; Always CC from previous CMP.
 		iny
 		bcs	.get_lz_win
 		beq	.get_lz_win		; Is lo-byte of length zero?
-		dec	<lzsa1_dstptr + 1
+		dec.h	<lzsa1_dstptr
 
 .get_lz_win:	clc				; Calc address of match.
-		adc	<lzsa1_offset + 0	; N.B. Offset is negative!
-		sta	<lzsa1_winptr + 0
-		lda	<lzsa1_dstptr + 1
-		adc	<lzsa1_offset + 1
-		sta	<lzsa1_winptr + 1
+		adc.l	<lzsa1_offset		; N.B. Offset is negative!
+		sta.l	<lzsa1_winptr
+		lda.h	<lzsa1_dstptr
+		adc.h	<lzsa1_offset
+		sta.h	<lzsa1_winptr
 
-.lz_byte:	lda	[lzsa1_winptr]
-		sta	[lzsa1_dstptr]
+.lz_byte:	lda	[lzsa1_winptr], y
+		sta	[lzsa1_dstptr], y
 		iny
 		bne	.lz_byte
-		inc	<lzsa1_dstptr + 1
+		inc.h	<lzsa1_dstptr
 		dex				; Any full pages left to copy?
 		bne	.lz_more
 
 		jmp	.cp_length		; Loop around to the beginning.
 
-.lz_more:	inc	<lzsa1_winptr + 1	; Unlikely, so can be slow.
+.lz_more:	inc.h	<lzsa1_winptr		; Unlikely, so can be slow.
 		bne	.lz_byte		; Always true!
 
 		.endif	LZSA1_SMALL
@@ -263,9 +265,9 @@ lzsa1_to_ram	.proc
 
 .get_length:	clc				; Add on the next byte to get
 		adc	[lzsa1_srcptr]		; the length.
-		inc	<lzsa1_srcptr + 0
+		inc.l	<lzsa1_srcptr
 		bne	.skip_inc
-		jsr	inc.h_si_mpr3
+		jsr	inc.h_bp_mpr3
 
 .skip_inc:	bcc	.got_length		; No overflow means done.
 		clc				; MUST return CC!
@@ -295,10 +297,10 @@ lzsa1_to_ram	.proc
 		leave				; Finished decompression!
 
 .get_byte:	lda	[lzsa1_srcptr]		; Subroutine version for when
-		inc	<lzsa1_srcptr + 0	; inlining isn't advantageous.
+		inc.l	<lzsa1_srcptr		; inlining isn't advantageous.
 		beq	.next_page
 .got_byte:	rts
 
-.next_page:	jmp	inc.h_si_mpr3		; Inc & test for bank overflow.
+.next_page:	jmp	inc.h_bp_mpr3		; Inc & test for bank overflow.
 
 		.endp

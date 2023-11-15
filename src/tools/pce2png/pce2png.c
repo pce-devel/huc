@@ -38,7 +38,7 @@
   #define GIT_DATE __DATE__
 #endif
 
-#define VERSION_STR "pce2png (v0.30-" GIT_VERSION ", " GIT_DATE ")"
+#define VERSION_STR "pce2png (" GIT_VERSION ", " GIT_DATE ")"
 
 //
 // GLOBAL VARIABLES
@@ -672,7 +672,7 @@ ERRORCODE ReadBinaryFile (
   if ((fstat( hFile, &cStat ) != 0) || (!S_ISREG( cStat.st_mode )))
     goto errorExit;
 
-  if (cStat.st_size > SSIZE_MAX)
+  if (cStat.st_size > 0x7FFFFFFF)
     goto errorExit;
 
   uSize = cStat.st_size;

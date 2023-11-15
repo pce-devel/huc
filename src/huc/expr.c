@@ -243,13 +243,13 @@ intptr_t heir2 (LVALUE *lval, int comma)
 
 	k = heir3(lval, comma);
 	blanks();
-	if ((ch() != '|') | (nch() == '|') | (nch() == '='))
+	if ((ch() != '|') || (nch() == '|') || (nch() == '='))
 		return (k);
 
 	if (k)
 		rvalue(lval);
 	FOREVER {
-		if ((ch() == '|') & (nch() != '|') & (nch() != '=')) {
+		if ((ch() == '|') && (nch() != '|') && (nch() != '=')) {
 			inbyte();
 			gpush();
 			if (heir3(lval2, comma))
@@ -270,13 +270,13 @@ intptr_t heir3 (LVALUE *lval, int comma)
 
 	k = heir4(lval, comma);
 	blanks();
-	if ((ch() != '^') | (nch() == '='))
+	if ((ch() != '^') || (nch() == '='))
 		return (k);
 
 	if (k)
 		rvalue(lval);
 	FOREVER {
-		if ((ch() == '^') & (nch() != '=')) {
+		if ((ch() == '^') && (nch() != '=')) {
 			inbyte();
 			gpush();
 			if (heir4(lval2, comma))
@@ -297,13 +297,13 @@ intptr_t heir4 (LVALUE *lval, int comma)
 
 	k = heir5(lval, comma);
 	blanks();
-	if ((ch() != '&') | (nch() == '|') | (nch() == '='))
+	if ((ch() != '&') || (nch() == '|') || (nch() == '='))
 		return (k);
 
 	if (k)
 		rvalue(lval);
 	FOREVER {
-		if ((ch() == '&') & (nch() != '&') & (nch() != '=')) {
+		if ((ch() == '&') && (nch() != '&') && (nch() != '=')) {
 			inbyte();
 			gpush();
 			if (heir5(lval2, comma))
@@ -333,8 +333,8 @@ intptr_t heir5 (LVALUE *lval, int comma)
 
 	k = heir6(lval, comma);
 	blanks();
-	if (!sstreq("==") &
-	    !sstreq("!="))
+	if ((!sstreq("==")) &&
+	    (!sstreq("!=")))
 		return (k);
 
 	if (k)

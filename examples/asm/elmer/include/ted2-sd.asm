@@ -612,18 +612,20 @@ spi_rd_fast:	TED_SPI_ARD_ON
 
 		; Update destination.
 
-		inc	<sdc_data_addr + 1	; Increment addr in bank.
-		inc	<sdc_data_addr + 1
-		bpl	.decrement		; Wrap bank at $8000.
-
-		lda	#$60			; Reset destination pointer.
-		sta	<sdc_data_addr + 1
+		lda	<sdc_data_addr + 1	; Increment addr in bank.
+		inc	a
+		inc	a
+		cmp	#$80			; Wrap bank at $8000.
+		bne	.keep_bank
 
 		tma3				; Map in next PCE 8KB bank.
 		inc	a
 		tam3
 
-.decrement:	lda	sdc_block_cnt + 0	; Decrement 16-bit block
+		lda	#$60			; Reset destination pointer.
+.keep_bank:	sta	<sdc_data_addr + 1
+
+		lda	sdc_block_cnt + 0	; Decrement 16-bit block
 		bne	.skip			; count.
 		dec	sdc_block_cnt + 1
 .skip:		dec	a
@@ -860,15 +862,16 @@ spi_wr_slow:	txa
 		cpy	#$85			; Was the data accepted?
 		bne	.error
 
-		lda	<sdc_data_addr + 1
-		bpl	.decrement		; Wrap bank at $8000.
-
-		lda	#$60			; Reset destination pointer.
-		sta	<sdc_data_addr + 1
+		lda	<sdc_data_addr + 1	; Wrap bank at $8000.
+		cmp	#$80
+		bne	.decrement
 
 		tma3				; Map in next PCE 8KB bank.
 		inc	a
 		tam3
+
+		lda	#$60			; Reset destination pointer.
+		sta	<sdc_data_addr + 1
 
 .decrement:	lda	sdc_block_cnt + 0	; Decrement 16-bit block
 		bne	.skip			; count.

@@ -367,7 +367,6 @@ PXLMAP_T *PcxReadPxlmap (
 
   MAPPEDFILE_T  cMapping;
   PCX_HEADER_T  cHeader;
-  uint8_t *     pFileBuffer;
   PXLMAP_T *    pPxlmap;
   int           iSrcW;
   int           iSrcH;
@@ -386,11 +385,7 @@ PXLMAP_T *PcxReadPxlmap (
 
   // Convert the header into the native format.
 
-  pFileBuffer = cMapping.m_pViewAddr;
-
   memcpy(&cHeader, cMapping.m_pViewAddr, sizeof(cHeader));
-
-  pFileBuffer += sizeof(cHeader);
 
 #if BYTE_ORDER_HILO
   cHeader.m_uXMin = SwapD16(cHeader.m_uXMin);

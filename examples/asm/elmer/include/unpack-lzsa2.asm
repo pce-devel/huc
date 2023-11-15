@@ -43,7 +43,7 @@ LZSA2_GET_SRC	.macro
 		lda	[lzsa_srcptr]
 		inc	<lzsa_srcptr + 0
 		bne	.skip\@
-		jsr	inc.h_si_mpr3
+		jsr	inc.h_bp_mpr3
 .skip\@:
 		.endm
 	.endif	LZSA2_SMALL
@@ -56,7 +56,7 @@ LZSA2_GET_SRC	.macro
 ; Data usage is 11 bytes of zero-page.
 ;
 
-lzsa2_srcptr	=	_si			; 1 word.
+lzsa2_srcptr	=	_bp			; 1 word.
 lzsa2_dstptr	=	_di			; 1 word.
 
 lzsa2_offset	=	_ax			; 1 word.
@@ -72,10 +72,10 @@ lzsa2_nibble	=	_dl			; 1 byte.
 ;
 ; lzsa2_to_ram - Decompress data stored in Emmanuel Marty's LZSA2 format.
 ;
-; Args: _si, _si_bank = _farptr to compressed data in MPR3.
+; Args: _bp, Y = _farptr to compressed data in MPR3.
 ; Args: _di = ptr to output address in RAM.
 ;
-; Uses: _si, _di, _ax, _bx, _cx, _dl !
+; Uses: _bp, _di, _ax, _bx, _cx, _dl !
 ;
 
 lzsa2_to_ram	.proc
@@ -83,9 +83,11 @@ lzsa2_to_ram	.proc
 		tma3				; Preserve MPR3.
 		pha
 
-		jsr	set_si_to_mpr3		; Map lzsa2_srcptr to MPR3.
+		tya				; Map lzsa2_srcptr to MPR3.
+		beq	!+
+		tam3
 
-		clx				; Hi-byte of length or offset.
+!:		clx				; Hi-byte of length or offset.
 		cly				; Initialize source index.
 		stz	<lzsa2_nibflg		; Initialize nibble buffer.
 
@@ -115,13 +117,13 @@ lzsa2_to_ram	.proc
 .cp_byte:	lda	[lzsa2_srcptr]		; CC throughout the execution of
 		sta	[lzsa2_dstptr]		; of this .cp_page loop.
 
-		inc	<lzsa2_srcptr + 0
+		inc.l	<lzsa2_srcptr
 		bne	.cp_skip1
-		inc	<lzsa2_srcptr + 1
+		inc.h	<lzsa2_srcptr
 
-.cp_skip1:	inc	<lzsa2_dstptr + 0
+.cp_skip1:	inc.l	<lzsa2_dstptr
 		bne	.cp_skip2
-		inc	<lzsa2_dstptr + 1
+		inc.h	<lzsa2_dstptr
 
 .cp_skip2:	dex
 		bne	.cp_byte
@@ -180,8 +182,8 @@ lzsa2_to_ram	.proc
 
 .get_lo_8:	LZSA2_GET_SRC			; Get lo-byte of offset.
 
-.set_offset:	sta	<lzsa2_offset + 0	; Save new offset.
-		stx	<lzsa2_offset + 1
+.set_offset:	sta.l	<lzsa2_offset		; Save new offset.
+		stx.h	<lzsa2_offset
 
 .lz_length:	ldx	#1			; Hi-byte of length+256.
 
@@ -199,31 +201,31 @@ lzsa2_to_ram	.proc
 		tay
 		eor	#$FF
 
-.get_lz_dst:	adc	<lzsa2_dstptr + 0	; Calc address of partial page.
-		sta	<lzsa2_dstptr + 0	; Always CC from .cp_page loop.
+.get_lz_dst:	adc.l	<lzsa2_dstptr		; Calc address of partial page.
+		sta.l	<lzsa2_dstptr		; Always CC from .cp_page loop.
 		iny
 		bcs	.get_lz_win
 		beq	.get_lz_win		; Is lo-byte of length zero?
-		dec	<lzsa2_dstptr + 1
+		dec.h	<lzsa2_dstptr
 
 .get_lz_win:	clc				; Calc address of match.
-		adc	<lzsa2_offset + 0	; N.B. Offset is negative!
-		sta	<lzsa2_winptr + 0
-		lda	<lzsa2_dstptr + 1
-		adc	<lzsa2_offset + 1
-		sta	<lzsa2_winptr + 1
+		adc.l	<lzsa2_offset		; N.B. Offset is negative!
+		sta.l	<lzsa2_winptr
+		lda.h	<lzsa2_dstptr
+		adc.h	<lzsa2_offset
+		sta.h	<lzsa2_winptr
 
-.lz_byte:	lda	[lzsa2_winptr]
-		sta	[lzsa2_dstptr]
+.lz_byte:	lda	[lzsa2_winptr], y
+		sta	[lzsa2_dstptr], y
 		iny
 		bne	.lz_byte
-		inc	<lzsa2_dstptr + 1
+		inc.h	<lzsa2_dstptr
 		dex				; Any full pages left to copy?
 		bne	.lz_more
 
 		jmp	.cp_length		; Loop around to the beginning.
 
-.lz_more:	inc	<lzsa2_winptr + 1	; Unlikely, so can be slow.
+.lz_more:	inc.h	<lzsa2_winptr		; Unlikely, so can be slow.
 		bne	.lz_byte		; Always true!
 
 		;
@@ -264,11 +266,11 @@ lzsa2_to_ram	.proc
 .got_word:	rts
 
 .get_byte:	lda	[lzsa2_srcptr]		; Subroutine version for when
-		inc	<lzsa2_srcptr + 0	; inlining isn't advantageous.
+		inc.l	<lzsa2_srcptr		; inlining isn't advantageous.
 		beq	.next_page
 .got_byte:	rts
 
-.next_page:	jmp	inc.h_si_mpr3		; Inc & test for bank overflow.
+.next_page:	jmp	inc.h_bp_mpr3		; Inc & test for bank overflow.
 
 .finished:	pla				; Decompression completed, pop
 		pla				; return address.

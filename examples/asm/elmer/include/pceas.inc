@@ -33,6 +33,12 @@ ARG_STRING	=	5
 ARG_LABEL	=	6
 
 ;
+; Function to map an address into MPR3.
+;
+
+mpr3		.func	($6000 + ($1FFF & (\1)))
+
+;
 ; Macro to shadow VDC_AR writes because the register is write-only.
 ;
 ; Any writes to the VDC_AR register in an IRQ routine should be restored
@@ -74,37 +80,3 @@ leave		.macro
 		.endm
 
 	.endif	USING_NEWPROC
-
-;
-; Macros to align data/code to boundaries commonly seen on the PCE.
-;
-
-WORD_ALIGN	.macro
-	.if	(* & 1)
-		ds	2 - (* & 1)		; Word Align the data.
-	.endif
-		.endm
-
-LONG_ALIGN	.macro
-	.if	(* & 3)
-		ds	4 - (* & 3)		; Long Align the data.
-	.endif
-		.endm
-
-CHR_ALIGN	.macro
-	.if	(* & 31)
-		ds	32 - (* & 31)		; 32-byte align the data.
-	.endif
-		.endm
-
-SPR_ALIGN	.macro
-	.if	(* & 127)
-		ds	128 - (* & 127)		; 128-byte align the data.
-	.endif
-		.endm
-
-PAGE_ALIGN	.macro
-	.if	(* & 255)
-		ds	256 - (* & 255)		; 256-byte align the data.
-	.endif
-		.endm

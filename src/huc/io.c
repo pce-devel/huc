@@ -212,6 +212,12 @@ void readline (void)
 			if ((ctext) & (cmode)) {
 				flush_ins();
 				comment();
+				tab();
+				tab();
+				tab();
+				tab();
+				tab();
+				tab();
 				outstr(line);
 				nl();
 			}

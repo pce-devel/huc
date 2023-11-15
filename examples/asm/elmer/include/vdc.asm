@@ -7,7 +7,7 @@
 ;
 ; These should be located in permanently-accessible memory!
 ;
-; Copyright John Brandwood 2021.
+; Copyright John Brandwood 2021-2022.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -24,8 +24,27 @@
 		include "vce.asm"		; Useful VCE routines.
 
 ;
-; Enable BG & SPR layers.
+; Choose how much to transfer to VRAM in a single chunk, normally 16-bytes.
 ;
+; 32-byte TIA takes 270/364 cycles in 5MHz, 242/312 cycles in 7MHz. (8.44 cycles-per-byte best-case at 5MHz.)
+; 24-byte TIA takes 210/298 cycles in 5MHz, 186/256 cycles in 7MHz. (8.75 cycles-per-byte best-case at 5MHz.)
+; 16-byte TIA takes 142/234 cycles in 5MHz, 128/200 cycles in 7MHz. (8.88 cycles-per-byte best-case at 5MHz.)
+;
+; If a user wishes to be able to put RCR interrupts one-line-after-another,
+; then it is only safe to use 32-byte chunks if there are no TIMER or IRQ2
+; interrupts ... which is almost-impossible to rely on in library code.
+;
+
+	.ifndef	VRAM_XFER_SIZE
+VRAM_XFER_SIZE	=	16
+	.endif
+
+;
+; Enable BG & SPR layers, and RCR interrupt.
+;
+
+set_rcron:	lda	#$04			; Enable RCR interrupt.
+		bra	!+
 
 set_bgon:	lda	#$80			; Enable BG layer.
 		bra	!+
@@ -42,8 +61,11 @@ set_dspon:	lda	#$C0			; Enable BG & SPR layers.
 		rts
 
 ;
-; Disable BG & SPR layers.
+; Disable BG & SPR layers, and RCR interrupt.
 ;
+
+set_rcroff:	lda	#$04			; Disable RCR interrupt.
+		bra	!+
 
 set_bgoff:	lda	#$80			; Disable BG layer.
 		bra	!+
@@ -63,7 +85,7 @@ set_dspoff:	lda	#$C0			; Disable BG & SPR layers.
 ;
 ;
 
-		.procgroup			; These routines share code!
+vdc_clear_vram	.procgroup			; These routines share code!
 
 ; ***************************************************************************
 ; ***************************************************************************
@@ -79,7 +101,7 @@ set_dspoff:	lda	#$C0			; Disable BG & SPR layers.
 clear_vram_sgx	.proc
 
 		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$E0			; Turn "clx" into a "cpx #".
+		db	$F0			; Turn "clx" into a "beq".
 
 		.endp
 	.endif
@@ -126,7 +148,7 @@ clear_vram_x:	bsr	clear_bat_x		; Clear the BAT.
 clear_bat_sgx	.proc
 
 		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$E0			; Turn "clx" into a "cpx #".
+		db	$F0			; Turn "clx" into a "beq".
 
 		.endp
 	.endif
@@ -159,6 +181,7 @@ clear_bat_x:	stz	<_di + 0		; Set VDC or SGX destination
 		sta	VDC_DH, x
 		dey
 		bne	.bat_pair
+
 		pla
 		dec	a
 		bne	.bat_loop
@@ -171,7 +194,7 @@ clear_bat_x:	stz	<_di + 0		; Set VDC or SGX destination
 ;
 ;
 
-		.procgroup			; These routines share code!
+vdc_set_mode	.procgroup			; These routines share code!
 
 ; ***************************************************************************
 ; ***************************************************************************
@@ -179,14 +202,14 @@ clear_bat_x:	stz	<_di + 0		; Set VDC or SGX destination
 ; set_mode_sgx - Set video hardware registers from a data table.
 ; set_mode_vdc - Set video hardware registers from a data table.
 ;
-; Args: _si, _si_bank = _farptr to data table mapped into MPR3 & MPR4.
+; Args: _bp, Y = _farptr to data table mapped into MPR3 & MPR4.
 ;
 
 	.if	SUPPORT_SGX
 set_mode_sgx	.proc
 
 		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$E0			; Turn "clx" into a "cpx #".
+		db	$F0			; Turn "clx" into a "beq".
 
 		.endp
 	.endif
@@ -200,14 +223,14 @@ set_mode_vdc	.proc
 		tma4				; Preserve MPR4.
 		pha
 
-		jsr	set_si_to_mpr34		; Map data to MPR3 & MPR4.
+		jsr	set_bp_to_mpr34		; Map data to MPR3 & MPR4.
 
 		php				; Disable interrupts.
 		sei
 
 		cly				; Table size is < 256 bytes.
 
-.loop:		lda	[_si], y		; Get the register #, +ve for
+.loop:		lda	[_bp], y		; Get the register #, +ve for
 		beq	.done			; VDC, -128 for VCE.
 		bpl	.set_vdc_reg
 
@@ -215,7 +238,7 @@ set_mode_vdc	.proc
 
 .set_vce_reg:	iny
 
-		lda	[_si], y		; Get lo-byte of register.
+		lda	[_bp], y		; Get lo-byte of register.
 		iny
 		sta	VCE_CR			; Set the VCE clock speed and
 		bra	.loop			; artifact reduction.
@@ -229,7 +252,7 @@ set_mode_vdc	.proc
 		beq	.skip_cc
 		clc				; CC if not VDC_CR.
 
-.skip_cc:	lda	[_si], y		; Get lo-byte of register.
+.skip_cc:	lda	[_bp], y		; Get lo-byte of register.
 		iny
 		bcc	.not_vdc_cr
 
@@ -243,7 +266,7 @@ set_mode_vdc	.proc
 
 .not_vdc_cr:	sta	VDC_DL, x		; Write to VDC.
 
-		lda	[_si], y		; Get hi-byte of register.
+		lda	[_bp], y		; Get hi-byte of register.
 		iny
 		sta	VDC_DH, x
 		bcc	.loop			; Next register, please!
@@ -275,17 +298,75 @@ set_mode_vdc	.proc
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; sgx_detect - Detect whether we're running on a SuperGrafx.
+; sgx_detect - Detect whether we're running on a SuperGrafx (and init VPC).
 ;
-; Note that this corrupts VRAM address $7F7F in both the VDC and SGX.
+; Returns: Y,Z-flag,N-flag, and "sgx_detected" = NZ if detected.
+;
+; Note that this clears VRAM address $7F7F in both the VDC and SGX.
+;
+; ***************************************************************************
+;
+; https://web.archive.org/web/20161129055659/http://cgfm2.emuviews.com/txt/sgxtech.txt
+;
+; ***************************************************************************
+;
+; HuC6202 VIDEO PRIORITY CONTROLLER (huge thanks to Charles MacDonald!)
+;
+; VPC registers $0008 and $0009 make up four 4-bit values that define the
+; enabled layers and priority setting for the four possible window areas.
+;
+; Bits 3-0 of $0008 are for the region where Window 1 and 2 overlap
+; Bits 7-4 of $0008 are for the region occupied by only Window 2
+; Bits 3-0 of $0009 are for the region occupied by only Window 1
+; Bits 7-4 of $0009 are for the region where no Window is present
+;
+;  Each 4-bit value has the same format:
+;
+;  Bit 0: VDC #1 graphics are 0=disabled, 1=enabled
+;  Bit 1: VDC #2 graphics are 0=disabled, 1=enabled
+;  Bit 2: Bit 0 of priority setting
+;  Bit 3: Bit 1 of priority setting
+;
+;   Priority Setting $00xx: (useful when VDC #1 is a fullscreen HUD)
+;
+;    FRONT
+;     SP1'= VDC #1 high priority sprites
+;     BG1 = VDC #1 background
+;     SP1 = VDC #1 low priority sprites
+;     SP2'= VDC #2 high priority sprites
+;     BG2 = VDC #2 background
+;     SP2 = VDC #2 low priority sprites
+;    BACK
+;
+;   Priority Setting $01xx: (useful for parallax backgrounds)
+;
+;    FRONT
+;     SP1'= VDC #1 high priority sprites
+;     SP2'= VDC #2 high priority sprites
+;     BG1 = VDC #1 background
+;     SP1 = VDC #1 low priority sprites
+;     BG2 = VDC #2 background
+;     SP2 = VDC #2 low priority sprites
+;    BACK
+;
+;   Priority Setting $10xx: (only useful for special effects)
+;
+;    FRONT
+;     BG1 = VDC #1 background (with holes for sprites)
+;     SP2'= VDC #2 high priority sprites
+;     BG2 = VDC #2 background
+;     SP2 = VDC #2 low priority sprites
+;     SP1'= VDC #1 high priority sprites
+;     SP1 = VDC #1 low priority sprites
+;    BACK
 ;
 
 	.if	SUPPORT_SGX
 sgx_detect	.proc
 
 		ldy	#$7F			; Use VRAM address $7F7F
-		sty.h	<_di			; because it won't cause
-		sty.l	<_di			; a screen glitch.
+		sty.l	<_di			; because it won't cause
+		sty.h	<_di			; a screen glitch.
 
 		jsr	sgx_di_to_mawr		; Write $007F to SGX VRAM.
 		sty	SGX_DL
@@ -296,24 +377,266 @@ sgx_detect	.proc
 		stz	VDC_DH
 
 		jsr	sgx_di_to_marr		; Check value in SGX VRAM.
-		ldy	SGX_DL
+		ldy	SGX_DL			; $7F if found, $00 if not.
 		sty	sgx_detected
+		beq	!+			; Skip the rest if not SGX.
 
-		jsr	sgx_di_to_mawr		; Write $0000 to SGX VRAM.
-		stz	SGX_DL
+		jsr	sgx_di_to_mawr		; Write $0000 to SGX VRAM
+		stz	SGX_DL			; to clean VRAM contents.
 		stz	SGX_DH
+
+		tii	.vpc_mode, VPC_CR, 8	; Initialize the HuC6202 VPC.
+
+!:		leave				; All done, phew!
+
+	.ifndef	SGX_PARALLAX
+SGX_PARALLAX	=	1			; The most common default.
+	.endif
+
+	.if	SGX_PARALLAX
+.vpc_mode:	dw	$7000			; Use SGX as a parallax layer
+		dw	$0000			; behind a VDC background.
+		dw	$0000
+		dw	$0000
+	.else
+.vpc_mode:	dw	$3000			; Use SGX as the background
+		dw	$0000			; behind a fullscreen HUD.
+		dw	$0000
+		dw	$0000
+	.endif	SGX_PARALLAX
+
+		.endp
+
+	.ifndef	CORE_VERSION			; CORE has this in the kernel.
+		.bss
+sgx_detected:	ds	1			; NZ if SuperGrafx detected.
+		.code
+	.endif	CORE_VERSION
+
+	.endif	SUPPORT_SGX
+
+;
+;
+;
+
+vdc_copy_to	.procgroup			; These routines share code!
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; copy_to_sgx - Copy data from CPU memory to VRAM.
+; copy_to_vdc - Copy data from CPU memory to VRAM.
+;
+; Args: _bp, Y = _farptr to data table mapped into MPR3 & MPR4.
+; Args: _di = VRAM destination address.
+; Args: _ax = Number of VRAM_XFER_SIZE chunks to copy.
+;
+
+	.if	SUPPORT_SGX
+copy_to_sgx	.proc
+
+		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		db	$F0			; Turn "clx" into a "beq".
+
+		.endp
+	.endif
+
+copy_to_vdc	.proc
+
+		clx				; Offset to PCE VDC.
+
+		tma3				; Preserve MPR3.
+		pha
+		tma4				; Preserve MPR4.
+		pha
+
+		jsr	set_bp_to_mpr34		; Map data to MPR3 & MPR4.
+
+		jsr	set_di_to_mawr		; Set VRAM write address.
+
+	.if	SUPPORT_SGX
+		inx				; Set VDC or SGX destination.
+		inx
+		stx	tia_to_vram_tia + 3
+	.endif
+
+		lda.l	<_bp			; Source address in CPU RAM.
+		ldy.h	<_bp
+		ldx.l	<_ax			; Number of chunks (lo-byte).
+
+	.if	CDROM
+		bne	tia_to_vram		; On CD-ROM, the code is close.
+	.else
+		bne	.execute		; On HuCARD, the code is far.
+	.endif
+
+		dec.h	<_ax			; Number of chunks (hi-byte).
+
+.execute:	jmp	tia_to_vram		; Execute the copy.
+
+		;
+		; This routine does the core of the transfer.
+		;
+		; Because it self-modifies, it needs to be in RAM on a HuCARD.
+		;
+
+tia_to_vram_rom:
+
+.next_page:	iny				; Increment source page.
+		bpl	.same_bank		; Still in MPR3?
+.next_bank:	tay
+		tma4
+		tam3
+		inc	a
+		tam4
+		tya
+		ldy.h	#$6000
+.same_bank:	dex				; Number of chunks (lo-byte).
+		beq	.next_block
+
+		; The routine starts here!
+
+.entry_point:	clc
+		sty.h	tia_to_vram_tia + 1	; TIA source address hi-byte.
+.chunk_loop:	sta.l	tia_to_vram_tia + 1	; TIA source address lo-byte.
+		tia	$1234, VDC_DL, VRAM_XFER_SIZE
+		adc	#VRAM_XFER_SIZE		; Increment source address.
+		bcs	.next_page
+.same_page:	dex				; Number of chunks (lo-byte).
+		bne	.chunk_loop
+.next_block:	dec.h	<_ax			; Number of chunks (hi-byte).
+		bpl	.entry_point
+
+		pla				; Restore MPR4.
+		tam4
+		pla				; Restore MPR3.
+		tam3
+
+		leave				; All done, phew!
+
+tia_to_vram_len	=	(* - .next_page)
+tia_to_vram_off	=	(.entry_point - .next_page)
+
+	.if	CDROM
+tia_to_vram_ram	=	tia_to_vram_rom		; CD-ROM can just self-modify.
+	.else
+		.bss
+tia_to_vram_ram:ds	tia_to_vram_len		; HuCARD must put code in RAM.
+		.code
+	.endif
+
+tia_to_vram	=	tia_to_vram_ram + tia_to_vram_off
+tia_to_vram_tia	=	tia_to_vram + 7
+
+		.endp
+
+
+
+	.if	!CDROM
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; init_vram_copy - Initialize the copy-to-vram subroutine in PCE RAM.
+;
+; N.B. Only needed on HuCARD, because SCD/ACD can just modify in-place.
+;
+
+init_vram_copy	.proc
+
+		tii	tia_to_vram_rom, tia_to_vram_ram, tia_to_vram_len
 
 		leave				; All done, phew!
 
 		.endp
 
-	.ifndef	sgx_detected			; Could be defined in CORE.
-		.bss
-sgx_detected:	ds	1			; NZ if SuperGrafx detected.
-		.code
+	.endif	!CDROM
+
+		.endprocgroup
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; init_240x208 - An example of initializing screen and VRAM.
+;
+; This can be used as-is, or copied to your own program and modified.
+;
+
+init_240x208	.proc
+
+.BAT_SIZE	=	32 * 32
+.SAT_ADDR	=	.BAT_SIZE		; SAT takes 16 tiles of VRAM.
+.CHR_ZERO	=	.BAT_SIZE / 16		; 1st tile # after the BAT.
+.CHR_0x10	=	.CHR_ZERO + 16		; 1st tile # after the SAT.
+.CHR_0x20	=	.CHR_ZERO + 32		; ASCII ' ' CHR tile #.
+
+		call	clear_vce		; Clear all palettes.
+
+		lda.l	#.CHR_0x20		; Tile # of ' ' CHR.
+		sta.l	<_ax
+		lda.h	#.CHR_0x20
+		sta.h	<_ax
+
+		lda	#>.BAT_SIZE		; Size of BAT in words.
+		sta	<_bl
+
+		call	clear_vram_vdc		; Clear VRAM.
+	.if	SUPPORT_SGX
+		call	clear_vram_sgx
 	.endif
 
-	.endif	SUPPORT_SGX
+		lda	#<.mode_240x224		; Disable BKG & SPR layers but
+		sta.l	<_bp			; enable RCR & VBLANK IRQ.
+		lda	#>.mode_240x224
+		sta.h	<_bp
+
+	.if	SUPPORT_SGX
+		call	sgx_detect		; Are we really on an SGX?
+		beq	!+
+		ldy	#^.mode_240x224		; Set SGX 1st, with no VBL.
+		call	set_mode_sgx
+	.endif
+!:		ldy	#^.mode_240x224		; Set VDC 2nd, VBL allowed.
+		call	set_mode_vdc
+
+		call	wait_vsync		; Wait for the next VBLANK.
+
+		leave				; All done, phew!
+
+		; A reduced 240x208 screen to save VRAM.
+
+.mode_240x224:	db	$80			; VCE Control Register.
+		db	VCE_CR_5MHz		; Video Clock
+
+		db	VDC_MWR			; Memory-access Width Register
+		dw	VDC_MWR_32x32 + VDC_MWR_1CYCLE
+		db	VDC_HSR			; Horizontal Sync Register
+		dw	VDC_HSR_240
+		db	VDC_HDR			; Horizontal Display Register
+		dw	VDC_HDR_240
+		db	VDC_VPR			; Vertical Sync Register
+		dw	VDC_VPR_208
+		db	VDC_VDW			; Vertical Display Register
+		dw	VDC_VDW_208
+		db	VDC_VCR			; Vertical Display END position Register
+		dw	VDC_VCR_208
+		db	VDC_DCR			; DMA Control Register
+		dw	$0010			;   Enable automatic VRAM->SATB
+		db	VDC_DVSSR		; VRAM->SATB address $0400
+		dw	$0400
+		db	VDC_BXR			; Background X-Scroll Register
+		dw	$0000
+		db	VDC_BYR			; Background Y-Scroll Register
+		dw	$0000
+		db	VDC_RCR			; Raster Counter Register
+		dw	$0000			;   Never occurs!
+		db	VDC_CR			; Control Register
+		dw	$000C			;   Enable VSYNC & RCR IRQ
+		db	0
+
+		.endp
 
 
 
@@ -348,19 +671,19 @@ init_256x224	.proc
 		call	clear_vram_sgx
 	.endif
 
-		lda.l	#.mode_256x224		; Disable BKG & SPR layers but
-		sta.l	<_si			; enable RCR & VBLANK IRQ.
-		lda.h	#.mode_256x224
-		sta.h	<_si
-		lda	#^.mode_256x224
-		sta	<_si_bank
+		lda	#<.mode_256x224		; Disable BKG & SPR layers but
+		sta.l	<_bp			; enable RCR & VBLANK IRQ.
+		lda	#>.mode_256x224
+		sta.h	<_bp
 
 	.if	SUPPORT_SGX
 		call	sgx_detect		; Are we really on an SGX?
 		beq	!+
-		call	set_mode_sgx		; Set SGX 1st, with no VBL.
+		ldy	#^.mode_256x224		; Set SGX 1st, with no VBL.
+		call	set_mode_sgx
 	.endif
-!:		call	set_mode_vdc		; Set VDC 2nd, VBL allowed.
+!:		ldy	#^.mode_256x224		; Set VDC 2nd, VBL allowed.
+		call	set_mode_vdc
 
 		call	wait_vsync		; Wait for the next VBLANK.
 
@@ -377,6 +700,90 @@ init_256x224	.proc
 		dw	VDC_HSR_256
 		db	VDC_HDR			; Horizontal Display Register
 		dw	VDC_HDR_256
+		db	VDC_VPR			; Vertical Sync Register
+		dw	VDC_VPR_224
+		db	VDC_VDW			; Vertical Display Register
+		dw	VDC_VDW_224
+		db	VDC_VCR			; Vertical Display END position Register
+		dw	VDC_VCR_224
+		db	VDC_DCR			; DMA Control Register
+		dw	$0010			;   Enable automatic VRAM->SATB
+		db	VDC_DVSSR		; VRAM->SATB address $0800
+		dw	$0800
+		db	VDC_BXR			; Background X-Scroll Register
+		dw	$0000
+		db	VDC_BYR			; Background Y-Scroll Register
+		dw	$0000
+		db	VDC_RCR			; Raster Counter Register
+		dw	$0000			;   Never occurs!
+		db	VDC_CR			; Control Register
+		dw	$000C			;   Enable VSYNC & RCR IRQ
+		db	0
+
+		.endp
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; init_352x224 - An example of initializing screen and VRAM.
+;
+; This can be used as-is, or copied to your own program and modified.
+;
+
+init_352x224	.proc
+
+.BAT_SIZE	=	64 * 32
+.SAT_ADDR	=	.BAT_SIZE		; SAT takes 16 tiles of VRAM.
+.CHR_ZERO	=	.BAT_SIZE / 16		; 1st tile # after the BAT.
+.CHR_0x10	=	.CHR_ZERO + 16		; 1st tile # after the SAT.
+.CHR_0x20	=	.CHR_ZERO + 32		; ASCII ' ' CHR tile #.
+
+		call	clear_vce		; Clear all palettes.
+
+		lda.l	#.CHR_0x20		; Tile # of ' ' CHR.
+		sta.l	<_ax
+		lda.h	#.CHR_0x20
+		sta.h	<_ax
+
+		lda	#>.BAT_SIZE		; Size of BAT in words.
+		sta	<_bl
+
+		call	clear_vram_vdc		; Clear VRAM.
+	.if	SUPPORT_SGX
+		call	clear_vram_sgx
+	.endif
+
+		lda	#<.mode_352x224		; Disable BKG & SPR layers but
+		sta.l	<_bp			; enable RCR & VBLANK IRQ.
+		lda	#>.mode_352x224
+		sta.h	<_bp
+
+	.if	SUPPORT_SGX
+		call	sgx_detect		; Are we really on an SGX?
+		beq	!+
+		ldy	#^.mode_352x224		; Set SGX 1st, with no VBL.
+		call	set_mode_sgx
+	.endif
+!:		ldy	#^.mode_352x224		; Set VDC 2nd, VBL allowed.
+		call	set_mode_vdc
+
+		call	wait_vsync		; Wait for the next VBLANK.
+
+		leave				; All done, phew!
+
+		; A standard 352x224 screen with overscan.
+
+.mode_352x224:	db	$80			; VCE Control Register.
+		db	VCE_CR_7MHz + 4		;   Video Clock + Artifact Reduction
+
+		db	VDC_MWR			; Memory-access Width Register
+		dw	VDC_MWR_64x32 + VDC_MWR_1CYCLE
+		db	VDC_HSR			; Horizontal Sync Register
+		dw	VDC_HSR_352
+		db	VDC_HDR			; Horizontal Display Register
+		dw	VDC_HDR_352
 		db	VDC_VPR			; Vertical Sync Register
 		dw	VDC_VPR_224
 		db	VDC_VDW			; Vertical Display Register
@@ -432,19 +839,19 @@ init_512x224	.proc
 		call	clear_vram_sgx
 	.endif
 
-		lda.l	#.mode_512x224		; Disable BKG & SPR layers but
-		sta.l	<_si			; enable RCR & VBLANK IRQ.
-		lda.h	#.mode_512x224
-		sta.h	<_si
-		lda	#^.mode_512x224
-		sta	<_si_bank
+		lda	#<.mode_512x224		; Disable BKG & SPR layers but
+		sta.l	<_bp			; enable RCR & VBLANK IRQ.
+		lda	#>.mode_512x224
+		sta.h	<_bp
 
 	.if	SUPPORT_SGX
 		call	sgx_detect		; Are we really on an SGX?
 		beq	!+
-		call	set_mode_sgx		; Set SGX 1st, with no VBL.
+		ldy	#^.mode_512x224		; Set SGX 1st, with no VBL.
+		call	set_mode_sgx
 	.endif
-!:		call	set_mode_vdc		; Set VDC 2nd, VBL allowed.
+!:		ldy	#^.mode_512x224		; Set VDC 2nd, VBL allowed.
+		call	set_mode_vdc
 
 		call	wait_vsync		; Wait for the next VBLANK.
 
@@ -488,97 +895,71 @@ init_512x224	.proc
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; mode_240x224 - Example 240x224 screen mode to copy to your own program.
-; mode_256x224 - Example 256x224 screen mode to copy to your own program.
-; mode_352x224 - Example 352x224 screen mode to copy to your own program.
-; mode_512x224 - Example 512x224 screen mode to copy to your own program.
+; init_320x208 - An example of initializing screen and VRAM.
 ;
-; See "pcengine.inc" for other common settings that can be used, and read the
-; HuC6270 Video Display Controller manual to understand what the values mean,
-; and how you might change them to create different special effects.
+; This can be used as-is, or copied to your own program and modified.
+;
+; This resolution is rarely-seen, but it has no overscan, so it has a use.
 ;
 
-	.if	0
+init_320x208	.proc
 
-		; A reduced 240x224 screen to save VRAM.
+.BAT_SIZE	=	64 * 32
+.SAT_ADDR	=	.BAT_SIZE		; SAT takes 16 tiles of VRAM.
+.CHR_ZERO	=	.BAT_SIZE / 16		; 1st tile # after the BAT.
+.CHR_0x10	=	.CHR_ZERO + 16		; 1st tile # after the SAT.
+.CHR_0x20	=	.CHR_ZERO + 32		; ASCII ' ' CHR tile #.
 
-mode_240x224:	db	$80			; VCE Control Register.
-		db	VCE_CR_5MHz		; Video Clock
+		call	clear_vce		; Clear all palettes.
 
-		db	VDC_MWR			; Memory-access Width Register
-		dw	VDC_MWR_32x32 + VDC_MWR_1CYCLE
-		db	VDC_HSR			; Horizontal Sync Register
-		dw	VDC_HSR_240
-		db	VDC_HDR			; Horizontal Display Register
-		dw	VDC_HDR_240
-		db	VDC_VPR			; Vertical Sync Register
-		dw	VDC_VPR_224
-		db	VDC_VDW			; Vertical Display Register
-		dw	VDC_VDW_224
-		db	VDC_VCR			; Vertical Display END position Register
-		dw	VDC_VCR_224
-		db	VDC_DCR			; DMA Control Register
-		dw	$0010			;   Enable automatic VRAM->SATB
-		db	VDC_DVSSR		; VRAM->SATB address $0400
-		dw	$0400
-		db	VDC_BXR			; Background X-Scroll Register
-		dw	$0000
-		db	VDC_BYR			; Background Y-Scroll Register
-		dw	$0000
-		db	VDC_RCR			; Raster Counter Register
-		dw	$0000			;   Never occurs!
-		db	VDC_CR			; Control Register
-		dw	$000C			;   Enable VSYNC & RCR IRQ
-		db	0
+		lda.l	#.CHR_0x20		; Tile # of ' ' CHR.
+		sta.l	<_ax
+		lda.h	#.CHR_0x20
+		sta.h	<_ax
 
-		; A standard 256x224 screen with overscan.
+		lda	#>.BAT_SIZE		; Size of BAT in words.
+		sta	<_bl
 
-mode_256x224:	db	$80			; VCE Control Register.
-		db	VCE_CR_5MHz		; Video Clock
+		call	clear_vram_vdc		; Clear VRAM.
+	.if	SUPPORT_SGX
+		call	clear_vram_sgx
+	.endif
 
-		db	VDC_MWR			; Memory-access Width Register
-		dw	VDC_MWR_64x32 + VDC_MWR_1CYCLE
-		db	VDC_HSR			; Horizontal Sync Register
-		dw	VDC_HSR_256
-		db	VDC_HDR			; Horizontal Display Register
-		dw	VDC_HDR_256
-		db	VDC_VPR			; Vertical Sync Register
-		dw	VDC_VPR_224
-		db	VDC_VDW			; Vertical Display Register
-		dw	VDC_VDW_224
-		db	VDC_VCR			; Vertical Display END position Register
-		dw	VDC_VCR_224
-		db	VDC_DCR			; DMA Control Register
-		dw	$0010			;   Enable automatic VRAM->SATB
-		db	VDC_DVSSR		; VRAM->SATB address $0800
-		dw	$0800
-		db	VDC_BXR			; Background X-Scroll Register
-		dw	$0000
-		db	VDC_BYR			; Background Y-Scroll Register
-		dw	$0000
-		db	VDC_RCR			; Raster Counter Register
-		dw	$0000			;   Never occurs!
-		db	VDC_CR			; Control Register
-		dw	$000C			;   Enable VSYNC & RCR IRQ
-		db	0
+		lda	#<.mode_320x208		; Disable BKG & SPR layers but
+		sta.l	<_bp			; enable RCR & VBLANK IRQ.
+		lda	#>.mode_320x208
+		sta.h	<_bp
+
+	.if	SUPPORT_SGX
+		call	sgx_detect		; Are we really on an SGX?
+		beq	!+
+		ldy	#^.mode_320x208		; Set SGX 1st, with no VBL.
+		call	set_mode_sgx
+	.endif
+!:		ldy	#^.mode_320x208		; Set VDC 2nd, VBL allowed.
+		call	set_mode_vdc
+
+		call	wait_vsync		; Wait for the next VBLANK.
+
+		leave				; All done, phew!
 
 		; A standard 352x224 screen with overscan.
 
-mode_352x224:	db	$80			; VCE Control Register.
+.mode_320x208:	db	$80			; VCE Control Register.
 		db	VCE_CR_7MHz + 4		;   Video Clock + Artifact Reduction
 
 		db	VDC_MWR			; Memory-access Width Register
 		dw	VDC_MWR_64x32 + VDC_MWR_1CYCLE
 		db	VDC_HSR			; Horizontal Sync Register
-		dw	VDC_HSR_352
+		dw	VDC_HSR_320
 		db	VDC_HDR			; Horizontal Display Register
-		dw	VDC_HDR_352
+		dw	VDC_HDR_320
 		db	VDC_VPR			; Vertical Sync Register
-		dw	VDC_VPR_224
+		dw	VDC_VPR_208
 		db	VDC_VDW			; Vertical Display Register
-		dw	VDC_VDW_224
+		dw	VDC_VDW_208
 		db	VDC_VCR			; Vertical Display END position Register
-		dw	VDC_VCR_224
+		dw	VDC_VCR_208
 		db	VDC_DCR			; DMA Control Register
 		dw	$0010			;   Enable automatic VRAM->SATB
 		db	VDC_DVSSR		; VRAM->SATB address $0800
@@ -593,35 +974,4 @@ mode_352x224:	db	$80			; VCE Control Register.
 		dw	$000C			;   Enable VSYNC & RCR IRQ
 		db	0
 
-		; A standard 512x224 screen with overscan.
-
-mode_512x224:	db	$80			; VCE Control Register.
-		db	VCE_CR_10MHz + 4	;   Video Clock + Artifact Reduction
-
-		db	VDC_MWR			; Memory-access Width Register
-		dw	VDC_MWR_64x32 + VDC_MWR_2CYCLE
-		db	VDC_HSR			; Horizontal Sync Register
-		dw	VDC_HSR_512
-		db	VDC_HDR			; Horizontal Display Register
-		dw	VDC_HDR_512
-		db	VDC_VPR			; Vertical Sync Register
-		dw	VDC_VPR_224
-		db	VDC_VDW			; Vertical Display Register
-		dw	VDC_VDW_224
-		db	VDC_VCR			; Vertical Display END position Register
-		dw	VDC_VCR_224
-		db	VDC_DCR			; DMA Control Register
-		dw	$0010			;   Enable automatic VRAM->SATB
-		db	VDC_DVSSR		; VRAM->SATB address $0800
-		dw	$0800
-		db	VDC_BXR			; Background X-Scroll Register
-		dw	$0000
-		db	VDC_BYR			; Background Y-Scroll Register
-		dw	$0000
-		db	VDC_RCR			; Raster Counter Register
-		dw	$0000			;   Never occurs!
-		db	VDC_CR			; Control Register
-		dw	$000C			;   Enable VSYNC & RCR IRQ
-		db	0
-
-	.endif
+		.endp

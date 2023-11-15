@@ -283,7 +283,7 @@ labldef(int lval, int lbnk, int lsrc)
 
 			/* sanity check */
 			if (lablptr->type != UNDEF) {
-				fatal_error("How did this multi-label get defined!");
+				fatal_error("How did this base multi-label get defined, that should never happen!");
 				return (-1);
 			}
 
@@ -301,11 +301,12 @@ labldef(int lval, int lbnk, int lsrc)
 		/* fix location after crossing bank */
 		if (loccnt >= 0x2000) {
 			loccnt &= 0x1FFF;
-			page++;
-			bank++;
+			bank = (bank + 1);
+			if (section != S_DATA || asm_opt[OPT_DATAPAGE] == 0)
+				page = (page + 1) & 7;
 		}
 
-		lval = ((loccnt + (page << 13)) & 0xFFFF);
+		lval = loccnt + (page << 13);
 
 		if (bank >= RESERVED_BANK)
 			lbnk = bank;
@@ -315,13 +316,25 @@ labldef(int lval, int lbnk, int lsrc)
 		/* KickC can't call bank(), so put it in the label */
 		if (kickc_mode)
 			lval += lbnk << 23;
+	} else {
+		/* is this a multi-label? */
+		if (lablptr->name[1] == '!') {
+			/* sanity check */
+			fatal_error("A multi-label can only be a location!");
+			return (-1);
+		}
 	}
 
 	/* record definition */
 	lablptr->defcnt = 1;
 
-	/* first pass */
-	if (pass == FIRST_PASS) {
+	/* first pass or still undefined */
+	if ((pass == FIRST_PASS) || (lablptr->type == UNDEF)) {
+		if (pass != FIRST_PASS) {
+			/* needed for KickC forward-references */
+			need_another_pass = 1;
+		}
+
 		switch (lablptr->type) {
 		/* undefined */
 		case UNDEF:
@@ -362,6 +375,11 @@ labldef(int lval, int lbnk, int lsrc)
 	/* branch pass */
 	else if (pass != LAST_PASS) {
 		if (lablptr->type == DEFABS) {
+			if ((lablptr->value != lval) ||
+			    ((lsrc == LOCATION) && (bank < bank_limit) && (lablptr->bank != bank_base + bank))) {
+				/* needed for KickC forward-references */
+				need_another_pass = 1;
+			}
 			lablptr->bank = lbnk;
 			lablptr->value = lval;
 		}

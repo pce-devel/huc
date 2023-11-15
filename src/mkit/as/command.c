@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <limits.h>
 #include "defs.h"
 #include "externs.h"
 #include "protos.h"
@@ -709,9 +710,9 @@ do_equ(int *ip)
 	if (!evaluate(ip, ';', 1))
 		return;
 
-	/* check for undefined symbol - they are not allowed in .set */
-	if ((optype == 1) && (undef != 0)) {
-		error("Undefined symbol in operand field!");
+	/* check for undefined symbols - they are not allowed in .equ or .set */
+	if ((undef != 0) && (kickc_mode == 0)) {
+		error("Symbols must be defined before their use in .EQU or .SET!");
 		return;
 	}
 
@@ -719,6 +720,10 @@ do_equ(int *ip)
 	if ((optype == 1) && (lablptr->type == DEFABS)) {
 		lablptr->value = value;
 		lablptr->bank = expr_valbank;
+	} else
+	if (undef != 0) {
+		/* needed for KickC forward-references */
+		need_another_pass = 1;
 	} else {
 		/* assign value to the label */
 		labldef(value, expr_valbank, CONSTANT);
@@ -761,7 +766,7 @@ do_page(int *ip)
 
 	/* output line */
 	if (pass == LAST_PASS) {
-		loadlc(value << 13, 1);
+		loadlc(loccnt + (page << 13), 1);
 		println();
 	}
 }
@@ -817,7 +822,7 @@ do_org(int *ip)
 			error("Invalid address!");
 			return;
 		}
-		page = (value >> 13) & 0x07;
+		page = (value >> 13) & 7;
 		break;
 	}
 
@@ -861,6 +866,7 @@ do_bank(int *ip)
 	/* get bank index */
 	if (!evaluate(ip, 0, 0))
 		return;
+
 	if (value > bank_limit) {
 		error("Bank index out of range!");
 		return;
@@ -940,6 +946,7 @@ do_incbin(int *ip)
 	char *p;
 	char fname[128];
 	int size;
+	int step;
 
 	/* get file name */
 	if (!getstring(ip, fname, 127))
@@ -985,32 +992,72 @@ do_incbin(int *ip)
 	fseek(fp, 0, SEEK_SET);
 
 	/* check if it will fit in the rom */
-	if (((bank << 13) + loccnt + size) > rom_limit) {
-		fclose(fp);
-		error("ROM overflow!");
-		return;
-	}
+	if (bank >= RESERVED_BANK) {
+		if ((loccnt + size) > 0x2000) {
+			fclose(fp);
+			fatal_error("PROC overflow!");
+			return;
+		}
+	} else {
+		/* check if it will fit in the rom */
+		if (((bank << 13) + loccnt + size) > rom_limit) {
+			fclose(fp);
+			error("ROM overflow!");
+			return;
+		}
 
-	/* load data on last pass */
-	if (pass == LAST_PASS) {
-		fread(&rom[bank][loccnt], 1, size, fp);
-		memset(&map[bank][loccnt], section + (page << 5), size);
+		/* load data on last pass */
+		if (pass == LAST_PASS) {
+			fread(&rom[bank][loccnt], 1, size, fp);
 
-		/* output line */
-		println();
+			if (section == S_DATA && asm_opt[OPT_DATAPAGE] != 0)
+				memset(&map[bank][loccnt], section + (page << 5), size);
+			else {
+				int addr = (bank << 13) + loccnt;
+				int temp = (page + (loccnt >> 13)) & 7;
+				int left = size;
+
+				while (left != 0) {
+					step = 0x2000 - (addr & 0x1FFF);
+					if (step > left) { step = left; }
+					memset(&map[0][0] + addr, section + (temp << 5), step);
+					temp = (temp + 1) & 7;
+					addr += step;
+					left -= step;
+				}
+			}
+
+			/* output line */
+			println();
+		}
 	}
 
 	/* close file */
 	fclose(fp);
 
 	/* update bank and location counters */
-	bank += (loccnt + size) >> 13;
+	step = (loccnt + size) >> 13;
+	bank = (bank + step);
+	if (section != S_DATA || asm_opt[OPT_DATAPAGE] == 0)
+		page = (page + step) & 7;
+
 	loccnt = (loccnt + size) & 0x1FFF;
-	if (bank > max_bank) {
-		if (loccnt)
-			max_bank = bank;
-		else
-			max_bank = bank - 1;
+
+	if (loccnt == 0 && step != 0) {
+		loccnt = 0x2000;
+		bank = (bank - 1);
+		if (section != S_DATA || asm_opt[OPT_DATAPAGE] == 0)
+			page = (page - 1) & 7;
+	}
+
+	/* update rom size */
+	if (bank < RESERVED_BANK) {
+		if (bank > max_bank) {
+			if (loccnt)
+				max_bank = bank;
+			else
+				max_bank = bank - 1;
+		}
 	}
 
 	/* size */
@@ -1215,11 +1262,13 @@ do_include(int *ip)
 	/* define label */
 	labldef(0, 0, LOCATION);
 
+#if 0 // This breaks @turboxray's code, so disable it for now.
 	/* avoid problems */
 	if (expand_macro) {
 		error("Cannot use INCLUDE inside a macro!");
 		return;
 	}
+#endif
 
 	/* get file name */
 	if (!getstring(ip, fname, 127))
@@ -1344,6 +1393,7 @@ do_ds(int *ip)
 {
 	int limit = 0;
 	int addr;
+	int step;
 	unsigned int nbytes;
 	unsigned int filler = 0;
 	unsigned char c;
@@ -1362,6 +1412,12 @@ do_ds(int *ip)
 	/* check for undefined symbol - they are not allowed in .ds */
 	if (undef != 0) {
 		error("Undefined symbol in operand field!");
+		return;
+	}
+
+	/* check for negative value */
+	if (value > INT_MAX) {
+		error("Negative value in operand field!");
 		return;
 	}
 
@@ -1407,7 +1463,7 @@ do_ds(int *ip)
 
 	/* check range */
 	if ((loccnt + nbytes) > limit) {
-		error("Out of range!");
+		error("The .DS is too large for the current bank or section!");
 		return;
 	}
 
@@ -1426,6 +1482,13 @@ do_ds(int *ip)
 		if (addr > max_bss)
 			max_bss = addr;
 		break;
+
+	default:
+		/* rom page */
+		if (((bank << 13) + addr) > rom_limit) {
+			error("ROM overflow!");
+			return;
+		}
 	}
 
 	/* output line on last pass */
@@ -1440,14 +1503,50 @@ do_ds(int *ip)
 
 		if (section == S_CODE || section == S_DATA) {
 			memset(&rom[bank][loccnt], filler, nbytes);
-			memset(&map[bank][loccnt], section + (page << 5), nbytes);
-			if (bank > max_bank)
-				max_bank = bank;
+
+			if (section == S_DATA && asm_opt[OPT_DATAPAGE] != 0)
+				memset(&map[bank][loccnt], section + (page << 5), nbytes);
+			else {
+				int addr = (bank << 13) + loccnt;
+				int temp = (page + (loccnt >> 13)) & 7;
+				int left = nbytes;
+
+				while (left != 0) {
+					step = 0x2000 - (addr & 0x1FFF);
+					if (step > left) { step = left; }
+					memset(&map[0][0] + addr, section + (temp << 5), step);
+					temp = (temp + 1) & 7;
+					addr += step;
+					left -= step;
+				}
+			}
 		}
 	}
 
 	/* update location counter */
-	loccnt += nbytes;
+	step = (loccnt + nbytes) >> 13;
+	bank = (bank + step);
+	if (section != S_DATA || asm_opt[OPT_DATAPAGE] == 0)
+		page = (page + step) & 7;
+
+	loccnt = (loccnt + nbytes) & 0x1FFF;
+
+	if (loccnt == 0 && step != 0) {
+		loccnt = 0x2000;
+		bank = (bank - 1);
+		if (section != S_DATA || asm_opt[OPT_DATAPAGE] == 0)
+			page = (page - 1) & 7;
+	}
+
+	/* update rom size */
+	if (bank < RESERVED_BANK) {
+		if (bank > max_bank) {
+			if (loccnt)
+				max_bank = bank;
+			else
+				max_bank = bank - 1;
+		}
+	}
 
 	/* size */
 	if (lablptr) {
@@ -1495,14 +1594,6 @@ do_fail(int *ip)
 void
 do_section(int *ip)
 {
-/*
-	if (proc_ptr && (scopeptr == NULL)) {
-		if (optype == S_DATA) {
-			fatal_error("No data segment in procs!");
-			return;
-		}
-	}
-*/
 	if (section != optype) {
 		/* backup current section data */
 		section_bank[section] = bank;
@@ -1659,6 +1750,8 @@ do_opt(int *ip)
 			asm_opt[OPT_ZPDETECT] = i;
 		else if (!strcasecmp(name, "b"))
 			asm_opt[OPT_LBRANCH] = i;
+		else if (!strcasecmp(name, "d"))
+			asm_opt[OPT_DATAPAGE] = i;
 		else {
 			error("Unknown option!");
 			return;
@@ -1718,22 +1811,29 @@ do_align(int *ip)
 	/* did the previous instruction fill up the current bank? */
 	if (loccnt >= 0x2000) {
 		loccnt &= 0x1FFF;
-		page++;
-		bank++;
+		bank = (bank + 1);
+		if (section != S_DATA || asm_opt[OPT_DATAPAGE] == 0)
+			page = (page + 1) & 7;
 	}
 
 	/* are we already aligned to the request boundary? */
 	if ((offset = loccnt & (value - 1)) != 0) {
 		/* update location counter */
+		int oldloc = loccnt;
 		loccnt = (loccnt + value - offset) & 0x1fff;
 
 		if (loccnt == 0) {
-			page++;
-			bank++;
+			/* signal discontiguous change in loccnt */
+			discontiguous = 1;
+			bank = (bank + 1);
+			if (section != S_DATA || asm_opt[OPT_DATAPAGE] == 0)
+				page = (page + 1) & 7;
+		} else {
+			if (section == S_CODE || section == S_DATA) {
+				memset(&rom[bank][oldloc], 0, loccnt - oldloc);
+				memset(&map[bank][oldloc], section + (page << 5), loccnt - oldloc);
+			}
 		}
-
-		/* signal discontiguous change in loccnt */
-		discontiguous = 1;
 	}
 
 	/* set label value if there was one */

@@ -47,19 +47,23 @@ inline byte get_joytrg (byte which) {
  */
 
 #define load_vram(addr, data, size) \
-	*__si = (word) (data); \
-	*__si_bank = (byte) ((data) >> 23); \
 	*__di = (word) (addr); \
 	*__ax = (word) (size); \
+	*__bp = (word) (data); \
+	*__bank = (byte) ((data) >> 23); \
+	kickasm( clobbers "Y" ) \
+	{{ ldy.z __bank }} \
 	kickasm( clobbers "AXY" ) \
 	{{ jsr _load_vram }}
 
 #define load_bat(addr, data, w, h) \
-	*__si = (word) (data); \
-	*__si_bank = (byte) ((data) >> 23); \
 	*__di = (word) (addr); \
 	*__al = (byte) (w); \
 	*__ah = (byte) (h); \
+	*__bp = (word) (data); \
+	*__bank = (byte) ((data) >> 23); \
+	kickasm( clobbers "Y" ) \
+	{{ ldy.z __bank }} \
 	kickasm( clobbers "AXY" ) \
 	{{ jsr _load_bat }}
 
@@ -78,7 +82,7 @@ inline byte get_joytrg (byte which) {
 #define put_string(addr, x, y) \
 	*__al = (byte) (x); \
 	*__ah = (byte) (y); \
-	*__si = (word) (addr); \
+	*__bp = (word) (addr); \
 	kickasm( clobbers "AXY" ) \
 	{{ jsr _put_string }}
 

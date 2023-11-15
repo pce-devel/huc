@@ -73,7 +73,7 @@ int mx_opt;
 int mlist_opt;		/* macro listing main flag */
 int xlist;		/* listing file main flag */
 int list_level;		/* output level */
-int asm_opt[8];		/* assembler options */
+int asm_opt[9];		/* assembler options */
 int zero_need;		/* counter for trailing empty sectors on CDROM */
 int rom_used;
 int rom_free;
@@ -554,6 +554,7 @@ main(int argc, char **argv)
 		scopeptr = NULL;
 		branchptr = branchlst;
 		xvertlong = 0;
+		need_another_pass = 0;
 		skip_lines = 0;
 		rsbase = 0;
 		rsbank = RESERVED_BANK;
@@ -631,10 +632,25 @@ main(int argc, char **argv)
 			if (!discontiguous) {
 				/* N.B. $2000 is a legal loccnt that says that the bank is full! */
 				if (loccnt > 0x2000) {
-					loccnt &= 0x1fff;
-					page++;
-					bank++;
-					if (pass == FIRST_PASS) {
+					if (proc_ptr) {
+						snprintf(cmd, sizeof(cmd), ".proc/.progroup \"%s\" is larger than 8192 bytes!\n", proc_ptr->name);
+						fatal_error(cmd);
+						break;
+					}
+
+					loccnt &= 0x1FFF;
+					bank = (bank + 1);
+					if (bank > max_bank) {
+						max_bank = bank;
+					}
+					if (section != S_DATA || asm_opt[OPT_DATAPAGE] == 0)
+						page = (page + 1) & 7;
+
+					if (section == S_CODE && page == 0) {
+						error("CODE section wrapped from MPR7 to MPR0!");
+					}
+
+					if (asm_opt[OPT_WARNING] && pass == LAST_PASS) {
 						printf("   (Warning. Opcode crossing page boundary $%04X, bank $%02X)\n", (page * 0x2000), bank);
 					}
 				}
@@ -646,18 +662,30 @@ main(int argc, char **argv)
 				}
 			}
 
+			/* sanity check */
+			if (max_bank > bank_limit) {
+				snprintf(cmd, sizeof(cmd), "Assembler bug ... max_bank (0x%02X) > bank_limit (0x%02X)!\n", max_bank, bank_limit);
+				fatal_error(cmd);
+			}
+
 			if (stop_pass)
 				break;
+		}
+
+		/* abort pass on errors */
+		if (errcnt) {
+			printf("# %d error(s)\n", errcnt);
+			exit(1);
 		}
 
 		/* set pass to FIRST_PASS to run BRANCH_PASS next */
 		/* or set it to BRANCH_PASS to run LAST_PASS next */
 		if (pass != LAST_PASS) {
 			/* fix out-of-range short-branches, return number fixed */
-			if (branchopt() == 0)
-				pass = BRANCH_PASS;
-			else
+			if ((branchopt() != 0) || (need_another_pass != 0))
 				pass = FIRST_PASS;
+			else
+				pass = BRANCH_PASS;
 		}
 
 		/* do this just before the last pass */
@@ -695,16 +723,15 @@ main(int argc, char **argv)
 	}
 
 	/* close listing file */
-	if (lst_fp)
+	if (lst_fp) {
+		if ((list_level >= 2) && (errcnt == 0)) {
+			list_procs();
+		}
 		fclose(lst_fp);
+	}
 
 	/* close input file */
 	fclose(in_fp);
-
-	/* check for corrupted trampolines */
-	if (check_trampolines()) {
-		exit(1);
-	}
 
 	/* dump the rom */
 	if (errcnt == 0) {
@@ -726,7 +753,7 @@ main(int argc, char **argv)
 
 				/* nb sectors */
 				if (lablexists("HUC")) {
-					ipl_buffer[0x803] = 16;
+					ipl_buffer[0x803] = 16; /* 4 banks */
 				} else {
 					ipl_buffer[0x803] = (max_bank + 1) * 8192 / 2048;
 				}
@@ -744,7 +771,7 @@ main(int argc, char **argv)
 				ipl_buffer[0x809] = 0x01;
 				ipl_buffer[0x80A] = 0x02;
 				ipl_buffer[0x80B] = 0x03;
-				ipl_buffer[0x80C] = 0x00;	/* boot loader @ $C000 */
+				ipl_buffer[0x80C] = 0x04;
 
 				/* load mode */
 				ipl_buffer[0x80D] = 0x60;
@@ -897,6 +924,11 @@ main(int argc, char **argv)
 	/* dump the bank table */
 	if (dump_seg)
 		show_seg_usage();
+
+	/* check for corrupted trampolines */
+	if (check_trampolines()) {
+		exit(1);
+	}
 
 	/* warn about 384KB hucard rom size */
 	if (cd_opt == 0 && scd_opt == 0 && padding_opt == 0) {

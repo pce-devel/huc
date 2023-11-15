@@ -65,19 +65,11 @@ VDC_DVSSR	= 19		; VRAM-SATB Block Transfer Source
 ; HuC6202 - Video Priority Controller (SGX-only)
 ;
 
-VPC_CR		= $FF:0208
-VPC_CRL		= $FF:0208
-VPC_CRH		= $FF:0209
-
-VPC_WIN1	= $FF:020A
-VPC_WIN1L	= $FF:020A
-VPC_WIN1H	= $FF:020B
-
-VPC_WIN2	= $FF:020C
-VPC_WIN2L	= $FF:020C
-VPC_WIN2H	= $FF:020D
-
-VPC_VDC_REDIR	= $FF:020E
+VPC_CR		= $FF:0208	; Defaults to $1111
+VPC_WINDOW1	= $FF:020A	; Defaults to $0000
+VPC_WINDOW2	= $FF:020C	; Defaults to $0000
+VPC_STMODE	= $FF:020E	; Defaults to $00=VDC ($01=SGX)
+VPC_UNKNOWN	= $FF:020F	; Defaults to $00
 
 
 
@@ -112,15 +104,16 @@ PSG_R8		= $FF:0808	; LFO Frequency
 PSG_R9		= $FF:0809	; LFO Control
 
 PSG_AR		= $FF:0800	; Channel Select
-PSG_MAL		= $FF:0801	; Main Amplitude Level
-PSG_FL		= $FF:0802	; Frequency Low
-PSG_FH		= $FF:0803	; Frequency High
-PSG_CR		= $FF:0804	; Control & Channel Amplitude
-PSG_LRAL	= $FF:0805	; L/R Amplitude Level
-PSG_WF		= $FF:0806	; Waveform
-PSG_NZ		= $FF:0807	; Noise
-PSG_LFO_FRQ	= $FF:0808	; LFO Frequency
-PSG_LFO_CR	= $FF:0809	; LFO Control
+PSG_VOL		= $FF:0801	; Main Amplitude Level
+PSG_FREQ	= $FF:0802	; Frequency Low
+PSG_FREQ_LO	= $FF:0802	; Frequency Low
+PSG_FREQ_HI	= $FF:0803	; Frequency High
+PSG_CTRL	= $FF:0804	; Control & Channel Amplitude
+PSG_PAN		= $FF:0805	; L/R Amplitude Level
+PSG_WAVEFORM	= $FF:0806	; Waveform
+PSG_NOISE	= $FF:0807	; Noise
+PSG_LFO_FREQ	= $FF:0808	; LFO Frequency
+PSG_LFO_CTRL	= $FF:0809	; LFO Control
 
 
 
@@ -141,14 +134,18 @@ TIMER_CR	= $FF:0C01	; Timer Control
 
 IO_PORT		= $FF:1000
 
-JOY_L		= $80
-JOY_D		= $40
-JOY_R		= $20
-JOY_U		= $10
-JOY_RUN		= $08
-JOY_SEL		= $04
-JOY_B2		= $02
-JOY_B1		= $01
+JOY_L		= $0080
+JOY_D		= $0040
+JOY_R		= $0020
+JOY_U		= $0010
+JOY_RUN		= $0008
+JOY_SEL		= $0004
+JOY_B2		= $0002
+JOY_B1		= $0001
+JOY_B3		= $0100
+JOY_B4		= $0200
+JOY_B5		= $0400
+JOY_B6		= $0800
 
 PORT_CLR	= $02
 PORT_SEL	= $01
@@ -171,38 +168,51 @@ IRQ_ACK		= $FF:1403	; Interrupt Acknowledge
 ; CDROM/ADPCM hardware registers.
 ;
 
-IFU_SCSI_CTRL	= $FF:1800	; -W : SCSI control signals out.
-IFU_SCSI_FLGS	= $FF:1800	; R- : SCSI control signals in.
-IFU_SCSI_DATA	= $FF:1801	; RW : SCSI data bus.
-IFU_SCSI_ACK	= $FF:1802
+IFU_SCSI_CTL	= $FF:1800	; _W : SCSI control signals out.
+IFU_SCSI_FLG	= $FF:1800	; R_ : SCSI control signals in.
+IFU_SCSI_DAT	= $FF:1801	; RW : SCSI data bus.
 
-IFU_IRQ_CTL	= $FF:1802
-IFU_IRQ_FLG	= $FF:1803	; flags reporting CD/ADPCM info.
+IFU_SCSI_ACK	= $FF:1802	; RW : Top bit of IFU_IRQ_MSK!
+IFU_IRQ_MSK	= $FF:1802	; RW : Interrupt mask, 0=disabled.
 
-IFU_HW_RESET	= $FF:1804
+IFU_IRQ_FLG	= $FF:1803	; R_ : Interrupt flags.
 
-IFU_SCSI_AUTO	= $FF:1808	; RO - SCSI auto-handshake read.
+IFU_HW_RESET	= $FF:1804	; _W : Set bit 1 to reset.
 
-IFU_ADPCM_LSB	= $FF:1808
-IFU_ADPCM_MSB	= $FF:1809
-IFU_ADPCM_DAT	= $FF:180A
-IFU_ADPCM_DMA	= $FF:180B
-IFU_ADPCM_FLG	= $FF:180C
-IFU_ADPCM_CTL	= $FF:180D
-IFU_ADPCM_SPD	= $FF:180E
+IFU_AUDIO_LSB	= $FF:1805	; R_ : Current CD audio.
+IFU_AUDIO_MSB	= $FF:1806	; R_ : Current CD audio.
+IFU_SUBCODE	= $FF:1807	; R_ : Current subcode.
 
-IFU_AUDIO_FADE	= $FF:180F
+IFU_SCSI_AUTO	= $FF:1808	; R_ : SCSI auto-handshake read.
 
-IFU_BRAM_LOCK	= $FF:1803
-IFU_BRAM_UNLOCK	= $FF:1807
+IFU_ADPCM_LSB	= $FF:1808	; _W : Temporary address latch.
+IFU_ADPCM_MSB	= $FF:1809	; _W : Temporary address latch.
+IFU_ADPCM_DAT	= $FF:180A	; RW : ADPCM RAM data.
+IFU_ADPCM_DMA	= $FF:180B	; RW : ADPCM DMA control (bits 0 & 1).
+IFU_ADPCM_FLG	= $FF:180C	; R- : ADPCM status.
+IFU_ADPCM_CTL	= $FF:180D	; RW : ADPCM control.
+IFU_ADPCM_SPD	= $FF:180E	; RW : ADPCM playback clock.
+
+IFU_AUDIO_FADE	= $FF:180F	; RW : IFU audio fade control/status.
+
+IFU_BRAM_LOCK	= $FF:1803	; _W :
+IFU_BRAM_UNLOCK	= $FF:1807	; _W :
 
 ; IFU interrupt bits in IFU_IRQ_CTL/IFU_IRQ_FLG
 
-IFU_INT_HALF	= $04		; ADPCM < 50% remaining.
-IFU_INT_STOP	= $08		; ADPCM finished.
-IFU_INT_SUB	= $10
+IFU_INT_HALF	= $04		; Set if ADPCM LENGTH <= $7FFF.
+IFU_INT_END	= $08		; Set if ADPCM LENGTH == 0 (when ADPCM_AUTO).
+IFU_INT_SUBC	= $10		; SUBCODE read.
 IFU_INT_MSG_IN	= $20		; SCSI MIN phase.
 IFU_INT_DAT_IN	= $40		; SCSI DIN phase.
+
+; IFU audio fade bits in IFU_AUDIO_FADE.
+
+IFU_FADE_MUTE	= $01
+IFU_FADE_TYPE	= $02		; ADPCM or CDAUDIO
+IFU_FADE_SELN	= $04		; ?
+IFU_FADE_TRIG	= $08		; Trigger a fade-out.
+IFU_FADE_TEST	= $80		; ?
 
 ; ADPCM control bits in IFU_ADPCM_CTL
 
@@ -211,8 +221,8 @@ ADPCM_SET_WR	= $02
 ADPCM_RD_CLK	= $04
 ADPCM_SET_RD	= $08
 ADPCM_SET_SZ	= $10
-ADPCM_PLAY	= $20
-ADPCM_INCR	= $40
+ADPCM_PLAY	= $20		; Start playback.
+ADPCM_AUTO	= $40		; Automatically stop when ADPCM LENGTH == 0.
 ADPCM_RESET	= $80
 
 ; ADPCM status bits in IFU_ADPCM_FLG
@@ -229,83 +239,43 @@ ADPCM_RD_BSY	= $80
 ; Arcade Card
 ;
 
-ACD_DAT0	= $FF:1A00	; 2
-ACD_ADR0	= $FF:1A02	; 2
-ACD_OFF0	= $FF:1A05	; 2
-ACD_INC0	= $FF:1A07	; 2
-ACD_CTL0	= $FF:1A09	; 1
-ACD_TRG0	= $FF:1A0A	; 1
+ACD0_DATA	= $FF:1A00	; RW : 2
+ACD0_BASE	= $FF:1A02	; RW : 3
+ACD0_INDX	= $FF:1A05	; RW : 2
+ACD0_INCR	= $FF:1A07	; RW : 2
+ACD0_CTRL	= $FF:1A09	; RW : 1
+ACD0_TRIG	= $FF:1A0A	; _W : 1
 
-ACD_D0L		= $FF:1A00	; 1
-ACD_D0H		= $FF:1A01	; 1
-ACD_A0L		= $FF:1A02	; 1
-ACD_A0M		= $FF:1A03	; 1
-ACD_A0H		= $FF:1A04	; 1
-ACD_O0L		= $FF:1A05	; 1
-ACD_O0H		= $FF:1A06	; 1
-ACD_I0L		= $FF:1A07	; 1
-ACD_I0H		= $FF:1A08	; 1
+ACD1_DATA	= $FF:1A10	; RW : 2
+ACD1_BASE	= $FF:1A12	; RW : 3
+ACD1_INDX	= $FF:1A15	; RW : 2
+ACD1_INCR	= $FF:1A17	; RW : 2
+ACD1_CTRL	= $FF:1A19	; RW : 1
+ACD1_TRIG	= $FF:1A1A	; _W : 1
 
-ACD_DAT1	= $FF:1A10	; 2
-ACD_ADR1	= $FF:1A12	; 3
-ACD_OFF1	= $FF:1A15	; 2
-ACD_INC1	= $FF:1A17	; 2
-ACD_CTL1	= $FF:1A19	; 1
-ACD_TRG1	= $FF:1A1A	; 1
+ACD2_DATA	= $FF:1A20	; RW : 2
+ACD2_BASE	= $FF:1A22	; RW : 3
+ACD2_INDX	= $FF:1A25	; RW : 2
+ACD2_INCR	= $FF:1A27	; RW : 2
+ACD2_CTRL	= $FF:1A29	; RW : 1
+ACD2_TRIG	= $FF:1A2A	; _W : 1
 
-ACD_D1L		= $FF:1A10	; 1
-ACD_D1H		= $FF:1A11	; 1
-ACD_A1L		= $FF:1A12	; 1
-ACD_A1M		= $FF:1A13	; 1
-ACD_A1H		= $FF:1A14	; 1
-ACD_O1L		= $FF:1A15	; 1
-ACD_O1H		= $FF:1A16	; 1
-ACD_I1L		= $FF:1A17	; 1
-ACD_I1H		= $FF:1A18	; 1
+ACD3_DATA	= $FF:1A30	; RW : 2
+ACD3_BASE	= $FF:1A32	; RW : 3
+ACD3_INDX	= $FF:1A35	; RW : 2
+ACD3_INCR	= $FF:1A37	; RW : 2
+ACD3_CTRL	= $FF:1A39	; RW : 1 (the bottom 7-bits are readable).
+ACD3_TRIG	= $FF:1A3A	; _W : 1
 
-ACD_DAT2	= $FF:1A20	; 2
-ACD_ADR2	= $FF:1A22	; 3
-ACD_OFF2	= $FF:1A25	; 2
-ACD_INC2	= $FF:1A27	; 2
-ACD_CTL2	= $FF:1A29	; 1
-ACD_TRG2	= $FF:1A2A	; 1
+ACD_SHIFT	= $FF:1AE0	; RW : 4 bytes
+ACD_ASL		= $FF:1AE4	; RW : 4-bit signed shift (positive is left).
+ACD_ROL		= $FF:1AE5	; RW : 4-bit signed shift (positive is left).
 
-ACD_D2L		= $FF:1A20	; 1
-ACD_D2H		= $FF:1A21	; 1
-ACD_A2L		= $FF:1A22	; 1
-ACD_A2M		= $FF:1A23	; 1
-ACD_A2H		= $FF:1A24	; 1
-ACD_O2L		= $FF:1A25	; 1
-ACD_O2H		= $FF:1A26	; 1
-ACD_I2L		= $FF:1A27	; 1
-ACD_I2H		= $FF:1A28	; 1
+ACD_VERL	= $FF:1AFD	; R_ :
+ACD_VERH	= $FF:1AFE	; R_ :
+ACD_FLAG	= $FF:1AFF	; R_ :
 
-ACD_DAT3	= $FF:1A30	; 2
-ACD_ADR3	= $FF:1A32	; 3
-ACD_OFF3	= $FF:1A35	; 2
-ACD_INC3	= $FF:1A37	; 2
-ACD_CTL3	= $FF:1A39	; 1
-ACD_TRG3	= $FF:1A3A	; 1
-
-ACD_D3L		= $FF:1A30	; 1
-ACD_D3H		= $FF:1A31	; 1
-ACD_A3L		= $FF:1A32	; 1
-ACD_A3M		= $FF:1A33	; 1
-ACD_A3H		= $FF:1A34	; 1
-ACD_O3L		= $FF:1A35	; 1
-ACD_O3H		= $FF:1A36	; 1
-ACD_I3L		= $FF:1A37	; 1
-ACD_I3H		= $FF:1A38	; 1
-
-ACD_SHIFTREG	= $FF:1AE0	; 4 bytes
-ACD_ASL_CNT	= $FF:1AE4	; positive = shift left
-ACD_ROL_CNT	= $FF:1AE5	; positive = shift left
-
-ACD_VERL	= $FF:1AFD
-ACD_VERH	= $FF:1AFE
-ACD_FLAG	= $FF:1AFF
-
-ACD_ID		= $51		; if ac_identflag = AC_IDENT, then AC in use
+ACD_ID		= $51		; If ACD_FLAG == ACD_ID, then ACD exists.
 
 
 
@@ -337,7 +307,7 @@ zpg_sys_top	= $F8:20EC
 _bp		= $F8:20EC	; base pointer
 _si		= $F8:20EE	; source address
 _di		= $F8:20F0	; destination address
-cdi_b		= $F8:20F2	; ???
+cdi_b		= $F8:20F2	; IRQ2 interrupt status (like vdc_sr)
 vdc_crl		= $F8:20F3	; shadow of VDC control register (lo-byte)
 vdc_crh		= $F8:20F4	; shadow of VDC control register (hi-byte)
 irq_vec		= $F8:20F5	; interrupt vector control mask
@@ -404,11 +374,11 @@ rndl		= $F8:2249 ; 1
 rndh		= $F8:224A ; 1
 rndm		= $F8:224B ; 1
 rndm		= $F8:224B ; 1
-scsisend	= $F8:224C ; 10	*UNDOCUMENTED* buffer for SCSI cmd send
-scsirecv	= $F8:2256 ; 10	*UNDOCUMENTED* buffer for SCSI cmd recv
-paramcpy	= $F8:2260 ; 8	*UNDOCUMENTED* stored _ax,_bx,_cx,_dx
+scsi_send_buf	= $F8:224C ; 10	*UNDOCUMENTED* buffer for SCSI cmd send
+scsi_recv_buf	= $F8:2256 ; 10	*UNDOCUMENTED* buffer for SCSI cmd recv
+parameter_buf	= $F8:2260 ; 8	*UNDOCUMENTED* stored _ax,_bx,_cx,_dx
 initialmpr	= $F8:2268 ; 1	*UNDOCUMENTED*
-;?		= $F8:2269 ; ?
+;?		= $F8:2269 ; ?	*UNDOCUMENTED* subcode
 tnomin		= $F8:226A ; 1
 tnomax		= $F8:226B ; 1
 outmin		= $F8:226C ; 1
@@ -428,14 +398,29 @@ recbase1_l	= $F8:2279 ; 1
 scsiphs		= $F8:227A ; 1	*UNDOCUMENTED* SCSI command phase
 scsists		= $F8:227B ; 1
 suberrc		= $F8:227C ; 1
-scsisns		= $F8:227D ; 1	*UNDOCUMENTED* SCSI "sense" return code
-subcode		= $F8:227E ; 1
+scsisns		= $F8:227D ; 1	*UNDOCUMENTED* unused SCSI "sense" return code
+subcode		= $F8:227E ; 1  WRITE-ONLY!
+;?		= $F8:227F ; 1	*UNDOCUMENTED* unused, never accessed!
 
 reset_hook	= $F8:2284 ; 2	*UNDOCUMENTED* joypad soft-reset hook
 color_tia	= $F8:2286 ; 8	*UNDOCUMENTED* self-mod TIA used by ex_colorcmd
 ;?		= $F8:228E ; 3	*UNDOCUMENTED* self-mod TMA/TAM used by cd_read/ad_read/ad_write
 ;?		= $F8:2291 ; 10	*UNDOCUMENTED* copy of scsisend made by cd_read (never read)
-;?		= $F8:229B ; ?
+reset_cdrom	= $F8:229B ; 1	*UNDOCUMENTED* NZ if CD reset is needed
+cdplay_mode	= $F8:229C ; 1	*UNDOCUMENTED*
+
+cplay_siz_l	= $F8:229D ; 1	*UNDOCUMENTED* ad_cplay streaming sector load size (low)
+cplay_len_l	= $F8:229E ; 1	*UNDOCUMENTED* ad_cplay streaming length (low/mid/high)
+cplay_len_m	= $F8:229F ; 1	*UNDOCUMENTED* ad_cplay streaming length (low/mid/high)
+cplay_len_h	= $F8:22A0 ; 1	*UNDOCUMENTED* ad_cplay streaming length (low/mid/high)
+cplay_lba_h	= $F8:22A1 ; 1	*UNDOCUMENTED* ad_cplay streaming sector (high/mid/low)
+cplay_lba_m	= $F8:22A2 ; 1	*UNDOCUMENTED* ad_cplay streaming sector (high/mid/low)
+cplay_lba_l	= $F8:22A3 ; 1	*UNDOCUMENTED* ad_cplay streaming sector (high/mid/low)
+bios_cd_mutex	= $F8:22A4 ; 1	*UNDOCUMENTED* NZ if BIOS is using the CD in the background
+ad_play_mode	= $F8:22A5 ; 1	*UNDOCUMENTED*
+ad_play_size	= $F8:22A6 ; 2	*UNDOCUMENTED*
+ad_play_addr	= $F8:22A8 ; 2	*UNDOCUMENTED*
+ad_play_rate	= $F8:22AA ; 1	*UNDOCUMENTED*
 
 ;mprsav		= $F8:22B5 ; 8 backups of MPR when BIOS needs major bank swapping.
 
@@ -673,7 +658,3 @@ VDC_MWR_64x64	= $0050
 
 VDC_MWR_128x32	= $0020
 VDC_MWR_128x64	= $0060
-
-;
-;
-;

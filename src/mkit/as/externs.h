@@ -76,6 +76,7 @@ extern struct t_symbol *bank_glabl[4][256];	/* latest global label in each bank 
 extern struct t_branch *branchlst;		/* first branch instruction assembled */
 extern struct t_branch *branchptr;		/* last branch instruction assembled */
 extern int xvertlong;				/* count of branches fixed in pass */
+extern char need_another_pass;			/* NZ if another pass if required */
 extern char hex[];				/* hexadecimal character buffer */
 extern int stop_pass;				/* stop the program; set by fatal_error() */
 extern int errcnt;				/* error counter */
@@ -98,7 +99,7 @@ extern int kickc_opt;				/* NZ if -kc flag on command line */
 extern int mlist_opt;				/* macro listing main flag */
 extern int xlist;				/* listing file main flag */
 extern int list_level;				/* output level */
-extern int asm_opt[8];				/* assembler option state */
+extern int asm_opt[9];				/* assembler option state */
 extern int opvaltab[6][16];
 extern int call_bank;				/* bank for .proc trampolines */
 extern int kickc_mode;				/* NZ if currently in KickC mode */

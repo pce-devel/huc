@@ -27,46 +27,32 @@ void           proc_sortlist(void);
 /* ----
  * do_call()
  * ----
- * call pseudo
+ * call pseudo - this handles both jsr and jmp!
  */
 
 void
 do_call(int *ip)
 {
-	struct t_symbol *target;
 	struct t_proc *proc;
-	int value;
 
-	/* define label */
-	labldef(0, 0, LOCATION);
+	/* define label, unless already defined in classC() instruction flow */
+	if (opflg == PSEUDO)
+		labldef(0, 0, LOCATION);
 
 	/* update location counter */
 	data_loccnt = loccnt;
 	loccnt += 3;
 
-	/* skip spaces */
-	while (isspace(prlnbuf[*ip]))
-		(*ip)++;
-
-	/* extract name */
-	if (!colsym(ip, 0)) {
-		if (symbol[0] == 0)
-			fatal_error("Syntax error!");
-		return;
-	}
-
-	/* check end of line */
-	if (!check_eol(ip))
-		return;
-
-	/* increment procedure refcnt */
-	if ((target = stlook(SYM_REF)) == NULL)
+	/* get value */
+	if (!evaluate(ip, ';', 0))
 		return;
 
 	/* generate code */
 	if (pass == LAST_PASS) {
 		/* lookup proc table */
-		if((proc = proc_look())) {
+		if ((expr_lablcnt == 1) && (complex_expr == 0) && (expr_lablptr != NULL) &&
+		    ((proc = expr_lablptr->proc) != NULL) && (proc->label == expr_lablptr)) {
+
 			/* check banks */
 			if ((newproc_opt == 0) && (bank == proc->bank)) {
 				/* same bank */
@@ -139,21 +125,33 @@ do_call(int *ip)
 
 					proc->call = value;
 				}
+
+				/* special handling for a jmp between procedures */
+				if ((newproc_opt != 0) && (optype == 1)) {
+					if (proc_ptr) {
+						/* don't save tma6 again if already in a procedure */
+						if (bank == proc->bank)
+							value = proc->org + 0xC000;
+						else
+							value = value + 3;
+					}
+				}
 			}
 		}
 		else {
-			/* target is a label, not a procedure */
-			if (target->type != DEFABS) {
-				fatal_error("Undefined destination!");
+			/* do not reference a procedure in this way! */
+			if ((expr_lablptr != NULL) && (expr_lablptr->proc != NULL) && (expr_lablptr->proc->label == expr_lablptr)) {
+				error("Illegal entry point to procedure label!");
 				return;
 			}
-
-			/* get symbol value */
-			value = target->value;
 		}
 
 		/* opcode */
-		putbyte(data_loccnt, 0x20);
+		if (optype == 0)
+			putbyte(data_loccnt, 0x20); /* JSR */
+		else
+			putbyte(data_loccnt, 0x4C); /* JMP */
+
 		putword(data_loccnt+1, value);
 
 		/* output line */
@@ -391,14 +389,22 @@ do_endp(int *ip)
 	/* define label */
 	labldef(0, 0, LOCATION);
 
+	/* sanity check */
+	if (bank != proc_ptr->bank) {
+		fatal_error(".endp/.endprocgroup is in a different bank to .proc/,procgroup!");
+		return;
+	}
+
 	/* record proc size */
 	proc_ptr->label->data_type = proc_ptr->type;
-	proc_ptr->label->data_size =
-	proc_ptr->size = loccnt - proc_ptr->base;
-
-	bank = proc_ptr->old_bank;
+	if (pass != LAST_PASS) {
+		proc_ptr->label->data_size =
+		proc_ptr->size = loccnt - proc_ptr->base;
+	}
 
 	/* restore previous bank settings */
+	bank = proc_ptr->old_bank;
+
 	if (proc_ptr->group == NULL) {
 		page     = bank_page[section][bank]   = proc_ptr->old_page;
 		loccnt   = bank_loccnt[section][bank] = proc_ptr->old_loccnt;
@@ -460,10 +466,10 @@ proc_reloc(void)
 	/* sort procedures by size (largest first) for better packing */
 	if (asm_opt[OPT_OPTIMIZE])
 		proc_sortlist();
-	else
+	else {
 		bank_free[max_bank] = 0;
-
-	new_bank = max_bank + 1;
+		new_bank = max_bank + 1;
+	}
 
 	proc_ptr = proc_first;
 
@@ -520,30 +526,36 @@ proc_reloc(void)
 
 							current = proc_ptr;
 
-							fatal_error("Not enough ROM space for procs!");
+							fatal_error("\nThere is not enough free memory for all the procedures!\n");
+
+							if (asm_opt[OPT_OPTIMIZE] == 0) {
+								printf("Procedure optimization is currently disabled, use \"-O\" to enable.\n\n");
+							}
 
 							for (i = new_bank; i < max_bank; i++) {
 								printf("BANK %02X: %d bytes free\n", i, bank_free[i]);
 								totfree += bank_free[i];
 							}
-							printf("Total free space in all banks %d\n", totfree);
+							printf("\nTotal free space in all banks %d.\n\n", totfree);
 
 							total = 0;
 							proc_ptr = proc_first;
 							while (proc_ptr) {
-								printf("Proc: %s Bank: 0x%02X Size: %d %s\n",
-									proc_ptr->name, proc_ptr->bank == PROC_BANK ? 0 : proc_ptr->bank, proc_ptr->size,
-									proc_ptr->bank == PROC_BANK && proc_ptr == current ? " ** too big **" : proc_ptr->bank == PROC_BANK ? "** unassigned **" : "");
-								if (proc_ptr->bank == PROC_BANK)
+								if (proc_ptr->bank == PROC_BANK) {
+									printf("Proc: %s Bank: 0x%02X Size: %4d %s\n",
+										proc_ptr->name, proc_ptr->bank == PROC_BANK ? 0 : proc_ptr->bank, proc_ptr->size,
+										proc_ptr->bank == PROC_BANK && proc_ptr == current ? " ** too big **" : proc_ptr->bank == PROC_BANK ? "** unassigned **" : "");
 									total += proc_ptr->size;
+								}
 								proc_ptr = proc_ptr->link;
 							}
-							printf("\nTotal bytes that didn't fit in ROM: %d\n", total);
+							printf("\nTotal bytes that didn't fit in ROM: %d\n\n", total);
 							if (totfree > total && current)
-								printf("Try segmenting the %s procedure into smaller chunks\n", current->name);
+								printf("Try splitting the \"%s\" procedure into smaller chunks.\n\n", current->name);
 							else
-								printf("There are %d bytes that won't fit into the currently available BANK space\n", total - totfree);
+								printf("There are %d bytes that won't fit into the currently available BANK space\n\n", total - totfree);
 							errcnt++;
+
 							return;
 						}
 						reloc_bank = max_bank;
@@ -820,6 +832,30 @@ proc_sortlist(void)
 
 
 /* ----
+ * list_procs()
+ * ----
+ * dump the procedure list to the listing file
+ */
+
+void
+list_procs(void)
+{
+	struct t_proc *proc_ptr = proc_first;
+
+	if ((lst_fp != NULL) && (proc_ptr != NULL) && (fprintf(lst_fp, "\nPROCEDURE LIST (in order of size):\n\n") > 0)) {
+		while (proc_ptr) {
+			if ((proc_ptr->group == NULL) && (proc_ptr->bank < RESERVED_BANK)) {
+				if (fprintf( lst_fp, "Size: $%04X, Addr: $%02X:%04X, %s %s\n", proc_ptr->size, proc_ptr->bank, proc_ptr->label->value,
+					(proc_ptr->type == P_PGROUP) ? ".procgroup" : "     .proc" , proc_ptr->name) < 0)
+					break;
+			}
+			proc_ptr = proc_ptr->link;
+		}
+	}
+}
+
+
+/* ----
  * check_trampolines()
  * ----
  * were they overwritten by other code/data?
@@ -850,7 +886,7 @@ check_trampolines(void)
 	}
 
 	if (first_bad >= 0) {
-		printf(".proc trampolines between $%04X-$%04X are overwritten by code or data!\n\n",
+		printf("Error: .proc trampolines between $%04X-$%04X are overwritten by code or data!\n\nTrampoline Bank ...\n",
 			first_bad, final_bad);
 		dump_seg = 2;
 		show_bnk_usage(call_bank);

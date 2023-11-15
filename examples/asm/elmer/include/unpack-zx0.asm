@@ -8,7 +8,7 @@
 ; The code length is 199 bytes for RAM, 249 bytes for direct-to-VRAM, plus
 ; some generic utility code.
 ;
-; Copyright John Brandwood 2021.
+; Copyright John Brandwood 2021-2022.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -22,6 +22,14 @@
 ;
 ; ***************************************************************************
 ; ***************************************************************************
+
+;
+; Configure Library ...
+;
+
+	.ifndef	SUPPORT_ACD
+SUPPORT_ACD	=	1
+	.endif
 
 
 
@@ -55,7 +63,7 @@ ZX0_WINMSK	=	($0800 - 1) >> 8	; RAM, located at $3800.
 ; Data usage is 11 bytes of zero-page, using aliases for clarity.
 ;
 
-zx0_srcptr	=	_si			; 1 word.
+zx0_srcptr	=	_bp			; 1 word.
 zx0_dstptr	=	_di			; 1 word.
 
 zx0_length	=	_ax			; 1 word.
@@ -70,10 +78,10 @@ zx0_bitbuf	=	_dl			; 1 byte.
 ;
 ; zx0_to_ram - Decompress data stored in Einar Saukas's ZX0 "classic" format.
 ;
-; Args: _si, _si_bank = _farptr to compressed data in MPR3.
+; Args: _bp, Y = _farptr to compressed data in MPR3.
 ; Args: _di = ptr to output address in RAM.
 ;
-; Uses: _si, _di, _ax, _bx, _cx, _dh !
+; Uses: _bp, _di, _ax, _bx, _cx, _dh !
 ;
 
 zx0_to_ram	.proc
@@ -81,9 +89,15 @@ zx0_to_ram	.proc
 		tma3				; Preserve MPR3.
 		pha
 
-		jsr	set_si_to_mpr3		; Map zx0_srcptr to MPR3.
+	.ifdef	_KICKC
+		jsr	set_bp_to_mpr3		; Map zx0_srcptr to MPR3.
+	.else
+		tya				; Map zx0_srcptr to MPR3.
+		beq	!+
+		tam3
+	.endif
 
-		ldx	#$40			; Initialize bit-buffer.
+!:		ldx	#$40			; Initialize bit-buffer.
 
 		ldy	#$FF			; Initialize offset to $FFFF.
 		sty	<zx0_offset + 0
@@ -222,16 +236,16 @@ zx0_to_ram	.proc
 		; Optimized handling of pointers crossing page-boundaries.
 		;
 
-.inc_off_src:	jsr	inc.h_si_mpr3
+.inc_off_src:	jsr	inc.h_bp_mpr3
 		bra	.off_skip1
 
-.inc_cp_src:	jsr	inc.h_si_mpr3
+.inc_cp_src:	jsr	inc.h_bp_mpr3
 		bra	.cp_skip1
 
 .inc_cp_dst:	inc	<zx0_dstptr + 1
 		bra	.cp_skip2
 
-.gamma_page:	jsr	inc.h_si_mpr3
+.gamma_page:	jsr	inc.h_bp_mpr3
 		bra	.gamma_skip1
 
 		;
@@ -269,10 +283,10 @@ zx0_to_ram	.proc
 ;
 ; zx0_to_vdc - Decompress data stored in Einar Saukas's ZX0 "classic" format.
 ;
-; Args: _si, _si_bank = _farptr to compressed data in MPR3.
+; Args: _bp, Y = _farptr to compressed data in MPR3.
 ; Args: _di = ptr to output address in VRAM.
 ;
-; Uses: _si, _di, _ax, _bx, _cx, _dl, _dh!
+; Uses: _bp, _di, _ax, _bx, _cx, _dl, _dh!
 ;
 
 		.procgroup			; Group code in the same bank.
@@ -280,7 +294,7 @@ zx0_to_ram	.proc
 	.if	SUPPORT_SGX
 zx0_to_sgx	.proc
 		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$E0			; Turn "clx" into a "cpx #".
+		db	$F0			; Turn "clx" into a "beq".
 		.endp
 	.endif
 
@@ -291,8 +305,15 @@ zx0_to_vdc	.proc
 		tma3				; Preserve MPR3.
 		pha
 
-		jsr	set_si_to_mpr3		; Map zx0_srcptr to MPR3.
-		jsr	set_di_to_mawr		; Map zx0_dstptr to VRAM.
+	.ifdef	_KICKC
+		jsr	set_bp_to_mpr3		; Map zx0_srcptr to MPR3.
+	.else
+		tya				; Map zx0_srcptr to MPR3.
+		beq	!+
+		tam3
+	.endif
+
+!:		jsr	set_di_to_mawr		; Map zx0_dstptr to VRAM.
 
 		lda	#$40			; Initialize bit-buffer.
 		sta	<zx0_bitbuf
@@ -442,13 +463,13 @@ zx0_to_vdc	.proc
 		; Optimized handling of pointers crossing page-boundaries.
 		;
 
-.inc_off_src:	jsr	inc.h_si_mpr3
+.inc_off_src:	jsr	inc.h_bp_mpr3
 		bra	.off_skip1
 
 .inc_lz_dst:	bsr	.next_dstpage
 		bra	.lz_skip2
 
-.inc_cp_src:	jsr	inc.h_si_mpr3
+.inc_cp_src:	jsr	inc.h_bp_mpr3
 		bra	.cp_skip1
 
 .inc_cp_dst:	bsr	.next_dstpage
@@ -468,7 +489,7 @@ zx0_to_vdc	.proc
 		sta	<zx0_dstptr + 1
 		rts
 
-.gamma_page:	jsr	inc.h_si_mpr3
+.gamma_page:	jsr	inc.h_bp_mpr3
 		bra	.gamma_skip1
 
 		;
@@ -499,3 +520,194 @@ zx0_to_vdc	.proc
 
 		.endp
 		.endprocgroup
+
+
+
+	.if	SUPPORT_ACD
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; zx0_acd_to_ram - Decompress data stored in ZX0 "classic" format.
+;
+; Args: _bp, Y = _farptr to compressed data in ACD0.
+; Args: _di = ptr to output address in RAM.
+;
+; Uses: _bp, _di, _ax, _bx, _cx, _dh !
+;
+
+zx0_acd_to_ram	.proc
+
+		lda.l	<_bp			; Map zx0_srcptr to ACD0.
+		sta	ACD0_BASE + 0
+		lda.h	<_bp
+		sta	ACD0_BASE + 1
+		sty	ACD0_BASE + 2
+
+		lda.l	#1
+		sta.l	ACD0_INCR
+		stz.h	ACD0_INCR
+		lda	#$11
+		sta	ACD0_CTRL
+
+		ldx	#$40			; Initialize bit-buffer.
+
+		ldy	#$FF			; Initialize offset to $FFFF.
+		sty.l	<zx0_offset
+		sty.h	<zx0_offset
+
+		iny				; Initialize hi-byte of length
+		sty.h	<zx0_length		; to zero.
+
+.lz_finished:	iny				; Initialize length back to 1.
+		sty.l	<zx0_length
+
+		txa				; Restore bit-buffer.
+
+		asl	a			; Copy from literals or new offset?
+		bcc	.cp_literals
+
+		;
+		; Copy bytes from new offset.
+		;
+
+.new_offset:	jsr	.get_gamma_flag		; Get offset MSB, returns CS.
+
+		cla				; Negate offset MSB and check
+		sbc.l	<zx0_length		; for zero (EOF marker).
+		beq	.got_eof
+
+		sec
+		ror	a
+		sta.h	<zx0_offset		; Save offset MSB.
+
+		lda	ACD0_DATA		; Get offset LSB.
+		ror	a			; Last offset bit starts gamma.
+		sta.l	<zx0_offset		; Save offset LSB.
+
+		lda	#-2			; Minimum length of 2?
+		bcs	.get_lz_dst
+
+		sty.l	<zx0_length		; Initialize length back to 1.
+
+		txa				; Restore bit-buffer.
+
+		bsr	.get_gamma_data		; Get length, returns CS.
+
+		lda.l	<zx0_length		; Negate lo-byte of (length+1).
+		eor	#$FF
+
+;		bne	.get_lz_dst		; N.B. Optimized to do nothing!
+;
+;		inc.h	<zx0_length		; Increment from (length+1).
+;		dec.h	<zx0_length		; Decrement because lo-byte=0.
+
+.get_lz_dst:	tay				; Calc address of partial page.
+		eor	#$FF
+		adc.l	<zx0_dstptr		; Always CS from .get_gamma_data.
+		sta.l	<zx0_dstptr
+		bcs	.get_lz_win
+
+		dec.h	<zx0_dstptr
+
+.get_lz_win:	clc				; Calc address of match.
+		adc.l	<zx0_offset		; N.B. Offset is negative!
+		sta.l	<zx0_winptr
+		lda.h	<zx0_dstptr
+		adc.h	<zx0_offset
+		sta.h	<zx0_winptr
+
+.lz_byte:	lda	[zx0_winptr], y		; Copy bytes from window into
+		sta	[zx0_dstptr], y		; decompressed data.
+		iny
+		bne	.lz_byte
+		inc.h	<zx0_dstptr
+
+		lda.h	<zx0_length		; Any full pages left to copy?
+		beq	.lz_finished
+
+		dec.h	<zx0_length		; This is rare, so slower.
+		inc.h	<zx0_winptr
+		bra	.lz_byte
+
+.got_eof:	leave				; Finished decompression!
+
+		;
+		; Copy bytes from compressed source.
+		;
+
+.cp_literals:	bsr	.get_gamma_flag		; Get length, returns CS.
+
+		ldy.l	<zx0_length		; Check if lo-byte of length
+		bne	.cp_byte		; == 0 without effecting CS.
+
+.cp_page:	dec.h	<zx0_length		; Decrement # pages to copy.
+
+.cp_byte:	lda	ACD0_DATA		; Copy bytes from compressed
+		sta	[zx0_dstptr]		; data to decompressed data.
+
+.cp_skip1:	inc.l	<zx0_dstptr
+		beq	.inc_cp_dst
+
+.cp_skip2:	dey				; Any bytes left to copy?
+		bne	.cp_byte
+
+		lda.h	<zx0_length		; Any pages left to copy?
+		bne	.cp_page		; Optimized for branch-unlikely.
+
+		iny				; Initialize length back to 1.
+		sty.l	<zx0_length
+
+		txa				; Restore bit-buffer.
+
+		asl	a			; Copy from last offset or new offset?
+		bcs	.new_offset
+
+		;
+		; Copy bytes from last offset (rare so slower).
+		;
+
+.old_offset:	bsr	.get_gamma_flag		; Get length, returns CS.
+
+		cla				; Negate the lo-byte of length.
+		sbc.l	<zx0_length
+		sec				; Ensure CS before .get_lz_dst!
+		bne	.get_lz_dst
+
+		dec.h	<zx0_length		; Decrement because lo-byte=0.
+		bra	.get_lz_dst
+
+		;
+		; Optimized handling of pointers crossing page-boundaries.
+		;
+
+.inc_cp_dst:	inc.h	<zx0_dstptr
+		bra	.cp_skip2
+
+		;
+		; Get 16-bit interlaced Elias gamma value.
+		;
+
+.get_gamma_data:asl	a			; Get next bit.
+		rol.l	<zx0_length
+.get_gamma_flag:asl	a
+		bcc	.get_gamma_data		; Loop until finished or empty.
+		bne	.gamma_done		; Bit-buffer empty?
+
+.gamma_reload:	lda	ACD0_DATA		; Reload the empty bit-buffer
+.gamma_skip1:	rol	a			; from the compressed source.
+		bcs	.gamma_done		; Finished?
+
+.get_gamma_loop:asl	a			; Get next bit.
+		rol.l	<zx0_length
+		rol.h	<zx0_length
+		asl	a
+		bcc	.get_gamma_loop		; Loop until finished or empty.
+		beq	.gamma_reload		; Bit-buffer empty?
+
+.gamma_done:	tax				; Preserve bit-buffer.
+		rts
+
+		.endp
+
+	.endif	SUPPORT_ACD

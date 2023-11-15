@@ -17,7 +17,7 @@ static struct t_branch * getbranch(int opcode_length);
 /* ----
  * classC()
  * ----
- * choose "jsr" or "call" processing for a "jsr" instruction
+ * choose "call" or "jsr/jmp" processing for a "jsr/jmp" instruction
  */
 
 void
@@ -32,12 +32,13 @@ classC(int *ip)
 
 		/* if the operand looks like a global label */
 		if (isalpha(prlnbuf[*ip]) || (prlnbuf[*ip] == '_')) {
+			if (opval == 0x40) { optype = 1; }
 			do_call(ip);
 			return;
 		}
 	}
 
-	/* default to traditional "jsr" behavior */
+	/* default to traditional "jsr" and "jmp" behavior */
 	class4(ip);
 }
 
@@ -1152,6 +1153,7 @@ branchopt(void)
 	if (xvertlong)
 		printf("Changed %d branches from short to long.\n", xvertlong);
 
-	/* do another pass if anything just changed */
-	return changed;
+	/* do another pass if anything just changed, except if KickC because */
+	/* any changes during the pass itself can change a forward-reference */
+	return ((kickc_opt) ? xvertlong : changed);
 }

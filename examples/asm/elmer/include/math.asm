@@ -19,30 +19,74 @@
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; mul8u - Simple 16-bit x 8-bit multiply.
+; mul_8x16u - Simple 16-bit x 8-bit multiply.
 ;
-; Args: _ax = Multiplier / Result
-; Args: _bl = Multiplier
+; Args: _ax = 16-bit Multiplicand / Result
+; Args: _cl =  8-bit Multiplier
 ;
 
-mul8u		.proc
+mul_8x16u:	.proc
 
 		cla				; Clear Result.
 		clx
-		lsr	<_bl			; Shift and test multiplier.
+		lsr	<_cl			; Shift and test multiplier.
 		bcc	.loop
+
 .add:		clc				; Add _ax to the Result.
-		adc	<_al
+		adc.l	<_ax
 		sax
-		adc	<_ah
+		adc.h	<_ax
 		sax
-.loop:		asl	<_al			; _ax = _ax * 2
-		rol	<_ah
-		lsr	<_bl			; Shift and test multiplier.
+
+.loop:		asl.l	<_ax			; _ax = _ax * 2
+		rol.h	<_ax
+		lsr	<_cl			; Shift and test multiplier.
 		bcs	.add
 		bne	.loop
-		sta	<_al			; Save Result.
-		stx	<_ah
+		sta.l	<_ax			; Save Result.
+		stx.h	<_ax
+
+		leave
+
+		.endp
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; mul_8x24u - Simple 24-bit x 8-bit multiply.
+;
+; Args: _ax,_bl = 24-bit Multiplicand / Result
+; Args: _cl     =  8-bit Multiplier
+;
+
+mul_8x24u:	.proc
+
+		cla				; Clear Result.
+		clx
+		cly
+		lsr	<_cl			; Shift and test multiplier.
+		bcc	.loop
+
+.add:		clc				; Add _ax to the Result.
+		adc	<_ax + 0
+		sax				; x = lo-byte, a = mi-byte
+		adc	<_ax + 1
+		sax
+		say				; y = lo-byte, a = hi-byte
+		adc	<_ax + 2
+		say
+
+.loop:		asl	<_ax + 0		; _ax = _ax * 2
+		rol	<_ax + 1
+		rol	<_ax + 2
+		lsr	<_cl			; Shift and test multiplier.
+		bcs	.add
+		bne	.loop
+		sta	<_ax + 0		; Save Result.
+		stx	<_ax + 1
+		sty	<_ax + 2
 
 		leave
 

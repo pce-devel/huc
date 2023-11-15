@@ -306,17 +306,16 @@ core_boot:	jmp	* + 3			; Allow someone to patch this.
 
 		; Now that RAM is initialized ...
 
-		jsr	core_clr_hooks		; Reset default hooks.
-
 		tma2				; Remember overlay's 1st bank
 		sta	<core_1stbank		; $00, $02, $68 or $80!
-
 	.if	USING_MPR7
 		tam7				; "CORE(not TM)" takes MPR7!
 	.endif
 
 		ldx	#$FF			; Initialize stack pointer.
 		txs
+
+		jsr	core_clr_hooks		; Reset default hooks.
 
 ;		stz	TIMER_CR		; Stop HuC6280 timer.
 ;		stz	IRQ_ACK			; Clr HuC6280 timer interrupt.
@@ -354,7 +353,7 @@ core_ramend	=	*
 		; a System Card) needs to do, and then it remaps memory to be
 		; compatible with the "CORE(not TM)" CD overlay program start.
 
-		.org	$E000 + (* & $1FFF)
+		.page	7			; This will run in MPR7.
 
 core_hw_reset:	sei				; Disable interrupts.
 		csh				; Set high-speed mode.
@@ -509,11 +508,11 @@ core_ramend	rs	0
 	.if	USING_MPR7
 		; Switch to MPR7 to run the developer's game code.
 
-		.org	$E000 + (* & $1FFF)
+		.page	7			; User code runs in MPR7.
 	.else
 		; Switch to MPR2 to run the developer's game code.
 
-		.org	$4000 + (* & $1FFF)
+		.page	2			; User code runs in MPR2.
 	.endif	USING_MPR7
 
 
@@ -546,4 +545,5 @@ DATA_BANK	=	CORE_BANK + 1 + RESERVE_BANKS
 		.data
 		.bank	DATA_BANK
 		.org	$6000
+		.opt	d+			; Force DATA labels to MPR3.
 		.code

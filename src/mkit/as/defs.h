@@ -3,9 +3,9 @@
 
 #include "version.h"
 
-#define NES_ASM_VERSION ("NES Assembler (v 3.25-" GIT_VERSION " Beta, " GIT_DATE ")")
-#define PCE_ASM_VERSION ("PC Engine Assembler (v 3.25-" GIT_VERSION ", " GIT_DATE ")")
-#define FUJI_ASM_VERSION ("Fuji Assembler for Atari (v 3.25-" GIT_VERSION " Beta, " GIT_DATE ")")
+#define NES_ASM_VERSION ("NES Assembler (" GIT_VERSION ", " GIT_DATE ")")
+#define PCE_ASM_VERSION ("PC Engine Assembler (" GIT_VERSION ", " GIT_DATE ")")
+#define FUJI_ASM_VERSION ("Fuji Assembler for Atari (" GIT_VERSION ", " GIT_DATE ")")
 
 /* path separator */
 #if defined(WIN32)
@@ -32,7 +32,7 @@
 #define PACKED_TILE	2
 
 /* line buffer length */
-#define LAST_CH_POS	158
+#define LAST_CH_POS	512
 #define SFIELD		29
 #define SBOLSZ		64
 
@@ -61,6 +61,7 @@
 #define OPT_INDPAREN	5
 #define OPT_ZPDETECT	6
 #define OPT_LBRANCH	7
+#define OPT_DATAPAGE	8
 
 /* assembler directives */
 #define P_DB		0	// .db

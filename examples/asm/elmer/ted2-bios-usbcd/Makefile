@@ -1,4 +1,4 @@
-all: ../include/ted2usbcd.pce
+all: ted2usbcd.pce
 
 include ../Make_ex.inc
 
@@ -8,8 +8,6 @@ AFLAGS ?= -raw -m -l 2 -S
 
 ted2usbcd.pce: $(SRC)
 	$(AS) $(AFLAGS) ted2usbcd.asm
-
-../include/ted2usbcd.pce: ted2usbcd.pce
 ifeq ($(CP),copy)
 	$(CP) ted2usbcd.pce ..\include\ted2usbcd.pce
 else

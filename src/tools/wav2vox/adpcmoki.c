@@ -196,7 +196,7 @@ static int16_t OkiStepTable12 [49] [16] =
 //
 
 void EncodeAdpcmOki4 (
-  int16_t *pSrc, uint8_t *pDst, int iLen, OKI_ADPCM *pState )
+  int16_t *pSrc, uint8_t *pDst, int iSrcLen, int iDstLen, OKI_ADPCM *pState )
 
 {
   // Local Variables.
@@ -228,7 +228,7 @@ void EncodeAdpcmOki4 (
 
   if (iBiasValue != 0)
   {
-    if (iLen < iBiasValue)
+    if (iSrcLen < iBiasValue)
     {
       printf("Sample too short to add/remove DC bias (need at least 200 samples). DC bias reset to zero.\n");
      iBiasValue = 0;
@@ -238,18 +238,18 @@ void EncodeAdpcmOki4 (
       for (temp = 0; temp < (iBiasValue / 2); ++temp)
       {
         *(pSrc + temp) = 0;
-        *(pSrc + iLen - 1 - temp) = 0;
+        *(pSrc + iSrcLen - 1 - temp) = 0;
       }
     }
   }
 
   // While there are samples to encode ...
 
-  while (iLen--)
+  while (iDstLen--)
   {
     // Update the DC bias.
 
-    if (iLen < (iBiasValue / 2))
+    if (iDstLen < (iBiasValue / 2))
     {
       if (dcbias > 0)
       {
@@ -266,7 +266,13 @@ void EncodeAdpcmOki4 (
 
     // Read the next signed 16-bit sample as unsigned 12-bits.
 
-    temp = ((((int) *pSrc++) + 32768) >> 4) + dcbias;
+    temp = (32768 >> 4) + dcbias;
+
+    if (iSrcLen)
+    {
+      --iSrcLen;
+      temp = ((((int) *pSrc++) + 32768) >> 4) + dcbias;
+    }
 
     if (temp > 4095)
     {
@@ -406,7 +412,7 @@ void EncodeAdpcmOki4 (
 //
 
 void DecodeAdpcmOki4 (
-  uint8_t *pSrc, int16_t *pDst, int iLen, OKI_ADPCM *pState )
+  uint8_t *pSrc, int16_t *pDst, int iSrcLen, OKI_ADPCM *pState )
 
 {
   // Local Variables.
@@ -434,7 +440,7 @@ void DecodeAdpcmOki4 (
 
   // Are we supposed to add a DC bias to this track?
 
-  if ((iBiasValue != 0) && (iLen < 200))
+  if ((iBiasValue != 0) && (iSrcLen < 200))
   {
     iBiasValue = 0;
 
@@ -445,11 +451,11 @@ void DecodeAdpcmOki4 (
 
   // While there are samples to decode ...
 
-  while (iLen--)
+  while (iSrcLen--)
   {
     // Update the DC bias.
 
-    if (iLen < (iBiasValue / 2))
+    if (iSrcLen < (iBiasValue / 2))
     {
       if (dcbias > 0)
       {
@@ -559,7 +565,7 @@ void DecodeAdpcmOki4 (
 //
 
 void EncodeAdpcmPcfx (
-  int16_t *pSrc, uint8_t *pDst, int iLen, OKI_ADPCM *pState )
+  int16_t *pSrc, uint8_t *pDst, int iSrcLen, int iDstLen, OKI_ADPCM *pState )
 
 {
   // Local Variables.
@@ -585,11 +591,17 @@ void EncodeAdpcmPcfx (
 
   // While there are samples to encode ...
 
-  while (iLen--)
+  while (iDstLen--)
   {
     // Read the next signed 16-bit sample as unsigned 12.3-bits.
 
-    temp = ((((int) *pSrc++) + 32768) >> 1);
+    temp = 32768 >> 1;
+
+    if (iSrcLen)
+    {
+      --iSrcLen;
+      temp = ((((int) *pSrc++) + 32768) >> 1);
+    }
 
     // Compute the delta from the previous sample.
 
@@ -679,7 +691,7 @@ void EncodeAdpcmPcfx (
 //
 
 void DecodeAdpcmPcfx (
-  uint8_t *pSrc, int16_t *pDst, int iLen, OKI_ADPCM *pState )
+  uint8_t *pSrc, int16_t *pDst, int iSrcLen, OKI_ADPCM *pState )
 
 {
   // Local Variables.
@@ -700,7 +712,7 @@ void DecodeAdpcmPcfx (
 
   // While there are samples to decode ...
 
-  while (iLen--)
+  while (iSrcLen--)
   {
     // Step 1 - Get the delta value.
 

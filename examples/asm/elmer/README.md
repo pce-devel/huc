@@ -14,6 +14,15 @@ This directory contains a number of example programs and utilities for developin
 * ted2-bios-usbcd
   - A modified System Card 3.0 HuCARD that runs a CD-ROM overlay uploaded through USB, rather than loading it from CD-ROM.
 
+* rom-bare-tiatest
+  - A HuCARD ROM to compare a PC Engine emulator's TIA-to-VDC cycle timing with real PC Engine console hardware.
+
+* rom-bare-vdctest
+  - A HuCARD ROM to compare a PC Engine emulator's VDC RCR interrupt handling with real PC Engine console hardware.
+
+* rom-core-okitest
+  - A HuCARD ROM to compare a PC Engine emulator's ADPCM playback flags and ADPCM write speed with real PC Engine console hardware.
+
 
 ## Using the System Card BIOS
 
@@ -49,6 +58,18 @@ The "CORE(not TM)" PC Engine library is a small and configurable set of library 
 
 * scd-core-2stage-error
   - An expansion of scd-core-2stage, using an error overlay to show a pretty screen when run with System Card 2.0 or earlier.
+
+* scd-core-fastcd
+  - An example of CD-ROM initialization, reading files and streaming ADPCM using the "fast" CD routines.
+
+* ted2-core-hwdetect
+  - An example of detecting PC Engine hardware and testing the Joypads and Mice attached to the console.
+
+* ted2-core-sdcard
+  - An example of reading and writing a file from the SDcard on a Turbo EverDrive v2.
+
+* ted2-core-gulliver
+  - An example of playing a HuVIDEO movie from Hudson's GulliverBoy CD-ROM game.
 
 
 ## Getting started with the KickC compiler

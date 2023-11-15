@@ -169,14 +169,9 @@ _load_default_font.2:
 	bne	.l3
 	inc	A
 .l3:	sta	<__al
-	lda	<__dl
-	and	#$03
-	asl	A
-	tax
-	lda	font_table,X
+	lda	#<font_1
 	sta	<__si
-	inx
-	lda	font_table,X
+	lda	#>font_1
 	sta	<__si+1
 	jmp	load_font
 

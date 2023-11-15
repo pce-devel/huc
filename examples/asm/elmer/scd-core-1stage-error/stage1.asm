@@ -55,6 +55,15 @@ CHR_0x10	=	CHR_ZERO + 16		; 1st tile # after the SAT.
 CHR_0x20	=	CHR_ZERO + 32		; ASCII ' ' CHR tile #.
 
 		;
+		; You would normally just set this in your project's local
+		; "core-config.inc", but this shows another way to achieve
+		; the same result.
+		;
+
+SUPPORT_6BUTTON	=	1			; Support 6BUTTON just to test
+SUPPORT_MOUSE	=	0			; the library still builds.
+
+		;
 		; Include the library, reading the project's configuration
 		; settings from the local "core-config.inc", if it exists.
 		;
@@ -109,13 +118,6 @@ core_main:	; Turn the display off and initialize the screen mode.
 
 		; Upload the font to VRAM.
 
-		lda	#<my_font		; Address of font data.
-		sta	<_si + 0
-		lda	#>my_font
-		sta	<_si + 1
-		lda	#^my_font
-		sta	<_si_bank
-
 		stz	<_di + 0		; Destination VRAM address.
 		lda	#>(CHR_0x10 * 16)
 		sta	<_di + 1
@@ -126,6 +128,12 @@ core_main:	; Turn the display off and initialize the screen mode.
 
 		lda	#16 + 96		; 16 graphics + 96 ASCII.
 		sta	<_bl
+
+		lda	#<my_font		; Address of font data.
+		sta	<_bp + 0
+		lda	#>my_font
+		sta	<_bp + 1
+		ldy	#^my_font
 
 		call	dropfnt8x8_vdc		; Upload font to VRAM.
 

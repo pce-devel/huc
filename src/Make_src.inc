@@ -8,10 +8,12 @@
 #
 # general stuff
 #
+GIT_VERSION := $(subst -,.,$(shell git describe --long --always))
+GIT_DATE := $(shell git show -s --format=%ci|cut -d" " -f1)
 CDEFS =
 CFLAGS = -Wall -g -O2
-CFLAGS += -DGIT_VERSION="\"$(shell git describe --long --tags --dirty --always)\""
-CFLAGS += -DGIT_DATE="\"$(shell git show -s --format=%ci|cut -d" " -f1)\""
+CFLAGS += -DGIT_VERSION="\"$(GIT_VERSION)\""
+CFLAGS += -DGIT_DATE="\"$(GIT_DATE)\""
 LDFLAGS = -g
 
 #
@@ -26,4 +28,4 @@ MAKETARG=$(ROOTDIR)/src/Maketarg.inc
 EXESUFFIX = 
 CP = cp
 RM = rm -f
-CC = gcc
+CC = cc

@@ -1,3 +1,67 @@
+New in version 4.00:
+--------------------
+
+2022-11-09:
+-----------
+
+  All HuC project tools ...
+  -------------------------
+- Bump all HuC programs up to verion number 4.00.xx after the changes.
+  The version number now comes from tags in the GIT repository, rather
+  than being defined in each individual program.
+
+  HuC changes ...
+  ---------------
+- Change the "include/pce" directory name to "include/huc" in order to
+  differentiate it from the old MagicKit library name, because the HuC
+  libraries are not compatible with pure assembly-language development.
+- Change "-v" argument to behave like HuC v3.21, which means that HuC always
+  asks PCEAS to generate a list file by default, and "-v" will output extra
+  information.
+- Change "-t" argument to warn that outputting C source to the listing file
+  will disable some code opimizations which can then cause huge C functions
+  to break because they exceed 8KBytes in length.
+- Add "-O" to the PCEAS command line to enable procedure-packing.
+- Change startup.asm to boot CD programs at $4000 (instead of $4070), and
+  add a "HuC" string into the programs so that overlays can be identified.
+- Remove HuC's 2nd (and never used) library font in order to save space.
+- Change ac_cd_xfer() to use ISOlink's file# instead of sector numbers.
+- Add lib_exclude.asm to allow a HuC project to customize library settings.
+- Add Dave Shadoff's old example project that shows how to use CD overlays.
+- Fix startup.asm when running an SCD program on System Card 2 (or lower).
+- Fix satb_update() bug.
+
+  ISOlink changes ...
+  -------------------
+- Add "-sgx" CLI parameter to put a SuperGRAFX string into CD-ROM projects.
+- Slight changes to the CLI format to allow HuC uses to name CD projects.
+- Change sector location and format of the directory information.
+- Change HuC location for patching directory info into HuC projects.
+- Change default startup location for HuC projects.
+- Add support for creating bootable PC-FX CD-ROMs.
+
+  PCEAS changes ...
+  -----------------
+- Add a list of procedure sizes to the listing file if list_level >= 2.
+- Fix PCEAS crash when it processes a .DS with a negative value.
+- Improve the error messages and information dumps when there isn't enough
+  ROM space for all of the user's HuC or ASM procedures.
+- Allow KickC to run multiple passes to resolve forward-referenced symbols.
+- Fix some data directives not expanding the ROM size during early passes.
+- Enable JMP from one procedure to another to allow tail-call optimization.
+- Enable expression evalution to be used in CALL pseudo-op.
+- Change default procedure packing to match PCEAS v3.21, use "-O" for enable
+  the newer optimized procedure packing.
+- Fix procedure relocation from breaking some code declared after procedures.
+- Support more C escape-code sequences in strings and char constants.
+- Add "-sgx" CLI parameter to put a SuperGRAFX string into CD-ROM projects.
+- Fix 6502 undocumented "lax abs,y" instruction.
+- Allow .EQU and .RSSET values to use "$xx:xxxx" to specify bank and addr.
+- Fix zero-byte procedure relocation when at the end of a bank.
+- Fix operator precedence of unary "<" and ">".
+
+
+
 New in version 3.99:
 --------------------
 
@@ -301,7 +365,7 @@ New in version 3.04:
   >> you may find that you need a temporary variable in some cases if you
   >> used a function call as a parameter to a fastcall function, such as:
   >> "poke(loc, peek(loc)+1);"
- 
+
 
 New in version 3.03:
 --------------------
@@ -368,7 +432,7 @@ interrupts
 - new CDROM library functions:
   - cd_reset(void) - resets CD player & stops motor
   - cd_pause(void) - pauses while playing music
-  - cd_playtrk(int start_trk,int end_trk,int mode) 
+  - cd_playtrk(int start_trk,int end_trk,int mode)
                       - play music either mute, normal, or repeat
                       - Note: end_trk is the first track that you
                               DON'T want to play

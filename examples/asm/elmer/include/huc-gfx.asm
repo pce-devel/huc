@@ -39,8 +39,8 @@
 ; ----
 ; copy a block of memory to VRAM
 ; ----
-; _si		= BAT memory location
-; _si_bank	= BAT bank
+; _bp		= BAT memory location
+; _bp_bank	= BAT bank
 ; _di		= VRAM base address
 ; _ax		= nb of words to copy
 ; ----
@@ -63,14 +63,19 @@ _load_vram	.proc
 		tma4
 		pha
 
-		jsr	set_si_to_mpr34
-		jsr	vdc_di_to_mawr
+		tya				; Map memory block to MPR3.
+		beq	!+
+		tam3
+		inc	a
+		tam4
+
+!:		jsr	vdc_di_to_mawr
 
 		tii	.vdc_tai, ram_tia, 8
 
-		ldx.l	<_si
+		ldx.l	<_bp
 		stx.l	ram_tia_src
-		ldy.h	<_si
+		ldy.h	<_bp
 		sty.h	ram_tia_src
 
 		lda	<_al			; length in chunks
@@ -139,8 +144,8 @@ _load_vram	.proc
 ; ----
 ; transfer a BAT to VRAM
 ; ----
-; _si		= BAT memory location
-; _si_bank	= BAT bank
+; _bp		= BAT memory location
+; _bp_bank	= BAT bank
 ; _di		= VRAM base address
 ; _al		= nb of column to copy
 ; _ah		= nb of row
@@ -152,22 +157,24 @@ _load_bat	.proc
 		tma3
 		pha
 
-		jsr	set_si_to_mpr3
+		tya				; Map memory block to MPR3.
+		beq	!+
+		tam3
 
-		ldy.l	<_si
-		stz.l	<_si
+!:		ldy.l	<_bp
+		stz.l	<_bp
 
 .line_loop:	jsr	vdc_di_to_mawr
 
 		ldx	<_al
-.tile_loop:	lda	[_si], y
+.tile_loop:	lda	[_bp], y
 		sta	VDC_DL
 		iny
-		lda	[_si], y
+		lda	[_bp], y
 		sta	VDC_DH
 		iny
 		bne	!+
-		jsr	inc.h_si_mpr3
+		jsr	inc.h_bp_mpr3
 !:		dex
 		bne	.tile_loop
 
@@ -437,8 +444,8 @@ _spr_pri:	ldy	#6
 ; ----
 ; _al		= x coordinate
 ; _ah		= y coordinate
-; _si		= string address
-; _si_bank	= string bank
+; _bp		= string address
+; _bp_bank	= string bank
 ; ----
 ; _di		= corrupted
 ; ----
@@ -447,7 +454,7 @@ _put_string	.proc
 
 		jsr	_put_xy
 
-.chr_loop:	lda	[_si]
+.chr_loop:	lda	[_bp]
 		beq	.done
 
 		clc
@@ -456,9 +463,9 @@ _put_string	.proc
 		lda	#$10
 ;		lda	#$00
 		sta	VDC_DH
-		inc.l	<_si
+		inc.l	<_bp
 		bne	.chr_loop
-		inc.h	<_si
+		inc.h	<_bp
 		bra	.chr_loop
 
 .done:		leave

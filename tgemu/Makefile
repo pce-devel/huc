@@ -28,6 +28,7 @@ clean:
 	rm -f $(OBJS) tgemu
 	find ../test -type f -name '*.s'   -delete
 	find ../test -type f -name '*.pce' -delete
+	find ../test -type f -name '*.lst' -delete
 	find ../test -type f -name '*.sym' -delete
 
-CC = gcc
+CC = cc

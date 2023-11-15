@@ -47,8 +47,7 @@
 BAT_LINE	=	64
 BAT_SIZE	=	64 * 32
 SAT_ADDR	=	BAT_SIZE		; SAT takes 16 tiles of VRAM.
-CHR_ZERO	=	BAT_SIZE / 16		; 1st tile # after the BAT.
-CHR_0x10	=	CHR_ZERO + 16		; 1st tile # after the SAT.
+CHR_ZERO	=	$0200			; Default System Card Font.
 CHR_0x20	=	CHR_ZERO + 32		; ASCII ' ' CHR tile #.
 
 		;

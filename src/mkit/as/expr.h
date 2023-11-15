@@ -35,8 +35,9 @@
 #define OP_VRAM		26
 #define OP_PAL		27
 #define OP_SIZEOF	28
-#define OP_dotLO	29
-#define OP_dotHI	30
+#define OP_LINEAR	29
+#define OP_dotLO	30
+#define OP_dotHI	31
 
 /* operator priority */
 const int op_pri[] = {
@@ -48,7 +49,7 @@ const int op_pri[] = {
 	 5 /* <=    */,  5 /* >     */,  5 /* >=    */,
 	11 /* DEFIN.*/, 11 /* HIGH  */, 11 /* LOW   */, 11 /* PAGE  */,
 	11 /* BANK  */, 11 /* VRAM  */, 11 /* PAL   */, 11 /* SIZEOF*/,
-	 6 /* dotLO */,  6 /* dotHI */
+	11 /* LINEAR*/,  6 /* dotLO */,  6 /* dotHI */
 };
 
 /* second argument */
@@ -61,7 +62,7 @@ const int op_2nd[] = {
 	 1 /* <=    */,  1 /* >     */,  1 /* >=    */,
 	 0 /* DEFIN.*/,  0 /* HIGH  */,  0 /* LOW   */,  0 /* PAGE  */,
 	 0 /* BANK  */,  0 /* VRAM  */,  0 /* PAL   */,  0 /* SIZEOF*/,
-	 0 /* dotLO */,  0 /* dotHI */
+	 0 /* LINEAR*/,  0 /* dotLO */,  0 /* dotHI */
 };
 
 unsigned int op_stack[64] = {
@@ -77,11 +78,14 @@ struct t_symbol *expr_lablptr;	/* pointer to the last-referenced label */
 int expr_lablcnt;		/* number of label seen in an expression */
 int expr_valbank;		/* last-defined bank# in an expression */
 int complex_expr;		/* NZ if an expression contains operators */
-const char *keyword[8] = {	/* predefined functions */
+const char *keyword[9] = {	/* predefined functions */
 	"\7DEFINED",
-	"\4HIGH", "\3LOW",
-	"\4PAGE", "\4BANK",
-	"\4VRAM", "\3PAL",
-	"\6SIZEOF"
+	"\4HIGH",
+	"\3LOW",
+	"\4PAGE",
+	"\4BANK",
+	"\4VRAM",
+	"\3PAL",
+	"\6SIZEOF",
+	"\6LINEAR"
 };
-
