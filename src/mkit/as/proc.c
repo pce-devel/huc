@@ -67,6 +67,9 @@ do_call(int *ip)
 						/* don't increase ROM size until we need a trampoline */
 						if (call_bank > bank_limit) {
 							fatal_error("Not enough ROM space for proc trampolines!");
+							if (asm_opt[OPT_OPTIMIZE] == 0) {
+								printf("Procedure optimization is currently disabled, use \"-O\" to enable.\n\n");
+							}
 							return;
 						}
 						max_bank = call_bank;
@@ -77,6 +80,9 @@ do_call(int *ip)
 						/* check that the new trampoline won't overrun the bank */
 						if (((call_ptr + 17) & 0xE000) != (call_1st & 0xE000)) {
 							error("No more space in bank for .proc trampoline!");
+							if (asm_opt[OPT_OPTIMIZE] == 0) {
+								printf("Procedure optimization is currently disabled, use \"-O\" to enable.\n\n");
+							}
 							return;
 						}
 
