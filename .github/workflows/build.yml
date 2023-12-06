@@ -2,7 +2,8 @@ name: build
 
 # Github Actions aren't supporting anchors yet
 # upvote here https://github.com/github/feedback/discussions/4501
-
+#
+# See https://github.com/marketplace/actions/setup-xcode-version
 on: 
   push:
   pull_request:
@@ -19,11 +20,13 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-18.04, ubuntu-20.04, macos-11, macos-12, windows-2022]
+        os: [ubuntu-20.04, macos-11, macos-12, windows-2022]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Check out code from the repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - name: Build on Linux
         if: startsWith(matrix.os, 'ubuntu')
         run: |
@@ -38,8 +41,8 @@ jobs:
       - name: Build on Mac
         if: startsWith(matrix.os, 'macos')
         run: |
-          brew install make # need gnumake
-          gmake
+          sudo xcode-select -s "/Applications/Xcode_13.2.1.app"
+          make
           echo Build Complete
       - name: Archive toolchain
         uses: actions/upload-artifact@v3
@@ -50,12 +53,12 @@ jobs:
             examples/**/*.iso
             examples/**/*.pce
             examples/**/*.sgx
-            tgemu/tgemu
+            tgemu/tgemu*
 
   test:
     strategy:
       matrix:
-        os: [ubuntu-18.04, ubuntu-20.04, macos-11, macos-12, windows-2022]
+        os: [ubuntu-20.04, macos-11, macos-12, windows-2022]
     runs-on: ${{ matrix.os }}
     needs: build
     steps:
@@ -73,7 +76,6 @@ jobs:
       - name: Run tests on Linux
         if: startsWith(matrix.os, 'ubuntu')
         run: |
-          sudo apt-get update && sudo apt-get install -y dos2unix
           make check
           make test
           echo Test Complete
@@ -83,7 +85,7 @@ jobs:
         with:
           msystem: MINGW64
           update: true
-          install: coreutils make git dos2unix
+          install: coreutils make git
       - name: Run tests on Windows
         if: startsWith(matrix.os, 'windows')
         shell: msys2 {0}
@@ -94,9 +96,8 @@ jobs:
       - name: Run tests on Mac
         if: startsWith(matrix.os, 'macos')
         run: |
-          brew install make md5sha1sum dos2unix # need gnumake and md5sum to run make check
-          gmake check
-          gmake test
+          make check
+          make test
           echo Build Complete
 
   package:
@@ -108,7 +109,7 @@ jobs:
     steps:
       - name: Check out code from the repository
         uses: actions/checkout@v3
-      - name: Get previoulsy built artifacts
+      - name: Get previously built artifacts
         uses: actions/download-artifact@v3
         with:
           name: toolchain-${{ matrix.os }}
@@ -126,8 +127,7 @@ jobs:
       - name: Package ${{ matrix.os }}
         if: startsWith(matrix.os, 'macos')
         run: |
-          brew install make # need gnumake
-          gmake package
+          make package
           echo Package Complete
       - name: Archive package
         uses: actions/upload-artifact@v3
@@ -148,11 +148,11 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: package-windows-2022
-      - name: Get previoulsy built artifacts macos
+      - name: Get previously built artifacts macos
         uses: actions/download-artifact@v3
         with:
           name: package-macos-12
-      - name: Get previoulsy built artifacts linux
+      - name: Get previously built artifacts linux
         uses: actions/download-artifact@v3
         with:
           name: package-ubuntu-20.04
