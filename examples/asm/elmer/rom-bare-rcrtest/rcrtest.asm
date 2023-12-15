@@ -1,9 +1,9 @@
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; vdctest.asm
+; rcrtest.asm
 ;
-; VDC tester HuCARD example of using the basic HuCARD startup library code.
+; RCR tester HuCARD example of using the basic HuCARD startup library code.
 ;
 ; Copyright John Brandwood 2022.
 ;
@@ -207,7 +207,7 @@ bare_main:	; Turn the display off and initialize the screen mode.
 
 		; Loop around updating the display each frame.
 
-		PRINTF	"\e<\eX1\eY5\eP2****PC ENGINE VDC IRQ TEST****\eP0\eX1\eY7\x1E\x1F\eP2:Change Delay\eP0 SEL\eP2:Resolution\eP0"
+		PRINTF	"\e<\eX1\eY5\eP2****PC ENGINE RCR IRQ TEST****\eP0\eX1\eY7\x1E\x1F\eP2:Change Delay\eP0 SEL\eP2:Resolution\eP0"
 
 		lda	#1			; Delay first VBLANK cycles
 		sta	irq_cnt			; update.
