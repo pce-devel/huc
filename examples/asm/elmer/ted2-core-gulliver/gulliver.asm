@@ -135,6 +135,9 @@ SUPPORT_TIMING	=	1	; Include the HuVIDEO timing information.
 ;
 
 		.zp
+
+which_video:	ds	1
+
 		.bss
 		.code
 
@@ -241,12 +244,13 @@ core_main:	; Turn the display off and initialize the screen mode.
 	.endif
 
 .sign_on:	PRINTF	"\eX3\eY22GulliverBoy HuVIDEO Player"
-		PRINTF	"\eX35\eY22GulliverBoy HuVIDEO Player"
 
 		PRINTF	"\eX2\eY23Buffer used when refill: $xx"
 		PRINTF	"\eX2\eY24Buffer used refill done: $xx"
 		PRINTF	"\eX2\eY25Buffer refill time  1st: $xx"
 		PRINTF	"\eX2\eY26Buffer refill time rest: $xx"
+
+		PRINTF	"\eX35\eY22GulliverBoy HuVIDEO Player"
 
 		PRINTF	"\eX34\eY23Buffer used when refill: $xx"
 		PRINTF	"\eX34\eY24Buffer used refill done: $xx"
@@ -262,11 +266,30 @@ core_main:	; Turn the display off and initialize the screen mode.
 		beq	!+			; Are we ready?
 		jmp	.main_loop
 
+!:		lda	#$25			; Default to NOT Gulliver CD!
+
+		ldx	tnomax			; Gulliver CD has 10 BCD tracks.
+		cpx	#$10
+		bne	!+
+		ldx	outmin			; Gulliver CD has 73 BCD minutes.
+		cpx	#$73
+		bne	!+
+		ldx	outsec			; Gulliver CD has 23 BCD seconds.
+		cpx	#$23
+		bne	!+
+		ldx	outfrm			; Gulliver CD has 53 BCD frames.
+		cpx	#$53
+		bne	!+
+
+;		lda	#$24			; Star Boy Movie.
+		lda	#$22			; Title Movie
+
 		; Play the "GulliverBoy" title HuVIDEO.
 
-!:
-;		lda	#$24			; Star Boy
-		lda	#$22			; Title Movie
+!:		sta	<which_video		; Which video to play?
+		cmp	#$25			; Skip HuVIDEO if this is not
+		bcs	!+			; the GulliverBoy CD.
+
 		sta	<_al
 		call	play_huvideo
 		beq	!+			; Are we ready?
@@ -291,11 +314,16 @@ core_main:	; Turn the display off and initialize the screen mode.
 		sta	<_bl			; complete, but will always end
 		lda	#3			; just after the sector has been
 		sta	<_dh			; read.
-		lda	gulliver_lba + $22 * 4 + 0
+
+		lda	<which_video		; Which video to play?
+		asl	a
+		asl	a
+		tax
+		lda	gulliver_lba + 0, x
 		sta	<_dl
-		lda	gulliver_lba + $22 * 4 + 1
+		lda	gulliver_lba + 1, x
 		sta	<_ch
-		lda	gulliver_lba + $22 * 4 + 2
+		lda	gulliver_lba + 2, x
 		sta	<_cl
 		stz	irq_cnt
 	.if	CDROM
@@ -314,12 +342,20 @@ core_main:	; Turn the display off and initialize the screen mode.
 		sta	<_bl			; time taken for the reads is
 		lda	#3			; how long it takes to read
 		sta	<_dh			; 150KB.
-		lda	gulliver_lba + $22 * 4 + 0
-		inc	a
+
+		lda	<which_video		; Which video to play?
+		asl	a
+		asl	a
+		tax
+		clc
+		lda	gulliver_lba + 0, x
+		adc	#1
 		sta	<_dl
-		lda	gulliver_lba + $22 * 4 + 1
+		lda	gulliver_lba + 1, x
+		adc	#0
 		sta	<_ch
-		lda	gulliver_lba + $22 * 4 + 2
+		lda	gulliver_lba + 2, x
+		adc	#0
 		sta	<_cl
 		stz	irq_cnt
 	.if	CDROM
@@ -529,6 +565,16 @@ gulliver_lba:	dd	$015002			; $00 Game Start
 		dd	$02D858			; $22 Title Movie
 		dd	$02EF9C			; $23 Baddie Test?
 		dd	$02F4B0			; $24 Star Boy
+
+		; Sector # for read-speed test if not a GulliverBoy CD.
+		;
+		; This is the sector # of the Sherlock Holmes Consulting
+		; Detective (USA) Intro movie, used as a quick-and-dirty
+		; test that ICOM didn't do anything clever with the data
+		; encoding on the CD itself in order to get that game's
+		; 120KB/s unbuffered playback rate.
+
+		dd	$000F26 - 1		; $25 LBA for 2nd video frame
 
 
 
