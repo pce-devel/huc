@@ -224,11 +224,13 @@ inc.h_di_mpr4:	inc.h	<_di			; Increment hi-byte of _di.
 ;		tya
 ;		rts
 ;
-; N.B. This costs 36 bytes, and takes 82 cycles vs 18 for the trampoline
+; N.B. This costs 32 bytes, and takes 82 cycles vs 18 for the trampoline
 ;      code (when you exclude preserving YA in zero-page).
 ;
 ; N.B. This is NOT re-entrant, and must NOT be used in an IRQ handler if
 ;      _temp is not saved and restored!
+;
+; N.B. This was written as an excerise, and I wouldn't recommend using it!
 ;
 
 	.if	0
@@ -264,3 +266,131 @@ far_call:	sta.l	<_bp			; Preserve YA registers as
 		rts				; Jump to routine.
 
 	.endif
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; Far-call a function in another bank.
+;
+; This is compatible with PCEAS's "-newproc" procedure calls, but avoids
+; generating a 10-byte procedure trampoline.
+;
+; To use this ...
+;
+;  brk
+;  tst #bank( myfunc ), myfunc - 1
+;
+; The "TST" instruction itself is skipped and NOT executed after the call,
+; it only exists to make things easier to read in a listing/debugger.
+;
+; The called .PROC routine must exit with "jmp leave_proc" and not "rts".
+;
+; leave_proc:	pla
+;		tam6
+;		tya
+;		rts
+;
+; N.B. This costs 45 bytes, and takes 103 cycles (or 84 on HuCARD) vs 18 for
+;      the trampoline code (when you exclude preserving YA in zero-page).
+;
+; N.B. This is NOT re-entrant, and must NOT be used in an IRQ handler if
+;      _temp is not saved and restored!
+;
+; N.B. This was written as an excerise, and I wouldn't recommend using it!
+;
+
+	.if	0
+
+irq2_handler:	phx				; Preserve X register
+		tsx				;
+		tst	#$10, $2102, x		; Is the B flag set?
+		beq	.got_irq2		;
+		plx				; Restore X register.
+
+		; Handle interrupt as BRK.
+
+.got_brk:	plp				; Restore interrupt flag.
+
+		sta.l	<_bp			; Preserve YA registers as
+		sty.h	<_bp			; an address parameter.
+
+		pla				; Get return address lo-byte.
+		sta.l	<_temp
+		clc				; Skip the far_call()
+		adc	#2			; address parameter.
+		tay
+
+		pla				; Get return address hi-byte.
+		sta.h	<_temp
+		adc	#0
+		pha				; Put updated return address.
+		phy
+
+		tma6				; Preserve MPR6.
+		pha
+
+		ldy	#2			; Push far_call() addr.
+		lda	[_temp], y
+		pha
+		dey
+		lda	[_temp], y
+		pha
+
+		lda	[_temp]			; Read far_call() bank.
+		tam6
+
+		rts				; Jump to routine.
+
+		; Handle interrupt as IRQ2.
+
+.got_irq2:	plx				; Process as an interrupt.
+		; ...
+
+	.endif
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; Far-call a function in another bank.
+;
+; This is a potential alternative procedure call trampoline that uses only 10
+; bytes of common memory per bank of procedures, instead of 10 bytes for each
+; individual procedure call, BUT it uses the X register as a procedure-index,
+; and it needs a table of addresses at the end of every procedure bank.
+;
+; To use this ...
+;
+;  ldx #procedure-index
+;  jsr far_call_nn
+;
+; The called .PROC routine must exit with "jmp leave_proc" and not "rts".
+;
+; leave_proc:	pla
+;		tam6
+;		tya
+;		rts
+;
+; N.B. This costs 21 cycles vs 18 for the .newproc trampoline code (when you
+;      exclude preserving YA in zero-page).
+;
+; N.B. This was written as an excerise, and definitely not for HuC!
+;
+
+	.if	0
+
+far_call_nn:
+;		sta.l	<_bp			; 4 Preserve YA registers as
+;		sty.h	<_bp			; 4 an address parameter.
+
+		tma6				; 4 Preserve MPR6.
+		pha				; 3
+
+		lda	#bank_number		; 2
+		tam6				; 5
+		jmp	[$DF00, x]		; 7
+
+	.endif					; 21
