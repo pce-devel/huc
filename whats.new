@@ -34,7 +34,7 @@ New in version 4.00:
   ISOlink changes ...
   -------------------
 - Add "-sgx" CLI parameter to put a SuperGRAFX string into CD-ROM projects.
-- Slight changes to the CLI format to allow HuC uses to name CD projects.
+- Slight changes to the CLI format to allow HuC users to name CD projects.
 - Change sector location and format of the directory information.
 - Change HuC location for patching directory info into HuC projects.
 - Change default startup location for HuC projects.
@@ -49,7 +49,7 @@ New in version 4.00:
 - Allow KickC to run multiple passes to resolve forward-referenced symbols.
 - Fix some data directives not expanding the ROM size during early passes.
 - Enable JMP from one procedure to another to allow tail-call optimization.
-- Enable expression evalution to be used in CALL pseudo-op.
+- Enable expression evaluation to be used in CALL pseudo-op.
 - Change default procedure packing to match PCEAS v3.21, use "-O" for enable
   the newer optimized procedure packing.
 - Fix procedure relocation from breaking some code declared after procedures.
