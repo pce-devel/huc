@@ -14,11 +14,14 @@ This directory contains a number of example programs and utilities for developin
 * ted2-bios-usbcd
   - A modified System Card 3.0 HuCARD that runs a CD-ROM overlay uploaded through USB, rather than loading it from CD-ROM.
 
+* rom-bare-buftest
+  - A HuCARD ROM to compare a PC Engine emulator's buffered VDC reading with real PC Engine console hardware.
+
+* rom-bare-rcrtest
+  - A HuCARD ROM to compare a PC Engine emulator's RCR interrupt handling with real PC Engine console hardware.
+
 * rom-bare-tiatest
   - A HuCARD ROM to compare a PC Engine emulator's TIA-to-VDC cycle timing with real PC Engine console hardware.
-
-* rom-bare-vdctest
-  - A HuCARD ROM to compare a PC Engine emulator's VDC RCR interrupt handling with real PC Engine console hardware.
 
 * rom-core-okitest
   - A HuCARD ROM to compare a PC Engine emulator's ADPCM playback flags and ADPCM write speed with real PC Engine console hardware.
