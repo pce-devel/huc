@@ -17,6 +17,9 @@ This directory contains a number of example programs and utilities for developin
 * rom-bare-buftest
   - A HuCARD ROM to compare a PC Engine emulator's buffered VDC reading with real PC Engine console hardware.
 
+* rom-bare-mwrtest
+  - A HuCARD ROM to compare a PC Engine emulator's VDC VRAM read/write timings with real PC Engine console hardware.
+
 * rom-bare-rcrtest
   - A HuCARD ROM to compare a PC Engine emulator's RCR interrupt handling with real PC Engine console hardware.
 
