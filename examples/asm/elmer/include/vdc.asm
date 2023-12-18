@@ -587,18 +587,18 @@ init_240x208	.proc
 		call	clear_vram_sgx
 	.endif
 
-		lda	#<.mode_240x224		; Disable BKG & SPR layers but
+		lda	#<.mode_240x208		; Disable BKG & SPR layers but
 		sta.l	<_bp			; enable RCR & VBLANK IRQ.
-		lda	#>.mode_240x224
+		lda	#>.mode_240x208
 		sta.h	<_bp
 
 	.if	SUPPORT_SGX
 		call	sgx_detect		; Are we really on an SGX?
 		beq	!+
-		ldy	#^.mode_240x224		; Set SGX 1st, with no VBL.
+		ldy	#^.mode_240x208		; Set SGX 1st, with no VBL.
 		call	set_mode_sgx
 	.endif
-!:		ldy	#^.mode_240x224		; Set VDC 2nd, VBL allowed.
+!:		ldy	#^.mode_240x208		; Set VDC 2nd, VBL allowed.
 		call	set_mode_vdc
 
 		call	wait_vsync		; Wait for the next VBLANK.
@@ -607,7 +607,7 @@ init_240x208	.proc
 
 		; A reduced 240x208 screen to save VRAM.
 
-.mode_240x224:	db	$80			; VCE Control Register.
+.mode_240x208:	db	$80			; VCE Control Register.
 		db	VCE_CR_5MHz		; Video Clock
 
 		db	VDC_MWR			; Memory-access Width Register
