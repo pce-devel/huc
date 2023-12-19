@@ -864,6 +864,22 @@ table_slo:	dwl	test_name1
 		dwl	test_name9
 		dwl	test_name10
 		dwl	test_name11
+		dwl	test_name12
+		dwl	test_name13
+		dwl	test_name14
+		dwl	test_name15
+		dwl	test_name16
+		dwl	test_name17
+		dwl	test_name18
+		dwl	test_name19
+		dwl	test_name20
+		dwl	test_name21
+		dwl	test_name22
+		dwl	test_name23
+		dwl	test_name24
+		dwl	test_name25
+		dwl	test_name26
+		dwl	test_name27
 
 table_shi:	dwh	test_name1
 		dwh	test_name2
@@ -876,6 +892,22 @@ table_shi:	dwh	test_name1
 		dwh	test_name9
 		dwh	test_name10
 		dwh	test_name11
+		dwh	test_name12
+		dwh	test_name13
+		dwh	test_name14
+		dwh	test_name15
+		dwh	test_name16
+		dwh	test_name17
+		dwh	test_name18
+		dwh	test_name19
+		dwh	test_name20
+		dwh	test_name21
+		dwh	test_name22
+		dwh	test_name23
+		dwh	test_name24
+		dwh	test_name25
+		dwh	test_name26
+		dwh	test_name27
 
 table_alo:	dwl	test_code1
 		dwl	test_code2
@@ -888,6 +920,22 @@ table_alo:	dwl	test_code1
 		dwl	test_code9
 		dwl	test_code10
 		dwl	test_code11
+		dwl	test_code12
+		dwl	test_code13
+		dwl	test_code14
+		dwl	test_code15
+		dwl	test_code16
+		dwl	test_code17
+		dwl	test_code18
+		dwl	test_code19
+		dwl	test_code20
+		dwl	test_code21
+		dwl	test_code22
+		dwl	test_code23
+		dwl	test_code24
+		dwl	test_code25
+		dwl	test_code26
+		dwl	test_code27
 
 table_ahi:	dwh	test_code1
 		dwh	test_code2
@@ -900,6 +948,22 @@ table_ahi:	dwh	test_code1
 		dwh	test_code9
 		dwh	test_code10
 		dwh	test_code11
+		dwh	test_code12
+		dwh	test_code13
+		dwh	test_code14
+		dwh	test_code15
+		dwh	test_code16
+		dwh	test_code17
+		dwh	test_code18
+		dwh	test_code19
+		dwh	test_code20
+		dwh	test_code21
+		dwh	test_code22
+		dwh	test_code23
+		dwh	test_code24
+		dwh	test_code25
+		dwh	test_code26
+		dwh	test_code27
 
 table_len:	db	test_size1
 		db	test_size2
@@ -912,6 +976,22 @@ table_len:	db	test_size1
 		db	test_size9
 		db	test_size10
 		db	test_size11
+		db	test_size12
+		db	test_size13
+		db	test_size14
+		db	test_size15
+		db	test_size16
+		db	test_size17
+		db	test_size18
+		db	test_size19
+		db	test_size20
+		db	test_size21
+		db	test_size22
+		db	test_size23
+		db	test_size24
+		db	test_size25
+		db	test_size26
+		db	test_size27
 
 		; 1st test - Baseline, should take 5 cycles.
 
@@ -987,6 +1067,138 @@ test_code11:	st0	#VDC_MARR
 		st2	#$70
 		st0	#VDC_VRR
 test_size11	=	* - test_code11
+
+		; 12th test - Can you sync to VDC clock?
+
+test_name12:	STRING	"  nop\n  st2 #$00\n"
+test_code12:	nop
+		st2	#0
+test_size12	=	* - test_code12
+
+		; 13th test - Can you sync to VDC clock?
+
+test_name13:	STRING	"  sxy\n  st2 #$00\n"
+test_code13:	sxy
+		st2	#0
+test_size13	=	* - test_code13
+
+		; 14th test - Can you sync to VDC clock?
+
+test_name14:	STRING	"  nop\n  nop\n  st2 #$00\n"
+test_code14:	nop
+		nop
+		st2	#0
+test_size14	=	* - test_code14
+
+		; 15th test - Can you sync to VDC clock?
+
+test_name15:	STRING	"  nop\n  sxy\n  st2 #$00\n"
+test_code15:	nop
+		sxy
+		st2	#0
+test_size15	=	* - test_code15
+
+		; 16th test - Can you sync to VDC clock?
+
+test_name16:	STRING	"  nop\n  nop\n  nop\n  st2 #$00\n"
+test_code16:	nop
+		nop
+		nop
+		st2	#0
+test_size16	=	* - test_code16
+
+		; 17th test - Can you sync to VDC clock?
+
+test_name17:	STRING	"  nop\n  nop\n  sxy\n  st2 #$00\n"
+test_code17:	nop
+		nop
+		sxy
+		st2	#0
+test_size17	=	* - test_code17
+
+		; 18th test - Can you sync to VDC clock?
+
+test_name18:	STRING	"  nop\n  sxy\n  sxy\n  st2 #$00\n"
+test_code18:	nop
+		sxy
+		sxy
+		st2	#0
+test_size18	=	* - test_code18
+
+		; 19th test - Can you sync to VDC clock?
+
+test_name19:	STRING	"  sxy\n  sxy\n  sxy\n  st2 #$00\n"
+test_code19:	sxy
+		sxy
+		sxy
+		st2	#0
+test_size19	=	* - test_code19
+
+		; 20th test - Can you sync to VDC clock?
+
+test_name20:	STRING	"  nop\n  lda $0003\n"
+test_code20:	nop
+		lda	VDC_DH
+test_size20	=	* - test_code20
+
+		; 21st test - Can you sync to VDC clock?
+
+test_name21:	STRING	"  sxy\n  lda $0003\n"
+test_code21:	sxy
+		lda	VDC_DH
+test_size21	=	* - test_code21
+
+		; 22nd test - Can you sync to VDC clock?
+
+test_name22:	STRING	"  nop\n  nop\n  lda $0003\n"
+test_code22:	nop
+		nop
+		lda	VDC_DH
+test_size22	=	* - test_code22
+
+		; 23rd test - Can you sync to VDC clock?
+
+test_name23:	STRING	"  nop\n  sxy\n  lda $0003\n"
+test_code23:	nop
+		sxy
+		lda	VDC_DH
+test_size23	=	* - test_code23
+
+		; 24th test - Can you sync to VDC clock?
+
+test_name24:	STRING	"  nop\n  nop\n  nop\n  lda $0003\n"
+test_code24:	nop
+		nop
+		nop
+		lda	VDC_DH
+test_size24	=	* - test_code24
+
+		; 25th test - Can you sync to VDC clock?
+
+test_name25:	STRING	"  nop\n  nop\n  sxy\n  lda $0003\n"
+test_code25:	nop
+		nop
+		sxy
+		lda	VDC_DH
+test_size25	=	* - test_code25
+
+		; 26th test - Can you sync to VDC clock?
+
+test_name26:	STRING	"  nop\n  sxy\n  sxy\n  lda $0003\n"
+test_code26:	nop
+		sxy
+		sxy
+		lda	VDC_DH
+test_size26	=	* - test_code26
+
+		; 27th test - Can you sync to VDC clock?
+
+test_name27:	STRING	"  sxy\n  sxy\n  sxy\n  lda $0003\n"
+test_code27:	sxy
+		sxy
+		sxy
+		lda	VDC_DH
+test_size27	=	* - test_code27
 
 
 
