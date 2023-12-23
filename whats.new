@@ -59,7 +59,8 @@ New in version 4.00:
 - Allow .EQU and .RSSET values to use "$xx:xxxx" to specify bank and addr.
 - Fix zero-byte procedure relocation when at the end of a bank.
 - Fix operator precedence of unary "<" and ">".
-
+- Add "linear(label_name)" operator to get the label's 32-bit address-offset
+  from the start of the ROM/SCD/CD memory.
 
 
 New in version 3.99:
@@ -194,6 +195,7 @@ New in version 3.99:
 - Add "-pad" to PCEAS to pad out HuCard ROM images to next power-of-2 size.
 - Change HuC to use "-raw" and "-pad" options to avoid 384KB HuCard problem.
 - Add warning whenever a 384KB HuCard image is created to highlight problem.
+- Allow unary <,>,^ in PCEAS as synonyms for low(),high(),bank().
 
 
 New in version 3.21:
