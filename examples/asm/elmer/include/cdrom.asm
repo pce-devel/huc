@@ -1684,7 +1684,9 @@ cdr_init_disc	.proc
 
 ;		; Check that the CD-ROM IFU is present.
 ;		;
-;		; N.B. The System Card does not check this!
+;		; N.B. The System Card does not check the IO-PORT!
+;		;
+;		; N.B. The Turbo Everdrive Pro does not emulate this!
 ;
 ;		ldy	#CDERR_NO_CDIFU
 ;		lda	IO_PORT
