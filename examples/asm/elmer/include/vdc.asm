@@ -26,13 +26,19 @@
 ;
 ; Choose how much to transfer to VRAM in a single chunk, normally 16-bytes.
 ;
-; 32-byte TIA takes 270/364 cycles in 5MHz, 242/312 cycles in 7MHz. (8.44 cycles-per-byte best-case at 5MHz.)
-; 24-byte TIA takes 210/298 cycles in 5MHz, 186/256 cycles in 7MHz. (8.75 cycles-per-byte best-case at 5MHz.)
-; 16-byte TIA takes 142/234 cycles in 5MHz, 128/200 cycles in 7MHz. (8.88 cycles-per-byte best-case at 5MHz.)
+; The cycle timings for a TIA-to-VRAM depend upon how the VDC's MWR CPU slots
+; line up to the CPU's writes, and how long the VDC has to halt the CPU while
+; it fetches the next scanline's sprite data.
+;
+; These cycle timings are for 0 sprites (best) and 16 sprites (worst) ...
+;
+; 32-byte TIA takes 270..364 cycles in 5MHz, 242..312 cycles in 7MHz. (8.44 cycles-per-byte best-case at 5MHz.)
+; 24-byte TIA takes 210..298 cycles in 5MHz, 186..256 cycles in 7MHz. (8.75 cycles-per-byte best-case at 5MHz.)
+; 16-byte TIA takes 142..234 cycles in 5MHz, 128..200 cycles in 7MHz. (8.88 cycles-per-byte best-case at 5MHz.)
 ;
 ; If a user wishes to be able to put RCR interrupts one-line-after-another,
 ; then it is only safe to use 32-byte chunks if there are no TIMER or IRQ2
-; interrupts ... which is almost-impossible to rely on in library code.
+; interrupts ... which is almost-impossible to rely on in library code!
 ;
 
 	.ifndef	VRAM_XFER_SIZE
