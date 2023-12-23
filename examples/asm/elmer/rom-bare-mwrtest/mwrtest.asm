@@ -880,6 +880,12 @@ table_slo:	dwl	test_name1
 		dwl	test_name25
 		dwl	test_name26
 		dwl	test_name27
+		dwl	test_name28
+		dwl	test_name29
+		dwl	test_name30
+		dwl	test_name31
+		dwl	test_name32
+		dwl	test_name33
 
 table_shi:	dwh	test_name1
 		dwh	test_name2
@@ -908,6 +914,12 @@ table_shi:	dwh	test_name1
 		dwh	test_name25
 		dwh	test_name26
 		dwh	test_name27
+		dwh	test_name28
+		dwh	test_name29
+		dwh	test_name30
+		dwh	test_name31
+		dwh	test_name32
+		dwh	test_name33
 
 table_alo:	dwl	test_code1
 		dwl	test_code2
@@ -936,6 +948,12 @@ table_alo:	dwl	test_code1
 		dwl	test_code25
 		dwl	test_code26
 		dwl	test_code27
+		dwl	test_code28
+		dwl	test_code29
+		dwl	test_code30
+		dwl	test_code31
+		dwl	test_code32
+		dwl	test_code33
 
 table_ahi:	dwh	test_code1
 		dwh	test_code2
@@ -964,6 +982,12 @@ table_ahi:	dwh	test_code1
 		dwh	test_code25
 		dwh	test_code26
 		dwh	test_code27
+		dwh	test_code28
+		dwh	test_code29
+		dwh	test_code30
+		dwh	test_code31
+		dwh	test_code32
+		dwh	test_code33
 
 table_len:	db	test_size1
 		db	test_size2
@@ -992,6 +1016,12 @@ table_len:	db	test_size1
 		db	test_size25
 		db	test_size26
 		db	test_size27
+		db	test_size28
+		db	test_size29
+		db	test_size30
+		db	test_size31
+		db	test_size32
+		db	test_size33
 
 		; 1st test - Baseline, should take 5 cycles.
 
@@ -1199,6 +1229,59 @@ test_code27:	sxy
 		sxy
 		lda	VDC_DH
 test_size27	=	* - test_code27
+
+		; 28th test - Can you change VDC_AR during a VRAM write?
+
+test_name28:	STRING	"  st2 #$00\n  st0 #19\n  st0 #2\n"
+test_code28:	st2	#$00
+		st0	#VDC_DVSSR
+		st0	#VDC_VWR
+test_size28	=	* - test_code28
+
+		; 29th test - Can you change VDC_AR during a VRAM write?
+
+test_name29:	STRING	"  st2 #$00\n  st0 #19\n  st1 #$00\n  st0 #2\n"
+test_code29:	st2	#$00
+		st0	#VDC_DVSSR
+		st1	#$00
+		st0	#VDC_VWR
+test_size29	=	* - test_code29
+
+		; 30th test - Can you change VDC_MAWR during a VRAM write?
+
+test_name30:	STRING	"  st2 #$00\n  st0 #$00\n  st1 #$00\n  st0 #$02\n"
+test_code30:	st2	#$00
+		st0	#VDC_MAWR
+		st1	#$00
+		st0	#VDC_VWR
+test_size30	=	* - test_code30
+
+		; 31st test - Can you change VDC_MAWR during a VRAM write?
+
+test_name31:	STRING	"  st2 #$00\n  st0 #$00\n  st2 #$70\n  st0 #$02\n"
+test_code31:	st2	#$00
+		st0	#VDC_MAWR
+		st2	#$70
+		st0	#VDC_VWR
+test_size31	=	* - test_code31
+
+		; 32nd test - Can you change VDC_MARR during a VRAM write?
+
+test_name32:	STRING	"  st2 #$00\n  st0 #$01\n  st1 #$00\n  st0 #$02\n"
+test_code32:	st2	#$00
+		st0	#VDC_MARR
+		st1	#$00
+		st0	#VDC_VWR
+test_size32	=	* - test_code32
+
+		; 33rd test - Can you change VDC_MARR during a VRAM write?
+
+test_name33:	STRING	"  st2 #$00\n  st0 #$01\n  st2 #$70\n  st0 #$02\n"
+test_code33:	st2	#$00
+		st0	#VDC_MARR
+		st2	#$70
+		st0	#VDC_VWR
+test_size33	=	* - test_code33
 
 
 
