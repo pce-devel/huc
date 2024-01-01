@@ -286,6 +286,14 @@ set_mode_vdc	.proc
 .done:		lda	<vdc_reg, x		; Restore previous VDC_AR from
 		sta	VDC_AR, x		; the shadow variable.
 
+;		; I'm deliberately NOT purging any delayed IRQ in this routine
+;		; because it might legitimately be used during a frame.
+;
+;	.if	SUPPORT_SGX
+;		bit	SGX_SR			; Purge any overdue RCR.
+;	.endif
+;		bit	VDC_SR			; Purge any overdue RCR/VBL.
+
 		plp				; Restore interrupts.
 
 		pla				; Restore MPR4.
@@ -435,8 +443,79 @@ vdc_copy_to	.procgroup			; These routines share code!
 ;
 ; Args: _bp, Y = _farptr to data table mapped into MPR3 & MPR4.
 ; Args: _di = VRAM destination address.
-; Args: _ax = Number of VRAM_XFER_SIZE chunks to copy.
+; Args: _ax = Number of VRAM_XFER_SIZE chunks to copy (max 32768).
 ;
+; N.B. This kind of self-modifying spaghetti code is why folks hate asm! ;-)
+;
+
+		;
+		; This subroutine does the core of the transfer.
+		;
+		; Because it self-modifies, it needs to be in RAM on a HuCARD.
+		;
+
+tia_to_vram_len	=	51			; Size of self-modifying code.
+
+	.if	CDROM
+tia_to_vram_ram:				; CD-ROM code can self-modify.
+	.else
+		.bss
+tia_to_vram_ram:ds	tia_to_vram_len		; HuCARD must put code in RAM.
+		.code
+	.endif
+
+tia_to_vram_rom:
+
+.next_page:	iny				; Increment source page.
+		bpl	.same_bank		; Still in MPR3?
+.next_bank:	tay				; Preserve address lo-byte.
+		tma4
+		tam3
+		inc	a
+		tam4
+		tya				; Restore address lo-byte.
+		ldy.h	#$6000			; Wrap address hi-byte.
+.same_bank:	dex				; Number of chunks (lo-byte).
+		beq	.next_block		; ... or drop through!
+
+		;
+		; The subroutine execution actually starts here!
+		;
+		; Because procedures are relocated just before the final
+		; pass, these addresses can change in the final pass and
+		; so must be ".set" because ".equ" will flag the changed
+		; address as an error!
+		;
+
+tia_to_vram	.set	tia_to_vram_ram + (* - .next_page)
+tia_to_vram_tia	.set	tia_to_vram + 7
+
+.entry_point:	clc
+		sty.h	tia_to_vram_tia + 1	; TIA source address hi-byte.
+.chunk_loop:	sta.l	tia_to_vram_tia + 1	; TIA source address lo-byte.
+		tia	$1234, VDC_DL, VRAM_XFER_SIZE
+		adc	#VRAM_XFER_SIZE		; Increment source address.
+		bcs	.next_page
+.same_page:	dex				; Number of chunks (lo-byte).
+		bne	.chunk_loop
+.next_block:	dec.h	<_ax			; Number of chunks (hi-byte).
+		bpl	.entry_point
+
+		pla				; Restore MPR4.
+		tam4
+		pla				; Restore MPR3.
+		tam3
+
+		leave				; All done, phew!
+
+	.if	tia_to_vram_len != (* - .next_page)
+		.fail	The tia_to_vram code length has changed!
+	.endif
+
+		;
+		; Main procedure entry points that set up the registers for the
+		; self-modifying subroutine that must be in RAM.
+		;
 
 	.if	SUPPORT_SGX
 copy_to_sgx	.proc
@@ -478,61 +557,7 @@ copy_to_vdc	.proc
 
 		dec.h	<_ax			; Number of chunks (hi-byte).
 
-.execute:	jmp	tia_to_vram		; Execute the copy.
-
-		;
-		; This routine does the core of the transfer.
-		;
-		; Because it self-modifies, it needs to be in RAM on a HuCARD.
-		;
-
-tia_to_vram_rom:
-
-.next_page:	iny				; Increment source page.
-		bpl	.same_bank		; Still in MPR3?
-.next_bank:	tay
-		tma4
-		tam3
-		inc	a
-		tam4
-		tya
-		ldy.h	#$6000
-.same_bank:	dex				; Number of chunks (lo-byte).
-		beq	.next_block
-
-		; The routine starts here!
-
-.entry_point:	clc
-		sty.h	tia_to_vram_tia + 1	; TIA source address hi-byte.
-.chunk_loop:	sta.l	tia_to_vram_tia + 1	; TIA source address lo-byte.
-		tia	$1234, VDC_DL, VRAM_XFER_SIZE
-		adc	#VRAM_XFER_SIZE		; Increment source address.
-		bcs	.next_page
-.same_page:	dex				; Number of chunks (lo-byte).
-		bne	.chunk_loop
-.next_block:	dec.h	<_ax			; Number of chunks (hi-byte).
-		bpl	.entry_point
-
-		pla				; Restore MPR4.
-		tam4
-		pla				; Restore MPR3.
-		tam3
-
-		leave				; All done, phew!
-
-tia_to_vram_len	=	(* - .next_page)
-tia_to_vram_off	=	(.entry_point - .next_page)
-
-	.if	CDROM
-tia_to_vram_ram	=	tia_to_vram_rom		; CD-ROM can just self-modify.
-	.else
-		.bss
-tia_to_vram_ram:ds	tia_to_vram_len		; HuCARD must put code in RAM.
-		.code
-	.endif
-
-tia_to_vram	=	tia_to_vram_ram + tia_to_vram_off
-tia_to_vram_tia	=	tia_to_vram + 7
+.execute:	jmp	tia_to_vram		; Now execute the VRAM copy.
 
 		.endp
 
@@ -578,6 +603,9 @@ init_240x208	.proc
 .CHR_0x10	=	.CHR_ZERO + 16		; 1st tile # after the SAT.
 .CHR_0x20	=	.CHR_ZERO + 32		; ASCII ' ' CHR tile #.
 
+		php				; Disable interrupts.
+		sei
+
 		call	clear_vce		; Clear all palettes.
 
 		lda.l	#.CHR_0x20		; Tile # of ' ' CHR.
@@ -606,6 +634,12 @@ init_240x208	.proc
 	.endif
 !:		ldy	#^.mode_240x208		; Set VDC 2nd, VBL allowed.
 		call	set_mode_vdc
+
+	.if	SUPPORT_SGX
+		bit	SGX_SR			; Purge any overdue RCR.
+	.endif
+		bit	VDC_SR			; Purge any overdue RCR/VBL.
+		plp				; Restore interrupts.
 
 		call	wait_vsync		; Wait for the next VBLANK.
 
@@ -662,6 +696,9 @@ init_256x224	.proc
 .CHR_0x10	=	.CHR_ZERO + 16		; 1st tile # after the SAT.
 .CHR_0x20	=	.CHR_ZERO + 32		; ASCII ' ' CHR tile #.
 
+		php				; Disable interrupts.
+		sei
+
 		call	clear_vce		; Clear all palettes.
 
 		lda.l	#.CHR_0x20		; Tile # of ' ' CHR.
@@ -690,6 +727,12 @@ init_256x224	.proc
 	.endif
 !:		ldy	#^.mode_256x224		; Set VDC 2nd, VBL allowed.
 		call	set_mode_vdc
+
+	.if	SUPPORT_SGX
+		bit	SGX_SR			; Purge any overdue RCR.
+	.endif
+		bit	VDC_SR			; Purge any overdue VBL.
+		plp				; Restore interrupts.
 
 		call	wait_vsync		; Wait for the next VBLANK.
 
@@ -746,6 +789,9 @@ init_352x224	.proc
 .CHR_0x10	=	.CHR_ZERO + 16		; 1st tile # after the SAT.
 .CHR_0x20	=	.CHR_ZERO + 32		; ASCII ' ' CHR tile #.
 
+		php				; Disable interrupts.
+		sei
+
 		call	clear_vce		; Clear all palettes.
 
 		lda.l	#.CHR_0x20		; Tile # of ' ' CHR.
@@ -774,6 +820,12 @@ init_352x224	.proc
 	.endif
 !:		ldy	#^.mode_352x224		; Set VDC 2nd, VBL allowed.
 		call	set_mode_vdc
+
+	.if	SUPPORT_SGX
+		bit	SGX_SR			; Purge any overdue RCR.
+	.endif
+		bit	VDC_SR			; Purge any overdue RCR/VBL.
+		plp				; Restore interrupts.
 
 		call	wait_vsync		; Wait for the next VBLANK.
 
@@ -830,6 +882,9 @@ init_512x224	.proc
 .CHR_0x10	=	.CHR_ZERO + 16		; 1st tile # after the SAT.
 .CHR_0x20	=	.CHR_ZERO + 32		; ASCII ' ' CHR tile #.
 
+		php				; Disable interrupts.
+		sei
+
 		call	clear_vce		; Clear all palettes.
 
 		lda.l	#.CHR_0x20		; Tile # of ' ' CHR.
@@ -858,6 +913,12 @@ init_512x224	.proc
 	.endif
 !:		ldy	#^.mode_512x224		; Set VDC 2nd, VBL allowed.
 		call	set_mode_vdc
+
+	.if	SUPPORT_SGX
+		bit	SGX_SR			; Purge any overdue RCR.
+	.endif
+		bit	VDC_SR			; Purge any overdue RCR/VBL.
+		plp				; Restore interrupts.
 
 		call	wait_vsync		; Wait for the next VBLANK.
 
@@ -916,6 +977,9 @@ init_320x208	.proc
 .CHR_0x10	=	.CHR_ZERO + 16		; 1st tile # after the SAT.
 .CHR_0x20	=	.CHR_ZERO + 32		; ASCII ' ' CHR tile #.
 
+		php				; Disable interrupts.
+		sei
+
 		call	clear_vce		; Clear all palettes.
 
 		lda.l	#.CHR_0x20		; Tile # of ' ' CHR.
@@ -944,6 +1008,12 @@ init_320x208	.proc
 	.endif
 !:		ldy	#^.mode_320x208		; Set VDC 2nd, VBL allowed.
 		call	set_mode_vdc
+
+	.if	SUPPORT_SGX
+		bit	SGX_SR			; Purge any overdue RCR.
+	.endif
+		bit	VDC_SR			; Purge any overdue VBL.
+		plp				; Restore interrupts.
 
 		call	wait_vsync		; Wait for the next VBLANK.
 
