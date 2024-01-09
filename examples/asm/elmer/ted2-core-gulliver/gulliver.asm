@@ -95,7 +95,7 @@ BAT_NULL	=	CHR_0x20 + (0 << 12)	; Default BAT tile & palette.
 		;
 
 	.if	CDROM
-SUPPORT_ACD	=	1	; Support the Arcade Card.
+SUPPORT_ACD	=	0	; Support the Arcade Card (does not work yet!).
 	.else
 SUPPORT_TED2	=	1	; Support the Turbo Everdrive's use of bank0.
 	.endif

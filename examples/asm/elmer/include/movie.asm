@@ -418,10 +418,10 @@ huv_proc_header:lda	#BUFFER_1ST_BANK	; Map the workspace into MPR3.
 
 		lda.l	HUV_FRM_COUNT		; Save the #frames in
 		sta.l	<huv_movie_frms		; movie.
-		sta.l	<_ax
+		sta.l	<_cx
 		lda.h	HUV_FRM_COUNT
 		sta.h	<huv_movie_frms
-		sta.h	<_ax
+		sta.h	<_cx
 
 		jsr	huv_frm_to_lba		; Calc the movie end.
 		tii	huv_read_lba_h, huv_movie_end_h, 3
@@ -477,13 +477,12 @@ huv_proc_header:lda	#BUFFER_1ST_BANK	; Map the workspace into MPR3.
 ;
 ; huv_frm_to_lba - Calculate a frame's LBA and page-offset into the sector.
 ;
-; ARGS: _ax = frame#
+; ARGS: _cx = frame#
 ;
 
 huv_frm_to_lba:	lda.h	#BYTES_PER_FRAME	; A frame is page-aligned so
-		sta	<_cl    		; we don't need the lo-byte.
-		stz	<_ax + 2
-		call	mul_8x24u
+		sta	<_al    		; we don't need the lo-byte.
+		call	mul_16x8u		; 16-bit x 8-bit -> 24-bit
 
 		lda	<_ax + 0		; Preserve page-offset into
 		and	#7			; the sector.
@@ -526,10 +525,10 @@ huv_play_from:	stz.l	bg_x1			; Reset screen flip.
 
 		lda.l	<huv_play_frame		; Get starting frame's LBA.
 		sta.l	<huv_load_frame
-		sta	<_ax + 0
+		sta.l	<_cx
 		lda.h	<huv_play_frame
 		sta.h	<huv_load_frame
-		sta	<_ax + 1
+		sta.h	<_cx
 		jsr	huv_frm_to_lba
 
 		and	#7			; Convert the page-offset to
