@@ -5,7 +5,7 @@
 ;
 ; Base include for the "CORE(not TM)" PC Engine library code.
 ;
-; Copyright John Brandwood 2021-2022.
+; Copyright John Brandwood 2021-2024.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -88,32 +88,32 @@ core_zpend	=	$F8:20EC
 		; the X register, and then index into either set of hardware
 		; registers and the "sgx_reg" or "vdc_reg" shadow-variables.
 
-PCE_VDC_OFFSET	=	$00			; Offset to PCE VDC hw & vars.
-SGX_VDC_OFFSET	=	$10			; Offset to SGX VDC hw & vars.
+PCE_VDC_OFFSET	=	$00		; Offset to PCE VDC chip & shadow vars.
+SGX_VDC_OFFSET	=	$10		; Offset to SGX VDC chip & shadow vars.
 
-_temp		=	$F8:2000		; Use within any ASM routine.
-_bank		=	$F8:2002		; Use within any ASM routine.
-sgx_crl		=	$F8:2003		; SGX shadow (vdc_crl = $20F3).
-sgx_crh		=	$F8:2004		; SGX shadow (vdc_crh = $20F4).
-core_1stbank	=	$F8:2005		; 1st bank of library code.
-sgx_sr		=	$F8:2006		; SGX shadow (vdc_sr  = $20F6).
-sgx_reg		=	$F8:2007		; SGX shadow (vdc_reg = $20F7).
+		.zp
+		.org	$2000
+_temp		ds	2		; $F8:2000 Use within any ASM routine.
+_bp_bank	ds	1		; $F8:2002 Use within any ASM routine.
+sgx_crl		ds	1		; $F8:2003 SGX shadow (vdc_crl = $20F3).
+sgx_crh		ds	1		; $F8:2004 SGX shadow (vdc_crh = $20F4).
+core_1stbank	ds	1		; $F8:2005 1st bank of library code.
+sgx_sr		ds	1		; $F8:2006 SGX shadow (vdc_sr  = $20F6).
+sgx_reg		ds	1		; $F8:2007 SGX shadow (vdc_reg = $20F7).
 
-core_zp1st	=	$F8:2008		; 1st free user address.
+core_zp1st	=	*		; $F8:2008 1st free user address.
 
 	.else	SUPPORT_SGX
 
-_temp		=	$F8:2000		; Use within any ASM routine.
-_bank		=	$F8:2002		; Use within any ASM routine.
-core_1stbank	=	$F8:2003		; 1st bank of engine code.
+		.zp
+		.org	$2000
+_temp		ds	2		; Use within any ASM routine.
+_bp_bank	ds	1		; Use within any ASM routine.
+core_1stbank	ds	1		; 1st bank of engine code.
 
-core_zp1st	=	$F8:2004		; 1st free user address.
+core_zp1st	=	*		; 1st free user address.
 
 	.endif	SUPPORT_SGX
-
-		.zp
-		.org	core_zp1st
-		.code
 
 ;
 ; The kernel code in RAM follows the System Card's RAM variables.
