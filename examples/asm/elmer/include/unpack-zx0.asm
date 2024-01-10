@@ -27,9 +27,9 @@
 ;
 ;  salvador -classic <infile> <outfile>
 ;
-; To create a ZX0 file to decompress to VRAM, using a 4KB ring-buffer in RAM
+; To create a ZX0 file to decompress to VRAM, using a 2KB ring-buffer in RAM
 ;
-;  salvador -classic -w 4096 <infile> <outfile>
+;  salvador -classic -w 2048 <infile> <outfile>
 ;
 ; ***************************************************************************
 ; ***************************************************************************
