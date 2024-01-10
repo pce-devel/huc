@@ -5,10 +5,10 @@
 ;
 ; HuC6280 decompressor for Einar Saukas's "classic" ZX0 format.
 ;
-; The code length is 199 bytes for RAM, 249 bytes for direct-to-VRAM, plus
+; The code length is 200 bytes for RAM, 250 bytes for direct-to-VRAM, plus
 ; some generic utility code.
 ;
-; Copyright John Brandwood 2021-2022.
+; Copyright John Brandwood 2021-2024.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -19,6 +19,17 @@
 ;
 ; ZX0 "modern" format is not supported, because it costs an extra 4 bytes of
 ; code in this decompressor, and it runs slower.
+;
+; Use Emmanuel Marty's SALVADOR ZX0 compressor which can be found here ...
+;  https://github.com/emmanuel-marty/salvador
+;
+; To create a ZX0 file to decompress to RAM
+;
+;  salvador -classic <infile> <outfile>
+;
+; To create a ZX0 file to decompress to VRAM, using a 4KB ring-buffer in RAM
+;
+;  salvador -classic -w 4096 <infile> <outfile>
 ;
 ; ***************************************************************************
 ; ***************************************************************************
@@ -79,7 +90,9 @@ zx0_bitbuf	=	_dl			; 1 byte.
 ; zx0_to_ram - Decompress data stored in Einar Saukas's ZX0 "classic" format.
 ;
 ; Args: _bp, Y = _farptr to compressed data in MPR3.
-; Args: _di = ptr to output address in RAM.
+; Args: _di = ptr to output address in RAM (anywhere except MPR3!).
+;
+; Returns: _bp, Y = _farptr to byte after compressed data.
 ;
 ; Uses: _bp, _di, _ax, _bx, _cx, _dh !
 ;
@@ -89,15 +102,9 @@ zx0_to_ram	.proc
 		tma3				; Preserve MPR3.
 		pha
 
-	.ifdef	_KICKC
 		jsr	set_bp_to_mpr3		; Map zx0_srcptr to MPR3.
-	.else
-		tya				; Map zx0_srcptr to MPR3.
-		beq	!+
-		tam3
-	.endif
 
-!:		ldx	#$40			; Initialize bit-buffer.
+		ldx	#$40			; Initialize bit-buffer.
 
 		ldy	#$FF			; Initialize offset to $FFFF.
 		sty	<zx0_offset + 0
@@ -180,7 +187,10 @@ zx0_to_ram	.proc
 		inc	<zx0_winptr + 1
 		bra	.lz_byte
 
-.got_eof:	pla				; Restore MPR3.
+.got_eof:	tma3				; Return final MPR3 in Y reg.
+		tay
+
+		pla				; Restore MPR3.
 		tam3
 
 		leave				; Finished decompression!
@@ -286,6 +296,8 @@ zx0_to_ram	.proc
 ; Args: _bp, Y = _farptr to compressed data in MPR3.
 ; Args: _di = ptr to output address in VRAM.
 ;
+; Returns: _bp, Y = _farptr to byte after compressed data.
+;
 ; Uses: _bp, _di, _ax, _bx, _cx, _dl, _dh!
 ;
 
@@ -305,15 +317,9 @@ zx0_to_vdc	.proc
 		tma3				; Preserve MPR3.
 		pha
 
-	.ifdef	_KICKC
 		jsr	set_bp_to_mpr3		; Map zx0_srcptr to MPR3.
-	.else
-		tya				; Map zx0_srcptr to MPR3.
-		beq	!+
-		tam3
-	.endif
 
-!:		jsr	set_di_to_mawr		; Map zx0_dstptr to VRAM.
+		jsr	set_di_to_mawr		; Map zx0_dstptr to VRAM.
 
 		lda	#$40			; Initialize bit-buffer.
 		sta	<zx0_bitbuf
@@ -405,11 +411,6 @@ zx0_to_vdc	.proc
 		dec	<zx0_length + 1		; This is rare, so slower.
 		bra	.lz_byte
 
-.got_eof:	pla				; Restore MPR3.
-		tam3
-
-		leave				; Finished decompression!
-
 		;
 		; Copy bytes from compressed source.
 		;
@@ -458,6 +459,18 @@ zx0_to_vdc	.proc
 
 		dec	<zx0_length + 1		; Decrement because lo-byte=0.
 		bra	.get_lz_win
+
+		;
+		; All done!
+		;
+
+.got_eof:	tma3				; Return final MPR3 in Y reg.
+		tay
+
+		pla				; Restore MPR3.
+		tam3
+
+		leave				; Finished decompression!
 
 		;
 		; Optimized handling of pointers crossing page-boundaries.
