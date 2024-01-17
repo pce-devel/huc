@@ -490,9 +490,9 @@ get_file_info:	sec				; Calculate file length.
 ; ***************************************************************************
 ; ***************************************************************************
 
-exec_overlay:	phx				; Preserve file number.
+exec_overlay:	jsr	core_clr_hooks		; Reset default hooks.
 
-		jsr	core_clr_hooks		; Reset default hooks.
+.retry:		phx				; Preserve file number.
 
 		cla				; Page System Card into MPR7.
 		tam7
@@ -505,16 +505,6 @@ exec_overlay:	phx				; Preserve file number.
 		sta	<_bl
 		stz	<_bh
 
-		tam2				; Reset bank mapping back to
-		inc	a                       ; its "CORE(not TM)" default.
-		tam3
-		inc	a
-		tam4
-		inc	a
-		tam5
-		inc	a
-		tam6
-
 		lda	#6			; Use MPR6 for loading.
 		sta	<_dh
 
@@ -523,9 +513,20 @@ exec_overlay:	phx				; Preserve file number.
 		plx				; Restore file number.
 
 		cmp	#0			; Was there an error?
-		bne	exec_overlay		; Retry forever!
+		bne	.retry			; Retry forever!
 
-.execute_game:	jmp	$4000			; Execute the overlay.
+.execute_game:	lda	<core_1stbank		; Reset bank mapping back to
+		tam2				; its "CORE(not TM)" default.
+		inc	a			; This is not done earlier to
+		tam3				; avoid the System Card error
+		inc	a			; handling bug which causes a
+		tam4				; cd_read to an MPRn to leave
+		inc	a			; the MPRn value corrupted.
+		tam5
+		inc	a
+		tam6
+
+		jmp	$4000			; Execute the overlay.
 
 	.endif	!CDROM
 
