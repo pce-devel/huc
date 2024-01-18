@@ -78,6 +78,127 @@
 ;
 ; ***************************************************************************
 ; ***************************************************************************
+;
+; Suggested video sizes for new 8-frames-per-second HuVIDEO data streams ...
+;
+;
+;  256x104 (approximately 2.39x1)
+;   32x13 = 416 CHR
+;    $3400 tiles ($0770 bytes-per-tick * 7 -> $3410)
+;    $0200 palettes
+;    $00D0 tile palettes
+;    $03E8 adpcm (1000 bytes, 2000 samples)
+;    $0028 adpcm resync
+;    =
+;    $3AE0 -> $3B00 * 8 -> 118KB/s
+;
+;
+;  224x120 (approximately 16x9)
+;   28x15 = 420 CHR
+;    $3480 tiles ($0780 bytes-per-tick * 7 -> $3480)
+;    $0200 palettes
+;    $00D2 tile palettes
+;    $03E8 adpcm (1000 bytes, 2000 samples)
+;    $0028 adpcm resync
+;    =
+;    $3B62 -> $3C00 * 8 -> 120KB/s
+;
+;
+;  192x144 (approximately 4x3)
+;   24x18 = 432 CHR
+;    $3600 tiles ($07C0 bytes-per-tick * 7 -> $3640)
+;    $0200 palettes
+;    $00D8 tile palettes
+;    $03E8 adpcm (1000 bytes, 2000 samples)
+;    $0028 adpcm resync
+;    =
+;    $3CE8 -> $3D00 * 8 -> 122KB/s
+;
+;
+; Suggested video sizes for new 10-frames-per-second HuVIDEO data streams ...
+;
+;
+;  224x96 (approximately 2.39x1)
+;   28x12 = 336 CHR
+;    $2A00 tiles ($0700 bytes-per-tick * 6 -> $2A00)
+;    $0200 palettes
+;    $00A8 tile palettes
+;    $0320 adpcm (800 bytes, 1600 samples)
+;    $0028 adpcm resync
+;    =
+;    $2FF0 -> $3000 * 10 -> 120KB/s
+;
+;
+;  192x112 (approximately 16x9)
+;   24x14 = 336 CHR
+;    $2A00 tiles ($0700 bytes-per-tick * 6 -> $2A00)
+;    $0200 palettes
+;    $00A8 tile palettes
+;    $0320 adpcm (800 bytes, 1600 samples)
+;    $0028 adpcm resync
+;    =
+;    $2FF0 -> $3000 * 10 -> 120KB/s
+;
+;
+;  176x120 (approximately 4x3)
+;   22x15 = 330 CHR
+;    $2940 tiles ($06E0 bytes-per-tick * 6 -> $2940)
+;    $0200 palettes
+;    $00A5 tile palettes
+;    $0320 adpcm (800 bytes, 1600 samples)
+;    $0028 adpcm resync
+;    =
+;    $2F2D -> $3000 * 10 -> 120KB/s
+;
+;
+; Suggested video sizes for new 12-frames-per-second HuVIDEO data streams ...
+;
+;
+;  208x88 (approximately 2.39x1)
+;   26x11 = 286 CHR
+;    $23C0 tiles ($0730 bytes-per-tick * 5 -> $23F0)
+;    $01E0 palettes **NOTE**
+;    $008F tile palettes
+;    $02A0 adpcm (669 bytes, 1338 samples)
+;    $0028 adpcm resync
+;    =
+;    $28F7 -> $2900 * 12 -> 123KB/s
+;
+;
+;  176x104 (approximately 16x9)
+;   22x13 = 286 CHR
+;    $23C0 tiles ($0730 bytes-per-tick * 5 -> $23F0)
+;    $01E0 palettes **NOTE**
+;    $008F tile palettes
+;    $02A0 adpcm (669 bytes, 1338 samples)
+;    $0028 adpcm resync
+;    =
+;    $28F7 -> $2900 * 12 -> 123KB/s
+;
+;
+;  184x96 (approximately 16x9)
+;   23x12 = 276 CHR
+;    $2280 tiles ($06F0 bytes-per-tick * 5 -> $22B0)
+;    $0200 palettes
+;    $0090 tile palettes
+;    $02A0 adpcm (669 bytes, 1338 samples)
+;    $0028 adpcm resync
+;    =
+;    $27D8 -> $2800 * 12 -> 120KB/s
+;
+;
+;  160x112 (approximately 4x3)
+;   20x14 = 280 CHR
+;    $2300 tiles ($0700 bytes-per-tick * 5 -> $2300)
+;    $0200 palettes
+;    $008C tile palettes
+;    $02A0 adpcm (669 bytes, 1338 samples)
+;    $0028 adpcm resync
+;    =
+;    $2854 -> $2900 * 12 -> 123KB/s
+;
+; ***************************************************************************
+; ***************************************************************************
 
 ;
 ; Configure Library ...
