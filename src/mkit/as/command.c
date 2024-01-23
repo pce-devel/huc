@@ -747,8 +747,8 @@ void
 do_page(int *ip)
 {
 	/* not allowed in procs */
-	if (proc_ptr) {
-		fatal_error("PAGE can not be changed in procs!");
+	if (proc_ptr && (section == S_CODE)) {
+		fatal_error("Code PAGE can not be changed within a .proc!");
 		return;
 	}
 
@@ -812,8 +812,8 @@ do_org(int *ip)
 	case S_CODE:
 	case S_DATA:
 		/* not allowed in procs */
-		if (proc_ptr) {
-			fatal_error("ORG can not be changed in procs!");
+		if (proc_ptr && (section == S_CODE)) {
+			fatal_error("Code ORG can not be changed within a .proc!");
 			return;
 		}
 
@@ -855,8 +855,8 @@ do_bank(int *ip)
 	char name[128];
 
 	/* not allowed in procs */
-	if (proc_ptr) {
-		fatal_error("Bank can not be changed in procs!");
+	if (proc_ptr && (section == S_CODE)) {
+		fatal_error("Code BANK can not be changed within a .proc!");
 		return;
 	}
 
