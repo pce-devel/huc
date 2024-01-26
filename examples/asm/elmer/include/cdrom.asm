@@ -325,8 +325,7 @@ cdr_cplay_irq2:	pha
 .got_int_stop:	lda	#IFU_INT_END		; Disable IFU_INT_END.
 		trb	IFU_IRQ_MSK
 
-		lda	#$01			; Disable IRQ2 vector.
-		trb	<irq_vec
+		rmb0	<irq_vec		; Disable IRQ2 vector.
 
 		stz	cplay_playing		; Signal ADPCM finished.
 		bra	.irq2_done
@@ -452,7 +451,7 @@ scsi_delay:	clx				; The inner loop takes 3584
 ; In that case the PC Engine asserts the SCSI_RST signal and then delays for
 ; 30ms in order to give the CD-ROM time to abort its current command.
 ;
-; After the abort the CD-ROM could end up in PHASE_STAT_IN or PHASE_COMMAND,
+; After the abort the CD-ROM could end up in PHASE_COMMAND or PHASE_STAT_IN,
 ; and so the PC Engine just ignores any data coming from the CD-ROM until it
 ; finally drops the BSY signal and relinquishes the SCSI bus.
 ;
@@ -462,14 +461,14 @@ scsi_abort:	lda	#IFU_INT_DAT_IN + IFU_INT_MSG_IN
 
 		sta	IFU_SCSI_CTL		; Signal SCSI_RST to stop cmd.
 
-		ldy	#30 * 2			; Wait 30ms.
-		bsr	scsi_delay
+		ldy	#30 * 2			; Wait 30ms, get PHASE_COMMAND
+		bsr	scsi_delay		; or PHASE_STAT_IN as response.
 
 		lda	#$FF			; Send $FF on SCSI bus in case
 		sta	IFU_SCSI_DAT		; the CD reads it as a command.
 
 		tst	#SCSI_REQ, IFU_SCSI_FLG	; Does the CD-ROM want the PCE
-		beq	scsi_initiate		; to send/recv some data?
+		beq	scsi_initiate		; to send/recv a byte of data?
 
 .flush_data:	jsr	scsi_handshake		; Flush out stale data byte.
 
@@ -621,8 +620,6 @@ scsi_send_cmd:	clx
 ; Returns: Y,Z-flag,N-flag = CDSTS_GOOD ($00) or an error code.
 ;
 
-	.if	1
-
 scsi_get_status:ldy	IFU_SCSI_DAT		; Read status code.
 		jsr	scsi_handshake
 
@@ -640,32 +637,6 @@ scsi_get_status:ldy	IFU_SCSI_DAT		; Read status code.
 
 		tya				; Return status & set flags.
 		rts
-
-	.else
-
-scsi_get_status:cly				; In case no PHASE_STAT_IN!
-
-.wait_mesg:	jsr	scsi_get_phase		; Do the final phases of the
-		cmp	#PHASE_STAT_IN		; SCSI transaction sequence.
-		beq	.read_status
-		cmp	#PHASE_MESG_IN
-		beq	.read_mesg
-		bra	.wait_mesg
-
-.read_status:	ldy	IFU_SCSI_DAT		; Read status code.
-		jsr	scsi_handshake
-		bra	.wait_mesg
-
-.read_mesg:	lda	IFU_SCSI_DAT		; Flush message byte.
-		jsr	scsi_handshake
-
-.wait_exit:	bit	IFU_SCSI_FLG		; Wait for the CD-ROM to
-		bmi	.wait_exit		; release SCSI_BSY.
-
-		tya				; Return status & set flags.
-		rts
-
-	.endif
 
 
 
@@ -879,7 +850,7 @@ cdr_read_ram	.proc
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; cdr_read_bnk - with BNK memory as destination (like CD_READ to RAM).
+; cdr_read_bnk - with BNK memory as destination (like CD_READ to BNK).
 ;
 ; Returns: Y,Z-flag,N-flag = $00 or an error code.
 ;
@@ -2106,4 +2077,4 @@ cdr_dinfo	.proc
 ; ***************************************************************************
 ; ***************************************************************************
 
-		.endprocgroup
+		.endprocgroup			; cdrom_group
