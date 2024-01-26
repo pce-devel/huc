@@ -63,6 +63,8 @@ wait_nvsync:	bsr	wait_vsync		; # of VBLANK IRQs to wait in
 ; banks, with the 2nd bank having no specific relation to the 1st, there
 ; is no way to deal with a bank-increment, so do not map that region.
 ;
+; N.B. Library code relies on this preserving X!
+;
 
 set_bp_to_mpr3:	lda.h	<_bp			; Do not remap a ptr to RAM,
 		cmp	#$60			; which is $2000-$5FFF.
@@ -93,6 +95,8 @@ set_bp_to_mpr34:lda.h	<_bp			; Do not remap a ptr to RAM,
 ;
 ; Increment the hi-byte of _bp and change TMA3 if necessary.
 ;
+; N.B. Library code relies on this preserving A,X,Y!
+;
 
 inc.h_bp_mpr3:	inc.h	<_bp			; Increment hi-byte of _bp.
 		bpl	!+			; OK if within MPR0-MPR3.
@@ -111,6 +115,8 @@ inc.h_bp_mpr3:	inc.h	<_bp			; Increment hi-byte of _bp.
 ; ***************************************************************************
 ;
 ; Increment the hi-byte of _bp and change TMA3 and TMA4 if necessary.
+;
+; N.B. Library code relies on this preserving A,X,Y!
 ;
 
 	.if	1				; Save memory, for now.
