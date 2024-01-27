@@ -198,7 +198,7 @@ IFU_AUDIO_FADE	= $FF:180F	; RW : IFU audio fade control/status.
 IFU_BRAM_LOCK	= $FF:1803	; _W :
 IFU_BRAM_UNLOCK	= $FF:1807	; _W :
 
-; IFU interrupt bits in IFU_IRQ_CTL/IFU_IRQ_FLG
+; IFU interrupt bits in IFU_IRQ_MSK/IFU_IRQ_FLG
 
 IFU_INT_HALF	= $04		; Set if ADPCM LENGTH <= $7FFF.
 IFU_INT_END	= $08		; Set if ADPCM LENGTH == 0 (when ADPCM_AUTO).
