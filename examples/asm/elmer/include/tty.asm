@@ -297,13 +297,9 @@ tty_printf_huc	.proc				; HuC entry point.
 		tma3				; Preserve MPR3.
 		pha
 
-		tya				; Map farptr to MPR3.
-		beq	!+
-		tam3
-		inc	a
-		tam4
+		jsr	set_bp_to_mpr34		; Map farptr to MPR3 & MPR4.
 
-!:		stz	tty_xyok		; Make sure VRAM addr is set!
+		stz	tty_xyok		; Make sure VRAM addr is set!
 
 		lda	[_bp]			; Get string length from the
 		inc	a			; PASCAL-format string, the
