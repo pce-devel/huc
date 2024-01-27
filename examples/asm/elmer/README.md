@@ -53,6 +53,9 @@ The "CORE(not TM)" PC Engine library is a small and configurable set of library 
 * cd-core-2stage
   - A simple example of creating an ISO for a CD-ROM, and loading the "CORE(not TM)" kernel code in a startup overlay.
 
+* cd-core-scsitest
+  - A CD-ROM and a HuCARD for testing some low-level details of the PC Engine's SCSI CD-ROM behavior.
+
 * scd-core-1stage
   - A simple example of creating an ISO for a Super CD-ROM, and loading the "CORE(not TM)" kernel code from the overlay program.
 
