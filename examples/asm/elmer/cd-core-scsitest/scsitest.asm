@@ -449,7 +449,7 @@ print_log	.proc
 		lda.l	count_was		; Only repeated once?
 		ora.h	count_was
 		beq	.unique
-		
+
 .repeated:	inc.l	count_was		; Increment the count
 		bne	!+			; for display.
 		inc.h	count_was
