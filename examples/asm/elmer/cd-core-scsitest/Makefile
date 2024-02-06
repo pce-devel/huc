@@ -16,4 +16,4 @@ scsitest.ovl: $(SRC_OVL) $(SRC_INC) scsitest.pce
 	$(AS) $(AFLAGS) -cd -overlay scsitest.asm
 
 scsitest.pce: $(SRC_OVL) $(SRC_INC)
-	$(AS) $(AFLAGS) scsitest.asm
+	$(AS) $(AFLAGS) -raw scsitest.asm
