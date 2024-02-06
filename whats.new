@@ -1,3 +1,22 @@
+  All HuC project tools ...
+  -------------------------
+- Add new "hulz" tool to compress/decompress Hudson's common LZSS data formats.
+- Change "sym2inc" tool to include bank information in the output equates.
+
+  PCEAS changes ...
+  -----------------
+- Add .AREA pseudo-op. This just sets a 32-bit "area" value which PCEAS copies
+  into every symbol when it is defined. The .AREA value can be changed at any
+  time so that subsequent symbol definitions can have different values.
+  The "area" value is set to 0 at the start of each pass.
+- Add "area()" operator to retrieve the "area" value stored within a symbol.
+  The purpose of the "area" is to allow symbols to have an extra value which
+  can then be used to tag symbols that are located in different code or data
+  overlays.
+- Change .BANK to give an error if undefined symbols are used.
+- Allow .BANK/.PAGE/.ORG within a .PROC if not in a .CODE section.
+
+
 New in version 4.00:
 --------------------
 

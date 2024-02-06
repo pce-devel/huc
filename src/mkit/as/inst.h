@@ -204,6 +204,7 @@ struct t_opcode base_pseudo[] = {
 	{NULL,  "CALL",         do_call,        PSEUDO, P_CALL,    0},
 
 	{NULL,  "ALIGN",        do_align,       PSEUDO, P_ALIGN,   0},
+//	{NULL,  "AREA",         do_area,        PSEUDO, P_AREA,    0},
 	{NULL,  "BANK",         do_bank,        PSEUDO, P_BANK,    0},
 	{NULL,  "BSS",          do_section,     PSEUDO, P_BSS,     S_BSS},
 //	{NULL,  "BYTE",         do_db,          PSEUDO, P_DB,      0},
@@ -252,6 +253,7 @@ struct t_opcode base_pseudo[] = {
 	{NULL,  "ZP",           do_section,     PSEUDO, P_ZP,      S_ZP},
 
 	{NULL, ".ALIGN",        do_align,       PSEUDO, P_ALIGN,   0},
+	{NULL, ".AREA",         do_area,        PSEUDO, P_AREA,    0},
 	{NULL, ".BANK",         do_bank,        PSEUDO, P_BANK,    0},
 	{NULL, ".BSS",          do_section,     PSEUDO, P_BSS,     S_BSS},
 	{NULL, ".BYTE",         do_db,          PSEUDO, P_DB,      0},
