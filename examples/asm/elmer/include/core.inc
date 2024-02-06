@@ -125,10 +125,6 @@ core_ram1st     =	$F8:2680
 core_ram1st     =	$F8:22D0
 	.endif	USING_PSGDRIVER
 
-		.bss
-		.org	core_ram1st
-		.code
-
 ;
 ; Include the "CORE(not TM)" startup code to begin the HuCARD / Overlay.
 ;

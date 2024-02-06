@@ -250,7 +250,7 @@ core_boot:	jmp	* + 3			; Allow someone to patch this.
 
 	.if	!USING_STAGE1			; Because the Stage1 does it!
 
-		lda	core_ram1st		; Did a previous overlay set
+		lda	core_kernel		; Did a previous overlay set
 		bne	.not_first		; up the kernel already?
 
 		; Is there a duplicate of the main ISO data track?
@@ -273,7 +273,7 @@ core_boot:	jmp	* + 3			; Allow someone to patch this.
 
 		; Copy the kernel code to its destination in MPR1.
 
-		tii	(core_ram1st + $2000), core_ram1st, (core_ramcpy - core_ram1st)
+		tii	(core_kernel + $2000), core_ram1st, (core_ramcpy - core_ram1st)
 
 		; Copy the ISO's directory into kernel memory in MPR1.
 
@@ -414,8 +414,22 @@ core_hw_reset:	sei				; Disable interrupts.
 	.if	USING_STAGE1
 
 		; Read the already-assembled equates for the kernel code.
+		;
+		; N.B. The area() changes are only here to test PCEAS!
+
+!:		.area	-1			; Tag the STAGE1 symbols.
 
 		include "core-stage1.s"
+
+		.area	area(!-)		; Restore previous area.
+
+	.if	(core_kernel != core_ram1st)
+		.fail	Stage1 kernel has not been built with the same core_ram1st!
+	.endif
+
+	.if	(area(core_kernel) != -1)
+		.fail	.AREA is not working correctly!
+	.endif
 
 	.else	USING_STAGE1
 

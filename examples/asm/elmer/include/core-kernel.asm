@@ -47,6 +47,16 @@
 ; ***************************************************************************
 ; ***************************************************************************
 ;
+; core_kernel - Start of kernel code.
+;
+
+core_kernel	=	*
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
 ; Useful constants, needed by joypad library code, and used by many others.
 ;
 ; The kernel starts with a non-zero byte so that core-startup.asm can check
