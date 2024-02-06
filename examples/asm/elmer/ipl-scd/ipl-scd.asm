@@ -6,7 +6,7 @@
 ; A version of Hudson's IPL for the PC Engine SuperCD that is customized
 ; to load homebrew assembly-language CD games that are built using ISOlink.
 ;
-; Copyright John Brandwood 2021.
+; Copyright John Brandwood 2021-2024.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -15,7 +15,7 @@
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; NOTE: This is not compatible with the current version of HuC!
+; NOTE: This is not compatible with the old 2021 version of HuC!
 ;
 ; ***************************************************************************
 ; ***************************************************************************
@@ -178,7 +178,7 @@ ipl_scd:	jsr	ex_getver		; Get System Card version.
 
 		jsr	ex_memopen		; Is there any SCD memory?
 		bcs	.not_supercd
-		sax				; Remove internal-or-HuCard
+		sax				; Remove internal-or-HuCARD
 		and	#$7F			; flag bit.
 		sax
 		cpx	#3			; Are there at-least three
@@ -186,15 +186,7 @@ ipl_scd:	jsr	ex_getver		; Get System Card version.
 
 		lda	#$68			; PCEAS code assumes this!
 
-		tam2				; Map SCD RAM banks to
-		inc	a			; replace the CD RAM banks.
-		tam3
-		inc	a
-		tam4
-		inc	a
-		tam5
-		inc	a
-		tam6
+		tam2				; Map the 1st SCD RAM bank.
 
 		ldy	#1			; Load & run the 1st file.
 
@@ -231,7 +223,17 @@ ipl_scd:	jsr	ex_getver		; Get System Card version.
 
 		bra	.report_error
 
-.execute_game:	jmp	$4000			; Execute the game.
+.execute_game:	tma2				; Setup the bank mapping into
+		inc	a			; its "CORE(not TM)" default.
+		tam3				; This is not done earlier to
+		inc	a			; avoid the System Card error
+		tam4				; handling bug which causes a
+		inc	a			; cd_read to an MPRn to leave
+		tam5				; the MPRn value corrupted.
+		inc	a
+		tam6
+
+		jmp	$4000			; Execute the game.
 
 .not_supercd:	ldy	iso_cderr		; Is there an error file
 		bne	.load_file		; to run?

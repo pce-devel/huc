@@ -243,19 +243,26 @@ core_main:	; Turn the display off and initialize the screen mode.
 
 test_init_disc	.proc
 
+		; N.B. The System Card does not check the IO-PORT!
+		;
+		; N.B. The Turbo Everdrive Pro does not emulate this!
+
 		lda	IO_PORT
 		bpl	!+
 
-		PRINTF	"No CD-ROM Interface Unit!\n\n"	
+;		PRINTF	"No CD-ROM Interface Unit!\n\n"	
+;
+;		ldy	#CDERR_NO_CDIFU
+;		jmp	.finished
 
-		ldy	#CDERR_NO_CDIFU
-		jmp	.finished
+		PRINTF	"CD-ROM IFU not detected\n\n"	
+		bra	.reset
 
-!:		PRINTF	"CD-ROM Interface present\n"
+!:		PRINTF	"CD-ROM IFU present\n"
 
 		; Reset the CD-ROM drive.
 
-		call	cdr_reset
+.reset:		call	cdr_reset
 
 		; Wait for the CD-ROM drive to release SCSI_BSY.
 

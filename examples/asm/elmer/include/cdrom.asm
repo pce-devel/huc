@@ -107,6 +107,9 @@ SUPPORT_TIMING	=	0
 
 ; SCSI bus signals.
 
+SCSI_SEL	=	$81	; IFU_SCSI_CTL When PCE selects the CD-ROM device
+SCSI_RST	=	$60	; IFU_SCSI_CTL When aborting the current command
+
 SCSI_MSK	=	$F8	; IFU_SCSI_FLG
 SCSI_BSY	=	$80	; IFU_SCSI_FLG Bus is Busy or Free
 SCSI_REQ	=	$40	; IFU_SCSI_FLG Target Requests next Xfer
@@ -114,7 +117,7 @@ SCSI_MSG	=	$20	; IFU_SCSI_FLG Bus contains a Message
 SCSI_CXD	=	$10	; IFU_SCSI_FLG Bus contains Control or /Data
 SCSI_IXO	=	$08	; IFU_SCSI_FLG Bus Initiator or Target
 
-SCSI_ACK	=	$80	; IFU_IRQ_MSK
+SCSI_ACK	=	$80	; IFU_IRQ_MSK Initiator's side of REQ/ACK handshake
 
 ; SCSI bus phases.
 
@@ -198,7 +201,7 @@ cplay_scsi_buf	=	scsi_send_buf		; Reuse the SCSI buffer.
 
 	.if	SUPPORT_TIMING
 scsi_stat_indx:	ds	1			; Track CD-ROM loading speed
-scsi_stat_time:	ds	256			; (cdr_read_bnk & 
+scsi_stat_time:	ds	256			; (cdr_read_bnk &
 	.endif	SUPPORT_TIMING
 
 		.code
@@ -222,7 +225,12 @@ scsi_stat_time:	ds	256			; (cdr_read_bnk &
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; scsi_handshake - Clock a byte of data onto the SCSI bus.
+; scsi_handshake - Clock a byte of data on the SCSI bus in or out.
+;
+; Used after a SCSI_REQ from the CD-ROM target to acknowledge the data byte
+; sent or received to/from IFU_SCSI_DAT.
+;
+; This is the manual version of using IFU_SCSI_AUTO to read a byte.
 ;
 ; N.B. On a HuCARD, this must be available for cdr_cplay_irq2!
 ;
@@ -317,8 +325,7 @@ cdr_cplay_irq2:	pha
 .got_int_stop:	lda	#IFU_INT_END		; Disable IFU_INT_END.
 		trb	IFU_IRQ_MSK
 
-		lda	#$01			; Disable IRQ2 vector.
-		trb	<irq_vec
+		rmb0	<irq_vec		; Disable IRQ2 vector.
 
 		stz	cplay_playing		; Signal ADPCM finished.
 		bra	.irq2_done
@@ -377,7 +384,12 @@ cdrom_group	.procgroup
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; scsi_handshake - Clock a byte of data onto the SCSI bus.
+; scsi_handshake - Clock a byte of data on the SCSI bus in or out.
+;
+; Used after a SCSI_REQ from the CD-ROM target to acknowledge the data byte
+; sent or received to/from IFU_SCSI_DAT.
+;
+; This is the manual version of using IFU_SCSI_AUTO to read a byte.
 ;
 ; On a CDROM, this can be in the same bank as the rest!
 ;
@@ -398,7 +410,7 @@ scsi_handshake:	lda	#SCSI_ACK		; Send SCSI_ACK signal.
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; scsi_get_phase - As a subroutine this helps provide a delay between reads!
+; scsi_get_phase - As a subroutine to provide deskew delay between reads!
 ;
 
 scsi_get_phase:	lda	IFU_SCSI_FLG
@@ -430,33 +442,49 @@ scsi_delay:	clx				; The inner loop takes 3584
 ;
 ; scsi_initiate - Initiate CD-ROM command.
 ;
+; Normally the CD-ROM is already idle, and the process is simple. But ...
+;
+; When the CD-ROM is already busy processing a command, such as either ADPCM
+; streaming or when there is an existing unfinalized command (which Sherlock
+; Holmes games do all the time), then the current command must be stopped.
+;
+; In that case the PC Engine asserts the SCSI_RST signal and then delays for
+; 30ms in order to give the CD-ROM time to abort its current command.
+;
+; After the abort the CD-ROM could end up in PHASE_COMMAND or PHASE_STAT_IN,
+; and so the PC Engine just ignores any data coming from the CD-ROM until it
+; finally drops the BSY signal and relinquishes the SCSI bus.
+;
 
-scsi_cd_busy:	lda	#IFU_INT_DAT_IN + IFU_INT_MSG_IN
-		trb	IFU_IRQ_MSK		; Disable SCSI phase interrupts.
+scsi_abort:	lda	#IFU_INT_DAT_IN + IFU_INT_MSG_IN
+		trb	IFU_IRQ_MSK		; Just in case previously set.
 
-		sta	IFU_SCSI_CTL		; Set control bits.
+		sta	IFU_SCSI_CTL		; Signal SCSI_RST to stop cmd.
 
-		ldy	#30 * 2			; Wait 30ms.
-		bsr	scsi_delay
+		ldy	#30 * 2			; Wait 30ms, get PHASE_COMMAND
+		bsr	scsi_delay		; or PHASE_STAT_IN as response.
 
-		lda	#$FF
-		sta	IFU_SCSI_DAT
+		lda	#$FF			; Send $FF on SCSI bus in case
+		sta	IFU_SCSI_DAT		; the CD reads it as a command.
 
-		tst	#SCSI_REQ, IFU_SCSI_FLG
-		beq	scsi_initiate
+		tst	#SCSI_REQ, IFU_SCSI_FLG	; Does the CD-ROM want the PCE
+		beq	scsi_initiate		; to send/recv a byte of data?
 
-.flush_data:	jsr	scsi_handshake		; Flush out stale data.
+.flush_data:	jsr	scsi_handshake		; Flush out stale data byte.
 
-.still_busy:	tst	#SCSI_REQ, IFU_SCSI_FLG
-		bne	.flush_data
-		tst	#SCSI_BSY, IFU_SCSI_FLG
-		bne	.still_busy
+.still_busy:	tst	#SCSI_REQ, IFU_SCSI_FLG	; Keep on flushing data while
+		bne	.flush_data		; the CD-ROM requests it.
 
-scsi_initiate:	bsr	scsi_select_cd		; Acquire the SCSI bus.
-		bcs	scsi_cd_busy
+		tst	#SCSI_BSY, IFU_SCSI_FLG	; Wait for the CD-ROM to drop
+		bne	.still_busy		; the SCSI_BSY signal.
+
+		;
+
+scsi_initiate:	bsr	scsi_select_cd		; Attempt to select the CD-ROM.
+		bcs	scsi_abort		; Is the CD-ROM already busy?
 
 .test_scsi_bus:	ldy	#18			; Wait for up to 20ms for the
-		clx				; CD-ROM to acknowledge.
+		clx				; CD-ROM to signal SCSI_BSY.
 .wait_scsi_bus:	bsr	scsi_get_phase
 		and	#SCSI_BSY
 		bne	.ready
@@ -481,16 +509,17 @@ scsi_initiate:	bsr	scsi_select_cd		; Acquire the SCSI bus.
 
 scsi_select_cd:	sec
 
-		lda	#$81			; Abridged SCSI device
-		sta	IFU_SCSI_DAT		; selection phase.
+		lda	#$81			; Set the SCSI device ID bits
+		sta	IFU_SCSI_DAT		; for the PCE and the CD-ROM.
 
-		tst	#SCSI_BSY, IFU_SCSI_FLG	; Is the SCSI bus already
-		bne	.done			; busy?
+		tst	#SCSI_BSY, IFU_SCSI_FLG	; Is the CD-ROM already busy
+		bne	.done			; doing something?
 
-		sta	IFU_SCSI_CTL		; Magic Number!
+		sta	IFU_SCSI_CTL		; Signal SCSI_SEL to CD-ROM.
+
 		clc
 
-.done:		rts				; Returns CS if busy.
+.done:		rts				; Returns CS if CD-ROM busy.
 
 
 
@@ -591,8 +620,6 @@ scsi_send_cmd:	clx
 ; Returns: Y,Z-flag,N-flag = CDSTS_GOOD ($00) or an error code.
 ;
 
-	.if	1
-
 scsi_get_status:ldy	IFU_SCSI_DAT		; Read status code.
 		jsr	scsi_handshake
 
@@ -610,32 +637,6 @@ scsi_get_status:ldy	IFU_SCSI_DAT		; Read status code.
 
 		tya				; Return status & set flags.
 		rts
-
-	.else
-
-scsi_get_status:cly				; In case no PHASE_STAT_IN!
-
-.wait_mesg:	jsr	scsi_get_phase		; Do the final phases of the
-		cmp	#PHASE_STAT_IN		; SCSI transaction sequence.
-		beq	.read_status
-		cmp	#PHASE_MESG_IN
-		beq	.read_mesg
-		bra	.wait_mesg
-
-.read_status:	ldy	IFU_SCSI_DAT		; Read status code.
-		jsr	scsi_handshake
-		bra	.wait_mesg
-
-.read_mesg:	lda	IFU_SCSI_DAT		; Flush message byte.
-		jsr	scsi_handshake
-
-.wait_exit:	tst	#SCSI_BSY, IFU_SCSI_FLG	; Wait for the CD-ROM to
-		bne	.wait_exit		; release the SCSI bus.
-
-		tya				; Return status & set flags.
-		rts
-
-	.endif
 
 
 
@@ -849,7 +850,7 @@ cdr_read_ram	.proc
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; cdr_read_bnk - with BNK memory as destination (like CD_READ to RAM).
+; cdr_read_bnk - with BNK memory as destination (like CD_READ to BNK).
 ;
 ; Returns: Y,Z-flag,N-flag = $00 or an error code.
 ;
@@ -1438,11 +1439,11 @@ cdr_incdec_len:	lda.l	cplay_len_l		; Decrement the ADPCM length.
 
 cdr_cplay_next	.proc
 
-		jsr	scsi_select_cd		; Acquire the SCSI bus.
-		bcs	.finished		; Signal that we've failed!
+		jsr	scsi_select_cd		; Attempt to select the CD-ROM.
+		bcs	.finished		; Is the CD-ROM already busy?
 
 		ldy	#19			; Wait for up to 20ms for the
-		clx				; CD-ROM to acknowledge.
+		clx				; CD-ROM to signal SCSI_BSY.
 .wait_scsi_bus:	jsr	scsi_get_phase
 		and	#SCSI_BSY
 		bne	.proc_scsi_loop
@@ -1684,7 +1685,9 @@ cdr_init_disc	.proc
 
 ;		; Check that the CD-ROM IFU is present.
 ;		;
-;		; N.B. The System Card does not check this!
+;		; N.B. The System Card does not check the IO-PORT!
+;		;
+;		; N.B. The Turbo Everdrive Pro does not emulate this!
 ;
 ;		ldy	#CDERR_NO_CDIFU
 ;		lda	IO_PORT
@@ -2074,4 +2077,4 @@ cdr_dinfo	.proc
 ; ***************************************************************************
 ; ***************************************************************************
 
-		.endprocgroup
+		.endprocgroup			; cdrom_group

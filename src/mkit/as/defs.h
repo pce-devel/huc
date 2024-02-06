@@ -129,6 +129,7 @@
 #define P_ENCODING	62	// .encoding
 #define P_STRUCT	63	// .struct
 #define P_ENDS		64	// .ends
+#define P_AREA		65	// .area
 
 /* symbol flags */
 #define UNDEF	1	/* undefined - may be zero page */
@@ -222,6 +223,7 @@ typedef struct t_symbol {
 	int type;
 	int value;
 	int section;
+	int area;
 	int bank;
 	int page;
 	int nb;

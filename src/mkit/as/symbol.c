@@ -229,6 +229,7 @@ stinstall(int hash, int type)
 	sym->scope = NULL;
 	sym->proc = NULL;
 	sym->section = -1;
+	sym->area = -1;
 	sym->bank = RESERVED_BANK;
 	sym->nb = 0;
 	sym->size = 0;
@@ -340,6 +341,7 @@ labldef(int lval, int lbnk, int lsrc)
 		case UNDEF:
 		case IFUNDEF:
 			lablptr->type = DEFABS;
+			lablptr->area = area;
 			lablptr->bank = lbnk;
 			lablptr->value = lval;
 			break;
@@ -390,6 +392,10 @@ labldef(int lval, int lbnk, int lsrc)
 		if ((lablptr->value != lval) ||
 		    ((lsrc == LOCATION) && (bank < bank_limit) && (lablptr->bank != bank_base + bank))) {
 			fatal_error("Symbol's bank or address changed in final pass!");
+			return (-1);
+		}
+		if (lablptr->area != area) {
+			fatal_error("Symbol's area changed in final pass!");
 			return (-1);
 		}
 	}

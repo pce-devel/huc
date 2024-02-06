@@ -35,7 +35,7 @@
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; Apply some extra patches to run an overlay from ROM instead of loading it
+; Apply some extra patches to run an overlay from USB instead of loading it
 ; from the CD, but try to keep the environment as similar as possible.
 ;
 

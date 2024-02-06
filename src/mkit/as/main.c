@@ -544,6 +544,7 @@ main(int argc, char **argv)
 	for (pass = FIRST_PASS; pass <= LAST_PASS; pass++) {
 		infile_error = -1;
 		page = 7;
+		area = 0;
 		bank = 0;
 		loccnt = 0;
 		slnum = 0;

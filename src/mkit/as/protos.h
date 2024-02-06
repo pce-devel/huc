@@ -45,6 +45,7 @@ void do_equ(int *ip);
 void do_page(int *ip);
 void do_org(int *ip);
 void do_bank(int *ip);
+void do_area(int *ip);
 void do_incbin(int *ip);
 void do_mx(char *fname);
 void forget_included_files(void);

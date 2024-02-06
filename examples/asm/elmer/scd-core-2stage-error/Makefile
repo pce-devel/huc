@@ -7,10 +7,10 @@ AFLAGS ?= -newproc -strip -m -l 2 -S -overlay
 SRC1_INC = pceas.inc pcengine.inc core.inc core-startup.asm core-kernel.asm joypad.asm
 SRC1_OVL = core-stage1.asm core-config.inc
 
-SRC2_INC = pceas.inc pcengine.inc core.inc core-startup.asm core-kernel.asm joypad.asm
+SRC2_INC = pceas.inc pcengine.inc core.inc core-startup.asm core-kernel.asm joypad.asm unpack-zx0.asm
 SRC2_OVL = stage2.asm core-config.inc
 
-ERR_INC = pceas.inc pcengine.inc core.inc core-startup.asm core-kernel.asm joypad.asm
+ERR_INC = pceas.inc pcengine.inc core.inc core-startup.asm core-kernel.asm joypad.asm unpack-zx0.asm
 ERR_OVL = error.asm core-config.inc saz_vdc.zx0 saz_vce.zx0
 
 SRC_ISO  = core-stage1.bin stage2.ovl

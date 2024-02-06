@@ -12,6 +12,7 @@ int data_loccnt;	/* data location counter */
 int data_size;		/* size of binary output (in bytes) */
 int data_level;		/* data output level, must be <= listlevel to be outputed */
 int loccnt;		/* location counter */
+int area;		/* current area */
 int bank;		/* current bank */
 int bank_base;		/* bank base index */
 int rom_limit;		/* bank limit */

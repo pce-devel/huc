@@ -12,6 +12,7 @@ extern int data_loccnt;			/* data location counter */
 extern int data_size;			/* size of binary output (in bytes) */
 extern int data_level;			/* data output level, must be <= listlevel to be outputed */
 extern int loccnt;			/* location counter */
+extern int area;			/* current area */
 extern int bank;			/* current bank */
 extern int bank_base;			/* bank base index */
 extern int bank_limit;			/* bank limit */

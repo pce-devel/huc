@@ -63,6 +63,15 @@ CHR_0x20	=	CHR_ZERO + 32		; ASCII ' ' CHR tile #.
 USING_STAGE1	=	1
 
 		;
+		; Choose a smaller ZX0 window than the default 2KB in order
+		; to test the optimized decompressor for a 256-byte window.
+		;
+
+ZX0_PREFER_SIZE	=	0			; Smaller size or 10% faster.
+ZX0_WINBUF	=	($3F00)			; Choose a 256 byte window in
+ZX0_WINMSK	=	($0100 - 1)		; RAM, located at $3F00.
+
+		;
 		; Include the library, reading the project's configuration
 		; settings from the local "core-config.inc", if it exists.
 		;
@@ -196,7 +205,7 @@ core_main:	; Turn the display off and initialize the screen mode.
 ; The compressed graphics for the error screen.
 ;
 
-saz_vdc:	incbin	"saz_vdc.zx0"
+saz_vdc:	incbin	"saz_vdc.zx0.256"
 
 
 

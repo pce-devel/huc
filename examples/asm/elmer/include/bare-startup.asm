@@ -370,10 +370,10 @@ DATA_BANK	=	BASE_BANK + 1 + RESERVE_BANKS
 _temp		ds	2			; Use within any ASM routine.
 _bank		ds	1			; Use within any ASM routine.
 
-base_zp1st	=	$2003			; 1st free user address.
-base_zpend	=	$20EC
+base_zp1st	=	$F8:2003		; 1st free user address.
+base_zpend	=	$F8:20EC
 
-base_ram1st     =	$22D0			; After the System Card!
+base_ram1st     =	$F8:22D0		; After the System Card!
 
 		.bss
 		.org	base_ram1st

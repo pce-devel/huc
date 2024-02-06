@@ -3,7 +3,7 @@
 ;
 ; TURBO-GRAFX / PC-ENGINE SUPER SYSTEM CARD 3.00 PATCH FOR TURBO EVERDRIVE 2
 ;
-; Copyright John Brandwood 2015-2019.
+; Copyright John Brandwood 2015-2024.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -25,6 +25,8 @@
 ; 2015-11-24 - Initial Release 3.01
 ; 2019-01-07 - Release 3.02
 ;              Add patch for Dragon Slayer II crash.
+; 2024-01-05 - Release 3.03
+;              Add patch to fix System Card's CD_READ-to-MPR bug.
 ;
 ; ***************************************************************************
 ; ***************************************************************************
@@ -82,11 +84,17 @@ JPN_SYSCARD     =       1
 
                 .incbin "syscard3.jpn.pce"
 
-SCRSIZ_PATCH    =       $e28e
+SCRSIZ_OLDPATCH =       $e28e ; Patch STA $0002 in TED2 v3.02 patch!!!
+SCRSIZ_NEWPATCH =       $e288 ; Patch STA $0000 in TED2 v3.03 patch!!!
+
 MEMOPEN_ADR     =       $fe92
 UNLOCK_TEST     =       $c86b
 MESSAGE_ADR     =       $c9d1
 RUNBOOT_ADR     =       $e206
+
+CDREAD_PATCH    =       $ed8e
+RESTORE_MPRx    =       $ed91
+RETRY_CDREAD    =       $ecf1
 
 SCRSIZ_FUNC     =       $e267 ; bank 0 ; repair this from TED2 v3.01 patch!!!
 HACKINIT_ADR    =       $c887 ; bank 1 ; repair this from TED2 v3.01 patch!!!
@@ -98,11 +106,17 @@ DISPLAY_SUPER   =       $c950
 
                 .incbin "syscard3.usa.pce"
 
-SCRSIZ_PATCH    =       $e2a7
+SCRSIZ_OLDPATCH =       $e2a7 ; Patch STA $0002 in TED2 v3.02 patch!!!
+SCRSIZ_NEWPATCH =       $e2a1 ; Patch STA $0000 in TED2 v3.03 patch!!!
+
 MEMOPEN_ADR     =       $feab
 UNLOCK_TEST     =       $c86b ; bank 1
 MESSAGE_ADR     =       $c9c4 ; bank 1
 RUNBOOT_ADR     =       $e21f
+
+CDREAD_PATCH    =       $eda7
+RESTORE_MPRx    =       $edaa
+RETRY_CDREAD    =       $ed0a
 
 SCRSIZ_FUNC     =       $e280 ; bank 0 ; repair this from TED2 v3.01 patch!!!
 HACKINIT_ADR    =       $c887 ; bank 1 ; repair this from TED2 v3.01 patch!!!
@@ -188,12 +202,13 @@ my_ex_memopen:  lda     #$68            ; Return that 192KB of external SCD RAM
                 clc                     ; internal SCD RAM chip.
                 rts
 
-fix_ex_scrsiz:  pha                     ; Repair "Gate of Thunder" damage.
-                lda     #$80
+fix_ex_scrsiz:  sta     $0000           ; Exec ex_scrsiz instr that was patched.
+                lda     #$80            ; Repair "Gate of Thunder" damage.
                 sta     $FFF5
-                pla
-                sta     $0002           ; Exec ex_scrsiz instr that was patched.
                 rts
+
+fix_ex_cdread:  jsr     RESTORE_MPRx    ; Fix Hudson's bug by restoring the old
+                jmp     RETRY_CDREAD    ; MPRx value before the CD_READ retries.
 
 scd_unlock_test:php                     ; Disable interrupts for the next bit.
                 sei
@@ -221,8 +236,11 @@ scd_unlock_test:php                     ; Disable interrupts for the next bit.
                 .org    $e069
                 jmp     SCRSIZ_FUNC
 
-                .org    SCRSIZ_PATCH
-                jmp     fix_ex_scrsiz
+                .org    SCRSIZ_OLDPATCH
+                sta     $0002
+
+                .org    SCRSIZ_NEWPATCH
+                jsr     fix_ex_scrsiz
 
                 ;
                 ; If we're building for a TED2 or 1MB-RAM card then patch the
@@ -248,8 +266,16 @@ scd_unlock_test:php                     ; Disable interrupts for the next bit.
 
                 .bank   0
                 .org    RUNBOOT_ADR
-
                 jsr     fix_bootload    ; Patch System Card's jump to boot loader.
+
+                ;
+                ; Fix Hudson's System Card bug where ex_cdread to an MPR fails
+                ; to restore the original bank before retrying after an error.
+                ;
+
+                .bank   0
+                .org    CDREAD_PATCH
+                jmp     fix_ex_cdread
 
                 ;
                 ; Check if the IPL of the CD (loaded at $3000) matches
@@ -358,4 +384,4 @@ fix_dslayer2:   tii     .patch,$2CD1,(.done - .patch)
                 .bank   1
                 .org    MESSAGE_ADR
 
-                .db     "TED2 3.02"
+                .db     "TED2 3.03"

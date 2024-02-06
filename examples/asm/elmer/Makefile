@@ -2,9 +2,11 @@
 #
 
 PREREQS = ipl-scd
-SUBDIRS = rom-bare-tiatest rom-bare-vdctest scd-bios-hello scd-bios-hello-error \
+SUBDIRS = rom-bare-buftest rom-bare-mwrtest rom-bare-rcrtest rom-bare-tiatest \
           rom-core-hello rom-core-okitest \
-          cd-core-1stage cd-core-2stage scd-core-1stage scd-core-1stage-error \
+          scd-bios-hello scd-bios-hello-error \
+          cd-core-1stage cd-core-2stage cd-core-scsitest \
+          scd-core-1stage scd-core-1stage-error \
           scd-core-2stage scd-core-2stage-error scd-core-fastcd \
           rom-kickc-hello rom-kickc-shmup ted2-core-hwdetect ted2-core-sdcard \
           ted2-core-gulliver

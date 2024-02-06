@@ -15,7 +15,7 @@ char pseudo_flag[] = {
 	0x0C, 0x0F, 0x0F, 0x0F, 0x0C, 0x0C, 0x0C, 0x0C, 0x0F, 0x0F,
 	0x0F, 0x0F, 0x0F, 0x0C, 0x0C, 0x0C, 0x04, 0x0F, 0x04, 0x0F,
 	0x04, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x0F, 0x0F, 0x0F, 0x0F,
-	0x0F, 0x0F, 0x0F, 0x0F, 0x0F
+	0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F
 };
 
 
@@ -720,6 +720,7 @@ do_equ(int *ip)
 	if ((optype == 1) && (lablptr->type == DEFABS)) {
 		lablptr->value = value;
 		lablptr->bank = expr_valbank;
+		lablptr->area = area;
 	} else
 	if (undef != 0) {
 		/* needed for KickC forward-references */
@@ -747,8 +748,8 @@ void
 do_page(int *ip)
 {
 	/* not allowed in procs */
-	if (proc_ptr) {
-		fatal_error("PAGE can not be changed in procs!");
+	if (proc_ptr && (section == S_CODE)) {
+		fatal_error("Code PAGE can not be changed within a .proc!");
 		return;
 	}
 
@@ -812,8 +813,8 @@ do_org(int *ip)
 	case S_CODE:
 	case S_DATA:
 		/* not allowed in procs */
-		if (proc_ptr) {
-			fatal_error("ORG can not be changed in procs!");
+		if (proc_ptr && (section == S_CODE)) {
+			fatal_error("Code ORG can not be changed within a .proc!");
 			return;
 		}
 
@@ -855,8 +856,8 @@ do_bank(int *ip)
 	char name[128];
 
 	/* not allowed in procs */
-	if (proc_ptr) {
-		fatal_error("Bank can not be changed in procs!");
+	if (proc_ptr && (section == S_CODE)) {
+		fatal_error("Code BANK can not be changed within a .proc!");
 		return;
 	}
 
@@ -866,6 +867,12 @@ do_bank(int *ip)
 	/* get bank index */
 	if (!evaluate(ip, 0, 0))
 		return;
+
+	/* check for undefined symbol - they are not allowed in .bank */
+	if (undef != 0) {
+		error("Undefined symbol in operand field!");
+		return;
+	}
 
 	if (value > bank_limit) {
 		error("Bank index out of range!");
@@ -928,6 +935,38 @@ do_bank(int *ip)
 	/* output on last pass */
 	if (pass == LAST_PASS) {
 		loadlc(bank, 1);
+		println();
+	}
+}
+
+
+/* ----
+ * do_area()
+ * ----
+ * .area pseudo
+ */
+
+void
+do_area(int *ip)
+{
+	/* define label */
+	labldef(0, 0, LOCATION);
+
+	/* get area value */
+	if (!evaluate(ip, 0, 0))
+		return;
+
+	/* check for undefined symbol - they are not allowed in .area */
+	if (undef != 0) {
+		error("Undefined symbol in operand field!");
+		return;
+	}
+
+	area = value;
+
+	/* output on last pass */
+	if (pass == LAST_PASS) {
+		loadlc(area, 1);
 		println();
 	}
 }

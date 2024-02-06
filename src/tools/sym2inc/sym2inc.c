@@ -95,6 +95,7 @@ char * strupr ( char *pStr )
 // document titled "A Painless Guide to CRC Error Detection Algorithms"
 // by Ross Williams (ross@guest.adelaide.edu.au.). This document is
 // likely to be in the FTP archive "ftp.adelaide.edu.au/pub/rocksoft".
+//
 
 static  uint32_t s_aCRC32Table [256] =
 {
@@ -172,6 +173,7 @@ static  uint32_t s_aCRC32Table [256] =
 // CalculateCRC32 ()
 //
 // Basically, it is the CRC32 calculation as used in Ethernet, PKZIP, etc.
+//
 
 uint32_t CalculateCRC32 ( const void * pData, size_t iSize )
 {
@@ -203,6 +205,7 @@ uint32_t CalculateCRC32 ( const void * pData, size_t iSize )
 // Google "FIO19-C" for the reason why.
 //
 // N.B. Will return an error for files larger than 2GB on a 32-bit system.
+//
 
 bool ReadBinaryFile ( const char * pName, void ** pBuffer, size_t * pLength )
 {
@@ -259,6 +262,7 @@ bool ReadBinaryFile ( const char * pName, void ** pBuffer, size_t * pLength )
 //
 // Uses POSIX file functions rather than C file functions, just because
 // it might save some space since ReadBinaryFile() uses POSIX functions.
+//
 
 bool WriteBinaryFile ( const char * pName, void * pBuffer, size_t iLength )
 {
@@ -500,6 +504,13 @@ void OutputSymbols ( char * pFileName )
       }
 
       fputs( "=\t$", pFile );
+
+      strupr( pSymbol->pBankString );
+
+      if (( pSymbol->pBankString[0] != 'F' ) || ( pSymbol->pBankString[1] != '0' )) {
+        fputs( pSymbol->pBankString, pFile );
+        fputs( ":", pFile );
+      }
 
       fputs( strupr( pSymbol->pAddrString ), pFile );
 

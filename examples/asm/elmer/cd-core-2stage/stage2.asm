@@ -66,6 +66,12 @@ CHR_0x20	=	CHR_ZERO + 32		; ASCII ' ' CHR tile #.
 USING_STAGE1	=	1
 
 		;
+		; Since we don't use it here, let's verify that this works.
+		;
+
+SUPPORT_ZX0VRAM	=	0			; Include decompress-to-VRAM?
+
+		;
 		; Include the library, reading the project's configuration
 		; settings from the local "core-config.inc", if it exists.
 		;
