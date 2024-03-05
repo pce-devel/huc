@@ -108,7 +108,7 @@ jobs:
     needs: build
     steps:
       - name: Check out code from the repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Get previously built artifacts
         uses: actions/download-artifact@v4
         with:
