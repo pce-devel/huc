@@ -24,7 +24,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Check out code from the repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Build on Linux
@@ -45,7 +45,7 @@ jobs:
           make
           echo Build Complete
       - name: Archive toolchain
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: toolchain-${{ matrix.os }}
           path: |
@@ -63,9 +63,9 @@ jobs:
     needs: build
     steps:
       - name: Check out code from the repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Get previoulsy built artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: toolchain-${{ matrix.os }}
       - name: Restore Execute Flags
@@ -110,7 +110,7 @@ jobs:
       - name: Check out code from the repository
         uses: actions/checkout@v3
       - name: Get previously built artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: toolchain-${{ matrix.os }}
       - name: Package ${{ matrix.os }}
@@ -130,7 +130,7 @@ jobs:
           make package
           echo Package Complete
       - name: Archive package
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: package-${{ matrix.os }}
           path: |
@@ -143,17 +143,17 @@ jobs:
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
     steps:
       - name: Check out code from the repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Get previoulsy built artifacts win64
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: package-windows-2022
       - name: Get previously built artifacts macos
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: package-macos-12
       - name: Get previously built artifacts linux
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: package-ubuntu-20.04
         # https://github.com/pyTooling/Actions/tree/main/releaser
