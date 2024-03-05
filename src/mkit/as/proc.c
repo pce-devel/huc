@@ -610,11 +610,6 @@ proc_reloc(void)
 				sym->value = (sym->value & 0x007FFFFF);
 				sym->value += (proc_ptr->org - proc_ptr->base);
 
-				/* KickC can't call bank(), so put it in the label */
-				if (proc_ptr->kickc) {
-					sym->value += sym->bank << 23;
-				}
-
 				/* local symbols */
 				if (sym->local) {
 					local = sym->local;
@@ -631,11 +626,6 @@ proc_reloc(void)
 
 							local->value = (local->value & 0x007FFFFF);
 							local->value += (proc_ptr->org - proc_ptr->base);
-
-							/* KickC can't call bank(), so put it in the label */
-							if (proc_ptr->kickc) {
-								local->value += local->bank << 23;
-							}
 						}
 
 						/* next */
@@ -681,7 +671,7 @@ proc_reloc(void)
 		poke(call_ptr--, 0x53);			// tam #6
 		poke(call_ptr--, 0x68);			// pla
 
-		lablset("leave_proc", call_ptr + 1 + (call_bank << 23));
+		lablset("leave_proc", call_ptr + 1);
 	}
 }
 

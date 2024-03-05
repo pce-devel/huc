@@ -313,10 +313,6 @@ labldef(int lval, int lbnk, int lsrc)
 			lbnk = bank;
 		else
 			lbnk = bank_base + bank;
-
-		/* KickC can't call bank(), so put it in the label */
-		if (kickc_mode)
-			lval += lbnk << 23;
 	} else {
 		/* is this a multi-label? */
 		if (lablptr->name[1] == '!') {

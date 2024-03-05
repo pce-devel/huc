@@ -603,11 +603,6 @@ push_val(int type)
 
 			pc_symbol.value += (page << 13);
 
-			/* KickC can't call bank(), so put it in the label */
-			if (kickc_mode) {
-				pc_symbol.value += pc_symbol.bank << 23;
-			}
-
 			expr_valbank = pc_symbol.bank;
 
 			expr_toplabl =
