@@ -267,14 +267,18 @@ start:
 	c = getc(in_fp);
 	if (c == EOF) {
 		if (close_input()) {
-			if (stop_pass != 0 || kickc_incl == 0) {
+			if (stop_pass != 0 || ((hucc_final == 0) && (kickc_final == 0))) {
 				return (-1);
 			} else {
-				kickc_incl = 0;
-				if (open_input("kickc-final.asm") == -1) {
-					fatal_error("Cannot open \"kickc-final.asm\" file!");
+				const char * name = (hucc_final) ? "hucc-final.asm" : "kickc-final.asm";
+				hucc_final = kickc_final = 0;
+				if (open_input(name) == -1) {
+					char message [128];
+					sprintf(message, "Cannot open \"%s\" file!", name);
+					fatal_error(message);
 					return (-1);
 				}
+				in_final = 1;
 			}
 		}
 		goto start;
@@ -374,7 +378,7 @@ start:
  */
 
 int
-open_input(char *name)
+open_input(const char *name)
 {
 	FILE *fp;
 	char *p;

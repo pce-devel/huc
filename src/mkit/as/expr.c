@@ -22,7 +22,7 @@ t_symbol pc_symbol = {
 	DEFABS, /* type */
 	0, /* value */
 	0, /* section */
-	0, /* area */
+	0, /* tag */
 	0, /* bank */
 	0, /* page */
 	0, /* nb */
@@ -588,7 +588,7 @@ push_val(int type)
 			else
 				pc_symbol.value = data_loccnt;
 
-			pc_symbol.area = area;
+			pc_symbol.tag  = tag_value;
 			pc_symbol.page = page;
 
 			if (bank >= RESERVED_BANK)
@@ -893,7 +893,7 @@ check_keyword(void)
 	else if (symbol[0] == keyword[8][0] && !strcasecmp(symbol, keyword[8]))
 		op = OP_LINEAR;
 	else if (symbol[0] == keyword[9][0] && !strcasecmp(symbol, keyword[9]))
-		op = OP_AREA;
+		op = OP_TAGOF;
 	else {
 		if (machine->type == MACHINE_PCE) {
 			/* PCE specific functions */
@@ -915,7 +915,7 @@ check_keyword(void)
 	case OP_PAL:
 	case OP_SIZEOF:
 	case OP_LINEAR:
-	case OP_AREA:
+	case OP_TAGOF:
 		expr_lablptr = NULL;
 		expr_lablcnt = 0;
 		break;
@@ -997,11 +997,11 @@ do_op(void)
 		val[0] = (exbank << 13) + (val[0] & 0x1FFF);
 		break;
 
-	/* AREA */
-	case OP_AREA:
-		if (!check_func_args("AREA"))
+	/* TAGOF */
+	case OP_TAGOF:
+		if (!check_func_args("TAGOF"))
 			return (0);
-		val[0] = expr_lablptr->area;
+		val[0] = expr_lablptr->tag;
 		break;
 
 	/* BANK */

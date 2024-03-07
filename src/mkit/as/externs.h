@@ -12,7 +12,7 @@ extern int data_loccnt;			/* data location counter */
 extern int data_size;			/* size of binary output (in bytes) */
 extern int data_level;			/* data output level, must be <= listlevel to be outputed */
 extern int loccnt;			/* location counter */
-extern int area;			/* current area */
+extern int tag_value;			/* current tag value */
 extern int bank;			/* current bank */
 extern int bank_base;			/* bank base index */
 extern int bank_limit;			/* bank limit */
@@ -104,7 +104,10 @@ extern int asm_opt[9];				/* assembler option state */
 extern int opvaltab[6][16];
 extern int call_bank;				/* bank for .proc trampolines */
 extern int kickc_mode;				/* NZ if currently in KickC mode */
-extern int kickc_incl;				/* auto-include "kickc-final.asm" */
+extern int hucc_mode;				/* NZ if assembling HuCC code */
+extern int kickc_final;				/* auto-include "kickc-final.asm" */
+extern int hucc_final;				/* auto-include "hucc-final.asm" */
+extern int in_final;				/* set when in xxxx-final.asm include */
 extern int preproc_inblock;			/* C-style comment: within block comment */
 extern int preproc_sfield;			/* C-style comment: SFIELD as a variable */
 extern int preproc_modidx;			/* C-style comment: offset to modified char */

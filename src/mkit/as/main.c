@@ -543,8 +543,8 @@ main(int argc, char **argv)
 	/* assemble */
 	for (pass = FIRST_PASS; pass <= LAST_PASS; pass++) {
 		infile_error = -1;
+		tag_value = 0;
 		page = 7;
-		area = 0;
 		bank = 0;
 		loccnt = 0;
 		slnum = 0;
@@ -561,7 +561,10 @@ main(int argc, char **argv)
 		rsbank = RESERVED_BANK;
 		proc_nb = 0;
 		kickc_mode = 0;
-		kickc_incl = kickc_opt;
+		hucc_mode = 0;
+		kickc_final = 0;
+		hucc_final = 0;
+		in_final = 0;
 
 		/* reset assembler options */
 		asm_opt[OPT_LIST] = 0;

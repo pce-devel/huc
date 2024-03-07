@@ -165,7 +165,9 @@ do_nomlist(int *ip)
 /* ----
  * do_db()
  * ----
- * .db pseudo
+ * .db    pseudo (optype == 0)
+ * .text  pseudo (optype == 1)
+ * .ascii pseudo (optype == 2)
  */
 
 void
@@ -690,7 +692,8 @@ do_dd(int *ip)
 /* ----
  * do_equ()
  * ----
- * .equ pseudo
+ * .equ pseudo (optype == 0)
+ * .set pseudo (optype == 1)
  */
 
 void
@@ -720,7 +723,7 @@ do_equ(int *ip)
 	if ((optype == 1) && (lablptr->type == DEFABS)) {
 		lablptr->value = value;
 		lablptr->bank = expr_valbank;
-		lablptr->area = area;
+		lablptr->tag = tag_value;
 	} else
 	if (undef != 0) {
 		/* needed for KickC forward-references */
@@ -941,32 +944,32 @@ do_bank(int *ip)
 
 
 /* ----
- * do_area()
+ * do_settag()
  * ----
- * .area pseudo
+ * .tag pseudo
  */
 
 void
-do_area(int *ip)
+do_settag(int *ip)
 {
 	/* define label */
 	labldef(0, 0, LOCATION);
 
-	/* get area value */
+	/* get tag value */
 	if (!evaluate(ip, 0, 0))
 		return;
 
-	/* check for undefined symbol - they are not allowed in .area */
+	/* check for undefined symbol - they are not allowed in .tag */
 	if (undef != 0) {
 		error("Undefined symbol in operand field!");
 		return;
 	}
 
-	area = value;
+	tag_value = value;
 
 	/* output on last pass */
 	if (pass == LAST_PASS) {
-		loadlc(area, 1);
+		loadlc(tag_value, 1);
 		println();
 	}
 }
@@ -1889,8 +1892,9 @@ do_align(int *ip)
 /* ----
  * do_kickc()
  * ----
- * .pceas pseudo
- * .kickc pseudo
+ * .pceas pseudo (optype == 0)
+ * .kickc pseudo (optype == 1)
+ * .hucc  pseudo (optype == 2)
  */
 
 void
@@ -1903,17 +1907,24 @@ do_kickc(int *ip)
 	if (!check_eol(ip))
 		return;
 
-	/* enable/disable KickC mode */
-	kickc_mode = optype;
+	/* enable/disable KickC or HuCC mode */
+	kickc_mode = (optype & 1) >> 0;
+	hucc_mode  = (optype & 2) >> 1;
+
+	/* include final.asm, but not if already inside final.asm */
+	if (!in_final) {
+		kickc_final |= kickc_mode;
+		hucc_final  |= hucc_mode;
+	}
 
 	/* enable () for indirect addressing in KickC mode */
-	asm_opt[OPT_INDPAREN] = optype;
+	asm_opt[OPT_INDPAREN] = kickc_mode;
 
 	/* enable auto-detect ZP addressing in KickC mode */
-	asm_opt[OPT_ZPDETECT] = optype;
+	asm_opt[OPT_ZPDETECT] = kickc_mode;
 
 	/* enable long-branch support in KickC mode */
-	asm_opt[OPT_LBRANCH] = optype;
+	asm_opt[OPT_LBRANCH] = kickc_mode;
 
 	/* output line */
 	if (pass == LAST_PASS)
@@ -1957,7 +1968,8 @@ do_cpu(int *ip)
 /* ----
  * do_segment()
  * ----
- * .segment pseudo (for KickC code)
+ * .segment pseudo (optype == 0) (for KickC code)
+ * .area    pseudo (optype == 1) (for HuCC code)
  */
 
 void

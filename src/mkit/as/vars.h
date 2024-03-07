@@ -12,7 +12,7 @@ int data_loccnt;	/* data location counter */
 int data_size;		/* size of binary output (in bytes) */
 int data_level;		/* data output level, must be <= listlevel to be outputed */
 int loccnt;		/* location counter */
-int area;		/* current area */
+int tag_value;		/* current tag value */
 int bank;		/* current bank */
 int bank_base;		/* bank base index */
 int rom_limit;		/* bank limit */
@@ -25,7 +25,10 @@ int section_bank[4];	/* current bank for each section */
 int stop_pass;		/* stop the program; set by fatal_error() */
 int errcnt;		/* error counter */
 int kickc_mode;		/* NZ if assembling KickC code */
-int kickc_incl;		/* auto-include "kickc-final.asm" */
+int hucc_mode;		/* NZ if assembling HuCC code */
+int kickc_final;	/* auto-include "kickc-final.asm" */
+int hucc_final;		/* auto-include "hucc-final.asm" */
+int in_final;		/* set when in xxxx-final.asm include */
 int preproc_inblock;	/* C-style comment: within block comment */
 int preproc_sfield;	/* C-style comment: SFIELD as a variable */
 int preproc_modidx;	/* C-style comment: offset to modified char */

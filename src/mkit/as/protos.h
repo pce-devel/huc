@@ -45,7 +45,7 @@ void do_equ(int *ip);
 void do_page(int *ip);
 void do_org(int *ip);
 void do_bank(int *ip);
-void do_area(int *ip);
+void do_settag(int *ip);
 void do_incbin(int *ip);
 void do_mx(char *fname);
 void forget_included_files(void);
@@ -93,7 +93,7 @@ int   add_path(char*, int);
 void  cleanup_path(void);
 int   init_path(void);
 int   readline(void);
-int   open_input(char *name);
+int   open_input(const char *name);
 int   close_input(void);
 FILE *open_file(char *fname, char *mode);
 
