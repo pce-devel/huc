@@ -165,7 +165,9 @@ do_nomlist(int *ip)
 /* ----
  * do_db()
  * ----
- * .db pseudo
+ * .db    pseudo (optype == 0)
+ * .text  pseudo (optype == 1)
+ * .ascii pseudo (optype == 2)
  */
 
 void
@@ -313,7 +315,7 @@ do_db(int *ip)
 				}
 
 				/* check for overflow */
-				if (((value & 0x007FFFFF) > 0xFF) && ((value & 0x007FFFFF) < 0x007FFF80)) {
+				if (((value & 0x3FFFFFFF) > 0xFF) && ((value & 0x3FFFFFFF) < 0x3FFFFF80)) {
 					error("Overflow error!");
 					return;
 				}
@@ -397,7 +399,7 @@ do_dw(int *ip)
 			}
 
 			/* check for overflow */
-			if (((value & 0x007FFFFF) > 0xFFFF) && ((value & 0x007FFFFF) < 0x007F8000)) {
+			if (((value & 0x3FFFFFFF) > 0xFFFF) && ((value & 0x3FFFFFFF) < 0x3FFF8000)) {
 				error("Overflow error!");
 				return;
 			}
@@ -480,7 +482,7 @@ do_dwl(int *ip)
 			}
 
 			/* check for overflow */
-			if (((value & 0x007FFFFF) > 0xFFFF) && ((value & 0x007FFFFF) < 0x007F8000)) {
+			if (((value & 0x3FFFFFFF) > 0xFFFF) && ((value & 0x3FFFFFFF) < 0x3FFF8000)) {
 				error("Overflow error!");
 				return;
 			}
@@ -563,7 +565,7 @@ do_dwh(int *ip)
 			}
 
 			/* check for overflow */
-			if (((value & 0x007FFFFF) > 0xFFFF) && ((value & 0x007FFFFF) < 0x007F8000)) {
+			if (((value & 0x3FFFFFFF) > 0xFFFF) && ((value & 0x3FFFFFFF) < 0x3FFF8000)) {
 				error("Overflow error!");
 				return;
 			}
@@ -690,7 +692,8 @@ do_dd(int *ip)
 /* ----
  * do_equ()
  * ----
- * .equ pseudo
+ * .equ pseudo (optype == 0)
+ * .set pseudo (optype == 1)
  */
 
 void
@@ -720,7 +723,7 @@ do_equ(int *ip)
 	if ((optype == 1) && (lablptr->type == DEFABS)) {
 		lablptr->value = value;
 		lablptr->bank = expr_valbank;
-		lablptr->area = area;
+		lablptr->tag = tag_value;
 	} else
 	if (undef != 0) {
 		/* needed for KickC forward-references */
@@ -796,7 +799,7 @@ do_org(int *ip)
 	switch (section) {
 	case S_ZP:
 		/* zero page section */
-		if ((value & 0x007FFF00) && ((value & 0x007FFF00) != machine->ram_base)) {
+		if ((value & 0x3FFFFF00) && ((value & 0x3FFFFF00) != machine->ram_base)) {
 			error("Invalid address!");
 			return;
 		}
@@ -804,7 +807,7 @@ do_org(int *ip)
 
 	case S_BSS:
 		/* ram section */
-		if (((value & 0x007FFFFF) < machine->ram_base) || ((value & 0x007FFFFF) >= (machine->ram_base + machine->ram_limit))) {
+		if (((value & 0x3FFFFFFF) < machine->ram_base) || ((value & 0x3FFFFFFF) >= (machine->ram_base + machine->ram_limit))) {
 			error("Invalid address!");
 			return;
 		}
@@ -941,32 +944,32 @@ do_bank(int *ip)
 
 
 /* ----
- * do_area()
+ * do_settag()
  * ----
- * .area pseudo
+ * .tag pseudo
  */
 
 void
-do_area(int *ip)
+do_settag(int *ip)
 {
 	/* define label */
 	labldef(0, 0, LOCATION);
 
-	/* get area value */
+	/* get tag value */
 	if (!evaluate(ip, 0, 0))
 		return;
 
-	/* check for undefined symbol - they are not allowed in .area */
+	/* check for undefined symbol - they are not allowed in .tag */
 	if (undef != 0) {
 		error("Undefined symbol in operand field!");
 		return;
 	}
 
-	area = value;
+	tag_value = value;
 
 	/* output on last pass */
 	if (pass == LAST_PASS) {
-		loadlc(area, 1);
+		loadlc(tag_value, 1);
 		println();
 	}
 }
@@ -1031,13 +1034,7 @@ do_incbin(int *ip)
 	fseek(fp, 0, SEEK_SET);
 
 	/* check if it will fit in the rom */
-	if (bank >= RESERVED_BANK) {
-		if ((loccnt + size) > 0x2000) {
-			fclose(fp);
-			fatal_error("PROC overflow!");
-			return;
-		}
-	} else {
+	if ((section_flags[section] & S_IN_ROM) && (bank < RESERVED_BANK)) {
 		/* check if it will fit in the rom */
 		if (((bank << 13) + loccnt + size) > rom_limit) {
 			fclose(fp);
@@ -1069,6 +1066,12 @@ do_incbin(int *ip)
 			/* output line */
 			println();
 		}
+	} else {
+		if ((loccnt + size) > section_limit[section]) {
+			fclose(fp);
+			fatal_error("Too large to fit in the current section!");
+			return;
+		}
 	}
 
 	/* close file */
@@ -1090,7 +1093,7 @@ do_incbin(int *ip)
 	}
 
 	/* update rom size */
-	if (bank < RESERVED_BANK) {
+	if ((section_flags[section] & S_IN_ROM) && (bank < RESERVED_BANK)) {
 		if (bank > max_bank) {
 			if (loccnt)
 				max_bank = bank;
@@ -1578,7 +1581,7 @@ do_ds(int *ip)
 	}
 
 	/* update rom size */
-	if (bank < RESERVED_BANK) {
+	if ((section_flags[section] & S_IN_ROM) && (bank < RESERVED_BANK)) {
 		if (bank > max_bank) {
 			if (loccnt)
 				max_bank = bank;
@@ -1889,8 +1892,9 @@ do_align(int *ip)
 /* ----
  * do_kickc()
  * ----
- * .pceas pseudo
- * .kickc pseudo
+ * .pceas pseudo (optype == 0)
+ * .kickc pseudo (optype == 1)
+ * .hucc  pseudo (optype == 2)
  */
 
 void
@@ -1903,17 +1907,24 @@ do_kickc(int *ip)
 	if (!check_eol(ip))
 		return;
 
-	/* enable/disable KickC mode */
-	kickc_mode = optype;
+	/* enable/disable KickC or HuCC mode */
+	kickc_mode = (optype & 1) >> 0;
+	hucc_mode  = (optype & 2) >> 1;
+
+	/* include final.asm, but not if already inside final.asm */
+	if (!in_final) {
+		kickc_final |= kickc_mode;
+		hucc_final  |= hucc_mode;
+	}
 
 	/* enable () for indirect addressing in KickC mode */
-	asm_opt[OPT_INDPAREN] = optype;
+	asm_opt[OPT_INDPAREN] = kickc_mode;
 
 	/* enable auto-detect ZP addressing in KickC mode */
-	asm_opt[OPT_ZPDETECT] = optype;
+	asm_opt[OPT_ZPDETECT] = kickc_mode;
 
 	/* enable long-branch support in KickC mode */
-	asm_opt[OPT_LBRANCH] = optype;
+	asm_opt[OPT_LBRANCH] = kickc_mode;
 
 	/* output line */
 	if (pass == LAST_PASS)
@@ -1957,7 +1968,8 @@ do_cpu(int *ip)
 /* ----
  * do_segment()
  * ----
- * .segment pseudo (for KickC code)
+ * .segment pseudo (optype == 0) (for KickC code)
+ * .area    pseudo (optype == 1) (for HuCC code)
  */
 
 void

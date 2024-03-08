@@ -13,4 +13,5 @@ endif
 
 %.o: %.c
 	$(CC) $(CDEFS) $(CFLAGS) -c $< -o $@
-
+%.o: %.cc
+	$(CXX) $(CDEFS) $(CXXFLAGS) -c $< -o $@

@@ -1312,7 +1312,7 @@ cdr_ad_trans	.proc
 
 		; Send SCSI command.
 
-.send_command:	ldx.l	<_bx			; Set the ADPCM RAM desination address.
+.send_command:	ldx.l	<_bx			; Set the ADPCM RAM destination address.
 		ldy.h	<_bx
 		jsr	adpcm_set_dst
 

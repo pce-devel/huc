@@ -21,11 +21,20 @@
 #define MACHINE_NES	1
 #define MACHINE_FUJI	2
 
+/* maximum user rom size */
+#define ROM_BANKS	1024
+
 /* reserved bank index */
-#define RESERVED_BANK	0xF0
-#define PROC_BANK	0xF1
-#define GROUP_BANK	0xF2
-#define STRIPPED_BANK	0xF3
+#define RESERVED_BANK	(ROM_BANKS + 0)
+#define PROC_BANK	(ROM_BANKS + 1)
+#define GROUP_BANK	(ROM_BANKS + 2)
+#define STRIPPED_BANK	(ROM_BANKS + 3)
+
+/* number of reserved banks used beyond ROM_BANKS */
+#define RESERVED_BANKS	4
+
+/* total number of banks to allocate for workspace */
+#define MAX_BANKS	(ROM_BANKS + RESERVED_BANKS)
 
 /* tile format for encoder */
 #define CHUNKY_TILE	1
@@ -50,7 +59,11 @@
 #define S_BSS	1
 #define S_CODE	2
 #define S_DATA	3
+#define MAX_S	4	/* selectable section types */
 #define S_PROC	4	/* trampolines for .proc */
+
+/* section flags */
+#define S_IN_ROM	1
 
 /* assembler options */
 #define OPT_LIST	0
@@ -129,7 +142,7 @@
 #define P_ENCODING	62	// .encoding
 #define P_STRUCT	63	// .struct
 #define P_ENDS		64	// .ends
-#define P_AREA		65	// .area
+#define P_SETTAG	65	// .tag
 
 /* symbol flags */
 #define UNDEF	1	/* undefined - may be zero page */
@@ -178,6 +191,9 @@
 #define BRANCH_PASS	1
 #define LAST_PASS	2
 
+/* size of various hashing tables */
+#define HASH_COUNT	256
+
 /* structs */
 typedef struct t_opcode {
 	struct t_opcode *next;
@@ -223,7 +239,7 @@ typedef struct t_symbol {
 	int type;
 	int value;
 	int section;
-	int area;
+	int tag;
 	int bank;
 	int page;
 	int nb;
@@ -289,6 +305,6 @@ typedef struct t_machine {
 	int (*pack_16x16_tile)(unsigned char *, void *, int, int);
 	int (*pack_16x16_sprite)(unsigned char *, void *, int, int);
 	void (*write_header)(FILE *, int);
-} MACHINE;
+} t_machine;
 
 #endif // DEFS_H

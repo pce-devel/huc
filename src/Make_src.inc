@@ -14,6 +14,8 @@ CDEFS =
 CFLAGS = -Wall -g -O2
 CFLAGS += -DGIT_VERSION="\"$(GIT_VERSION)\""
 CFLAGS += -DGIT_DATE="\"$(GIT_DATE)\""
+CXXFLAGS += -DGIT_VERSION="\"$(GIT_VERSION)\""
+CXXFLAGS += -DGIT_DATE="\"$(GIT_DATE)\""
 LDFLAGS = -g
 
 #
@@ -29,3 +31,7 @@ EXESUFFIX =
 CP = cp
 RM = rm -f
 CC = cc
+CXX = c++
+AWK = awk
+LEX = lex
+YACC = yacc

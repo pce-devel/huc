@@ -22,7 +22,7 @@ t_symbol pc_symbol = {
 	DEFABS, /* type */
 	0, /* value */
 	0, /* section */
-	0, /* area */
+	0, /* tag */
 	0, /* bank */
 	0, /* page */
 	0, /* nb */
@@ -588,13 +588,13 @@ push_val(int type)
 			else
 				pc_symbol.value = data_loccnt;
 
-			pc_symbol.area = area;
+			pc_symbol.tag  = tag_value;
 			pc_symbol.page = page;
 
-			if (bank >= RESERVED_BANK)
-				pc_symbol.bank = bank;
-			else
+			if ((section_flags[section] & S_IN_ROM) && (bank < RESERVED_BANK))
 				pc_symbol.bank = bank + bank_base;
+			else
+				pc_symbol.bank = bank;
 
 			if (pc_symbol.value >= 0x2000) {
 				pc_symbol.bank = (pc_symbol.bank + 1);
@@ -602,11 +602,6 @@ push_val(int type)
 			}
 
 			pc_symbol.value += (page << 13);
-
-			/* KickC can't call bank(), so put it in the label */
-			if (kickc_mode) {
-				pc_symbol.value += pc_symbol.bank << 23;
-			}
 
 			expr_valbank = pc_symbol.bank;
 
@@ -898,7 +893,7 @@ check_keyword(void)
 	else if (symbol[0] == keyword[8][0] && !strcasecmp(symbol, keyword[8]))
 		op = OP_LINEAR;
 	else if (symbol[0] == keyword[9][0] && !strcasecmp(symbol, keyword[9]))
-		op = OP_AREA;
+		op = OP_TAGOF;
 	else {
 		if (machine->type == MACHINE_PCE) {
 			/* PCE specific functions */
@@ -920,7 +915,7 @@ check_keyword(void)
 	case OP_PAL:
 	case OP_SIZEOF:
 	case OP_LINEAR:
-	case OP_AREA:
+	case OP_TAGOF:
 		expr_lablptr = NULL;
 		expr_lablcnt = 0;
 		break;
@@ -1002,11 +997,11 @@ do_op(void)
 		val[0] = (exbank << 13) + (val[0] & 0x1FFF);
 		break;
 
-	/* AREA */
-	case OP_AREA:
-		if (!check_func_args("AREA"))
+	/* TAGOF */
+	case OP_TAGOF:
+		if (!check_func_args("TAGOF"))
 			return (0);
-		val[0] = expr_lablptr->area;
+		val[0] = expr_lablptr->tag;
 		break;
 
 	/* BANK */
@@ -1014,14 +1009,15 @@ do_op(void)
 		if (!check_func_args("BANK"))
 			return (0);
 		if (pass == LAST_PASS) {
-			if (expr_lablptr->bank == RESERVED_BANK) {
-				error("No BANK index for this symbol!");
+			if (expr_lablptr->bank >= RESERVED_BANK) {
+				if (expr_lablptr->bank == RESERVED_BANK)
+					error("No BANK index for this symbol!");
 				val[0] = 0;
 				break;
 			}
 		}
-		/* complicated math to deal with BANK(label+value) */
-		val[0] = (expr_lablptr->bank + (val[0] / 8192) - (expr_lablptr->value / 8192));
+		/* complicated math to deal with BANK(label+value), but keep it 8-bit */
+		val[0] = 0xFF & (expr_lablptr->bank + (val[0] / 8192) - (expr_lablptr->value / 8192));
 		break;
 
 	/* PAGE */

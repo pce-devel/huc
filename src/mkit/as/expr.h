@@ -36,7 +36,7 @@
 #define OP_PAL		27
 #define OP_SIZEOF	28
 #define OP_LINEAR	29
-#define OP_AREA		30
+#define OP_TAGOF	30
 #define OP_dotLO	31
 #define OP_dotHI	32
 
@@ -50,7 +50,7 @@ const int op_pri[] = {
 	 5 /* <=    */,  5 /* >     */,  5 /* >=    */,
 	11 /* DEFIN.*/, 11 /* HIGH  */, 11 /* LOW   */, 11 /* PAGE  */,
 	11 /* BANK  */, 11 /* VRAM  */, 11 /* PAL   */, 11 /* SIZEOF*/,
-	11 /* LINEAR*/, 11 /* AREA  */,  6 /* dotLO */,  6 /* dotHI */
+	11 /* LINEAR*/, 11 /* TAGOF */,  6 /* dotLO */,  6 /* dotHI */
 };
 
 /* second argument */
@@ -63,7 +63,7 @@ const int op_2nd[] = {
 	 1 /* <=    */,  1 /* >     */,  1 /* >=    */,
 	 0 /* DEFIN.*/,  0 /* HIGH  */,  0 /* LOW   */,  0 /* PAGE  */,
 	 0 /* BANK  */,  0 /* VRAM  */,  0 /* PAL   */,  0 /* SIZEOF*/,
-	 0 /* LINEAR*/,  0 /* AREA  */,  0 /* dotLO */,  0 /* dotHI */
+	 0 /* LINEAR*/,  0 /* TAGOF */,  0 /* dotLO */,  0 /* dotHI */
 };
 
 unsigned int op_stack[64] = {
@@ -89,5 +89,5 @@ const char *keyword[10] = {	/* predefined functions */
 	"\3PAL",
 	"\6SIZEOF",
 	"\6LINEAR",
-	"\4AREA"
+	"\5TAGOF"
 };

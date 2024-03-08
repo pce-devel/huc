@@ -768,8 +768,8 @@ getoperand(int *ip, int flag, int last_char)
 		if (mode == (ABS | ABS_X | ABS_Y | ZP | ZP_X | ZP_Y)) {
 			/* was there an undefined or undefined-this-pass symbol? */
 			if (undef || notyetdef ||
-				((value & 0x007FFF00) != machine->ram_base)) {
-//				((value & 0x007FFF00) && ((value & 0x007FFF00) != machine->ram_base))) {
+				((value & 0x3FFFFF00) != machine->ram_base)) {
+//				((value & 0x3FFFFF00) && ((value & 0x3FFFFF00) != machine->ram_base))) {
 				/* use ABS addressing, if available */
 				if (flag & ABS)
 					mode &= ~ZP;
@@ -896,7 +896,7 @@ getoperand(int *ip, int flag, int last_char)
 						value++;
 				}
 				/* check address validity */
-				if ((value & 0x007FFF00) && ((value & 0x007FFF00) != machine->ram_base))
+				if ((value & 0x3FFFFF00) && ((value & 0x3FFFFF00) != machine->ram_base))
 					error("Incorrect zero page address!");
 			}
 
@@ -911,7 +911,7 @@ getoperand(int *ip, int flag, int last_char)
 					error("Instruction extension not supported in immediate mode!");
 				else {
 					/* check value validity */
-					if (((value & 0x007FFF00) > 0xFF) && ((value & 0x007FFF00) < 0x007FFF00))
+					if (((value & 0x3FFFFF00) > 0xFF) && ((value & 0x3FFFFF00) < 0x3FFFFF00))
 						error("Incorrect immediate value!");
 				}
 			}

@@ -6,10 +6,10 @@
 #include "externs.h"
 #include "protos.h"
 
-struct t_proc *proc_tbl[256];
-struct t_proc *proc_ptr;
-struct t_proc *proc_first;
-struct t_proc *proc_last;
+t_proc *proc_tbl[HASH_COUNT];
+t_proc *proc_ptr;
+t_proc *proc_first;
+t_proc *proc_last;
 int proc_nb;
 int call_1st;
 int call_ptr;
@@ -594,7 +594,7 @@ proc_reloc(void)
 	bank_free = NULL;
 
 	/* remap proc symbols */
-	for (i = 0; i < 256; i++) {
+	for (i = 0; i < HASH_COUNT; i++) {
 		sym = hash_tbl[i];
 
 		while (sym) {
@@ -607,13 +607,8 @@ proc_reloc(void)
 				else
 					sym->bank = proc_ptr->bank + bank_base;
 
-				sym->value = (sym->value & 0x007FFFFF);
+				sym->value = (sym->value & 0x3FFFFFFF);
 				sym->value += (proc_ptr->org - proc_ptr->base);
-
-				/* KickC can't call bank(), so put it in the label */
-				if (proc_ptr->kickc) {
-					sym->value += sym->bank << 23;
-				}
 
 				/* local symbols */
 				if (sym->local) {
@@ -629,13 +624,8 @@ proc_reloc(void)
 							else
 								local->bank = proc_ptr->bank + bank_base;
 
-							local->value = (local->value & 0x007FFFFF);
+							local->value = (local->value & 0x3FFFFFFF);
 							local->value += (proc_ptr->org - proc_ptr->base);
-
-							/* KickC can't call bank(), so put it in the label */
-							if (proc_ptr->kickc) {
-								local->value += local->bank << 23;
-							}
 						}
 
 						/* next */
@@ -681,7 +671,7 @@ proc_reloc(void)
 		poke(call_ptr--, 0x53);			// tam #6
 		poke(call_ptr--, 0x68);			// pla
 
-		lablset("leave_proc", call_ptr + 1 + (call_bank << 23));
+		lablset("leave_proc", call_ptr + 1);
 	}
 }
 

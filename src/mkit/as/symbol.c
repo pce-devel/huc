@@ -229,7 +229,7 @@ stinstall(int hash, int type)
 	sym->scope = NULL;
 	sym->proc = NULL;
 	sym->section = -1;
-	sym->area = -1;
+	sym->tag = -1;
 	sym->bank = RESERVED_BANK;
 	sym->nb = 0;
 	sym->size = 0;
@@ -309,14 +309,11 @@ labldef(int lval, int lbnk, int lsrc)
 
 		lval = loccnt + (page << 13);
 
-		if (bank >= RESERVED_BANK)
-			lbnk = bank;
-		else
-			lbnk = bank_base + bank;
 
-		/* KickC can't call bank(), so put it in the label */
-		if (kickc_mode)
-			lval += lbnk << 23;
+		if ((section_flags[section] & S_IN_ROM) && (bank < RESERVED_BANK))
+			lbnk = bank_base + bank;
+		else
+			lbnk = bank;
 	} else {
 		/* is this a multi-label? */
 		if (lablptr->name[1] == '!') {
@@ -341,7 +338,7 @@ labldef(int lval, int lbnk, int lsrc)
 		case UNDEF:
 		case IFUNDEF:
 			lablptr->type = DEFABS;
-			lablptr->area = area;
+			lablptr->tag = tag_value;
 			lablptr->bank = lbnk;
 			lablptr->value = lval;
 			break;
@@ -394,8 +391,8 @@ labldef(int lval, int lbnk, int lsrc)
 			fatal_error("Symbol's bank or address changed in final pass!");
 			return (-1);
 		}
-		if (lablptr->area != area) {
-			fatal_error("Symbol's area changed in final pass!");
+		if (lablptr->tag != tag_value) {
+			fatal_error("Symbol's tag changed in final pass!");
 			return (-1);
 		}
 	}
@@ -501,7 +498,7 @@ lablremap(void)
 	int i;
 
 	/* browse the symbol table */
-	for (i = 0; i < 256; i++) {
+	for (i = 0; i < HASH_COUNT; i++) {
 		sym = hash_tbl[i];
 		while (sym) {
 			/* remap the bank */
@@ -546,7 +543,7 @@ labldump(FILE *fp)
 	fprintf(fp, "----\t----\t-----\n");
 
 	/* browse the symbol table */
-	for (i = 0; i < 256; i++) {
+	for (i = 0; i < HASH_COUNT; i++) {
 		for (sym = hash_tbl[i]; sym != NULL; sym = sym->next) {
 			/* skip undefined symbols and stripped symbols */
 			if ((sym->type != DEFABS) || (sym->bank == STRIPPED_BANK) || (sym->name[1] == '!'))
@@ -598,7 +595,7 @@ lablresetdefcnt(void)
 	int i;
 
 	/* browse the symbol table */
-	for (i = 0; i < 256; i++) {
+	for (i = 0; i < HASH_COUNT; i++) {
 		sym = hash_tbl[i];
 		while (sym) {
 			sym->defcnt = 0;

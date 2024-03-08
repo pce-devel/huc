@@ -78,6 +78,21 @@ int zero_need;		/* counter for trailing empty sectors on CDROM */
 int rom_used;
 int rom_free;
 
+/* current flags for each section */
+int section_flags[MAX_S] = {
+	0,		/* S_ZP */
+	0,		/* S_BSS */
+	S_IN_ROM,	/* S_CODE */
+	S_IN_ROM	/* S_DATA */
+};
+
+/* current loccnt limit for each section */
+int section_limit[MAX_S] = {
+	0x2000,		/* S_ZP */
+	0x2000,		/* S_BSS */
+	0x2000,		/* S_CODE */
+	0x2000		/* S_DATA */
+};
 
 /* ----
  * atexit callback
@@ -471,8 +486,8 @@ main(int argc, char **argv)
 	}
 
 	/* clear the ROM array */
-	memset(rom, 0xFF, 8192 * 128);
-	memset(map, 0xFF, 8192 * 128);
+	memset(rom, 0xFF, MAX_BANKS * 8192);
+	memset(map, 0xFF, MAX_BANKS * 8192);
 
 	/* are we creating a custom PCE CDROM IPL? */
 	if (ipl_opt) {
@@ -482,7 +497,7 @@ main(int argc, char **argv)
 	}
 
 	/* clear symbol hash tables */
-	for (i = 0; i < 256; i++) {
+	for (i = 0; i < HASH_COUNT; i++) {
 		hash_tbl[i] = NULL;
 		macro_tbl[i] = NULL;
 		func_tbl[i] = NULL;
@@ -543,8 +558,8 @@ main(int argc, char **argv)
 	/* assemble */
 	for (pass = FIRST_PASS; pass <= LAST_PASS; pass++) {
 		infile_error = -1;
+		tag_value = 0;
 		page = 7;
-		area = 0;
 		bank = 0;
 		loccnt = 0;
 		slnum = 0;
@@ -561,7 +576,10 @@ main(int argc, char **argv)
 		rsbank = RESERVED_BANK;
 		proc_nb = 0;
 		kickc_mode = 0;
-		kickc_incl = kickc_opt;
+		hucc_mode = 0;
+		kickc_final = 0;
+		hucc_final = 0;
+		in_final = 0;
 
 		/* reset assembler options */
 		asm_opt[OPT_LIST] = 0;
@@ -573,8 +591,8 @@ main(int argc, char **argv)
 		asm_opt[OPT_LBRANCH] = 0;
 
 		/* reset bank arrays */
-		for (i = 0; i < 4; i++) {
-			for (j = 0; j < 256; j++) {
+		for (i = 0; i < MAX_S; i++) {
+			for (j = 0; j < MAX_BANKS; j++) {
 				bank_maxloc[j] = 0;
 				bank_loccnt[i][j] = 0;
 				bank_glabl[i][j] = NULL;
@@ -643,6 +661,7 @@ main(int argc, char **argv)
 					bank = (bank + 1);
 					if (bank > max_bank) {
 						max_bank = bank;
+	printf("Increased max_bank to (0x%02X).\n", max_bank);
 					}
 					if (section != S_DATA || asm_opt[OPT_DATAPAGE] == 0)
 						page = (page + 1) & 7;
@@ -652,7 +671,7 @@ main(int argc, char **argv)
 					}
 
 					if (asm_opt[OPT_WARNING] && pass == LAST_PASS) {
-						printf("   (Warning. Opcode crossing page boundary $%04X, bank $%02X)\n", (page * 0x2000), bank);
+						printf("   (Warning. Opcode crossing page boundary $%04X, bank $%04X)\n", (page * 0x2000), bank);
 					}
 				}
 				while (old_bank != bank) {
@@ -665,7 +684,7 @@ main(int argc, char **argv)
 
 			/* sanity check */
 			if (max_bank > bank_limit) {
-				snprintf(cmd, sizeof(cmd), "Assembler bug ... max_bank (0x%02X) > bank_limit (0x%02X)!\n", max_bank, bank_limit);
+				snprintf(cmd, sizeof(cmd), "Assembler bug ... max_bank (0x%04X) > bank_limit (0x%04X)!\n", max_bank, bank_limit);
 				fatal_error(cmd);
 			}
 

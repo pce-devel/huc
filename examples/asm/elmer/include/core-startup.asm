@@ -415,20 +415,20 @@ core_hw_reset:	sei				; Disable interrupts.
 
 		; Read the already-assembled equates for the kernel code.
 		;
-		; N.B. The area() changes are only here to test PCEAS!
+		; N.B. The tag() changes are only here to test PCEAS!
 
-!:		.area	-1			; Tag the STAGE1 symbols.
+!:		.settag	-1			; Tag the STAGE1 symbols.
 
 		include "core-stage1.s"
 
-		.area	area(!-)		; Restore previous area.
+		.settag	tagof(!-)		; Restore previous area.
 
 	.if	(core_kernel != core_ram1st)
 		.fail	Stage1 kernel has not been built with the same core_ram1st!
 	.endif
 
-	.if	(area(core_kernel) != -1)
-		.fail	.AREA is not working correctly!
+	.if	(tagof(*) != 0) + (tagof(core_kernel) != -1)
+		.fail	.TAG is not working correctly!
 	.endif
 
 	.else	USING_STAGE1
