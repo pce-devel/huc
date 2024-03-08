@@ -167,7 +167,7 @@ putbyte(int offset, int data)
 {
 	int addr;
 
-	if (bank >= RESERVED_BANK)
+	if (((section_flags[section] & S_IN_ROM) == 0) || (bank >= RESERVED_BANK))
 		return;
 
 	addr = offset + 1 + (bank << 13);
@@ -208,7 +208,7 @@ putword(int offset, int data)
 {
 	int addr;
 
-	if (bank >= RESERVED_BANK)
+	if (((section_flags[section] & S_IN_ROM) == 0) || (bank >= RESERVED_BANK))
 		return;
 
 	addr = offset + 2 + (bank << 13);
@@ -251,7 +251,7 @@ putdword(int offset, int data)
 {
 	int addr;
 
-	if (bank >= RESERVED_BANK)
+	if (((section_flags[section] & S_IN_ROM) == 0) || (bank >= RESERVED_BANK))
 		return;
 
 	addr = offset + 4 + (bank << 13);
@@ -304,15 +304,7 @@ putbuffer(void *data, int size)
 		return;
 
 	/* check if the buffer will fit in the rom */
-	if (bank >= RESERVED_BANK) {
-		addr = loccnt + size;
-
-		if (addr > 0x2000) {
-			fatal_error("PROC overflow!");
-			return;
-		}
-	}
-	else {
+	if ((section_flags[section] & S_IN_ROM) && (bank < RESERVED_BANK)) {
 		addr = (bank << 13) + loccnt;
 
 		if ((addr + size) > rom_limit) {
@@ -343,6 +335,11 @@ putbuffer(void *data, int size)
 				}
 			}
 		}
+	} else {
+		if ((loccnt + size) > section_limit[section]) {
+			fatal_error("Too large to fit in the current section!");
+			return;
+		}
 	}
 
 	/* update the location counter */
@@ -361,7 +358,7 @@ putbuffer(void *data, int size)
 	}
 
 	/* update rom size */
-	if (bank < RESERVED_BANK) {
+	if ((section_flags[section] & S_IN_ROM) && (bank < RESERVED_BANK)) {
 		if (bank > max_bank) {
 			if (loccnt)
 				max_bank = bank;

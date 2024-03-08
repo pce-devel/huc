@@ -13,7 +13,7 @@
 
 int    infile_error;
 int    infile_num;
-struct t_input_info input_file[8];
+t_input_info input_file[8];
 static char    *incpath			= NULL;
 static int	   *str_offset		= NULL;
 static int	   remaining		= 0;

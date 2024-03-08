@@ -13,10 +13,10 @@ char marg[8][10][256];
 int midx;
 int mcounter, mcntmax;
 int mcntstack[8];
-struct t_line *mstack[8];
-struct t_line *mlptr;
-struct t_macro *macro_tbl[256];
-struct t_macro *mptr;
+t_line *mstack[8];
+t_line *mlptr;
+t_macro *macro_tbl[HASH_COUNT];
+t_macro *mptr;
 
 /* .macro pseudo */
 

@@ -309,10 +309,11 @@ labldef(int lval, int lbnk, int lsrc)
 
 		lval = loccnt + (page << 13);
 
-		if (bank >= RESERVED_BANK)
-			lbnk = bank;
-		else
+
+		if ((section_flags[section] & S_IN_ROM) && (bank < RESERVED_BANK))
 			lbnk = bank_base + bank;
+		else
+			lbnk = bank;
 	} else {
 		/* is this a multi-label? */
 		if (lablptr->name[1] == '!') {
@@ -497,7 +498,7 @@ lablremap(void)
 	int i;
 
 	/* browse the symbol table */
-	for (i = 0; i < 256; i++) {
+	for (i = 0; i < HASH_COUNT; i++) {
 		sym = hash_tbl[i];
 		while (sym) {
 			/* remap the bank */
@@ -542,7 +543,7 @@ labldump(FILE *fp)
 	fprintf(fp, "----\t----\t-----\n");
 
 	/* browse the symbol table */
-	for (i = 0; i < 256; i++) {
+	for (i = 0; i < HASH_COUNT; i++) {
 		for (sym = hash_tbl[i]; sym != NULL; sym = sym->next) {
 			/* skip undefined symbols and stripped symbols */
 			if ((sym->type != DEFABS) || (sym->bank == STRIPPED_BANK) || (sym->name[1] == '!'))
@@ -594,7 +595,7 @@ lablresetdefcnt(void)
 	int i;
 
 	/* browse the symbol table */
-	for (i = 0; i < 256; i++) {
+	for (i = 0; i < HASH_COUNT; i++) {
 		sym = hash_tbl[i];
 		while (sym) {
 			sym->defcnt = 0;

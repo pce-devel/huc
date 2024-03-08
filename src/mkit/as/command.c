@@ -315,7 +315,7 @@ do_db(int *ip)
 				}
 
 				/* check for overflow */
-				if (((value & 0x007FFFFF) > 0xFF) && ((value & 0x007FFFFF) < 0x007FFF80)) {
+				if (((value & 0x3FFFFFFF) > 0xFF) && ((value & 0x3FFFFFFF) < 0x3FFFFF80)) {
 					error("Overflow error!");
 					return;
 				}
@@ -399,7 +399,7 @@ do_dw(int *ip)
 			}
 
 			/* check for overflow */
-			if (((value & 0x007FFFFF) > 0xFFFF) && ((value & 0x007FFFFF) < 0x007F8000)) {
+			if (((value & 0x3FFFFFFF) > 0xFFFF) && ((value & 0x3FFFFFFF) < 0x3FFF8000)) {
 				error("Overflow error!");
 				return;
 			}
@@ -482,7 +482,7 @@ do_dwl(int *ip)
 			}
 
 			/* check for overflow */
-			if (((value & 0x007FFFFF) > 0xFFFF) && ((value & 0x007FFFFF) < 0x007F8000)) {
+			if (((value & 0x3FFFFFFF) > 0xFFFF) && ((value & 0x3FFFFFFF) < 0x3FFF8000)) {
 				error("Overflow error!");
 				return;
 			}
@@ -565,7 +565,7 @@ do_dwh(int *ip)
 			}
 
 			/* check for overflow */
-			if (((value & 0x007FFFFF) > 0xFFFF) && ((value & 0x007FFFFF) < 0x007F8000)) {
+			if (((value & 0x3FFFFFFF) > 0xFFFF) && ((value & 0x3FFFFFFF) < 0x3FFF8000)) {
 				error("Overflow error!");
 				return;
 			}
@@ -799,7 +799,7 @@ do_org(int *ip)
 	switch (section) {
 	case S_ZP:
 		/* zero page section */
-		if ((value & 0x007FFF00) && ((value & 0x007FFF00) != machine->ram_base)) {
+		if ((value & 0x3FFFFF00) && ((value & 0x3FFFFF00) != machine->ram_base)) {
 			error("Invalid address!");
 			return;
 		}
@@ -807,7 +807,7 @@ do_org(int *ip)
 
 	case S_BSS:
 		/* ram section */
-		if (((value & 0x007FFFFF) < machine->ram_base) || ((value & 0x007FFFFF) >= (machine->ram_base + machine->ram_limit))) {
+		if (((value & 0x3FFFFFFF) < machine->ram_base) || ((value & 0x3FFFFFFF) >= (machine->ram_base + machine->ram_limit))) {
 			error("Invalid address!");
 			return;
 		}
@@ -1034,13 +1034,7 @@ do_incbin(int *ip)
 	fseek(fp, 0, SEEK_SET);
 
 	/* check if it will fit in the rom */
-	if (bank >= RESERVED_BANK) {
-		if ((loccnt + size) > 0x2000) {
-			fclose(fp);
-			fatal_error("PROC overflow!");
-			return;
-		}
-	} else {
+	if ((section_flags[section] & S_IN_ROM) && (bank < RESERVED_BANK)) {
 		/* check if it will fit in the rom */
 		if (((bank << 13) + loccnt + size) > rom_limit) {
 			fclose(fp);
@@ -1072,6 +1066,12 @@ do_incbin(int *ip)
 			/* output line */
 			println();
 		}
+	} else {
+		if ((loccnt + size) > section_limit[section]) {
+			fclose(fp);
+			fatal_error("Too large to fit in the current section!");
+			return;
+		}
 	}
 
 	/* close file */
@@ -1093,7 +1093,7 @@ do_incbin(int *ip)
 	}
 
 	/* update rom size */
-	if (bank < RESERVED_BANK) {
+	if ((section_flags[section] & S_IN_ROM) && (bank < RESERVED_BANK)) {
 		if (bank > max_bank) {
 			if (loccnt)
 				max_bank = bank;
@@ -1581,7 +1581,7 @@ do_ds(int *ip)
 	}
 
 	/* update rom size */
-	if (bank < RESERVED_BANK) {
+	if ((section_flags[section] & S_IN_ROM) && (bank < RESERVED_BANK)) {
 		if (bank > max_bank) {
 			if (loccnt)
 				max_bank = bank;

@@ -6,8 +6,8 @@
 #include "externs.h"
 #include "protos.h"
 
-struct t_func *func_tbl[256];
-struct t_func *func_ptr;
+t_func *func_tbl[HASH_COUNT];
+t_func *func_ptr;
 char func_line[128];
 char func_arg[8][10][80];
 int func_idx;

@@ -591,10 +591,10 @@ push_val(int type)
 			pc_symbol.tag  = tag_value;
 			pc_symbol.page = page;
 
-			if (bank >= RESERVED_BANK)
-				pc_symbol.bank = bank;
-			else
+			if ((section_flags[section] & S_IN_ROM) && (bank < RESERVED_BANK))
 				pc_symbol.bank = bank + bank_base;
+			else
+				pc_symbol.bank = bank;
 
 			if (pc_symbol.value >= 0x2000) {
 				pc_symbol.bank = (pc_symbol.bank + 1);
@@ -1009,14 +1009,15 @@ do_op(void)
 		if (!check_func_args("BANK"))
 			return (0);
 		if (pass == LAST_PASS) {
-			if (expr_lablptr->bank == RESERVED_BANK) {
-				error("No BANK index for this symbol!");
+			if (expr_lablptr->bank >= RESERVED_BANK) {
+				if (expr_lablptr->bank == RESERVED_BANK)
+					error("No BANK index for this symbol!");
 				val[0] = 0;
 				break;
 			}
 		}
-		/* complicated math to deal with BANK(label+value) */
-		val[0] = (expr_lablptr->bank + (val[0] / 8192) - (expr_lablptr->value / 8192));
+		/* complicated math to deal with BANK(label+value), but keep it 8-bit */
+		val[0] = 0xFF & (expr_lablptr->bank + (val[0] / 8192) - (expr_lablptr->value / 8192));
 		break;
 
 	/* PAGE */
