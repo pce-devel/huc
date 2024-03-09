@@ -55,6 +55,7 @@
 #define ARG_LABEL	6
 
 /* section types */
+/* update pseudo_allowed when adding or changing! */
 #define S_ZP	0
 #define S_BSS	1
 #define S_CODE	2
@@ -77,6 +78,7 @@
 #define OPT_DATAPAGE	8
 
 /* assembler directives */
+/* update pseudo_allowed when adding or changing! */
 #define P_DB		0	// .db
 #define P_DW		1	// .dw
 #define P_DD		2	// .dd

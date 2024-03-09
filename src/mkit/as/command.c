@@ -7,15 +7,80 @@
 #include "externs.h"
 #include "protos.h"
 
+/* section types mask for pseudo_allowed */
+#define IN_ZP		(1 << S_ZP)
+#define IN_BSS		(1 << S_BSS)
+#define IN_CODE		(1 << S_CODE)
+#define IN_DATA		(1 << S_DATA)
+
 /* pseudo instructions section flag */
-char pseudo_flag[] = {
-	0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0C, 0x0C, 0x0C, 0x0F,
-	0x0C, 0x0C, 0x0C, 0x0C, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F,
-	0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F,
-	0x0C, 0x0F, 0x0F, 0x0F, 0x0C, 0x0C, 0x0C, 0x0C, 0x0F, 0x0F,
-	0x0F, 0x0F, 0x0F, 0x0C, 0x0C, 0x0C, 0x04, 0x0F, 0x04, 0x0F,
-	0x04, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x0F, 0x0F, 0x0F, 0x0F,
-	0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F
+unsigned short pseudo_allowed[] = {
+/* P_DB          */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_DW          */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_DD          */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_DS          */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_EQU         */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_ORG         */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_PAGE        */	IN_CODE + IN_DATA,
+/* P_BANK        */	IN_CODE + IN_DATA,
+/* P_INCBIN      */	IN_CODE + IN_DATA,
+/* P_INCLUDE     */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_INCCHR      */	IN_CODE + IN_DATA,
+/* P_INCSPR      */	IN_CODE + IN_DATA,
+/* P_INCPAL      */	IN_CODE + IN_DATA,
+/* P_INCBAT      */	IN_CODE + IN_DATA,
+/* P_MACRO       */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_ENDM        */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_LIST        */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_MLIST       */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_NOLIST      */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_NOMLIST     */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_RSSET       */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_RS          */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_IF          */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_ELSE        */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_ENDIF       */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_FAIL        */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_ZP          */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_BSS         */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_CODE        */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_DATA        */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_DEFCHR      */	IN_CODE + IN_DATA,
+/* P_FUNC        */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_IFDEF       */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_IFNDEF      */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_VRAM        */	IN_CODE + IN_DATA,
+/* P_PAL         */	IN_CODE + IN_DATA,
+/* P_DEFPAL      */	IN_CODE + IN_DATA,
+/* P_DEFSPR      */	IN_CODE + IN_DATA,
+/* P_INESPRG     */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_INESCHR     */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_INESMAP     */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_INESMIR     */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_OPT         */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_INCTILE     */	IN_CODE + IN_DATA,
+/* P_INCMAP      */	IN_CODE + IN_DATA,
+/* P_MML         */	IN_CODE + IN_DATA,
+/* P_PROC        */	IN_CODE,
+/* P_ENDP        */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_PGROUP      */	IN_CODE,
+/* P_ENDPG       */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_CALL        */	IN_CODE,
+/* P_DWL         */	IN_CODE + IN_DATA,
+/* P_DWH         */	IN_CODE + IN_DATA,
+/* P_INCCHRPAL   */	IN_CODE + IN_DATA,
+/* P_INCSPRPAL   */	IN_CODE + IN_DATA,
+/* P_INCTILEPAL  */	IN_CODE + IN_DATA,
+/* P_CARTRIDGE   */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_ALIGN       */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_KICKC       */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_CPU         */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_SEGMENT     */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_LABEL       */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_ENCODING    */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_STRUCT      */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_ENDS        */	IN_CODE + IN_DATA + IN_ZP + IN_BSS,
+/* P_SETTAG      */	IN_CODE + IN_DATA + IN_ZP + IN_BSS
 };
 
 
@@ -33,7 +98,7 @@ do_pseudo(int *ip)
 	int size;
 
 	/* check if the directive is allowed in the current section */
-	if (!(pseudo_flag[opval] & (1 << section)))
+	if (!(pseudo_allowed[opval] & (1 << section)))
 		fatal_error("Directive not allowed in the current section!");
 
 	/* save current location */
