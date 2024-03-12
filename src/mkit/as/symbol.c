@@ -80,6 +80,20 @@ colsym(int *ip, int flag)
 	int j;
 	char c;
 
+	/* convert an SDCC local-symbol into a PCEAS local-symbol */
+	if (sdcc_mode && (prlnbuf[(*ip)+5] == '$') &&
+		isdigit((symbol[2] = prlnbuf[(*ip)+0])) &&
+		isdigit((symbol[3] = prlnbuf[(*ip)+1])) &&
+		isdigit((symbol[4] = prlnbuf[(*ip)+2])) &&
+		isdigit((symbol[5] = prlnbuf[(*ip)+3])) &&
+		isdigit((symbol[6] = prlnbuf[(*ip)+4]))) {
+		symbol[0] = 6;
+		symbol[1] = '@';
+		symbol[7] = '\0';
+		(*ip) += 6;
+		return (6);
+	}
+
 	/* prepend the current scope? */
 	c = prlnbuf[*ip];
 	if ((flag != 0) && (scopeptr != NULL) && (c != '.') && (c != '@') && (c != '!')) {
@@ -114,6 +128,10 @@ colsym(int *ip, int flag)
 		return (0);
 	}
 
+	/* skip passed the first ':' if there are two in SDCC code */
+	if (sdcc_mode && (prlnbuf[*ip] == ':') && (prlnbuf[(*ip)+1] == ':'))
+		(*ip)++;
+
 	/* check if it's a reserved symbol */
 	if (i == 1) {
 		switch (toupper(symbol[1])) {
@@ -124,7 +142,7 @@ colsym(int *ip, int flag)
 			break;
 		}
 	}
-	if (check_keyword())
+	if (check_keyword(symbol))
 		err = 1;
 
 	/* error */
@@ -228,9 +246,9 @@ stinstall(int hash, int type)
 	sym->local = NULL;
 	sym->scope = NULL;
 	sym->proc = NULL;
-	sym->section = -1;
-	sym->tag = -1;
-	sym->bank = RESERVED_BANK;
+	sym->section = S_NONE;
+	sym->mprbank = RESERVED_BANK;
+	sym->overlay = 0;
 	sym->nb = 0;
 	sym->size = 0;
 	sym->page = -1;
@@ -268,16 +286,17 @@ stinstall(int hash, int type)
  */
 
 int
-labldef(int lval, int lbnk, int lsrc)
+labldef(int reason)
 {
 	char c;
+	int l_value, l_mprbank, l_overlay;
 
 	/* check for NULL ptr */
 	if (lablptr == NULL)
 		return (0);
 
 	/* adjust symbol address */
-	if (lsrc == LOCATION) {
+	if (reason == LOCATION) {
 		/* is this a multi-label? */
 		if (lablptr->name[1] == '!') {
 			char tail [10];
@@ -307,13 +326,21 @@ labldef(int lval, int lbnk, int lsrc)
 				page = (page + 1) & 7;
 		}
 
-		lval = loccnt + (page << 13);
+		/* defaults for RESERVED or RAM or HARDWARE banks */
+		l_value = loccnt + (page << 13);
+		l_mprbank = bank;
+		l_overlay = 0;
 
-
-		if ((section_flags[section] & S_IN_ROM) && (bank < RESERVED_BANK))
-			lbnk = bank_base + bank;
-		else
-			lbnk = bank;
+		if ((section_flags[section] & S_IS_ROM) && (bank < RESERVED_BANK)) {
+			if ((section_flags[section] & S_IS_SF2) && (bank > 0x7F)) {
+				/* for StreetFighterII banks in ROM */
+				l_overlay = (bank / 0x40) - 1;
+				l_mprbank = (bank & 0x3F) + 0x40;
+			} else {
+				/* for all non-SF2, CD, SCD code and data banks */
+				l_mprbank = bank_base + bank;
+			}
+		}
 	} else {
 		/* is this a multi-label? */
 		if (lablptr->name[1] == '!') {
@@ -321,6 +348,10 @@ labldef(int lval, int lbnk, int lsrc)
 			fatal_error("A multi-label can only be a location!");
 			return (-1);
 		}
+
+		l_value = value;
+		l_mprbank = expr_mprbank;
+		l_overlay = expr_overlay;
 	}
 
 	/* record definition */
@@ -338,9 +369,9 @@ labldef(int lval, int lbnk, int lsrc)
 		case UNDEF:
 		case IFUNDEF:
 			lablptr->type = DEFABS;
-			lablptr->tag = tag_value;
-			lablptr->bank = lbnk;
-			lablptr->value = lval;
+			lablptr->value  = l_value;
+			lablptr->mprbank = l_mprbank;
+			lablptr->overlay = l_overlay;
 			break;
 
 		/* already defined - error */
@@ -360,7 +391,7 @@ labldef(int lval, int lbnk, int lsrc)
 			}
 
 			/* compare the values */
-			if (lablptr->value == lval)
+			if (lablptr->value == l_value)
 				break;
 
 			/* normal label */
@@ -374,34 +405,31 @@ labldef(int lval, int lbnk, int lsrc)
 	/* branch pass */
 	else if (pass != LAST_PASS) {
 		if (lablptr->type == DEFABS) {
-			if ((lablptr->value != lval) ||
-			    ((lsrc == LOCATION) && (bank < bank_limit) && (lablptr->bank != bank_base + bank))) {
+			if ((lablptr->value != l_value) ||
+			    ((reason == LOCATION) && (bank < RESERVED_BANK) && (lablptr->mprbank != l_mprbank))) {
 				/* needed for KickC forward-references */
 				need_another_pass = 1;
 			}
-			lablptr->bank = lbnk;
-			lablptr->value = lval;
+			lablptr->value  = l_value;
+			lablptr->mprbank = l_mprbank;
+			lablptr->overlay = l_overlay;
 		}
 	}
 
 	/* last pass */
 	else {
-		if ((lablptr->value != lval) ||
-		    ((lsrc == LOCATION) && (bank < bank_limit) && (lablptr->bank != bank_base + bank))) {
+		if ((lablptr->value != l_value) || (lablptr->overlay != l_overlay) ||
+		    ((reason == LOCATION) && (bank < RESERVED_BANK) && (lablptr->mprbank != l_mprbank))) {
 			fatal_error("Symbol's bank or address changed in final pass!");
-			return (-1);
-		}
-		if (lablptr->tag != tag_value) {
-			fatal_error("Symbol's tag changed in final pass!");
 			return (-1);
 		}
 	}
 
 	/* update symbol data */
-	if (lsrc == LOCATION) {
+	if (reason == LOCATION) {
 		lablptr->section = section;
 
-		if (section == S_CODE)
+		if (section_flags[section] & S_IS_CODE)
 			lablptr->proc = proc_ptr;
 
 		lablptr->page = page;
@@ -546,12 +574,21 @@ labldump(FILE *fp)
 	for (i = 0; i < HASH_COUNT; i++) {
 		for (sym = hash_tbl[i]; sym != NULL; sym = sym->next) {
 			/* skip undefined symbols and stripped symbols */
-			if ((sym->type != DEFABS) || (sym->bank == STRIPPED_BANK) || (sym->name[1] == '!'))
+			if ((sym->type != DEFABS) || (sym->mprbank == STRIPPED_BANK) || (sym->name[1] == '!'))
 				continue;
 
 			/* dump the label */
-			fprintf(fp, "%2.2x\t%4.4x\t", sym->bank, sym->value & 0xFFFF);
+			if (sym->mprbank >= RESERVED_BANK)
+				fprintf(fp, "   -");
+			else if (sym->overlay == 0)
+				fprintf(fp, "  %2.2x", sym->mprbank);
+			else
+				fprintf(fp, "%1.1x:%2.2x", sym->overlay, sym->mprbank);
+
+			fprintf(fp, "\t%4.4x\t", sym->value & 0xFFFF);
+
 			fprintf(fp, "%s\t", &(sym->name[1]));
+
 			if (strlen(&(sym->name[1])) < 8)
 				fprintf(fp, "\t");
 			if (strlen(&(sym->name[1])) < 16)
@@ -565,8 +602,16 @@ labldump(FILE *fp)
 				local = sym->local;
 
 				while (local) {
-					fprintf(fp, "%2.2x\t%4.4x\t", local->bank, local->value & 0xFFFF);
+					if (local->mprbank >= RESERVED_BANK)
+						fprintf(fp, "   -");
+					else if (sym->overlay == 0)
+						fprintf(fp, "  %2.2x", local->mprbank);
+					else
+						fprintf(fp, "%1.1x:%2.2x", local->overlay, local->mprbank);
+
+					fprintf(fp, "\t%4.4x\t", local->value & 0xFFFF);
 					fprintf(fp, "\t%s\t", &(local->name[1]));
+
 					if (strlen(&(local->name[1])) < 8)
 						fprintf(fp, "\t");
 					if (strlen(&(local->name[1])) < 16)

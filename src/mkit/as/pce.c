@@ -340,7 +340,7 @@ void
 pce_vram(int *ip)
 {
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* check if there's a label */
 	if (lastlabl == NULL) {
@@ -375,7 +375,7 @@ void
 pce_pal(int *ip)
 {
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* check if there's a label */
 	if (lastlabl == NULL) {
@@ -420,7 +420,7 @@ pce_defchr(int *ip)
 	/* check if there's a label */
 	if (lablptr) {
 		/* define label */
-		labldef(0, 0, LOCATION);
+		labldef(LOCATION);
 
 		/* get the VRAM address */
 		if (!evaluate(ip, ',', 0))
@@ -477,7 +477,7 @@ pce_defpal(int *ip)
 	char c;
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output infos */
 	data_loccnt = loccnt;
@@ -542,7 +542,7 @@ pce_defspr(int *ip)
 	/* check if there's a label */
 	if (lablptr) {
 		/* define label */
-		labldef(0, 0, LOCATION);
+		labldef(LOCATION);
 
 		/* get the VRAM address */
 		if (!evaluate(ip, ',', 0))
@@ -600,7 +600,7 @@ pce_incbat(int *ip)
 	unsigned int temp;
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -668,7 +668,7 @@ pce_incpal(int *ip)
 	int r, g, b;
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -733,7 +733,7 @@ pce_incspr(int *ip)
 	int nb_sprite = 0;
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -811,7 +811,7 @@ pce_inctile(int *ip)
 	int nb_tile = 0;
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -894,7 +894,7 @@ pce_incchrpal(int *ip)
 	int nb_chr = 0;
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -964,7 +964,7 @@ pce_incsprpal(int *ip)
 	int nb_sprite = 0;
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -1034,7 +1034,7 @@ pce_inctilepal(int *ip)
 	int nb_tile = 0;
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -1124,7 +1124,7 @@ pce_incmap(int *ip)
 	int err = 0;
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -1188,7 +1188,7 @@ pce_mml(int *ip)
 	char c;
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output */
 	if (pass == LAST_PASS)

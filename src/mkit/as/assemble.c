@@ -155,7 +155,6 @@ assemble(int do_label)
 
 	/* comment line */
 	c = prlnbuf[preproc_sfield];
-//	if (c == ';' || c == '*' || c == '\0') { /* Let's see if anyone really uses '*' for a comment line! */
 	if (c == ';' || c == '\0') {
 		lastlabl = NULL;
 		if (pass == LAST_PASS)
@@ -168,15 +167,19 @@ assemble(int do_label)
 	j = 0;
 	while (isspace(prlnbuf[i]))
 		i++;
-	for (;;) {
-		c = prlnbuf[i + j];
-		if ((j == 0) && isdigit(c))
-			break;
-		if (isalnum(c) || (c == '_') || (c == '.') || (j == 0 && (c == '@' || c == '!'))) {
-			++j;
-		} else {
-			break;
+
+	c = prlnbuf[i];
+
+	if (isdigit(c)) {
+		/* check for an SDCC local-symbol */
+		if (sdcc_mode && (prlnbuf[i+5] == '$') && (prlnbuf[i+6] == ':')
+			&& isdigit(prlnbuf[i+1]) && isdigit(prlnbuf[i+2])
+			&& isdigit(prlnbuf[i+3]) && isdigit(prlnbuf[i+4])) {
+			j = 6; c = ':';
 		}
+	} else
+	while (isalnum(c) || (c == '_') || (c == '.') || (j == 0 && (c == '@' || c == '!'))) {
+		c = prlnbuf[i + (++j)];
 	}
 
 	if ((j == 0) || ((i != preproc_sfield) && (c != ':'))) {
@@ -222,7 +225,7 @@ assemble(int do_label)
 	mptr = macro_look(&ip);
 	if (mptr) {
 		/* define label */
-		labldef(0, 0, LOCATION);
+		labldef(LOCATION);
 
 		/* output location counter */
 		if (pass == LAST_PASS) {
@@ -256,7 +259,7 @@ assemble(int do_label)
 			return;
 		}
 
-		labldef(0, 0, LOCATION);
+		labldef(LOCATION);
 		if (flag == -1)
 			error("Unknown instruction!");
 		if ((flag == -2) && (pass == LAST_PASS)) {
@@ -271,14 +274,14 @@ assemble(int do_label)
 	/* generate code */
 	if (opflg == PSEUDO)
 		do_pseudo(&ip);
-	else if (labldef(0, 0, LOCATION) == -1)
+	else if (labldef(LOCATION) == -1)
 		return;
 	else {
 		/* output infos */
 		data_loccnt = loccnt;
 
 		/* check if we are in the CODE section */
-		if (section != S_CODE)
+		if ((section_flags[section] & S_IS_CODE) == 0)
 			fatal_error("Instructions not allowed in this section!");
 
 		/* generate code */
@@ -484,7 +487,7 @@ save_if_expr(int *ip)
 void
 do_if(int *ip)
 {
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* save condition text */
 	save_if_expr(ip);
@@ -537,7 +540,7 @@ do_endif(int *ip)
 void
 do_ifdef(int *ip)
 {
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* skip spaces */
 	while (isspace(prlnbuf[*ip]))

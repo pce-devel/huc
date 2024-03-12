@@ -135,7 +135,7 @@ nes_defchr(int *ip)
 	int i;
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output infos */
 	data_loccnt = loccnt;
