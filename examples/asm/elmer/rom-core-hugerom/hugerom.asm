@@ -174,7 +174,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 		;
 		; Write to the SF2 mapper at offset $1FF0-$1FF3 in MRP7.
 
-		stz	$FFF0 + overlay( saz_satb0 )
+		stz	$FFF0 + ((linear( saz_satb0 ) / (64 * $2000)) - 1)
+
+		stz	$FFF0 + ((linear( saz_satb0 ) >> 19) - 1)
 
 		lda.l	#$0834			; Upload hand position sprites
 		sta.l	<_di			; to the SATB in VRAM.
@@ -191,8 +193,6 @@ core_main:	; Turn the display off and initialize the screen mode.
 		; Select the overlay containing saz_satb1 using an equate.
 		;
 		; Write to the SF2 mapper at offset $1FF0-$1FF3 in MRP7.
-
-;		stz	$FFF0 + ((linear( SAZ_SATB_DATA ) >> 19) - 1)
 
 		stz	$FFF0 + overlay( SAZ_SATB_DATA )
 
@@ -228,9 +228,25 @@ core_main:	; Turn the display off and initialize the screen mode.
 ;
 
 		; Put this in the last bank of a 1MByte ROM.
+		;
+		; ".bank" must be set to the offset from the beginning of the
+		; file that PCEAS outputs.
+		;
+		; "bank()" returns the actual value that you put into the MPR
+		; register on the PC Engine.
+		;
+		; These are usually the same value for HuCARD ROMs <= 1MByte,
+		; but they are different values for CD and SCD programs, also
+		; for programs that use the StreetFighterII mapper.
+		;
+		; Use the "linear()" operator to get a symbol's offset in the
+		; file, which can be used like ...
+		;
+		; .bank (linear( symbol ) / 8192)
+
 		.bank	$7F
 
-		; The earlier code maps this data into MPR3.
+		; The earlier code maps this data into MPR3, so set the page.
 		.page	3
 
 saz_satb0:	dw	$00A8,$0050,$01A8,$1080
@@ -247,7 +263,7 @@ saz_satb1:	dw	$00A8,$0050,$01B8,$1080
 		;
 		; Overlay .... none (banks $00-$7F)
 		; Bank ........ $7F (the last bank of $40..$7F)
-		; Address ... $6000 (the bank is mapped into MPR3)
+		; Address ... $6000 (this bank will be mapped into MPR3)
 
 SAZ_SATB_DATA	=	$7F:6000
 
@@ -262,7 +278,8 @@ SAZ_SATB_DATA	=	$7F:6000
 		; Put this at 1MB, larger than normal PCE ROMs.
 		.bank	$080
 
-		; Make sure the address > $6000 for set_bp_to_mpr
+		; Make sure the address >= $6000 so that set_bp_to_mpr
+		; will map the data into MPR3.
 		.page	3
 
 saz_vdc:	incbin	"saz_vdc.zx0.256"
@@ -271,7 +288,7 @@ saz_vdc:	incbin	"saz_vdc.zx0.256"
 		;
 		; Overlay ...... $1 (banks $80-$BF)
 		; Bank ........ $7F (the last bank of $40..$7F)
-		; Address ... $6000 (the bank is mapped into MPR3)
+		; Address ... $6000 (this bank will be mapped into MPR3)
 
 SAZ_VDC_DATA	=	$1:7F:6000
 
@@ -288,7 +305,8 @@ SAZ_VDC_DATA	=	$1:7F:6000
 		; Put this in the last bank of a 2MByte ROM.
 		.bank	$FF
 
-		; Make sure the address > $6000 for set_bp_to_mpr
+		; Make sure the address >= $6000 so that set_bp_to_mpr
+		; will map the data into MPR3.
 		.page	3
 
 saz_vce:	incbin	"saz_vce.zx0"
@@ -297,7 +315,7 @@ saz_vce:	incbin	"saz_vce.zx0"
 		;
 		; Overlay ...... $2 (banks $C0-$FF)
 		; Bank ........ $7F (the last bank of $40..$7F)
-		; Address ... $6000 (the bank is mapped into MPR3)
+		; Address ... $6000 (this bank will be mapped into MPR3)
 
 SAZ_VCE_DATA	=	$2:7F:6000
 
@@ -306,16 +324,17 @@ SAZ_VCE_DATA	=	$2:7F:6000
 		; Put this in the last bank of a 2.5MByte ROM.
 		.bank	$13F
 
-		; Make sure the address > $6000 for set_bp_to_mpr
+		; Make sure the address >= $6000 so that set_bp_to_mpr
+		; will map the data into MPR3.
 		.page	3
 
 saz_vce:	incbin	"saz_vce.zx0"
 
 		; This is how to set the bank and overlay in an equate.
 		;
-		; Overlay ...... $2 (banks $C0-$FF)
+		; Overlay ...... $3 (banks $100-$13F)
 		; Bank ........ $7F (the last bank of $40..$7F)
-		; Address ... $6000 (the bank is mapped into MPR3)
+		; Address ... $6000 (this bank will be mapped into MPR3)
 
 SAZ_VCE_DATA	=	$3:7F:6000
 
