@@ -54,13 +54,13 @@ println(void)
 			for (i = 0; i < nb; i++) {
 //				if (bank == RESERVED_BANK || bank == STRIPPED_BANK) {
 				if (bank > bank_limit) {
-					prlnbuf[16 + (3 * cnt)] = '-';
-					prlnbuf[17 + (3 * cnt)] = '-';
+					prlnbuf[18 + (3 * cnt)] = '-';
+					prlnbuf[19 + (3 * cnt)] = '-';
 				}
 				else {
 					hexcon(2, rom[bank][data_loccnt]);
-					prlnbuf[16 + (3 * cnt)] = hex[1];
-					prlnbuf[17 + (3 * cnt)] = hex[2];
+					prlnbuf[18 + (3 * cnt)] = hex[1];
+					prlnbuf[19 + (3 * cnt)] = hex[2];
 				}
 				data_loccnt++;
 				cnt++;
@@ -113,19 +113,33 @@ loadlc(int offset, int pos)
 	int i;
 
 	if (pos)
-		i = 16;
+		i = 20;
 	else
 		i = 7;
 
 	if (pos == 0) {
 		if (bank == RESERVED_BANK || bank == STRIPPED_BANK) {
+			prlnbuf[i++] = ' ';
+			prlnbuf[i++] = ' ';
 			prlnbuf[i++] = '-';
 			prlnbuf[i++] = '-';
 		}
 		else {
-			hexcon(2, bank);
-			prlnbuf[i++] = hex[1];
-			prlnbuf[i++] = hex[2];
+			if ((section_flags[section] & S_IS_SF2) && (bank > 127)) {
+				hexcon(1, (bank / 64) - 1);
+				prlnbuf[i++] = hex[1];
+				prlnbuf[i++] = ':';
+				hexcon(2, (bank & 63) + 64);
+				prlnbuf[i++] = hex[1];
+				prlnbuf[i++] = hex[2];
+
+			} else {
+				prlnbuf[i++] = ' ';
+				prlnbuf[i++] = ' ';
+				hexcon(2, bank);
+				prlnbuf[i++] = hex[1];
+				prlnbuf[i++] = hex[2];
+			}
 		}
 		prlnbuf[i++] = ':';
 		offset += page << 13;
@@ -167,7 +181,7 @@ putbyte(int offset, int data)
 {
 	int addr;
 
-	if (((section_flags[section] & S_IN_ROM) == 0) || (bank >= RESERVED_BANK))
+	if (((section_flags[section] & S_IS_ROM) == 0) || (bank >= RESERVED_BANK))
 		return;
 
 	addr = offset + 1 + (bank << 13);
@@ -208,7 +222,7 @@ putword(int offset, int data)
 {
 	int addr;
 
-	if (((section_flags[section] & S_IN_ROM) == 0) || (bank >= RESERVED_BANK))
+	if (((section_flags[section] & S_IS_ROM) == 0) || (bank >= RESERVED_BANK))
 		return;
 
 	addr = offset + 2 + (bank << 13);
@@ -251,7 +265,7 @@ putdword(int offset, int data)
 {
 	int addr;
 
-	if (((section_flags[section] & S_IN_ROM) == 0) || (bank >= RESERVED_BANK))
+	if (((section_flags[section] & S_IS_ROM) == 0) || (bank >= RESERVED_BANK))
 		return;
 
 	addr = offset + 4 + (bank << 13);
@@ -304,7 +318,7 @@ putbuffer(void *data, int size)
 		return;
 
 	/* check if the buffer will fit in the rom */
-	if ((section_flags[section] & S_IN_ROM) && (bank < RESERVED_BANK)) {
+	if ((section_flags[section] & S_IS_ROM) && (bank < RESERVED_BANK)) {
 		addr = (bank << 13) + loccnt;
 
 		if ((addr + size) > rom_limit) {
@@ -358,7 +372,7 @@ putbuffer(void *data, int size)
 	}
 
 	/* update rom size */
-	if ((section_flags[section] & S_IN_ROM) && (bank < RESERVED_BANK)) {
+	if ((section_flags[section] & S_IS_ROM) && (bank < RESERVED_BANK)) {
 		if (bank > max_bank) {
 			if (loccnt)
 				max_bank = bank;
@@ -531,4 +545,3 @@ warning(char *stptr)
 		prlnbuf[preproc_modidx] = ';';
 	}
 }
-

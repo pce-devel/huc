@@ -1,0 +1,35 @@
+; ***************************************************************************
+; ***************************************************************************
+;
+; hugerom.s2i
+;
+; A simple (mostly empty) test of using the Street Fighter 2 mapper.
+;
+; Copyright John Brandwood 2024.
+;
+; Distributed under the Boost Software License, Version 1.0.
+; (See accompanying file LICENSE_1_0.txt or copy at
+;  http://www.boost.org/LICENSE_1_0.txt)
+;
+; ***************************************************************************
+; ***************************************************************************
+;
+; Here is the list of symbols for SYM2INC to export into a ".s" file.
+;
+; A ';' marks a comment, and everything else on the line is ignored.
+;
+; A symbol with a '?' in front of it is optional, and can be used for
+; conditionally-compiled symbols.
+;
+; ***************************************************************************
+; ***************************************************************************
+;
+; NOTE ... This is not used, it is only here to test that SYM2INC handles the
+;          recent changes to the format of the .sym file!
+;
+; ***************************************************************************
+; ***************************************************************************
+
+core_kernel
+leave_proc
+saz_vce

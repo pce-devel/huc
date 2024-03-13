@@ -706,7 +706,13 @@ getoperand(int *ip, int flag, int last_char)
 
 	default:
 		/* other */
-		switch (prlnbuf[*ip]) {
+		c = prlnbuf[*ip];
+		if (c == '*' && sdcc_mode) {
+			/* change SDCC's '*' for ZP to '<' */
+			c = '<';
+		}
+
+		switch (c) {
 		case '#':
 			/* immediate */
 			mode = IMM;
@@ -729,6 +735,10 @@ getoperand(int *ip, int flag, int last_char)
 			/* indirect */
 			mode = ABS_IND | ABS_IND_X | ZP_IND | ZP_IND_X | ZP_IND_Y;
 			(*ip)++;
+			if (prlnbuf[*ip] == '*' && sdcc_mode) {
+				/* skip SDCC's redundant '*' */
+				(*ip)++;
+			}
 			break;
 
 		case '(':
@@ -769,7 +779,6 @@ getoperand(int *ip, int flag, int last_char)
 			/* was there an undefined or undefined-this-pass symbol? */
 			if (undef || notyetdef ||
 				((value & 0x3FFFFF00) != machine->ram_base)) {
-//				((value & 0x3FFFFF00) && ((value & 0x3FFFFF00) != machine->ram_base))) {
 				/* use ABS addressing, if available */
 				if (flag & ABS)
 					mode &= ~ZP;

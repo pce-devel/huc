@@ -13,14 +13,15 @@ extern int data_loccnt;                         /* data location counter */
 extern int data_size;                           /* size of binary output (in bytes) */
 extern int data_level;                          /* data output level, must be <= listlevel to be outputed */
 extern int loccnt;                              /* location counter */
-extern int tag_value;                           /* current tag value */
+extern int tag_overlay;                         /* current tag value */
 extern int bank;                                /* current bank */
 extern int bank_base;                           /* bank base index */
 extern int bank_limit;                          /* bank limit */
 extern int rom_limit;                           /* rom max. size in bytes */
 extern int page;                                /* page */
-extern int rsbase;                              /* .rs counter */
-extern int rsbank;                              /* .rs counter */
+extern int rs_base;                             /* .rs counter */
+extern int rs_mprbank;                          /* .rs counter */
+extern int rs_overlay;                          /* .rs counter */
 extern int section;                             /* current section: S_ZP, S_BSS, S_CODE or S_DATA */
 extern int section_bank[MAX_S];                 /* current bank for each section */
 extern int section_flags[MAX_S];                /* current flags for each section */
@@ -41,7 +42,8 @@ extern char *expr;                              /* expression string pointer */
 extern struct t_symbol *expr_toplabl;           /* pointer to the innermost scope-label */
 extern struct t_symbol *expr_lablptr;           /* pointer to the last-referenced label */
 extern int expr_lablcnt;                        /* number of label seen in an expression */
-extern int expr_valbank;                        /* last-defined bank# in an expression */
+extern int expr_mprbank;                        /* last-defined bank# in an expression */
+extern int expr_overlay;                        /* last-defined overlay# in an expression */
 extern int complex_expr;                        /* NZ if an expression contains operators */
 extern int mopt;
 extern int in_macro;
@@ -102,6 +104,7 @@ extern unsigned int value;                      /* operand field value */
 extern int newproc_opt;                         /* use "new" style of procedure trampolines */
 extern int strip_opt;                           /* strip unused procedures? */
 extern int kickc_opt;                           /* NZ if -kc flag on command line */
+extern int sdcc_opt;                            /* NZ if -sdcc flag on command line */
 extern int mlist_opt;                           /* macro listing main flag */
 extern int xlist;                               /* listing file main flag */
 extern int list_level;                          /* output level */
@@ -109,9 +112,9 @@ extern int asm_opt[9];                          /* assembler option state */
 extern int opvaltab[6][16];
 extern int call_bank;                           /* bank for .proc trampolines */
 extern int kickc_mode;                          /* NZ if currently in KickC mode */
-extern int hucc_mode;                           /* NZ if assembling HuCC code */
+extern int sdcc_mode;                           /* NZ if assembling SDCC code */
 extern int kickc_final;                         /* auto-include "kickc-final.asm" */
-extern int hucc_final;                          /* auto-include "hucc-final.asm" */
+extern int sdcc_final;                          /* auto-include "sdcc-final.asm" */
 extern int in_final;                            /* set when in xxxx-final.asm include */
 extern int preproc_inblock;                     /* C-style comment: within block comment */
 extern int preproc_sfield;                      /* C-style comment: SFIELD as a variable */

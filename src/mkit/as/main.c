@@ -51,12 +51,23 @@ char zeroes[2048];	/* CDROM sector full of zeores */
 char *prg_name;		/* program name */
 FILE *in_fp;		/* file pointers, input */
 FILE *lst_fp;		/* listing */
-char section_name[5][8] = {
-	"  ZP", " BSS", "CODE", "DATA", "PROC"
+char section_name[MAX_S + 1][8] = {
+	" NULL",
+	"   ZP",
+	"  BSS",
+	" CODE",
+	" DATA",
+	" HOME",
+	"XDATA",
+	"XINIT",
+	"CONST",
+	" OSEG",
+	" PROC"
 };
 int newproc_opt;
 int strip_opt;
 int kickc_opt;
+int sdcc_opt;
 int dump_seg;
 int overlayflag;
 int develo_opt;
@@ -69,6 +80,7 @@ int ipl_opt;
 int sgx_opt;
 int scd_opt;
 int cd_opt;
+int sf2_opt;
 int mx_opt;
 int mlist_opt;		/* macro listing main flag */
 int xlist;		/* listing file main flag */
@@ -80,18 +92,31 @@ int rom_free;
 
 /* current flags for each section */
 int section_flags[MAX_S] = {
-	0,		/* S_ZP */
-	0,		/* S_BSS */
-	S_IN_ROM,	/* S_CODE */
-	S_IN_ROM	/* S_DATA */
+/* S_NONE  */	S_NO_DATA,
+/* S_ZP    */	S_IS_RAM + S_NO_DATA, 
+/* S_BSS   */	S_IS_RAM + S_NO_DATA,
+/* S_CODE  */	S_IS_ROM + S_IS_CODE,
+/* S_DATA  */	S_IS_ROM,
+/* S_HOME  */	S_IS_ROM + S_IS_CODE,
+/* S_XDATA */	S_IS_RAM + S_NO_DATA,
+/* S_XINIT */	S_IS_ROM,
+/* S_CONST */	S_IS_ROM,
+/* S_OSEG  */	S_IS_RAM
 };
 
-/* current loccnt limit for each section */
+/* maximum loccnt limit for each section */
+/* N.B. this isn't used, yet! */
 int section_limit[MAX_S] = {
-	0x2000,		/* S_ZP */
-	0x2000,		/* S_BSS */
-	0x2000,		/* S_CODE */
-	0x2000		/* S_DATA */
+/* S_NONE  */	0x0000,
+/* S_ZP    */	0x0100,
+/* S_BSS   */	0x2000,
+/* S_CODE  */	0x2000,
+/* S_DATA  */	0x2000,
+/* S_HOME  */	0x2000,
+/* S_XDATA */	0x2000,
+/* S_XINIT */	0x2000,
+/* S_CONST */	0x2000,
+/* S_OSEG  */	0x0100
 };
 
 /* ----
@@ -237,28 +262,30 @@ main(int argc, char **argv)
 	int pass_count = 0;
 	const char *cmd_line_options = "sSl:mhI:o:O";
 	const struct option cmd_line_long_options[] = {
-		{"segment",     0, 0,           's'},
-		{"fullsegment", 0, 0,           'S'},
-		{"listing",     1, 0,           'l'},
-		{"macro",       0, 0,           'm'},
-		{"raw",         0, &header_opt,  0 },
-		{"pad",         0, &padding_opt, 1 },
-		{"trim",        0, &trim_opt,    1 },
-		{"cd",          0, &cd_type,     1 },
-		{"scd",         0, &cd_type,     2 },
-		{"sgx",         0, &sgx_opt,     1 },
-		{"ipl",         0, &ipl_opt,     1 },
-		{"over",        0, &overlayflag, 1 },
-		{"overlay",     0, &overlayflag, 1 },
-		{"dev",         0, &develo_opt,  1 },
-		{"develo",      0, &develo_opt,  1 },
-		{"mx",          0, &mx_opt,      1 },
-		{"srec",        0, &srec_opt,    1 },
-		{"help",        0, 0,           'h'},
-		{"strip",       0, &strip_opt,   1 },
-		{"newproc",     0, &newproc_opt, 1 },
-		{"kc",          0, &kickc_opt,   1 },
-		{0,		0, 0,		 0 }
+		{"segment",     no_argument,       0,           's'},
+		{"fullsegment", no_argument,       0,           'S'},
+		{"listing",     required_argument, 0,           'l'},
+		{"macro",       no_argument,       0,           'm'},
+		{"raw",         no_argument,       &header_opt,  0 },
+		{"pad",         no_argument,       &padding_opt, 1 },
+		{"trim",        no_argument,       &trim_opt,    1 },
+		{"sf2",         no_argument,       &sf2_opt,     1 },
+		{"cd",          no_argument,       &cd_type,     1 },
+		{"scd",         no_argument,       &cd_type,     2 },
+		{"sgx",         no_argument,       &sgx_opt,     1 },
+		{"ipl",         no_argument,       &ipl_opt,     1 },
+		{"over",        no_argument,       &overlayflag, 1 },
+		{"overlay",     no_argument,       &overlayflag, 1 },
+		{"dev",         no_argument,       &develo_opt,  1 },
+		{"develo",      no_argument,       &develo_opt,  1 },
+		{"mx",          no_argument,       &mx_opt,      1 },
+		{"srec",        no_argument,       &srec_opt,    1 },
+		{"help",        no_argument,       0,           'h'},
+		{"strip",       no_argument,       &strip_opt,   1 },
+		{"newproc",     no_argument,       &newproc_opt, 1 },
+		{"kc",          no_argument,       &kickc_opt,   1 },
+		{"sdcc",        no_argument,       &sdcc_opt,    1 },
+		{0,		no_argument,       0,		 0 }
 	};
 
 	/* register atexit callback */
@@ -309,6 +336,7 @@ main(int argc, char **argv)
 	run_opt = 0;
 	ipl_opt = 0;
 	sgx_opt = 0;
+	sf2_opt = 0;
 	scd_opt = 0;
 	cd_opt = 0;
 	mx_opt = 0;
@@ -524,7 +552,17 @@ main(int argc, char **argv)
 	bank_base  = 0x00;
 	bank_limit = 0x7F;
 
-	if (ipl_opt) {
+	/* fixme: these should be exclusive! */
+	/* process -sf2 first, because overlays are incompatible with the other modes */
+	if (sf2_opt) {
+		rom_limit  = ROM_BANKS * 8192;	/* 8MB */
+		bank_base  = 0x00;
+		bank_limit = ROM_BANKS - 1;
+//		section_flags[S_HOME] |= S_IS_SF2;
+		section_flags[S_CODE] |= S_IS_SF2;
+		section_flags[S_DATA] |= S_IS_SF2;
+	}
+	else if (ipl_opt) {
 		rom_limit  = 0x01800;	/* 4KB */
 		bank_base  = 0x00;
 		bank_limit = 0x00;
@@ -558,7 +596,7 @@ main(int argc, char **argv)
 	/* assemble */
 	for (pass = FIRST_PASS; pass <= LAST_PASS; pass++) {
 		infile_error = -1;
-		tag_value = 0;
+		tag_overlay = 0;
 		page = 7;
 		bank = 0;
 		loccnt = 0;
@@ -572,13 +610,14 @@ main(int argc, char **argv)
 		xvertlong = 0;
 		need_another_pass = 0;
 		skip_lines = 0;
-		rsbase = 0;
-		rsbank = RESERVED_BANK;
+		rs_base = 0;
+		rs_mprbank = RESERVED_BANK;
+		rs_overlay = 0;
 		proc_nb = 0;
 		kickc_mode = 0;
-		hucc_mode = 0;
+		sdcc_mode = 0;
 		kickc_final = 0;
-		hucc_final = 0;
+		sdcc_final = 0;
 		in_final = 0;
 
 		/* reset assembler options */
@@ -661,13 +700,12 @@ main(int argc, char **argv)
 					bank = (bank + 1);
 					if (bank > max_bank) {
 						max_bank = bank;
-	printf("Increased max_bank to (0x%02X).\n", max_bank);
 					}
 					if (section != S_DATA || asm_opt[OPT_DATAPAGE] == 0)
 						page = (page + 1) & 7;
 
-					if (section == S_CODE && page == 0) {
-						error("CODE section wrapped from MPR7 to MPR0!");
+					if ((section_flags[section] & S_IS_CODE) && page == 0) {
+						error("CODE or HOME section wrapped from MPR7 to MPR0!");
 					}
 
 					if (asm_opt[OPT_WARNING] && pass == LAST_PASS) {
@@ -874,8 +912,20 @@ main(int argc, char **argv)
 
 			/* binary file */
 			else {
-				/* pad rom to power-of-two? */
 				int num_banks = max_bank + 1;
+
+				/* make StreetFighterII roms compatible with emulators which detect size */
+				if (sf2_opt) {
+					/* Pad a StreetFighterII HuCARD to a minimum of the 2MB */
+					if (num_banks < (64 * 4))
+						num_banks = (64 * 4);
+
+					/* Also pad it to a multiple of the 512KB mapper size */
+					if (num_banks & 63)
+						num_banks = num_banks + 64 - (num_banks & 63);
+				}
+
+				/* pad rom to power-of-two? */
 				if (padding_opt) {
 					num_banks = 1;
 					while (num_banks <= max_bank) num_banks <<= 1;
@@ -991,6 +1041,7 @@ help(void)
 	printf("-trim      : strip unused head and tail from ROM\n");
 	printf("-I         : add include path\n");
 	if (machine->type == MACHINE_PCE) {
+		printf("-sf2       : create a StreetFighterII HuCARD\n");
 		printf("-cd        : create a CD-ROM track image\n");
 		printf("-scd       : create a Super CD-ROM track image\n");
 		printf("-sgx       : add a SuperGRAFX signature to the CD-ROM\n");
@@ -1033,10 +1084,10 @@ show_bnk_usage(int which_bank)
 
 	/* display bank infos */
 	if (nb)
-		printf("BANK %2X  %-23s    %4i/%4i\n",
+		printf("BANK %3X  %-23s    %4i / %4i\n",
 		       which_bank, bank_name[which_bank], nb, 8192 - nb);
 	else {
-		printf("BANK %2X  %-23s       0/8192\n", which_bank, bank_name[which_bank]);
+		printf("BANK %3X  %-23s       0 / 8192\n", which_bank, bank_name[which_bank]);
 		return;
 	}
 
@@ -1089,24 +1140,24 @@ show_seg_usage(void)
 	printf("segment usage:\n");
 	printf("\n");
 
-	printf("\t\t\t\t    USED/FREE\n");
+	printf("\t\t\t\t     USED / FREE\n");
 
 	/* zp usage */
 	if (max_zp <= 1)
-		printf("      ZP    -\n");
+		printf("       ZP    -\n");
 	else {
 		start = ram_base;
 		stop = ram_base + (max_zp - 1);
-		printf("      ZP    $%04X-$%04X  [%4i]     %4i/%4i\n", start, stop, stop - start + 1, stop - start + 1, 256 - (stop - start + 1));
+		printf("       ZP    $%04X-$%04X  [%4i]     %4i / %4i\n", start, stop, stop - start + 1, stop - start + 1, 256 - (stop - start + 1));
 	}
 
 	/* bss usage */
 	if (max_bss <= 0x201)
-		printf("     BSS    -\n\n");
+		printf("      BSS    -\n\n");
 	else {
 		start = ram_base + 0x200;
 		stop = ram_base + (max_bss - 1);
-		printf("     BSS    $%04X-$%04X  [%4i]     %4i/%4i\n\n", start, stop, stop - start + 1, stop - start + 1, 8192 - (stop - start + 1));
+		printf("      BSS    $%04X-$%04X  [%4i]     %4i / %4i\n\n", start, stop, stop - start + 1, stop - start + 1, 8192 - (stop - start + 1));
 	}
 
 	/* bank usage */
@@ -1121,7 +1172,7 @@ show_seg_usage(void)
 	/* total */
 	rom_used = (rom_used + 1023) >> 10;
 	rom_free = (rom_free) >> 10;
-	printf("\t\t\t\t    ---- ----\n");
-	printf("\t\t\t\t    %4iK%4iK\n", rom_used, rom_free);
-	printf("\n\t\t\tTOTAL SIZE =     %4iK\n\n", (rom_used + rom_free));
+	printf("\t\t\t\t    -----  -----\n");
+	printf("\t\t\t\t    %4iK  %4iK\n", rom_used, rom_free);
+	printf("\n\t\t\tTOTAL SIZE =       %4iK\n\n", (rom_used + rom_free));
 }

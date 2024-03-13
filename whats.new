@@ -5,14 +5,15 @@
 
   PCEAS changes ...
   -----------------
-- Add .AREA pseudo-op. This just sets a 32-bit "area" value which PCEAS copies
-  into every symbol when it is defined. The .AREA value can be changed at any
-  time so that subsequent symbol definitions can have different values.
-  The "area" value is set to 0 at the start of each pass.
-- Add "area()" operator to retrieve the "area" value stored within a symbol.
-  The purpose of the "area" is to allow symbols to have an extra value which
-  can then be used to tag symbols that are located in different code or data
-  overlays.
+
+- Add support for generating HuCARD ROMs up to 8MByte using the StreetFighterII
+  mapper. Use "-sf2" on the command line to select this.
+- Add the "overlay(label_name)" operator to get the StreetFighterII mapper addr
+  register to write to select the correct set of 64 banks to map into $40..$7F.
+  For example, "stz $FFF0 + overlay( my_data )" if HuCARD bank $00 is in MPR7.
+- Allow .EQU and .RSSET values to use "$x:xx:xxxx" to specify the overlay, bank
+  and addr.
+- Allow C-style "&&" and "||" in expressions.
 - Change .BANK to give an error if undefined symbols are used.
 - Allow .BANK/.PAGE/.ORG within a .PROC if not in a .CODE section.
 

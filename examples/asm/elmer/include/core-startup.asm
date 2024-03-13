@@ -417,19 +417,19 @@ core_hw_reset:	sei				; Disable interrupts.
 		;
 		; N.B. The tag() changes are only here to test PCEAS!
 
-!:		.settag	-1			; Tag the STAGE1 symbols.
+;!:		.overlay 1			; Tag the STAGE1 symbols.
 
 		include "core-stage1.s"
 
-		.settag	tagof(!-)		; Restore previous area.
+;		.overlay overlay(!-)		; Restore previous area.
 
 	.if	(core_kernel != core_ram1st)
 		.fail	Stage1 kernel has not been built with the same core_ram1st!
 	.endif
 
-	.if	(tagof(*) != 0) + (tagof(core_kernel) != -1)
-		.fail	.TAG is not working correctly!
-	.endif
+;	.if	(overlay(*) != 0) || (overlay(core_kernel) != 1)
+;		.fail	.OVERLAY is not working correctly!
+;	.endif
 
 	.else	USING_STAGE1
 

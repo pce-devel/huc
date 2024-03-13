@@ -37,7 +37,7 @@ do_call(int *ip)
 
 	/* define label, unless already defined in classC() instruction flow */
 	if (opflg == PSEUDO)
-		labldef(0, 0, LOCATION);
+		labldef(LOCATION);
 
 	/* update location counter */
 	data_loccnt = loccnt;
@@ -66,9 +66,9 @@ do_call(int *ip)
 					if (call_bank > max_bank) {
 						/* don't increase ROM size until we need a trampoline */
 						if (call_bank > bank_limit) {
-							fatal_error("Not enough ROM space for proc trampolines!");
+							fatal_error("There is no target memory left to allocate a bank for .proc trampolines!");
 							if (asm_opt[OPT_OPTIMIZE] == 0) {
-								printf("Procedure optimization is currently disabled, use \"-O\" to enable.\n\n");
+								printf("Optimized procedure packing is currently disabled, use \"-O\" to enable.\n\n");
 							}
 							return;
 						}
@@ -79,10 +79,7 @@ do_call(int *ip)
 					if (newproc_opt == 0) {
 						/* check that the new trampoline won't overrun the bank */
 						if (((call_ptr + 17) & 0xE000) != (call_1st & 0xE000)) {
-							error("No more space in bank for .proc trampoline!");
-							if (asm_opt[OPT_OPTIMIZE] == 0) {
-								printf("Procedure optimization is currently disabled, use \"-O\" to enable.\n\n");
-							}
+							error("The .proc trampoline bank is full, there are too many procedures!");
 							return;
 						}
 
@@ -110,7 +107,7 @@ do_call(int *ip)
 					} else {
 						/* check that the new trampoline won't overrun the bank */
 						if (((call_ptr - 9) & 0xE000) != (call_1st & 0xE000)) {
-							error("No more space in bank for .proc trampoline!");
+							error("The .proc trampoline bank is full, there are too many procedures!");
 							return;
 						}
 
@@ -176,7 +173,7 @@ void
 do_leave(int *ip)
 {
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* check end of line */
 	if (!check_eol(ip))
@@ -324,7 +321,7 @@ do_proc(int *ip)
 	discontiguous = 1;
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* a KickC procedure also opens a label-scope */
 	if (optype == P_KICKC) {
@@ -393,7 +390,7 @@ do_endp(int *ip)
 	}
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* sanity check */
 	if (bank != proc_ptr->bank) {
@@ -504,13 +501,17 @@ proc_reloc(void)
 				/* relocate code to any unused bank in ROM */
 				int reloc_bank = -1;
 				int check_bank = 0;
+				int check_last = 0;
 				int smallest = 0x2000;
 
 				while (reloc_bank == -1)
 				{
 					check_bank = (asm_opt[OPT_OPTIMIZE]) ? 0 : max_bank;
 
-					for (; check_bank <= max_bank; check_bank++)
+					/* limit procs to the first 64 banks if using the SF2 mapper */
+					check_last = (section_flags[S_DATA] & S_IS_SF2) ? 63 : max_bank;
+
+					for (; check_bank <= check_last; check_bank++)
 					{
 						/* don't use a full bank, even if proc_ptr->size==0 */
 						if ((bank_free[check_bank] != 0) && (bank_free[check_bank] >= proc_ptr->size))
@@ -525,21 +526,21 @@ proc_reloc(void)
 
 					if (reloc_bank == -1)
 					{
-						/* need new bank */
-						if (++max_bank > bank_limit) {
+						/* new bank needed, is there space below 1MB? */
+						if ((max_bank >= 127) || (max_bank >= bank_limit)) {
 							int total = 0, totfree = 0;
 							struct t_proc *current = NULL;
 
 							current = proc_ptr;
 
-							fatal_error("\nThere is not enough free memory for all the procedures!\n");
+							fatal_error("\nThere is not enough free target memory for all the procedures!\n");
 
 							if (asm_opt[OPT_OPTIMIZE] == 0) {
-								printf("Procedure optimization is currently disabled, use \"-O\" to enable.\n\n");
+								printf("Optimized procedure packing is currently disabled, use \"-O\" to enable.\n\n");
 							}
 
-							for (i = new_bank; i < max_bank; i++) {
-								printf("BANK %02X: %d bytes free\n", i, bank_free[i]);
+							for (i = new_bank; i <= max_bank; i++) {
+								printf("BANK %3X: %d bytes free\n", i, bank_free[i]);
 								totfree += bank_free[i];
 							}
 							printf("\nTotal free space in all banks %d.\n\n", totfree);
@@ -564,7 +565,7 @@ proc_reloc(void)
 
 							return;
 						}
-						reloc_bank = max_bank;
+						reloc_bank = ++max_bank;
 					}
 				}
 
@@ -603,9 +604,9 @@ proc_reloc(void)
 			/* remap addr */
 			if (sym->proc) {
 				if (proc_ptr->bank == STRIPPED_BANK)
-					sym->bank = STRIPPED_BANK;
+					sym->mprbank = STRIPPED_BANK;
 				else
-					sym->bank = proc_ptr->bank + bank_base;
+					sym->mprbank = proc_ptr->bank + bank_base;
 
 				sym->value = (sym->value & 0x3FFFFFFF);
 				sym->value += (proc_ptr->org - proc_ptr->base);
@@ -620,9 +621,9 @@ proc_reloc(void)
 						/* remap addr */
 						if (local->proc) {
 							if (proc_ptr->bank == STRIPPED_BANK)
-								local->bank = STRIPPED_BANK;
+								local->mprbank = STRIPPED_BANK;
 							else
-								local->bank = proc_ptr->bank + bank_base;
+								local->mprbank = proc_ptr->bank + bank_base;
 
 							local->value = (local->value & 0x3FFFFFFF);
 							local->value += (proc_ptr->org - proc_ptr->base);

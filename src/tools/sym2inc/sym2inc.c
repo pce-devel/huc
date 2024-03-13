@@ -507,7 +507,7 @@ void OutputSymbols ( char * pFileName )
 
       strupr( pSymbol->pBankString );
 
-      if (( pSymbol->pBankString[0] != 'F' ) || ( pSymbol->pBankString[1] != '0' )) {
+      if ( pSymbol->pBankString[0] != '-' ) {
         fputs( pSymbol->pBankString, pFile );
         fputs( ":", pFile );
       }

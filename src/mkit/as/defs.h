@@ -42,8 +42,10 @@
 
 /* line buffer length */
 #define LAST_CH_POS	512
-#define SFIELD		29
-#define SBOLSZ		64
+#define SFIELD		30
+
+/* symbol length (must be < 128 if "char" is signed!) */
+#define SBOLSZ		96
 
 /* macro argument types */
 #define NO_ARG		0
@@ -55,15 +57,29 @@
 #define ARG_LABEL	6
 
 /* section types */
-#define S_ZP	0
-#define S_BSS	1
-#define S_CODE	2
-#define S_DATA	3
-#define MAX_S	4	/* selectable section types */
-#define S_PROC	4	/* trampolines for .proc */
+/* update pseudo_allowed when adding or changing! */
+/* update section_name  when adding or changing! */
+/* update section_flags when adding or changing! */
+/* update section_limit when adding or changing! */
+#define S_NONE		0 /* SDCC: sections that should always be empty! */
+#define S_ZP		1
+#define S_BSS		2
+#define S_CODE		3
+#define S_DATA		4
+#define S_HOME		5 /* SDCC: permanently-mapped code */
+#define S_XDATA		6 /* SDCC: BSS copy of initialized variables */
+#define S_XINIT		7 /* SDCC: ROM copy of initialized variables */
+#define S_CONST		8 /* SDCC: permanent const data */
+#define S_OSEG		9 /* SDCC: overlayed variables in ZP */
+#define MAX_S		10 /* selectable section types */
+#define S_PROC		10 /* info only, trampolines for .proc */
 
-/* section flags */
-#define S_IN_ROM	1
+/* section flag mask */
+#define S_IS_RAM	1
+#define S_IS_ROM	2
+#define S_IS_SF2	4
+#define S_IS_CODE	8
+#define S_NO_DATA       16
 
 /* assembler options */
 #define OPT_LIST	0
@@ -77,6 +93,7 @@
 #define OPT_DATAPAGE	8
 
 /* assembler directives */
+/* update pseudo_allowed when adding or changing! */
 #define P_DB		0	// .db
 #define P_DW		1	// .dw
 #define P_DD		2	// .dd
@@ -135,14 +152,14 @@
 #define P_INCTILEPAL	55	// .inctilepal
 #define P_CARTRIDGE	56	// .cartridge
 #define P_ALIGN		57	// .align
-#define P_KICKC		58	// .kickc
-#define P_CPU		59	// .cpu
-#define P_SEGMENT	60	// .segment
-#define P_LABEL		61	// .label or .const
+#define P_KICKC		58	// .kickc .r6502 .r65c02
+#define P_IGNORE	59	// .cpu .optsdcc .globl
+#define P_SEGMENT	60	// .segment .area
+#define P_LABEL		61	// .label .const
 #define P_ENCODING	62	// .encoding
 #define P_STRUCT	63	// .struct
 #define P_ENDS		64	// .ends
-#define P_SETTAG	65	// .tag
+#define P_OVERLAY	65	// .overlay
 
 /* symbol flags */
 #define UNDEF	1	/* undefined - may be zero page */
@@ -231,6 +248,7 @@ typedef struct t_proc {
 	char name[SBOLSZ];
 } t_proc;
 
+/* update pc_symbol when adding or changing! */
 typedef struct t_symbol {
 	struct t_symbol *next;
 	struct t_symbol *local;
@@ -239,8 +257,8 @@ typedef struct t_symbol {
 	int type;
 	int value;
 	int section;
-	int tag;
-	int bank;
+	int overlay;
+	int mprbank;
 	int page;
 	int nb;
 	int size;
