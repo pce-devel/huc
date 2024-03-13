@@ -460,6 +460,9 @@ do_dw(int *ip)
 
 	/* get data */
 	for (;;) {
+		/* skip spaces */
+		while (isspace(prlnbuf[*ip])) { ++(*ip); }
+
 		/* skip SDCC's junk at the start of some .dw output */
 		if (sdcc_mode && prlnbuf[*ip] == '#')
 			(*ip)++;
