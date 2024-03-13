@@ -47,6 +47,9 @@ The "CORE(not TM)" PC Engine library is a small and configurable set of library 
 * rom-core-hello
   - A simple example of creating a HuCARD ROM.
 
+* rom-core-hugerom
+  - A simple example of creating a HuCARD ROM for the Street Fighter II mapper.
+
 * cd-core-1stage
   - A simple example of creating an ISO for a CD-ROM, and loading the "CORE(not TM)" kernel code from the overlay program.
 
