@@ -158,7 +158,8 @@ jobs:
           name: package-ubuntu-20.04
         # https://github.com/pyTooling/Actions/tree/main/releaser
         # need to use composite on windows, since docker isn't available
-      - name: publish package
+      - name: publish release package
+        if: ${{ github.event_name == 'release' }}
         uses: pyTooling/Actions/releaser@r0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -166,4 +167,12 @@ jobs:
           rm: true # do not keep old latest artifacts
           files: |
             *.zip
-
+      - name: publish current package
+        if: ${{ github.event_name != 'release' }}
+        uses: pyTooling/Actions/releaser@r0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: 'current'
+          rm: true # do not keep old latest artifacts
+          files: |
+            *.zip
