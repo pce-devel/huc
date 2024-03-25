@@ -172,7 +172,7 @@ jobs:
         uses: pyTooling/Actions/releaser@r0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          tag: 'current'
+          tag: "current"
           rm: true # do not keep old latest artifacts
           files: |
             *.zip
