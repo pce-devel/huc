@@ -1,6 +1,15 @@
 ;
 ; STARTUP.ASM  -  MagicKit standard startup code
 ;
+;
+; Note: lib_exclude.asm is empty and can be overridden with a local version
+;       which is how compile-time variables should be defined in a HuC program
+;
+; Example: You may wish to implement your own joyport device driver, in which
+;          case you will need to disable the automatic Mouse/Joypad reading
+;          by setting "DISABLEJOYSCAN .equ 1"
+;
+
 		.list
 
 		.include "lib_exclude.asm"
@@ -719,9 +728,11 @@ scd_ok:
 
 	.endif	HUC
 
+	.ifndef	DISABLEJOYSCAN
 	.ifdef	SUPPORT_MOUSE
 		jsr  mousinit		; check existence of mouse
 	.endif	SUPPORT_MOUSE
+	.endif	DISABLEJOYSCAN
 
 	.if	(CDROM)
 		; Now, install the RAM-based version of the
@@ -1012,11 +1023,20 @@ vsync_hndl:
 	.ifdef	SUPPORT_MOUSE
 		lda	msflag		; if mouse supported, and exists
 		beq	.l3		; then read mouse instead of pad
+
+	.ifndef	DISABLEJOYSCAN
 		jsr	mousread
+	.endif	DISABLEJOYSCAN
+
 		bra	.out
 	.endif	SUPPORT_MOUSE
 
+
+	.ifdef	DISABLEJOYSCAN
+.l3:
+	.else
 .l3:		jsr	read_joypad	; else read joypad
+	.endif
 .out:		rts
 
 
