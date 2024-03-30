@@ -373,7 +373,6 @@ rndseed		= $F8:2249 ; 1
 rndl		= $F8:2249 ; 1
 rndh		= $F8:224A ; 1
 rndm		= $F8:224B ; 1
-rndm		= $F8:224B ; 1
 scsi_send_buf	= $F8:224C ; 10	*UNDOCUMENTED* buffer for SCSI cmd send
 scsi_recv_buf	= $F8:2256 ; 10	*UNDOCUMENTED* buffer for SCSI cmd recv
 parameter_buf	= $F8:2260 ; 8	*UNDOCUMENTED* stored _ax,_bx,_cx,_dx
