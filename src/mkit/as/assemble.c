@@ -230,7 +230,7 @@ assemble(int do_label)
 		/* output location counter */
 		if (pass == LAST_PASS) {
 			if (!asm_opt[OPT_MACRO])
-				loadlc((page << 13) + loccnt, 0);
+				loadlc(loccnt + (page << 13), 0);
 		}
 
 		/* get macro args */
@@ -556,7 +556,13 @@ do_ifdef(int *ip)
 	}
 	if (!check_eol(ip))
 		return;
+
+	/* this check does not count as a refererence! */
 	lablptr = stlook(SYM_CHK);
+
+	/* is it undefined */
+	if ((lablptr != NULL) && ((lablptr->type == IFUNDEF) || (lablptr->type == UNDEF)))
+		lablptr = NULL;
 
 	/* check for '.if' stack overflow */
 	if (if_level == 255) {
