@@ -87,7 +87,7 @@ unsigned short pseudo_allowed[] = {
 /* P_ENCODING    */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
 /* P_STRUCT      */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
 /* P_ENDS        */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
-/* P_OVERLAY     */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS
+/* P_3PASS       */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS
 };
 
 
@@ -799,24 +799,16 @@ do_equ(int *ip)
 		return;
 
 	/* check for undefined symbols - they are not allowed in .equ or .set */
-	if ((undef != 0) && (kickc_mode == 0)) {
-		error("Symbols must be defined before their use in .EQU or .SET!");
+	if (undef != 0) {
+		if ((asm_opt[OPT_FORWARD] == 0) || (pass != FIRST_PASS))
+			error("Undefined symbol in operand field!");
+		else
+			need_another_pass = 1;
 		return;
 	}
 
-	/* allow ".set" to change a label's value */
-	if ((optype == 1) && (lablptr->type == DEFABS)) {
-		lablptr->value   = value;
-		lablptr->mprbank = expr_mprbank;
-		lablptr->overlay = expr_overlay;
-	} else
-	if (undef != 0) {
-		/* needed for KickC forward-references */
-		need_another_pass = 1;
-	} else {
-		/* assign value to the label */
-		labldef(CONSTANT);
-	}
+	/* assign value to the label */
+	labldef(CONSTANT + optype); /* or VARIABLE */
 
 	/* output line */
 	if (pass == LAST_PASS) {
@@ -1023,44 +1015,6 @@ do_bank(int *ip)
 	/* output on last pass */
 	if (pass == LAST_PASS) {
 		loadlc(bank, 1);
-		println();
-	}
-}
-
-
-/* ----
- * do_overlay()
- * ----
- * .overlay pseudo
- */
-
-void
-do_overlay(int *ip)
-{
-	/* define label */
-	labldef(LOCATION);
-
-	/* get tag value */
-	if (!evaluate(ip, 0, 0))
-		return;
-
-	/* check for undefined symbol - they are not allowed in .overlay */
-	if (undef != 0) {
-		error("Undefined symbol in operand field!");
-		return;
-	}
-
-	/* check for out-of-range StreetFighterII overlay */
-	if ((value < 0x0) || (value > 0xF)) {
-		error("Symbol tag for StreetFighterII overlays must be $0..$F!");
-		return;
-	}
-
-	tag_overlay = value;
-
-	/* output on last pass */
-	if (pass == LAST_PASS) {
-		loadlc(tag_overlay, 1);
 		println();
 	}
 }
@@ -1552,7 +1506,10 @@ do_ds(int *ip)
 
 	/* check for undefined symbol - they are not allowed in .ds */
 	if (undef != 0) {
-		error("Undefined symbol in operand field!");
+		if ((asm_opt[OPT_FORWARD] == 0) || (pass != FIRST_PASS))
+			error("Undefined symbol in operand field!");
+		else
+			need_another_pass = 1;
 		return;
 	}
 
@@ -1893,6 +1850,8 @@ do_opt(int *ip)
 			asm_opt[OPT_LBRANCH] = i;
 		else if (!strcasecmp(name, "d"))
 			asm_opt[OPT_DATAPAGE] = i;
+		else if (!strcasecmp(name, "f"))
+			asm_opt[OPT_FORWARD] = i;
 		else {
 			error("Unknown option!");
 			return;
@@ -1989,6 +1948,35 @@ do_align(int *ip)
 
 
 /* ----
+ * do_3pass()
+ * ----
+ * .3pass  pseudo (optype == 0)
+ */
+
+void
+do_3pass(int *ip)
+{
+	/* define label */
+	labldef(LOCATION);
+
+	/* check end of line */
+	if (optype == 0 && !check_eol(ip))
+		return;
+
+	/* signal that an extra pass is wanted */
+	if (pass == FIRST_PASS)
+		need_another_pass = 1;
+
+	/* enable forward-reference support in 3pass mode */
+	asm_opt[OPT_FORWARD] = 1;
+
+	/* output line */
+	if (pass == LAST_PASS)
+		println();
+}
+
+
+/* ----
  * do_kickc()
  * ----
  * .pceas  pseudo (optype == 0)
@@ -2017,14 +2005,17 @@ do_kickc(int *ip)
 		sdcc_final  |= sdcc_mode;
 	}
 
-	/* enable () for indirect addressing in KickC mode */
+	/* enable () for indirect addressing during KickC code */
 	asm_opt[OPT_INDPAREN] = kickc_mode;
 
-	/* enable auto-detect ZP addressing in KickC mode */
+	/* enable auto-detect ZP addressing during KickC code */
 	asm_opt[OPT_ZPDETECT] = kickc_mode;
 
-	/* enable long-branch support in KickC mode */
-	asm_opt[OPT_LBRANCH] = kickc_mode;
+	/* enable long-branch support when building KickC code */
+	asm_opt[OPT_LBRANCH] |= kickc_mode;
+
+	/* enable forward-references when building KickC code */
+	asm_opt[OPT_FORWARD] |= kickc_mode;
 
 	/* output line */
 	if (pass == LAST_PASS)

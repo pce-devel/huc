@@ -45,7 +45,6 @@ void do_equ(int *ip);
 void do_page(int *ip);
 void do_org(int *ip);
 void do_bank(int *ip);
-void do_overlay(int *ip);
 void do_incbin(int *ip);
 void do_mx(char *fname);
 void forget_included_files(void);
@@ -58,6 +57,7 @@ void do_section(int *ip);
 void do_incchr(int *ip);
 void do_opt(int *ip);
 void do_align(int *ip);
+void do_3pass(int *ip);
 void do_kickc(int *ip);
 void do_ignore(int *ip);
 void do_segment(int *ip);
@@ -107,9 +107,8 @@ int  macro_getargtype(char *arg);
 
 /* MAIN.C */
 int  main(int argc, char **argv);
-int  calc_bank_base(void);
 void help(void);
-void show_bnk_usage(int which_bank);
+void show_bank_usage(int which_bank);
 void show_seg_usage(void);
 
 /* MAP.C */
@@ -165,3 +164,6 @@ int  lablexists(char *name);
 void lablremap(void);
 void labldump(FILE *fp);
 void lablresetdefcnt(void);
+int bank2mprbank (int what_bank, int what_section);
+int bank2overlay (int what_bank, int what_section);
+int mprbank2bank (int what_bank, int what_overlay);

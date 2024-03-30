@@ -91,6 +91,8 @@
 #define OPT_ZPDETECT	6
 #define OPT_LBRANCH	7
 #define OPT_DATAPAGE	8
+#define OPT_FORWARD	9
+#define MAX_OPTS	10
 
 /* assembler directives */
 /* update pseudo_allowed when adding or changing! */
@@ -159,7 +161,7 @@
 #define P_ENCODING	62	// .encoding
 #define P_STRUCT	63	// .struct
 #define P_ENDS		64	// .ends
-#define P_OVERLAY	65	// .overlay
+#define P_3PASS		65	// .3pass
 
 /* symbol flags */
 #define UNDEF	1	/* undefined - may be zero page */
@@ -175,8 +177,9 @@
 #define SYM_REF	2	/* symbol reference */
 
 /* symbol definition source */
-#define CONSTANT 0	/* constant value */
-#define LOCATION 1	/* location (current PC) */
+#define LOCATION 0	/* location (current PC) */
+#define CONSTANT 1	/* constant value */
+#define VARIABLE 2	/* variable value */
 
 /* operation code flags */
 #define PSEUDO		0x0008000
@@ -203,9 +206,9 @@
 #define ABS_IND		0x0000800
 #define ABS_IND_X	0x0001000
 
-/* pass flags */
+/* pass type flags */
 #define FIRST_PASS	0
-#define BRANCH_PASS	1
+#define EXTRA_PASS	1
 #define LAST_PASS	2
 
 /* size of various hashing tables */
@@ -254,11 +257,13 @@ typedef struct t_symbol {
 	struct t_symbol *local;
 	struct t_symbol *scope;
 	struct t_proc *proc;
+	int reason;
 	int type;
 	int value;
 	int section;
 	int overlay;
 	int mprbank;
+	int rombank;
 	int page;
 	int nb;
 	int size;
