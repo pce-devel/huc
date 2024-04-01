@@ -13,7 +13,6 @@ extern int data_loccnt;                         /* data location counter */
 extern int data_size;                           /* size of binary output (in bytes) */
 extern int data_level;                          /* data output level, must be <= listlevel to be outputed */
 extern int loccnt;                              /* location counter */
-extern int tag_overlay;                         /* current tag value */
 extern int bank;                                /* current bank */
 extern int bank_base;                           /* bank base index */
 extern int bank_limit;                          /* bank limit */
@@ -67,7 +66,8 @@ extern int infile_num;
 extern FILE *out_fp;                            /* file pointers, output */
 extern FILE *in_fp;                             /* input */
 extern FILE *lst_fp;                            /* listing */
-extern t_input_info input_file[8];
+extern t_input_info input_file[MAX_NESTING + 1];
+extern char full_path[PATHSZ * 2];              /* full path name of last file opened */
 
 extern t_machine *machine;
 extern t_machine nes;
@@ -93,7 +93,8 @@ extern int opflg;                               /* instruction flags */
 extern int opval;                               /* instruction value */
 extern int optype;                              /* instruction type */
 extern char opext;                              /* instruction extension (.l or .h) */
-extern int pass;                                /* pass counter */
+extern int pass;                                /* pass type (FIRST_PASS, EXTRA_PASS, LAST_PASS */
+extern int pass_count;                          /* pass counter */
 extern char prlnbuf[];                          /* input line buffer */
 extern char tmplnbuf[];                         /* temporary line buffer */
 extern int slnum;                               /* source line number counter */
@@ -108,7 +109,7 @@ extern int sdcc_opt;                            /* NZ if -sdcc flag on command l
 extern int mlist_opt;                           /* macro listing main flag */
 extern int xlist;                               /* listing file main flag */
 extern int list_level;                          /* output level */
-extern int asm_opt[9];                          /* assembler option state */
+extern int asm_opt[MAX_OPTS];                   /* assembler option state */
 extern int opvaltab[6][16];
 extern int call_bank;                           /* bank for .proc trampolines */
 extern int kickc_mode;                          /* NZ if currently in KickC mode */

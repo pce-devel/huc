@@ -539,13 +539,3 @@ exec_overlay:	jsr	core_clr_hooks		; Reset default hooks.
 		jmp	$4000			; Execute the overlay.
 
 	.endif	!CDROM
-
-
-
-; ***************************************************************************
-; ***************************************************************************
-;
-; core_ramcpy - End of code to relocate.
-;
-
-core_ramcpy	=	*

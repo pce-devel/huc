@@ -19,11 +19,13 @@ t_symbol pc_symbol = {
 	NULL, /* local */
 	NULL, /* scope */
 	NULL, /* proc */
+	CONSTANT, /* reason */
 	DEFABS, /* type */
 	0, /* value */
 	S_NONE, /* section */
 	0, /* overlay */
 	0, /* mprbank */
+	RESERVED_BANK, /* bank */
 	0, /* page */
 	0, /* nb */
 	0, /* size */
@@ -608,36 +610,12 @@ push_val(int type)
 			else
 				pc_symbol.value = data_loccnt;
 
+			pc_symbol.rombank = bank + (pc_symbol.value >> 13);
+			pc_symbol.mprbank = bank2mprbank(pc_symbol.rombank, section);
+			pc_symbol.overlay = bank2overlay(pc_symbol.rombank, section);
 			pc_symbol.section = section;
+
 			pc_symbol.page = page;
-
-			/* defaults for RESERVED or RAM or HARDWARE banks */
-			pc_symbol.mprbank = bank;
-			pc_symbol.overlay = 0;
-
-			if (bank < RESERVED_BANK) {
-				if (section_flags[section] & S_IS_ROM) {
-					if ((section_flags[section] & S_IS_SF2) && (bank > 127)) {
-						/* for StreetFighterII banks in ROM */
-						pc_symbol.overlay = (bank / 64) - 1;
-						pc_symbol.mprbank = (bank & 63) + 64;
-					} else {
-						/* for all other HuCARD, CD, SCD code and data banks */
-						pc_symbol.mprbank = bank_base + bank;
-					}
-
-					if (pc_symbol.value >= 0x2000) {
-						pc_symbol.page = (pc_symbol.page + 1) & 7;
-						pc_symbol.mprbank = (pc_symbol.mprbank + 1);
-
-						if ((section_flags[section] & S_IS_SF2) && (bank > 127)) {
-							/* wrap StreetFighterII banks in ROM */
-							pc_symbol.overlay += 1;
-							pc_symbol.mprbank -= 64;
-						}
-					}
-				}
-			}
 
 			pc_symbol.value += (page << 13);
 
@@ -681,14 +659,11 @@ push_val(int type)
 				if (op) {
 					if (!push_op(op))
 						return (0);
-
-//					else
-//						return (1);
 					// process the symbol
 				}
 			}
 
-			c = symbol[1]; // c = *symexpr;
+			c = symbol[1];
 			if ((scopeptr != NULL) && (c != '.') && (c != '@') && (c != '!')) {
 				struct t_symbol * curscope = scopeptr;
 				for (;;) {
@@ -1018,8 +993,8 @@ check_keyword(char * name)
  * check_prefix()
  * ----
  * verify if the current symbol has a reserved function name as a prefix
- * like "__bank_" or "__page_" which is the way that C code accesses the
- * functions
+ * like "___bank_" or "___page_", which is a hack that C code can employ
+ * to access the functions.
  */
 
 int
@@ -1031,17 +1006,17 @@ check_prefix(char * name)
 	int prefix_end;
 
 	/* is this a compiler-reserved C symbol ? */
-	if ((name[0] < 3) || (name[1] != '_') || (name[2] != '_'))
+	if ((name[0] < 4) || (name[3] != '_') || (name[1] != '_') || (name[2] != '_'))
 		return 0;
 
 	/* find the next '_' after the prefix keyword */
-	/* offset: 0123456789A */
-	/* symbol: 9__bank_xx0 */
-	/* prefix: 4bank0      */
-	prefix_end = 2;
+	/* offset: 0123456789AB */
+	/* symbol: A___bank_xx0 */
+	/* prefix: 4bank0       */
+	prefix_end = 3;
 	do {
 		++prefix_end;
-		c = prefix[prefix_end-2] = name[prefix_end];
+		c = prefix[prefix_end-3] = name[prefix_end];
 	} while ((c != '_') && (c != '\0'));
 
 	/* return if no prefix keyword, or if there is no symbol afterwards */
@@ -1049,8 +1024,8 @@ check_prefix(char * name)
 		return 0;
 
 	/* set up the prefix for checking */
-	prefix[0] = prefix_end - 3;
-	prefix[prefix_end - 2] = '\0';
+	prefix[0] = prefix_end - 4;
+	prefix[prefix_end - 3] = '\0';
 
 	op = check_keyword(prefix);
 
@@ -1129,17 +1104,10 @@ do_op(void)
 			break;
 		}
 		exbank = 0;
-		if (expr_lablptr->mprbank < RESERVED_BANK) {
-			if ((section_flags[expr_lablptr->section] & S_IS_SF2) && (expr_lablptr->overlay != 0)) {
-				/* for StreetFighterII banks in ROM */
-				exbank = expr_lablptr->mprbank + (expr_lablptr->overlay * 0x40);
-			} else {
-				/* for all non-SF2, CD, SCD code and data banks */
-				exbank = expr_lablptr->mprbank - bank_base;
-			}
-		}
 		/* complicated math to deal with LINEAR(label+value) */
-		exbank = (exbank + (val[0] / 8192) - (expr_lablptr->value / 8192));
+		if (expr_lablptr->mprbank < RESERVED_BANK) {
+			exbank = (expr_lablptr->rombank + (val[0] / 8192) - (expr_lablptr->value / 8192));
+		}
 		val[0] = (exbank << 13) + (val[0] & 0x1FFF);
 		break;
 
@@ -1198,6 +1166,7 @@ do_op(void)
 	case OP_DEFINED:
 		if (!check_func_args("DEFINED"))
 			return (0);
+
 		if ((expr_lablptr->type != IFUNDEF) && (expr_lablptr->type != UNDEF))
 			val[0] = 1;
 		else {

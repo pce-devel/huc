@@ -159,14 +159,8 @@ pcx_set_tile(struct t_symbol *ref, unsigned int offset)
 	if (((section_flags[ref->section] & S_IS_ROM) == 0) || (ref->mprbank >= RESERVED_BANK)) {
 		goto err;
 	}
-	if ((section_flags[ref->section] & S_IS_SF2) && (ref->overlay != 0)) {
-		/* for StreetFighterII banks in ROM */
-		i = ref->mprbank + (ref->overlay * 0x40);
-	} else {
-		/* for all non-SF2, CD, SCD code and data banks */
-		i = ref->mprbank - bank_base;
-	}
-	data = &rom[i][ref->value & 0x1FFF] + start;
+
+	data = &rom[ref->rombank][ref->value & 0x1FFF] + start;
 
 	/* 256 tiles max */
 	if (nb > 256)
@@ -250,11 +244,11 @@ pcx_search_tile(unsigned char *data, int size)
 int
 pcx_get_args(int *ip)
 {
-	char name[128];
+	char name[PATHSZ];
 	char c;
 
 	/* get pcx file name */
-	if (!getstring(ip, name, 127))
+	if (!getstring(ip, name, PATHSZ - 1))
 		return (0);
 
 	/* reset args counter */
@@ -401,7 +395,7 @@ pcx_load(char *name)
 
 	/* open the file */
 	if ((f = open_file(name, "rb")) == NULL) {
-		error("Can not open file!");
+		fatal_error("Unable to open file!");
 		return (0);
 	}
 
@@ -650,7 +644,7 @@ bmp_load(char *name)
 
 	/* open the file */
 	if ((pFile = open_file(name, "rb")) == NULL) {
-		error("Can not open file!");
+		fatal_error("Unable to open file!");
 		goto errorCleanup;
 	}
 
@@ -784,7 +778,7 @@ png_load(char *name)
 
 	/* open the file */
 	if ((pFile = open_file(name, "rb")) == NULL) {
-		error("Can not open file!");
+		fatal_error("Unable to open file!");
 		goto errorCleanup;
 	}
 

@@ -13,7 +13,6 @@ int data_loccnt;                                /* data location counter */
 int data_size;                                  /* size of binary output (in bytes) */
 int data_level;                                 /* data output level, must be <= listlevel to be outputed */
 int loccnt;                                     /* location counter */
-int tag_overlay;                                /* current tag value */
 int bank;                                       /* current bank */
 int bank_base;                                  /* bank base index */
 int rom_limit;                                  /* bank limit */
@@ -54,11 +53,12 @@ int opflg;                                      /* instruction flags */
 int opval;                                      /* instruction value */
 int optype;                                     /* instruction type */
 char opext;                                     /* instruction extension (.l or .h) */
-int pass;                                       /* pass counter */
+int pass;                                       /* pass type (FIRST_PASS, EXTRA_PASS, LAST_PASS */
+int pass_count;                                 /* pass counter */
 char prlnbuf[LAST_CH_POS + 4];                  /* input line buffer */
 char tmplnbuf[LAST_CH_POS + 4];                 /* temporary line buffer */
 int slnum;                                      /* source line number counter */
-char symbol[SBOLSZ + 1];                        /* temporary symbol storage */
+char symbol[SBOLSZ];                            /* temporary symbol storage */
 int undef;                                      /* undefined symbol in expression flg  */
 int notyetdef;                                  /* undefined-in-current-pass symbol in expr */
 unsigned int value;                             /* operand field value */

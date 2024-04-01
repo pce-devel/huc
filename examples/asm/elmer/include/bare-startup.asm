@@ -378,8 +378,6 @@ base_ram1st     =	$F8:22D0		; After the System Card!
 		.bss
 		.org	base_ram1st
 
-DATA_BANK	=	1
-
 		.data
 		.bank	DATA_BANK
 		.org	$6000

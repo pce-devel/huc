@@ -1,8 +1,8 @@
 /* pnglibconf.h - library build configuration */
 
-/* libpng version 1.6.37 */
+/* libpng version 1.6.43 */
 
-/* Copyright (c) 2018-2019 Cosmin Truta */
+/* Copyright (c) 2018-2024 Cosmin Truta */
 /* Copyright (c) 1998-2002,2004,2006-2018 Glenn Randers-Pehrson */
 
 /* This code is released under the libpng license. */
@@ -27,6 +27,7 @@
 /*#undef PNG_COLORSPACE_SUPPORTED*/
 /*#undef PNG_CONSOLE_IO_SUPPORTED*/
 /*#undef PNG_CONVERT_tIME_SUPPORTED*/
+/*#undef PNG_DISABLE_ADLER32_CHECK_SUPPORTED*/
 /*#undef PNG_EASY_ACCESS_SUPPORTED*/
 /*#undef PNG_ERROR_NUMBERS_SUPPORTED*/
 /*#undef PNG_ERROR_TEXT_SUPPORTED*/
@@ -41,6 +42,10 @@
 /*#undef PNG_INCH_CONVERSIONS_SUPPORTED*/
 /*#undef PNG_INFO_IMAGE_SUPPORTED*/
 /*#undef PNG_IO_STATE_SUPPORTED*/
+/*#undef PNG_MIPS_MMI_API_SUPPORTED*/
+/*#undef PNG_MIPS_MMI_CHECK_SUPPORTED*/
+/*#undef PNG_MIPS_MSA_API_SUPPORTED*/
+/*#undef PNG_MIPS_MSA_CHECK_SUPPORTED*/
 /*#undef PNG_MNG_FEATURES_SUPPORTED*/
 /*#undef PNG_POINTER_INDEXING_SUPPORTED*/
 /*#undef PNG_POWERPC_VSX_API_SUPPORTED*/
@@ -210,7 +215,7 @@
 #define PNG_USER_HEIGHT_MAX 1000000
 #define PNG_USER_WIDTH_MAX 1000000
 #define PNG_ZBUF_SIZE 8192
-#define PNG_ZLIB_VERNUM 0x12b0
+#define PNG_ZLIB_VERNUM 0x1310
 #define PNG_Z_DEFAULT_COMPRESSION (-1)
 #define PNG_Z_DEFAULT_NOFILTER_STRATEGY 0
 #define PNG_Z_DEFAULT_STRATEGY 1

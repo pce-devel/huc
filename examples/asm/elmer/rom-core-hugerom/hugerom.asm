@@ -38,7 +38,7 @@
 		; Create a 2MB (homebrew) or 2.5MB (standard) sized HuCARD?
 		;
 
-CREATE_2MB_ROM	=	0
+CREATE_2MB_ROM	=	1
 
 		;
 		; Create some equates for a very generic VRAM layout, with a
@@ -141,9 +141,9 @@ core_main:	; Turn the display off and initialize the screen mode.
 		lda.h	#PALETTE_BUFFER
 		sta.h	<_di
 
-		lda.l	#saz_vce		; Address of font data.
+		lda	#<SAZ_VCE_DATA		; Address of font data.
 		sta.l	<_bp
-		lda.h	#saz_vce
+		lda	#>SAZ_VCE_DATA
 		sta.h	<_bp
 		ldy	#^SAZ_VCE_DATA
 
@@ -170,12 +170,12 @@ core_main:	; Turn the display off and initialize the screen mode.
 .animate:	ldy	#30			; Wait for 30 frames.
 		call	wait_nvsync
 
-		; Select the overlay containing saz_satb0
+		; Another way to select an overlay using the linear() operator,
+		; showing 2 different ways to calculate the overlay number.
 		;
 		; Write to the SF2 mapper at offset $1FF0-$1FF3 in MRP7.
 
 		stz	$FFF0 + ((linear( saz_satb0 ) / (64 * $2000)) - 1)
-
 		stz	$FFF0 + ((linear( saz_satb0 ) >> 19) - 1)
 
 		lda.l	#$0834			; Upload hand position sprites
@@ -194,16 +194,16 @@ core_main:	; Turn the display off and initialize the screen mode.
 		;
 		; Write to the SF2 mapper at offset $1FF0-$1FF3 in MRP7.
 
-		stz	$FFF0 + overlay( SAZ_SATB_DATA )
+		stz	$FFF0 + overlay( SAZ_SATB1_DATA )
 
 		lda.l	#$0834			; Upload hand position sprites
 		sta.l	<_di			; to the SATB in VRAM.
 		lda.h	#$0834
 		sta.h	<_di
 		call	vdc_di_to_mawr
-		lda	#^SAZ_SATB_DATA		; Put saz_satb1 in MPR3.
+		lda	#^SAZ_SATB1_DATA	; Put saz_satb1 in MPR3.
 		tam3
-		tia	saz_satb1, VDC_DL, 32	; Frame 2 of 2.
+		tia	SAZ_SATB1_DATA, VDC_DL, 32
 
 		bra	.animate		; Wait for user to reboot.
 
@@ -249,23 +249,27 @@ core_main:	; Turn the display off and initialize the screen mode.
 		; The earlier code maps this data into MPR3, so set the page.
 		.page	3
 
-saz_satb0:	dw	$00A8,$0050,$01A8,$1080
-		dw	$0088,$0040,$0182,$0080
-		dw	$00A8,$0030,$0188,$1180
-		dw	$0098,$0030,$0184,$0180
-
-saz_satb1:	dw	$00A8,$0050,$01B8,$1080
-		dw	$00A8,$0030,$0198,$1180
-		dw	$0088,$0030,$0190,$1180
-		dw	$0000,$0000,$0000,$0000
-
 		; This is how to set the bank and overlay in an equate.
 		;
 		; Overlay .... none (banks $00-$7F)
 		; Bank ........ $7F (the last bank of $40..$7F)
 		; Address ... $6000 (this bank will be mapped into MPR3)
 
-SAZ_SATB_DATA	=	$7F:6000
+SAZ_SATB0_DATA	=	$7F:6000
+
+saz_satb0:	dw	$00A8,$0050,$01A8,$1080
+		dw	$0088,$0040,$0182,$0080
+		dw	$00A8,$0030,$0188,$1180
+		dw	$0098,$0030,$0184,$0180
+
+		; The program counter also contains the bank and overlay.
+
+SAZ_SATB1_DATA	=	*
+
+saz_satb1:	dw	$00A8,$0050,$01B8,$1080
+		dw	$00A8,$0030,$0198,$1180
+		dw	$0088,$0030,$0190,$1180
+		dw	$0000,$0000,$0000,$0000
 
 
 
@@ -276,21 +280,21 @@ SAZ_SATB_DATA	=	$7F:6000
 ;
 
 		; Put this at 1MB, larger than normal PCE ROMs.
-		.bank	$080
+		.bank	$80
 
 		; Make sure the address >= $6000 so that set_bp_to_mpr
 		; will map the data into MPR3.
 		.page	3
 
-saz_vdc:	incbin	"saz_vdc.zx0.256"
-
 		; This is how to set the bank and overlay in an equate.
 		;
 		; Overlay ...... $1 (banks $80-$BF)
-		; Bank ........ $7F (the last bank of $40..$7F)
+		; Bank ........ $40 (the first bank of $40..$7F)
 		; Address ... $6000 (this bank will be mapped into MPR3)
 
-SAZ_VDC_DATA	=	$1:7F:6000
+SAZ_VDC_DATA	=	$1:40:6000
+
+saz_vdc:	incbin	"saz_vdc.zx0.256"
 
 
 
@@ -309,7 +313,9 @@ SAZ_VDC_DATA	=	$1:7F:6000
 		; will map the data into MPR3.
 		.page	3
 
-saz_vce:	incbin	"saz_vce.zx0"
+		; The program counter also contains the bank and overlay.
+
+SAZ_VCE_DATA	=	*
 
 		; This is how to set the bank and overlay in an equate.
 		;
@@ -317,7 +323,9 @@ saz_vce:	incbin	"saz_vce.zx0"
 		; Bank ........ $7F (the last bank of $40..$7F)
 		; Address ... $6000 (this bank will be mapped into MPR3)
 
-SAZ_VCE_DATA	=	$2:7F:6000
+ALSO_SAZ_VCE	=	$2:7F:6000
+
+saz_vce:	incbin	"saz_vce.zx0"
 
 	.else
 
@@ -328,7 +336,9 @@ SAZ_VCE_DATA	=	$2:7F:6000
 		; will map the data into MPR3.
 		.page	3
 
-saz_vce:	incbin	"saz_vce.zx0"
+		; The program counter also contains the bank and overlay.
+
+SAZ_VCE_DATA	=	*
 
 		; This is how to set the bank and overlay in an equate.
 		;
@@ -336,6 +346,8 @@ saz_vce:	incbin	"saz_vce.zx0"
 		; Bank ........ $7F (the last bank of $40..$7F)
 		; Address ... $6000 (this bank will be mapped into MPR3)
 
-SAZ_VCE_DATA	=	$3:7F:6000
+ALSO_SAZ_VCE	=	$3:7F:6000
+
+saz_vce:	incbin	"saz_vce.zx0"
 
 	.endif	CREATE_2MB_ROM

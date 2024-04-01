@@ -100,6 +100,11 @@ SUPPORT_ACD	=	0	; Support the Arcade Card (does not work yet!).
 SUPPORT_TED2	=	1	; Support the Turbo Everdrive's use of bank0.
 	.endif
 
+		; Enable a 3rd pass, not because it is needed, but just to
+		; test that it works.
+
+		.3pass
+
 		;
 		; Include the library, reading the project's configuration
 		; settings from the local "core-config.inc", if it exists.

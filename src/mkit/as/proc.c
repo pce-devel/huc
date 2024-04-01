@@ -91,7 +91,7 @@ do_call(int *ip)
 						poke(call_ptr++, 0x20);
 						poke(call_ptr++, 0x48);			// pha
 						poke(call_ptr++, 0xA9);			// lda #...
-						poke(call_ptr++, proc->bank + bank_base);
+						poke(call_ptr++, proc->label->mprbank);
 						poke(call_ptr++, 0x53);			// tam #5
 						poke(call_ptr++, 0x20);
 						poke(call_ptr++, 0x98);			// tya
@@ -117,7 +117,7 @@ do_call(int *ip)
 						poke(call_ptr--, 0x4C);			// jmp ...
 						poke(call_ptr--, 0x40);
 						poke(call_ptr--, 0x53);			// tam #6
-						poke(call_ptr--, proc->bank + bank_base);
+						poke(call_ptr--, proc->label->mprbank);
 						poke(call_ptr--, 0xA9);			// lda #...
 						poke(call_ptr--, 0x48);			// pha
 						poke(call_ptr--, 0x40);
@@ -603,10 +603,15 @@ proc_reloc(void)
 
 			/* remap addr */
 			if (sym->proc) {
-				if (proc_ptr->bank == STRIPPED_BANK)
+				if (proc_ptr->bank == STRIPPED_BANK) {
+					sym->rombank =
 					sym->mprbank = STRIPPED_BANK;
-				else
-					sym->mprbank = proc_ptr->bank + bank_base;
+					sym->overlay = 0;
+				} else {
+					sym->rombank = proc_ptr->bank;
+					sym->mprbank = bank2mprbank(sym->rombank, sym->section);
+					sym->overlay = bank2overlay(sym->rombank, sym->section);
+				}
 
 				sym->value = (sym->value & 0x3FFFFFFF);
 				sym->value += (proc_ptr->org - proc_ptr->base);
@@ -620,10 +625,15 @@ proc_reloc(void)
 
 						/* remap addr */
 						if (local->proc) {
-							if (proc_ptr->bank == STRIPPED_BANK)
+							if (proc_ptr->bank == STRIPPED_BANK) {
+								local->rombank =
 								local->mprbank = STRIPPED_BANK;
-							else
-								local->mprbank = proc_ptr->bank + bank_base;
+								local->overlay = 0;
+							} else {
+								local->rombank = proc_ptr->bank;
+								local->mprbank = bank2mprbank(local->rombank, local->section);
+								local->overlay = bank2overlay(local->rombank, local->section);
+							}
 
 							local->value = (local->value & 0x3FFFFFFF);
 							local->value += (proc_ptr->org - proc_ptr->base);
@@ -886,7 +896,7 @@ check_trampolines(void)
 		printf("Error: .proc trampolines between $%04X-$%04X are overwritten by code or data!\n\nTrampoline Bank ...\n",
 			first_bad, final_bad);
 		dump_seg = 2;
-		show_bnk_usage(call_bank);
+		show_bank_usage(call_bank);
 		printf("\n");
 		return (1);
 	}

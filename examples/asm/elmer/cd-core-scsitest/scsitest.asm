@@ -214,7 +214,8 @@ core_main:	; Turn the display off and initialize the screen mode.
 
 		stz	TIMER_CR		; Reset timer hardware.
 		stz	IRQ_ACK
-		stz	TIMER_DR		; 0 -> 1024 cycles -> 143.034939us
+		lda	#6
+		sta	TIMER_DR		; 6 -> 7144 cycles -> 1.00124457ms
 
 		lda.l	#timer_irq		; Install timer_irq vector.
 		sta.l	timer_hook
@@ -342,13 +343,15 @@ log_tag:	php
 
 		; Table of event tag strings to be printed.
 
-MAX_TAGS	=	64
-
-tagtbl_lo:	ds	MAX_TAGS
-tagtbl_hi:	ds	MAX_TAGS
-tagtbl_bk:	ds	MAX_TAGS
+	.ifdef	tag_number			; Not defined yet in pass1.
+MAX_TAGS	=	tag_number + 1		; #events in previous pass.
+	.endif
 
 tag_number	.set	-1			; Next TAG will be 0.
+
+tagtbl_lo:	ds	MAX_TAGS		; MAX_TAGS is defined above
+tagtbl_hi:	ds	MAX_TAGS		; in the 2nd-pass, after we
+tagtbl_bk:	ds	MAX_TAGS		; know how many are needed.
 
 		;
 		; Macro to create a tag string and add a log entry.
@@ -356,8 +359,11 @@ tag_number	.set	-1			; Next TAG will be 0.
 
 TAG		.macro
 tag_number	.set	tag_number + 1
+
+	.ifdef	MAX_TAGS
 	.if	(tag_number >= MAX_TAGS)
 		.fail	Too many TAGs, increase MAX_TAGS!
+	.endif
 	.endif
 		.data
 !string:	db	(!end+ - !string-)	; PASCAL-style string.

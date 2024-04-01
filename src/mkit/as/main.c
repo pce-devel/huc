@@ -85,7 +85,7 @@ int mx_opt;
 int mlist_opt;		/* macro listing main flag */
 int xlist;		/* listing file main flag */
 int list_level;		/* output level */
-int asm_opt[9];		/* assembler options */
+int asm_opt[MAX_OPTS];	/* assembler options */
 int zero_need;		/* counter for trailing empty sectors on CDROM */
 int rom_used;
 int rom_free;
@@ -259,7 +259,6 @@ main(int argc, char **argv)
 	int file;
 	int ram_bank;
 	int cd_type;
-	int pass_count = 0;
 	const char *cmd_line_options = "sSl:mhI:o:O";
 	const struct option cmd_line_long_options[] = {
 		{"segment",     no_argument,       0,           's'},
@@ -346,7 +345,7 @@ main(int argc, char **argv)
 	kickc_opt = 0;
 	newproc_opt = 0;
 
-    	memset(out_fname, 0, 256);
+	memset(out_fname, 0, 256);
 
 	/* display assembler version message */
 	printf("%s\n\n", machine->asm_title);
@@ -558,7 +557,7 @@ main(int argc, char **argv)
 		rom_limit  = ROM_BANKS * 8192;	/* 8MB */
 		bank_base  = 0x00;
 		bank_limit = ROM_BANKS - 1;
-//		section_flags[S_HOME] |= S_IS_SF2;
+		section_flags[S_HOME] |= S_IS_SF2;
 		section_flags[S_CODE] |= S_IS_SF2;
 		section_flags[S_DATA] |= S_IS_SF2;
 	}
@@ -596,7 +595,6 @@ main(int argc, char **argv)
 	/* assemble */
 	for (pass = FIRST_PASS; pass <= LAST_PASS; pass++) {
 		infile_error = -1;
-		tag_overlay = 0;
 		page = 7;
 		bank = 0;
 		loccnt = 0;
@@ -628,6 +626,8 @@ main(int argc, char **argv)
 		asm_opt[OPT_INDPAREN] = 0;
 		asm_opt[OPT_ZPDETECT] = 0;
 		asm_opt[OPT_LBRANCH] = 0;
+		asm_opt[OPT_DATAPAGE] = 0;
+		asm_opt[OPT_FORWARD] = 1;
 
 		/* reset bank arrays */
 		for (i = 0; i < MAX_S; i++) {
@@ -736,18 +736,18 @@ main(int argc, char **argv)
 			exit(1);
 		}
 
-		/* set pass to FIRST_PASS to run BRANCH_PASS next */
-		/* or set it to BRANCH_PASS to run LAST_PASS next */
+		/* set pass to FIRST_PASS to run EXTRA_PASS next */
+		/* or set it to EXTRA_PASS to run LAST_PASS next */
 		if (pass != LAST_PASS) {
 			/* fix out-of-range short-branches, return number fixed */
 			if ((branchopt() != 0) || (need_another_pass != 0))
 				pass = FIRST_PASS;
 			else
-				pass = BRANCH_PASS;
+				pass = EXTRA_PASS;
 		}
 
 		/* do this just before the last pass */
-		if (pass == BRANCH_PASS) {
+		if (pass == EXTRA_PASS) {
 			/* open the listing file */
 			if (lst_fp == NULL && xlist && list_level) {
 				if ((lst_fp = fopen(lst_fname, "w")) == NULL) {
@@ -1061,12 +1061,12 @@ help(void)
 
 
 /* ----
- * show_bnk_usage()
+ * show_bank_usage()
  * ----
  */
 
 void
-show_bnk_usage(int which_bank)
+show_bank_usage(int which_bank)
 {
 	int addr, start, nb;
 
@@ -1166,7 +1166,7 @@ show_seg_usage(void)
 
 	/* scan banks */
 	for (i = 0; i <= max_bank; i++) {
-		show_bnk_usage(i);
+		show_bank_usage(i);
 	}
 
 	/* total */

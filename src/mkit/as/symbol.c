@@ -214,7 +214,7 @@ stlook(int type)
 	}
 
 	/* increment symbol reference counter */
-	if ((sym != NULL) && (type == SYM_REF)) {
+	if ((sym != NULL) && (type == SYM_REF) && (if_expr == 0)) {
 		sym->refcnt++;
 	}
 
@@ -241,17 +241,19 @@ stinstall(int hash, int type)
 	}
 
 	/* init the symbol struct */
-	sym->type = if_expr ? IFUNDEF : UNDEF;
-	sym->value = 0;
 	sym->local = NULL;
 	sym->scope = NULL;
 	sym->proc = NULL;
+	sym->reason = -1;
+	sym->type = if_expr ? IFUNDEF : UNDEF;
+	sym->value = 0;
 	sym->section = S_NONE;
-	sym->mprbank = RESERVED_BANK;
 	sym->overlay = 0;
+	sym->mprbank = RESERVED_BANK;
+	sym->rombank = RESERVED_BANK;
+	sym->page = -1;
 	sym->nb = 0;
 	sym->size = 0;
-	sym->page = -1;
 	sym->vram = -1;
 	sym->pal = -1;
 	sym->defcnt = 0;
@@ -289,14 +291,29 @@ int
 labldef(int reason)
 {
 	char c;
-	int l_value, l_mprbank, l_overlay;
+	int labl_value, labl_rombank, labl_mprbank, labl_overlay, labl_section;
 
 	/* check for NULL ptr */
 	if (lablptr == NULL)
 		return (0);
 
-	/* adjust symbol address */
+	/* is the symbol already used for somthing else */
+	if (lablptr->type == MACRO) {
+		error("Symbol already used by a macro!");
+		return (-1);
+	}
+	if (lablptr->type == FUNC) {
+		error("Symbol already used by a function!");
+		return (-1);
+	}
+	if (lablptr->reserved) {
+		fatal_error("Reserved symbol!");
+		return (-1);
+	}
+
 	if (reason == LOCATION) {
+		/* label is set from the current LOCATION */
+
 		/* is this a multi-label? */
 		if (lablptr->name[1] == '!') {
 			char tail [10];
@@ -326,22 +343,14 @@ labldef(int reason)
 				page = (page + 1) & 7;
 		}
 
-		/* defaults for RESERVED or RAM or HARDWARE banks */
-		l_value = loccnt + (page << 13);
-		l_mprbank = bank;
-		l_overlay = 0;
-
-		if ((section_flags[section] & S_IS_ROM) && (bank < RESERVED_BANK)) {
-			if ((section_flags[section] & S_IS_SF2) && (bank > 0x7F)) {
-				/* for StreetFighterII banks in ROM */
-				l_overlay = (bank / 0x40) - 1;
-				l_mprbank = (bank & 0x3F) + 0x40;
-			} else {
-				/* for all non-SF2, CD, SCD code and data banks */
-				l_mprbank = bank_base + bank;
-			}
-		}
+		labl_value = loccnt + (page << 13);
+		labl_rombank = bank;
+		labl_mprbank = bank2mprbank(bank, section);
+		labl_overlay = bank2overlay(bank, section);
+		labl_section = section;
 	} else {
+		/* label is a CONSTANT or VARIABLE set from the current expression */
+
 		/* is this a multi-label? */
 		if (lablptr->name[1] == '!') {
 			/* sanity check */
@@ -349,86 +358,58 @@ labldef(int reason)
 			return (-1);
 		}
 
-		l_value = value;
-		l_mprbank = expr_mprbank;
-		l_overlay = expr_overlay;
+		labl_value = value;
+		labl_mprbank = expr_mprbank;
+		labl_overlay = expr_overlay;
+		labl_rombank = mprbank2bank(expr_mprbank, expr_overlay);
+		labl_section = (labl_rombank < RESERVED_BANK) ? S_DATA : S_NONE;
 	}
 
-	/* record definition */
-	lablptr->defcnt = 1;
+//	/* needed for forward-references (in KickC and elsewhere) */
+//	if ((pass != FIRST_PASS) && (lablptr->type == UNDEF)) {
+//		if (pass_count < 3)
+//			need_another_pass = 1;
+//	}
 
-	/* first pass or still undefined */
-	if ((pass == FIRST_PASS) || (lablptr->type == UNDEF)) {
-		if (pass != FIRST_PASS) {
-			/* needed for KickC forward-references */
-			need_another_pass = 1;
-		}
+	/* allow ".set" to change a label's value at any time */
+	if ((reason == VARIABLE) && (lablptr->reason == VARIABLE))
+		lablptr->type = UNDEF;
 
-		switch (lablptr->type) {
-		/* undefined */
-		case UNDEF:
-		case IFUNDEF:
-			lablptr->type = DEFABS;
-			lablptr->value  = l_value;
-			lablptr->mprbank = l_mprbank;
-			lablptr->overlay = l_overlay;
-			break;
-
-		/* already defined - error */
-		case MACRO:
-			error("Symbol already used by a macro!");
-			return (-1);
-
-		case FUNC:
-			error("Symbol already used by a function!");
-			return (-1);
-
-		default:
-			/* reserved label */
-			if (lablptr->reserved) {
-				fatal_error("Reserved symbol!");
-				return (-1);
-			}
-
-			/* compare the values */
-			if (lablptr->value == l_value)
-				break;
-
-			/* normal label */
-			lablptr->type = MDEF;
-			lablptr->value = 0;
-			error("Label multiply defined!");
-			return (-1);
-		}
+	/* is the symbol still undefined? */
+	if ((lablptr->type == UNDEF) || (lablptr->type == IFUNDEF)) {
+		/* allow the definition */
 	}
-
-	/* branch pass */
-	else if (pass != LAST_PASS) {
-		if (lablptr->type == DEFABS) {
-			if ((lablptr->value != l_value) ||
-			    ((reason == LOCATION) && (bank < RESERVED_BANK) && (lablptr->mprbank != l_mprbank))) {
-				/* needed for KickC forward-references */
-				need_another_pass = 1;
-			}
-			lablptr->value  = l_value;
-			lablptr->mprbank = l_mprbank;
-			lablptr->overlay = l_overlay;
-		}
+	/* don't allow the reason, or a constant, to change */
+	else if ((lablptr->reason != reason) ||
+		 (lablptr->reason == CONSTANT && lablptr->value != labl_value)) {
+		/* normal label */
+		lablptr->type = MDEF;
+		lablptr->value = 0;
+		error("Label was already defined!");
+		return (-1);
 	}
-
-	/* last pass */
-	else {
-		if ((lablptr->value != l_value) || (lablptr->overlay != l_overlay) ||
-		    ((reason == LOCATION) && (bank < RESERVED_BANK) && (lablptr->mprbank != l_mprbank))) {
+	/* make sure that nothing changes at all in the last pass */
+	else if (pass == LAST_PASS) {
+		if ((lablptr->value != labl_value) || (lablptr->overlay != labl_overlay) ||
+		    ((reason == LOCATION) && (labl_mprbank < RESERVED_BANK) && (lablptr->mprbank != labl_mprbank))) {
 			fatal_error("Symbol's bank or address changed in final pass!");
 			return (-1);
 		}
 	}
 
-	/* update symbol data */
-	if (reason == LOCATION) {
-		lablptr->section = section;
+	/* record definition */
+	lablptr->defcnt = 1;
 
+	/* update symbol data */
+	lablptr->reason  = reason;
+	lablptr->type    = DEFABS;
+	lablptr->value   = labl_value;
+	lablptr->rombank = labl_rombank;
+	lablptr->mprbank = labl_mprbank;
+	lablptr->overlay = labl_overlay;
+	lablptr->section = labl_section;
+
+	if (reason == LOCATION) {
 		if (section_flags[section] & S_IS_CODE)
 			lablptr->proc = proc_ptr;
 
@@ -661,4 +642,67 @@ lablresetdefcnt(void)
 			sym = sym->next;
 		}
 	}
+}
+
+
+/* ----
+ * bank2mprbank
+ * ----
+ * convert a bank number into a value to put into an MPR register
+ */
+
+int bank2mprbank (int what_bank, int what_section)
+{
+	if ((section_flags[what_section] & S_IS_ROM) && (what_bank < RESERVED_BANK)) {
+		if ((section_flags[what_section] & S_IS_SF2) && (what_bank > 0x7F)) {
+			/* for StreetFighterII banks in ROM */
+			what_bank = 0x40 + (what_bank & 0x3F);
+		} else {
+			/* for all non-SF2, CD, SCD code and data banks */
+			what_bank = what_bank + bank_base;
+		}
+	}
+	return (what_bank);
+}
+
+
+/* ----
+ * bank2overlay
+ * ----
+ * convert a bank number into an overlay number
+ */
+
+int bank2overlay (int what_bank, int what_section)
+{
+	if ((section_flags[what_section] & S_IS_ROM) && (what_bank < RESERVED_BANK)) {
+		if ((section_flags[what_section] & S_IS_SF2) && (what_bank > 0x7F)) {
+			/* for StreetFighterII banks in ROM */
+			return (what_bank / 0x40) - 1;
+		}
+	}
+	return (0);
+}
+
+
+/* ----
+ * mprbank2bank
+ * ----
+ * convert an overlay and MPR register value into a bank number
+ */
+
+int mprbank2bank (int what_bank, int what_overlay)
+{
+	if (what_overlay != 0) {
+		if ((section_flags[S_DATA] & S_IS_SF2) == 0) {
+			error("You can only use overlays with the StreetFighterII mapper!");
+			return (RESERVED_BANK);
+		}
+		if ((what_bank < 0x40) || (what_bank > 0x7F)) {
+			error("Invalid bank and overlay for the StreetFighterII mapper!");
+			return (RESERVED_BANK);
+		}
+		return (what_bank + what_overlay * 0x40);
+	}
+	what_bank = what_bank - bank_base;
+	return (what_bank <= bank_limit) ? what_bank : RESERVED_BANK;
 }

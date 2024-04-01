@@ -16,10 +16,10 @@
 
 	.ifdef	_SGX
 HAVE_LIB3	=	1
-	.endif
-
+	.else
 	.ifdef	_AC
 HAVE_LIB3	=	1
+	.endif
 	.endif
 
 ; first, set MOUSE to default on:
