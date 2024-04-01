@@ -30,7 +30,7 @@ pce_load_map(char *fname, int mode)
 
 	/* open the file */
 	if ((fp = open_file(fname, "rb")) == NULL) {
-		fatal_error("Can not open file!");
+		fatal_error("Unable to open file!");
 		return (1);
 	}
 
@@ -154,7 +154,7 @@ pce_load_stm(char *fname, int mode)
 
 	/* open the file */
 	if ((fp = open_file(fname, "rb")) == NULL) {
-		fatal_error("Can not open file!");
+		fatal_error("Unable to open file!");
 		return (1);
 	}
 

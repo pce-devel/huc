@@ -1017,6 +1017,10 @@ getstring(int *ip, char *buffer, int size)
 		c = prlnbuf[(*ip)++];
 		if (c == '\"')
 			break;
+		if (c == '\0') {
+			error("String terminator missing!");
+			return (0);
+		}
 		if (i >= size) {
 			error("String too long!");
 			return (0);

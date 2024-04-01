@@ -95,7 +95,7 @@ int   init_path(void);
 int   readline(void);
 int   open_input(const char *name);
 int   close_input(void);
-FILE *open_file(char *fname, char *mode);
+FILE *open_file(const char *fname, const char *mode);
 
 /* MACRO.C */
 void do_macro(int *ip);

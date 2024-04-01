@@ -1031,12 +1031,14 @@ do_incbin(int *ip)
 {
 	FILE *fp;
 	char *p;
-	char fname[128];
+	char fname[PATHSZ];
 	int size;
 	int step;
+	int offset =  0;
+	int length = -1;
 
 	/* get file name */
-	if (!getstring(ip, fname, 127))
+	if (!getstring(ip, fname, PATHSZ - 1))
 		return;
 
 	/* get file extension */
@@ -1060,6 +1062,47 @@ do_incbin(int *ip)
 		}
 	}
 
+	/* get the optional offset and length */
+	if (prlnbuf[*ip] == ',') {
+		/* get the offset */
+		++(*ip);
+		if (!evaluate(ip, 0, 0))
+			return;
+
+		if (undef != 0) {
+			error("Undefined symbol in offset field!");
+			return;
+		}
+
+		if (0 > (int)value) {
+			error(".incbin offset cannot be negative!");
+			return;
+		}
+		offset = value;
+
+		if (prlnbuf[*ip] == ',') {
+			/* get a byte */
+			++(*ip);
+			if (!evaluate(ip, 0, 0))
+				return;
+
+			if (undef != 0) {
+				error("Undefined symbol in length field!");
+				return;
+			}
+
+			if (0 > (int)value) {
+				error(".incbin length cannot be negative!");
+				return;
+			}
+			length = value;
+		}
+	}
+
+	/* check end of line */
+	if (!check_eol(ip))
+		return;
+
 	/* define label */
 	labldef(LOCATION);
 
@@ -1069,14 +1112,31 @@ do_incbin(int *ip)
 
 	/* open file */
 	if ((fp = open_file(fname, "rb")) == NULL) {
-		fatal_error("Can not open file!");
+		fatal_error("Unable to open file!");
 		return;
 	}
 
 	/* get file size */
 	fseek(fp, 0, SEEK_END);
-	size = ftell(fp);
-	fseek(fp, 0, SEEK_SET);
+	size = ftell(fp) - offset;
+
+	if (size < 0) {
+		fclose(fp);
+		error(".incbin offset is greater than the file's length!");
+		return;
+	}
+
+	if (length >= 0) {
+		if (length > size) {
+			fclose(fp);
+			error(".incbin length is greater than the file's length!");
+			return;
+			}
+		size = length;
+	}
+
+	/* seek to the file offset */
+	fseek(fp, offset, SEEK_SET);
 
 	/* check if it will fit in the rom */
 	if ((section_flags[section] & S_IS_ROM) && (bank < RESERVED_BANK)) {
@@ -1183,7 +1243,7 @@ do_mx(char *fname)
 
 	/* open the file */
 	if ((fp = open_file(fname, "r")) == NULL) {
-		fatal_error("Can not open file!");
+		fatal_error("Unable to open file!");
 		return;
 	}
 
@@ -1341,7 +1401,7 @@ forget_included_files(void)
 void
 do_include(int *ip)
 {
-	char fname[128];
+	char fname[PATHSZ];
 	int fsize;
 	int found_include;
 	t_filelist * list;
@@ -1358,12 +1418,18 @@ do_include(int *ip)
 #endif
 
 	/* if this is an SDCC .module pseudo-op then auto-include sdcc.asm */
-	if (optype == 1)
+	if (optype == 1) {
+		/* ignore the module name and everything else on the line */
 		strcpy(fname, "sdcc.asm");
-	else
-	/* get file name, or auto-include sdcc.asm if this */
-	if (!getstring(ip, fname, 127))
-		return;
+	} else {
+		/* get file name */
+		if (!getstring(ip, fname, PATHSZ - 1))
+			return;
+
+		/* check end of line */
+		if (!check_eol(ip))
+			return;
+	}
 
 	/* have we already included this file on this pass? */
 	fsize = strlen(fname);
@@ -1379,7 +1445,7 @@ do_include(int *ip)
 	/* do not include the file a 2nd time on this pass */
 	if (!found_include) {
 		/* remember include file name */
-		if ((list = malloc(sizeof(t_filelist) + fsize - 127)) == NULL) {
+		if ((list = malloc(sizeof(t_filelist))) == NULL) {
 			fatal_error("Out of memory!");
 			return;
 		}
@@ -1391,7 +1457,7 @@ do_include(int *ip)
 
 		/* open file */
 		if (open_input(fname) == -1) {
-			fatal_error("Can not open file!");
+			fatal_error("Unable to open file!");
 			return;
 		}
 	}

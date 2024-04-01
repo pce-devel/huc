@@ -66,7 +66,8 @@ extern int infile_num;
 extern FILE *out_fp;                            /* file pointers, output */
 extern FILE *in_fp;                             /* input */
 extern FILE *lst_fp;                            /* listing */
-extern t_input_info input_file[8];
+extern t_input_info input_file[MAX_NESTING + 1];
+extern char full_path[PATHSZ * 2];              /* full path name of last file opened */
 
 extern t_machine *machine;
 extern t_machine nes;

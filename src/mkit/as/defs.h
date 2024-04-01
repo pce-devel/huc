@@ -40,12 +40,19 @@
 #define CHUNKY_TILE	1
 #define PACKED_TILE	2
 
+/* max nesting of include files */
+#define MAX_NESTING	31
+
 /* line buffer length */
-#define LAST_CH_POS	512
+#define LAST_CH_POS	(32768 - 4)
 #define SFIELD		30
 
-/* symbol length (must be < 128 if "char" is signed!) */
-#define SBOLSZ		96
+/* symbol name size, including length byte and '\0' */
+/* must be <= 129 if "char" is signed */
+#define SBOLSZ		128
+
+/* file name size, including the '\0' */
+#define PATHSZ		260
 
 /* macro argument types */
 #define NO_ARG		0
@@ -228,7 +235,7 @@ typedef struct t_input_info {
 	FILE *fp;
 	int lnum;
 	int if_level;
-	char name[116];
+	char name[PATHSZ];
 } t_input_info;
 
 typedef struct t_proc {

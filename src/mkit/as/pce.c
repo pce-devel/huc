@@ -1184,7 +1184,7 @@ void
 pce_mml(int *ip)
 {
 	int offset, bufsize, size;
-	char mml[128];
+	char mml[PATHSZ];
 	char c;
 
 	/* define label */
@@ -1202,7 +1202,7 @@ pce_mml(int *ip)
 	/* extract and parse mml string(s) */
 	for (;;) {
 		/* get string */
-		if (!getstring(ip, mml, 127))
+		if (!getstring(ip, mml, PATHSZ - 1))
 			return;
 
 		/* parse string */
