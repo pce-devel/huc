@@ -390,9 +390,9 @@ do_db(int *ip)
 					return;
 				}
 
-				/* check for overflow, except in SDCC code */
+				/* check for overflow, except in SDCC code (-256..255 are ok) */
 				/* SDCC's code generator assumes that the assembler doesn't care */
-				if ((sdcc_mode == 0) && ((value & 0x3FFFFFFF) > 0xFF) && ((value & 0x3FFFFFFF) < 0x3FFFFF80)) {
+				if ((sdcc_mode == 0) && (value & ~0xFF) && ((value & ~0xFF) != ~0xFF)) {
 					error("Overflow error!");
 					return;
 				}
@@ -482,9 +482,9 @@ do_dw(int *ip)
 				return;
 			}
 
-			/* check for overflow, except in SDCC code */
+			/* check for overflow, except in SDCC code (-65536..65535 are ok) */
 			/* SDCC's code generator assumes that the assembler doesn't care */
-			if ((sdcc_mode == 0) && ((value & 0x3FFFFFFF) > 0xFFFF) && ((value & 0x3FFFFFFF) < 0x3FFF8000)) {
+			if ((sdcc_mode == 0) && (value & ~0xFFFF) && ((value & ~0xFFFF) != ~0xFFFF)) {
 				error("Overflow error!");
 				return;
 			}
@@ -566,8 +566,8 @@ do_dwl(int *ip)
 				return;
 			}
 
-			/* check for overflow */
-			if (((value & 0x3FFFFFFF) > 0xFFFF) && ((value & 0x3FFFFFFF) < 0x3FFF8000)) {
+			/* check for overflow (-65536..65535 are ok) */
+			if ((value & ~0xFFFF) && ((value & ~0xFFFF) != ~0xFFFF)) {
 				error("Overflow error!");
 				return;
 			}
@@ -649,8 +649,8 @@ do_dwh(int *ip)
 				return;
 			}
 
-			/* check for overflow */
-			if (((value & 0x3FFFFFFF) > 0xFFFF) && ((value & 0x3FFFFFFF) < 0x3FFF8000)) {
+			/* check for overflow (-65536..65535 are ok) */
+			if ((value & ~0xFFFF) && ((value & ~0xFFFF) != ~0xFFFF)) {
 				error("Overflow error!");
 				return;
 			}
@@ -875,8 +875,8 @@ do_org(int *ip)
 	/* section switch */
 	switch (section) {
 	case S_ZP:
-		/* zero page section */
-		if ((value & 0x3FFFFF00) && ((value & 0x3FFFFF00) != machine->ram_base)) {
+		/* zero page section (accept traditional 6502 zero-page) */
+		if ((value & ~0xFF) && ((value & ~0xFF) != machine->ram_base)) {
 			error("Invalid address!");
 			return;
 		}
@@ -884,7 +884,7 @@ do_org(int *ip)
 
 	case S_BSS:
 		/* ram section */
-		if (((value & 0x3FFFFFFF) < machine->ram_base) || ((value & 0x3FFFFFFF) >= (machine->ram_base + machine->ram_limit))) {
+		if ((value < machine->ram_base) || (value >= (machine->ram_base + machine->ram_limit))) {
 			error("Invalid address!");
 			return;
 		}
@@ -899,7 +899,7 @@ do_org(int *ip)
 		}
 
 		/* code and data section */
-		if (value & 0x007F0000) {
+		if (value & ~0xFFFF) {
 			error("Invalid address!");
 			return;
 		}
@@ -1139,7 +1139,7 @@ do_incbin(int *ip)
 	fseek(fp, offset, SEEK_SET);
 
 	/* check if it will fit in the rom */
-	if ((section_flags[section] & S_IS_ROM) && (bank < RESERVED_BANK)) {
+	if ((section_flags[section] & S_IS_ROM) && (bank < UNDEFINED_BANK)) {
 		/* check if it will fit in the rom */
 		if (((bank << 13) + loccnt + size) > rom_limit) {
 			fclose(fp);
@@ -1198,7 +1198,7 @@ do_incbin(int *ip)
 	}
 
 	/* update rom size */
-	if ((section_flags[section] & S_IS_ROM) && (bank < RESERVED_BANK)) {
+	if ((section_flags[section] & S_IS_ROM) && (bank < UNDEFINED_BANK)) {
 		if (bank > max_bank) {
 			if (loccnt)
 				max_bank = bank;
@@ -1483,13 +1483,13 @@ do_rsset(int *ip)
 	/* get value */
 	if (!evaluate(ip, ';', 1))
 		return;
-	if (value & 0x007F0000) {
+	if (value & ~0xFFFF) {
 		error("Address out of range!");
 		return;
 	}
 
 	/* set 'rs' base and bank */
-	rs_base = value & 0xFFFF;
+	rs_base = value;
 	rs_mprbank = expr_mprbank;
 	rs_overlay = expr_overlay;
 
@@ -1530,11 +1530,11 @@ do_rs(int *ip)
 
 	/* update 'rs' base */
 	rs_base += value;
-	if (rs_base & 0x007F0000)
+	if (rs_base & ~0xFFFF)
 		error("Address out of range!");
 
 	/* update 'rs' bank */
-	if (rs_mprbank != RESERVED_BANK) {
+	if (rs_mprbank != UNDEFINED_BANK) {
 		while ((old_rs & 0xE000) != (rs_base & 0xE000)) {
 			old_rs += 0x2000;
 			++rs_mprbank;
@@ -1703,7 +1703,7 @@ do_ds(int *ip)
 	}
 
 	/* update rom size */
-	if ((section_flags[section] & S_IS_ROM) && (bank < RESERVED_BANK)) {
+	if ((section_flags[section] & S_IS_ROM) && (bank < UNDEFINED_BANK)) {
 		if (bank > max_bank) {
 			if (loccnt)
 				max_bank = bank;
@@ -2379,7 +2379,7 @@ do_ends(int *ip)
 		return;
 
 	/* assign value to the label */
-//	labldef(scopeptr->data_size, RESERVED_BANK, 0, CONSTANT);
+//	labldef(scopeptr->data_size, UNDEFINED_BANK, 0, CONSTANT);
 
 	/* restore the previous label */
 	lablptr = curlabl;

@@ -405,7 +405,7 @@ class6(int *ip)
 		if (!evaluate(ip, (i < 2) ? ',' : ';', 0))
 			return;
 		if (pass == LAST_PASS) {
-			if (value & 0x007F0000) {
+			if (value & ~0xFFFF) {
 				error("Operand size error!");
 				return;
 			}
@@ -778,7 +778,7 @@ getoperand(int *ip, int flag, int last_char)
 		if (mode == (ABS | ABS_X | ABS_Y | ZP | ZP_X | ZP_Y)) {
 			/* was there an undefined or undefined-this-pass symbol? */
 			if (undef || notyetdef ||
-				((value & 0x3FFFFF00) != machine->ram_base)) {
+				((value & ~0xFF) != machine->ram_base)) {
 				/* use ABS addressing, if available */
 				if (flag & ABS)
 					mode &= ~ZP;
@@ -904,8 +904,8 @@ getoperand(int *ip, int flag, int last_char)
 					if (opext == 'H')
 						value++;
 				}
-				/* check address validity */
-				if ((value & 0x3FFFFF00) && ((value & 0x3FFFFF00) != machine->ram_base))
+				/* check address validity (accept $00xx as well for 6502-compatibility) */
+				if ((value & ~0xFF) && ((value & ~0xFF) != machine->ram_base))
 					error("Incorrect zero page address!");
 			}
 
@@ -919,8 +919,8 @@ getoperand(int *ip, int flag, int last_char)
 				else if (opext != 0)
 					error("Instruction extension not supported in immediate mode!");
 				else {
-					/* check value validity */
-					if (((value & 0x3FFFFF00) > 0xFF) && ((value & 0x3FFFFF00) < 0x3FFFFF00))
+					/* check value validity (-256..255) */
+					if ((value & ~0xFF) && ((value & ~0xFF) != ~0xFF))
 						error("Incorrect immediate value!");
 				}
 			}
@@ -935,7 +935,7 @@ getoperand(int *ip, int flag, int last_char)
 						value++;
 				}
 				/* check address validity */
-				if (value & 0x007F0000)
+				if (value & ~0xFFFF)
 					error("Incorrect absolute address!");
 
 				/* if HuC6280 and currently inside a ".kickc" C function/procedure */
@@ -1113,7 +1113,7 @@ getbranch(int opcode_length)
 		/* has target already been defined (this pass)? */
 		if ((branch->convert == 0) &&
 		    (branch->label != NULL) &&
-		    (branch->label->defcnt != 0) &&
+		    (branch->label->defthispass != 0) &&
 		    (branch->label->type == DEFABS)) {
 			/* check if it is outside short-branch range */
 			addr = (branch->label->value & 0xFFFF) - branch->addr;

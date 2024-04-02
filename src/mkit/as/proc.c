@@ -476,11 +476,11 @@ proc_reloc(void)
 
 	proc_ptr = proc_first;
 
-	/* sum up each group's refcnt */
+	/* sum up each group's refthispass */
 	while (proc_ptr) {
 		/* proc within a group */
 		if (proc_ptr->group != NULL) {
-			proc_ptr->group->label->refcnt += proc_ptr->label->refcnt;
+			proc_ptr->group->label->refthispass += proc_ptr->label->refthispass;
 		}
 		proc_ptr = proc_ptr->link;
 	}
@@ -494,7 +494,7 @@ proc_reloc(void)
 		if (proc_ptr->group == NULL) {
 
 			/* relocate or strip? */
-			if ((strip_opt != 0) && (proc_ptr->label->refcnt < 1)) {
+			if ((strip_opt != 0) && (proc_ptr->label->refthispass < 1)) {
 				/* strip this unused code from the ROM */
 				proc_ptr->bank = STRIPPED_BANK;
 			} else {
@@ -613,7 +613,6 @@ proc_reloc(void)
 					sym->overlay = bank2overlay(sym->rombank, sym->section);
 				}
 
-				sym->value = (sym->value & 0x3FFFFFFF);
 				sym->value += (proc_ptr->org - proc_ptr->base);
 
 				/* local symbols */
@@ -635,7 +634,6 @@ proc_reloc(void)
 								local->overlay = bank2overlay(local->rombank, local->section);
 							}
 
-							local->value = (local->value & 0x3FFFFFFF);
 							local->value += (proc_ptr->org - proc_ptr->base);
 						}
 
@@ -851,7 +849,7 @@ list_procs(void)
 
 	if ((lst_fp != NULL) && (proc_ptr != NULL) && (fprintf(lst_fp, "\nPROCEDURE LIST (in order of size):\n\n") > 0)) {
 		while (proc_ptr) {
-			if ((proc_ptr->group == NULL) && (proc_ptr->bank < RESERVED_BANK)) {
+			if ((proc_ptr->group == NULL) && (proc_ptr->bank < UNDEFINED_BANK)) {
 				if (fprintf( lst_fp, "Size: $%04X, Addr: $%02X:%04X, %s %s\n", proc_ptr->size, proc_ptr->bank, proc_ptr->label->value,
 					(proc_ptr->type == P_PGROUP) ? ".procgroup" : "     .proc" , proc_ptr->name) < 0)
 					break;

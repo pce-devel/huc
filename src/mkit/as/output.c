@@ -52,7 +52,7 @@ println(void)
 			/* ok */
 			cnt = 0;
 			for (i = 0; i < nb; i++) {
-//				if (bank == RESERVED_BANK || bank == STRIPPED_BANK) {
+//				if (bank == UNDEFINED_BANK || bank == STRIPPED_BANK) {
 				if (bank > bank_limit) {
 					prlnbuf[18 + (3 * cnt)] = '-';
 					prlnbuf[19 + (3 * cnt)] = '-';
@@ -118,7 +118,7 @@ loadlc(int offset, int pos)
 		i = 7;
 
 	if (pos == 0) {
-		if (bank == RESERVED_BANK || bank == STRIPPED_BANK) {
+		if (bank == UNDEFINED_BANK || bank == STRIPPED_BANK) {
 			prlnbuf[i++] = ' ';
 			prlnbuf[i++] = ' ';
 			prlnbuf[i++] = '-';
@@ -181,7 +181,7 @@ putbyte(int offset, int data)
 {
 	int addr;
 
-	if (((section_flags[section] & S_IS_ROM) == 0) || (bank >= RESERVED_BANK))
+	if (((section_flags[section] & S_IS_ROM) == 0) || (bank > bank_limit))
 		return;
 
 	addr = offset + 1 + (bank << 13);
@@ -222,7 +222,7 @@ putword(int offset, int data)
 {
 	int addr;
 
-	if (((section_flags[section] & S_IS_ROM) == 0) || (bank >= RESERVED_BANK))
+	if (((section_flags[section] & S_IS_ROM) == 0) || (bank > bank_limit))
 		return;
 
 	addr = offset + 2 + (bank << 13);
@@ -265,7 +265,7 @@ putdword(int offset, int data)
 {
 	int addr;
 
-	if (((section_flags[section] & S_IS_ROM) == 0) || (bank >= RESERVED_BANK))
+	if (((section_flags[section] & S_IS_ROM) == 0) || (bank > bank_limit))
 		return;
 
 	addr = offset + 4 + (bank << 13);
@@ -318,7 +318,7 @@ putbuffer(void *data, int size)
 		return;
 
 	/* check if the buffer will fit in the rom */
-	if ((section_flags[section] & S_IS_ROM) && (bank < RESERVED_BANK)) {
+	if ((section_flags[section] & S_IS_ROM) && (bank <= bank_limit)) {
 		addr = (bank << 13) + loccnt;
 
 		if ((addr + size) > rom_limit) {
@@ -372,7 +372,7 @@ putbuffer(void *data, int size)
 	}
 
 	/* update rom size */
-	if ((section_flags[section] & S_IS_ROM) && (bank < RESERVED_BANK)) {
+	if ((section_flags[section] & S_IS_ROM) && (bank < UNDEFINED_BANK)) {
 		if (bank > max_bank) {
 			if (loccnt)
 				max_bank = bank;

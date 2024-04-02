@@ -25,17 +25,19 @@ t_symbol pc_symbol = {
 	S_NONE, /* section */
 	0, /* overlay */
 	0, /* mprbank */
-	RESERVED_BANK, /* bank */
+	UNDEFINED_BANK, /* bank */
 	0, /* page */
 	0, /* nb */
 	0, /* size */
 	0, /* vram */
 	0, /* pal */
-	1, /* defcnt */
-	1, /* refcnt */
 	1, /* reserved */
 	0, /* data_type */
 	0, /* data_size */
+	1, /* deflastpass */
+	1, /* reflastpass */
+	1, /* defthispass */
+	1, /* refthispass */
 	"*" /* name */
 };
 
@@ -93,7 +95,7 @@ evaluate(int *ip, char last_char, char allow_bank)
 	expr_toplabl = NULL;
 	expr_lablptr = NULL;
 	expr_lablcnt = 0;
-	expr_mprbank = RESERVED_BANK;
+	expr_mprbank = UNDEFINED_BANK;
 	expr_overlay = 0;
 	complex_expr = 0;
 	op = OP_START;
@@ -711,7 +713,7 @@ push_val(int type)
 			expr_overlay = expr_lablptr->overlay;
 			expr_mprbank = expr_lablptr->mprbank;
 			val = expr_lablptr->value;
-			if (expr_lablptr->defcnt == 0) {
+			if (expr_lablptr->defthispass == 0) {
 				notyetdef++;
 			}
 		}
@@ -766,7 +768,7 @@ extract:
 			val = (val * mul) + c;
 		}
 		if (c == ':' && mul == 16 && allow_numeric_bank) {
-			if (expr_mprbank != RESERVED_BANK) {
+			if (expr_mprbank != UNDEFINED_BANK) {
 				if (expr_overlay != 0) {
 					error("Memory overlay# already set in this expression!");
 					return (0);
@@ -780,9 +782,9 @@ extract:
 					return (0);
 				}
 				expr_overlay = expr_mprbank;
-				expr_mprbank = RESERVED_BANK;
+				expr_mprbank = UNDEFINED_BANK;
 			}
-			if (expr_mprbank != RESERVED_BANK) {
+			if (expr_mprbank != UNDEFINED_BANK) {
 				error("Memory bank# already set in this expression!");
 				return (0);
 			}
@@ -906,7 +908,7 @@ getsym(struct t_symbol * curscope)
 		if (whichlabl < 0) { ++whichlabl; }
 
 		/* add the current multi-label instance */
-		whichlabl += baselabl->defcnt;
+		whichlabl += baselabl->defthispass;
 		if ((whichlabl < 0) || (whichlabl > 0x7FFFF)) {
 			/* illegal value */
 			whichlabl = 0;
@@ -1097,15 +1099,15 @@ do_op(void)
 	case OP_LINEAR:
 		if (!check_func_args("LINEAR"))
 			return (0);
-		if (((expr_lablptr->mprbank  < RESERVED_BANK) && ((section_flags[expr_lablptr->section] & S_IS_ROM) == 0)) ||
-		    ((expr_lablptr->mprbank == RESERVED_BANK) && (pass == LAST_PASS))) {
+		if (((expr_lablptr->mprbank  < UNDEFINED_BANK) && ((section_flags[expr_lablptr->section] & S_IS_ROM) == 0)) ||
+		    ((expr_lablptr->mprbank == UNDEFINED_BANK) && (pass == LAST_PASS))) {
 			error("No LINEAR index for this symbol!");
 			val[0] = 0;
 			break;
 		}
 		exbank = 0;
 		/* complicated math to deal with LINEAR(label+value) */
-		if (expr_lablptr->mprbank < RESERVED_BANK) {
+		if (expr_lablptr->mprbank < UNDEFINED_BANK) {
 			exbank = (expr_lablptr->rombank + (val[0] / 8192) - (expr_lablptr->value / 8192));
 		}
 		val[0] = (exbank << 13) + (val[0] & 0x1FFF);
@@ -1122,8 +1124,8 @@ do_op(void)
 	case OP_BANK:
 		if (!check_func_args("BANK"))
 			return (0);
-		if (expr_lablptr->mprbank >= RESERVED_BANK) {
-			if ((pass == LAST_PASS) && (expr_lablptr->mprbank == RESERVED_BANK))
+		if (expr_lablptr->mprbank >= UNDEFINED_BANK) {
+			if ((pass == LAST_PASS) && (expr_lablptr->mprbank == UNDEFINED_BANK))
 				error("No BANK index for this symbol!");
 			val[0] = 0;
 			break;

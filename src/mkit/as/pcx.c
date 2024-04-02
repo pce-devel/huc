@@ -156,7 +156,8 @@ pcx_set_tile(struct t_symbol *ref, unsigned int offset)
 	nb = ref->nb - (start / ref->size);
 	size = ref->size;
 
-	if (((section_flags[ref->section] & S_IS_ROM) == 0) || (ref->mprbank >= RESERVED_BANK)) {
+	if (((section_flags[ref->section] & S_IS_ROM) == 0) || (ref->rombank > bank_limit)) {
+//	if (((section_flags[ref->section] & S_IS_ROM) == 0) || (ref->mprbank >= UNDEFINED_BANK)) {
 		goto err;
 	}
 
