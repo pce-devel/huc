@@ -2,8 +2,7 @@
 # Makefile for HuC sources
 #
 
-SUBDIRS = huc sdcc mcpp mkit isolink tools
-NJOBS := $(shell nproc)
+SUBDIRS = huc mkit isolink tools
 
 all clean:
 	@$(MAKE) $(SUBDIRS) "COMMAND=$@"
@@ -13,5 +12,5 @@ all clean:
 $(SUBDIRS):
 	@echo " "
 	@echo " -----> make $(COMMAND) in $@"
-	$(MAKE) -j $(NJOBS) --directory=$@ $(COMMAND)
+	$(MAKE) --directory=$@ $(COMMAND)
 
