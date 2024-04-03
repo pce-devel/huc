@@ -4,7 +4,6 @@ name: build
 # upvote here https://github.com/github/feedback/discussions/4501
 #
 # See https://github.com/marketplace/actions/setup-xcode-version
-# sudo xcode-select -s "/Applications/Xcode_13.2.1.app"
 on: 
   push:
   pull_request:
@@ -39,8 +38,14 @@ jobs:
           ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -c "pacman -S binutils make mingw-w64-x86_64-gcc git --noconfirm"
           ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -where %CD% -c "make"
           echo Build Complete
-      - name: Build on Mac
-        if: startsWith(matrix.os, 'macos')
+      - name: Build on MacOs-12
+        if: startsWith(matrix.os, 'macos-12')
+        run: |
+          sudo xcode-select -s "/Applications/Xcode_13.4.1.app"
+          make
+          echo Build Complete
+      - name: Build on MacOs-14
+        if: startsWith(matrix.os, 'macos-14')
         run: |
           make
           echo Build Complete
