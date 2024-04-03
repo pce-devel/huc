@@ -903,7 +903,7 @@ pce_incchrpal(int *ip)
 	/* get args */
 	if (!pcx_get_args(ip))
 		return;
-	if (!pcx_parse_args(0, pcx_nb_args, &x, &y, &w, &h, 16))
+	if (!pcx_parse_args(0, pcx_nb_args, &x, &y, &w, &h, 8))
 		return;
 
 	/* scan tiles */
@@ -915,7 +915,7 @@ pce_incchrpal(int *ip)
 
 			/* get chr palette */
 			buffer[0] = pce_scan_8x8_tile(tx, ty) << 4;
-
+printf("chr 0x%02x uses palette %2d\n", i * w + j, buffer[0] >> 4);
 			/* store palette number */
 			putbuffer(buffer, 1);
 			nb_chr++;
