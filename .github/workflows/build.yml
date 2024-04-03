@@ -20,7 +20,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-20.04, macos-11, macos-12, windows-2022]
+        os: [ubuntu-22.04, macos-12, macos-14, windows-2022]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Check out code from the repository
@@ -41,7 +41,7 @@ jobs:
       - name: Build on Mac
         if: startsWith(matrix.os, 'macos')
         run: |
-          sudo xcode-select -s "/Applications/Xcode_13.2.1.app"
+        # sudo xcode-select -s "/Applications/Xcode_13.2.1.app"
           make
           echo Build Complete
       - name: Archive toolchain
@@ -58,7 +58,7 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [ubuntu-20.04, macos-11, macos-12, windows-2022]
+        os: [ubuntu-22.04, macos-12, macos-14, windows-2022]
     runs-on: ${{ matrix.os }}
     needs: build
     steps:
@@ -103,7 +103,7 @@ jobs:
   package:
     strategy:
       matrix:
-        os: [ubuntu-20.04, macos-12, windows-2022]
+        os: [ubuntu-22.04, macos-12, windows-2022]
     runs-on: ${{ matrix.os }}
     needs: build
     steps:
@@ -155,7 +155,7 @@ jobs:
       - name: Get previously built artifacts linux
         uses: actions/download-artifact@v4
         with:
-          name: package-ubuntu-20.04
+          name: package-ubuntu-22.04
         # https://github.com/pyTooling/Actions/tree/main/releaser
         # need to use composite on windows, since docker isn't available
       - name: publish release package
