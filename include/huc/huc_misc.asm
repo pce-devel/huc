@@ -336,7 +336,7 @@ lib2_farmemget.3:
 	; ----
 	; copy a block
 	;
-	clx
+.l0:	clx
 	cly
 	dec	<__ch
 	bmi	.l4
@@ -366,16 +366,23 @@ lib2_farmemget.3:
 	; ----
 	; second half
 	;
-	tstw	<__dx
+	lda	<__dl
+	sta	<__cl
+	ora	<__dh
 	beq	.l5
 	; -- reload dst and cnt
-	stw	<__dx,<__cx
-	stw	#$6000,<__fptr
+	stz	<__dl
+	lda	<__dh
+	sta	<__ch
+	stz	<__dh
+	stz	<__fptr
+	lda	#$60
+	sta	<__fptr+1
 	; -- inc bank
 	tma	#3
 	inc	A
 	tam	#3
-	bra	.l1
+	bra	.l0
 
 	; ----
 	; exit
