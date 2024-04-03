@@ -59,7 +59,7 @@ do_macro(int *ip)
 			fatal_error("Macro name cannot be a multi-label!");
 			return;
 		}
-		if (lablptr->defcnt || lablptr->refcnt) {
+		if (lablptr->defthispass || lablptr->refthispass) {
 			switch (lablptr->type) {
 			case MACRO:
 				fatal_error("Macro already defined!");
@@ -344,7 +344,7 @@ macro_install(void)
 
 	/* mark the macro name as reserved */
 	lablptr->type = MACRO;
-	lablptr->defcnt = 1;
+	lablptr->defthispass = 1;
 
 	/* check macro name syntax */
 	/*
@@ -440,7 +440,7 @@ macro_getargtype(char *arg)
 				else {
 					if ((sym->type == UNDEF) || (sym->type == IFUNDEF))
 						return (ARG_LABEL);
-					if (sym->mprbank == RESERVED_BANK)
+					if (sym->mprbank == UNDEFINED_BANK)
 						return (ARG_ABS);
 					else
 						return (ARG_LABEL);

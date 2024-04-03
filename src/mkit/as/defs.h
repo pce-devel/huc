@@ -25,7 +25,7 @@
 #define ROM_BANKS	1024
 
 /* reserved bank index */
-#define RESERVED_BANK	(ROM_BANKS + 0)
+#define UNDEFINED_BANK	(ROM_BANKS + 0)
 #define PROC_BANK	(ROM_BANKS + 1)
 #define GROUP_BANK	(ROM_BANKS + 2)
 #define STRIPPED_BANK	(ROM_BANKS + 3)
@@ -276,11 +276,13 @@ typedef struct t_symbol {
 	int size;
 	int vram;
 	int pal;
-	int defcnt;
-	int refcnt;
 	int reserved;
 	int data_type;
 	int data_size;
+	int deflastpass;
+	int reflastpass;
+	int defthispass;
+	int refthispass;
 	char name[SBOLSZ];
 } t_symbol;
 

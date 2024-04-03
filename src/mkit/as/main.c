@@ -609,7 +609,7 @@ main(int argc, char **argv)
 		need_another_pass = 0;
 		skip_lines = 0;
 		rs_base = 0;
-		rs_mprbank = RESERVED_BANK;
+		rs_mprbank = UNDEFINED_BANK;
 		rs_overlay = 0;
 		proc_nb = 0;
 		kickc_mode = 0;
@@ -665,8 +665,8 @@ main(int argc, char **argv)
 
 		/* reset symbol table and include files */
 		if (pass != FIRST_PASS) {
-			/* clear the label and multi-label defcnt */
-			lablresetdefcnt();
+			/* reset symbol definition and reference tracking */
+			lablstartpass();
 
 			/* clear the list of included files */
 			forget_included_files();

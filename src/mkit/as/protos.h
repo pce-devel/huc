@@ -163,7 +163,7 @@ void lablset(char *name, int val);
 int  lablexists(char *name);
 void lablremap(void);
 void labldump(FILE *fp);
-void lablresetdefcnt(void);
+void lablstartpass(void);
 int bank2mprbank (int what_bank, int what_section);
 int bank2overlay (int what_bank, int what_section);
 int mprbank2bank (int what_bank, int what_overlay);

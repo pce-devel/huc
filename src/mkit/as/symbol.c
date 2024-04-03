@@ -215,7 +215,7 @@ stlook(int type)
 
 	/* increment symbol reference counter */
 	if ((sym != NULL) && (type == SYM_REF) && (if_expr == 0)) {
-		sym->refcnt++;
+		sym->refthispass++;
 	}
 
 	/* ok */
@@ -249,18 +249,20 @@ stinstall(int hash, int type)
 	sym->value = 0;
 	sym->section = S_NONE;
 	sym->overlay = 0;
-	sym->mprbank = RESERVED_BANK;
-	sym->rombank = RESERVED_BANK;
+	sym->mprbank = UNDEFINED_BANK;
+	sym->rombank = UNDEFINED_BANK;
 	sym->page = -1;
 	sym->nb = 0;
 	sym->size = 0;
 	sym->vram = -1;
 	sym->pal = -1;
-	sym->defcnt = 0;
-	sym->refcnt = 0;
 	sym->reserved = 0;
 	sym->data_type = -1;
 	sym->data_size = 0;
+	sym->deflastpass = 0;
+	sym->reflastpass = 1; /* so that .ifref triggers in 1st pass */
+	sym->defthispass = 0;
+	sym->refthispass = 0;
 	strcpy(sym->name, symbol);
 
 	/* add the symbol to the hash table */
@@ -326,7 +328,7 @@ labldef(int reason)
 
 			/* define the next multi-label instance */
 			strcpy(symbol, lablptr->name);
-			sprintf(tail, "!%d", 0x7FFFF & ++(lablptr->defcnt));
+			sprintf(tail, "!%d", 0x7FFFF & ++(lablptr->defthispass));
 			strncat(symbol, tail, SBOLSZ - 1 - strlen(symbol));
 			symbol[0] = strlen(&symbol[1]);
 			if ((lablptr = stlook(SYM_DEF)) == NULL) {
@@ -362,7 +364,7 @@ labldef(int reason)
 		labl_mprbank = expr_mprbank;
 		labl_overlay = expr_overlay;
 		labl_rombank = mprbank2bank(expr_mprbank, expr_overlay);
-		labl_section = (labl_rombank < RESERVED_BANK) ? S_DATA : S_NONE;
+		labl_section = (labl_rombank < UNDEFINED_BANK) ? S_DATA : S_NONE;
 	}
 
 //	/* needed for forward-references (in KickC and elsewhere) */
@@ -375,7 +377,7 @@ labldef(int reason)
 	if ((reason == VARIABLE) && (lablptr->reason == VARIABLE))
 		lablptr->type = UNDEF;
 
-	/* is the symbol still undefined? */
+	/* is the symbol currently undefined? */
 	if ((lablptr->type == UNDEF) || (lablptr->type == IFUNDEF)) {
 		/* allow the definition */
 	}
@@ -391,21 +393,23 @@ labldef(int reason)
 	/* make sure that nothing changes at all in the last pass */
 	else if (pass == LAST_PASS) {
 		if ((lablptr->value != labl_value) || (lablptr->overlay != labl_overlay) ||
-		    ((reason == LOCATION) && (labl_mprbank < RESERVED_BANK) && (lablptr->mprbank != labl_mprbank))) {
+		    ((reason == LOCATION) && (labl_mprbank < UNDEFINED_BANK) && (lablptr->mprbank != labl_mprbank))) {
 			fatal_error("Symbol's bank or address changed in final pass!");
 			return (-1);
 		}
 	}
 
 	/* record definition */
-	lablptr->defcnt = 1;
+	lablptr->defthispass = 1;
 
 	/* update symbol data */
 	lablptr->reason  = reason;
 	lablptr->type    = DEFABS;
 	lablptr->value   = labl_value;
-	lablptr->rombank = labl_rombank;
-	lablptr->mprbank = labl_mprbank;
+//	if (labl_rombank < UNDEFINED_BANK) /* Don't overwrite with undefined */
+		lablptr->rombank = labl_rombank;
+//	if (labl_mprbank < UNDEFINED_BANK) /* Don't overwrite with undefined */
+		lablptr->mprbank = labl_mprbank;
 	lablptr->overlay = labl_overlay;
 	lablptr->section = labl_section;
 
@@ -455,7 +459,7 @@ lablset(char *name, int val)
 		if (lablptr) {
 			lablptr->type = DEFABS;
 			lablptr->value = val;
-			lablptr->defcnt = 1;
+			lablptr->defthispass = 1;
 			lablptr->reserved = 1;
 		}
 	}
@@ -559,7 +563,7 @@ labldump(FILE *fp)
 				continue;
 
 			/* dump the label */
-			if (sym->mprbank >= RESERVED_BANK)
+			if (sym->mprbank >= UNDEFINED_BANK)
 				fprintf(fp, "   -");
 			else if (sym->overlay == 0)
 				fprintf(fp, "  %2.2x", sym->mprbank);
@@ -583,7 +587,7 @@ labldump(FILE *fp)
 				local = sym->local;
 
 				while (local) {
-					if (local->mprbank >= RESERVED_BANK)
+					if (local->mprbank >= UNDEFINED_BANK)
 						fprintf(fp, "   -");
 					else if (sym->overlay == 0)
 						fprintf(fp, "  %2.2x", local->mprbank);
@@ -609,13 +613,13 @@ labldump(FILE *fp)
 
 
 /* ----
- * lablresetdefcnt
+ * lablstartpass
  * ----
- * clear the defcnt on all the multi-labels
+ * reset symbol definition and reference tracking
  */
 
 void
-lablresetdefcnt(void)
+lablstartpass(void)
 {
 	struct t_symbol *sym;
 	int i;
@@ -624,14 +628,20 @@ lablresetdefcnt(void)
 	for (i = 0; i < HASH_COUNT; i++) {
 		sym = hash_tbl[i];
 		while (sym) {
-			sym->defcnt = 0;
+			sym->deflastpass = sym->defthispass;
+			sym->defthispass = 0;
+			sym->reflastpass = sym->refthispass;
+			sym->refthispass = 0;
 
 			/* local symbols */
 			if (sym->local) {
 				struct t_symbol * local = sym->local;
 
 				while (local) {
-					local->defcnt = 0;
+					local->deflastpass = local->defthispass;
+					local->defthispass = 0;
+					local->reflastpass = local->refthispass;
+					local->refthispass = 0;
 
 					/* next */
 					local = local->next;
@@ -653,7 +663,7 @@ lablresetdefcnt(void)
 
 int bank2mprbank (int what_bank, int what_section)
 {
-	if ((section_flags[what_section] & S_IS_ROM) && (what_bank < RESERVED_BANK)) {
+	if ((section_flags[what_section] & S_IS_ROM) && (what_bank < UNDEFINED_BANK)) {
 		if ((section_flags[what_section] & S_IS_SF2) && (what_bank > 0x7F)) {
 			/* for StreetFighterII banks in ROM */
 			what_bank = 0x40 + (what_bank & 0x3F);
@@ -674,7 +684,7 @@ int bank2mprbank (int what_bank, int what_section)
 
 int bank2overlay (int what_bank, int what_section)
 {
-	if ((section_flags[what_section] & S_IS_ROM) && (what_bank < RESERVED_BANK)) {
+	if ((section_flags[what_section] & S_IS_ROM) && (what_bank < UNDEFINED_BANK)) {
 		if ((section_flags[what_section] & S_IS_SF2) && (what_bank > 0x7F)) {
 			/* for StreetFighterII banks in ROM */
 			return (what_bank / 0x40) - 1;
@@ -695,14 +705,14 @@ int mprbank2bank (int what_bank, int what_overlay)
 	if (what_overlay != 0) {
 		if ((section_flags[S_DATA] & S_IS_SF2) == 0) {
 			error("You can only use overlays with the StreetFighterII mapper!");
-			return (RESERVED_BANK);
+			return (UNDEFINED_BANK);
 		}
 		if ((what_bank < 0x40) || (what_bank > 0x7F)) {
 			error("Invalid bank and overlay for the StreetFighterII mapper!");
-			return (RESERVED_BANK);
+			return (UNDEFINED_BANK);
 		}
 		return (what_bank + what_overlay * 0x40);
 	}
 	what_bank = what_bank - bank_base;
-	return (what_bank <= bank_limit) ? what_bank : RESERVED_BANK;
+	return (what_bank <= bank_limit) ? what_bank : UNDEFINED_BANK;
 }
