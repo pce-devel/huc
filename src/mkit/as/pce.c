@@ -915,7 +915,6 @@ pce_incchrpal(int *ip)
 
 			/* get chr palette */
 			buffer[0] = pce_scan_8x8_tile(tx, ty) << 4;
-printf("chr 0x%02x uses palette %2d\n", i * w + j, buffer[0] >> 4);
 			/* store palette number */
 			putbuffer(buffer, 1);
 			nb_chr++;
