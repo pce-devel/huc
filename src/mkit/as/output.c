@@ -527,7 +527,7 @@ warning(char *stptr)
 	/* update the current file name */
 	if (infile_error != infile_num) {
 		infile_error = infile_num;
-		printf("#[%i]   %s\n", infile_num, input_file[infile_num].name);
+		printf("#[%i]   %s\n", infile_num, input_file[infile_num].file->name);
 	}
 
 	/* undo the pre-processor's modification to the line */

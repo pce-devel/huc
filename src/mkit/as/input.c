@@ -7,16 +7,21 @@
 #include "externs.h"
 #include "protos.h"
 
+int file_count;
+t_file_names * file_names;
+t_file * file_hash[HASH_COUNT];
+
 #define INCREMENT_BASE 256
 #define INCREMENT_BASE_MASK 255
 
 char full_path[PATHSZ * 2];
 int infile_error;
 int infile_num;
-t_input_info input_file[MAX_NESTING + 1];
+t_input input_file[MAX_NESTING + 1];
+
 static char *incpath = NULL;
 static int *incpath_offset = NULL;
-static int remaining = 0;
+static int incpath_remaining = 0;
 static int incpath_size = 0;
 static int incpath_offset_count = 0;
 static int incpath_count = 0;
@@ -29,10 +34,10 @@ static int incpath_count = 0;
 void
 cleanup_path(void)
 {
-	if(incpath)
+	if (incpath)
 		free(incpath);
 
-	if(incpath_offset)
+	if (incpath_offset)
 		free(incpath_offset);
 }
 
@@ -53,31 +58,31 @@ add_path(char* newpath, int newpath_size)
 		--newpath_size;
 
 	/* Expand incpath_offset array if needed */
-	if(incpath_count >= incpath_offset_count)
+	if (incpath_count >= incpath_offset_count)
 	{
 		incpath_offset_count += 8;
 		incpath_offset = (int*)realloc(incpath_offset, incpath_offset_count * sizeof(int));
-		if(incpath_offset == NULL)
+		if (incpath_offset == NULL)
 			return 0;
 	}
 
 	/* Initialize string offset */
-	incpath_offset[incpath_count] = incpath_size - remaining;
+	incpath_offset[incpath_count] = incpath_size - incpath_remaining;
 
 	/* Realloc string buffer if needed */
-	if(remaining < newpath_size)
+	if (incpath_remaining < newpath_size)
 	{
-		remaining = incpath_size;
+		incpath_remaining = incpath_size;
 		/* evil trick, get the greater multiple of INCREMENT_BASE closer
 		   to (size + path_len). Note : this only works for INCREMENT_BASE = 2^n*/
 		incpath_size = ((incpath_size + newpath_size) + INCREMENT_BASE) & ~INCREMENT_BASE_MASK;
-		remaining  = incpath_size - remaining;
+		incpath_remaining = incpath_size - incpath_remaining;
 		incpath = (char*)realloc(incpath, incpath_size);
-		if(incpath == NULL)
+		if (incpath == NULL)
 			return 0;
 	}
 
-	remaining -= newpath_size;
+	incpath_remaining -= newpath_size;
 
 	/* Copy path */
 	strncpy(incpath + incpath_offset[incpath_count], newpath, newpath_size);
@@ -122,13 +127,13 @@ init_path(void)
 		pl = strchr(p, ENV_PATH_SEPARATOR);
 
 		/* Compute new substring size */
-		if(pl == NULL)
+		if (pl == NULL)
 			l = strlen(p) + 1;
 		else
 			l = pl - p + 1;
 
 		/* Might be empty, jump to next char */
-		if(l <= 1)
+		if (l <= 1)
 		{
 			++p;
 			continue;
@@ -136,7 +141,7 @@ init_path(void)
 
 		/* Add path */
 		ret = add_path(p, l);
-		if(!ret)
+		if (!ret)
 			return 0;
 
 		/* Eat remaining separators */
@@ -379,6 +384,68 @@ start:
 	return (0);
 }
 
+
+/* ----
+ * remember_file()
+ * ----
+ * remember all source file names
+ */
+
+t_file *
+remember_file(int hash)
+{
+	int need;
+	t_file * file = malloc(sizeof(t_file));
+
+	if (file == NULL)
+		return (NULL);
+
+	need = strlen(full_path) + 1;
+
+	if ((file_names == NULL) || (file_names->remain < need)) {
+		t_file_names *temp = malloc(sizeof(t_file_names));
+		if (temp == NULL)
+			return (NULL);
+		temp->remain = FILE_NAMES_SIZE;
+		temp->next = file_names;
+		file_names = temp;
+	}
+
+	file->name = memcpy(file_names->buffer + FILE_NAMES_SIZE - file_names->remain, full_path, need);
+	file_names->remain -= need;
+
+	file->number = ++file_count;
+	file->included = 0;
+
+	file->next = file_hash[hash];
+	file_hash[hash] = file;
+
+	return (file);
+}
+
+
+/* ----
+ * clear_included()
+ * ----
+ * remember all source file names
+ */
+
+void
+clear_included(void)
+{
+	t_file *file;
+	int i;
+
+	for (i = 0; i < HASH_COUNT; i++) {
+		file = file_hash[i];
+		while (file) {
+			file->included = 0;
+			file = file->next;
+		}
+	}
+}
+
+
 /* ----
  * open_input()
  * ----
@@ -390,8 +457,9 @@ open_input(const char *name)
 {
 	FILE *fp;
 	char *p;
+	t_file * file;
 	char temp[PATHSZ + 4];
-	int i;
+	int hash;
 
 	/* only MAX_NESTING nested input files */
 	if (infile_num == MAX_NESTING) {
@@ -417,16 +485,36 @@ open_input(const char *name)
 	if ((fp = open_file(name, "r")) == NULL)
 		return (-1);
 
-	/* check if this file is already open in the nesting */
-	if (infile_num) {
-		for (i = 1; i < infile_num; i++) {
-			if (strcmp(input_file[i].name, full_path) == 0) {
-				fclose(fp);
-				error("Nested .include file!");
-				return (1);
-			}
+	/* remember all filenames */
+	hash = filename_crc(full_path) & (HASH_COUNT - 1);
+	file = file_hash[hash];
+	while (file) {
+#if defined(_WIN32) || defined(__APPLE__)
+		if (strcasecmp(file->name, full_path) == 0)
+			break;
+#else
+		if (strcmp(file->name, full_path) == 0)
+			break;
+#endif
+		file = file->next;
+	}
+	if (file == NULL) {
+		file = remember_file(hash);
+		if (file == NULL) {
+			fclose(fp);
+			fatal_error("No memory left to remember filename!");
+			return (-1);
 		}
 	}
+
+	/* do not include the same file twice in a pass */
+	if (file->included) {
+		fclose(fp);
+		return (0);
+	}
+
+	/* remember that this file has been included */
+	file->included = 1;
 
 	/* update input file infos */
 	in_fp = fp;
@@ -434,9 +522,9 @@ open_input(const char *name)
 	infile_num++;
 	input_file[infile_num].fp = fp;
 	input_file[infile_num].if_level = if_level;
-	strcpy(input_file[infile_num].name, full_path);
+	input_file[infile_num].file = file;
 	if ((pass == LAST_PASS) && (xlist) && (list_level))
-		fprintf(lst_fp, "#[%i]   %s\n", infile_num, input_file[infile_num].name);
+		fprintf(lst_fp, "#[%i]   %s\n", infile_num, input_file[infile_num].file->name);
 
 	/* ok */
 	return (0);
@@ -479,7 +567,7 @@ close_input(void)
 	slnum = input_file[infile_num].lnum;
 	in_fp = input_file[infile_num].fp;
 	if ((pass == LAST_PASS) && (xlist) && (list_level))
-		fprintf(lst_fp, "#[%i]   %s\n", infile_num, input_file[infile_num].name);
+		fprintf(lst_fp, "#[%i]   %s\n", infile_num, input_file[infile_num].file->name);
 
 	/* ok */
 	return (0);
@@ -527,4 +615,3 @@ open_file(const char *name, const char *mode)
 
 	return (fileptr);
 }
-

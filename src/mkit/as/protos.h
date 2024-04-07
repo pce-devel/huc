@@ -47,7 +47,6 @@ void do_org(int *ip);
 void do_bank(int *ip);
 void do_incbin(int *ip);
 void do_mx(char *fname);
-void forget_included_files(void);
 void do_include(int *ip);
 void do_rsset(int *ip);
 void do_rs(int *ip);
@@ -68,8 +67,8 @@ void do_ends(int *ip);
 int  htoi(char *str, int nb);
 
 /* CRC.C */
-void         crc_init(void);
-unsigned int crc_calc(unsigned char *data, int len);
+unsigned int crc_calc(const unsigned char *data, int len);
+unsigned int filename_crc(const char *name);
 
 /* EXPR.C */
 int  evaluate(int *ip, char flag, char allow_bank);
@@ -93,6 +92,7 @@ int   add_path(char*, int);
 void  cleanup_path(void);
 int   init_path(void);
 int   readline(void);
+void  clear_included(void);
 int   open_input(const char *name);
 int   close_input(void);
 FILE *open_file(const char *fname, const char *mode);

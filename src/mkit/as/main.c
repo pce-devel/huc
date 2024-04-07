@@ -503,9 +503,6 @@ main(int argc, char **argv)
 	/* init include path */
 	init_path();
 
-	/* init crc functions */
-	crc_init();
-
 	/* open the input file */
 	if (open_input(in_fname)) {
 		printf("Can not open input file '%s'!\n", in_fname);
@@ -669,7 +666,7 @@ main(int argc, char **argv)
 			lablstartpass();
 
 			/* clear the list of included files */
-			forget_included_files();
+			clear_included();
 		}
 
 		/* reset max_bank */
@@ -754,7 +751,7 @@ main(int argc, char **argv)
 					printf("Can not open listing file '%s'!\n", lst_fname);
 					exit(1);
 				}
-				fprintf(lst_fp, "#[1]   %s\n", input_file[1].name);
+				fprintf(lst_fp, "#[1]   %s\n", input_file[1].file->name);
 			}
 
 			/* relocate procs */
