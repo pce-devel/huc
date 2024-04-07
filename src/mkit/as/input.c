@@ -88,7 +88,7 @@ add_path(char* newpath, int newpath_size)
 	return 1;
 }
 
-#ifdef WIN32
+#ifdef _WIN32
 #define ENV_PATH_SEPARATOR ';'
 #else
 #define ENV_PATH_SEPARATOR ':'

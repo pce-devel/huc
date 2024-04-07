@@ -8,7 +8,7 @@
 #define FUJI_ASM_VERSION ("Fuji Assembler for Atari (" GIT_VERSION ", " GIT_DATE ")")
 
 /* path separator */
-#if defined(WIN32)
+#if defined(_WIN32)
 #define PATH_SEPARATOR		'\\'
 #define PATH_SEPARATOR_STRING	"\\"
 #else

@@ -14,7 +14,7 @@ struct t_opcode fuji_pseudo[3] = {
 /* *INDENT-ON* */
 
 const char defdirs_fuji[] =
-#ifdef WIN32
+#ifdef _WIN32
 	"c:\\huc\\include\\atari"
 #else
 	"/usr/local/lib/huc/include/atari;" \

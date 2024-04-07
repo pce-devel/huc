@@ -105,7 +105,7 @@ struct t_opcode pce_pseudo[29] = {
 /* *INDENT-ON* */
 
 const char defdirs_pce[] =
-#ifdef WIN32
+#ifdef _WIN32
 	"c:\\huc\\include\\huc"
 #else
 	"/usr/local/lib/huc/include/huc;" \

@@ -26,7 +26,7 @@ struct t_opcode nes_pseudo[11] = {
 /* *INDENT-ON* */
 
 const char defdirs_nes[] =
-#ifdef WIN32
+#ifdef _WIN32
 	"c:\\huc\\include\\nes"
 #else
 	"/usr/local/lib/huc/include/nes;" \
