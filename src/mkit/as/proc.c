@@ -266,7 +266,7 @@ do_proc(int *ip)
 			}
 
 			/* default name */
-			sprintf(&symbol[1], "__group_%i__", proc_nb + 1);
+			sprintf(&symbol[1], "__group_%d_%d__", input_file[infile_num].file->number, slnum);
 			symbol[0] = strlen(&symbol[1]);
 		}
 
