@@ -83,7 +83,7 @@ extern t_symbol *bank_glabl[MAX_S][MAX_BANKS];  /* latest global label in each b
 extern t_branch *branchlst;                     /* first branch instruction assembled */
 extern t_branch *branchptr;                     /* last branch instruction assembled */
 
-extern int xvertlong;                           /* count of branches fixed in pass */
+extern int branches_changed;                    /* count of branches changed in pass */
 extern char need_another_pass;                  /* NZ if another pass if required */
 extern char hex[];                              /* hexadecimal character buffer */
 extern int stop_pass;                           /* stop the program; set by fatal_error() */

@@ -110,11 +110,10 @@ class2(int *ip)
 		return;
 
 	/* all branches tracked for long-branch handling */
-	if ((branch = getbranch(2)) == NULL)
-		return;
+	branch = getbranch(2);
 
 	/* need more space for a long-branch */
-	if (branch->convert) {
+	if ((branch) && (branch->convert)) {
 		if ((opval & 0x1F) == 0x10)
 			/* conditional branch */
 			loccnt += 3;
@@ -125,7 +124,7 @@ class2(int *ip)
 
 	/* generate code */
 	if (pass == LAST_PASS) {
-		if (branch->convert) {
+		if ((branch) && (branch->convert)) {
 			/* long-branch opcode */
 			if ((opval & 0x1F) == 0x10) {
 				/* conditional-branch */
@@ -344,16 +343,15 @@ class5(int *ip)
 		return;
 
 	/* all branches tracked for long-branch handling */
-	if ((branch = getbranch(3)) == NULL)
-		return;
+	branch = getbranch(3);
 
 	/* need more space for a long-branch */
-	if (branch->convert)
+	if ((branch) && (branch->convert))
 		loccnt += 3;
 
 	/* generate code */
 	if (pass == LAST_PASS) {
-		if (branch->convert) {
+		if ((branch) && (branch->convert)) {
 			/* long-branch opcode */
 			putbyte(data_loccnt, opval ^ 0x80);
 			putbyte(data_loccnt + 1, zp);
@@ -610,11 +608,10 @@ class10(int *ip)
 		return;
 
 	/* all branches tracked for long-branch handling */
-	if ((branch = getbranch(3)) == NULL)
-		return;
+	branch = getbranch(3);
 
 	/* need more space for a long-branch */
-	if (branch->convert)
+	if ((branch) && (branch->convert))
 		loccnt += 3;
 
 	/* generate code */
@@ -625,7 +622,7 @@ class10(int *ip)
 			return;
 		}
 
-		if (branch->convert) {
+		if ((branch) && (branch->convert)) {
 			/* long-branch opcode */
 			putbyte(data_loccnt, (opval + (bit << 4)) ^ 0x80);
 			putbyte(data_loccnt + 1, zp);
@@ -1052,8 +1049,21 @@ getbranch(int opcode_length)
 	struct t_branch * branch;
 	unsigned int addr;
 
+#if 0
+	/* do not track yet, because .ifref can change after the first */
+	/* pass which can then change the sequence of tracked branches */
+	if (pass == FIRST_PASS)
+		return (NULL);
+
+	/* no tracking info if transitioned from FIRST_PASS to LAST_PASS */
+	if ((branchlst == NULL) && (pass == LAST_PASS))
+		return (NULL);
+
 	/* track all branches for long-branch handling */
+	if (pass_count == 2) {
+#else
 	if (pass == FIRST_PASS) {
+#endif
 		/* remember this branch instruction */
 		if ((branch = malloc(sizeof(struct t_branch))) == NULL) {
 			error("Out of memory!");
@@ -1078,7 +1088,7 @@ getbranch(int opcode_length)
 	} else {
 		/* update this branch instruction */
 		if (branchptr == NULL) {
-			error("Untracked branch instruction!");
+			fatal_error("Untracked branch instruction!");
 			return NULL;
 		}
 
@@ -1087,15 +1097,20 @@ getbranch(int opcode_length)
 
 		/* sanity check */
 		if ((branch->label != NULL) && (branch->label != expr_lablptr)) {
+#if 0
 			if (branch->label == expr_toplabl) {
 				/* resolve branch outside of label-scope */
 				/* disable for now, because this is more */
 				/* likely to be an error than deliberate */
 //				branch->label = expr_lablptr;
 			} else {
-				error("Branch label mismatch!");
+				fatal_error("Branch label mismatch!");
 				return NULL;
 			}
+#else
+			fatal_error("Branch label mismatch!");
+			return NULL;
+#endif
 		}
 	}
 
@@ -1110,19 +1125,19 @@ getbranch(int opcode_length)
 			loccnt += opcode_length;
 		}
 	} else {
-		/* has target already been defined (this pass)? */
-		if ((branch->convert == 0) &&
-		    (branch->label != NULL) &&
-		    (branch->label->defthispass != 0) &&
+		/* check if it is outside short-branch range */
+		if ((branch->label != NULL) &&
 		    (branch->label->type == DEFABS)) {
-			/* check if it is outside short-branch range */
 			addr = (branch->label->value & 0xFFFF) - branch->addr;
 
 			if (addr > 0x7Fu && addr < ~0x7Fu) {
+				if (branch->convert == 0)
+					++branches_changed;
 				branch->convert = 1;
-				++xvertlong;
 			}
-			branch->checked = 1;
+
+			/* result uncertain if not already defined this pass */
+			branch->checked = branch->label->defthispass;
 		}
 	}
 
@@ -1133,7 +1148,8 @@ getbranch(int opcode_length)
 /* ----
  * branchopt()
  * ----
- * convert out-of-range short-branches into long-branches
+ * convert out-of-range short-branches into long-branches, also
+ * convert incorrectly-guessed long-branches back to short-branches
  */
 
 int
@@ -1141,32 +1157,38 @@ branchopt(void)
 {
 	struct t_branch * branch;
 	unsigned int addr;
-	int changed = 0;
+	int just_changed = 0;
 
 	/* look through the entire list of branch instructions */
 	for (branch = branchlst; branch != NULL; branch = branch->next) {
 
-		/* check to see if a short-branch needs to be converted */
-		if ((branch->convert == 0) &&
-		    (branch->checked == 0) &&
+		/* check to see if a branch needs to be converted */
+		if ((branch->checked == 0) &&
 		    (branch->label != NULL) &&
 		    (branch->label->type == DEFABS)) {
 			/* check if it is outside short-branch range */
 			addr = (branch->label->value & 0xFFFF) - branch->addr;
 
 			if (addr > 0x7Fu && addr < ~0x7Fu) {
+				if (branch->convert == 0)
+					++just_changed;
 				branch->convert = 1;
-				++changed;
+#if 0 /* This saving just doesn't seem to be worth an extra pass */
+			} else {
+				if (branch->convert == 1)
+					++just_changed;
+				branch->convert = 0;
+#endif
 			}
 		}
 	}
 
 	/* report total changes this pass */
-	xvertlong += changed;
-	if (xvertlong)
-		printf("Changed %d branches from short to long.\n", xvertlong);
+	branches_changed += just_changed;
+	if (branches_changed)
+		printf("     Changed %3d branches from short to long.\n", branches_changed);
 
 	/* do another pass if anything just changed, except if KickC because */
 	/* any changes during the pass itself can change a forward-reference */
-	return ((kickc_opt) ? xvertlong : changed);
+	return ((kickc_opt) ? branches_changed : just_changed);
 }

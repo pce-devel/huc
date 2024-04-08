@@ -602,7 +602,7 @@ main(int argc, char **argv)
 		glablptr = NULL;
 		scopeptr = NULL;
 		branchptr = branchlst;
-		xvertlong = 0;
+		branches_changed = 0;
 		need_another_pass = 0;
 		skip_lines = 0;
 		rs_base = 0;

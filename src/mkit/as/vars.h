@@ -45,7 +45,7 @@ t_symbol *bank_glabl[MAX_S][MAX_BANKS];         /* latest global symbol for each
 t_branch *branchlst;                            /* first branch instruction assembled */
 t_branch *branchptr;                            /* last branch instruction assembled */
 
-int xvertlong;                                  /* count of branches fixed in pass */
+int branches_changed;                           /* count of branches changed in pass */
 char need_another_pass;                         /* NZ if another pass if required */
 char hex[5];                                    /* hexadecimal character buffer */
 void (*opproc)(int *);                          /* instruction gen proc */
