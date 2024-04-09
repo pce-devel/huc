@@ -121,7 +121,7 @@ _disk_write_err:db	" SDC write sector failed!",$0D,0
 	.endif	SDC_PRINT_MESSAGES
 
 
-		.procgroup			; Group ted2-sd in 1 bank!
+ted2_sd		.procgroup			; Group ted2-sd in 1 bank!
 
 ; Use const_0000 from core-kernal.asm if possible!
 

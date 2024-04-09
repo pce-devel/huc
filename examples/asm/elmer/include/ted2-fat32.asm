@@ -214,7 +214,7 @@ FLAG_Last_Ord	=	$40
 
 
 
-		.procgroup			; Group ted2-fat32 in 1 bank!
+ted2_fat32	.procgroup			; Group ted2-fat32 in 1 bank!
 
 ; ***************************************************************************
 ; ***************************************************************************
@@ -481,9 +481,6 @@ f32_mount_vol	.proc
 
 f32_minimum_cnt:dd	$0000FFF5		; 65525 clusters
 f32_illegal_cnt:dd	$0FFFFFF5		; Too many clusters.
-f32_cluster_bad:dd	$0FFFFFF7		; Test if == val.
-f32_cluster_eoc:dd	$0FFFFFF8		; Test if >= val.
-f32_cluster_msk:dd	$0FFFFFFF		; Mask out the top 4-bits.
 
 		.endp				; f32_mount_vol
 
@@ -768,6 +765,10 @@ f32_use_cluster:ldy	#3			; Copy the cluster # from the
 
 .bad_cluster:	ldy	#F32_ERR_INVALID	; Invalid cluster.
 		rts
+
+f32_cluster_bad:dd	$0FFFFFF7		; Test if == val.
+f32_cluster_eoc:dd	$0FFFFFF8		; Test if >= val.
+f32_cluster_msk:dd	$0FFFFFFF		; Mask out the top 4-bits.
 
 
 
