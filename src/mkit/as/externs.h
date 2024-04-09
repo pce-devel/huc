@@ -120,3 +120,16 @@ extern int in_final;                            /* set when in xxxx-final.asm in
 extern int preproc_inblock;                     /* C-style comment: within block comment */
 extern int preproc_sfield;                      /* C-style comment: SFIELD as a variable */
 extern int preproc_modidx;                      /* C-style comment: offset to modified char */
+
+/* this is set when suppressing the listing output of stripped procedures */
+/* n.b. fully compatible with 2-pass assembly because code is still built */
+extern int cloaking_stripped;
+
+/* this is set when not assembling the code within the stripped procedure */
+/* n.b. not compatible with 2-pass assembly because symbol addresses will */
+/* change because both multi-label and branch tracking counts will change */
+extern int skipping_stripped;
+
+/* this is set to say that skipping is an acceptable alternative to */
+/* cloaking, which means that we've decided to do a 3-pass assembly */
+extern int allow_skipping;

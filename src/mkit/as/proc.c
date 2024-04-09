@@ -15,6 +15,22 @@ int call_1st;
 int call_ptr;
 int call_bank;
 
+/* this is set when suppressing the listing output of stripped procedures */
+/* n.b. fully compatible with 2-pass assembly because code is still built */
+int cloaking_stripped;
+
+/* this is set when not assembling the code within the stripped procedure */
+/* n.b. not compatible with 2-pass assembly because symbol addresses will */
+/* change because both multi-label and branch tracking counts will change */
+int skipping_stripped;
+
+/* this is set to say that skipping is an acceptable alternative to */
+/* cloaking, which means that we've decided to do a 3-pass assembly */
+int allow_skipping;
+
+/* set this to spew procedure stripping information to the tty */
+#define DEBUG_STRIPPING 0
+
 extern int dump_seg;
 
 /* protos */
@@ -290,7 +306,7 @@ do_proc(int *ip)
 		return;
 
 	/* search (or create new) proc */
-	if((ptr = proc_look()))
+	if ((ptr = proc_look()))
 		proc_ptr = ptr;
 	else {
 		if (!proc_install())
@@ -301,8 +317,40 @@ do_proc(int *ip)
 		return;
 	}
 
+	/* reset location and size in case it changed due to skipping */
+	if (pass != LAST_PASS) {
+		proc_ptr->org = proc_ptr->base = proc_ptr->group ? loccnt : 0;
+		proc_ptr->label->data_size = proc_ptr->size = 0;
+	}
+
+	/* can we just not assemble a stripped .proc/.procgroup */
+	/* at all instead of assembling it to the STRIPPED_BANK */
+	if (proc_ptr->bank == STRIPPED_BANK && allow_skipping && proc_ptr->is_skippable) {
+		#if DEBUG_STRIPPING
+		printf("Skipping %s \"%s\" with parent \"%s\".\n",
+			proc_ptr->type == P_PROC ? ".proc" : ".procgroup",
+			proc_ptr->label->name + 1,
+			proc_ptr->group == NULL ? "none" : proc_ptr->group->label->name + 1);
+		#endif
+		proc_ptr = proc_ptr->group;
+		skipping_stripped = optype;
+		if (pass == LAST_PASS) {
+			println();
+		}
+		return;
+	}
+
+	#if DEBUG_STRIPPING
+	printf("Assembling %s \"%s\" to bank %d with parent \"%s\".\n",
+		proc_ptr->type == P_PROC ? ".proc" : ".procgroup",
+		proc_ptr->label->name + 1,
+		proc_ptr->bank,
+		proc_ptr->group == NULL ? "none" : proc_ptr->group->label->name + 1);
+	#endif
+
 	/* increment proc ref counter */
 	proc_ptr->defined = 1;
+	proc_ptr->is_skippable = if_level;
 
 	/* backup current bank infos */
 	bank_glabl[section][bank]  = proc_ptr->old_glablptr = glablptr;
@@ -331,8 +379,13 @@ do_proc(int *ip)
 
 	/* output */
 	if (pass == LAST_PASS) {
-		loadlc(loccnt, 0);
-		println();
+		if (proc_ptr->bank == STRIPPED_BANK) {
+			println();
+			++cloaking_stripped;
+		} else {
+			loadlc(loccnt, 0);
+			println();
+		}
 	}
 }
 
@@ -367,6 +420,12 @@ do_endp(int *ip)
 	/* check end of line */
 	if (!check_eol(ip))
 		return;
+
+	/* disable skipping if the procedure starts and ends at different .if nesting */
+	if (!(proc_ptr->is_skippable = (proc_ptr->is_skippable == if_level))) {
+		if (asm_opt[OPT_WARNING])
+			warning("Warning: .proc/.procgroup has mismatched .if nesting!\n");
+	}
 
 	/* restore procedure's initial section */
 	if (section != proc_ptr->label->section) {
@@ -417,6 +476,13 @@ do_endp(int *ip)
 		discontiguous = 1;
 	}
 
+	#if DEBUG_STRIPPING
+	printf("Ending %s \"%s\" with parent \"%s\".\n",
+		optype == P_PROC ? ".proc" : ".procgroup",
+		proc_ptr->label->name + 1,
+		proc_ptr->group == NULL ? "none" : proc_ptr->group->label->name + 1);
+	#endif
+
 	proc_ptr = proc_ptr->group;
 
 	/* a KickC procedure also closes the label-scope */
@@ -430,8 +496,86 @@ do_endp(int *ip)
 	}
 
 	/* output */
-	if (pass == LAST_PASS)
+	if (pass == LAST_PASS) {
+		if (cloaking_stripped)
+			--cloaking_stripped;
 		println();
+	}
+}
+
+
+/* ----
+ * proc_strip()
+ * ----
+ *
+ */
+
+void
+proc_strip(void)
+{
+	int num_stripped = 0;
+
+	if (proc_nb == 0)
+		return;
+
+	if (strip_opt == 0)
+		return;
+
+	/* calculate the refthispass for each group */
+	proc_ptr = proc_first;
+
+	while (proc_ptr) {
+		/* proc within a group */
+		if (proc_ptr->group != NULL) {
+			proc_ptr->group->label->refthispass += proc_ptr->label->refthispass;
+		}
+		proc_ptr = proc_ptr->link;
+	}
+
+	/* strip out the groups and procs with zero references */
+	proc_ptr = proc_first;
+
+	while (proc_ptr) {
+
+		/* group or standalone proc */
+		if (proc_ptr->group == NULL) {
+			/* strip this .proc or .procgroup? */
+			if (proc_ptr->label->refthispass < 1) {
+				/* strip this unused code from the ROM */
+				#if DEBUG_STRIPPING
+				printf("Stripping %s \"%s\" with parent \"%s\".\n",
+					proc_ptr->type == P_PROC ? ".proc" : ".procgroup",
+					proc_ptr->label->name + 1,
+					proc_ptr->group == NULL ? "none" : proc_ptr->group->label->name + 1);
+				#endif
+				proc_ptr->bank = STRIPPED_BANK;
+				--proc_nb;
+				++num_stripped;
+			}
+		}
+
+		/* proc within a group */
+		else {
+			/* strip this .proc? */
+			if ((proc_ptr->group->bank == STRIPPED_BANK) ||
+			    (proc_ptr->label->refthispass < 1 && allow_skipping && proc_ptr->is_skippable)) {
+				/* strip this unused code from the ROM */
+				#if DEBUG_STRIPPING
+				printf("Stripping %s \"%s\" with parent \"%s\".\n",
+					proc_ptr->type == P_PROC ? ".proc" : ".procgroup",
+					proc_ptr->label->name + 1,
+					proc_ptr->group == NULL ? "none" : proc_ptr->group->label->name + 1);
+				#endif
+				proc_ptr->bank = STRIPPED_BANK;
+				--proc_nb;
+				++num_stripped;
+			}
+		}
+
+		/* next */
+		proc_ptr->defined = 0;
+		proc_ptr = proc_ptr->link;
+	}
 }
 
 
@@ -474,30 +618,16 @@ proc_reloc(void)
 		new_bank = max_bank + 1;
 	}
 
-	proc_ptr = proc_first;
-
-	/* sum up each group's refthispass */
-	while (proc_ptr) {
-		/* proc within a group */
-		if (proc_ptr->group != NULL) {
-			proc_ptr->group->label->refthispass += proc_ptr->label->refthispass;
-		}
-		proc_ptr = proc_ptr->link;
-	}
-
-	proc_ptr = proc_first;
-
 	/* alloc memory */
+	proc_ptr = proc_first;
+
 	while (proc_ptr) {
 
 		/* group or standalone proc */
 		if (proc_ptr->group == NULL) {
 
-			/* relocate or strip? */
-			if ((strip_opt != 0) && (proc_ptr->label->refthispass < 1)) {
-				/* strip this unused code from the ROM */
-				proc_ptr->bank = STRIPPED_BANK;
-			} else {
+			/* relocate if not stripped */
+			if (proc_ptr->bank != STRIPPED_BANK) {
 				/* relocate code to any unused bank in ROM */
 				int reloc_bank = -1;
 				int check_bank = 0;
@@ -550,7 +680,7 @@ proc_reloc(void)
 							while (proc_ptr) {
 								if (proc_ptr->bank == PROC_BANK) {
 									printf("Proc: %s Bank: 0x%02X Size: %4d %s\n",
-										proc_ptr->name, proc_ptr->bank == PROC_BANK ? 0 : proc_ptr->bank, proc_ptr->size,
+										proc_ptr->label->name + 1, proc_ptr->bank == PROC_BANK ? 0 : proc_ptr->bank, proc_ptr->size,
 										proc_ptr->bank == PROC_BANK && proc_ptr == current ? " ** too big **" : proc_ptr->bank == PROC_BANK ? "** unassigned **" : "");
 									total += proc_ptr->size;
 								}
@@ -558,7 +688,7 @@ proc_reloc(void)
 							}
 							printf("\nTotal bytes that didn't fit in ROM: %d\n\n", total);
 							if (totfree > total && current)
-								printf("Try splitting the \"%s\" procedure into smaller chunks.\n\n", current->name);
+								printf("Try splitting the \"%s\" procedure into smaller chunks.\n\n", current->label->name + 1);
 							else
 								printf("There are %d bytes that won't fit into the currently available BANK space\n\n", total - totfree);
 							errcnt++;
@@ -582,7 +712,8 @@ proc_reloc(void)
 		else {
 			/* reloc proc */
 			group = proc_ptr->group;
-			proc_ptr->bank = group->bank;
+			if (proc_ptr->bank != STRIPPED_BANK)
+				proc_ptr->bank = group->bank;
 			proc_ptr->org += (group->org - group->base);
 		}
 
@@ -650,7 +781,6 @@ proc_reloc(void)
 
 	/* reset */
 	proc_ptr = NULL;
-	proc_nb = 0;
 
 	/* initialize trampoline bank/addr after relocation */
 	if (newproc_opt) {
@@ -701,7 +831,7 @@ proc_look(void)
 	hash = symhash();
 	ptr = proc_tbl[hash];
 	while (ptr) {
-		if (!strcmp(&symbol[1], ptr->name))
+		if (!strcmp(symbol, ptr->label->name))
 			break;
 		ptr = ptr->next;
 	}
@@ -731,7 +861,6 @@ proc_install(void)
 	}
 
 	/* initialize it */
-	strcpy(ptr->name, &symbol[1]);
 	hash = symhash();
 	ptr->bank = (optype == P_PGROUP)  ? GROUP_BANK : PROC_BANK;
 	ptr->base = proc_ptr ? loccnt : 0;
@@ -740,6 +869,7 @@ proc_install(void)
 	ptr->call = 0;
 	ptr->kickc = kickc_mode;
 	ptr->defined = 0;
+	ptr->is_skippable = 0;
 	ptr->link = NULL;
 	ptr->next = proc_tbl[hash];
 	ptr->group = proc_ptr;
@@ -811,9 +941,9 @@ proc_sortlist(void)
 			struct t_proc *previous = NULL;
 			while(!inserted && list)
 			{
-				if(list->size < proc_ptr->size)
+				if (list->size < proc_ptr->size)
 				{
-					if(!previous)
+					if (!previous)
 						sorted_list = proc_ptr;
 					else
 						previous->link = proc_ptr;
@@ -827,7 +957,7 @@ proc_sortlist(void)
 				}
 			}
 
-			if(!inserted)
+			if (!inserted)
 				previous->link = proc_ptr;
 		}
 	}
@@ -851,7 +981,7 @@ list_procs(void)
 		while (proc_ptr) {
 			if ((proc_ptr->group == NULL) && (proc_ptr->bank < UNDEFINED_BANK)) {
 				if (fprintf( lst_fp, "Size: $%04X, Addr: $%02X:%04X, %s %s\n", proc_ptr->size, proc_ptr->bank, proc_ptr->label->value,
-					(proc_ptr->type == P_PGROUP) ? ".procgroup" : "     .proc" , proc_ptr->name) < 0)
+					(proc_ptr->type == P_PGROUP) ? ".procgroup" : "     .proc" , proc_ptr->label->name + 1) < 0)
 					break;
 			}
 			proc_ptr = proc_ptr->link;

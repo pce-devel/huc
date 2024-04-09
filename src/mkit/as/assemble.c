@@ -86,6 +86,28 @@ assemble(int do_label)
 		return;
 	}
 
+	/* unused PROC/PROCGROUP that has been stripped out;
+	 * check for a '.endp' or '.endprocgroup'
+	 * to toggle state
+	 */
+	if (skipping_stripped) {
+		i = preproc_sfield;
+		while (isspace(prlnbuf[i])) { i++; }
+		if ((oplook(&i) >= 0) && (opflg == PSEUDO)) {
+			switch (opval) {
+
+			case P_ENDP:		// .endp
+			case P_ENDPG:		// .endprocgroup
+				if (optype != skipping_stripped)
+					break;
+				skipping_stripped = 0;
+				if (pass == LAST_PASS)
+					println();
+			}
+		}
+		return;
+	}
+
 	/* IF/ELSE section;
 	 * check for a '.else' or '.endif'
 	 * to toggle state

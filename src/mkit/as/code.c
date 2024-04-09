@@ -1049,7 +1049,7 @@ getbranch(int opcode_length)
 	struct t_branch * branch;
 	unsigned int addr;
 
-#if 0
+#if 1
 	/* do not track yet, because .ifref can change after the first */
 	/* pass which can then change the sequence of tracked branches */
 	if (pass == FIRST_PASS)

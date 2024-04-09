@@ -148,6 +148,7 @@ void do_call(int *ip);
 void do_leave(int *ip);
 void do_proc(int *ip);
 void do_endp(int *ip);
+void proc_strip(void);
 void proc_reloc(void);
 void list_procs(void);
 int check_trampolines(void);

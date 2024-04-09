@@ -22,6 +22,8 @@ println(void)
 		return;
 	if (!xlist || !asm_opt[OPT_LIST] || (expand_macro && !asm_opt[OPT_MACRO]))
 		return;
+	if (cloaking_stripped)
+		return;
 
 	/* undo the pre-processor's modification to the line */
 	if (preproc_modidx != 0) {

@@ -271,7 +271,7 @@ typedef struct t_proc {
 	int type;
 	int kickc;
 	int defined;
-	char name[SBOLSZ];
+	int is_skippable;
 } t_proc;
 
 /* update pc_symbol when adding or changing! */

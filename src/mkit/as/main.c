@@ -312,7 +312,7 @@ main(int argc, char **argv)
 		) {
 		machine = &pce;
 	}
-	else if(
+	else if (
 			((prg_name[0] == 'N') || (prg_name[0] == 'n')) &&
 			((prg_name[1] == 'E') || (prg_name[1] == 'e')) &&
 			((prg_name[2] == 'S') || (prg_name[2] == 's'))
@@ -376,7 +376,7 @@ main(int argc, char **argv)
 				break;
 
 			case 'I':
-				if(!add_path(optarg, strlen(optarg)+1))
+				if (!add_path(optarg, strlen(optarg)+1))
 				{
 					printf("Error while adding include path\n");
 					return 0;
@@ -421,7 +421,7 @@ main(int argc, char **argv)
 	asm_opt[OPT_OPTIMIZE] |= strip_opt;
 
 	/* check for missing asm file */
-	if(optind == argc)
+	if (optind == argc)
 	{
 		fprintf(stderr, "Missing input file\n");
 		return 0;
@@ -608,6 +608,7 @@ main(int argc, char **argv)
 		rs_base = 0;
 		rs_mprbank = UNDEFINED_BANK;
 		rs_overlay = 0;
+		proc_ptr = NULL;
 		proc_nb = 0;
 		kickc_mode = 0;
 		sdcc_mode = 0;
@@ -688,7 +689,7 @@ main(int argc, char **argv)
 				/* N.B. $2000 is a legal loccnt that says that the bank is full! */
 				if (loccnt > 0x2000) {
 					if (proc_ptr) {
-						snprintf(cmd, sizeof(cmd), ".proc/.progroup \"%s\" is larger than 8192 bytes!\n", proc_ptr->name);
+						snprintf(cmd, sizeof(cmd), ".proc/.progroup \"%s\" is larger than 8192 bytes!\n", proc_ptr->label->name + 1);
 						fatal_error(cmd);
 						break;
 					}
@@ -731,6 +732,19 @@ main(int argc, char **argv)
 		if (errcnt) {
 			printf("# %d error(s)\n", errcnt);
 			exit(1);
+		}
+
+		/* check which procedures have been referenced */
+		if (pass == FIRST_PASS) {
+//			/* force a 3rd pass for testing */
+//			need_another_pass = 1;
+
+			/* only skip stripped procedures if we're going to
+			** run a 3rd pass anyway, just hide them if not */
+			allow_skipping = need_another_pass;
+
+			/* strip unreferenced procedures */
+			proc_strip();
 		}
 
 		/* set pass to FIRST_PASS to run EXTRA_PASS next */
