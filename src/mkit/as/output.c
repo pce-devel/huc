@@ -1,3 +1,4 @@
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 #include "defs.h"
@@ -400,9 +401,9 @@ write_srec(char *file, char *ext, int base)
 
 	/* status message */
 	if (!strcmp(ext, "mx"))
-		printf("writing mx file... ");
+		printf("Writing .MX file... ");
 	else
-		printf("writing s-record file... ");
+		printf("Writing S-record file... ");
 
 	/* flush output */
 	fflush(stdout);
@@ -414,7 +415,7 @@ write_srec(char *file, char *ext, int base)
 
 	/* open the file */
 	if ((fp = fopen(fname, "w")) == NULL) {
-		printf("can not open file '%s'!\n", fname);
+		fprintf(ERROUT, "Error: Cannot open file \"%s\"!\n", fname);
 		return;
 	}
 
@@ -480,41 +481,13 @@ write_srec(char *file, char *ext, int base)
 
 
 /* ----
- * fatal_error()
+ * vmessage()
  * ----
- * stop compilation
+ * display the current source line and a message
  */
 
-void
-fatal_error(char *stptr)
-{
-	error(stptr);
-	stop_pass = 1;
-}
-
-
-/* ----
- * error()
- * ----
- * error printing routine
- */
-
-void
-error(char *stptr)
-{
-	warning(stptr);
-	errcnt++;
-}
-
-
-/* ----
- * warning()
- * ----
- * warning printing routine
- */
-
-void
-warning(char *stptr)
+static void
+vmessage(const char *msgtype, const char *format, va_list args)
 {
 	int i, temp;
 
@@ -529,7 +502,7 @@ warning(char *stptr)
 	/* update the current file name */
 	if (infile_error != infile_num) {
 		infile_error = infile_num;
-		printf("#[%i]   %s\n", infile_num, input_file[infile_num].file->name);
+		fprintf(ERROUT, "#[%i]   \"%s\"\n", infile_num, input_file[infile_num].file->name);
 	}
 
 	/* undo the pre-processor's modification to the line */
@@ -539,11 +512,66 @@ warning(char *stptr)
 
 	/* output the line and the error message */
 	loadlc(loccnt, 0);
-	printf("%s\n", prlnbuf);
-	printf("       %s\n", stptr);
+	fprintf(ERROUT, "%s\n       %s", prlnbuf, msgtype);
+	vfprintf(ERROUT, format, args);
+	fprintf(ERROUT, "\n");
 
 	/* redo the pre-processor's modification to the line */
 	if (preproc_modidx != 0) {
 		prlnbuf[preproc_modidx] = ';';
 	}
+}
+
+
+/* ----
+ * fatal_error()
+ * ----
+ * stop compilation
+ */
+
+void
+fatal_error(const char *format, ...)
+{
+	va_list args;
+
+	va_start(args, format);
+	vmessage("Error: ", format, args);
+	va_end(args);
+	errcnt++;
+	stop_pass = 1;
+}
+
+
+/* ----
+ * error()
+ * ----
+ * error printing routine
+ */
+
+void
+error(const char *format, ...)
+{
+	va_list args;
+
+	va_start(args, format);
+	vmessage("Error: ", format, args);
+	va_end(args);
+	errcnt++;
+}
+
+
+/* ----
+ * warning()
+ * ----
+ * warning printing routine
+ */
+
+void
+warning(const char *format, ...)
+{
+	va_list args;
+
+	va_start(args, format);
+	vmessage("Warning: ", format, args);
+	va_end(args);
 }

@@ -1121,12 +1121,13 @@ getbranch(int opcode_length)
 		/* display the branches that have been converted */
 		if (branch->convert && asm_opt[OPT_WARNING]) {
 			loccnt -= opcode_length;
-			warning("Warning: Converted to long-branch!\n");
+			warning("Converted to long-branch!\n");
 			loccnt += opcode_length;
 		}
 	} else {
 		/* check if it is outside short-branch range */
 		if ((branch->label != NULL) &&
+		    (branch->label->defthispass) &&
 		    (branch->label->type == DEFABS)) {
 			addr = (branch->label->value & 0xFFFF) - branch->addr;
 
@@ -1136,8 +1137,7 @@ getbranch(int opcode_length)
 				branch->convert = 1;
 			}
 
-			/* result uncertain if not already defined this pass */
-			branch->checked = branch->label->defthispass;
+			branch->checked = 1;
 		}
 	}
 

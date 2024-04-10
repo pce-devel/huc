@@ -286,9 +286,7 @@ start:
 				const char * name = (sdcc_final) ? "sdcc-final.asm" : "kickc-final.asm";
 				sdcc_final = kickc_final = 0;
 				if (open_input(name) == -1) {
-					char message [512];
-					sprintf(message, "Cannot open \"%s\" file!", name);
-					fatal_error(message);
+					fatal_error("Cannot open \"%s\" file!", name);
 					return (-1);
 				}
 				in_final = 1;
@@ -463,7 +461,7 @@ open_input(const char *name)
 
 	/* only MAX_NESTING nested input files */
 	if (infile_num == MAX_NESTING) {
-		error("Too many include levels, max. 31!");
+		error("Too many include levels, maximum 31!");
 		return (1);
 	}
 
@@ -524,7 +522,7 @@ open_input(const char *name)
 	input_file[infile_num].if_level = if_level;
 	input_file[infile_num].file = file;
 	if ((pass == LAST_PASS) && (xlist) && (list_level))
-		fprintf(lst_fp, "#[%i]   %s\n", infile_num, input_file[infile_num].file->name);
+		fprintf(lst_fp, "#[%i]   \"%s\"\n", infile_num, input_file[infile_num].file->name);
 
 	/* ok */
 	return (0);
@@ -541,21 +539,19 @@ int
 close_input(void)
 {
 	if (proc_ptr) {
-		fatal_error("Incomplete .proc/.procgroup!");
+		fatal_error("Incomplete .PROC/.PROCGROUP!");
 		return (-1);
 	}
 	if (scopeptr) {
-		fatal_error("Incomplete .struct!");
+		fatal_error("Incomplete .STRUCT!");
 		return (-1);
 	}
 	if (in_macro) {
-		fatal_error("Incomplete MACRO definition!");
+		fatal_error("Incomplete .MACRO definition!");
 		return (-1);
 	}
 	if (input_file[infile_num].if_level != if_level) {
-		char message[128];
-		sprintf(message, "Incomplete IF/ENDIF statement, beginning at line %d!", if_line[if_level-1]);
-		fatal_error(message);
+		fatal_error("Incomplete .IF/.ENDIF statement, beginning at line %d!", if_line[if_level-1]);
 		return (-1);
 	}
 	if (infile_num <= 1)
@@ -567,7 +563,7 @@ close_input(void)
 	slnum = input_file[infile_num].lnum;
 	in_fp = input_file[infile_num].fp;
 	if ((pass == LAST_PASS) && (xlist) && (list_level))
-		fprintf(lst_fp, "#[%i]   %s\n", infile_num, input_file[infile_num].file->name);
+		fprintf(lst_fp, "#[%i]   \"%s\"\n", infile_num, input_file[infile_num].file->name);
 
 	/* ok */
 	return (0);

@@ -108,8 +108,8 @@ int  macro_getargtype(char *arg);
 /* MAIN.C */
 int  main(int argc, char **argv);
 void help(void);
-void show_bank_usage(int which_bank);
-void show_seg_usage(void);
+void show_bank_usage(FILE *fp, int which_bank);
+void show_seg_usage(FILE *fp);
 
 /* MAP.C */
 int pce_load_map(char *fname, int mode);
@@ -125,9 +125,9 @@ void putword(int offset, int data);
 void putdword(int offset, int data);
 void putbuffer(void *data, int size);
 void write_srec(char *fname, char *ext, int base);
-void error(char *stptr);
-void warning(char *stptr);
-void fatal_error(char *stptr);
+void error(const char *format, ...);
+void warning(const char *format, ...);
+void fatal_error(const char *format, ...);
 
 /* PCX.C */
 int  pcx_pack_8x8_tile(unsigned char *buffer, int x, int y);
@@ -151,7 +151,7 @@ void do_endp(int *ip);
 void proc_strip(void);
 void proc_reloc(void);
 void list_procs(void);
-int check_trampolines(void);
+int check_thunks(void);
 
 /* SYMBOL.C */
 int  symhash(void);

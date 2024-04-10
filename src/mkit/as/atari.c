@@ -207,7 +207,7 @@ fuji_pack_8x8_tile(unsigned char *buffer, void *data, int line_offset, int forma
 
 	default:
 		/* other formats not supported */
-		error("Internal error: unsupported format passed to 'pack_8x8_tile'!");
+		error("Unsupported format passed to 'pack_8x8_tile'!");
 		break;
 	}
 

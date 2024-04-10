@@ -422,7 +422,7 @@ pcx_load(char *name)
 	/* malloc a buffer */
 	pcx_buf = malloc((size_t)pcx_w * pcx_h);
 	if (pcx_buf == NULL) {
-		error("Can not load file, not enough memory!");
+		error("Cannot load file, not enough memory!");
 		return (0);
 	}
 
@@ -432,7 +432,7 @@ pcx_load(char *name)
 	else if ((pcx.bpp == 1) && (pcx.np <= 4))
 		decode_16(f, pcx_w, pcx_h);
 	else {
-		error("Unsupported or invalid PCX format!");
+		error("Unsupported or invalid .PCX file format!");
 		return (0);
 	}
 
@@ -490,7 +490,7 @@ decode_256(FILE *f, int w, int h)
 		break;
 
 	default:
-		error("Unsupported PCX encoding scheme!");
+		error("Unsupported .PCX file encoding scheme!");
 		return;
 	}
 
@@ -530,7 +530,7 @@ decode_16(FILE *f, int w, int h)
 	switch (pcx.encoding) {
 	case 0:
 		/* raw */
-		error("Unsupported PCX encoding scheme!");
+		error("Unsupported .PCX file encoding scheme!");
 		break;
 
 	case 1:
@@ -598,7 +598,7 @@ decode_16(FILE *f, int w, int h)
 		break;
 
 	default:
-		error("Unsupported PCX encoding scheme!");
+		error("Unsupported .PCX file encoding scheme!");
 		return;
 	}
 
@@ -668,7 +668,7 @@ bmp_load(char *name)
 	/* malloc a buffer */
 	pcx_buf = malloc((size_t)pcx_w * pcx_h);
 	if (pcx_buf == NULL) {
-		error("Can not load file, not enough memory!");
+		error("Cannot load file, not enough memory!");
 		goto errorCleanup;
 	}
 	for (i=0;i<header.colors;i++)
@@ -717,7 +717,7 @@ bmp_load(char *name)
 /*
 	aImageRows = (png_byte **) malloc(uHeight * sizeof(png_byte *));
 	if (aImageRows == NULL) {
-		error("Can not load file, not enough memory!");
+		error("Cannot load file, not enough memory!");
 		goto errorCleanup;
 	}
 	for (i = 0; i < uHeight; i++)
@@ -786,18 +786,18 @@ png_load(char *name)
 	/* initialize libpng for reading the file */
 	pPngStruct = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 	if (!pPngStruct) {
-		error("Can not load file, not enough memory!");
+		error("Cannot load file, not enough memory!");
 		goto errorCleanup;
 	}
 
 	pPngInfo = png_create_info_struct(pPngStruct);
 	if (!pPngInfo) {
-		error("Can not load file, not enough memory!");
+		error("Cannot load file, not enough memory!");
 		goto errorCleanup;
 	}
 
 	if (setjmp(png_jmpbuf(pPngStruct))) {
-		error("Unsupported or invalid PNG file!");
+		error("Unsupported or invalid .PNG file!");
 		goto errorCleanup;
 	}
 
@@ -808,7 +808,7 @@ png_load(char *name)
 	png_get_IHDR(pPngStruct, pPngInfo, &uWidth, &uHeight, &iBitDepth, &iColorType, NULL, NULL, NULL);
 
 	if (iColorType != PNG_COLOR_TYPE_PALETTE) {
-		error("Unsupported or invalid PNG picture format!");
+		error("Unsupported or invalid .PNG picture format!");
 		goto errorCleanup;
 	}
 
@@ -834,7 +834,7 @@ png_load(char *name)
 	/* malloc a buffer */
 	pcx_buf = malloc((size_t)pcx_w * pcx_h);
 	if (pcx_buf == NULL) {
-		error("Can not load file, not enough memory!");
+		error("Cannot load file, not enough memory!");
 		goto errorCleanup;
 	}
 
@@ -860,7 +860,7 @@ png_load(char *name)
 	/* create a list of each row's starting point in memory */
 	aImageRows = (png_byte **) malloc(uHeight * sizeof(png_byte *));
 	if (aImageRows == NULL) {
-		error("Can not load file, not enough memory!");
+		error("Cannot load file, not enough memory!");
 		goto errorCleanup;
 	}
 

@@ -102,7 +102,7 @@ extern char symbol[];                           /* temporary symbol storage */
 extern int undef;                               /* undefined symbol in expression flag */
 extern int notyetdef;                           /* undefined-in-current-pass symbol in expr */
 extern unsigned int value;                      /* operand field value */
-extern int newproc_opt;                         /* use "new" style of procedure trampolines */
+extern int newproc_opt;                         /* use "new" style of procedure thunks */
 extern int strip_opt;                           /* strip unused procedures? */
 extern int kickc_opt;                           /* NZ if -kc flag on command line */
 extern int sdcc_opt;                            /* NZ if -sdcc flag on command line */
@@ -111,7 +111,7 @@ extern int xlist;                               /* listing file main flag */
 extern int list_level;                          /* output level */
 extern int asm_opt[MAX_OPTS];                   /* assembler option state */
 extern int opvaltab[6][16];
-extern int call_bank;                           /* bank for .proc trampolines */
+extern int call_bank;                           /* bank for .proc thunks */
 extern int kickc_mode;                          /* NZ if currently in KickC mode */
 extern int sdcc_mode;                           /* NZ if assembling SDCC code */
 extern int kickc_final;                         /* auto-include "kickc-final.asm" */

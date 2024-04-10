@@ -7,6 +7,9 @@
 #define PCE_ASM_VERSION ("PC Engine Assembler (" GIT_VERSION ", " GIT_DATE ")")
 #define FUJI_ASM_VERSION ("Fuji Assembler for Atari (" GIT_VERSION ", " GIT_DATE ")")
 
+/* send errors and warnings to either stdout or stderr */
+#define ERROUT stderr
+
 /* path separator */
 #if defined(_WIN32)
 #define PATH_SEPARATOR		'\\'
@@ -79,7 +82,7 @@
 #define S_CONST		8 /* SDCC: permanent const data */
 #define S_OSEG		9 /* SDCC: overlayed variables in ZP */
 #define MAX_S		10 /* selectable section types */
-#define S_PROC		10 /* info only, trampolines for .proc */
+#define S_PROC		10 /* info only, thunks for .proc */
 
 /* section flag mask */
 #define S_IS_RAM	1

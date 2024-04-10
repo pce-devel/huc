@@ -80,11 +80,11 @@ do_call(int *ip)
 				} else {
 					/* init */
 					if (call_bank > max_bank) {
-						/* don't increase ROM size until we need a trampoline */
+						/* don't increase ROM size until we need a thunk */
 						if (call_bank > bank_limit) {
-							fatal_error("There is no target memory left to allocate a bank for .proc trampolines!");
+							fatal_error("There is no target memory left to allocate a bank for .PROC thunks!");
 							if (asm_opt[OPT_OPTIMIZE] == 0) {
-								printf("Optimized procedure packing is currently disabled, use \"-O\" to enable.\n\n");
+								fprintf(ERROUT, "Optimized procedure packing is currently disabled, use \"-O\" to enable.\n\n");
 							}
 							return;
 						}
@@ -93,13 +93,13 @@ do_call(int *ip)
 
 					/* new call */
 					if (newproc_opt == 0) {
-						/* check that the new trampoline won't overrun the bank */
+						/* check that the new thunk won't overrun the bank */
 						if (((call_ptr + 17) & 0xE000) != (call_1st & 0xE000)) {
-							error("The .proc trampoline bank is full, there are too many procedures!");
+							error("The .PROC thunk bank is full, there are too many procedures!");
 							return;
 						}
 
-						/* install HuC trampolines at start of MPR4, map code into MPR5 */
+						/* install HuC thunks at start of MPR4, map code into MPR5 */
 						value = call_ptr;
 
 						poke(call_ptr++, 0xA8);			// tay
@@ -121,13 +121,13 @@ do_call(int *ip)
 						poke(call_ptr++, 0x98);			// tya
 						poke(call_ptr++, 0x60);			// rts
 					} else {
-						/* check that the new trampoline won't overrun the bank */
+						/* check that the new thunk won't overrun the bank */
 						if (((call_ptr - 9) & 0xE000) != (call_1st & 0xE000)) {
-							error("The .proc trampoline bank is full, there are too many procedures!");
+							error("The .PROC thunk bank is full, there are too many procedures!");
 							return;
 						}
 
-						/* install new trampolines at end of MPR7, map code into MPR6 */
+						/* install new thunks at end of MPR7, map code into MPR6 */
 						poke(call_ptr--, (proc->org + 0xC000) >> 8);
 						poke(call_ptr--, (proc->org + 0xC000) & 255);
 						poke(call_ptr--, 0x4C);			// jmp ...
@@ -231,7 +231,7 @@ do_proc(int *ip)
 	if (optype == P_KICKC) {
 		/* reserve "{}" syntax for KickC code */
 		if (kickc_mode == 0) {
-			fatal_error("Cannot use \"{}\" syntax in .pceas mode!");
+			fatal_error("Cannot use \"{}\" syntax in .PCEAS mode!");
 			return;
 		}
 
@@ -244,14 +244,14 @@ do_proc(int *ip)
 
 	/* do not mix different types of label-scope */
 	if (scopeptr) {
-		fatal_error("Cannot declare a .proc/.procgroup inside a .struct!");
+		fatal_error("Cannot declare a .PROC/.PROCGROUP inside a .STRUCT!");
 			return;
 	}
 
 	/* check if nesting procs/groups */
 	if (proc_ptr) {
 		if (optype == P_PGROUP) {
-			fatal_error("Cannot declare a .procgroup inside a .proc/.procgroup!");
+			fatal_error("Cannot declare a .PROCGROUP inside a .PROC/.PROCGROUP!");
 			return;
 		}
 		else {
@@ -277,7 +277,7 @@ do_proc(int *ip)
 			if (symbol[0])
 				return;
 			if (optype == P_PROC) {
-				fatal_error(".proc name is missing!");
+				fatal_error(".PROC name is missing!");
 				return;
 			}
 
@@ -293,11 +293,11 @@ do_proc(int *ip)
 
 	/* check symbol */
 	if (symbol[1] == '.' || symbol[1] == '@') {
-		fatal_error(".proc/.procgroup name cannot be a local label!");
+		fatal_error(".PROC/.PROCGROUP name cannot be a local label!");
 		return;
 	}
 	if (symbol[1] == '!') {
-		fatal_error(".proc/.procgroup name cannot be a multi-label!");
+		fatal_error(".PROC/.PROCGROUP name cannot be a multi-label!");
 		return;
 	}
 
@@ -313,7 +313,7 @@ do_proc(int *ip)
 			return;
 	}
 	if (pass == FIRST_PASS && proc_ptr->defined) {
-		fatal_error(".proc/.procgroup multiply defined!");
+		fatal_error(".PROC/.PROCGROUP multiply defined!");
 		return;
 	}
 
@@ -328,7 +328,7 @@ do_proc(int *ip)
 	if (proc_ptr->bank == STRIPPED_BANK && allow_skipping && proc_ptr->is_skippable) {
 		#if DEBUG_STRIPPING
 		printf("Skipping %s \"%s\" with parent \"%s\".\n",
-			proc_ptr->type == P_PROC ? ".proc" : ".procgroup",
+			proc_ptr->type == P_PROC ? ".PROC" : ".PROCGROUP",
 			proc_ptr->label->name + 1,
 			proc_ptr->group == NULL ? "none" : proc_ptr->group->label->name + 1);
 		#endif
@@ -342,7 +342,7 @@ do_proc(int *ip)
 
 	#if DEBUG_STRIPPING
 	printf("Assembling %s \"%s\" to bank %d with parent \"%s\".\n",
-		proc_ptr->type == P_PROC ? ".proc" : ".procgroup",
+		proc_ptr->type == P_PROC ? ".PROC" : ".PROCGROUP",
 		proc_ptr->label->name + 1,
 		proc_ptr->bank,
 		proc_ptr->group == NULL ? "none" : proc_ptr->group->label->name + 1);
@@ -403,17 +403,17 @@ do_endp(int *ip)
 	if (optype == P_KICKC) {
 		/* reserve "{}" syntax for KickC code */
 		if (kickc_mode == 0) {
-			fatal_error("Cannot use \"{}\" syntax in .pceas mode!");
+			fatal_error("Cannot use \"{}\" syntax in .PCEAS mode!");
 			return;
 		}
 	}
 
 	if (proc_ptr == NULL) {
-		fatal_error("Unexpected .endp/.endprocgroup!");
+		fatal_error("Unexpected .ENDP/.ENDPROCGROUP!");
 		return;
 	}
 	if (optype != proc_ptr->type) {
-		fatal_error("Unexpected .endp/.endprocgroup!");
+		fatal_error("Unexpected .ENDP/.ENDPROCGROUP!");
 		return;
 	}
 
@@ -424,7 +424,7 @@ do_endp(int *ip)
 	/* disable skipping if the procedure starts and ends at different .if nesting */
 	if (!(proc_ptr->is_skippable = (proc_ptr->is_skippable == if_level))) {
 		if (asm_opt[OPT_WARNING])
-			warning("Warning: .proc/.procgroup has mismatched .if nesting!\n");
+			warning(".PROC/.PROCGROUP has mismatched .IF nesting!\n");
 	}
 
 	/* restore procedure's initial section */
@@ -453,7 +453,7 @@ do_endp(int *ip)
 
 	/* sanity check */
 	if (bank != proc_ptr->bank) {
-		fatal_error(".endp/.endprocgroup is in a different bank to .proc/,procgroup!");
+		fatal_error(".ENDP/.ENDPROCGROUP is in a different bank to .PROC/.PROCGROUP!");
 		return;
 	}
 
@@ -478,7 +478,7 @@ do_endp(int *ip)
 
 	#if DEBUG_STRIPPING
 	printf("Ending %s \"%s\" with parent \"%s\".\n",
-		optype == P_PROC ? ".proc" : ".procgroup",
+		optype == P_PROC ? ".PROC" : ".PROCGROUP",
 		proc_ptr->label->name + 1,
 		proc_ptr->group == NULL ? "none" : proc_ptr->group->label->name + 1);
 	#endif
@@ -544,7 +544,7 @@ proc_strip(void)
 				/* strip this unused code from the ROM */
 				#if DEBUG_STRIPPING
 				printf("Stripping %s \"%s\" with parent \"%s\".\n",
-					proc_ptr->type == P_PROC ? ".proc" : ".procgroup",
+					proc_ptr->type == P_PROC ? ".PROC" : ".PROCGROUP",
 					proc_ptr->label->name + 1,
 					proc_ptr->group == NULL ? "none" : proc_ptr->group->label->name + 1);
 				#endif
@@ -562,7 +562,7 @@ proc_strip(void)
 				/* strip this unused code from the ROM */
 				#if DEBUG_STRIPPING
 				printf("Stripping %s \"%s\" with parent \"%s\".\n",
-					proc_ptr->type == P_PROC ? ".proc" : ".procgroup",
+					proc_ptr->type == P_PROC ? ".PROC" : ".PROCGROUP",
 					proc_ptr->label->name + 1,
 					proc_ptr->group == NULL ? "none" : proc_ptr->group->label->name + 1);
 				#endif
@@ -663,34 +663,34 @@ proc_reloc(void)
 
 							current = proc_ptr;
 
-							fatal_error("\nThere is not enough free target memory for all the procedures!\n");
+							fatal_error("There is not enough free target memory for all the procedures!\n");
 
 							if (asm_opt[OPT_OPTIMIZE] == 0) {
-								printf("Optimized procedure packing is currently disabled, use \"-O\" to enable.\n\n");
+								fprintf(ERROUT, "Optimized procedure packing is currently disabled, use \"-O\" to enable.\n\n");
 							}
 
 							for (i = new_bank; i <= max_bank; i++) {
-								printf("BANK %3X: %d bytes free\n", i, bank_free[i]);
+								fprintf(ERROUT, "BANK %3X: %d bytes free\n", i, bank_free[i]);
 								totfree += bank_free[i];
 							}
-							printf("\nTotal free space in all banks %d.\n\n", totfree);
+							fprintf(ERROUT, "\nTotal free space in all banks %d.\n\n", totfree);
 
 							total = 0;
 							proc_ptr = proc_first;
 							while (proc_ptr) {
 								if (proc_ptr->bank == PROC_BANK) {
-									printf("Proc: %s Bank: 0x%02X Size: %4d %s\n",
+									fprintf(ERROUT, "Proc: %s Bank: 0x%02X Size: %4d %s\n",
 										proc_ptr->label->name + 1, proc_ptr->bank == PROC_BANK ? 0 : proc_ptr->bank, proc_ptr->size,
 										proc_ptr->bank == PROC_BANK && proc_ptr == current ? " ** too big **" : proc_ptr->bank == PROC_BANK ? "** unassigned **" : "");
 									total += proc_ptr->size;
 								}
 								proc_ptr = proc_ptr->link;
 							}
-							printf("\nTotal bytes that didn't fit in ROM: %d\n\n", total);
+							fprintf(ERROUT, "\nTotal bytes that didn't fit in ROM: %d\n\n", total);
 							if (totfree > total && current)
-								printf("Try splitting the \"%s\" procedure into smaller chunks.\n\n", current->label->name + 1);
+								fprintf(ERROUT, "Try splitting the \"%s\" procedure into smaller chunks.\n\n", current->label->name + 1);
 							else
-								printf("There are %d bytes that won't fit into the currently available BANK space\n\n", total - totfree);
+								fprintf(ERROUT, "There are %d bytes that won't fit into the currently available BANK space\n\n", total - totfree);
 							errcnt++;
 
 							return;
@@ -782,7 +782,7 @@ proc_reloc(void)
 	/* reset */
 	proc_ptr = NULL;
 
-	/* initialize trampoline bank/addr after relocation */
+	/* initialize thunk bank/addr after relocation */
 	if (newproc_opt) {
 		call_bank = 0;
 		call_ptr  = 0xFFF5;
@@ -902,7 +902,7 @@ proc_install(void)
 void
 poke(int addr, int data)
 {
-	/* do not overwrite existing data! check_trampolines() will report */
+	/* do not overwrite existing data! check_thunks() will report */
 	/* this error later on and show a segment dump to provide help */
 	if ((map[call_bank][(addr & 0x1FFF)] & 0x0F) == 0x0F) {
 		rom[call_bank][(addr & 0x1FFF)] = data;
@@ -980,7 +980,7 @@ list_procs(void)
 	if ((lst_fp != NULL) && (proc_ptr != NULL) && (fprintf(lst_fp, "\nPROCEDURE LIST (in order of size):\n\n") > 0)) {
 		while (proc_ptr) {
 			if ((proc_ptr->group == NULL) && (proc_ptr->bank < UNDEFINED_BANK)) {
-				if (fprintf( lst_fp, "Size: $%04X, Addr: $%02X:%04X, %s %s\n", proc_ptr->size, proc_ptr->bank, proc_ptr->label->value,
+				if (fprintf(lst_fp, "Size: $%04X, Addr: $%02X:%04X, %s %s\n", proc_ptr->size, proc_ptr->bank, proc_ptr->label->value,
 					(proc_ptr->type == P_PGROUP) ? ".procgroup" : "     .proc" , proc_ptr->label->name + 1) < 0)
 					break;
 			}
@@ -991,13 +991,13 @@ list_procs(void)
 
 
 /* ----
- * check_trampolines()
+ * check_thunks()
  * ----
  * were they overwritten by other code/data?
  */
 
 int
-check_trampolines(void)
+check_thunks(void)
 {
 	int first_bad = -1;
 	int final_bad = -1;
@@ -1021,11 +1021,11 @@ check_trampolines(void)
 	}
 
 	if (first_bad >= 0) {
-		printf("Error: .proc trampolines between $%04X-$%04X are overwritten by code or data!\n\nTrampoline Bank ...\n",
+		fatal_error(".PROC thunks between $%04X-$%04X are overwritten by code or data!\n\nThunk Bank ...\n",
 			first_bad, final_bad);
 		dump_seg = 2;
-		show_bank_usage(call_bank);
-		printf("\n");
+		show_bank_usage(ERROUT, call_bank);
+		fprintf(ERROUT, "\n");
 		return (1);
 	}
 	return (0);

@@ -195,7 +195,7 @@ func_getargs(void)
 	int arg, level, space, flag;
 	int i, x;
 
-	/* can not nest too much macros */
+	/* Cannot nest macros too deeply */
 	if (func_idx == 7) {
 		error("Too many nested function calls!");
 		return (0);

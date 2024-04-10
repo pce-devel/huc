@@ -122,9 +122,7 @@ colsym(int *ip, int flag)
 	symbol[i + 1] = '\0';
 
 	if (i >= SBOLSZ - 1) {
-		char errorstr[512];
-		snprintf(errorstr, 512, "Symbol name too long ('%s' is %d chars long, max is %d)", symbol + 1, i, SBOLSZ - 2);
-		fatal_error(errorstr);
+		fatal_error("Symbol name too long ('%s' is %d chars long, max is %d)", symbol + 1, i, SBOLSZ - 2);
 		return (0);
 	}
 
@@ -396,9 +394,9 @@ labldef(int reason)
 		    ((reason == LOCATION) && (labl_mprbank < UNDEFINED_BANK) && (lablptr->mprbank != labl_mprbank))) {
 			fatal_error("Symbol's bank or address changed in final pass!");
 			#if 0
-			printf("lablptr->value = $%04x, labl_value = $%04x\n", lablptr->value, labl_value);
-			printf("lablptr->mprbank = $%02x, labl_mprbank = $%02x\n", lablptr->mprbank, labl_mprbank);
-			printf("lablptr->rombank = $%02x, labl_rombank = $%02x\n", lablptr->rombank, labl_rombank);
+			fprintf(ERROUT, "lablptr->value = $%04x, labl_value = $%04x\n", lablptr->value, labl_value);
+			fprintf(ERROUT, "lablptr->mprbank = $%02x, labl_mprbank = $%02x\n", lablptr->mprbank, labl_mprbank);
+			fprintf(ERROUT, "lablptr->rombank = $%02x, labl_rombank = $%02x\n", lablptr->rombank, labl_rombank);
 			#endif
 			return (-1);
 		}

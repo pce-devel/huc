@@ -254,7 +254,6 @@ main(int argc, char **argv)
 {
 	FILE *fp;
 	char *p;
-	char cmd[512];
 	int i, j, opt;
 	int file;
 	int ram_bank;
@@ -378,8 +377,8 @@ main(int argc, char **argv)
 			case 'I':
 				if (!add_path(optarg, strlen(optarg)+1))
 				{
-					printf("Error while adding include path\n");
-					return 0;
+					fprintf(ERROUT, "Error: Could not add '-I' include path!\n");
+					return (1);
 				}
 				break;
 
@@ -393,13 +392,13 @@ main(int argc, char **argv)
 
 			case 'h':
 				help();
-				return 0;
+				return (0);
 
 			case 0:
 				break;
 
 			default:
-				return 1;
+				return (1);
 		}
 	}
 
@@ -423,8 +422,8 @@ main(int argc, char **argv)
 	/* check for missing asm file */
 	if (optind == argc)
 	{
-		fprintf(stderr, "Missing input file\n");
-		return 0;
+		fprintf(ERROUT, "Error: Missing input file!\n");
+		return (1);
 	}
 
 	/* get file names */
@@ -450,9 +449,9 @@ main(int argc, char **argv)
 
 		if ((overlayflag == 1) &&
 		    ((scd_opt == 0) && (cd_opt == 0))) {
-			printf("Overlay option only valid for CD or SCD programs\n\n");
+			fprintf(ERROUT, "Error: Overlay option only valid for CD or SCD programs.\n\n");
 			help();
-			return (0);
+			return (1);
 		}
 	} else {
 		/* Force ipl_opt off if not PCEAS */
@@ -461,7 +460,7 @@ main(int argc, char **argv)
 
 	if (!file) {
 		help();
-		return (0);
+		return (1);
 	}
 
 	/* search file extension */
@@ -505,7 +504,7 @@ main(int argc, char **argv)
 
 	/* open the input file */
 	if (open_input(in_fname)) {
-		printf("Can not open input file '%s'!\n", in_fname);
+		fprintf(ERROUT, "Error: Cannot open input file \"%s\"!\n", in_fname);
 		exit(1);
 	}
 
@@ -689,8 +688,7 @@ main(int argc, char **argv)
 				/* N.B. $2000 is a legal loccnt that says that the bank is full! */
 				if (loccnt > 0x2000) {
 					if (proc_ptr) {
-						snprintf(cmd, sizeof(cmd), ".proc/.progroup \"%s\" is larger than 8192 bytes!\n", proc_ptr->label->name + 1);
-						fatal_error(cmd);
+						fatal_error(".PROC/.PROGROUP \"%s\" is larger than 8192 bytes!\n", proc_ptr->label->name + 1);
 						break;
 					}
 
@@ -703,11 +701,11 @@ main(int argc, char **argv)
 						page = (page + 1) & 7;
 
 					if ((section_flags[section] & S_IS_CODE) && page == 0) {
-						error("CODE or HOME section wrapped from MPR7 to MPR0!");
+						error(".CODE or .HOME section wrapped from MPR7 to MPR0!");
 					}
 
 					if (asm_opt[OPT_WARNING] && pass == LAST_PASS) {
-						printf("   (Warning. Opcode crossing page boundary $%04X, bank $%04X)\n", (page * 0x2000), bank);
+						warning("Opcode crossing page boundary $%04X, bank $%02X", (page * 0x2000), bank);
 					}
 				}
 				while (old_bank != bank) {
@@ -720,17 +718,16 @@ main(int argc, char **argv)
 
 			/* sanity check */
 			if (max_bank > bank_limit) {
-				snprintf(cmd, sizeof(cmd), "Assembler bug ... max_bank (0x%04X) > bank_limit (0x%04X)!\n", max_bank, bank_limit);
-				fatal_error(cmd);
+				fatal_error("Assembler bug ... max_bank (0x%04X) > bank_limit (0x%04X)!\n", max_bank, bank_limit);
 			}
 
 			if (stop_pass)
 				break;
 		}
 
-		/* abort pass on errors */
+		/* abort pass on errors during the pass */
 		if (errcnt) {
-			printf("# %d error(s)\n", errcnt);
+			fprintf(ERROUT, "# %d error(s)\n", errcnt);
 			exit(1);
 		}
 
@@ -762,10 +759,10 @@ main(int argc, char **argv)
 			/* open the listing file */
 			if (lst_fp == NULL && xlist && list_level) {
 				if ((lst_fp = fopen(lst_fname, "w")) == NULL) {
-					printf("Can not open listing file '%s'!\n", lst_fname);
+					fprintf(ERROUT, "Error: Cannot open listing file \"%s\"!\n", lst_fname);
 					exit(1);
 				}
-				fprintf(lst_fp, "#[1]   %s\n", input_file[1].file->name);
+				fprintf(lst_fp, "#[1]   \"%s\"\n", input_file[1].file->name);
 			}
 
 			/* relocate procs */
@@ -781,9 +778,9 @@ main(int argc, char **argv)
 			}
 		}
 
-		/* abort pass on errors */
+		/* abort pass on errors after the pass */
 		if (errcnt) {
-			printf("# %d error(s)\n", errcnt);
+			fprintf(ERROUT, "# %d error(s)\n", errcnt);
 			exit(1);
 		}
 
@@ -808,7 +805,7 @@ main(int argc, char **argv)
 		if ((cd_opt || scd_opt) && !trim_opt) {
 			/* open output file */
 			if ((fp = fopen(bin_fname, "wb")) == NULL) {
-				printf("Can not open output file '%s'!\n", bin_fname);
+				fprintf(ERROUT, "Error: Cannot open output file \"%s\"!\n", bin_fname);
 				exit(1);
 			}
 
@@ -910,6 +907,7 @@ main(int argc, char **argv)
 
 			/* execute */
 			if (develo_opt) {
+				char cmd[PATHSZ+6];
 				snprintf(cmd, sizeof(cmd), "perun %s", out_fname);
 				system(cmd);
 			}
@@ -944,7 +942,7 @@ main(int argc, char **argv)
 
 				/* open file */
 				if ((fp = fopen(bin_fname, "wb")) == NULL) {
-					printf("Can not open binary file '%s'!\n", bin_fname);
+					fprintf(ERROUT, "Error: Cannot open binary file \"%s\"!\n", bin_fname);
 					exit(1);
 				}
 
@@ -1004,23 +1002,21 @@ main(int argc, char **argv)
 
 	/* dump the bank table */
 	if (dump_seg)
-		show_seg_usage();
+		show_seg_usage(stdout);
 
-	/* check for corrupted trampolines */
-	if (check_trampolines()) {
+	/* check for corrupted thunks */
+	if (check_thunks()) {
 		exit(1);
 	}
 
 	/* warn about 384KB hucard rom size */
 	if (cd_opt == 0 && scd_opt == 0 && padding_opt == 0) {
 		if (max_bank == 0x2F) {
-			printf(
-				"\n!!!WARNING!!!\n"
+			warning("A 384KB ROM size may not work with emulators!\n\n"
 				"Most emulators expect a 384KB HuCard ROM to be in a split-image layout.\n\n"
 				"Unless you are patching an existing 384KB HuCard game image, you are\n"
 				"almost-certainly not using that layout, and your ROM will crash.\n\n"
-				"To avoid problems, add or remove enough data to avoid the 384KB size.\n"
-				"!!!WARNING!!!\n\n");
+				"To avoid problems, add or remove enough data to avoid the 384KB size.\n\n");
 		}
 	}
 
@@ -1077,7 +1073,7 @@ help(void)
  */
 
 void
-show_bank_usage(int which_bank)
+show_bank_usage(FILE *fp, int which_bank)
 {
 	int addr, start, nb;
 
@@ -1095,10 +1091,10 @@ show_bank_usage(int which_bank)
 
 	/* display bank infos */
 	if (nb)
-		printf("BANK %3X  %-23s    %4i / %4i\n",
+		fprintf(fp, "BANK $%-3X  %-23s    %4i / %4i\n",
 		       which_bank, bank_name[which_bank], nb, 8192 - nb);
 	else {
-		printf("BANK %3X  %-23s       0 / 8192\n", which_bank, bank_name[which_bank]);
+		fprintf(fp, "BANK $%-3X  %-23s       0 / 8192\n", which_bank, bank_name[which_bank]);
 		return;
 	}
 
@@ -1127,7 +1123,7 @@ show_bank_usage(int which_bank)
 				break;
 
 		/* display section infos */
-		printf("    %s    $%04X-$%04X  [%4i]\n",
+		fprintf(fp, "    %s    $%04X-$%04X  [%4i]\n",
 			section_name[section],		/* section name */
 			start + page,			/* starting address */
 			addr + page - 1,		/* end address */
@@ -1142,33 +1138,32 @@ show_bank_usage(int which_bank)
  */
 
 void
-show_seg_usage(void)
+show_seg_usage(FILE *fp)
 {
 	int i;
 	int start, stop;
 	int ram_base = machine->ram_base;
 
-	printf("segment usage:\n");
-	printf("\n");
+	fprintf(fp, "\nSegment Usage:\n");
 
-	printf("\t\t\t\t     USED / FREE\n");
+	fprintf(fp, "%37c USED / FREE\n", ' ');
 
 	/* zp usage */
 	if (max_zp <= 1)
-		printf("       ZP    -\n");
+		fprintf(fp, "       ZP    -\n");
 	else {
 		start = ram_base;
 		stop = ram_base + (max_zp - 1);
-		printf("       ZP    $%04X-$%04X  [%4i]     %4i / %4i\n", start, stop, stop - start + 1, stop - start + 1, 256 - (stop - start + 1));
+		fprintf(fp, "       ZP    $%04X-$%04X  [%4i]      %4i / %4i\n", start, stop, stop - start + 1, stop - start + 1, 256 - (stop - start + 1));
 	}
 
 	/* bss usage */
 	if (max_bss <= 0x201)
-		printf("      BSS    -\n\n");
+		fprintf(fp, "      BSS    -\n\n");
 	else {
 		start = ram_base + 0x200;
 		stop = ram_base + (max_bss - 1);
-		printf("      BSS    $%04X-$%04X  [%4i]     %4i / %4i\n\n", start, stop, stop - start + 1, stop - start + 1, 8192 - (stop - start + 1));
+		fprintf(fp, "      BSS    $%04X-$%04X  [%4i]      %4i / %4i\n\n", start, stop, stop - start + 1, stop - start + 1, 8192 - (stop - start + 1));
 	}
 
 	/* bank usage */
@@ -1177,13 +1172,13 @@ show_seg_usage(void)
 
 	/* scan banks */
 	for (i = 0; i <= max_bank; i++) {
-		show_bank_usage(i);
+		show_bank_usage(fp, i);
 	}
 
 	/* total */
 	rom_used = (rom_used + 1023) >> 10;
 	rom_free = (rom_free) >> 10;
-	printf("\t\t\t\t    -----  -----\n");
-	printf("\t\t\t\t    %4iK  %4iK\n", rom_used, rom_free);
-	printf("\n\t\t\tTOTAL SIZE =       %4iK\n\n", (rom_used + rom_free));
+	fprintf(fp, "%36c -----  -----\n", ' ');
+	fprintf(fp, "%36c %4iK  %4iK\n", ' ', rom_used, rom_free);
+	fprintf(fp, "\n%24c TOTAL SIZE =       %4iK\n\n", ' ', (rom_used + rom_free));
 }

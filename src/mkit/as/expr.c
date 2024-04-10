@@ -770,26 +770,26 @@ extract:
 		if (c == ':' && mul == 16 && allow_numeric_bank) {
 			if (expr_mprbank != UNDEFINED_BANK) {
 				if (expr_overlay != 0) {
-					error("Memory overlay# already set in this expression!");
+					error("Overlay number already set in this expression!");
 					return (0);
 				}
 				if ((expr_mprbank < 1) || (expr_mprbank > 15)) {
-					error("Memory overlay# must be in the range $1..$F!");
+					error("Overlay number must be in the range $1..$F!");
 					return (0);
 				}
 				if ((val < 0x40) || (val > 0x7F)) {
-					error("Memory overlay bank# must be in the range $40..$7F!");
+					error("Overlay bank number must be in the range $40..$7F!");
 					return (0);
 				}
 				expr_overlay = expr_mprbank;
 				expr_mprbank = UNDEFINED_BANK;
 			}
 			if (expr_mprbank != UNDEFINED_BANK) {
-				error("Memory bank# already set in this expression!");
+				error("Bank number already set in this expression!");
 				return (0);
 			}
 			if ((val < 0x00) || (val > 0xFF)) {
-				error("Memory bank# must be in the range $00..$FF!");
+				error("Bank number must be in the range $00..$FF!");
 				return (0);
 			}
 			expr_mprbank = val;
@@ -921,9 +921,7 @@ getsym(struct t_symbol * curscope)
 	}
 
 	if (i >= SBOLSZ - 1) {
-		char errorstr[512];
-		snprintf(errorstr, 512, "Symbol name too long ('%s' is %d chars long, max is %d)", symbol + 1, i, SBOLSZ - 2);
-		fatal_error(errorstr);
+		fatal_error("Symbol name too long ('%s' is %d chars long, max is %d)", symbol + 1, i, SBOLSZ - 2);
 		return (0);
 	}
 
@@ -1101,7 +1099,7 @@ do_op(void)
 			return (0);
 		if (((expr_lablptr->mprbank  < UNDEFINED_BANK) && ((section_flags[expr_lablptr->section] & S_IS_ROM) == 0)) ||
 		    ((expr_lablptr->mprbank == UNDEFINED_BANK) && (pass == LAST_PASS))) {
-			error("No LINEAR index for this symbol!");
+			error("No LINEAR() index for this symbol!");
 			val[0] = 0;
 			break;
 		}
@@ -1126,7 +1124,7 @@ do_op(void)
 			return (0);
 		if (expr_lablptr->mprbank >= UNDEFINED_BANK) {
 			if ((pass == LAST_PASS) && (expr_lablptr->mprbank == UNDEFINED_BANK))
-				error("No BANK index for this symbol!");
+				error("No BANK() number for this symbol!");
 			val[0] = 0;
 			break;
 		}
@@ -1148,7 +1146,7 @@ do_op(void)
 			return (0);
 		if (pass == LAST_PASS) {
 			if (expr_lablptr->vram == -1)
-				error("No VRAM address for this symbol!");
+				error("No VRAM() address for this symbol!");
 		}
 		val[0] = expr_lablptr->vram;
 		break;
@@ -1159,7 +1157,7 @@ do_op(void)
 			return (0);
 		if (pass == LAST_PASS) {
 			if (expr_lablptr->pal == -1)
-				error("No palette index for this symbol!");
+				error("No PAL() index for this symbol!");
 		}
 		val[0] = expr_lablptr->pal;
 		break;
@@ -1183,7 +1181,7 @@ do_op(void)
 			return (0);
 		if (pass == LAST_PASS) {
 			if (expr_lablptr->data_type == -1) {
-				error("No size attributes for this symbol!");
+				error("No SIZEOF() attribute for this symbol!");
 				return (0);
 			}
 		}
@@ -1314,17 +1312,13 @@ do_op(void)
 int
 check_func_args(char *func_name)
 {
-	char string[64];
-
 	if (expr_lablcnt == 1)
 		return (1);
 	else if (expr_lablcnt == 0)
-		sprintf(string, "No symbol in function %s!", func_name);
+		error("No symbol in function %s!", func_name);
 	else {
-		sprintf(string, "Too many symbols in function %s!", func_name);
+		error("Too many symbols in function %s!", func_name);
 	}
 
-	/* output message */
-	error(string);
 	return (0);
 }

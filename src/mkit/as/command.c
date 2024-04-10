@@ -100,7 +100,6 @@ unsigned short pseudo_allowed[] = {
 void
 do_pseudo(int *ip)
 {
-	char str[80];
 	int old_bank;
 	int size;
 
@@ -154,8 +153,7 @@ do_pseudo(int *ip)
 				if (bank != old_bank) {
 					size = ((bank - old_bank - 1) * 8192) + loccnt;
 					if (size) {
-						sprintf(str, "Warning, bank overflow by %i bytes!\n", size);
-						warning(str);
+						warning("Bank overflow by %i bytes!\n", size);
 					}
 				}
 				break;
@@ -264,7 +262,7 @@ do_db(int *ip)
 		if (prlnbuf[*ip] == '\"') {
 			/* check for non-zero value in ZP or BSS sections */
 			if (section == S_ZP || section == S_BSS) {
-				error("Cannot store non-zero data in .zp or .bss sections!");
+				error("Cannot store non-zero data in .ZP or .BSS sections!");
 				return;
 			}
 
@@ -386,14 +384,14 @@ do_db(int *ip)
 			if (pass == LAST_PASS) {
 				/* check for non-zero value in ZP or BSS sections */
 				if ((value != 0) && (section_flags[section] & S_NO_DATA)) {
-					error("Cannot store non-zero data in .zp or .bss sections!");
+					error("Cannot store non-zero data in .ZP or .BSS sections!");
 					return;
 				}
 
 				/* check for overflow, except in SDCC code (-256..255 are ok) */
 				/* SDCC's code generator assumes that the assembler doesn't care */
 				if ((sdcc_mode == 0) && (value & ~0xFF) && ((value & ~0xFF) != ~0xFF)) {
-					error("Overflow error!");
+					error("Operand too large to fit in a byte!");
 					return;
 				}
 
@@ -478,14 +476,14 @@ do_dw(int *ip)
 		if (pass == LAST_PASS) {
 			/* check for non-zero value in ZP or BSS sections */
 			if ((value != 0) && (section_flags[section] & S_NO_DATA)) {
-				error("Cannot store non-zero data in .zp or .bss sections!");
+				error("Cannot store non-zero data in .ZP or .BSS sections!");
 				return;
 			}
 
 			/* check for overflow, except in SDCC code (-65536..65535 are ok) */
 			/* SDCC's code generator assumes that the assembler doesn't care */
 			if ((sdcc_mode == 0) && (value & ~0xFFFF) && ((value & ~0xFFFF) != ~0xFFFF)) {
-				error("Overflow error!");
+				error("Operand too large to fit in a word!");
 				return;
 			}
 
@@ -562,13 +560,13 @@ do_dwl(int *ip)
 		if (pass == LAST_PASS) {
 			/* check for non-zero value in ZP or BSS sections */
 			if ((value != 0) && (section_flags[section] & S_NO_DATA)) {
-				error("Cannot store non-zero data in .zp or .bss sections!");
+				error("Cannot store non-zero data in .ZP or .BSS sections!");
 				return;
 			}
 
 			/* check for overflow (-65536..65535 are ok) */
 			if ((value & ~0xFFFF) && ((value & ~0xFFFF) != ~0xFFFF)) {
-				error("Overflow error!");
+				error("Operand too large to fit in a word!");
 				return;
 			}
 
@@ -645,13 +643,13 @@ do_dwh(int *ip)
 		if (pass == LAST_PASS) {
 			/* check for non-zero value in ZP or BSS sections */
 			if ((value != 0) && (section_flags[section] & S_NO_DATA)) {
-				error("Cannot store non-zero data in .zp or .bss sections!");
+				error("Cannot store non-zero data in .ZP or .BSS sections!");
 				return;
 			}
 
 			/* check for overflow (-65536..65535 are ok) */
 			if ((value & ~0xFFFF) && ((value & ~0xFFFF) != ~0xFFFF)) {
-				error("Overflow error!");
+				error("Operand too large to fit in a word!");
 				return;
 			}
 
@@ -728,7 +726,7 @@ do_dd(int *ip)
 		if (pass == LAST_PASS) {
 			/* check for non-zero value in ZP or BSS sections */
 			if ((value != 0) && (section_flags[section] & S_NO_DATA)) {
-				error("Cannot store non-zero data in .zp or .bss sections!");
+				error("Cannot store non-zero data in .ZP or .BSS sections!");
 				return;
 			}
 
@@ -829,7 +827,7 @@ do_page(int *ip)
 {
 	/* not allowed in procs */
 	if (proc_ptr && (section_flags[section] & S_IS_CODE)) {
-		fatal_error("Code PAGE can not be changed within a .proc!");
+		fatal_error("Code .PAGE cannot be changed within a .PROC!");
 		return;
 	}
 
@@ -894,7 +892,7 @@ do_org(int *ip)
 	case S_DATA:
 		/* not allowed in procs */
 		if (proc_ptr && (section_flags[section] & S_IS_CODE)) {
-			fatal_error("Code ORG can not be changed within a .proc!");
+			fatal_error("Code .ORG cannot be changed within a .PROC!");
 			return;
 		}
 
@@ -937,7 +935,7 @@ do_bank(int *ip)
 
 	/* not allowed in procs */
 	if (proc_ptr && (section_flags[section] & S_IS_CODE)) {
-		fatal_error("Code BANK can not be changed within a .proc!");
+		fatal_error("Code .BANK cannot be changed within a .PROC!");
 		return;
 	}
 
@@ -1075,7 +1073,7 @@ do_incbin(int *ip)
 		}
 
 		if (0 > (int)value) {
-			error(".incbin offset cannot be negative!");
+			error(".INCBIN offset cannot be negative!");
 			return;
 		}
 		offset = value;
@@ -1092,7 +1090,7 @@ do_incbin(int *ip)
 			}
 
 			if (0 > (int)value) {
-				error(".incbin length cannot be negative!");
+				error(".INCBIN length cannot be negative!");
 				return;
 			}
 			length = value;
@@ -1122,14 +1120,14 @@ do_incbin(int *ip)
 
 	if (size < 0) {
 		fclose(fp);
-		error(".incbin offset is greater than the file's length!");
+		error(".INCBIN offset is greater than the file's length!");
 		return;
 	}
 
 	if (length >= 0) {
 		if (length > size) {
 			fclose(fp);
-			error(".incbin length is greater than the file's length!");
+			error(".INCBIN length is greater than the file's length!");
 			return;
 			}
 		size = length;
@@ -1384,7 +1382,7 @@ do_include(int *ip)
 #if 0 // This breaks @turboxray's code, so disable it for now.
 	/* avoid problems */
 	if (expand_macro) {
-		error("Cannot use INCLUDE inside a macro!");
+		error("Cannot use .INCLUDE inside a macro!");
 		return;
 	}
 #endif
@@ -1917,7 +1915,7 @@ do_align(int *ip)
 
 	/* check for power-of-two, 1 bank maximum */
 	if ((value > 8192) || (value == 0) || ((value & (value - 1)) != 0)) {
-		error(".align value must be a power-of-two, with a maximum of 8192!");
+		error(".ALIGN value must be a power-of-two, with a maximum of 8192!");
 		return;
 	}
 
@@ -2231,27 +2229,27 @@ do_struct(int *ip)
 	/* the code is written to handle nesting, but try */
 	/* this temporarily, while we see if it is needed */
 	if (scopeptr != NULL) {
-		fatal_error("Cannot nest .struct scopes!");
+		fatal_error("Cannot nest .STRUCT scopes!");
 		return;
 	}
 
 	/* do not mix different types of label-scope */
 	if (proc_ptr) {
-		fatal_error("Cannot declare a .struct inside a .proc/.procgroup!");
+		fatal_error("Cannot declare a .STRUCT inside a .PROC/.PROCGROUP!");
 			return;
 	}
 
 	/* check symbol */
 	if (lablptr == NULL) {
-		fatal_error("Label name missing from .struct!");
+		fatal_error("Label name missing from .STRUCT!");
 		return;
 	}
 	if (lablptr->name[1] == '.' || lablptr->name[1] == '@') {
-		fatal_error("Cannot open .struct scope on a local label!");
+		fatal_error("Cannot open .STRUCT scope on a local label!");
 		return;
 	}
 	if (lablptr->name[1] == '!') {
-		fatal_error("Cannot open .struct scope on a multi-label!");
+		fatal_error("Cannot open .STRUCT scope on a multi-label!");
 		return;
 	}
 
@@ -2286,7 +2284,7 @@ do_ends(int *ip)
 
 	/* sanity check */
 	if (scopeptr == NULL) {
-		fatal_error("Unexpected '.ends'!");
+		fatal_error("Unexpected .ENDS!");
 		return;
 	}
 
