@@ -283,7 +283,7 @@ do_proc(int *ip)
 
 			/* default name */
 			sprintf(&symbol[1], "__group_%d_%d__", input_file[infile_num].file->number, slnum);
-			symbol[0] = strlen(&symbol[1]);
+			symbol[0] = (char)strlen(&symbol[1]);
 		}
 
 		/* lookup symbol table */

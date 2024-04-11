@@ -27,7 +27,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef _MSC_VER
+#include "xgetopt.h"
+#else
 #include <getopt.h>
+#endif
 #include <ctype.h>
 #include "defs.h"
 #include "externs.h"
@@ -375,7 +379,7 @@ main(int argc, char **argv)
 				break;
 
 			case 'I':
-				if (!add_path(optarg, strlen(optarg)+1))
+				if (!add_path(optarg, (int)strlen(optarg)+1))
 				{
 					fprintf(ERROUT, "Error: Could not add '-I' include path!\n");
 					return (1);

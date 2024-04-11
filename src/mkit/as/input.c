@@ -128,9 +128,9 @@ init_path(void)
 
 		/* Compute new substring size */
 		if (pl == NULL)
-			l = strlen(p) + 1;
+			l = (int)strlen(p) + 1;
 		else
-			l = pl - p + 1;
+			l = (int)(pl - p + 1);
 
 		/* Might be empty, jump to next char */
 		if (l <= 1)
@@ -236,7 +236,7 @@ start:
 					/* \1 - \9 */
 					else if (c >= '1' && c <= '9') {
 						j = c - '1';
-						n = strlen(marg[midx][j]);
+						n = (int)strlen(marg[midx][j]);
 						arg = marg[midx][j];
 					}
 
@@ -398,7 +398,7 @@ remember_file(int hash)
 	if (file == NULL)
 		return (NULL);
 
-	need = strlen(full_path) + 1;
+	need = (int)strlen(full_path) + 1;
 
 	if ((file_names == NULL) || (file_names->remain < need)) {
 		t_file_names *temp = malloc(sizeof(t_file_names));

@@ -451,7 +451,7 @@ pcx_load(char *name)
 void
 decode_256(FILE *f, int w, int h)
 {
-	unsigned int i, c, x, y;
+	int i, c, x, y;
 	unsigned char *ptr;
 
 	ptr = pcx_buf;
@@ -635,7 +635,7 @@ int
 bmp_load(char *name)
 {
 	BMPHeader_t header;
-	int i;
+	unsigned int i;
 	FILE *      pFile      = NULL;
 	/* no it's a new file - ok let's prepare loading */
 	if (pcx_buf)
@@ -687,9 +687,9 @@ bmp_load(char *name)
 
 	if (header.bitsPerPixel==4)
 	{
-		for (uint32_t y=0;y<pcx_h;y++)
+		for (int y=0;y<pcx_h;y++)
 		{
-			for (uint32_t x=0;x<pcx_w;x+=2)
+			for (int x=0;x<pcx_w;x+=2)
 			{
 				uint8_t byte;
 				fread(&byte,1,1,pFile);
@@ -702,10 +702,10 @@ bmp_load(char *name)
 	{
 //					uint8_t *src = &buffer[bmp_header->bitmapDataOffset];
 		fseek(pFile,header.bitmapDataOffset,SEEK_SET);
-		for (uint32_t y=0;y<pcx_h;y++)
+		for (int y=0;y<pcx_h;y++)
 		{
 
-			for (uint32_t x=0;x<pcx_w;x++)
+			for (int x=0;x<pcx_w;x++)
 			{
 				uint8_t byte;
 				fread(&byte,1,1,pFile);

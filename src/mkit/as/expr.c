@@ -466,7 +466,7 @@ cont:
 	}
 
 	/* convert back the pointer to an array index */
-	*ip = expr - prlnbuf;
+	*ip = (int)(expr - prlnbuf);
 
 	/* ok */
 	return (1);
@@ -487,9 +487,9 @@ error:
 int
 push_val(int type)
 {
-	unsigned int mul, val;
+	unsigned int val;
 	int op;
-	char c;
+	char c, mul;
 	char *symexpr;
 
 	val = 0;
@@ -917,7 +917,7 @@ getsym(struct t_symbol * curscope)
 		/* create the target multi-label name */
 		sprintf(tail, "!%d", 0x7FFFF & whichlabl);
 		strncat(symbol, tail, SBOLSZ - 1 - strlen(symbol));
-		i = symbol[0] = strlen(&symbol[1]);
+		i = symbol[0] = (char)strlen(&symbol[1]);
 	}
 
 	if (i >= SBOLSZ - 1) {

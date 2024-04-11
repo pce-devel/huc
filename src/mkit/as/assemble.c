@@ -435,7 +435,7 @@ addinst(struct t_opcode *optbl)
 	while (optbl->name) {
 		/* calculate instruction hash value */
 		hash = 0;
-		len = strlen(optbl->name);
+		len = (int)strlen(optbl->name);
 		ptr = optbl->name;
 
 		for (i = 0; i < len; i++) {

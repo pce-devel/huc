@@ -328,7 +328,7 @@ labldef(int reason)
 			strcpy(symbol, lablptr->name);
 			sprintf(tail, "!%d", 0x7FFFF & ++(lablptr->defthispass));
 			strncat(symbol, tail, SBOLSZ - 1 - strlen(symbol));
-			symbol[0] = strlen(&symbol[1]);
+			symbol[0] = (char)strlen(&symbol[1]);
 			if ((lablptr = stlook(SYM_DEF)) == NULL) {
 				fatal_error("Out of memory!");
 				return (-1);
@@ -451,7 +451,7 @@ lablset(char *name, int val)
 {
 	int len;
 
-	len = strlen(name);
+	len = (int)strlen(name);
 	lablptr = NULL;
 
 	if (len) {
@@ -483,7 +483,7 @@ lablexists(char *name)
 {
 	int len;
 
-	len = strlen(name);
+	len = (int)strlen(name);
 	lablptr = NULL;
 
 	if (len) {

@@ -727,9 +727,9 @@ pce_incpal(int *ip)
 void
 pce_incspr(int *ip)
 {
-	unsigned int i, j;
+	int i, j;
 	int x, y, w, h;
-	unsigned int sx, sy;
+	int sx, sy;
 	int nb_sprite = 0;
 
 	/* define label */
@@ -805,9 +805,9 @@ pce_incspr(int *ip)
 void
 pce_inctile(int *ip)
 {
-	unsigned int i, j;
+	int i, j;
 	int x, y, w, h;
-	unsigned int tx, ty;
+	int tx, ty;
 	int nb_tile = 0;
 
 	/* define label */
@@ -888,9 +888,9 @@ pce_inctile(int *ip)
 void
 pce_incchrpal(int *ip)
 {
-	unsigned int i, j;
+	int i, j;
 	int x, y, w, h;
-	unsigned int tx, ty;
+	int tx, ty;
 	int nb_chr = 0;
 
 	/* define label */
@@ -957,9 +957,9 @@ pce_incchrpal(int *ip)
 void
 pce_incsprpal(int *ip)
 {
-	unsigned int i, j;
+	int i, j;
 	int x, y, w, h;
-	unsigned int tx, ty;
+	int tx, ty;
 	int nb_sprite = 0;
 
 	/* define label */
@@ -1027,9 +1027,9 @@ pce_incsprpal(int *ip)
 void
 pce_inctilepal(int *ip)
 {
-	unsigned int i, j;
+	int i, j;
 	int x, y, w, h;
-	unsigned int tx, ty;
+	int tx, ty;
 	int nb_tile = 0;
 
 	/* define label */
@@ -1116,9 +1116,9 @@ pce_inctilepal(int *ip)
 void
 pce_incmap(int *ip)
 {
-	unsigned int i, j;
+	int i, j;
 	int x, y, w, h;
-	unsigned int tx, ty;
+	int tx, ty;
 	int tile;
 	int err = 0;
 

@@ -952,7 +952,7 @@ do_bank(int *ip)
 		return;
 	}
 
-	if (value > bank_limit) {
+	if (value > (unsigned)bank_limit) {
 		error("Bank index out of range!");
 		return;
 	}
@@ -1500,7 +1500,7 @@ do_ds(int *ip)
 	int limit = 0;
 	int addr;
 	int step;
-	unsigned int nbytes;
+	int nbytes;
 	unsigned int filler = 0;
 	unsigned char c;
 
@@ -1741,9 +1741,9 @@ void
 do_incchr(int *ip)
 {
 	unsigned char buffer[32];
-	unsigned int i, j;
+	int i, j;
 	int x, y, w, h;
-	unsigned int tx, ty;
+	int tx, ty;
 	int total = 0;
 	int size;
 
