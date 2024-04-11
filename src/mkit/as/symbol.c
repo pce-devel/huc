@@ -122,9 +122,7 @@ colsym(int *ip, int flag)
 	symbol[i + 1] = '\0';
 
 	if (i >= SBOLSZ - 1) {
-		char errorstr[512];
-		snprintf(errorstr, 512, "Symbol name too long ('%s' is %d chars long, max is %d)", symbol + 1, i, SBOLSZ - 2);
-		fatal_error(errorstr);
+		fatal_error("Symbol name too long ('%s' is %d chars long, max is %d)", symbol + 1, i, SBOLSZ - 2);
 		return (0);
 	}
 
@@ -383,11 +381,11 @@ labldef(int reason)
 	}
 	/* don't allow the reason, or a constant, to change */
 	else if ((lablptr->reason != reason) ||
-		 (lablptr->reason == CONSTANT && lablptr->value != labl_value)) {
+		 (lablptr->reason == CONSTANT && lablptr->value != labl_value && lablptr->defthispass)) {
 		/* normal label */
 		lablptr->type = MDEF;
 		lablptr->value = 0;
-		error("Label was already defined!");
+		error("Label was already defined differently!");
 		return (-1);
 	}
 	/* make sure that nothing changes at all in the last pass */
@@ -395,6 +393,11 @@ labldef(int reason)
 		if ((lablptr->value != labl_value) || (lablptr->overlay != labl_overlay) ||
 		    ((reason == LOCATION) && (labl_mprbank < UNDEFINED_BANK) && (lablptr->mprbank != labl_mprbank))) {
 			fatal_error("Symbol's bank or address changed in final pass!");
+			#if 0
+			fprintf(ERROUT, "lablptr->value = $%04x, labl_value = $%04x\n", lablptr->value, labl_value);
+			fprintf(ERROUT, "lablptr->mprbank = $%02x, labl_mprbank = $%02x\n", lablptr->mprbank, labl_mprbank);
+			fprintf(ERROUT, "lablptr->rombank = $%02x, labl_rombank = $%02x\n", lablptr->rombank, labl_rombank);
+			#endif
 			return (-1);
 		}
 	}

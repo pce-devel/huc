@@ -162,7 +162,7 @@ pce_pack_8x8_tile(unsigned char *buffer, void *data, int line_offset, int format
 
 	default:
 		/* other formats not supported */
-		error("Internal error: unsupported format passed to 'pack_8x8_tile'!");
+		error("Unsupported format passed to 'pack_8x8_tile'!");
 		break;
 	}
 
@@ -223,7 +223,7 @@ pce_pack_16x16_tile(unsigned char *buffer, void *data, int line_offset, int form
 
 	default:
 		/* other formats not supported */
-		error("Internal error: unsupported format passed to 'pack_16x16_tile'!");
+		error("Unsupported format passed to 'pack_16x16_tile'!");
 		break;
 	}
 
@@ -321,7 +321,7 @@ pce_pack_16x16_sprite(unsigned char *buffer, void *data, int line_offset, int fo
 
 	default:
 		/* other formats not supported */
-		error("Internal error: unsupported format passed to 'pack_16x16_sprite'!");
+		error("Unsupported format passed to 'pack_16x16_sprite'!");
 		break;
 	}
 
@@ -915,7 +915,6 @@ pce_incchrpal(int *ip)
 
 			/* get chr palette */
 			buffer[0] = pce_scan_8x8_tile(tx, ty) << 4;
-printf("chr 0x%02x uses palette %2d\n", i * w + j, buffer[0] >> 4);
 			/* store palette number */
 			putbuffer(buffer, 1);
 			nb_chr++;

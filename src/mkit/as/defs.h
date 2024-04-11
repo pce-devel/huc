@@ -7,8 +7,11 @@
 #define PCE_ASM_VERSION ("PC Engine Assembler (" GIT_VERSION ", " GIT_DATE ")")
 #define FUJI_ASM_VERSION ("Fuji Assembler for Atari (" GIT_VERSION ", " GIT_DATE ")")
 
+/* send errors and warnings to either stdout or stderr */
+#define ERROUT stderr
+
 /* path separator */
-#if defined(WIN32)
+#if defined(_WIN32)
 #define PATH_SEPARATOR		'\\'
 #define PATH_SEPARATOR_STRING	"\\"
 #else
@@ -79,7 +82,7 @@
 #define S_CONST		8 /* SDCC: permanent const data */
 #define S_OSEG		9 /* SDCC: overlayed variables in ZP */
 #define MAX_S		10 /* selectable section types */
-#define S_PROC		10 /* info only, trampolines for .proc */
+#define S_PROC		10 /* info only, thunks for .proc */
 
 /* section flag mask */
 #define S_IS_RAM	1
@@ -221,6 +224,9 @@
 /* size of various hashing tables */
 #define HASH_COUNT	256
 
+/* size of remembered filename strings */
+#define FILE_NAMES_SIZE 65536
+
 /* structs */
 typedef struct t_opcode {
 	struct t_opcode *next;
@@ -231,12 +237,25 @@ typedef struct t_opcode {
 	int type_idx;
 } t_opcode;
 
-typedef struct t_input_info {
+typedef struct t_file_names {
+	struct t_file_names *next;
+	int remain;
+	char buffer [FILE_NAMES_SIZE];
+} t_file_names;
+
+typedef struct t_file {
+	struct t_file *next;
+	int number;
+	int included;
+	char *name;
+} t_file;
+
+typedef struct t_input {
+	struct t_file *file;
 	FILE *fp;
 	int lnum;
 	int if_level;
-	char name[PATHSZ];
-} t_input_info;
+} t_input;
 
 typedef struct t_proc {
 	struct t_proc *next;
@@ -255,7 +274,7 @@ typedef struct t_proc {
 	int type;
 	int kickc;
 	int defined;
-	char name[SBOLSZ];
+	int is_skippable;
 } t_proc;
 
 /* update pc_symbol when adding or changing! */

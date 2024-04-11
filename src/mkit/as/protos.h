@@ -47,7 +47,6 @@ void do_org(int *ip);
 void do_bank(int *ip);
 void do_incbin(int *ip);
 void do_mx(char *fname);
-void forget_included_files(void);
 void do_include(int *ip);
 void do_rsset(int *ip);
 void do_rs(int *ip);
@@ -68,8 +67,8 @@ void do_ends(int *ip);
 int  htoi(char *str, int nb);
 
 /* CRC.C */
-void         crc_init(void);
-unsigned int crc_calc(unsigned char *data, int len);
+unsigned int crc_calc(const unsigned char *data, int len);
+unsigned int filename_crc(const char *name);
 
 /* EXPR.C */
 int  evaluate(int *ip, char flag, char allow_bank);
@@ -93,6 +92,7 @@ int   add_path(char*, int);
 void  cleanup_path(void);
 int   init_path(void);
 int   readline(void);
+void  clear_included(void);
 int   open_input(const char *name);
 int   close_input(void);
 FILE *open_file(const char *fname, const char *mode);
@@ -108,8 +108,8 @@ int  macro_getargtype(char *arg);
 /* MAIN.C */
 int  main(int argc, char **argv);
 void help(void);
-void show_bank_usage(int which_bank);
-void show_seg_usage(void);
+void show_bank_usage(FILE *fp, int which_bank);
+void show_seg_usage(FILE *fp);
 
 /* MAP.C */
 int pce_load_map(char *fname, int mode);
@@ -125,9 +125,9 @@ void putword(int offset, int data);
 void putdword(int offset, int data);
 void putbuffer(void *data, int size);
 void write_srec(char *fname, char *ext, int base);
-void error(char *stptr);
-void warning(char *stptr);
-void fatal_error(char *stptr);
+void error(const char *format, ...);
+void warning(const char *format, ...);
+void fatal_error(const char *format, ...);
 
 /* PCX.C */
 int  pcx_pack_8x8_tile(unsigned char *buffer, int x, int y);
@@ -148,9 +148,10 @@ void do_call(int *ip);
 void do_leave(int *ip);
 void do_proc(int *ip);
 void do_endp(int *ip);
+void proc_strip(void);
 void proc_reloc(void);
 void list_procs(void);
-int check_trampolines(void);
+int check_thunks(void);
 
 /* SYMBOL.C */
 int  symhash(void);

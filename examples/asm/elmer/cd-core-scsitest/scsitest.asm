@@ -343,8 +343,10 @@ log_tag:	php
 
 		; Table of event tag strings to be printed.
 
-	.ifdef	tag_number			; Not defined yet in pass1.
-MAX_TAGS	=	tag_number + 1		; #events in previous pass.
+	.ifdef	tag_number			; Not defined yet in 1st pass.
+	.ifndef	MAX_TAGS
+MAX_TAGS	=	tag_number + 1		; #events defined in 1st pass.
+	.endif
 	.endif
 
 tag_number	.set	-1			; Next TAG will be 0.

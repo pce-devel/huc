@@ -33,7 +33,7 @@ do_macro(int *ip)
 			return;
 		}
 		if (expand_macro) {
-			error("Can not nest macro definitions!");
+			error("Cannot nest macro definitions!");
 			return;
 		}
 		if (lablptr == NULL) {
@@ -90,7 +90,7 @@ do_macro(int *ip)
 void
 do_endm(int *ip)
 {
-	error("Unexpected ENDM!");
+	error("Unexpected .ENDM!");
 	return;
 }
 
@@ -149,7 +149,7 @@ macro_getargs(int ip)
 	int i, j, f, arg;
 	int level;
 
-	/* can not nest too much macros */
+	/* Cannot nest too much macros */
 	if (midx == 7) {
 		error("Too many nested macro calls!");
 		return (0);

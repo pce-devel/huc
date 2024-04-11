@@ -52,7 +52,7 @@ assemble(int do_label)
 		if (oplook(&i) >= 0) {
 			if (opflg == PSEUDO) {
 				if (opval == P_MACRO) {
-					error("Can not nest macro definitions!");
+					error("Cannot nest macro definitions!");
 					return;
 				}
 				if (opval == P_ENDM) {
@@ -86,6 +86,28 @@ assemble(int do_label)
 		return;
 	}
 
+	/* unused PROC/PROCGROUP that has been stripped out;
+	 * check for a '.endp' or '.endprocgroup'
+	 * to toggle state
+	 */
+	if (skipping_stripped) {
+		i = preproc_sfield;
+		while (isspace(prlnbuf[i])) { i++; }
+		if ((oplook(&i) >= 0) && (opflg == PSEUDO)) {
+			switch (opval) {
+
+			case P_ENDP:		// .endp
+			case P_ENDPG:		// .endprocgroup
+				if (optype != skipping_stripped)
+					break;
+				skipping_stripped = 0;
+				if (pass == LAST_PASS)
+					println();
+			}
+		}
+		return;
+	}
+
 	/* IF/ELSE section;
 	 * check for a '.else' or '.endif'
 	 * to toggle state
@@ -113,9 +135,7 @@ assemble(int do_label)
 						/* check that expression matches if_level */
 						save_if_expr(&i);
 						if (strcmp(if_txt[if_level], if_txt[if_level-1]) != 0) {
-							char message [128];
-							sprintf(message, "Condition does not match \".if %s\" at line %d!", if_txt[if_level-1], if_line[if_level-1]);
-							fatal_error(message);
+							fatal_error("Condition does not match \".IF %s\" at line %d!", if_txt[if_level-1], if_line[if_level-1]);
 							return;
 						}
 					}
@@ -132,9 +152,7 @@ assemble(int do_label)
 						/* check that expression matches if_level */
 						save_if_expr(&i);
 						if (strcmp(if_txt[if_level], if_txt[if_level-1]) != 0) {
-							char message [128];
-							sprintf(message, "Condition does not match \".if %s\" at line %d!", if_txt[if_level-1], if_line[if_level-1]);
-							fatal_error(message);
+							fatal_error("Condition does not match \".IF %s\" at line %d!", if_txt[if_level-1], if_line[if_level-1]);
 							return;
 						}
 					}
@@ -282,7 +300,7 @@ assemble(int do_label)
 
 		/* check if we are in the CODE section */
 		if ((section_flags[section] & S_IS_CODE) == 0)
-			fatal_error("Instructions not allowed in this section!");
+			fatal_error("Instructions are not allowed in this section!");
 
 		/* generate code */
 		opproc(&ip);
@@ -502,7 +520,7 @@ do_if(int *ip)
 
 	/* check for '.if' stack overflow */
 	if (if_level == 255) {
-		fatal_error("Too many nested IF/ENDIF!");
+		fatal_error("Too many nested .IF/.ENDIF!");
 		return;
 	}
 	in_if = 1;
@@ -523,7 +541,7 @@ void
 do_else(int *ip)
 {
 	if (!in_if)
-		fatal_error("Unexpected ELSE!");
+		fatal_error("Unexpected .ELSE!");
 }
 
 /* .endif pseudo */
@@ -532,7 +550,7 @@ void
 do_endif(int *ip)
 {
 	if (!in_if)
-		fatal_error("Unexpected ENDIF!");
+		fatal_error("Unexpected .ENDIF!");
 }
 
 /* .ifdef/.ifndef pseudo */
@@ -566,7 +584,7 @@ do_ifdef(int *ip)
 
 	/* check for '.if' stack overflow */
 	if (if_level == 255) {
-		fatal_error("Too many nested IF/ENDIF!");
+		fatal_error("Too many nested .IF/.ENDIF!");
 		return;
 	}
 	in_if = 1;

@@ -112,7 +112,7 @@ nes_pack_8x8_tile(unsigned char *buffer, void *data, int line_offset, int format
 
 	default:
 		/* other formats not supported */
-		error("Internal error: unsupported format passed to 'pack_8x8_tile'!");
+		error("Unsupported format passed to 'pack_8x8_tile'!");
 		break;
 	}
 
@@ -177,7 +177,7 @@ nes_inesprg(int *ip)
 		return;
 
 	if ((value < 0) || (value > 64)) {
-		error("Prg bank value out of range!");
+		error("PRG bank value out of range!");
 
 		return;
 	}
@@ -203,7 +203,7 @@ nes_ineschr(int *ip)
 		return;
 
 	if ((value < 0) || (value > 64)) {
-		error("Prg bank value out of range!");
+		error("PRG bank value out of range!");
 
 		return;
 	}

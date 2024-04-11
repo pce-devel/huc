@@ -66,7 +66,7 @@ extern int infile_num;
 extern FILE *out_fp;                            /* file pointers, output */
 extern FILE *in_fp;                             /* input */
 extern FILE *lst_fp;                            /* listing */
-extern t_input_info input_file[MAX_NESTING + 1];
+extern t_input input_file[MAX_NESTING + 1];
 extern char full_path[PATHSZ * 2];              /* full path name of last file opened */
 
 extern t_machine *machine;
@@ -83,7 +83,7 @@ extern t_symbol *bank_glabl[MAX_S][MAX_BANKS];  /* latest global label in each b
 extern t_branch *branchlst;                     /* first branch instruction assembled */
 extern t_branch *branchptr;                     /* last branch instruction assembled */
 
-extern int xvertlong;                           /* count of branches fixed in pass */
+extern int branches_changed;                    /* count of branches changed in pass */
 extern char need_another_pass;                  /* NZ if another pass if required */
 extern char hex[];                              /* hexadecimal character buffer */
 extern int stop_pass;                           /* stop the program; set by fatal_error() */
@@ -102,7 +102,7 @@ extern char symbol[];                           /* temporary symbol storage */
 extern int undef;                               /* undefined symbol in expression flag */
 extern int notyetdef;                           /* undefined-in-current-pass symbol in expr */
 extern unsigned int value;                      /* operand field value */
-extern int newproc_opt;                         /* use "new" style of procedure trampolines */
+extern int newproc_opt;                         /* use "new" style of procedure thunks */
 extern int strip_opt;                           /* strip unused procedures? */
 extern int kickc_opt;                           /* NZ if -kc flag on command line */
 extern int sdcc_opt;                            /* NZ if -sdcc flag on command line */
@@ -111,7 +111,7 @@ extern int xlist;                               /* listing file main flag */
 extern int list_level;                          /* output level */
 extern int asm_opt[MAX_OPTS];                   /* assembler option state */
 extern int opvaltab[6][16];
-extern int call_bank;                           /* bank for .proc trampolines */
+extern int call_bank;                           /* bank for .proc thunks */
 extern int kickc_mode;                          /* NZ if currently in KickC mode */
 extern int sdcc_mode;                           /* NZ if assembling SDCC code */
 extern int kickc_final;                         /* auto-include "kickc-final.asm" */
@@ -120,3 +120,16 @@ extern int in_final;                            /* set when in xxxx-final.asm in
 extern int preproc_inblock;                     /* C-style comment: within block comment */
 extern int preproc_sfield;                      /* C-style comment: SFIELD as a variable */
 extern int preproc_modidx;                      /* C-style comment: offset to modified char */
+
+/* this is set when suppressing the listing output of stripped procedures */
+/* n.b. fully compatible with 2-pass assembly because code is still built */
+extern int cloaking_stripped;
+
+/* this is set when not assembling the code within the stripped procedure */
+/* n.b. not compatible with 2-pass assembly because symbol addresses will */
+/* change because both multi-label and branch tracking counts will change */
+extern int skipping_stripped;
+
+/* this is set to say that skipping is an acceptable alternative to */
+/* cloaking, which means that we've decided to do a 3-pass assembly */
+extern int allow_skipping;
