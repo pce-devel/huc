@@ -104,8 +104,9 @@ do_pseudo(int *ip)
 	int size;
 
 	/* check if the directive is allowed in the current section */
-	if (!(pseudo_allowed[opval] & (1 << section)))
-		fatal_error("Directive not allowed in the current section!");
+	if (!(pseudo_allowed[opval] & (1 << section))) {
+		fatal_error("Directive not allowed in the %s section!", section_name[section]);
+	}
 
 	/* save current location */
 	old_bank = bank;
@@ -1703,25 +1704,7 @@ do_fail(int *ip)
 void
 do_section(int *ip)
 {
-	if (section != optype) {
-		/* backup current section data */
-		section_bank[section] = bank;
-		bank_glabl[section][bank] = glablptr;
-		bank_loccnt[section][bank] = loccnt;
-		bank_page[section][bank] = page;
-
-		/* change section */
-		section = optype;
-
-		/* switch to the new section */
-		bank = section_bank[section];
-		page = bank_page[section][bank];
-		loccnt = bank_loccnt[section][bank];
-		glablptr = bank_glabl[section][bank];
-
-		/* signal discontiguous change in loccnt */
-		discontiguous = 1;
-	}
+	set_section(optype);
 
 	/* output line */
 	if (pass == LAST_PASS) {
@@ -2365,4 +2348,34 @@ htoi(char *str, int nb)
 
 	/* ok */
 	return (val);
+}
+
+
+/* ----
+ * set_section(int new_section)
+ * ----
+ */
+
+void
+set_section(int new_section)
+{
+	if (section != new_section) {
+		/* backup current section data */
+		section_bank[section] = bank;
+		bank_glabl[section][bank] = glablptr;
+		bank_loccnt[section][bank] = loccnt;
+		bank_page[section][bank] = page;
+
+		/* change section */
+		section = new_section;
+
+		/* switch to the new section */
+		bank = section_bank[section];
+		page = bank_page[section][bank];
+		loccnt = bank_loccnt[section][bank];
+		glablptr = bank_glabl[section][bank];
+
+		/* signal discontiguous change in loccnt */
+		discontiguous = 1;
+	}
 }

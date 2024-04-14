@@ -65,6 +65,7 @@ void do_label(int *ip);
 void do_struct(int *ip);
 void do_ends(int *ip);
 int  htoi(char *str, int nb);
+void set_section(int new_section);
 
 /* CRC.C */
 unsigned int crc_calc(const unsigned char *data, int len);

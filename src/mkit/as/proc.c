@@ -428,25 +428,7 @@ do_endp(int *ip)
 	}
 
 	/* restore procedure's initial section */
-	if (section != proc_ptr->label->section) {
-		/* backup current section data */
-		section_bank[section] = bank;
-		bank_glabl[section][bank] = glablptr;
-		bank_loccnt[section][bank] = loccnt;
-		bank_page[section][bank] = page;
-
-		/* change section */
-		section = proc_ptr->label->section;
-
-		/* switch to the new section */
-		bank = section_bank[section];
-		page = bank_page[section][bank];
-		loccnt = bank_loccnt[section][bank];
-		glablptr = bank_glabl[section][bank];
-
-		/* signal discontiguous change in loccnt */
-		discontiguous = 1;
-	}
+	set_section(proc_ptr->label->section);
 
 	/* define label */
 	labldef(LOCATION);

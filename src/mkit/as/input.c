@@ -17,6 +17,7 @@ t_file * file_hash[HASH_COUNT];
 char full_path[PATHSZ * 2];
 int infile_error;
 int infile_num;
+t_file *extra_file;
 t_input input_file[MAX_NESTING + 1];
 
 static char *incpath = NULL;
@@ -280,16 +281,26 @@ start:
 	c = getc(in_fp);
 	if (c == EOF) {
 		if (close_input()) {
-			if (stop_pass != 0 || ((sdcc_final == 0) && (kickc_final == 0))) {
+			if (stop_pass != 0 || ((extra_file == NULL) && (sdcc_final == 0) && (kickc_final == 0))) {
 				return (-1);
 			} else {
-				const char * name = (sdcc_final) ? "sdcc-final.asm" : "kickc-final.asm";
-				sdcc_final = kickc_final = 0;
+				const char * name;
+				if (extra_file != NULL) {
+					/* include the next file from the command-line */
+					name = extra_file->name;
+					extra_file = extra_file->next;
+				} else {
+					/* auto-include a final source file */
+					name = (sdcc_final) ? "sdcc-final.asm" : "kickc-final.asm";
+					sdcc_final = kickc_final = 0;
+					in_final = 1;
+				}
 				if (open_input(name) == -1) {
 					fatal_error("Cannot open \"%s\" file!", name);
 					return (-1);
 				}
-				in_final = 1;
+				/* switch to the CODE section */
+				set_section(S_CODE);
 			}
 		}
 		goto start;
