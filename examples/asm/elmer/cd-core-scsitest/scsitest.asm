@@ -77,7 +77,11 @@ CHR_0x20	=	CHR_ZERO + 32		; ASCII ' ' CHR tile #.
 		include	"vdc.asm"		; Useful VDC routines.
 		include	"font.asm"		; Useful font routines.
 		include	"tty.asm"		; Useful TTY print routines.
-		include	"cdrom.asm"		; Fast CD-ROM routines.
+
+; This is needed, but is included on the PCEAS command line in the makefile
+; instead just to confirm that the multiple-input-file functionality works.
+;
+;		include	"cdrom.asm"		; Fast CD-ROM routines.
 
 
 
