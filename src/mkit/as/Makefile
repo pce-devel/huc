@@ -9,7 +9,7 @@ include ../../Make_src.inc
 
 OBJS   = main.o input.o assemble.o expr.o code.o command.o\
          macro.o func.o proc.o symbol.o pcx.o output.o crc.o\
-         pce.o map.o mml.o nes.o atari.o xgetopt.o
+         pce.o map.o mml.o nes.o atari.o
 
 LIBS    = pngread/pngread.a
 

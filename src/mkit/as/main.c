@@ -28,13 +28,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#ifdef _MSC_VER
+#include "xgetopt.h"
+#else
+#include <getopt.h>
+#endif
 #include "defs.h"
 #include "externs.h"
 #include "protos.h"
 #include "vars.h"
 #include "inst.h"
 #include "overlay.h"
-#include "xgetopt.h"
 
 /* defines */
 #define STANDARD_CD	1
@@ -357,8 +361,8 @@ main(int argc, char **argv)
 		switch(opt)
 		{
 			case 'I':
-//				/* GNU optarg can add a leading space on linux */
-//				while (*optarg == ' ') { ++optarg; }
+				/* optarg can have a leading space on linux/mac */
+				while (*optarg == ' ') { ++optarg; }
 
 				if (*optarg == '-') {
 					fprintf(stderr, "%s: include path missing after \"-I\"!\n", argv[0]);
@@ -383,8 +387,8 @@ main(int argc, char **argv)
 				return (0);
 
 			case 'l':
-//				/* GNU optarg can add a leading space on linux */
-//				while (*optarg == ' ') { ++optarg; }
+				/* optarg can have a leading space on linux/mac */
+				while (*optarg == ' ') { ++optarg; }
 
 				if ((isdigit(*optarg) == 0) || (optarg[1] != '\0')) {
 					fprintf(stderr, "%s: \"-l\" option must be followed by a single digit\n", argv[0]);
@@ -404,8 +408,8 @@ main(int argc, char **argv)
 				break;
 
 			case 'o':
-//				/* GNU optarg can add a leading space on linux */
-//				while (*optarg == ' ') { ++optarg; }
+				/* optarg can have a leading space on linux/mac */
+				while (*optarg == ' ') { ++optarg; }
 
 				if (*optarg == '-') {
 					fprintf(stderr, "%s: output filename missing after \"-o\"\n", argv[0]);
