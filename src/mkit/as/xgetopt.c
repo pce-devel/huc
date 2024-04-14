@@ -25,6 +25,10 @@
  *
  * All original xopt* and xget* labels have changed to opt* and get* so that this
  * is a drop-in replacement for the GNU/BSD functions on Windows.
+ *
+ * Error messages have been changed to make them more consistent with MSYS2.
+ *
+ * In getopt_long_only(), ambiguous single letter options now try short options.
  ********************************************************************************/
 
 #ifdef _MSC_VER
@@ -81,7 +85,7 @@ static void getopt_permute(int argc, char * const argv[],
 		pstr[0] = '+';
 		strcpy(&pstr[1], optstring);
 	}
-	
+
 	// Clone longopts and tweak on flag and val.
 	struct option *x = 0;
 	if (longopts)
@@ -175,7 +179,7 @@ static int getopt_impl(int argc, char * const argv[],
 
 	// BSD implementation provides a user controllable optreset flag.
 	// Set to be a non-zero value to ask getopt to clean up
-	// all internal state and thus perform a whole new parsing 
+	// all internal state and thus perform a whole new parsing
 	// iteration.
 	if (optreset != 0)
 	{
@@ -190,12 +194,12 @@ static int getopt_impl(int argc, char * const argv[],
 		optind = 1;
 
 	char missingarg = 0; // Whether a missing argument should return as ':' (true) or '?' (false).
-	char permute = 1;    // Whether to perform content permuting: Permute the contents of the argument vector (argv) 
+	char permute = 1;    // Whether to perform content permuting: Permute the contents of the argument vector (argv)
 	                   // as it scans, so that eventually all the non-option arguments are at the end.
-	char argofone = 0;   // Whether to handle each nonoption argv-element as if it were the argument of an option 
+	char argofone = 0;   // Whether to handle each nonoption argv-element as if it were the argument of an option
 	                   // with character code 1.
 	//bool dashw = (0 != strstr(optstring, "W;")); // TODO: If 'W;' exists in optstring indicates '-W foo' will be treated as '--foo'.
-	
+
 	// Parse the head of optstring for flags: "+-:"
 	for (const char *p = optstring; *p != '\0'; ++p)
 	{
@@ -261,7 +265,7 @@ static int getopt_impl(int argc, char * const argv[],
 		}
 
 		// case 2
-		if (!optcur && 
+		if (!optcur &&
 			((0 == strcmp("-", argv[optind])) ||
 			 (0 == strcmp("--", argv[optind]))))
 		{
@@ -313,14 +317,17 @@ static int getopt_impl(int argc, char * const argv[],
 					break; // continue to match short opts..
 
 				if (opterr)
-					fprintf(stderr, "%s: unrecognized option `%s\'\n", progname, argv[optind]);
+					fprintf(stderr, "%s: unknown option \"%s\"\n\n", progname, argv[optind]);
 				optind++;
 				return '?';
 			}
 			else if (hitcnt > 1) // ambiguous
 			{
+				if ((only) && (plen == 1))
+					break; // continue to match short opts..
+
 				if (opterr)
-					fprintf(stderr, "%s: option `%s\' is ambiguous\n", progname, argv[optind]);
+					fprintf(stderr, "%s: option \"%s\" is ambiguous\n\n", progname, argv[optind]);
 				optind++;
 				return '?';
 			}
@@ -346,7 +353,7 @@ static int getopt_impl(int argc, char * const argv[],
 					{
 						;
 					}
-					else if (optind < argc) // For xrequired_argument, use the next arg value if no inline argument present.
+					else if (optind < argc) // For required_argument, use the next arg value if no inline argument present.
 					{
 						optarg = argv[optind++];
 					}
@@ -364,7 +371,7 @@ static int getopt_impl(int argc, char * const argv[],
 					}
 
 					if (opterr)
-						fprintf(stderr, "%s: option `%s\' requires an argument\n", progname, argv[curind]);
+						fprintf(stderr, "%s: option \"%s\" requires an argument\n\n", progname, argv[curind]);
 					if (missingarg)
 						return ':';
 				}
@@ -402,7 +409,7 @@ static int getopt_impl(int argc, char * const argv[],
 			else if (required)
 			{
 				if (opterr)
-					fprintf(stderr, "%s: option requires an argument -- \'%c\'\n", progname, *p);
+					fprintf(stderr, "%s: option \"-%c\" requires an argument\n\n", progname, *p);
 				optopt = *p;
 				return (missingarg)? ':': '?';
 			}
@@ -423,7 +430,7 @@ static int getopt_impl(int argc, char * const argv[],
 		{
 			optopt = *p;
 			if (!missingarg && opterr)
-				fprintf(stderr, "%s: invalid option -- \'%c\'\n", progname, *p);
+				fprintf(stderr, "%s: unknown option -- %c\n\n", progname, *p);
 			return '?';
 		}
 

@@ -25,6 +25,10 @@
  *
  * All original xopt* and xget* labels have changed to opt* and get* so that this
  * is a drop-in replacement for the GNU/BSD functions on Windows.
+ *
+ * Error messages have been changed to make them more consistent with MSYS2.
+ *
+ * In getopt_long_only(), ambiguous single letter options now try short options.
  ********************************************************************************/
 
 
@@ -45,7 +49,7 @@ extern int  optreset;
  *  This is a cross-platform implementation of legacy getopt related functions.
  *  Here provides 4 functions: getopt(), getopt_long(), getopt_long_only(),
  *  and getsubopt() which mimic almost the same functionality of both GNU
- *  and BSD's version of getopt(), getopt_long(), getopt_long_only, and 
+ *  and BSD's version of getopt(), getopt_long(), getopt_long_only, and
  *  getsubopt().
  *
  *  Since there were some differences between GNU and BSD's getopt impl, getopt
@@ -77,14 +81,14 @@ extern int  optreset;
  *   xgetopt: Both behaviours are supported.
  *
  *    -W special case:
- *       GNU: If "W;" is present in optstring, the "-W foo" in commandline will be 
+ *       GNU: If "W;" is present in optstring, the "-W foo" in commandline will be
  *            treated as the long option "--foo".
  *       BSD: No mentioned in the man page but seems to support such usage.
  *   xgetopt: Do NOT support -W special case.
  */
 
 int getopt(
-	int argc, 
+	int argc,
 	char * const argv[],
 	const char *optstr);
 
@@ -101,7 +105,7 @@ struct option
 #define optional_argument (2)
 
 int getopt_long(
-	int argc, 
+	int argc,
 	char * const argv[],
 	const char *optstring,
 	const struct option *longopts,
