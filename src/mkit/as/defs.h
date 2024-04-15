@@ -8,7 +8,7 @@
 #define FUJI_ASM_VERSION ("Fuji Assembler for Atari (" GIT_VERSION ", " GIT_DATE ")")
 
 /* send errors and warnings to either stdout or stderr */
-#define ERROUT stderr
+#define ERROUT stdout
 
 /* path separator */
 #if defined(_WIN32)

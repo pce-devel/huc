@@ -81,7 +81,7 @@ unsigned short pseudo_allowed[] = {
 /* P_CARTRIDGE   */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
 /* P_ALIGN       */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
 /* P_KICKC       */	ANYWHERE,
-/* P_IGNORE      */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_IGNORE      */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS + IN_CONST + IN_XINIT,
 /* P_SEGMENT     */	ANYWHERE,
 /* P_LABEL       */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
 /* P_ENCODING    */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,

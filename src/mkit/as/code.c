@@ -916,9 +916,10 @@ getoperand(int *ip, int flag, int last_char)
 				else if (opext != 0)
 					error("Instruction extension not supported in immediate mode!");
 				else {
-					/* check value validity (-256..255) */
-					if ((value & ~0xFF) && ((value & ~0xFF) != ~0xFF))
-						error("Incorrect immediate value!");
+					/* check for overflow, except in SDCC code (-256..255 are ok) */
+					/* SDCC's code generator assumes that the assembler doesn't care */
+					if ((sdcc_mode == 0) && (value & ~0xFF) && ((value & ~0xFF) != ~0xFF))
+						error("Operand too large to fit in a byte!");
 				}
 			}
 
