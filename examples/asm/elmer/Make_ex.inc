@@ -12,7 +12,9 @@ BINDIR := ../../../../bin
 # endif
 # endif
 
-CC     = $(BINDIR)/huc
+export PATH := $(PWD)/../../../../bin:$(PATH)
+
+CC     = $(BINDIR)/sdcc
 AS     = $(BINDIR)/pceas
 IL     = $(BINDIR)/isolink
 S2I    = $(BINDIR)/sym2inc
