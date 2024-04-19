@@ -8,6 +8,10 @@
 *.s
 *.sgx
 *.sym
+*.user
+.vs
+.x86
+.x64
 bin
 src/huc/huc
 src/huc/huc.exe
