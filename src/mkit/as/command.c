@@ -2112,8 +2112,12 @@ do_segment(int *ip)
 	if (!strcasecmp(&symbol[1], "_CODE"))
 		optype = S_HOME;
 	else
-	if (!strcasecmp(&symbol[1], "_DATA"))
-		optype = S_NONE;
+	if (!strcasecmp(&symbol[1], "_DATA")) {
+		if (sdcc_mode)
+			optype = S_DATA;
+		else
+			optype = S_NONE;
+	}
 	else
 	if (!strcasecmp(&symbol[1], "CABS"))
 		optype = S_NONE;
