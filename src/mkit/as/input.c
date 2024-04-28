@@ -8,7 +8,7 @@
 #include "protos.h"
 
 int file_count;
-t_file_names * file_names;
+t_str_pool * str_pool;
 t_file * file_hash[HASH_COUNT];
 
 #define INCREMENT_BASE 256
@@ -164,7 +164,8 @@ init_path(void)
 int
 readline(void)
 {
-	char *ptr, *arg, num[8];
+	char *arg, num[8];
+	const char *ptr;
 	int j, n;
 	int i;		/* pointer into prlnbuf */
 	int c;		/* current character		*/
@@ -192,7 +193,7 @@ start:
 		/* expand line */
 		if (mlptr) {
 			i = SFIELD;
-			ptr = mlptr->data;
+			ptr = mlptr->line;
 			for (;;) {
 				c = *ptr++;
 				if (c == '\0')
@@ -395,6 +396,33 @@ start:
 
 
 /* ----
+ * remember_string()
+ * ----
+ * remember all source file names
+ */
+
+const char *
+remember_string(const char * string, size_t size)
+{
+	const char * output;
+
+	if ((str_pool == NULL) || (str_pool->remain < size)) {
+		t_str_pool *temp = malloc(sizeof(t_str_pool));
+		if (temp == NULL)
+			return (NULL);
+		temp->remain = STR_POOL_SIZE;
+		temp->next = str_pool;
+		str_pool = temp;
+	}
+
+	output = memcpy(str_pool->buffer + STR_POOL_SIZE - str_pool->remain, string, size);
+	str_pool->remain -= size;
+
+	return (output);
+}
+
+
+/* ----
  * remember_file()
  * ----
  * remember all source file names
@@ -403,26 +431,12 @@ start:
 t_file *
 remember_file(int hash)
 {
-	int need;
 	t_file * file = malloc(sizeof(t_file));
 
 	if (file == NULL)
 		return (NULL);
 
-	need = (int)strlen(full_path) + 1;
-
-	if ((file_names == NULL) || (file_names->remain < need)) {
-		t_file_names *temp = malloc(sizeof(t_file_names));
-		if (temp == NULL)
-			return (NULL);
-		temp->remain = FILE_NAMES_SIZE;
-		temp->next = file_names;
-		file_names = temp;
-	}
-
-	file->name = memcpy(file_names->buffer + FILE_NAMES_SIZE - file_names->remain, full_path, need);
-	file_names->remain -= need;
-
+	file->name = remember_string(full_path, strlen(full_path) + 1);
 	file->number = ++file_count;
 	file->included = 0;
 

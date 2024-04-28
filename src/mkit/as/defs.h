@@ -66,6 +66,12 @@
 #define ARG_STRING	5
 #define ARG_LABEL	6
 
+/* function interface parameter types */
+#define PARAM_NONE	0 /* none or unknown */
+#define PARAM_A_LO	1 /* 16-bit in XA for SDCC */
+#define PARAM_X_LO	2 /* 16-bit in AX for HuC */
+#define PARAM_Y_LO	3 /* 16-bit in XY for newproc */
+
 /* section types */
 /* update pseudo_allowed when adding or changing! */
 /* update section_name  when adding or changing! */
@@ -225,7 +231,7 @@
 #define HASH_COUNT	256
 
 /* size of remembered filename strings */
-#define FILE_NAMES_SIZE 65536
+#define STR_POOL_SIZE 65536
 
 /* structs */
 typedef struct t_opcode {
@@ -237,17 +243,17 @@ typedef struct t_opcode {
 	int type_idx;
 } t_opcode;
 
-typedef struct t_file_names {
-	struct t_file_names *next;
+typedef struct t_str_pool {
+	struct t_str_pool *next;
 	int remain;
-	char buffer [FILE_NAMES_SIZE];
-} t_file_names;
+	char buffer [STR_POOL_SIZE];
+} t_str_pool;
 
 typedef struct t_file {
 	struct t_file *next;
 	int number;
 	int included;
-	char *name;
+	const char *name;
 } t_file;
 
 typedef struct t_input {
@@ -283,6 +289,9 @@ typedef struct t_symbol {
 	struct t_symbol *local;
 	struct t_symbol *scope;
 	struct t_proc *proc;
+	const char *name;
+	struct t_file *fileinfo;
+	int fileline;
 	int reason;
 	int type;
 	int value;
@@ -296,13 +305,13 @@ typedef struct t_symbol {
 	int vram;
 	int pal;
 	int reserved;
+	int interface;
 	int data_type;
 	int data_size;
 	int deflastpass;
 	int reflastpass;
 	int defthispass;
 	int refthispass;
-	char name[SBOLSZ];
 } t_symbol;
 
 typedef struct t_branch {
@@ -315,19 +324,19 @@ typedef struct t_branch {
 
 typedef struct t_line {
 	struct t_line *next;
-	char *data;
+	const char *line;
 } t_line;
 
 typedef struct t_macro {
 	struct t_macro *next;
+	struct t_symbol *label;
 	struct t_line *line;
-	char name[SBOLSZ];
 } t_macro;
 
 typedef struct t_func {
 	struct t_func *next;
-	char line[128];
-	char name[SBOLSZ];
+	struct t_symbol *label;
+	char *line;
 } t_func;
 
 typedef struct t_tile {

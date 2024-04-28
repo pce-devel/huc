@@ -2002,8 +2002,9 @@ do_kickc(int *ip)
 	/* enable () for indirect addressing during KickC code */
 	asm_opt[OPT_INDPAREN] = kickc_mode;
 
-	/* enable auto-detect ZP addressing during KickC code */
-	asm_opt[OPT_ZPDETECT] = kickc_mode;
+	/* enable auto-detect ZP addressing during KickC and SDCC code */
+	/* for SDCC, this is needed to assemble library function params into ZP */
+	asm_opt[OPT_ZPDETECT] = (kickc_mode | sdcc_mode);
 
 	/* enable long-branch support when building KickC code */
 	asm_opt[OPT_LBRANCH] |= kickc_mode;

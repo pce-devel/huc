@@ -93,6 +93,8 @@ int   add_path(char*, int);
 void  cleanup_path(void);
 int   init_path(void);
 int   readline(void);
+const char *remember_string(const char * string, size_t length);
+t_file *remember_file(int hash);
 void  clear_included(void);
 int   open_input(const char *name);
 int   close_input(void);

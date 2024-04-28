@@ -76,7 +76,7 @@ func_look(void)
 	hash = symhash();
 	func_ptr = func_tbl[hash];
 	while (func_ptr) {
-		if (!strcmp(&symbol[1], func_ptr->name))
+		if (!strcmp(symbol, func_ptr->label->name))
 			break;
 		func_ptr = func_ptr->next;
 	}
@@ -100,6 +100,10 @@ func_install(int ip)
 	lablptr->type = FUNC;
 	lablptr->defthispass = 1;
 
+	/* remember where this was defined */
+	lablptr->fileinfo = input_file[infile_num].file;
+	lablptr->fileline = slnum;
+
 	/* check function name syntax */
 	if (strchr(&symbol[1], '.')) {
 		error("Invalid function name!");
@@ -111,14 +115,21 @@ func_install(int ip)
 		return (0);
 
 	/* allocate a new func struct */
-	if ((func_ptr = (void *)malloc(sizeof(struct t_func))) == NULL) {
+	func_ptr = (void *)malloc(sizeof(struct t_func));
+	if (func_ptr == NULL) {
 		error("Out of memory!");
 		return (0);
 	}
 
 	/* initialize it */
-	strcpy(func_ptr->name, &symbol[1]);
+	func_ptr->label = lablptr;
+	func_ptr->line = malloc(strlen(func_line) + 1);
+	if (func_ptr->line == NULL) {
+		error("Out of memory!");
+		return (0);
+	}
 	strcpy(func_ptr->line, func_line);
+
 	hash = symhash();
 	func_ptr->next = func_tbl[hash];
 	func_tbl[hash] = func_ptr;

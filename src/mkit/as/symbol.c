@@ -40,7 +40,7 @@ symhash(void)
 int
 addscope(struct t_symbol * curscope, int i)
 {
-	char * string;
+	const char * string;
 
 	/* stop at the end of scope chain */
 	if (curscope == NULL) {
@@ -255,13 +255,14 @@ stinstall(int hash, int type)
 	sym->vram = -1;
 	sym->pal = -1;
 	sym->reserved = 0;
+	sym->interface = PARAM_NONE;
 	sym->data_type = -1;
 	sym->data_size = 0;
 	sym->deflastpass = 0;
 	sym->reflastpass = 1; /* so that .ifref triggers in 1st pass */
 	sym->defthispass = 0;
 	sym->refthispass = 0;
-	strcpy(sym->name, symbol);
+	sym->name = remember_string(symbol, 2 + (size_t)symbol[0]);
 
 	/* add the symbol to the hash table */
 	if (type) {
@@ -310,6 +311,10 @@ labldef(int reason)
 		fatal_error("Reserved symbol!");
 		return (-1);
 	}
+
+	/* remember where this was defined */
+	lablptr->fileinfo = input_file[infile_num].file;
+	lablptr->fileline = slnum;
 
 	if (reason == LOCATION) {
 		/* label is set from the current LOCATION */
