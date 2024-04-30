@@ -13,11 +13,11 @@
 #endif
 
 
-intptr_t openin (char *p);
-intptr_t openout (void);
+int openin (char *p);
+int openout (void);
 void outfname (char *s);
 void fixname (char *s);
-intptr_t checkname (char *s);
+int checkname (char *s);
 #if defined(__APPLE__) || defined(__CYGWIN__)
 void _kill (void);
 #define kill _kill
@@ -28,15 +28,15 @@ void unget_line (void);
 void readline (void);
 
 /* could otherwise be char */
-intptr_t inbyte (void);
-intptr_t inchar (void);
-intptr_t gch (void);
-intptr_t nch (void);
-intptr_t ch (void);
+int inbyte (void);
+int inchar (void);
+int gch (void);
+int nch (void);
+int ch (void);
 
 void pl (char *str);
 void glabel (char *lab);
-void gnlabel (intptr_t nlab);
+void gnlabel (int nlab);
 void olprfix (void);
 void col (void);
 void comment (void);
@@ -46,11 +46,11 @@ void ol (char *ptr);
 void ot (char *ptr);
 void nl (void);
 void outsymbol (char *ptr);
-void outlabel (intptr_t label);
-void outdec (intptr_t number);
-void outhex (intptr_t number);
-void outhexfix (intptr_t number, intptr_t length);
+void outlabel (int label);
+void outdec (int number);
+void outhex (int number);
+void outhexfix (int number, int length);
 char outbyte (char c);
-void outstr (char *ptr);
+void outstr (const char *ptr);
 
 #endif

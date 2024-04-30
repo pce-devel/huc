@@ -31,98 +31,93 @@
 #define T_LITERAL       12
 
 /* basic pseudo instructions */
-#define I_LDB            1
-#define I_LDBP           2
-#define I_LDW            3
-#define I_LDWI           4
-#define I_LDWP           5
-#define I_STB            6
-#define I_STBPS          7
-#define I_STW            8
-#define I_STWPS          9
-#define I_ADDWI          10
-#define I_ADDWS          11
-#define I_ADDMI          12
-#define I_SUBWI          13
-#define I_SUBWS          14
-#define I_ORWS           15
-#define I_EORWS          16
-#define I_ANDWS          17
-#define I_ASLW           18
-#define I_ASLWS          19
-#define I_ASRW           20
-#define I_COMW           21
-#define I_NEGW           22
-#define I_SWAPW          23
-#define I_EXTW           24
-#define I_BOOLW          25
-#define I_NOTW           26
-#define I_JMP            27
-#define I_JSR            28
-#define I_RTS            29
-#define I_CALL           30
-#define I_CALLS      31
-#define I_PUSHW      32
-#define I_POPW       33
-#define I_TSTW       34
-#define I_LBRA       35
-#define I_LBEQ       36
-#define I_LBNE       37
-#define I_BANK       38
-#define I_OFFSET     39
-#define I_FARPTR     40
-#define I_FARPTR_I   41
-#define I_FARPTR_GET 42
-#define I_FGETB      43
-#define I_FGETW      44
-#define I_VGETW      45
-#define I_VPUTW      46
-#define I_INCW       50
-#define I_ANDWI      51
-#define I_ORWI       52
-#define I_ADDW       53
-#define I_SUBW       54
-#define I_LDUB       55
-#define I_LDUBP      56
-#define I_FGETUB     57
-#define I_ADDBS      58
-#define I_ADDBI      59
-#define I_LABEL      60
-#define I_STWIP      61
-#define I_STBIP      62
-#define I_MULWI      63
-#define I_STWI       64
-#define I_STBI       65
-#define I_ASLWI      66
-#define I_LSRWI      67
-#define I_ASRWI      68
-#define I_LBEQN      69
-#define I_LBNEN      70
-#define I_LBRAN      71
-#define I_LDYB       72
-#define I_LDBY       73
-#define I_ADDB       74
-#define I_ADDUB      75
-#define I_ADDBI_P    76
-#define I_INCB       77
-#define I_STWZ       78
-#define I_STBZ       79
-#define I_CMPWI_EQ   80
-#define I_CMPWI_NE   81
-#define I_STBP       82
-#define I_STWP       83
-#define I_EORWI      84
-#define I_SAVEW      85
-#define I_SAVEB      86
-#define I_RESW       87
-#define I_RESB       88
-#define I_EXTUW      89
-#define I_DEF        90
-#define I_SEI        91
-#define I_CLI        92
-#define I_MAPCBANK   93
-#define I_UNMAPCBANK 94
-#define I_MACRO      95			// Used to fastcall macro calling support
+#define I_LDB           1
+#define I_LDBP          2
+#define I_LDW           3
+#define I_LDWI          4
+#define I_LDWP          5
+#define I_STB           6
+#define I_STBPS         7
+#define I_STW           8
+#define I_STWPS         9
+#define I_ADDWI         10
+#define I_ADDWS         11
+#define I_ADDMI         12
+#define I_SUBWI         13
+#define I_SUBWS         14
+#define I_ORWS          15
+#define I_EORWS         16
+#define I_ANDWS         17
+#define I_ASLW          18
+#define I_ASLWS         19
+#define I_ASRW          20
+#define I_COMW          21
+#define I_NEGW          22
+#define I_SWAPW         23
+#define I_EXTW          24
+#define I_BOOLW         25
+#define I_NOTW          26
+#define I_JMP           27
+#define I_JSR           28
+#define I_RTS           29
+#define I_CALL          30
+#define I_CALLS         31
+#define I_PUSHW         32
+#define I_POPW          33
+#define I_TSTW          34
+#define I_LBRA          35
+#define I_LBEQ          36
+#define I_LBNE          37
+#define I_BANK          38
+#define I_OFFSET        39
+#define I_FARPTR        40
+#define I_FARPTR_I      41
+#define I_FARPTR_GET    42
+#define I_FGETB         43
+#define I_FGETW         44
+#define I_VGETW         45
+#define I_VPUTW         46
+#define I_INCW          50
+#define I_ANDWI         51
+#define I_ORWI          52
+#define I_ADDW          53
+#define I_SUBW          54
+#define I_LDUB          55
+#define I_LDUBP         56
+#define I_FGETUB        57
+#define I_ADDBS         58
+#define I_ADDBI         59
+#define I_LABEL         60
+#define I_STWIP         61
+#define I_STBIP         62
+#define I_MULWI         63
+#define I_STWI          64
+#define I_STBI          65
+#define I_ASLWI         66
+#define I_LSRWI         67
+#define I_ASRWI         68
+#define I_LDYB          69
+#define I_LDBY          70
+#define I_ADDB          71
+#define I_ADDUB         72
+#define I_ADDBI_P       73
+#define I_INCB          74
+#define I_STWZ          75
+#define I_STBZ          76
+#define I_CMPWI_EQ      77
+#define I_CMPWI_NE      78
+#define I_STBP          79
+#define I_STWP          80
+#define I_EORWI         81
+#define I_SAVEW         82
+#define I_SAVEB         83
+#define I_RESW          84
+#define I_RESB          85
+#define I_EXTUW         86
+#define I_DEF           87
+#define I_SEI           88
+#define I_CLI           89
+#define I_MACRO         90                      // Used to fastcall macro calling support
 
 /* optimized pseudo instructions */
 #define X_MASK          0xFFFF0
@@ -255,8 +250,8 @@ struct tag_symbol {
 
 /* "do"/"for"/"while"/"switch" statement stack */
 
-#define WSTABSZ 100
 #define WSSIZ   7
+#define WSTABSZ (WSSIZ * 16)
 #define WSMAX   ws + WSTABSZ - WSSIZ
 
 /* entry offsets in "do"/"for"/"while"/"switch" stack */
@@ -335,10 +330,10 @@ struct macro {
 /* pseudo instruction structure */
 
 typedef struct {
-	intptr_t code;
-	intptr_t type;
+	int code;
+	int type;
 	intptr_t data;
-	intptr_t imm_type;
+	int imm_type;
 	intptr_t imm_data;
 	char *arg[3];
 	SYMBOL *sym;
@@ -352,9 +347,9 @@ typedef struct {
 
 struct const_array {
 	SYMBOL *sym;
-	intptr_t typ;
-	intptr_t size;
-	intptr_t data;
+	int typ;
+	int size;
+	int data;
 };
 
 /* fastcall func struct */
@@ -366,8 +361,8 @@ struct const_array {
 struct fastcall {
 	struct fastcall *next;
 	char fname[NAMESIZE];
-	intptr_t nargs;
-	intptr_t flags;
+	int nargs;
+	int flags;
 	char argtype[MAX_FASTCALL_ARGS];
 	char argname[MAX_FASTCALL_ARGS][NAMESIZE];
 };
@@ -389,10 +384,10 @@ SYMBOL *find_member (TAG_SYMBOL *tag, char *sname);
 
 struct lvalue {
 	SYMBOL *symbol;
-	intptr_t indirect;
-	intptr_t ptr_type;
+	int indirect;
+	int ptr_type;
 	SYMBOL *symbol2;
-	intptr_t value;
+	int value;
 	TAG_SYMBOL *tagsym;
 	int ptr_order;
 	int type;

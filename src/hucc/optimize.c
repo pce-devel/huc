@@ -12,6 +12,7 @@
 #endif
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -24,9 +25,9 @@
 #include "error.h"
 
 #ifdef _MSC_VER
-#  include <intrin.h>
-#  define __builtin_popcount __popcnt
-#  define __builtin_ctz __lzcnt
+ #include <intrin.h>
+ #define __builtin_popcount __popcnt
+ #define __builtin_ctz _tzcnt_u32
 #endif
 
 /* defines */
@@ -34,15 +35,15 @@
 
 /* locals */
 static INS q_ins[Q_SIZE];
-static intptr_t q_rd;
-static intptr_t q_wr;
-static intptr_t q_nb;
+static int q_rd;
+static int q_wr;
+static int q_nb;
 
 /* externs */
-extern intptr_t arg_stack_flag;
+extern int arg_stack_flag;
 
 
-intptr_t cmp_operands (INS *p1, INS *p2)
+int cmp_operands (INS *p1, INS *p2)
 {
 #ifdef DEBUG_OPTIMIZER
 	printf("cmp"); dump_ins(p1); dump_ins(p2);
@@ -146,7 +147,7 @@ void push_ins (INS *ins)
 	if (optimize >= 1) {
 		INS *p[Q_SIZE];
 		int i, j;
-		intptr_t nb;
+		int nb;
 
 lv1_loop:
 		/* precalculate pointers to instructions */
@@ -165,38 +166,6 @@ lv1_loop:
 			j -= 1;
 			if (j < 0)
 				j += Q_SIZE;
-		}
-
-		/* Convert intptr_t branches to near ones.
-		   This currently assumes that no ten macroinsns in a row
-		   will be larger than 128 bytes. */
-		/* XXX: This is something the assembler should do, but
-		   is currently incapable of. */
-		{
-			int j;
-			for (j = 0; j < nb; j++) {
-				if (p[j]->code == I_LBNE || p[j]->code == I_LBEQ ||
-				    p[j]->code == I_LBRA) {
-					int i;
-					for (i = 0; i < nb; i++) {
-						if (p[i]->code == I_LABEL &&
-						    p[i]->data == p[j]->data) {
-							switch (p[j]->code) {
-							case I_LBNE:
-								p[j]->code = I_LBNEN;
-								break;
-							case I_LBEQ:
-								p[j]->code = I_LBEQN;
-								break;
-							case I_LBRA:
-								p[j]->code = I_LBRAN;
-								break;
-							}
-							break;
-						}
-					}
-				}
-			}
 		}
 
 		/* LEVEL 1 - FUN STUFF STARTS HERE */
@@ -295,8 +264,9 @@ lv1_loop:
 			    (p[2]->code == I_LDW) &&
 			    (p[3]->code == I_PUSHW) &&
 			    (p[4]->code == I_LDWI)) {
-				intptr_t tempdata, temptype;
+				intptr_t tempdata;
 				SYMBOL *tempsym;
+				char temptype;
 
 				tempdata = p[2]->data;
 				tempsym = p[2]->sym;
@@ -580,9 +550,9 @@ lv1_loop:
 			 p[1]->data > 0 && p[1]->data < 0x8000 &&
 			 p[2]->code == I_PUSHW) {
 				p[2]->type = T_VALUE;
-				if (__builtin_popcount(p[1]->data) == 1) {
+				if (__builtin_popcount((unsigned int)p[1]->data) == 1) {
 					p[2]->code = I_ASLWI;
-					p[2]->data = __builtin_ctz(p[1]->data);
+					p[2]->data = __builtin_ctz((unsigned int)p[1]->data);
 				}
 				else {
 					p[2]->code = I_MULWI;
@@ -809,85 +779,85 @@ lv1_loop:
 			  p[1]->code == I_LDB ||
 			  p[1]->code == X_LDB_S) &&
 			 (p[2]->code == I_PUSHW) &&
-			 ((strcmp((char *)p[0]->data, "eq") == 0) ||
-			  (strcmp((char *)p[0]->data, "eqb") == 0) ||
-			  (strcmp((char *)p[0]->data, "ne") == 0) ||
-			  (strcmp((char *)p[0]->data, "neb") == 0) ||
-			  (strcmp((char *)p[0]->data, "lt") == 0) ||
-			  (strcmp((char *)p[0]->data, "ltb") == 0) ||
-			  (strcmp((char *)p[0]->data, "ult") == 0) ||
-			  (strcmp((char *)p[0]->data, "ublt") == 0) ||
-			  (strcmp((char *)p[0]->data, "gt") == 0) ||
-			  (strcmp((char *)p[0]->data, "gtb") == 0) ||
-			  (strcmp((char *)p[0]->data, "ugt") == 0) ||
-			  (strcmp((char *)p[0]->data, "ubgt") == 0) ||
-			  (strcmp((char *)p[0]->data, "ge") == 0) ||
-			  (strcmp((char *)p[0]->data, "geb") == 0) ||
-			  (strcmp((char *)p[0]->data, "uge") == 0) ||
-			  (strcmp((char *)p[0]->data, "ubge") == 0) ||
-			  (strcmp((char *)p[0]->data, "le") == 0) ||
-			  (strcmp((char *)p[0]->data, "leb") == 0) ||
-			  (strcmp((char *)p[0]->data, "ule") == 0) ||
-			  (strcmp((char *)p[0]->data, "uble") == 0))) {
+			 ((strcmp((char *)p[0]->data, "eq_w") == 0) ||
+			  (strcmp((char *)p[0]->data, "eq_b") == 0) ||
+			  (strcmp((char *)p[0]->data, "ne_w") == 0) ||
+			  (strcmp((char *)p[0]->data, "ne_b") == 0) ||
+			  (strcmp((char *)p[0]->data, "ge_sw") == 0) ||
+			  (strcmp((char *)p[0]->data, "ge_sb") == 0) ||
+			  (strcmp((char *)p[0]->data, "ge_uw") == 0) ||
+			  (strcmp((char *)p[0]->data, "ge_ub") == 0) ||
+			  (strcmp((char *)p[0]->data, "lt_sw") == 0) ||
+			  (strcmp((char *)p[0]->data, "lt_sb") == 0) ||
+			  (strcmp((char *)p[0]->data, "lt_uw") == 0) ||
+			  (strcmp((char *)p[0]->data, "lt_ub") == 0) ||
+			  (strcmp((char *)p[0]->data, "gt_sw") == 0) ||
+			  (strcmp((char *)p[0]->data, "gt_sb") == 0) ||
+			  (strcmp((char *)p[0]->data, "gt_uw") == 0) ||
+			  (strcmp((char *)p[0]->data, "gt_ub") == 0) ||
+			  (strcmp((char *)p[0]->data, "le_sw") == 0) ||
+			  (strcmp((char *)p[0]->data, "le_sb") == 0) ||
+			  (strcmp((char *)p[0]->data, "le_uw") == 0) ||
+			  (strcmp((char *)p[0]->data, "le_ub") == 0))) {
 				if (p[1]->code == X_LDW_S || p[1]->code == X_LDB_S)
 					p[1]->data -= 2;
 				/* replace code */
 				p[2]->code = I_STW;
 				p[2]->type = T_SYMBOL;
 				p[2]->data = (intptr_t)"_temp";
-				if (strcmp((char *)p[0]->data, "eq") == 0)
-					p[0]->data = (intptr_t)"eqzp";
-				else if (strcmp((char *)p[0]->data, "eqb") == 0)
-					p[0]->data = (intptr_t)"eqbzp";
-				else if (strcmp((char *)p[0]->data, "ne") == 0)
-					p[0]->data = (intptr_t)"nezp";
-				else if (strcmp((char *)p[0]->data, "neb") == 0)
-					p[0]->data = (intptr_t)"nebzp";
-				else if (strcmp((char *)p[0]->data, "lt") == 0)
-					p[0]->data = (intptr_t)"ltzp";
-				else if (strcmp((char *)p[0]->data, "ltb") == 0)
-					p[0]->data = (intptr_t)"ltbzp";
-				else if (strcmp((char *)p[0]->data, "ult") == 0)
-					p[0]->data = (intptr_t)"ultzp";
-				else if (strcmp((char *)p[0]->data, "ublt") == 0)
-					p[0]->data = (intptr_t)"ubltzp";
-				else if (strcmp((char *)p[0]->data, "gt") == 0)
-					p[0]->data = (intptr_t)"gtzp";
-				else if (strcmp((char *)p[0]->data, "gtb") == 0)
-					p[0]->data = (intptr_t)"gtbzp";
-				else if (strcmp((char *)p[0]->data, "ugt") == 0)
-					p[0]->data = (intptr_t)"ugtzp";
-				else if (strcmp((char *)p[0]->data, "ubgt") == 0)
-					p[0]->data = (intptr_t)"ubgtzp";
-				else if (strcmp((char *)p[0]->data, "le") == 0)
-					p[0]->data = (intptr_t)"lezp";
-				else if (strcmp((char *)p[0]->data, "leb") == 0)
-					p[0]->data = (intptr_t)"lebzp";
-				else if (strcmp((char *)p[0]->data, "ule") == 0)
-					p[0]->data = (intptr_t)"ulezp";
-				else if (strcmp((char *)p[0]->data, "uble") == 0)
-					p[0]->data = (intptr_t)"ublezp";
-				else if (strcmp((char *)p[0]->data, "ge") == 0)
-					p[0]->data = (intptr_t)"gezp";
-				else if (strcmp((char *)p[0]->data, "geb") == 0)
-					p[0]->data = (intptr_t)"gebzp";
-				else if (strcmp((char *)p[0]->data, "uge") == 0)
-					p[0]->data = (intptr_t)"ugezp";
-				else if (strcmp((char *)p[0]->data, "ubge") == 0)
-					p[0]->data = (intptr_t)"ubgezp";
+				if (strcmp((char *)p[0]->data, "eq_w") == 0)
+					p[0]->data = (intptr_t)"eq_wzp";
+				else if (strcmp((char *)p[0]->data, "eq_b") == 0)
+					p[0]->data = (intptr_t)"eq_bzp";
+				else if (strcmp((char *)p[0]->data, "ne_w") == 0)
+					p[0]->data = (intptr_t)"ne_wzp";
+				else if (strcmp((char *)p[0]->data, "ne_b") == 0)
+					p[0]->data = (intptr_t)"ne_bzp";
+				else if (strcmp((char *)p[0]->data, "ge_sw") == 0)
+					p[0]->data = (intptr_t)"ge_swzp";
+				else if (strcmp((char *)p[0]->data, "ge_sb") == 0)
+					p[0]->data = (intptr_t)"ge_sbzp";
+				else if (strcmp((char *)p[0]->data, "ge_uw") == 0)
+					p[0]->data = (intptr_t)"ge_uwzp";
+				else if (strcmp((char *)p[0]->data, "ge_ub") == 0)
+					p[0]->data = (intptr_t)"ge_ubzp";
+				else if (strcmp((char *)p[0]->data, "lt_sw") == 0)
+					p[0]->data = (intptr_t)"lt_swzp";
+				else if (strcmp((char *)p[0]->data, "lt_sb") == 0)
+					p[0]->data = (intptr_t)"lt_sbzp";
+				else if (strcmp((char *)p[0]->data, "lt_uw") == 0)
+					p[0]->data = (intptr_t)"lt_uwzp";
+				else if (strcmp((char *)p[0]->data, "lt_ub") == 0)
+					p[0]->data = (intptr_t)"lt_ubzp";
+				else if (strcmp((char *)p[0]->data, "gt_sw") == 0)
+					p[0]->data = (intptr_t)"gt_swzp";
+				else if (strcmp((char *)p[0]->data, "gt_sb") == 0)
+					p[0]->data = (intptr_t)"gt_sbzp";
+				else if (strcmp((char *)p[0]->data, "gt_uw") == 0)
+					p[0]->data = (intptr_t)"gt_uwzp";
+				else if (strcmp((char *)p[0]->data, "gt_ub") == 0)
+					p[0]->data = (intptr_t)"gt_ubzp";
+				else if (strcmp((char *)p[0]->data, "le_sw") == 0)
+					p[0]->data = (intptr_t)"le_swzp";
+				else if (strcmp((char *)p[0]->data, "le_sb") == 0)
+					p[0]->data = (intptr_t)"le_sbzp";
+				else if (strcmp((char *)p[0]->data, "le_uw") == 0)
+					p[0]->data = (intptr_t)"le_uwzp";
+				else if (strcmp((char *)p[0]->data, "le_ub") == 0)
+					p[0]->data = (intptr_t)"le_ubzp";
 				/* loop */
 				goto lv1_loop;
 			}
 
 			else if (p[0]->code == I_JSR &&
-				 (!strcmp((char *)p[0]->data, "eqzp") ||
-				  !strcmp((char *)p[0]->data, "nezp")) &&
+				 (!strcmp((char *)p[0]->data, "eq_wzp") ||
+				  !strcmp((char *)p[0]->data, "ne_wzp")) &&
 				 p[1]->code == I_LDWI &&
 				 p[2]->code == I_STW &&
 				 p[2]->type == T_SYMBOL &&
 				 !strcmp((char *)p[2]->data, "_temp")) {
 				*p[2] = *p[1];
-				if (!strcmp((char *)p[0]->data, "eqzp"))
+				if (!strcmp((char *)p[0]->data, "eq_wzp"))
 					p[2]->code = I_CMPWI_EQ;
 				else
 					p[2]->code = I_CMPWI_NE;
@@ -971,7 +941,7 @@ lv1_loop:
 		/* 2-instruction patterns */
 		if (q_nb >= 2) {
 			if (p[0]->code == I_LABEL &&
-			    (p[1]->code == I_LBRA || p[1]->code == I_LBRAN) &&
+			    (p[1]->code == I_LBRA) &&
 			    p[1]->type == T_LABEL &&
 			    p[0]->data == p[1]->data) {
 				*p[1] = *p[0];
@@ -1044,7 +1014,7 @@ lv1_loop:
 					SYMBOL * newsym = copysym(oldsym);
 					if (NAMEALLOC <=
 						snprintf(newsym->name, NAMEALLOC, "%s+%ld", oldsym->name, (long) p[0]->data))
-						error("optimized symbol+offset name too intptr_t");
+						error("optimized symbol+offset name too long");
 					p[1]->data = (intptr_t)newsym;
 				}
 				nb = 1;
@@ -1182,10 +1152,10 @@ lv1_loop:
 			  !strcmp((char *)p[0]->data, "smul")) &&
 			 (p[1]->code == I_LDWI) &&
 			 (p[1]->type == T_VALUE) &&
-			 __builtin_popcount(p[1]->data) == 1 &&
+			 __builtin_popcount((unsigned int)p[1]->data) == 1 &&
 			 p[1]->data > 0 && p[1]->data < 0x8000) {
 				p[0]->data = (intptr_t)"asl";
-				p[1]->data = __builtin_ctz(p[1]->data);
+				p[1]->data = __builtin_ctz((unsigned int)p[1]->data);
 				nb = 0;
 			}
 
@@ -1333,7 +1303,7 @@ lv1_loop:
 					p[0]->code = I_EXTW;
 				else
 					p[0]->code = I_EXTUW;
-				p[0]->type = p[0]->data = 0;
+				p[0]->data = p[0]->type = 0;
 			}
 
 			/*  @_lea_s i                   --> @_pea_s i
@@ -1509,46 +1479,46 @@ lv1_loop:
 			else if
 			((p[0]->code == I_TSTW) &&
 			 (p[1]->code == I_JSR) &&
-			 ((strcmp((char *)p[1]->data, "eq") == 0) ||
-			  (strcmp((char *)p[1]->data, "eqb") == 0) ||
-			  (strcmp((char *)p[1]->data, "ne") == 0) ||
-			  (strcmp((char *)p[1]->data, "neb") == 0) ||
-			  (strcmp((char *)p[1]->data, "ge") == 0) ||
-			  (strcmp((char *)p[1]->data, "geb") == 0) ||
-			  (strcmp((char *)p[1]->data, "uge") == 0) ||
-			  (strcmp((char *)p[1]->data, "ubge") == 0) ||
-			  (strcmp((char *)p[1]->data, "gt") == 0) ||
-			  (strcmp((char *)p[1]->data, "gtb") == 0) ||
-			  (strcmp((char *)p[1]->data, "ugt") == 0) ||
-			  (strcmp((char *)p[1]->data, "ubgt") == 0) ||
-			  (strcmp((char *)p[1]->data, "le") == 0) ||
-			  (strcmp((char *)p[1]->data, "leb") == 0) ||
-			  (strcmp((char *)p[1]->data, "ule") == 0) ||
-			  (strcmp((char *)p[1]->data, "uble") == 0) ||
-			  (strcmp((char *)p[1]->data, "lt") == 0) ||
-			  (strcmp((char *)p[1]->data, "ltb") == 0) ||
-			  (strcmp((char *)p[1]->data, "ult") == 0) ||
-			  (strcmp((char *)p[1]->data, "ublt") == 0) ||
-			  (strcmp((char *)p[1]->data, "eqzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "eqbzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "nezp") == 0) ||
-			  (strcmp((char *)p[1]->data, "nebzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "gezp") == 0) ||
-			  (strcmp((char *)p[1]->data, "gebzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "ugezp") == 0) ||
-			  (strcmp((char *)p[1]->data, "ubgezp") == 0) ||
-			  (strcmp((char *)p[1]->data, "gtzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "gtbzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "ugtzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "ubgtzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "lezp") == 0) ||
-			  (strcmp((char *)p[1]->data, "lebzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "ulezp") == 0) ||
-			  (strcmp((char *)p[1]->data, "ublezp") == 0) ||
-			  (strcmp((char *)p[1]->data, "ltzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "ltbzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "ultzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "ubltzp") == 0)))
+			 ((strcmp((char *)p[1]->data, "eq_w") == 0) ||
+			  (strcmp((char *)p[1]->data, "eq_b") == 0) ||
+			  (strcmp((char *)p[1]->data, "ne_w") == 0) ||
+			  (strcmp((char *)p[1]->data, "ne_b") == 0) ||
+			  (strcmp((char *)p[1]->data, "ge_sw") == 0) ||
+			  (strcmp((char *)p[1]->data, "ge_sb") == 0) ||
+			  (strcmp((char *)p[1]->data, "ge_uw") == 0) ||
+			  (strcmp((char *)p[1]->data, "ge_ub") == 0) ||
+			  (strcmp((char *)p[1]->data, "lt_sw") == 0) ||
+			  (strcmp((char *)p[1]->data, "lt_sb") == 0) ||
+			  (strcmp((char *)p[1]->data, "lt_uw") == 0) ||
+			  (strcmp((char *)p[1]->data, "lt_ub") == 0) ||
+			  (strcmp((char *)p[1]->data, "gt_sw") == 0) ||
+			  (strcmp((char *)p[1]->data, "gt_sb") == 0) ||
+			  (strcmp((char *)p[1]->data, "gt_uw") == 0) ||
+			  (strcmp((char *)p[1]->data, "gt_ub") == 0) ||
+			  (strcmp((char *)p[1]->data, "le_sw") == 0) ||
+			  (strcmp((char *)p[1]->data, "le_sb") == 0) ||
+			  (strcmp((char *)p[1]->data, "le_uw") == 0) ||
+			  (strcmp((char *)p[1]->data, "le_ub") == 0) ||
+			  (strcmp((char *)p[1]->data, "eq_wzp") == 0) ||
+			  (strcmp((char *)p[1]->data, "eq_bzp") == 0) ||
+			  (strcmp((char *)p[1]->data, "ne_wzp") == 0) ||
+			  (strcmp((char *)p[1]->data, "ne_bzp") == 0) ||
+			  (strcmp((char *)p[1]->data, "ge_swzp") == 0) ||
+			  (strcmp((char *)p[1]->data, "ge_sbzp") == 0) ||
+			  (strcmp((char *)p[1]->data, "ge_uwzp") == 0) ||
+			  (strcmp((char *)p[1]->data, "ge_ubzp") == 0) ||
+			  (strcmp((char *)p[1]->data, "lt_swzp") == 0) ||
+			  (strcmp((char *)p[1]->data, "lt_sbzp") == 0) ||
+			  (strcmp((char *)p[1]->data, "lt_uwzp") == 0) ||
+			  (strcmp((char *)p[1]->data, "lt_ubzp") == 0) ||
+			  (strcmp((char *)p[1]->data, "gt_swzp") == 0) ||
+			  (strcmp((char *)p[1]->data, "gt_sbzp") == 0) ||
+			  (strcmp((char *)p[1]->data, "gt_uwzp") == 0) ||
+			  (strcmp((char *)p[1]->data, "gt_ubzp") == 0) ||
+			  (strcmp((char *)p[1]->data, "le_swzp") == 0) ||
+			  (strcmp((char *)p[1]->data, "le_sbzp") == 0) ||
+			  (strcmp((char *)p[1]->data, "le_uwzp") == 0) ||
+			  (strcmp((char *)p[1]->data, "le_ubzp") == 0)))
 				nb = 1;
 
 			/*  __boolw         --> __tstw
@@ -1622,10 +1592,10 @@ lv1_loop:
 	 *
 	 */
 	if (optimize >= 2) {
-		intptr_t offset;
-		intptr_t i, j;
-		intptr_t t;
-		intptr_t jp;
+		int offset;
+		int i, j;
+		int t;
+		int jp;
 
 		/* check last instruction */
 		if (q_nb > 1 &&
@@ -1662,7 +1632,7 @@ lv1_loop:
 				case I_ADDMI:
 					if ((q_ins[j].type == T_STACK) ||
 					    (q_ins[j].type == T_NOP))
-						offset += q_ins[j].data;
+						offset += (int)q_ins[j].data;
 					break;
 
 				case I_CALLS:
@@ -1833,7 +1803,7 @@ void flush_ins_label (int nextlabel)
 	while (q_nb) {
 		/* skip last op if it's a branch to nextlabel */
 		if (q_nb > 1 || nextlabel == -1 ||
-		    (q_ins[q_rd].code != I_LBRA && q_ins[q_rd].code != I_LBRAN) ||
+		    (q_ins[q_rd].code != I_LBRA) ||
 		    q_ins[q_rd].data != nextlabel) {
 			/* gen code */
 			if (arg_stack_flag)
@@ -1886,25 +1856,25 @@ void gen_asm (INS *inst)
 
 	case X_LDB_S:
 		ot("__ldb_s\t");
-		outdec(inst->data);
+		outdec((int)inst->data);
 		nl();
 		break;
 
 	case X_LDUB_S:
 		ot("__ldub_s\t");
-		outdec(inst->data);
+		outdec((int)inst->data);
 		nl();
 		break;
 
 	case X_LDW_S:
 		ot("__ldw_s\t");
-		outdec(inst->data);
+		outdec((int)inst->data);
 		nl();
 		break;
 
 	case X_LDD_I:
 		ot("__ldd_i\t");
-		outdec(inst->data);
+		outdec((int)inst->data);
 		outstr(",");
 		outsymbol(inst->arg[0]);
 		outstr(",");
@@ -1934,7 +1904,7 @@ void gen_asm (INS *inst)
 
 	case X_LDD_S_B:
 		ot("__ldd_s_b\t");
-		outdec(inst->data);
+		outdec((int)inst->data);
 		outstr(",");
 		outsymbol(inst->arg[0]);
 		outstr(",");
@@ -1944,7 +1914,7 @@ void gen_asm (INS *inst)
 
 	case X_LDD_S_W:
 		ot("__ldd_s_w\t");
-		outdec(inst->data);
+		outdec((int)inst->data);
 		outstr(",");
 		outsymbol(inst->arg[0]);
 		outstr(",");
@@ -1954,69 +1924,69 @@ void gen_asm (INS *inst)
 
 	case X_LEA_S:
 		ot("__lea_s\t");
-		outdec(inst->data);
+		outdec((int)inst->data);
 		nl();
 		break;
 
 	case X_PEA_S:
 		ot("__pea_s\t");
-		outdec(inst->data);
+		outdec((int)inst->data);
 		nl();
 		break;
 
 	case X_STBI_S:
 		ot("__stbi_s\t");
-		outdec(inst->imm_data);
+		outdec((int)inst->imm_data);
 		outstr(",");
-		outdec(inst->data);
+		outdec((int)inst->data);
 		nl();
 		break;
 
 	case X_STWI_S:
 		ot("__stwi_s\t");
-		outdec(inst->imm_data);
+		outdec((int)inst->imm_data);
 		outstr(",");
-		outdec(inst->data);
+		outdec((int)inst->data);
 		nl();
 		break;
 
 	case X_STW_S:
 		ot("__stw_s\t");
-		outdec(inst->data);
+		outdec((int)inst->data);
 		nl();
 		break;
 
 	case X_STB_S:
 		ot("__stb_s\t");
-		outdec(inst->data);
+		outdec((int)inst->data);
 		nl();
 		break;
 
 	case X_INCW_S:
 		ot("__incw_s\t");
-		outdec(inst->data);
+		outdec((int)inst->data);
 		nl();
 		break;
 
 	case X_INCB_S:
 		ot("__incb_s\t");
-		outdec(inst->data);
+		outdec((int)inst->data);
 		nl();
 		break;
 
 	case X_ADDW_S:
 		ot("__addw_s\t");
-		outdec(inst->data);
+		outdec((int)inst->data);
 		nl();
 		break;
 	case X_ADDB_S:
 		ot("__addb_s\t");
-		outdec(inst->data);
+		outdec((int)inst->data);
 		nl();
 		break;
 	case X_ADDUB_S:
 		ot("__addub_s\t");
-		outdec(inst->data);
+		outdec((int)inst->data);
 		nl();
 		break;
 	default:

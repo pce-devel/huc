@@ -3,6 +3,7 @@
    See LICENSE for details on use and redistribution. */
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include "data.h"
@@ -31,7 +32,7 @@ int define_enum (char *sname, int storage)
 		strcpy(enums[enum_ptr].name, n);
 		/* optional initializer */
 		if (match("=")) {
-			intptr_t num;
+			int num;
 			if (const_expr(&num, ",", "}"))
 				count = num;
 		}
@@ -93,7 +94,7 @@ int find_enum_type (char *name)
 	return (-1);
 }
 
-int find_enum (char *sname, intptr_t *val)
+int find_enum (char *sname, int *val)
 {
 	int i;
 

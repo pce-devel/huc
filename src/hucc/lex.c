@@ -4,6 +4,7 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include "defs.h"
 #include "data.h"
@@ -38,13 +39,13 @@ void junk (void)
 	blanks();
 }
 
-intptr_t endst (void)
+int endst (void)
 {
 	blanks();
 	return ((streq(line + lptr, ";") | (ch() == 0)));
 }
 
-void needbrack (char *str)
+void needbrack (const char *str)
 {
 	if (!match(str)) {
 		error("missing bracket");
@@ -58,7 +59,7 @@ void needbrack (char *str)
  *	test if given character is alpha
  *
  */
-intptr_t alpha (char c)
+int alpha (char c)
 {
 	c = c & 127;
 	return (((c >= 'a') && (c <= 'z')) |
@@ -70,7 +71,7 @@ intptr_t alpha (char c)
  *	test if given character is numeric
  *
  */
-intptr_t numeric (char c)
+int numeric (char c)
 {
 	c = c & 127;
 	return ((c >= '0') && (c <= '9'));
@@ -80,19 +81,19 @@ intptr_t numeric (char c)
  *	test if given character is alphanumeric
  *
  */
-intptr_t an (char c)
+int an (char c)
 {
 	return ((alpha(c)) | (numeric(c)));
 }
 
-intptr_t sstreq (char *str1)
+int sstreq (const char *str1)
 {
 	return (streq(line + lptr, str1));
 }
 
-intptr_t streq (char *str1, char *str2)
+int streq (const char *str1, const char *str2)
 {
-	intptr_t k;
+	int k;
 
 	k = 0;
 	while (str2[k]) {
@@ -104,9 +105,9 @@ intptr_t streq (char *str1, char *str2)
 	return (k);
 }
 
-intptr_t astreq (char *str1, char *str2, intptr_t len)
+int astreq (const char *str1, const char *str2, int len)
 {
-	intptr_t k;
+	int k;
 
 	k = 0;
 	while (k < len) {
@@ -127,9 +128,9 @@ intptr_t astreq (char *str1, char *str2, intptr_t len)
 	return (k);
 }
 
-intptr_t match (char *lit)
+int match (const char *lit)
 {
-	intptr_t k;
+	int k;
 
 	blanks();
 	k = streq(line + lptr, lit);
@@ -140,9 +141,9 @@ intptr_t match (char *lit)
 	return (0);
 }
 
-intptr_t amatch (char *lit, intptr_t len)
+int amatch (const char *lit, int len)
 {
-	intptr_t k;
+	int k;
 
 	blanks();
 	k = astreq(line + lptr, lit, len);

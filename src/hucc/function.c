@@ -4,6 +4,7 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -27,21 +28,19 @@
 
 /* locals */
 static INS ins_stack[1024];
-static intptr_t ins_stack_idx;
-/* static char ins_stack_fname[NAMESIZE]; */
-static intptr_t arg_list[32][2];
-/* static intptr_t  arg_list_idx; */
-static intptr_t arg_idx;
-static intptr_t func_call_stack;
+static int ins_stack_idx;
+static int arg_list[32][2];
+static int arg_idx;
+static int func_call_stack;
 
 /* globals */
-intptr_t arg_stack_flag;
-intptr_t argtop;
+int arg_stack_flag;
+int argtop;
 
 /* protos */
-void arg_flush (intptr_t arg, intptr_t adj);
-void arg_to_fptr (struct fastcall *fast, intptr_t i, intptr_t arg, intptr_t adj);
-void arg_to_dword (struct fastcall *fast, intptr_t i, intptr_t arg, intptr_t adj);
+void arg_flush (int arg, int adj);
+void arg_to_fptr (struct fastcall *fast, int i, int arg, int adj);
+void arg_to_dword (struct fastcall *fast, int i, int arg, int adj);
 
 /* function declaration styles */
 #define KR 0
@@ -65,15 +64,12 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 {
 	char n[NAMESIZE];
 	SYMBOL *ptr;
-	intptr_t nbarg = 0;
-	int is_irq_handler = 0;
-	int is_firq_handler = 0;
+	int nbarg = 0;
 	int save_norecurse = norecurse;
 	struct fastcall *fc;
-	intptr_t hash;
+	int hash;
 	int fc_args;
 
-	need_map_call_bank = 0;
 	is_leaf_function = 1;
 
 	if (sname) {
@@ -249,33 +245,6 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 	}
 
 	for (;;) {
-		if (amatch("__firq", 6)) {
-			/* Goes to LIB1_BANK for performance. */
-			is_firq_handler = 1;
-			have_irq_handler++;
-			continue;
-		}
-		else if (amatch("__irq", 5)) {
-			/* Goes to regular code bank, with a mapping stub in
-			   LIB1_BANK. */
-			is_irq_handler = 1;
-			have_irq_handler++;
-			continue;
-		}
-		else if (amatch("__sirq", 6)) {
-			/* Same as __irq to us, but we need to inform the system
-			   interrupt handler that it needs extra context saving
-			   because it calls fastcall functions. */
-			is_irq_handler = 1;
-			have_sirq_handler++;
-			continue;
-		}
-
-		if (amatch("__mapcall", 9)) {
-			need_map_call_bank = 1;
-			continue;
-		}
-
 		if (amatch("__norecurse", 14)) {
 			norecurse = 1;
 			continue;
@@ -378,23 +347,10 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 
 	flush_ins();	/* David, .proc directive support */
 	gtext();
-	if (is_firq_handler) {
-		ol(".bank LIB1_BANK");
-		prefix(); outstr(current_fn); outstr(":"); nl();
-	}
-	else if (is_irq_handler) {
-		ol(".bank LIB1_BANK");
-		prefix(); outstr(current_fn); outstr(":"); nl();
-		ot("maplibfunc\t"); outstr(current_fn); nl();
-		ol("rts");
-		ot(".proc "); outstr(current_fn); nl();
-	}
-	else {
-		ot(".proc ");
-		prefix();
-		outstr(current_fn);
-		nl();
-	}
+	ot(".proc ");
+	prefix();
+	outstr(current_fn);
+	nl();
 
 	if (nbarg)	/* David, arg optimization */
 		gpusharg(0);
@@ -411,8 +367,7 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 	gtext();
 	gret();			/* generate the return statement */
 	flush_ins();		/* David, optimize.c related */
-	if (!is_firq_handler)
-		ol(".endp");	/* David, .endp directive support */
+	ol(".endp");	/* David, .endp directive support */
 
 	/* Add space for fixed-address locals to .bss section. */
 	if (norecurse && locals_ptr < 0) {
@@ -446,9 +401,9 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
  *	completely rewritten version.  p.l. woods
  *
  */
-int getarg (intptr_t t, int syntax, int otag, int is_fastcall)
+int getarg (int t, int syntax, int otag, int is_fastcall)
 {
-	intptr_t j, legalname, address;
+	int j, legalname, address;
 	char n[NAMESIZE];
 	SYMBOL *argptr;
 	int ptr_order = 0;
@@ -558,14 +513,14 @@ int getarg (intptr_t t, int syntax, int otag, int is_fastcall)
 
 void callfunction (char *ptr)
 {
-	extern char *new_string (intptr_t, char *);
+	extern char *new_string (int, char *);
 	struct fastcall *fast;
-	intptr_t call_stack_ref;
-	intptr_t i, j;
-	intptr_t nb;
-	intptr_t adj;
-	intptr_t nargs;
-	intptr_t cnt;
+	int call_stack_ref;
+	int i, j;
+	int nb;
+	int adj;
+	int nargs;
+	int cnt;
 	int max_fc_arg = 0;	/* highest arg with a fastcall inside */
 	/* args spilled to the native stack */
 	const char *spilled_args[MAX_FASTCALL_ARGS];
@@ -695,14 +650,14 @@ void callfunction (char *ptr)
 				case TYPE_BYTE:
 					if (i < max_fc_arg)
 						SPILLB(fast->argname[j])
-						else
-							out_ins(I_STB, T_LITERAL, (intptr_t)fast->argname[j]);
+					else
+						out_ins(I_STB, T_LITERAL, (intptr_t)fast->argname[j]);
 					break;
 				case TYPE_WORD:
 					if (i < max_fc_arg)
 						SPILLW(fast->argname[j])
-						else
-							out_ins(I_STW, T_LITERAL, (intptr_t)fast->argname[j]);
+					else
+						out_ins(I_STW, T_LITERAL, (intptr_t)fast->argname[j]);
 					break;
 				case TYPE_FARPTR:
 					arg_to_fptr(fast, j, arg_idx + i, adj);
@@ -815,7 +770,7 @@ void callfunction (char *ptr)
  * start arg instruction stacking
  *
  */
-void arg_stack (intptr_t arg)
+void arg_stack (int arg)
 {
 	if (arg > 31)
 		error("too many args");
@@ -852,12 +807,12 @@ void arg_push_ins (INS *ptr)
  * flush arg instruction stacks
  *
  */
-void arg_flush (intptr_t arg, intptr_t adj)
+void arg_flush (int arg, int adj)
 {
 	INS *ins;
-	intptr_t idx;
-	intptr_t nb;
-	intptr_t i;
+	int idx;
+	int nb;
+	int i;
 
 	if (arg > 31)
 		return;
@@ -904,13 +859,13 @@ void arg_flush (intptr_t arg, intptr_t adj)
 	}
 }
 
-void arg_to_fptr (struct fastcall *fast, intptr_t i, intptr_t arg, intptr_t adj)
+void arg_to_fptr (struct fastcall *fast, int i, int arg, int adj)
 {
 	INS *ins, tmp;
 	SYMBOL *sym;
-	intptr_t idx;
-	intptr_t err;
-	intptr_t nb;
+	int idx;
+	int err;
+	int nb;
 
 	if (arg > 31)
 		return;
@@ -1000,8 +955,8 @@ void arg_to_fptr (struct fastcall *fast, intptr_t i, intptr_t arg, intptr_t adj)
 			     (sym->ident == POINTER)) &&
 			    (sym->type == CINT || sym->type == CUINT)) {
 				tmp.code = I_FARPTR_GET;
-				tmp.type = (intptr_t)NULL;
-				tmp.data = (intptr_t)NULL;
+				tmp.type = 0;
+				tmp.data = 0;
 				tmp.arg[0] = fast->argname[i];
 				tmp.arg[1] = fast->argname[i + 1];
 			}
@@ -1015,14 +970,14 @@ void arg_to_fptr (struct fastcall *fast, intptr_t i, intptr_t arg, intptr_t adj)
 	}
 }
 
-void arg_to_dword (struct fastcall *fast, intptr_t i, intptr_t arg, intptr_t adj)
+void arg_to_dword (struct fastcall *fast, int i, int arg, int adj)
 {
 	INS *ins, *ptr, tmp;
 	SYMBOL *sym;
-	intptr_t idx;
-	intptr_t gen;
-	intptr_t err;
-	intptr_t nb;
+	int idx;
+	int gen;
+	int err;
+	int nb;
 
 	if (arg > 31)
 		return;

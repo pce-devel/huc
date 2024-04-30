@@ -9,6 +9,7 @@
    Needs a rewrite. */
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include "defs.h"
 #include "data.h"
@@ -36,7 +37,7 @@ void new_const (void)
  *	add a const array
  *
  */
-void add_const (intptr_t typ)
+void add_const (char typ)
 {
 	if ((const_data_idx >= MAX_CONST_DATA) || (const_val_idx >= MAX_CONST_VALUE))
 		error("too much constant data (> 8KB)");
@@ -58,11 +59,11 @@ void add_const (intptr_t typ)
  *	array initializer
  *
  */
-intptr_t array_initializer (intptr_t typ, intptr_t id, intptr_t stor)
+int array_initializer (char typ, char id, char stor)
 {
-	intptr_t nb;
-	intptr_t k;
-	intptr_t i;
+	int nb;
+	int k;
+	int i;
 
 	nb = 0;
 	k = needsub();
@@ -124,9 +125,9 @@ intptr_t array_initializer (intptr_t typ, intptr_t id, intptr_t stor)
  *	scalar initializer
  *
  */
-intptr_t scalar_initializer (intptr_t typ, intptr_t id, intptr_t stor)
+int scalar_initializer (char typ, char id, char stor)
 {
-	intptr_t i;
+	int i;
 
 	if (stor == CONST)
 		new_const();
@@ -158,14 +159,14 @@ intptr_t scalar_initializer (intptr_t typ, intptr_t id, intptr_t stor)
  *  add a string to the literal pool and return a pointer (index) to it
  *
  */
-intptr_t get_string_ptr (intptr_t typ)
+int get_string_ptr (char typ)
 {
-	intptr_t num[1];
+	int num;
 
 	if (typ == CINT || typ == CUINT)
 		error("incompatible pointer type");
-	if (qstr(num))
-		return (-(num[0] + 1024));
+	if (qstr(&num))
+		return (-(num + 1024));
 	else
 		return (-1);
 }
@@ -175,14 +176,14 @@ intptr_t get_string_ptr (intptr_t typ)
  *  get value raw text
  *
  */
-intptr_t get_raw_value (char sep)
+int get_raw_value (char sep)
 {
 	char c;
 	char tmp[LINESIZE + 1];
 	char *ptr;
-	intptr_t level;
-	intptr_t flag;
-	intptr_t start;
+	int level;
+	int flag;
+	int start;
 	int is_address = 0;
 	int had_address = 0;
 
@@ -357,10 +358,8 @@ char *get_const (SYMBOL *s)
  */
 void dump_const (void)
 {
-	intptr_t i, j, k;
-	intptr_t size;
-
-/*	intptr_t c; */
+	int i, j, k;
+	int size;
 
 	if (const_nb) {
 		const_ptr = const_var;

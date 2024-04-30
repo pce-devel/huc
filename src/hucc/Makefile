@@ -1,4 +1,4 @@
-# Makefile for HuC
+# Makefile for HuCC
 #
 # Written for Linux development version, March 4, 2001 by Dave Shadoff 
 #
@@ -15,7 +15,7 @@ OBJS = code.o const.o data.o error.o expr.o \
        function.o gen.o io.o lex.o main.o \
        optimize.o pragma.o preproc.o primary.o pseudo.o \
        stmt.o sym.o while.o struct.o enum.o initials.o
-EXE = huc$(EXESUFFIX)
+EXE = hucc$(EXESUFFIX)
 
 all: $(EXE)
 

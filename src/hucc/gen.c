@@ -4,6 +4,7 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -23,7 +24,7 @@
  *	return next available internal label number
  *
  */
-intptr_t getlabel (void)
+int getlabel (void)
 {
 	return (nxtlab++);
 }
@@ -72,7 +73,7 @@ void getvram (SYMBOL *sym)
  */
 void getloc (SYMBOL *sym)
 {
-	intptr_t value;
+	int value;
 
 	if ((sym->storage & ~WRITTEN) == LSTATIC)
 		out_ins(I_LDWI, T_LABEL, glint(sym));
@@ -83,7 +84,7 @@ void getloc (SYMBOL *sym)
 			SYMBOL * locsym = copysym(sym);
 			if (NAMEALLOC <=
 				sprintf(locsym->name, "_%s_lend-%ld", current_fn, (long) -value))
-				error("norecurse local name too intptr_t");
+				error("norecurse local name too long");
 			out_ins(I_LDWI, T_SYMBOL, (intptr_t)locsym);
 		}
 		else {
@@ -99,7 +100,7 @@ void getloc (SYMBOL *sym)
  */
 void putmem (SYMBOL *sym)
 {
-	intptr_t code;
+	int code;
 
 	/* XXX: What about 1-byte structs? */
 	if ((sym->ident != POINTER) & (sym->type == CCHAR || sym->type == CUCHAR))
@@ -121,9 +122,9 @@ void putmem (SYMBOL *sym)
 void putstk (char typeobj)
 {
 	if (typeobj == CCHAR || typeobj == CUCHAR)
-		out_ins(I_STBPS, (intptr_t)NULL, (intptr_t)NULL);
+		out_ins(I_STBPS, 0, 0);
 	else
-		out_ins(I_STWPS, (intptr_t)NULL, (intptr_t)NULL);
+		out_ins(I_STWPS, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
@@ -150,13 +151,13 @@ void putvram (SYMBOL *sym)
  */
 void indirect (char typeobj)
 {
-	out_ins(I_STW, T_PTR, (intptr_t)NULL);
+	out_ins(I_STW, T_PTR, 0);
 	if (typeobj == CCHAR)
-		out_ins(I_LDBP, T_PTR, (intptr_t)NULL);
+		out_ins(I_LDBP, T_PTR, 0);
 	else if (typeobj == CUCHAR)
-		out_ins(I_LDUBP, T_PTR, (intptr_t)NULL);
+		out_ins(I_LDUBP, T_PTR, 0);
 	else
-		out_ins(I_LDWP, T_PTR, (intptr_t)NULL);
+		out_ins(I_LDWP, T_PTR, 0);
 }
 
 void farpeek (SYMBOL *ptr)
@@ -174,7 +175,7 @@ void farpeek (SYMBOL *ptr)
  *	the primary register
  *
  */
-void immed (intptr_t type, intptr_t data)
+void immed (int type, intptr_t data)
 {
 	if (type == T_VALUE && (data < -32768 || data > 65535))
 		warning(W_GENERAL, "large integer truncated");
@@ -198,7 +199,7 @@ void gpush (void)
  *	push the primary register onto the stack
  *
  */
-void gpusharg (intptr_t size)
+void gpusharg (int size)
 {
 	out_ins(I_PUSHW, T_SIZE, size);
 	stkp = stkp - size;
@@ -210,7 +211,7 @@ void gpusharg (intptr_t size)
  */
 void gpop (void)
 {
-	out_ins(I_POPW, (intptr_t)NULL, (intptr_t)NULL);
+	out_ins(I_POPW, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
@@ -220,27 +221,23 @@ void gpop (void)
  */
 void swapstk (void)
 {
-	out_ins(I_SWAPW, (intptr_t)NULL, (intptr_t)NULL);
+	out_ins(I_SWAPW, 0, 0);
 }
 
 /*
  *	call the specified subroutine name
  *
  */
-void gcall (char *sname, intptr_t nargs)
+void gcall (char *sname, int nargs)
 {
-	if (need_map_call_bank)
-		out_ins_ex(I_MAPCBANK, T_SYMBOL, (intptr_t)sname, T_VALUE, nargs);
 	out_ins_ex(I_CALL, T_SYMBOL, (intptr_t)sname, T_VALUE, nargs);
-	if (need_map_call_bank)
-		out_ins_ex(I_UNMAPCBANK, T_SYMBOL, (intptr_t)sname, T_VALUE, nargs);
 }
 
 /*
  *	call the specified macro name
  *
  */
-void gmacro (char *sname, intptr_t nargs)
+void gmacro (char *sname, int nargs)
 {
 	out_ins_ex(I_MACRO, T_SYMBOL, (intptr_t)sname, T_VALUE, nargs);
 }
@@ -261,14 +258,14 @@ void gbank (unsigned char bank, unsigned short offset)
  */
 void gret (void)
 {
-	out_ins(I_RTS, (intptr_t)NULL, (intptr_t)NULL);
+	out_ins(I_RTS, 0, 0);
 }
 
 /*
  *	perform subroutine call to value on top of stack
  *
  */
-void callstk (intptr_t nargs)
+void callstk (int nargs)
 {
 	if (nargs <= INTSIZE)
 		out_ins(I_CALLS, T_STACK, 0);
@@ -282,7 +279,7 @@ void callstk (intptr_t nargs)
  *	jump to specified internal label number
  *
  */
-void jump (intptr_t label)
+void jump (int label)
 {
 	out_ins(I_LBRA, T_LABEL, label);
 }
@@ -291,9 +288,9 @@ void jump (intptr_t label)
  *	test the primary register and jump if false to label
  *
  */
-void testjump (intptr_t label, intptr_t ft)
+void testjump (int label, int ft)
 {
-	out_ins(I_TSTW, (intptr_t)NULL, (intptr_t)NULL);
+	out_ins(I_TSTW, 0, 0);
 	if (ft)
 		out_ins(I_LBNE, T_LABEL, label);
 	else
@@ -304,9 +301,9 @@ void testjump (intptr_t label, intptr_t ft)
  *	modify the stack pointer to the new value indicated
  *      Is it there that we decrease the value of the stack to add local vars ?
  */
-intptr_t modstk (intptr_t newstkp)
+int modstk (int newstkp)
 {
-	intptr_t k;
+	int k;
 
 //	k = galign(newstkp - stkp);
 	k = newstkp - stkp;
@@ -322,7 +319,7 @@ intptr_t modstk (intptr_t newstkp)
  */
 void gaslint (void)
 {
-	out_ins(I_ASLW, (intptr_t)NULL, (intptr_t)NULL);
+	out_ins(I_ASLW, 0, 0);
 }
 
 /*
@@ -330,7 +327,7 @@ void gaslint (void)
  */
 void gasrint (void)
 {
-	out_ins(I_ASRW, (intptr_t)NULL, (intptr_t)NULL);
+	out_ins(I_ASRW, 0, 0);
 }
 
 /*
@@ -349,11 +346,11 @@ void gadd (LVALUE *lval, LVALUE *lval2)
 {
 	/* XXX: isn't this done in expr.c already? */
 	if (dbltest(lval2, lval))
-		out_ins(I_ASLWS, (intptr_t)NULL, (intptr_t)NULL);
+		out_ins(I_ASLWS, 0, 0);
 	if (lval && lval2 && is_byte(lval) && is_byte(lval2))
-		out_ins(I_ADDBS, (intptr_t)NULL, (intptr_t)NULL);
+		out_ins(I_ADDBS, 0, 0);
 	else
-		out_ins(I_ADDWS, (intptr_t)NULL, (intptr_t)NULL);
+		out_ins(I_ADDWS, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
@@ -363,7 +360,7 @@ void gadd (LVALUE *lval, LVALUE *lval2)
  */
 void gsub (void)
 {
-	out_ins(I_SUBWS, (intptr_t)NULL, (intptr_t)NULL);
+	out_ins(I_SUBWS, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
@@ -428,7 +425,7 @@ void gmod (int is_unsigned)
  */
 void gor (void)
 {
-	out_ins(I_ORWS, (intptr_t)NULL, (intptr_t)NULL);
+	out_ins(I_ORWS, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
@@ -438,7 +435,7 @@ void gor (void)
  */
 void gxor (void)
 {
-	out_ins(I_EORWS, (intptr_t)NULL, (intptr_t)NULL);
+	out_ins(I_EORWS, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
@@ -448,7 +445,7 @@ void gxor (void)
  */
 void gand (void)
 {
-	out_ins(I_ANDWS, (intptr_t)NULL, (intptr_t)NULL);
+	out_ins(I_ANDWS, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
@@ -485,7 +482,7 @@ void gasl (void)
  */
 void gneg (void)
 {
-	out_ins(I_NEGW, (intptr_t)NULL, (intptr_t)NULL);
+	out_ins(I_NEGW, 0, 0);
 }
 
 /*
@@ -494,7 +491,7 @@ void gneg (void)
  */
 void gcom (void)
 {
-	out_ins(I_COMW, (intptr_t)NULL, (intptr_t)NULL);
+	out_ins(I_COMW, 0, 0);
 }
 
 /*
@@ -503,7 +500,7 @@ void gcom (void)
  */
 void gbool (void)
 {
-	out_ins(I_BOOLW, (intptr_t)NULL, (intptr_t)NULL);
+	out_ins(I_BOOLW, 0, 0);
 }
 
 /*
@@ -512,12 +509,11 @@ void gbool (void)
  */
 void glneg (void)
 {
-	out_ins(I_NOTW, (intptr_t)NULL, (intptr_t)NULL);
+	out_ins(I_NOTW, 0, 0);
 }
 
 /*
- *	increment the primary register by 1 if char, INTSIZE if
- *      intptr_t
+ *	increment the primary register by 1 if char, INTSIZE if int
  */
 void ginc (LVALUE *lval)
 {
@@ -533,8 +529,7 @@ void ginc (LVALUE *lval)
 }
 
 /*
- *	decrement the primary register by one if char, INTSIZE if
- *	intptr_t
+ *	decrement the primary register by one if char, INTSIZE if int
  */
 void gdec (LVALUE *lval)
 {
@@ -564,9 +559,9 @@ void gdec (LVALUE *lval)
 void geq (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_JSR, T_LIB, (intptr_t)"eqb");
+		out_ins(I_JSR, T_LIB, (intptr_t)"eq_b");
 	else
-		out_ins(I_JSR, T_LIB, (intptr_t)"eq");
+		out_ins(I_JSR, T_LIB, (intptr_t)"eq_w");
 	stkp = stkp + INTSIZE;
 }
 
@@ -577,9 +572,9 @@ void geq (int is_byte)
 void gne (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_JSR, T_LIB, (intptr_t)"neb");
+		out_ins(I_JSR, T_LIB, (intptr_t)"ne_b");
 	else
-		out_ins(I_JSR, T_LIB, (intptr_t)"ne");
+		out_ins(I_JSR, T_LIB, (intptr_t)"ne_w");
 	stkp = stkp + INTSIZE;
 }
 
@@ -587,13 +582,12 @@ void gne (int is_byte)
  *	less than (signed)
  *
  */
-/*void glt (intptr_t lvl) */
 void glt (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_JSR, T_LIB, (intptr_t)"ltb");
+		out_ins(I_JSR, T_LIB, (intptr_t)"lt_sb");
 	else
-		out_ins(I_JSR, T_LIB, (intptr_t)"lt");
+		out_ins(I_JSR, T_LIB, (intptr_t)"lt_sw");
 	stkp = stkp + INTSIZE;
 }
 
@@ -604,9 +598,9 @@ void glt (int is_byte)
 void gle (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_JSR, T_LIB, (intptr_t)"leb");
+		out_ins(I_JSR, T_LIB, (intptr_t)"le_sb");
 	else
-		out_ins(I_JSR, T_LIB, (intptr_t)"le");
+		out_ins(I_JSR, T_LIB, (intptr_t)"le_sw");
 	stkp = stkp + INTSIZE;
 }
 
@@ -617,9 +611,9 @@ void gle (int is_byte)
 void ggt (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_JSR, T_LIB, (intptr_t)"gtb");
+		out_ins(I_JSR, T_LIB, (intptr_t)"gt_sb");
 	else
-		out_ins(I_JSR, T_LIB, (intptr_t)"gt");
+		out_ins(I_JSR, T_LIB, (intptr_t)"gt_sw");
 	stkp = stkp + INTSIZE;
 }
 
@@ -630,9 +624,9 @@ void ggt (int is_byte)
 void gge (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_JSR, T_LIB, (intptr_t)"geb");
+		out_ins(I_JSR, T_LIB, (intptr_t)"ge_sb");
 	else
-		out_ins(I_JSR, T_LIB, (intptr_t)"ge");
+		out_ins(I_JSR, T_LIB, (intptr_t)"ge_sw");
 	stkp = stkp + INTSIZE;
 }
 
@@ -640,13 +634,12 @@ void gge (int is_byte)
  *	less than (unsigned)
  *
  */
-/*void gult (intptr_t lvl)*/
 void gult (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_JSR, T_LIB, (intptr_t)"ublt");
+		out_ins(I_JSR, T_LIB, (intptr_t)"lt_ub");
 	else
-		out_ins(I_JSR, T_LIB, (intptr_t)"ult");
+		out_ins(I_JSR, T_LIB, (intptr_t)"lt_uw");
 	stkp = stkp + INTSIZE;
 }
 
@@ -657,9 +650,9 @@ void gult (int is_byte)
 void gule (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_JSR, T_LIB, (intptr_t)"uble");
+		out_ins(I_JSR, T_LIB, (intptr_t)"le_uw");
 	else
-		out_ins(I_JSR, T_LIB, (intptr_t)"ule");
+		out_ins(I_JSR, T_LIB, (intptr_t)"le_uw");
 	stkp = stkp + INTSIZE;
 }
 
@@ -670,9 +663,9 @@ void gule (int is_byte)
 void gugt (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_JSR, T_LIB, (intptr_t)"ubgt");
+		out_ins(I_JSR, T_LIB, (intptr_t)"gt_ub");
 	else
-		out_ins(I_JSR, T_LIB, (intptr_t)"ugt");
+		out_ins(I_JSR, T_LIB, (intptr_t)"gt_uw");
 	stkp = stkp + INTSIZE;
 }
 
@@ -683,13 +676,13 @@ void gugt (int is_byte)
 void guge (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_JSR, T_LIB, (intptr_t)"ubge");
+		out_ins(I_JSR, T_LIB, (intptr_t)"ge_ub");
 	else
-		out_ins(I_JSR, T_LIB, (intptr_t)"uge");
+		out_ins(I_JSR, T_LIB, (intptr_t)"ge_uw");
 	stkp = stkp + INTSIZE;
 }
 
-void scale_const (int type, int otag, intptr_t *size)
+void scale_const (int type, int otag, int *size)
 {
 	switch (type) {
 	case CINT:

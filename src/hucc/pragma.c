@@ -4,6 +4,7 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -134,7 +135,7 @@ static char *pragma_init[] = {
 };
 
 /* protos */
-intptr_t fastcall_look (const char *fname, intptr_t nargs, struct fastcall **p);
+int fastcall_look (const char *fname, int nargs, struct fastcall **p);
 
 
 /* ----
@@ -145,7 +146,7 @@ intptr_t fastcall_look (const char *fname, intptr_t nargs, struct fastcall **p);
  */
 void dopragma (void)
 {
-	intptr_t i;
+	int i;
 
 	/* make a local copy of the pragma command line */
 	for (i = 0;; i++) {
@@ -168,7 +169,7 @@ void dopragma (void)
  */
 void defpragma (void)
 {
-	intptr_t i;
+	int i;
 
 	for (i = 0;; i++) {
 		if (pragma_init[i] == NULL)
@@ -224,9 +225,9 @@ void new_fastcall (void)
 	struct fastcall *ptr;
 	char fname[NAMESIZE];
 	char sname[NAMESIZE];
-	intptr_t hash;
-	intptr_t cnt;
-	intptr_t i;
+	int hash;
+	int cnt;
+	int i;
 
 	ptr = &ftemp;
 	cnt = 0;
@@ -411,12 +412,12 @@ void new_fastcall (void)
  * search a fastcall function
  *
  */
-intptr_t fastcall_look (const char *fname, intptr_t nargs, struct fastcall **p)
+int fastcall_look (const char *fname, int nargs, struct fastcall **p)
 {
 	struct fastcall *ptr;
 	struct fastcall *ref;
-	intptr_t hash;
-	intptr_t nb;
+	int hash;
+	int nb;
 
 	/* search */
 	hash = symhash(fname);
@@ -451,11 +452,11 @@ intptr_t fastcall_look (const char *fname, intptr_t nargs, struct fastcall **p)
  * calculate the hash value of a symbol
  *
  */
-intptr_t symhash (const char *sym)
+int symhash (const char *sym)
 {
-	intptr_t i;
+	int i;
 	char c;
-	intptr_t hash = 0;
+	int hash = 0;
 
 	/* calc hash value */
 	for (i = 0;; i++) {
@@ -477,9 +478,9 @@ intptr_t symhash (const char *sym)
  * extract a symbol name
  *
  */
-intptr_t symget (char *sname)
+int symget (char *sname)
 {
-	intptr_t i;
+	int i;
 
 	skip_blanks();
 
@@ -506,9 +507,9 @@ intptr_t symget (char *sname)
  * test if next input string is legal symbol name
  *
  */
-intptr_t strmatch (char *lit)
+int strmatch (char *lit)
 {
-	intptr_t i;
+	int i;
 
 	skip_blanks();
 

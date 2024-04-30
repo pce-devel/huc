@@ -7,11 +7,11 @@
 #ifndef _STMT_H
 #define _STMT_H
 
-intptr_t statement (intptr_t func);
-intptr_t stdecl (void);
-intptr_t doldcls (intptr_t stclass);
+int statement (int func);
+int stdecl (void);
+int doldcls (int stclass);
 void stst (void);
-void compound (intptr_t func);
+void compound (int func);
 void doif (void);
 void dowhile (void);
 void dodo (void);
@@ -25,6 +25,6 @@ void docont (void);
 void dolabel (char *name);
 void dogoto (void);
 void dumpsw (intptr_t *ws);
-void test (intptr_t label, intptr_t ft);
+void test (int label, int ft);
 
 #endif

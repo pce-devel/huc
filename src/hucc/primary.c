@@ -4,6 +4,7 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
@@ -34,7 +35,7 @@ int match_type (struct type *t, int do_ptr, int allow_unk_compound)
 	t->otag = -1;
 
 	for (i = 0; i < typedef_ptr; i++) {
-		if (amatch(typedefs[i].sname, strlen(typedefs[i].sname))) {
+		if (amatch(typedefs[i].sname, (int)strlen(typedefs[i].sname))) {
 			*t = typedefs[i];
 			goto ret_do_ptr;
 		}
@@ -149,12 +150,12 @@ invalid_cast:
 	return (0);
 }
 
-intptr_t primary (LVALUE *lval, int comma)
+int primary (LVALUE *lval, int comma)
 {
 	SYMBOL *ptr;
 	char sname[NAMESIZE];
-	intptr_t num[1];
-	intptr_t k;
+	int num;
+	int k;
 
 	lval->ptr_type = 0;	/* clear pointer/array type */
 	lval->ptr_order = 0;
@@ -231,19 +232,19 @@ intptr_t primary (LVALUE *lval, int comma)
 		return (0);
 	}
 	if (amatch("__FUNCTION__", 12) || amatch("__func__", 8)) {
-		const_str(num, current_fn);
-		immed(T_STRING, num[0]);
+		const_str(&num, current_fn);
+		immed(T_STRING, num);
 		indflg = 0;
-		lval->value = num[0];
+		lval->value = num;
 		lval->symbol = 0;
 		lval->indirect = 0;
 		return (0);
 	}
 	else if (amatch("__FILE__", 8)) {
-		const_str(num, fname_copy);
-		immed(T_STRING, num[0]);
+		const_str(&num, fname_copy);
+		immed(T_STRING, num);
 		indflg = 0;
-		lval->value = num[0];
+		lval->value = num;
 		lval->symbol = 0;
 		lval->indirect = 0;
 		return (0);
@@ -258,12 +259,12 @@ intptr_t primary (LVALUE *lval, int comma)
 	}
 
 	if (symname(sname)) {
-		if (find_enum(sname, num)) {
+		if (find_enum(sname, &num)) {
 			indflg = 0;
-			lval->value = num[0];
+			lval->value = num;
 			lval->symbol = 0;
 			lval->indirect = 0;
-			immed(T_VALUE, *num);
+			immed(T_VALUE, num);
 			return (0);
 		}
 		ptr = findloc(sname);
@@ -363,9 +364,9 @@ intptr_t primary (LVALUE *lval, int comma)
 		lval->indirect = 0;
 		return (0);
 	}
-	if ((k = constant(num))) {
+	if ((k = constant(&num))) {
 		indflg = 0;
-		lval->value = num[0];
+		lval->value = num;
 		lval->symbol = 0;
 		lval->indirect = 0;
 		if (k == 2) {
@@ -386,18 +387,18 @@ intptr_t primary (LVALUE *lval, int comma)
 /*
  *	true if val1 -> int pointer or int array and val2 not pointer or array
  */
-intptr_t dbltest (LVALUE val1[], LVALUE val2[])
+bool dbltest (LVALUE val1[], LVALUE val2[])
 {
 	if (val1 == NULL || !val1->ptr_type)
-		return (FALSE);
+		return (false);
 
 	if (val1->ptr_type == CCHAR || val1->ptr_type == CUCHAR)
-		return (FALSE);
+		return (false);
 
 	if (val2->ptr_type)
-		return (FALSE);
+		return (false);
 
-	return (TRUE);
+	return (true);
 }
 
 /*
@@ -417,14 +418,14 @@ void result (LVALUE lval[], LVALUE lval2[])
 	}
 }
 
-intptr_t constant (intptr_t val[])
+int constant (int *val)
 {
 	if (number(val))
-		immed(T_VALUE, val[0]);
+		immed(T_VALUE, *val);
 	else if (pstr(val))
-		immed(T_VALUE, val[0]);
+		immed(T_VALUE, *val);
 	else if (qstr(val)) {
-		immed(T_STRING, val[0]);
+		immed(T_STRING, *val);
 		return (2);
 	}
 	else
@@ -433,9 +434,9 @@ intptr_t constant (intptr_t val[])
 	return (1);
 }
 
-intptr_t number (intptr_t val[])
+bool number (int *val)
 {
-	intptr_t k, minus, base;
+	int k, minus, base;
 	char c;
 
 	k = minus = 1;
@@ -449,7 +450,7 @@ intptr_t number (intptr_t val[])
 		}
 	}
 	if (!numeric(c = ch()))
-		return (0);
+		return (false);
 
 	if (match("0x") || match("0X")) {
 		while (numeric(c = ch()) ||
@@ -478,10 +479,10 @@ intptr_t number (intptr_t val[])
 	if (minus < 0)
 		k = (-k);
 	val[0] = k;
-	return (1);
+	return (true);
 }
 
-static int parse0 (intptr_t *num)
+static int parse0 (int *num)
 {
 	if (!const_expr(num, ")", NULL))
 		return (0);
@@ -491,9 +492,9 @@ static int parse0 (intptr_t *num)
 	return (1);
 }
 
-static int parse3 (intptr_t *num)
+static int parse3 (int *num)
 {
-	intptr_t num2;
+	int num2;
 	struct type t;
 	char op;
 	char n[NAMESIZE];
@@ -564,9 +565,9 @@ static int parse3 (intptr_t *num)
 	return (1);
 }
 
-static int parse5 (intptr_t *num)
+static int parse5 (int *num)
 {
-	intptr_t num1, num2;
+	int num1, num2;
 
 	if (!parse3(&num1))
 		return (0);
@@ -592,9 +593,9 @@ static int parse5 (intptr_t *num)
 	}
 }
 
-static int parse6 (intptr_t *num)
+static int parse6 (int *num)
 {
-	intptr_t num1, num2;
+	int num1, num2;
 
 	if (!parse5(&num1))
 		return (0);
@@ -620,9 +621,9 @@ static int parse6 (intptr_t *num)
 	}
 }
 
-static int parse7 (intptr_t *num)
+static int parse7 (int *num)
 {
-	intptr_t num1, num2;
+	int num1, num2;
 
 	if (!parse6(&num1))
 		return (0);
@@ -648,9 +649,9 @@ static int parse7 (intptr_t *num)
 	}
 }
 
-static int parse9 (intptr_t *num)
+static int parse9 (int *num)
 {
-	intptr_t num1, num2;
+	int num1, num2;
 
 	if (!parse7(&num1))
 		return (0);
@@ -676,18 +677,18 @@ static int parse9 (intptr_t *num)
 	}
 }
 
-int const_expr (intptr_t *num, char *end1, char *end2)
+bool const_expr (int *num, char *end1, char *end2)
 {
 	if (!parse9(num)) {
 		error("failed to evaluate constant expression");
-		return (0);
+		return (false);
 	}
 	blanks();
 	if (end1 && !sstreq(end1) && !(end2 && sstreq(end2))) {
 		error("unexpected character after constant expression");
-		return (0);
+		return (false);
 	}
-	return (1);
+	return (true);
 }
 
 /*
@@ -695,21 +696,21 @@ int const_expr (intptr_t *num, char *end1, char *end2)
  * pstr parses a character than can eventually be 'double' i.e. like 'a9'
  * returns 0 in case of failure else 1
  */
-intptr_t pstr (intptr_t val[])
+bool pstr (int *val)
 {
-	intptr_t k;
+	int k;
 	char c;
 
 	k = 0;
 	if (!match("'"))
-		return (0);
+		return (false);
 
 	while ((c = gch()) != '\'') {
 		c = (c == '\\') ? spechar() : c;
 		k = (k & 255) * 256 + (c & 255);
 	}
-	val[0] = k;
-	return (1);
+	*val = k;
+	return (true);
 }
 
 /*
@@ -717,14 +718,14 @@ intptr_t pstr (intptr_t val[])
  * qstr parses a double quoted string into litq
  * return 0 in case of failure and 1 else
  */
-intptr_t qstr (intptr_t val[])
+bool qstr (int *val)
 {
 	char c;
 
 	if (!match(quote))
 		return (0);
 
-	val[0] = litptr;
+	*val = litptr;
 	while (ch() != '"') {
 		if (ch() == 0)
 			break;
@@ -733,26 +734,26 @@ intptr_t qstr (intptr_t val[])
 			while (!match(quote))
 				if (gch() == 0)
 					break;
-			return (1);
+			return (false);
 		}
 		c = gch();
 		litq[litptr++] = (c == '\\') ? spechar() : c;
 	}
 	gch();
 	litq[litptr++] = 0;
-	return (1);
+	return (true);
 }
 
-intptr_t const_str (intptr_t *val, const char *str)
+bool const_str (int *val, const char *str)
 {
-	if (litptr + strlen(str) + 1 >= LITMAX) {
+	if (litptr + (int)strlen(str) + 1 >= LITMAX) {
 		error("string space exhausted");
-		return (1);
+		return (false);
 	}
 	strcpy(&litq[litptr], str);
 	*val = litptr;
-	litptr += strlen(str) + 1;
-	return (1);
+	litptr += (int)strlen(str) + 1;
+	return (true);
 }
 
 /*
@@ -762,10 +763,10 @@ intptr_t const_str (intptr_t *val, const char *str)
  * Zeograd: this function don't dump the result of the reading in the literal
  * pool, it is rather intended for use in pseudo code
  */
-intptr_t readqstr (void)
+bool readqstr (void)
 {
 	char c;
-	intptr_t posptr = 0;
+	int posptr = 0;
 
 	if (!match(quote))
 		return (0);
@@ -778,14 +779,14 @@ intptr_t readqstr (void)
 			while (!match(quote))
 				if (gch() == 0)
 					break;
-			return (1);
+			return (false);
 		}
 		c = gch();
 		litq2[posptr++] = (c == '\\') ? spechar() : c;
 	}
 	gch();
 	litq2[posptr] = 0;
-	return (1);
+	return (true);
 }
 
 /*
@@ -796,30 +797,30 @@ intptr_t readqstr (void)
  * Zeograd: this function don't dump the result of the reading in the literal
  * pool, it is rather intended for use in pseudo code
  */
-intptr_t readstr (void)
+bool readstr (void)
 {
 	char c;
-	intptr_t posptr = 0;
+	int posptr = 0;
 
 	while (an(ch()) || (ch() == '_')) {
 		if (ch() == 0)
 			break;
 		if (posptr >= LITMAX2) {
 			error("string space exhausted");
-			return (1);
+			return (false);
 		}
 		c = gch();
 		litq2[posptr++] = (c == '\\') ? spechar() : c;
 	}
 	litq2[posptr] = 0;
-	return (1);
+	return (true);
 }
 
 
 /*
  *	decode special characters (preceeded by back slashes)
  */
-intptr_t spechar (void)
+char spechar (void)
 {
 	char c;
 

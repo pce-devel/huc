@@ -13,13 +13,12 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <ctype.h>
 #include <sys/stat.h>
-#include <getopt.h>
 #include <errno.h>
 #include "defs.h"
 #include "data.h"
@@ -48,6 +47,7 @@ static int infile_ptr;
 
 static int user_norecurse = 0;
 
+#if 0
 #if !((__STDC_VERSION__ >= 201112L) || (_MSC_VER >= 1910))
 #   if !defined(HAVE_STRCAT_S) 
 static int strcat_s(char* dst, size_t len, const char* src) {
@@ -90,6 +90,7 @@ static int strcpy_s(char* dst, size_t len, const char* src) {
 }
 #   endif // !HAVE_STRCPY_S
 #endif 
+#endif
 
 static char *lib_to_file (char *lib)
 {
@@ -112,7 +113,7 @@ int main (int argc, char *argv[])
 	char *p, *pp, *bp;
 	char **oldargv = argv;
 	char **link_lib;
-	intptr_t smacptr;
+	int smacptr;
 	int first = 1;
 	char *asmdefs_global_end;
 
@@ -536,9 +537,9 @@ void parse (void)
 /*
  *		parse top level declarations
  */
-intptr_t dodcls (intptr_t stclass, TAG_SYMBOL *mtag, int is_struct)
+int dodcls (int stclass, TAG_SYMBOL *mtag, int is_struct)
 {
-	intptr_t err;
+	int err;
 	struct type t;
 
 	blanks();
@@ -604,7 +605,7 @@ void dotypedef (void)
  */
 void dumplits (void)
 {
-	intptr_t j, k;
+	int j, k;
 
 	if ((litptr == 0) && (const_nb == 0))
 		return;
@@ -727,7 +728,7 @@ char outbyteBuffer (char c)
  *	buffered print decimal number
  *
  */
-void outdecBuffer (intptr_t number)
+void outdecBuffer (int number)
 {
 	if (current_offset >=	DATABUFSIZE) {
 		printf("HuC compiler overrun detected, DATABUFSIZE is too small!\n");
@@ -815,7 +816,7 @@ int dump_structBuffer (SYMBOL *symbol, int position)
  */
 void dumpglbs (void)
 {
-	intptr_t i = 1;
+	int i = 1;
 	int dim, list_size, line_count;
 	int j;
 	FILE *save = output;
@@ -981,10 +982,6 @@ static void dumpfinal (void)
 		outstr("__huc_rodata_end:\n");
 	}
 	fseek(output, output_globdef, SEEK_SET);
-	if (have_irq_handler || have_sirq_handler)
-		outstr("HAVE_IRQ = 1\n");
-	if (have_sirq_handler)
-		outstr("HAVE_SIRQ = 1\n");
 	if (have_init_data)
 		outstr("HAVE_INIT = 1\n");
 }
@@ -1012,7 +1009,7 @@ void errorsummary (void)
 	nl();
 	comment();
 	ot("global pool:");
-	outdec(glbptr - rglbptr);
+	outdec((int)(glbptr - rglbptr));
 	nl();
 	comment();
 	ot("Macro pool:");
@@ -1030,7 +1027,7 @@ char extension (char *s)
 	return (' ');
 }
 
-intptr_t assemble (char *s)
+int assemble (char *s)
 {
 #if defined(_WIN32)
 
@@ -1086,7 +1083,7 @@ intptr_t assemble (char *s)
 	char *exe;
 	char buf[256];
 	char *opts[12];
-	intptr_t i = 0;
+	int i = 0;
 
 	exe = getenv("PCE_PCEAS");
 	if (!exe) {
@@ -1129,7 +1126,7 @@ intptr_t assemble (char *s)
 
 // Comment this out later...
 //	{
-//		intptr_t j;
+//		int j;
 //		printf("invoking pceas:\n");
 //		for (j = 0; j < i; j++)
 //			printf("arg[%d] = %s\n", j, opts[j]);

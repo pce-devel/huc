@@ -4,6 +4,7 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -46,7 +47,7 @@ void warning (int type, char *text)
 
 void doerror (char *ptr, int type)
 {
-	intptr_t k;
+	int k;
 
 	comment();
 	if (!type)

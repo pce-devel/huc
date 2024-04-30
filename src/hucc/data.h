@@ -1,6 +1,7 @@
 /*	File data.h: 2.2 (84/11/27,16:26:11) */
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 
 #include "defs.h"
@@ -9,14 +10,14 @@
 
 extern struct const_array *const_ptr;
 extern struct const_array const_var[MAX_CONST];
-extern intptr_t const_val[MAX_CONST_VALUE];
+extern int const_val[MAX_CONST_VALUE];
 extern char const_data[MAX_CONST_DATA];
-extern intptr_t const_val_start;
-extern intptr_t const_val_idx;
-extern intptr_t const_data_start;
-extern intptr_t const_data_idx;
-extern intptr_t const_size;
-extern intptr_t const_nb;
+extern int const_val_start;
+extern int const_val_idx;
+extern int const_data_start;
+extern int const_data_idx;
+extern int const_size;
+extern int const_nb;
 
 /* storage words */
 
@@ -24,17 +25,17 @@ extern SYMBOL symtab[];
 extern SYMBOL *glbptr, *rglbptr, *locptr;
 extern intptr_t ws[];
 extern intptr_t *wsptr;
-extern intptr_t swstcase[];
-extern intptr_t swstlab[];
-extern intptr_t swstp;
+extern int swstcase[];
+extern int swstlab[];
+extern int swstp;
 extern char litq[];
 extern char litq2[];
-extern intptr_t litptr;
+extern int litptr;
 extern struct macro macq[];
-extern intptr_t macptr;
+extern int macptr;
 extern char line[];
 extern char mline[];
-extern intptr_t lptr, mptr;
+extern int lptr, mptr;
 
 extern TAG_SYMBOL tag_table[NUMTAG];	// start of structure tag table
 extern int tag_table_index;		// ptr to next entry
@@ -46,7 +47,7 @@ extern char asmdefs[];
 
 /* miscellaneous storage */
 
-extern intptr_t nxtlab,
+extern int nxtlab,
 	    litlab,
 	    stkp,
 	    zpstkp,
@@ -66,29 +67,29 @@ extern FILE *input, *input2, *output;
 extern FILE *inclstk[];
 
 extern char inclstk_name[INCLSIZ][FILENAMESIZE];
-extern intptr_t inclstk_line[];
+extern int inclstk_line[];
 extern char fname_copy[FILENAMESIZE];
 extern char user_outfile[FILENAMESIZE];
-extern intptr_t line_number;
+extern int line_number;
 
-extern intptr_t inclsp;
+extern int inclsp;
 extern char fname[];
 
 extern char quote[];
 extern SYMBOL *cptr;
-extern intptr_t *iptr;
-extern intptr_t fexitlab;
-extern intptr_t iflevel, skiplevel;
-extern intptr_t errfile;
-extern intptr_t sflag;
-extern intptr_t cdflag;
-extern intptr_t verboseflag;
-extern intptr_t startup_incl;
-extern intptr_t errs;
+extern int *iptr;
+extern int fexitlab;
+extern int iflevel, skiplevel;
+extern int errfile;
+extern int sflag;
+extern int cdflag;
+extern int verboseflag;
+extern int startup_incl;
+extern int errs;
 
-extern intptr_t top_level_stkp;
+extern int top_level_stkp;
 extern int norecurse;
-extern intptr_t locals_ptr;
+extern int locals_ptr;
 extern char current_fn[];
 
 extern struct type *typedefs;
@@ -105,11 +106,7 @@ extern int enum_type_ptr;
 extern int user_short_enums;
 extern int user_signed_char;
 
-extern intptr_t output_globdef;
-extern int have_irq_handler;
-extern int have_sirq_handler;
-
-extern int need_map_call_bank;
+extern int output_globdef;
 
 extern char **leaf_functions;
 extern int leaf_cnt;

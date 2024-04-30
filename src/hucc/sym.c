@@ -4,6 +4,7 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -33,7 +34,7 @@
  */
 static int init (char *symbol_name, int type, int identity, int *dim, TAG_SYMBOL *tag)
 {
-	intptr_t value;
+	int value;
 	int number_of_chars;
 
 	if (identity == POINTER) {
@@ -153,9 +154,9 @@ int initials (char *symbol_name, int type, int identity, int dim, int otag)
  *  David, added support for const arrays and improved error detection
  *
  */
-intptr_t declglb (intptr_t typ, intptr_t stor, TAG_SYMBOL *mtag, int otag, int is_struct)
+int declglb (char typ, char stor, TAG_SYMBOL *mtag, int otag, int is_struct)
 {
-	intptr_t k, id;
+	int k, id;
 	char sname[NAMESIZE];
 	int ptr_order;
 	SYMBOL *s;
@@ -196,7 +197,7 @@ intptr_t declglb (intptr_t typ, intptr_t stor, TAG_SYMBOL *mtag, int otag, int i
 				if (k == -1)
 					return (1);
 
-				/* XXX: This doesn't really beintptr_t here, but I
+				/* XXX: This doesn't really beint here, but I
 				   can't think of a better place right now. */
 				if (id == POINTER && (typ == CCHAR || typ == CUCHAR || typ == CVOID))
 					k *= INTSIZE;
@@ -283,12 +284,12 @@ intptr_t declglb (intptr_t typ, intptr_t stor, TAG_SYMBOL *mtag, int otag, int i
  *
  *  zeo : added "totalk" stuff and global stack modification (00/04/12)
  */
-void declloc (intptr_t typ, intptr_t stclass, int otag)
+void declloc (char typ, char stclass, int otag)
 {
-	intptr_t k = 0, j;
-	intptr_t elements = 0;
+	int k = 0, j;
+	int elements = 0;
 	char sname[NAMESIZE];
-	intptr_t totalk = 0;
+	int totalk = 0;
 
 	for (;;) {
 		for (;;) {
@@ -387,7 +388,7 @@ void declloc (intptr_t typ, intptr_t stclass, int otag)
 			break;
 		}
 		if (match("=")) {
-			intptr_t num[1];
+			int num[1];
 			if (!norecurse)
 				stkp = modstk(stkp - totalk);
 			else
@@ -399,7 +400,7 @@ void declloc (intptr_t typ, intptr_t stclass, int otag)
 				gtext();
 				if (k == 1) {
 					if (norecurse) {
-						sprintf(locsym, "_%s_lend-%d", current_fn, (int) -locals_ptr);
+						sprintf(locsym, "_%s_lend - %d", current_fn, (int) -locals_ptr);
 						out_ins_ex(I_STBI, T_SYMBOL, (intptr_t)locsym, T_VALUE, *num);
 					}
 					else
@@ -407,7 +408,7 @@ void declloc (intptr_t typ, intptr_t stclass, int otag)
 				}
 				else if (k == 2) {
 					if (norecurse) {
-						sprintf(locsym, "_%s_lend-%d", current_fn, (int) -locals_ptr);
+						sprintf(locsym, "_%s_lend - %d", current_fn, (int) -locals_ptr);
 						out_ins_ex(I_STWI, T_SYMBOL, (intptr_t)locsym, T_VALUE, *num);
 					}
 					else
@@ -432,9 +433,9 @@ void declloc (intptr_t typ, intptr_t stclass, int otag)
 /*
  *	get required array size
  */
-intptr_t needsub (void)
+int needsub (void)
 {
-	intptr_t num[1];
+	int num[1];
 
 	if (match("]"))
 		return (0);
@@ -479,7 +480,7 @@ SYMBOL *findloc (char *sname)
 	return (NULL);
 }
 
-SYMBOL *addglb (char *sname, char id, char typ, intptr_t value, intptr_t stor, SYMBOL *replace)
+SYMBOL *addglb (char *sname, char id, char typ, int value, char stor, SYMBOL *replace)
 {
 	char *ptr;
 
@@ -526,7 +527,7 @@ SYMBOL *addglb_far (char *sname, char typ)
 }
 
 
-SYMBOL *addloc (char *sname, char id, char typ, intptr_t value, intptr_t stclass, intptr_t size)
+SYMBOL *addloc (char *sname, char id, char typ, int value, char stclass, int size)
 {
 	char *ptr;
 
@@ -554,21 +555,21 @@ SYMBOL *addloc (char *sname, char id, char typ, intptr_t value, intptr_t stclass
  *	test if next input string is legal symbol name
  *
  */
-intptr_t symname (char *sname)
+bool symname (char *sname)
 {
-	intptr_t k;
+	int k;
 
 /*	char	c; */
 
 	blanks();
 	if (!alpha(ch()))
-		return (0);
+		return (false);
 
 	k = 0;
 	while (an(ch()))
 		sname[k++] = gch();
 	sname[k] = 0;
-	return (1);
+	return (true);
 }
 
 void illname (void)
@@ -584,7 +585,7 @@ void multidef (char *sname)
 	nl();
 }
 
-intptr_t glint (SYMBOL *sym)
+int glint (SYMBOL *sym)
 {
 	return (sym->offset);
 }

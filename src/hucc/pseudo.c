@@ -3,6 +3,7 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include "data.h"
@@ -20,11 +21,11 @@
 
 /* local array to store internal strings */
 static char str_buf[0x10000];
-static intptr_t str_idx;
+static int str_idx;
 
 /* protos */
-char *new_string (intptr_t und, char *a);
-void  do_inc_ex (intptr_t type);
+char *new_string (int und, char *a);
+void  do_inc_ex (int type);
 
 /*
  * This source file includes all kind of stuff used to 'simulate' pseudo code
@@ -32,8 +33,8 @@ void  do_inc_ex (intptr_t type);
  */
 void dopsdinc (void)
 {
-	intptr_t dummy;		/* Used in the qstr function, I don't know its utility yet */
-	intptr_t numericarg = 0;	/* Number of numeric arg to test validity */
+	int dummy;		/* Used in the qstr function, I don't know its utility yet */
+	int numericarg = 0;	/* Number of numeric arg to test validity */
 
 	if (amatch("pal", 3)) {
 		if (!match("("))
@@ -620,10 +621,10 @@ void dopsdinc (void)
 
 void dopsddef (void)
 {
-	intptr_t numericarg = 0;
-	intptr_t dummy;
-	intptr_t dummy_array[16];
-	intptr_t i;
+	int numericarg = 0;
+	int dummy;
+	int dummy_array[16];
+	int i;
 
 	if (amatch("pal", 3)) {
 		if (!match("("))
@@ -801,7 +802,7 @@ void dopsddef (void)
 }
 
 
-intptr_t outcomma (void)
+int outcomma (void)
 {
 	if (!match(",")) {
 		error("missing ,");
@@ -814,7 +815,7 @@ intptr_t outcomma (void)
 	return (0);
 }
 
-intptr_t outnameunderline (void)
+int outnameunderline (void)
 {
 	char n[NAMESIZE];
 
@@ -830,9 +831,9 @@ intptr_t outnameunderline (void)
 	return (0);
 }
 
-intptr_t outconst (void)
+int outconst (void)
 {
-	intptr_t dummy;
+	int dummy;
 
 	number(&dummy);
 	outbyte('#');
@@ -965,7 +966,7 @@ void doload_backgroundstatement (void)
 	needbrack(")");
 }
 
-void do_asm_func (intptr_t type)
+void do_asm_func (int type)
 {
 	/* syntax is
 	   name of the data : identifier
@@ -993,15 +994,15 @@ void do_asm_func (intptr_t type)
 		error("out of memory");
 }
 
-char *new_string (intptr_t und, char *a)
+char *new_string (int und, char *a)
 {
-	intptr_t len;
-	intptr_t tmp;
+	int len;
+	int tmp;
 
 	if (a == NULL)
 		return (NULL);
 
-	len = strlen(a);
+	len = (int)strlen(a);
 	tmp = str_idx;
 	if ((len + str_idx) > 0xFFF0)
 		return (NULL);
@@ -1014,12 +1015,12 @@ char *new_string (intptr_t und, char *a)
 	return (&str_buf[tmp]);
 }
 
-void do_inc_ex (intptr_t type)
+void do_inc_ex (int type)
 {
-	intptr_t end;
-	intptr_t i;
-	intptr_t j;
-	intptr_t num;
+	int end;
+	int i;
+	int j;
+	int num;
 	int nb_tile;
 	char label[NAMESIZE];
 	char label2[NAMESIZE];
@@ -1027,7 +1028,7 @@ void do_inc_ex (intptr_t type)
 
 	struct {
 		char fname[FILENAMESIZE];
-		intptr_t arg[5];
+		int arg[5];
 	} tiles[16];
 
 	if (!match("(")) {

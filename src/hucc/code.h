@@ -8,7 +8,7 @@
 
 #include "defs.h"
 
-extern intptr_t segment;
+extern int segment;
 
 void gdata (void);
 void gtext (void);
@@ -18,9 +18,9 @@ void asmdefines (void);
 void defbyte (void);
 void defstorage (void);
 void defword (void);
-void out_ins (intptr_t code, intptr_t type, intptr_t data);
-void out_ins_ex (intptr_t code, intptr_t type, intptr_t data, intptr_t imm_type, intptr_t imm_data);
-void out_ins_sym (intptr_t code, intptr_t type, intptr_t data, SYMBOL *sym);
+void out_ins (int code, int type, intptr_t data);
+void out_ins_ex (int code, int type, intptr_t data, int imm_type, intptr_t imm_data);
+void out_ins_sym (int code, int type, intptr_t data, SYMBOL *sym);
 void gen_ins (INS *tmp);
 void gen_code (INS *tmp);
 

@@ -4,6 +4,7 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include "defs.h"
 
@@ -11,14 +12,14 @@
 
 struct const_array *const_ptr;
 struct const_array const_var[MAX_CONST];
-intptr_t const_val[MAX_CONST_VALUE];
+int const_val[MAX_CONST_VALUE];
 char const_data[MAX_CONST_DATA];
-intptr_t const_val_start;
-intptr_t const_val_idx;
-intptr_t const_data_start;
-intptr_t const_data_idx;
-intptr_t const_size;
-intptr_t const_nb;
+int const_val_start;
+int const_val_idx;
+int const_data_start;
+int const_data_idx;
+int const_size;
+int const_nb;
 
 /* storage words */
 
@@ -26,17 +27,17 @@ SYMBOL symtab[SYMTBSZ];
 SYMBOL *glbptr, *rglbptr, *locptr;
 intptr_t ws[WSTABSZ];
 intptr_t *wsptr;
-intptr_t swstcase[SWSTSZ];
-intptr_t swstlab[SWSTSZ];
-intptr_t swstp;
+int swstcase[SWSTSZ];
+int swstlab[SWSTSZ];
+int swstp;
 char litq[LITABSZ];
 char litq2[LITABSZ];
-intptr_t litptr;
+int litptr;
 struct macro macq[MACQSIZE];
-intptr_t macptr;
+int macptr;
 char line[LINESIZE];
 char mline[LINESIZE];
-intptr_t lptr, mptr;
+int lptr, mptr;
 
 TAG_SYMBOL tag_table[NUMTAG];	// start of structure tag table
 int tag_table_index;		// ptr to next entry
@@ -48,7 +49,7 @@ char asmdefs[LITABSZ];
 
 /* miscellaneous storage */
 
-intptr_t nxtlab,
+int nxtlab,
      litlab,
      stkp,
      zpstkp,
@@ -64,7 +65,7 @@ intptr_t nxtlab,
      optimize,
      globals_h_in_process;
 
-intptr_t top_level_stkp;
+int top_level_stkp;
 
 FILE *input, *input2, *output;
 FILE *inclstk[INCLSIZ];
@@ -72,26 +73,26 @@ FILE *inclstk[INCLSIZ];
 char inclstk_name[INCLSIZ][FILENAMESIZE];
 char fname_copy[FILENAMESIZE];
 char user_outfile[FILENAMESIZE];
-intptr_t inclstk_line[INCLSIZ];
-intptr_t line_number;
+int inclstk_line[INCLSIZ];
+int line_number;
 
-intptr_t inclsp;
+int inclsp;
 char fname[FILENAMESIZE];
 
 char quote[2];
 char *cptr;
-intptr_t *iptr;
-intptr_t fexitlab;
-intptr_t iflevel, skiplevel;
-intptr_t errfile;
-intptr_t sflag;
-intptr_t cdflag;
-intptr_t verboseflag;
-intptr_t startup_incl;
-intptr_t errs;
+int *iptr;
+int fexitlab;
+int iflevel, skiplevel;
+int errfile;
+int sflag;
+int cdflag;
+int verboseflag;
+int startup_incl;
+int errs;
 
 int norecurse = 0;
-intptr_t locals_ptr;
+int locals_ptr;
 
 struct type *typedefs;
 int typedef_ptr = 0;
@@ -107,11 +108,7 @@ int enum_type_ptr = 0;
 int user_short_enums = 1;
 int user_signed_char = 0;
 
-intptr_t output_globdef;
-int have_irq_handler;
-int have_sirq_handler;
-
-int need_map_call_bank;
+int output_globdef;
 
 char **leaf_functions = 0;
 int leaf_cnt = 0;

@@ -4,6 +4,7 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include "defs.h"
 #include "data.h"
@@ -13,9 +14,8 @@
 #include "while.h"
 
 void addwhile (intptr_t *ptr)
-/*intptr_t	ptr[];*/
 {
-	intptr_t k;
+	int k;
 
 	if (wsptr == WSMAX) {
 		error("too many active whiles");
@@ -67,9 +67,9 @@ intptr_t *readswitch (void)
 	return (0);
 }
 
-void addcase (intptr_t val)
+void addcase (int val)
 {
-	intptr_t lab;
+	int lab;
 
 	if (swstp == SWSTSZ)
 		error("too many case labels");

@@ -6,6 +6,6 @@ void delwhile (void);
 intptr_t *readwhile (void);
 intptr_t *findwhile (void);
 intptr_t *readswitch (void);
-void addcase (intptr_t val);
+void addcase (int val);
 
 #endif

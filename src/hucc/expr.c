@@ -4,6 +4,7 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include "defs.h"
@@ -30,9 +31,9 @@ void expression (int comma)
 	expression_ex(lval, comma, NO);
 }
 
-intptr_t expression_ex (LVALUE *lval, int comma, int norval)
+int expression_ex (LVALUE *lval, int comma, int norval)
 {
-	intptr_t k;
+	int k;
 
 	do {
 		if ((k = heir1(lval, comma)) && !norval)
@@ -81,9 +82,9 @@ static int is_ptrptr (LVALUE *lval)
 	return (s && (s->ptr_order > 1 || (s->ident == ARRAY && s->ptr_order > 0)));
 }
 
-intptr_t heir1 (LVALUE *lval, int comma)
+int heir1 (LVALUE *lval, int comma)
 {
-	intptr_t k;
+	int k;
 	LVALUE lval2[1] = {{0}};
 	char fc;
 
@@ -152,10 +153,9 @@ intptr_t heir1 (LVALUE *lval, int comma)
 	}
 }
 
-intptr_t heir1a (LVALUE *lval, int comma)
-/* intptr_t	lval[]; */
+int heir1a (LVALUE *lval, int comma)
 {
-	intptr_t k, lab1, lab2;
+	int k, lab1, lab2;
 	LVALUE lval2[1] = {{0}};
 
 	k = heir1b(lval, comma);
@@ -185,10 +185,9 @@ intptr_t heir1a (LVALUE *lval, int comma)
 		return (0);
 }
 
-intptr_t heir1b (LVALUE *lval, int comma)
-/*intptr_t	lval[]; */
+int heir1b (LVALUE *lval, int comma)
 {
-	intptr_t k, lab;
+	int k, lab;
 	LVALUE lval2[1] = {{0}};
 
 	k = heir1c(lval, comma);
@@ -210,10 +209,9 @@ intptr_t heir1b (LVALUE *lval, int comma)
 		return (0);
 }
 
-intptr_t heir1c (LVALUE *lval, int comma)
-/*intptr_t	lval[]; */
+int heir1c (LVALUE *lval, int comma)
 {
-	intptr_t k, lab;
+	int k, lab;
 	LVALUE lval2[1] = {{0}};
 
 	k = heir2(lval, comma);
@@ -235,10 +233,9 @@ intptr_t heir1c (LVALUE *lval, int comma)
 		return (0);
 }
 
-intptr_t heir2 (LVALUE *lval, int comma)
-/*intptr_t	lval[]; */
+int heir2 (LVALUE *lval, int comma)
 {
-	intptr_t k;
+	int k;
 	LVALUE lval2[1] = {{0}};
 
 	k = heir3(lval, comma);
@@ -262,10 +259,9 @@ intptr_t heir2 (LVALUE *lval, int comma)
 	}
 }
 
-intptr_t heir3 (LVALUE *lval, int comma)
-/* intptr_t	lval[]; */
+int heir3 (LVALUE *lval, int comma)
 {
-	intptr_t k;
+	int k;
 	LVALUE lval2[1] = {{0}};
 
 	k = heir4(lval, comma);
@@ -289,10 +285,9 @@ intptr_t heir3 (LVALUE *lval, int comma)
 	}
 }
 
-intptr_t heir4 (LVALUE *lval, int comma)
-/* intptr_t	lval[]; */
+int heir4 (LVALUE *lval, int comma)
 {
-	intptr_t k;
+	int k;
 	LVALUE lval2[1] = {{0}};
 
 	k = heir5(lval, comma);
@@ -325,10 +320,9 @@ int is_byte (LVALUE *lval)
 	return (0);
 }
 
-intptr_t heir5 (LVALUE *lval, int comma)
-/*intptr_t	lval[]; */
+int heir5 (LVALUE *lval, int comma)
 {
-	intptr_t k;
+	int k;
 	LVALUE lval2[1] = {{0}};
 
 	k = heir6(lval, comma);
@@ -357,10 +351,9 @@ intptr_t heir5 (LVALUE *lval, int comma)
 	}
 }
 
-intptr_t heir6 (LVALUE *lval, int comma)
-/* intptr_t	lval[]; */
+int heir6 (LVALUE *lval, int comma)
 {
-	intptr_t k;
+	int k;
 	LVALUE lval2[1] = {{0}};
 
 	k = heir7(lval, comma);
@@ -440,10 +433,9 @@ intptr_t heir6 (LVALUE *lval, int comma)
 	}
 }
 
-intptr_t heir7 (LVALUE *lval, int comma)
-/*intptr_t	lval[]; */
+int heir7 (LVALUE *lval, int comma)
 {
-	intptr_t k;
+	int k;
 	LVALUE lval2[1] = {{0}};
 
 	k = heir8(lval, comma);
@@ -476,10 +468,9 @@ intptr_t heir7 (LVALUE *lval, int comma)
 	}
 }
 
-intptr_t heir8 (LVALUE *lval, int comma)
-/*intptr_t	lval[]; */
+int heir8 (LVALUE *lval, int comma)
 {
-	intptr_t k;
+	int k;
 	LVALUE lval2[1] = {{0}};
 
 	k = heir9(lval, comma);
@@ -528,10 +519,9 @@ intptr_t heir8 (LVALUE *lval, int comma)
 	}
 }
 
-intptr_t heir9 (LVALUE *lval, int comma)
-/* intptr_t	lval[]; */
+int heir9 (LVALUE *lval, int comma)
 {
-	intptr_t k;
+	int k;
 	LVALUE lval2[1] = {{0}};
 
 	k = heir10(lval, comma);
@@ -566,10 +556,9 @@ intptr_t heir9 (LVALUE *lval, int comma)
 	}
 }
 
-intptr_t heir10 (LVALUE *lval, int comma)
-/* intptr_t	lval[]; */
+int heir10 (LVALUE *lval, int comma)
 {
-	intptr_t k;
+	int k;
 	SYMBOL *ptr;
 
 	if (match("++")) {
@@ -715,10 +704,9 @@ intptr_t heir10 (LVALUE *lval, int comma)
 	}
 }
 
-intptr_t heir11 (LVALUE *lval, int comma)
-/*intptr_t	*lval; */
+int heir11 (LVALUE *lval, int comma)
 {
-	intptr_t direct, k;
+	int direct, k;
 	SYMBOL *ptr;
 	char sname[NAMESIZE];
 
@@ -892,7 +880,6 @@ intptr_t heir11 (LVALUE *lval, int comma)
 }
 
 void store (LVALUE *lval)
-/* intptr_t	*lval; */
 {
 	if (lval->symbol2) {
 		/* far arrays (or special arrays) */
@@ -911,7 +898,7 @@ void store (LVALUE *lval)
 			putstk(lval->indirect);
 		else {
 			if (lval->symbol && strcmp(lval->symbol->name, "vram") == 0)
-				out_ins(I_VPUTW, (intptr_t)NULL, (intptr_t)NULL);
+				out_ins(I_VPUTW, 0, 0);
 			else if (lval->symbol)
 				putmem(lval->symbol);
 			else
@@ -921,11 +908,10 @@ void store (LVALUE *lval)
 }
 
 void rvalue (LVALUE *lval)
-/* intptr_t	*lval; */
 {
 	if ((lval->symbol != 0) && (lval->indirect == 0)) {
 		if (strcmp(lval->symbol->name, "vram") == 0)
-			out_ins(I_VGETW, (intptr_t)NULL, (intptr_t)NULL);
+			out_ins(I_VGETW, 0, 0);
 		else
 			getmem(lval->symbol);
 	}

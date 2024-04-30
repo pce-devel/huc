@@ -6,6 +6,7 @@
 // #define DEBUG_PREPROC
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -65,7 +66,7 @@ char **include_dirs (void)
 void init_path (void)
 {
 	const char *p, *pl;
-	intptr_t i, l;
+	int i, l;
 
 	p = include_path();
 
@@ -73,9 +74,9 @@ void init_path (void)
 		pl = strchr(p, PATH_SEPARATOR);
 
 		if (pl == NULL)
-			l = strlen(p);
+			l = (int)strlen(p);
 		else
-			l = pl - p;
+			l = (int)(pl - p);
 		if (l) {
 			incpath[i] = (char *)malloc(l + 2);
 			strncpy(incpath[i], p, l);
@@ -104,7 +105,7 @@ FILE *file_open (char *name, char *mode)
 {
 	FILE *fp = NULL;
 	char testname[256];
-	intptr_t i;
+	int i;
 
 	for (i = 0; i < 10; i++) {
 		if (incpath[i] && strlen(incpath[i])) {
@@ -234,7 +235,7 @@ void doasmdef (void)
 {
 	char sname[100];
 	char sval[100];
-	intptr_t i = 0;
+	int i = 0;
 
 	symname(sname);
 	while ((ch() == ' ') || (ch() == 9))
@@ -293,10 +294,10 @@ static void bump_iflevel (void)
 	}
 }
 
-void doifdef (intptr_t ifdef)
+void doifdef (bool ifdef)
 {
 	char sname[NAMESIZE];
-	intptr_t k;
+	bool k;
 
 	blanks();
 	bump_iflevel();
@@ -309,7 +310,7 @@ void doifdef (intptr_t ifdef)
 
 static void doif (void)
 {
-	intptr_t num;
+	int num;
 
 	blanks();
 	bump_iflevel();
@@ -325,7 +326,7 @@ static void doif (void)
 
 static void doelif (void)
 {
-	intptr_t num;
+	int num;
 
 	blanks();
 	if (skiplevel && skiplevel < iflevel)
@@ -347,7 +348,7 @@ static void doelif (void)
 	}
 }
 
-intptr_t ifline (void)
+int ifline (void)
 {
 	FOREVER {
 		readline();
@@ -428,13 +429,13 @@ void noiferr (void)
 }
 
 
-intptr_t cpp (int subline)
+int cpp (int subline)
 {
-	intptr_t k;
+	int k;
 	char c, sname[NAMESIZE];
-	intptr_t tog;
-	intptr_t cpped;		/* non-zero if something expanded */
-	intptr_t llptr;
+	int tog;
+	int cpped;		/* non-zero if something expanded */
+	int llptr;
 
 	cpped = 0;
 	/* don't expand lines with preprocessor commands in them */
@@ -561,7 +562,7 @@ intptr_t cpp (int subline)
 								parg[0] = c;
 								parg[1] = '\0';
 								if (++parg >= pend) {
-									error("macro argument too intptr_t");
+									error("macro argument too int");
 									return (0);
 								}
 								if (ch() == ')') {
@@ -630,7 +631,7 @@ intptr_t cpp (int subline)
 	}
 	keepch(0);
 	if (mptr >= MPMAX)
-		error("line too intptr_t");
+		error("line too int");
 	/* copy cooked input back to where we got the raw input from */
 	strcpy(&line[llptr], mline);
 	/* ...and continue processing at that point */
@@ -638,7 +639,7 @@ intptr_t cpp (int subline)
 	return (cpped);
 }
 
-intptr_t keepch (char c)
+int keepch (char c)
 {
 	mline[mptr] = c;
 	if (mptr < MPMAX)
@@ -730,7 +731,7 @@ void addmac (void)
 			break;
 		}
 		for (i = 0; i < argc; i++) {
-			if (an(ch()) && amatch(mp->args[i], strlen(mp->args[i]))) {
+			if (an(ch()) && amatch(mp->args[i], (int)strlen(mp->args[i]))) {
 #ifdef DEBUG_PREPROC
 				printf("arg %d at offset %d\n", i, pos);
 #endif
@@ -741,7 +742,7 @@ void addmac (void)
 				mp->argpos[count++].pos = pos;
 				mp->argpos[count].arg = -1;
 				mp->argpos[count].pos = -1;
-				pos += strlen(mp->args[i]);
+				pos += (int)strlen(mp->args[i]);
 				found = 1;
 				break;
 			}
@@ -787,7 +788,7 @@ void delmac (struct macro *mp)
 
 struct macro *findmac (char *sname)
 {
-	intptr_t k;
+	int k;
 
 	k = 0;
 	while (k < macptr) {
@@ -799,7 +800,7 @@ struct macro *findmac (char *sname)
 	return (0);
 }
 
-void toggle (char name, intptr_t onoff)
+void toggle (char name, int onoff)
 {
 	switch (name) {
 	case 'C':

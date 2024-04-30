@@ -15,17 +15,17 @@
 
 #include "version.h"
 
-#define HUC_VERSION     "HuC (" GIT_VERSION ", " GIT_DATE ")"
+#define HUC_VERSION     "HuCC (" GIT_VERSION ", " GIT_DATE ")"
 
 void FEvers (void);
 void usage (char *exename);
 void parse (void);
-intptr_t dodcls (intptr_t stclass, TAG_SYMBOL *mtag, int is_struct);
+int dodcls (int stclass, TAG_SYMBOL *mtag, int is_struct);
 void dumplits (void);
 void dumpglbs (void);
 void errorsummary (void);
 char extension (char *s);
-intptr_t assemble (char *s);
+int assemble (char *s);
 
 void dotypedef (void);
 

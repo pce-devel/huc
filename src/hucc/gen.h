@@ -1,7 +1,7 @@
 #ifndef _GEN_H
 #define _GEN_H
 
-intptr_t getlabel (void);
+int getlabel (void);
 void getmem (SYMBOL *sym);
 void getio (SYMBOL *sym);
 void getvram (SYMBOL *sym);
@@ -12,19 +12,19 @@ void putio (SYMBOL *sym);
 void putvram (SYMBOL *sym);
 void indirect (char typeobj);
 void farpeek (SYMBOL *ptr);
-void immed (intptr_t type, intptr_t data);
+void immed (int type, intptr_t data);
 void gpush (void);
-void gpusharg (intptr_t size);
+void gpusharg (int size);
 void gpop (void);
 void swapstk (void);
-void gcall (char *sname, intptr_t nargs);
-void gmacro (char *sname, intptr_t nargs);
+void gcall (char *sname, int nargs);
+void gmacro (char *sname, int nargs);
 void gbank (unsigned char bank, unsigned short offset);
 void gret (void);
-void callstk (intptr_t nargs);
-void jump (intptr_t label);
-void testjump (intptr_t label, intptr_t ft);
-intptr_t modstk (intptr_t newstkp);
+void callstk (int nargs);
+void jump (int label);
+void testjump (int label, int ft);
+int modstk (int newstkp);
 void gaslint (void);
 void gasrint (void);
 void gjcase (void);
@@ -60,6 +60,6 @@ void gcast (int type);
 void gsei (void);
 void gcli (void);
 
-void scale_const (int type, int otag, intptr_t *size);
+void scale_const (int type, int otag, int *size);
 
 #endif

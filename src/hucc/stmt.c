@@ -4,6 +4,7 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -34,7 +35,7 @@
  *	must be compound, and must contain "statement_list" (even if
  *	"declaration_list" is omitted)
  */
-intptr_t statement (intptr_t func)
+int statement (int func)
 {
 	if ((ch() == 0) & feof(input))
 		return (0);
@@ -59,7 +60,7 @@ intptr_t statement (intptr_t func)
 /*
  *	declaration
  */
-intptr_t stdecl (void)
+int stdecl (void)
 {
 	if (amatch("register", 8))
 		doldcls(DEFAUTO);
@@ -74,7 +75,7 @@ intptr_t stdecl (void)
 	return (YES);
 }
 
-intptr_t doldcls (intptr_t stclass)
+int doldcls (int stclass)
 {
 	struct type t;
 
@@ -193,9 +194,9 @@ void stst (void)
  *	'func' is true if we are in a "function_statement", which
  *	must contain "statement_list"
  */
-void compound (intptr_t func)
+void compound (int func)
 {
-	intptr_t decls;
+	int decls;
 
 	decls = YES;
 	ncmp++;
@@ -224,7 +225,7 @@ void compound (intptr_t func)
  */
 void doif (void)
 {
-	intptr_t fstkp, flab1, flab2;
+	int fstkp, flab1, flab2;
 	SYMBOL *flev;
 
 	flev = locptr;
@@ -251,7 +252,7 @@ void doif (void)
  */
 void dowhile (void)
 {
-	intptr_t ws[7];
+	intptr_t ws[WSSIZ];
 
 	ws[WSSYM] = (intptr_t)locptr;
 	ws[WSSP] = stkp;
@@ -259,13 +260,13 @@ void dowhile (void)
 	ws[WSTEST] = getlabel();
 	ws[WSEXIT] = getlabel();
 	addwhile(ws);
-	gnlabel(ws[WSTEST]);
-	test(ws[WSEXIT], FALSE);
+	gnlabel((int)ws[WSTEST]);
+	test((int)ws[WSEXIT], FALSE);
 	statement(NO);
-	jump(ws[WSTEST]);
-	gnlabel(ws[WSEXIT]);
+	jump((int)ws[WSTEST]);
+	gnlabel((int)ws[WSEXIT]);
 	locptr = (SYMBOL *)ws[WSSYM];
-	stkp = modstk(ws[WSSP]);
+	stkp = modstk((int)ws[WSSP]);
 	delwhile();
 }
 
@@ -274,7 +275,7 @@ void dowhile (void)
  */
 void dodo (void)
 {
-	intptr_t ws[7];
+	intptr_t ws[WSSIZ];
 
 	ws[WSSYM] = (intptr_t)locptr;
 	ws[WSSP] = stkp;
@@ -283,17 +284,17 @@ void dodo (void)
 	ws[WSTEST] = getlabel();
 	ws[WSEXIT] = getlabel();
 	addwhile(ws);
-	gnlabel(ws[WSBODY]);
+	gnlabel((int)ws[WSBODY]);
 	statement(NO);
 	if (!match("while")) {
 		error("missing while");
 		return;
 	}
-	gnlabel(ws[WSTEST]);
-	test(ws[WSBODY], TRUE);
-	gnlabel(ws[WSEXIT]);
+	gnlabel((int)ws[WSTEST]);
+	test((int)ws[WSBODY], TRUE);
+	gnlabel((int)ws[WSEXIT]);
 	locptr = (SYMBOL *)ws[WSSYM];
-	stkp = modstk(ws[WSSP]);
+	stkp = modstk((int)ws[WSSP]);
 	delwhile();
 }
 
@@ -302,8 +303,7 @@ void dodo (void)
  */
 void dofor (void)
 {
-	intptr_t ws[7],
-	*pws;
+	intptr_t ws[WSSIZ], *pws;
 
 	ws[WSSYM] = (intptr_t)locptr;
 	ws[WSSP] = stkp;
@@ -319,28 +319,28 @@ void dofor (void)
 		expression(YES);
 		ns();
 	}
-	gnlabel(pws[WSTEST]);
+	gnlabel((int)pws[WSTEST]);
 	if (!match(";")) {
 		expression(YES);
-		testjump(pws[WSBODY], TRUE);
-		jump(pws[WSEXIT]);
+		testjump((int)pws[WSBODY], TRUE);
+		jump((int)pws[WSEXIT]);
 		ns();
 	}
 	else
 		pws[WSTEST] = pws[WSBODY];
-	gnlabel(pws[WSINCR]);
+	gnlabel((int)pws[WSINCR]);
 	if (!match(")")) {
 		expression(YES);
 		needbrack(")");
-		jump(pws[WSTEST]);
+		jump((int)pws[WSTEST]);
 	}
 	else
 		pws[WSINCR] = pws[WSTEST];
-	gnlabel(pws[WSBODY]);
+	gnlabel((int)pws[WSBODY]);
 	statement(NO);
-	stkp = modstk(pws[WSSP]);
-	jump(pws[WSINCR]);
-	gnlabel(pws[WSEXIT]);
+	stkp = modstk((int)pws[WSSP]);
+	jump((int)pws[WSINCR]);
+	gnlabel((int)pws[WSEXIT]);
 	locptr = (SYMBOL *)pws[WSSYM];
 	delwhile();
 }
@@ -350,7 +350,7 @@ void dofor (void)
  */
 void doswitch (void)
 {
-	intptr_t ws[7];
+	intptr_t ws[WSSIZ];
 	intptr_t *ptr;
 
 	ws[WSSYM] = (intptr_t)locptr;
@@ -369,12 +369,12 @@ void doswitch (void)
 	gjcase();
 	statement(NO);
 	ptr = readswitch();
-	jump(ptr[WSEXIT]);
+	jump((int)ptr[WSEXIT]);
 	dumpsw(ptr);
-	gnlabel(ptr[WSEXIT]);
+	gnlabel((int)ptr[WSEXIT]);
 	locptr = (SYMBOL *)ptr[WSSYM];
-	stkp = modstk(ptr[WSSP]);
-	swstp = ptr[WSCASEP];
+	stkp = modstk((int)ptr[WSSP]);
+	swstp = (int)ptr[WSCASEP];
 	delwhile();
 }
 
@@ -383,7 +383,7 @@ void doswitch (void)
  */
 void docase (void)
 {
-	intptr_t val;
+	int val;
 	char n[NAMESIZE];
 
 	val = 0;
@@ -405,8 +405,8 @@ void docase (void)
  */
 void dodefault (void)
 {
-	intptr_t *ptr,
-	      lab;
+	intptr_t* ptr;
+	int lab;
 
 	ptr = readswitch();
 	if (ptr) {
@@ -447,8 +447,8 @@ void dobreak (void)
 	if ((ptr = readwhile()) == 0)
 		return;
 
-	modstk(ptr[WSSP]);
-	jump(ptr[WSEXIT]);
+	modstk((int)ptr[WSSP]);
+	jump((int)ptr[WSEXIT]);
 }
 
 /*
@@ -461,11 +461,11 @@ void docont (void)
 	if ((ptr = findwhile()) == 0)
 		return;
 
-	modstk(ptr[WSSP]);
+	modstk((int)ptr[WSSP]);
 	if (ptr[WSTYP] == WSFOR)
-		jump(ptr[WSINCR]);
+		jump((int)ptr[WSINCR]);
 	else
-		jump(ptr[WSTEST]);
+		jump((int)ptr[WSTEST]);
 }
 
 void dolabel (char *name)
@@ -544,15 +544,14 @@ void dogoto (void)
  *	dump switch table
  */
 void dumpsw (intptr_t *ws)
-/*intptr_t	ws[];*/
 {
-	intptr_t i, j;
+	int i, j;
 
 //	gdata ();
-	gnlabel(ws[WSTAB]);
+	gnlabel((int)ws[WSTAB]);
 	flush_ins();
 	if (ws[WSCASEP] != swstp) {
-		j = ws[WSCASEP];
+		j = (int)ws[WSCASEP];
 		while (j < swstp) {
 			defword();
 			i = 4;
@@ -570,14 +569,12 @@ void dumpsw (intptr_t *ws)
 	}
 	defword();
 	outstr("0,");
-	outlabel(ws[WSDEF]);
+	outlabel((int)ws[WSDEF]);
 	nl();
 //	gtext ();
 }
 
-void test (intptr_t label, intptr_t ft)
-/* intptr_t	label,
-        ft; */
+void test (int label, int ft)
 {
 	needbrack("(");
 	expression(YES);
