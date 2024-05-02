@@ -16,7 +16,6 @@ void immed (int type, intptr_t data);
 void gpush (void);
 void gpusharg (int size);
 void gpop (void);
-void swapstk (void);
 void gcall (char *sname, int nargs);
 void gmacro (char *sname, int nargs);
 void gbank (unsigned char bank, unsigned short offset);

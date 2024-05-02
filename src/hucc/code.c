@@ -590,10 +590,6 @@ void gen_code (INS *tmp)
 		ol("__negw");
 		break;
 
-	case I_SWAPW:
-		ol("__swapw");
-		break;
-
 	case I_EXTW:
 		ol("__extw");
 		break;

@@ -216,15 +216,6 @@ void gpop (void)
 }
 
 /*
- *	swap the primary register and the top of the stack
- *
- */
-void swapstk (void)
-{
-	out_ins(I_SWAPW, 0, 0);
-}
-
-/*
  *	call the specified subroutine name
  *
  */
