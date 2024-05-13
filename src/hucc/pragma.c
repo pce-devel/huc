@@ -25,6 +25,7 @@ static char *cmdptr;
 
 /* default pragma's */
 static char *pragma_init[] = {
+#if 0
 	/* far pointer support funcs */
 	"fastcall farpeekb(farptr __fbank:__fptr)",
 	"fastcall farpeekw(farptr __fbank:__fptr)",
@@ -131,6 +132,7 @@ static char *pragma_init[] = {
 	"fastcall ad_play(word __bx, word __ax, byte __dh, byte __dl)",
 
 	"fastcall __builtin_ffs(word acc)",
+#endif
 	NULL
 };
 
