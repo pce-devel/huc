@@ -519,9 +519,9 @@ int cpp (int subline)
 			while (ch())
 				inchar();
 		}
-		else if (an(ch())) {
+		else if (alphanum(ch())) {
 			k = 0;
-			while (an(ch())) {
+			while (alphanum(ch())) {
 				if (k < NAMEMAX)
 					sname[k++] = ch();
 				gch();
@@ -731,7 +731,7 @@ void addmac (void)
 			break;
 		}
 		for (i = 0; i < argc; i++) {
-			if (an(ch()) && amatch(mp->args[i], (int)strlen(mp->args[i]))) {
+			if (alphanum(ch()) && amatch(mp->args[i], (int)strlen(mp->args[i]))) {
 #ifdef DEBUG_PREPROC
 				printf("arg %d at offset %d\n", i, pos);
 #endif

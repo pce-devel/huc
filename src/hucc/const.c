@@ -234,7 +234,7 @@ int get_raw_value (char sep)
 		}
 
 		/* parse */
-		if (an(c)) {
+		if (alphanum(c)) {
 			flag = 1;
 			*ptr++ = c;
 		}

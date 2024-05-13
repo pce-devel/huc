@@ -802,7 +802,7 @@ bool readstr (void)
 	char c;
 	int posptr = 0;
 
-	while (an(ch()) || (ch() == '_')) {
+	while (alphanum(ch()) || (ch() == '_')) {
 		if (ch() == 0)
 			break;
 		if (posptr >= LITMAX2) {

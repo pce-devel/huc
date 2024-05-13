@@ -72,7 +72,7 @@ void add_member (char *sname, char identity, char type, int offset, int storage_
 	}
 	symbol = &member_table[member_table_index];
 	buffer_ptr = symbol->name;
-	while (an(*buffer_ptr++ = *sname++)) ;
+	while (alphanum(*buffer_ptr++ = *sname++)) ;
 	symbol->ident = identity;
 	symbol->type = type;
 	symbol->storage = storage_class;
@@ -98,7 +98,7 @@ int define_struct (char *sname, int storage, int is_struct)
 	tti = tag_table_index++;
 	symbol = &tag_table[tti];
 	buffer_ptr = symbol->name;
-	while (an(*buffer_ptr++ = *sname++)) ;
+	while (alphanum(*buffer_ptr++ = *sname++)) ;
 	symbol->size = 0;
 	symbol->member_idx = member_table_index;
 

@@ -492,7 +492,7 @@ int symget (char *sname)
 
 	/* extract symbol name (stops at first non-alphanum char) */
 	for (i = 0;; i++) {
-		if (!an(*cmdptr))
+		if (!alphanum(*cmdptr))
 			break;
 		sname[i] = *cmdptr++;
 	}

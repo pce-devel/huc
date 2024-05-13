@@ -13,7 +13,7 @@ int alpha (char c);
 
 int numeric (char c);
 
-int an (char c);
+int alphanum (char c);
 
 int sstreq (const char *str1);
 

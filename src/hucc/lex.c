@@ -27,11 +27,11 @@ void ns (void)
 
 void junk (void)
 {
-	if (an(inbyte()))
-		while (an(ch()))
+	if (alphanum(inbyte()))
+		while (alphanum(ch()))
 			gch();
 	else
-		while (an(ch())) {
+		while (alphanum(ch())) {
 			if (ch() == 0)
 				break;
 			gch();
@@ -81,7 +81,7 @@ int numeric (char c)
  *	test if given character is alphanumeric
  *
  */
-int an (char c)
+int alphanum (char c)
 {
 	return ((alpha(c)) | (numeric(c)));
 }
@@ -119,10 +119,10 @@ int astreq (const char *str1, const char *str2, int len)
 			break;
 		k++;
 	}
-	if (an(str1[k]))
+	if (alphanum(str1[k]))
 		return (0);
 
-	if (an(str2[k]))
+	if (alphanum(str2[k]))
 		return (0);
 
 	return (k);
@@ -149,7 +149,7 @@ int amatch (const char *lit, int len)
 	k = astreq(line + lptr, lit, len);
 	if (k) {
 		lptr = lptr + k;
-		while (an(ch()))
+		while (alphanum(ch()))
 			inbyte();
 		return (1);
 	}

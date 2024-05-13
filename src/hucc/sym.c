@@ -500,7 +500,7 @@ SYMBOL *addglb (char *sname, char id, char typ, int value, char stor, SYMBOL *re
 		cptr = replace;
 
 	ptr = cptr->name;
-	while (an(*ptr++ = *sname++)) ;
+	while (alphanum(*ptr++ = *sname++)) ;
 	cptr->ident = id;
 	cptr->type = typ;
 	cptr->storage = stor;
@@ -541,7 +541,7 @@ SYMBOL *addloc (char *sname, char id, char typ, int value, char stclass, int siz
 	}
 	cptr = locptr;
 	ptr = locptr->name;
-	while (an(*ptr++ = *sname++)) ;
+	while (alphanum(*ptr++ = *sname++)) ;
 	cptr->ident = id;
 	cptr->type = typ;
 	cptr->storage = stclass;
@@ -566,7 +566,7 @@ bool symname (char *sname)
 		return (false);
 
 	k = 0;
-	while (an(ch()))
+	while (alphanum(ch()))
 		sname[k++] = gch();
 	sname[k] = 0;
 	return (true);
