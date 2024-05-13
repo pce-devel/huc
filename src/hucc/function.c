@@ -134,7 +134,7 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 			}
 
 			if (is_fastcall) {
-				if (match("far"))
+				if (match("__far") || match("far"))
 					fc->argtype[fc_args] = TYPE_FARPTR;
 				else {
 					if (t.type == CINT || t.type == CUINT)
