@@ -842,6 +842,7 @@ int outconst (void)
 	return (0);
 }
 
+#if 0
 void doset_bgpalstatement (void)
 {
 	/* syntax is
@@ -965,6 +966,7 @@ void doload_backgroundstatement (void)
 	nl();
 	needbrack(")");
 }
+#endif
 
 void do_asm_func (int type)
 {

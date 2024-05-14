@@ -552,6 +552,7 @@ void callfunction (char *ptr)
 		else if (!strcmp(ptr, "pal")) {
 			do_asm_func(T_PAL);  return;
 		}
+#if 0
 		else if (!strcmp(ptr, "set_bgpal")) {
 			doset_bgpalstatement(); return;
 		}
@@ -564,6 +565,7 @@ void callfunction (char *ptr)
 		else if (!strcmp(ptr, "load_background")) {
 			doload_backgroundstatement(); return;
 		}
+#endif
 	}
 
 	/* indirect call (push func address) */
