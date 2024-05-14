@@ -353,7 +353,7 @@ struct const_array {
 
 /* fastcall func struct */
 
-#define MAX_FASTCALL_ARGS 8
+#define MAX_FASTCALL_ARGS 16
 #define FASTCALL_NOP      0x01  // bitmask values
 #define FASTCALL_MACRO    0x04	// bitmask values
 
