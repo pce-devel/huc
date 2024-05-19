@@ -64,6 +64,8 @@ void do_star(int *ip);
 void do_label(int *ip);
 void do_struct(int *ip);
 void do_ends(int *ip);
+void do_alias(int *ip);
+void do_ref(int *ip);
 int  htoi(char *str, int nb);
 void set_section(int new_section);
 

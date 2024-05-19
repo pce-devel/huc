@@ -42,6 +42,7 @@ t_symbol *glablptr;                             /* pointer to the latest defined
 t_symbol *scopeptr;                             /* pointer to the latest defined scope label */
 t_symbol *lastlabl;                             /* last label we have seen */
 t_symbol *bank_glabl[MAX_S][MAX_BANKS];         /* latest global symbol for each bank */
+t_symbol *unaliased;                            /* unaliased version of last symbol lookup */
 t_branch *branchlst;                            /* first branch instruction assembled */
 t_branch *branchptr;                            /* last branch instruction assembled */
 

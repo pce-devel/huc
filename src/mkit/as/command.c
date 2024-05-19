@@ -87,7 +87,9 @@ unsigned short pseudo_allowed[] = {
 /* P_ENCODING    */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
 /* P_STRUCT      */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
 /* P_ENDS        */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
-/* P_3PASS       */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS
+/* P_3PASS       */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_ALIAS       */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_REF         */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS
 };
 
 
@@ -2323,6 +2325,202 @@ do_ends(int *ip)
 //	/* output line */
 //	if (pass == LAST_PASS)
 //		println();
+}
+
+
+/* ----
+ * do_alias()
+ * ----
+ * .alias pseudo
+ */
+
+void
+do_alias(int *ip)
+{
+	struct t_symbol *alias;
+	int i;
+
+
+	/* get alias name */
+	if (lablptr) {
+		/* go back to the unaliased label */
+		if (lablptr != unaliased) {
+			lablptr = unaliased;
+		}
+
+		/* copy the procedure name from the label */
+		strcpy(symbol, lablptr->name);
+	}
+	else {
+		/* skip spaces */
+		while (isspace(prlnbuf[*ip]))
+			(*ip)++;
+
+		/* extract name */
+		if (!colsym(ip, 0)) {
+			/* was there a bad symbol */
+			if (symbol[0])
+				return;
+			/* or just no symbol at all */
+			fatal_error(".ALIAS name is missing!");
+			return;
+		}
+
+		/* lookup symbol table */
+		if ((lablptr = stlook(SYM_DEF)) == NULL)
+			return;
+
+		/* go back to the unaliased label */
+		if (lablptr != unaliased) {
+			lablptr = unaliased;
+		}
+
+		/* skip spaces */
+		while (isspace(prlnbuf[*ip]))
+			(*ip)++;
+
+		if (prlnbuf[(*ip)++] != '=') {
+			fatal_error("Syntax error!");
+			return;
+		}
+	}
+
+	/* check symbol */
+	if (symbol[1] == '.' || symbol[1] == '@') {
+		error(".ALIAS name cannot be a local label!");
+		return;
+	}
+	if (symbol[1] == '!') {
+		error(".ALIAS name cannot be a multi-label!");
+		return;
+	}
+
+	/* is the symbol already used for somthing else */
+	if (lablptr->type == MACRO) {
+		error("Symbol already used by a macro!");
+		return;
+	}
+	if (lablptr->type == FUNC) {
+		error("Symbol already used by a function!");
+		return;
+	}
+	if (lablptr->type == DEFABS || lablptr->type == MDEF ) {
+		error("Symbol already used by a label!");
+		return;
+	}
+	if (lablptr->reserved) {
+		error("Reserved symbol!");
+		return;
+	}
+
+	/* skip spaces */
+	while (isspace(prlnbuf[*ip]))
+		(*ip)++;
+
+	/* make sure that it's not an instruction or pseudo op, N.B. "i" is altered by oplook() */
+	i = *ip;
+	if (oplook(&i) >= 0) {
+		fatal_error("Cannot create a .ALIAS to an instruction name!");
+		return;
+	}
+
+	/* extract symbol name of .ALIAS target */
+	if (!colsym(ip, 0)) {
+		/* was there a bad symbol */
+		if (symbol[0] == 0)
+			return;
+		/* or just no symbol at all */
+		error(".ALIAS target symbol name is missing!");
+		return;
+	}
+
+	/* check end of line */
+	if (!check_eol(ip))
+		return;
+
+	/* check symbol */
+	if (symbol[1] == '.' || symbol[1] == '@') {
+		fatal_error("Cannot create a .ALIAS to a local label!");
+		return;
+	}
+	if (symbol[1] == '!') {
+		fatal_error("Cannot create a .ALIAS to a multi-label!");
+		return;
+	}
+
+	/* check for redefinition */
+	if (lablptr->type == ALIAS) {
+		alias = lablptr->local;
+		if (strcmp(alias->name, symbol) != 0) {
+			error(".ALIAS was already defined differently!");
+			return;
+		}
+	} else {
+		/* lookup or create the target symbol name */
+		if ((alias = stlook(SYM_DEF)) == NULL)
+			return;
+
+		/* is the symbol already used for somthing else */
+		if (alias->type == MACRO) {
+			error("Cannot create a .ALIAS to a macro!");
+			return;
+		}
+		if (alias->type == FUNC) {
+			error("Cannot create a .ALIAS to a function!");
+			return;
+		}
+		if (alias->reserved) {
+			error("Cannot create a .ALIAS to a reserved symbol!");
+			return;
+		}
+
+		/* define alias */
+		lablptr->type = ALIAS;
+		lablptr->local = alias;
+
+		/* remember where this was defined */
+		lablptr->fileinfo = input_file[infile_num].file;
+		lablptr->fileline = slnum;
+	}
+
+	/* check for circular definition */
+	if (strcmp(lablptr->name, alias->name) == 0) {
+		error(".ALIAS cannot refer to itself!");
+		return;
+	}
+
+	/* record definition */
+	lablptr->defthispass = 1;
+
+	/* output */
+	if (pass == LAST_PASS) {
+		loadlc(loccnt, 0);
+		println();
+	}
+}
+
+
+/* ----
+ * do_ref()
+ * ----
+ * .ref pseudo
+ */
+
+void
+do_ref(int *ip)
+{
+	/* define label */
+	labldef(LOCATION);
+
+	/* evaluate expression to increment a label's reference count */
+	if (!evaluate(ip, ';', 0))
+		return;
+
+	/* output line */
+	if (pass == LAST_PASS) {
+		loadlc(loccnt, 0);
+		println();
+	}
 }
 
 

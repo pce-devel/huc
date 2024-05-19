@@ -100,7 +100,7 @@ colsym(int *ip, int flag)
 		i = addscope(scopeptr, i);
 	}
 
-	/* remember where the symbol itself starts */
+	/* remember where the symbol itself starts after the scope */
 	j = i;
 
 	/* get the symbol */
@@ -119,12 +119,14 @@ colsym(int *ip, int flag)
 	if (i == j) { i = 0; }
 
 	symbol[0] = i;
-	symbol[i + 1] = '\0';
 
-	if (i >= SBOLSZ - 1) {
-		fatal_error("Symbol name too long ('%s' is %d chars long, max is %d)", symbol + 1, i, SBOLSZ - 2);
+	if (i == SBOLSZ - 1) {
+		symbol[SBOLSZ - 1] = '\0';
+		fatal_error("Symbol name too long, maximum is %d characters.", SBOLSZ - 2);
 		return (0);
 	}
+
+	symbol[i + 1] = '\0';
 
 	/* skip passed the first ':' if there are two in SDCC code */
 	if (sdcc_mode && (prlnbuf[*ip] == ':') && (prlnbuf[(*ip)+1] == ':'))
@@ -146,8 +148,6 @@ colsym(int *ip, int flag)
 	/* error */
 	if (err) {
 		fatal_error("Reserved symbol!");
-//		symbol[0] = 0;
-//		symbol[1] = '\0';
 		return (0);
 	}
 
@@ -211,6 +211,12 @@ stlook(int type)
 		}
 	}
 
+	/* resolve symbol alias */
+	unaliased = sym;
+	while ((sym != NULL) && (sym->type == ALIAS)) {
+		sym = sym->local;
+	}
+
 	/* increment symbol reference counter */
 	if ((sym != NULL) && (type == SYM_REF) && (if_expr == 0)) {
 		sym->refthispass++;
@@ -262,7 +268,7 @@ stinstall(int hash, int type)
 	sym->reflastpass = 1; /* so that .ifref triggers in 1st pass */
 	sym->defthispass = 0;
 	sym->refthispass = 0;
-	sym->name = remember_string(symbol, 2 + (size_t)symbol[0]);
+	sym->name = remember_string(symbol, (size_t)symbol[0] + 2);
 
 	/* add the symbol to the hash table */
 	if (type) {
@@ -299,6 +305,10 @@ labldef(int reason)
 		return (0);
 
 	/* is the symbol already used for somthing else */
+	if (lablptr->type == ALIAS) {
+		error("Symbol already used by an alias!");
+		return (-1);
+	}
 	if (lablptr->type == MACRO) {
 		error("Symbol already used by a macro!");
 		return (-1);
@@ -307,6 +317,7 @@ labldef(int reason)
 		error("Symbol already used by a function!");
 		return (-1);
 	}
+
 	if (lablptr->reserved) {
 		fatal_error("Reserved symbol!");
 		return (-1);

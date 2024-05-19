@@ -178,6 +178,8 @@
 #define P_STRUCT	63	// .struct
 #define P_ENDS		64	// .ends
 #define P_3PASS		65	// .3pass
+#define P_ALIAS		66	// .alias
+#define P_REF		67	// .ref
 
 /* symbol flags */
 #define UNDEF	1	/* undefined - may be zero page */
@@ -186,6 +188,7 @@
 #define DEFABS	4	/* defined - two byte address */
 #define MACRO	5	/* used for a macro name */
 #define FUNC	6	/* used for a function */
+#define ALIAS	7	/* used for an alias */
 
 /* symbol lookup flags */
 #define SYM_CHK	0	/* does it exist? */

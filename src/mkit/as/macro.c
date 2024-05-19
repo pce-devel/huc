@@ -61,6 +61,10 @@ do_macro(int *ip)
 		}
 		if (lablptr->defthispass || lablptr->refthispass) {
 			switch (lablptr->type) {
+			case ALIAS:
+				fatal_error("Symbol already used by an alias!");
+				return;
+
 			case MACRO:
 				fatal_error("Macro already defined!");
 				return;

@@ -274,8 +274,11 @@ do_proc(int *ip)
 
 		/* extract name */
 		if (!colsym(ip, 0)) {
+			/* was there a bad symbol */
 			if (symbol[0])
 				return;
+
+			/* or just no symbol at all */
 			if (optype == P_PROC) {
 				fatal_error(".PROC name is missing!");
 				return;
