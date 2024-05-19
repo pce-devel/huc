@@ -416,7 +416,7 @@ remember_string(const char * string, size_t size)
 	}
 
 	output = memcpy(str_pool->buffer + STR_POOL_SIZE - str_pool->remain, string, size);
-	str_pool->remain -= size;
+	str_pool->remain -= (int)size;
 
 	return (output);
 }
