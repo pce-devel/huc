@@ -762,6 +762,7 @@ lv1_loop:
 				nb = 1;
 			}
 
+#if 0
 			/*  __pushw                    --> __stw  <__temp
 			 *  __ldw(i)  n / __ldw_s n          __ldw(i) n / __ldw_s n-2
 			 *  jsr  eq/ne (etc.)                jsr eqzp/nezp (etc.)
@@ -863,6 +864,7 @@ lv1_loop:
 					p[2]->code = I_CMPWI_NE;
 				nb = 2;
 			}
+#endif
 
 			/*  __ldw/b/ub   n                    -->   incw/b  n
 			 *  __addwi 1                        __ldw/b/ub   n
