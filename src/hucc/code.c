@@ -48,7 +48,7 @@ void header (void)
 {
 	time_t today;
 
-	outstr("; Small C HuC6280 (1997-Nov-08)\n;\n");
+	outstr("; Small-C HuC6280 (1997-Nov-08)\n");
 	outstr("; became HuC      (2000-Feb-22)\n");
 	outstr("; became HuCC     (2024-May-01)\n");
 	outstr(";\n");
@@ -392,7 +392,7 @@ void gen_code (INS *tmp)
 		break;
 
 	case I_STB:
-		ot("  stx\t");
+		ot("__stb\t");
 		out_addr(type, data);
 		nl();
 		break;
@@ -428,7 +428,7 @@ void gen_code (INS *tmp)
 		break;
 
 	case I_STBZ:
-		ot("stz\t");
+		ot("__stbz\t");
 		out_type(type, data);
 		nl();
 		break;

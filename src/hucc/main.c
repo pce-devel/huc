@@ -1,7 +1,7 @@
 /*	File main.c: 2.7 (84/11/28,10:14:56)
  *
  * PC Engine C Compiler
- * based on Small C Compiler by Ron Cain, James E. Hendrix, and others
+ * based on Small-C Compiler by Ron Cain, James E. Hendrix, and others
  * hacked to work on PC Engine by David Michel
  * work resumed by Zeograd
  * work resumed again by Ulrich Hecht
