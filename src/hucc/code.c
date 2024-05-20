@@ -185,7 +185,7 @@ static void out_type (int type, intptr_t data)
 		outstr((const char *)data);
 		break;
 	case T_STRING:
-		outlabel(litlab);
+		outconst(litlab);
 		outbyte('+');
 		outdec((int)data);
 		break;

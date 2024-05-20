@@ -391,7 +391,7 @@ void dump_const (void)
 					outstr("0");
 				else if (k <= -1024) {
 					k = (-k) - 1024;
-					outlabel(litlab);
+					outconst(litlab);
 					outbyte('+');
 					outdec(k);
 				}

@@ -613,7 +613,7 @@ void dumplits (void)
 	outstr("\t.data\n");
 	outstr("\t.bank CONST_BANK\n");
 	if (litptr) {
-		outlabel(litlab);
+		outconst(litlab);
 		col();
 		k = 0;
 		while (k < litptr) {
@@ -1046,26 +1046,26 @@ int assemble (char *s)
 
 	switch (cdflag) {
 	case 1:
-		strcat_s(buf, sizeof(buf), "-cd ");
+		strcat_s(buf, sizeof(buf), "--cd ");
 		break;
 
 	case 2:
-		strcat_s(buf, sizeof(buf), "-scd ");
+		strcat_s(buf, sizeof(buf), "--scd ");
 		break;
 
 	default:
-		strcat_s(buf, sizeof(buf), "-raw -pad ");
+		strcat_s(buf, sizeof(buf), "--raw --pad ");
 		break;
 	}
 
 	if (overlayflag)
-		strcat_s(buf, sizeof(buf), "-over ");
+		strcat_s(buf, sizeof(buf), "--over ");
 
 	if (verboseflag) {
 		strcat_s(buf, sizeof(buf), "-S -l 3 -m ");
 	}
 
-	strcat_s(buf, sizeof(buf), "-O ");
+	strcat_s(buf, sizeof(buf), "-O --newproc --strip ");
 
 	strcat_s(buf, sizeof(buf), "\"");
 	strcat_s(buf, sizeof(buf), s);
@@ -1081,8 +1081,8 @@ int assemble (char *s)
 #elif defined(__unix__) || defined(__APPLE__)
 
 	char *exe;
-	char buf[256];
-	char *opts[12];
+	char buf[512];
+	char *opts[16];
 	int i = 0;
 
 	exe = getenv("PCE_PCEAS");
@@ -1092,21 +1092,21 @@ int assemble (char *s)
 	opts[i++] = exe;
 	switch (cdflag) {
 	case 1:
-		opts[i++] = "-cd";
+		opts[i++] = "--cd";
 		break;
 
 	case 2:
-		opts[i++] = "-scd";
+		opts[i++] = "--scd";
 		break;
 
 	default:
-		opts[i++] = "-raw";
-		opts[i++] = "-pad";
+		opts[i++] = "--raw";
+		opts[i++] = "--pad";
 		break;
 	}
 
 	if (overlayflag)
-		opts[i++] = "-over";	/* compile as overlay */
+		opts[i++] = "--over";	/* compile as overlay */
 
 	if (verboseflag) {
 		opts[i++] = "-S";	/* asm: display full segment map */
@@ -1117,6 +1117,8 @@ int assemble (char *s)
 		opts[i++] = "-l 0";
 
 	opts[i++] = "-O";		/* optimize procedure packing */
+	opts[i++] = "--newproc";	/* use newproc procedure thunks */
+	opts[i++] = "--strip";		/* strip unused procedures */
 
 	strcpy(buf, s);
 	buf[strlen(buf) - 1] = 's';

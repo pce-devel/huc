@@ -466,6 +466,15 @@ void outsymbol (char *ptr)
 /*
  *	print specified number as label
  */
+void outconst (int label)
+{
+	outstr("__const");
+	outdec(label);
+}
+
+/*
+ *	print specified number as label
+ */
 void outlabel (int label)
 {
 	olprfix();

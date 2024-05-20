@@ -46,6 +46,7 @@ void ol (char *ptr);
 void ot (char *ptr);
 void nl (void);
 void outsymbol (char *ptr);
+void outconst (int label);
 void outlabel (int label);
 void outdec (int number);
 void outhex (int number);
