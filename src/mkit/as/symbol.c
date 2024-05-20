@@ -395,9 +395,9 @@ labldef(int reason)
 	if ((lablptr->type == UNDEF) || (lablptr->type == IFUNDEF)) {
 		/* allow the definition */
 	}
-	/* don't allow the reason, or a constant, to change */
+	/* don't allow the reason, or the value, to change during a single pass */
 	else if ((lablptr->reason != reason) ||
-		 (lablptr->reason == CONSTANT && lablptr->value != labl_value && lablptr->defthispass)) {
+		 (lablptr->defthispass && lablptr->value != labl_value)) {
 		/* normal label */
 		lablptr->type = MDEF;
 		lablptr->value = 0;
