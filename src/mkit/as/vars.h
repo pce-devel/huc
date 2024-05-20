@@ -27,8 +27,9 @@ int stop_pass;                                  /* stop the program; set by fata
 int errcnt;                                     /* error counter */
 int kickc_mode;                                 /* NZ if assembling KickC code */
 int sdcc_mode;                                  /* NZ if assembling SDCC code */
+int hucc_mode;                                  /* NZ if assembling HuCC code */
 int kickc_final;                                /* auto-include "kickc-final.asm" */
-int sdcc_final;                                 /* auto-include "sdcc-final.asm" */
+int hucc_final;                                 /* auto-include "hucc-final.asm" */
 int in_final;                                   /* set when in xxxx-final.asm include */
 int preproc_inblock;                            /* C-style comment: within block comment */
 int preproc_sfield;                             /* C-style comment: SFIELD as a variable */

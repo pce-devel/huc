@@ -1991,14 +1991,15 @@ do_kickc(int *ip)
 	if (!check_eol(ip))
 		return;
 
-	/* enable/disable KickC or SDCC mode */
+	/* enable/disable KickC, SDCC or HuCC mode */
 	kickc_mode = (optype & 1) >> 0;
 	sdcc_mode  = (optype & 2) >> 1;
+	hucc_mode  = (optype & 4) >> 2;
 
 	/* signal to include final.asm, but not if already inside final.asm */
 	if (!in_final) {
 		kickc_final |= kickc_mode;
-		sdcc_final  |= sdcc_mode;
+		hucc_final  |= (sdcc_mode | hucc_mode);
 	}
 
 	/* enable () for indirect addressing during KickC code */
@@ -2006,10 +2007,10 @@ do_kickc(int *ip)
 
 	/* enable auto-detect ZP addressing during KickC and SDCC code */
 	/* for SDCC, this is needed to assemble library function params into ZP */
-	asm_opt[OPT_ZPDETECT] = (kickc_mode | sdcc_mode);
+	asm_opt[OPT_ZPDETECT] = (kickc_mode | sdcc_mode | hucc_mode);
 
 	/* enable long-branch support when building KickC code */
-	asm_opt[OPT_LBRANCH] |= kickc_mode;
+	asm_opt[OPT_LBRANCH] |= (kickc_mode | hucc_mode);
 
 	/* enable forward-references when building KickC code */
 	asm_opt[OPT_FORWARD] |= kickc_mode;

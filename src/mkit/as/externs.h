@@ -117,8 +117,9 @@ extern int opvaltab[6][16];
 extern int call_bank;                           /* bank for .proc thunks */
 extern int kickc_mode;                          /* NZ if currently in KickC mode */
 extern int sdcc_mode;                           /* NZ if assembling SDCC code */
+extern int hucc_mode;                           /* NZ if assembling HuCC code */
 extern int kickc_final;                         /* auto-include "kickc-final.asm" */
-extern int sdcc_final;                          /* auto-include "sdcc-final.asm" */
+extern int hucc_final;                          /* auto-include "hucc-final.asm" */
 extern int in_final;                            /* set when in xxxx-final.asm include */
 extern int preproc_inblock;                     /* C-style comment: within block comment */
 extern int preproc_sfield;                      /* C-style comment: SFIELD as a variable */

@@ -282,7 +282,7 @@ start:
 	c = getc(in_fp);
 	if (c == EOF) {
 		if (close_input()) {
-			if (stop_pass != 0 || ((extra_file == NULL) && (sdcc_final == 0) && (kickc_final == 0))) {
+			if (stop_pass != 0 || ((extra_file == NULL) && (hucc_final == 0) && (kickc_final == 0))) {
 				return (-1);
 			} else {
 				const char * name;
@@ -292,8 +292,8 @@ start:
 					extra_file = extra_file->next;
 				} else {
 					/* auto-include a final source file */
-					name = (sdcc_final) ? "sdcc-final.asm" : "kickc-final.asm";
-					sdcc_final = kickc_final = 0;
+					name = (hucc_final) ? "hucc-final.asm" : "kickc-final.asm";
+					hucc_final = kickc_final = 0;
 					in_final = 1;
 				}
 				if (open_input(name) == -1) {

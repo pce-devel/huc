@@ -664,7 +664,7 @@ main(int argc, char **argv)
 		kickc_mode = 0;
 		sdcc_mode = 0;
 		kickc_final = 0;
-		sdcc_final = 0;
+		hucc_final = 0;
 		in_final = 0;
 
 		/* reset assembler options */
