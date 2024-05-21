@@ -347,6 +347,7 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 
 	flush_ins();	/* David, .proc directive support */
 	gtext();
+	ol(".hucc");
 	ot(".proc ");
 	prefix();
 	outstr(current_fn);
@@ -387,6 +388,7 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 		}
 	}
 
+	ol(".pceas");
 	nl();
 	stkp = 0;
 	locptr = STARTLOC;
