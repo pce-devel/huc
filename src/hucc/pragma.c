@@ -369,7 +369,7 @@ void new_fastcall (void)
 	/* extra infos */
 	if (cnt) {
 		if (ptr->nargs > 1)
-			ptr->flags |= 0x02;
+			ptr->flags |= FASTCALL_EXTRA;
 	}
 	if (symget(sname)) {
 		if (strcmp(sname, "nop") == 0)

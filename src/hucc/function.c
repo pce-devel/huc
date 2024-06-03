@@ -94,10 +94,13 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 			fc->nargs = 0;
 			fc_args = 0;
 			fc->flags = 0;
+			if (match("__xsafe"))
+				fc->flags |= FASTCALL_XSAFE;
 			if (match("__nop"))
-				fc->flags = 0x01;
+				fc->flags |= FASTCALL_NOP;
+			else
 			if (match("__macro"))
-				fc->flags = 0x04;
+				fc->flags |= FASTCALL_MACRO;
 		}
 		else {
 			/* No explicit return type. */
