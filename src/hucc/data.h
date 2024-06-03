@@ -50,7 +50,6 @@ extern char asmdefs[];
 extern int nxtlab,
 	    litlab,
 	    stkp,
-	    zpstkp,
 	    argstk,
 	    ncmp,
 	    errcnt,

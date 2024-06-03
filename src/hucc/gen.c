@@ -188,9 +188,6 @@ void immed (int type, intptr_t data)
  */
 void gpush (void)
 {
-//	out_ins(I_PUSHWZ, T_VALUE, zpstkp);
-//	zpstkp = zpstkp - INTSIZE;
-
 	out_ins(I_PUSHW, T_VALUE, INTSIZE);
 	stkp = stkp - INTSIZE;
 }

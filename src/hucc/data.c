@@ -52,7 +52,6 @@ char asmdefs[LITABSZ];
 int nxtlab,
      litlab,
      stkp,
-     zpstkp,
      argstk,
      ncmp,
      errcnt,
