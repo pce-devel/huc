@@ -71,7 +71,7 @@ char *section_name[MAX_S + 1] = {
 int newproc_opt;
 int strip_opt;
 int kickc_opt;
-int sdcc_opt;
+int hucc_opt;
 int dump_seg;
 int overlayflag;
 int develo_opt;
@@ -277,6 +277,7 @@ main(int argc, char **argv)
 
 		{"cd",          no_argument,       &cd_type,     1 },
 		{"develo",      no_argument,       &develo_opt,  1 },
+		{"hucc",        no_argument,       &hucc_opt,    1 },
 		{"ipl",         no_argument,       &ipl_opt,     1 },
 		{"kc",          no_argument,       &kickc_opt,   1 },
 		{"mx",          no_argument,       &mx_opt,      1 },
@@ -285,7 +286,7 @@ main(int argc, char **argv)
 		{"pad",         no_argument,       &padding_opt, 1 },
 		{"raw",         no_argument,       &header_opt,  0 },
 		{"scd",         no_argument,       &cd_type,     2 },
-		{"sdcc",        no_argument,       &sdcc_opt,    1 },
+		{"sdcc",        no_argument,       &hucc_opt,    1 },
 		{"sf2",         no_argument,       &sf2_opt,     1 },
 		{"sgx",         no_argument,       &sgx_opt,     1 },
 		{"srec",        no_argument,       &srec_opt,    1 },
@@ -451,8 +452,15 @@ main(int argc, char **argv)
 		overlayflag = 0;
 	}
 
+	/* HuCC option requires newproc_opt and strip_opt as well */
+	if (hucc_opt)
+	{
+		newproc_opt = 1;
+		strip_opt = 1;
+	}
+
 	/* enable optimized procedure packing if stripping */
-	asm_opt[OPT_OPTIMIZE] |= strip_opt;
+	asm_opt[OPT_OPTIMIZE] |= (newproc_opt | strip_opt);
 
 	if (machine->type == MACHINE_PCE) {
 		/* Adjust cdrom type values ... */

@@ -108,7 +108,7 @@ extern unsigned int value;                      /* operand field value */
 extern int newproc_opt;                         /* use "new" style of procedure thunks */
 extern int strip_opt;                           /* strip unused procedures? */
 extern int kickc_opt;                           /* NZ if -kc flag on command line */
-extern int sdcc_opt;                            /* NZ if -sdcc flag on command line */
+extern int hucc_opt;                            /* NZ if -hucc flag on command line */
 extern int mlist_opt;                           /* macro listing main flag */
 extern int xlist;                               /* listing file main flag */
 extern int list_level;                          /* output level */

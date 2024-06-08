@@ -790,7 +790,10 @@ proc_reloc(void)
 		/* install code for leaving .proc */
 		/* fix do_proc() if this changes! */
 		poke(call_ptr--, 0x60);			// rts
-		poke(call_ptr--, 0x98);			// tya
+		if (hucc_opt)
+			poke(call_ptr--, 0x8A);			// txa
+		else
+			poke(call_ptr--, 0x98);			// tya
 		poke(call_ptr--, 0x40);
 		poke(call_ptr--, 0x53);			// tam #6
 		poke(call_ptr--, 0x68);			// pla
