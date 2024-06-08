@@ -286,7 +286,7 @@ init_path(void)
    int i, l;
 
    strcpy(incpath[0], ".");
-   strcat(incpath[0], PATH_SEPARATOR_STRING);
+   strcat(incpath[0], DIR_SEPARATOR_STRING);
 
    p = getenv("PCE_INCLUDE");
 
@@ -295,19 +295,19 @@ init_path(void)
 #ifdef WIN32
          "c:\\huc\\include\\huc"
 #else
-         "/usr/local/lib/huc/include/huc;" \
-         "/usr/local/huc/include/huc;" \
-         "/usr/local/share/huc/include/huc;" \
-         "/usr/local/include/huc;" \
-         "/usr/lib/huc/include/huc;" \
-         "/usr/share/huc/include/huc;" \
+         "/usr/local/lib/huc/include/huc:" \
+         "/usr/local/huc/include/huc:" \
+         "/usr/local/share/huc/include/huc:" \
+         "/usr/local/include/huc:" \
+         "/usr/lib/huc/include/huc:" \
+         "/usr/share/huc/include/huc:" \
          "/usr/include/huc"
 #endif
       ;
    }
 
    for (i = 1; i < 10; i++) {
-      pl = strchr(p, ';');
+      pl = strchr(p, PATH_SEPARATOR);
 
       if (pl == NULL)
          l = strlen(p);
@@ -317,14 +317,14 @@ init_path(void)
       if (l) {
          strncpy(incpath[i], p, l);
          p += l;
-         while (*p == ';')
+         while (*p == PATH_SEPARATOR)
             p++;
       }
       incpath[i][l] = '\0';
 
       if (l) {
-         if (incpath[i][l - 1] != PATH_SEPARATOR)
-            strcat(incpath[i], PATH_SEPARATOR_STRING);
+         if (incpath[i][l - 1] != DIR_SEPARATOR)
+            strcat(incpath[i], DIR_SEPARATOR_STRING);
       }
    }
 }

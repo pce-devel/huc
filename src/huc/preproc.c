@@ -23,19 +23,21 @@
 #include "sym.h"
 
 /* path separator */
-#if defined(WIN32)
-#define PATH_SEPARATOR '\\'
-#define PATH_SEPARATOR_STRING "\\"
+#ifdef _WIN32
+#define PATH_SEPARATOR ';'
+#define DIR_SEPARATOR '\\'
+#define DIR_SEPARATOR_STRING "\\"
 #define DEFAULT_DIRS "c:\\huc\\include\\huc"
 #else
-#define PATH_SEPARATOR '/'
-#define PATH_SEPARATOR_STRING "/"
-#define DEFAULT_DIRS "/usr/local/lib/huc/include/huc;" \
-	"/usr/local/huc/include/huc;" \
-	"/usr/local/share/huc/include/huc;" \
-	"/usr/local/include/huc;" \
-	"/usr/lib/huc/include/huc;" \
-	"/usr/share/huc/include/huc;" \
+#define PATH_SEPARATOR ':'
+#define DIR_SEPARATOR '/'
+#define DIR_SEPARATOR_STRING "/"
+#define DEFAULT_DIRS "/usr/local/lib/huc/include/huc:" \
+	"/usr/local/huc/include/huc:" \
+	"/usr/local/share/huc/include/huc:" \
+	"/usr/local/include/huc:" \
+	"/usr/lib/huc/include/huc:" \
+	"/usr/share/huc/include/huc:" \
 	"/usr/include/huc"
 #endif
 
@@ -68,7 +70,7 @@ void init_path (void)
 	p = include_path();
 
 	for (i = 0; i < 10; i++) {
-		pl = strchr(p, ';');
+		pl = strchr(p, PATH_SEPARATOR);
 
 		if (pl == NULL)
 			l = strlen(p);
@@ -78,11 +80,11 @@ void init_path (void)
 			incpath[i] = (char *)malloc(l + 2);
 			strncpy(incpath[i], p, l);
 			p += l;
-			while (*p == ';')
+			while (*p == PATH_SEPARATOR)
 				p++;
 			incpath[i][l] = '\0';
-			if (incpath[i][l - 1] != PATH_SEPARATOR)
-				strcat(incpath[i], PATH_SEPARATOR_STRING);
+			if (incpath[i][l - 1] != DIR_SEPARATOR)
+				strcat(incpath[i], DIR_SEPARATOR_STRING);
 #ifdef DEBUG_PREPROC
 			printf("incpath %s\n", incpath[i]);
 #endif
