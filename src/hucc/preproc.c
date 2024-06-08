@@ -28,18 +28,18 @@
 #define PATH_SEPARATOR ';'
 #define DIR_SEPARATOR '\\'
 #define DIR_SEPARATOR_STRING "\\"
-#define DEFAULT_DIRS "c:\\huc\\include\\huc"
+#define DEFAULT_DIRS "c:\\huc\\include\\hucc"
 #else
 #define PATH_SEPARATOR ':'
 #define DIR_SEPARATOR '/'
 #define DIR_SEPARATOR_STRING "/"
-#define DEFAULT_DIRS "/usr/local/lib/huc/include/huc:" \
-	"/usr/local/huc/include/huc:" \
-	"/usr/local/share/huc/include/huc:" \
-	"/usr/local/include/huc:" \
-	"/usr/lib/huc/include/huc:" \
-	"/usr/share/huc/include/huc:" \
-	"/usr/include/huc"
+#define DEFAULT_DIRS "/usr/local/lib/huc/include/hucc:" \
+	"/usr/local/huc/include/hucc:" \
+	"/usr/local/share/huc/include/hucc:" \
+	"/usr/local/include/hucc:" \
+	"/usr/lib/huc/include/hucc:" \
+	"/usr/share/huc/include/hucc:" \
+	"/usr/include/hucc"
 #endif
 
 /* locals */
