@@ -486,8 +486,8 @@ void gen_code (INS *tmp)
 		ol("__addbs");
 		break;
 
-	case I_ADDMI:
-		ot("__addmi");
+	case I_MODSP:
+		ot("__modsp");
 		if (type == T_LITERAL) {
 			outstr("_sym\t");
 			outstr((const char *)data);
@@ -496,7 +496,6 @@ void gen_code (INS *tmp)
 			outstr("\t");
 			outdec((int)data);
 		}
-		outstr(",__stack");
 		nl();
 		break;
 
@@ -658,14 +657,20 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case I_CALLS:
-		ot("__calls\t");
-		outdec((int)data);
+	case I_CALLP:
+		ol("__callp");
+		break;
+
+	case I_ENTER:
+		ot("__enter\t");
+		outsymbol((char *)data);
 		nl();
 		break;
 
-	case I_RTS:
-		ol("  rts");
+	case I_LEAVE:
+		ot("__leave\t");
+		outdec((int)data);
+		nl();
 		break;
 
 	case I_PUSHW:
@@ -676,19 +681,19 @@ void gen_code (INS *tmp)
 		ol("__popw");
 		break;
 
-	case I_SAVEW:
+	case I_SPUSHW:
 		ol("__spillw");
 		break;
 
-	case I_RESW:
+	case I_SPOPW:
 		ol("__restorew");
 		break;
 
-	case I_SAVEB:
+	case I_SPUSHB:
 		ol("__spillb");
 		break;
 
-	case I_RESB:
+	case I_SPOPB:
 		ol("__restoreb");
 		break;
 
@@ -793,6 +798,18 @@ void gen_code (INS *tmp)
 
 	case I_CLI:
 		ol("cli");
+		break;
+
+	case I_SAVESP:
+		ol("__savesp");
+		break;
+
+	case I_LOADSP:
+		ol("__loadsp");
+		break;
+
+	case I_GETACC:
+		ol("__getacc");
 		break;
 
 	default:

@@ -310,7 +310,7 @@ unknown_option:
 	p = pp = infiles[0];
 	/* Labels count is not reset for each file because labels are
 	   global and conflicts would arise. */
-	nxtlab = 0;
+	nxtlab = 1;
 	link_lib = link_libs;
 	infile_ptr = 1;
 	/* Remember where the global assembler defines end so we can
@@ -1065,7 +1065,7 @@ int assemble (char *s)
 		strcat_s(buf, sizeof(buf), "-S -l 3 -m ");
 	}
 
-	strcat_s(buf, sizeof(buf), "-O --newproc --strip ");
+	strcat_s(buf, sizeof(buf), "--hucc ");
 
 	strcat_s(buf, sizeof(buf), "\"");
 	strcat_s(buf, sizeof(buf), s);

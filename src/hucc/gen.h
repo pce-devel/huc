@@ -19,8 +19,6 @@ void gpop (void);
 void gcall (char *sname, int nargs);
 void gmacro (char *sname, int nargs);
 void gbank (unsigned char bank, unsigned short offset);
-void gret (void);
-void callstk (int nargs);
 void jump (int label);
 void testjump (int label, int ft);
 int modstk (int newstkp);

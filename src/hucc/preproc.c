@@ -216,6 +216,9 @@ FILE *fixiname (void)
  */
 void doasm (void)
 {
+	/* Save the SP if this #asm section is inside a function */
+	if (fexitlab)
+		out_ins(I_SAVESP, 0, 0);
 	flush_ins();	/* David - optimize.c related */
 	cmode = 0;
 	FOREVER {
@@ -229,6 +232,11 @@ void doasm (void)
 	}
 	kill();
 	cmode = 1;
+	/* Restore the SP if this #asm section is inside a function */
+	if (fexitlab) {
+		out_ins(I_LOADSP, 0, 0);
+		flush_ins();	/* David - optimize.c related */
+	}
 }
 
 void doasmdef (void)

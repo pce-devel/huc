@@ -342,22 +342,22 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 		else
 			/* XXX: sanity check? */
 			ptr->offset = FUNCTION;
-	}
-	else
+	} else {
 		ptr = addglb(current_fn, FUNCTION, ret_type, FUNCTION, PUBLIC, 0);
+	}
 	ptr->ptr_order = ret_ptr_order;
 	ptr->tagidx = ret_otag;
 
 	flush_ins();	/* David, .proc directive support */
 	gtext();
 	ol(".hucc");
-	ot(".proc ");
+	ot(".proc\t");
 	prefix();
 	outstr(current_fn);
 	nl();
 
-	if (nbarg)	/* David, arg optimization */
-		gpusharg(0);
+	/* generate the function prolog */
+	out_ins(I_ENTER, T_STRING, (intptr_t)ptr->name);
 
 	/* When using fixed-address locals, locals_ptr is used to
 	   keep track of their memory offset instead of stkp, so
@@ -365,12 +365,16 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 	if (norecurse)
 		locals_ptr = 0;
 
+	/* generate all the code for the function */
 	statement(YES);
+
+	/* generate the function epilog */
+	gtext();
 	gnlabel(fexitlab);
 	modstk(nbarg * INTSIZE);
-	gtext();
-	gret();			/* generate the return statement */
+	out_ins(I_LEAVE, T_VALUE, ret_type != CVOID || ret_ptr_order != 0); /* generate the return statement */
 	flush_ins();		/* David, optimize.c related */
+
 	ol(".endp");	/* David, .endp directive support */
 
 	/* Add space for fixed-address locals to .bss section. */
@@ -390,6 +394,9 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 			ot(".code"); nl();
 		}
 	}
+
+	/* Signal that we're not in a function anymore. */
+	fexitlab = 0;
 
 	ol(".pceas");
 	nl();
@@ -507,25 +514,26 @@ int getarg (int t, int syntax, int otag, int is_fastcall)
 #define SPILLB(a) { \
 		spilled_args[sparg_idx] = (a); \
 		spilled_arg_sizes[sparg_idx++] = 1; \
-		out_ins(I_SAVEB, 0, 0); \
+		out_ins(I_SPUSHB, 0, 0); \
 }
 
 #define SPILLW(a) { \
 		spilled_args[sparg_idx] = (a); \
 		spilled_arg_sizes[sparg_idx++] = 2; \
-		out_ins(I_SAVEW, 0, 0); \
+		out_ins(I_SPUSHW, 0, 0); \
 }
 
 void callfunction (char *ptr)
 {
 	extern char *new_string (int, char *);
-	struct fastcall *fast;
+	struct fastcall *fast = NULL;
+	SYMBOL *func = NULL;
+	int is_fc = 0;
+	int argcnt = 0;
+	int argsiz = 0;
 	int call_stack_ref;
 	int i, j;
-	int nb;
 	int adj;
-	int nargs;
-	int cnt;
 	int max_fc_arg = 0;	/* highest arg with a fastcall inside */
 	/* args spilled to the native stack */
 	const char *spilled_args[MAX_FASTCALL_ARGS];
@@ -536,9 +544,6 @@ void callfunction (char *ptr)
 
 	is_leaf_function = 0;
 
-	cnt = 0;
-	nargs = 0;
-	fast = NULL;
 	call_stack_ref = ++func_call_stack;
 
 	/* skip blanks */
@@ -559,36 +564,35 @@ void callfunction (char *ptr)
 		}
 	}
 
-	/* indirect call (push func address) */
-	if (ptr == NULL)
-		gpush();
-
-	/* fastcall check */
-	if (ptr == NULL)
-		nb = 0;
-	else
-		nb = fastcall_look(ptr, -1, NULL);
+	if (ptr == NULL) {
+		/* save indirect call function-ptr on the hardware-stack */
+		out_ins(I_SPUSHW, 0, 0);
+	} else {
+		/* fastcall check, but don't know how many parameters */
+		if ((is_fc = fastcall_look(ptr, -1, NULL)) == 0) {
+			/* N.B. functions are not required to be pre-declared! */
+			func = findglb(ptr);
+		}
+	}
 
 	/* calling regular functions in fastcall arguments is OK */
-	if (!nb)
-		--func_call_stack;
-
-	if (nb)
+	if (is_fc)
 		flush_ins();
+	else
+		--func_call_stack;
 
 	/* get args */
 	while (!streq(line + lptr, ")")) {
 		if (endst())
 			break;
 		/* fastcall func */
-		if (nb) {
+		if (is_fc) {
 			int nfc = func_call_stack;
 
-			if (nargs)
-				stkp = stkp - INTSIZE;
 			arg_stack(arg_idx++);
 			expression(NO);
 			flush_ins();
+			stkp = stkp - INTSIZE;
 
 			/* Check if we had a fastcall in our argument. */
 			if (nfc < func_call_stack) {
@@ -599,23 +603,22 @@ void callfunction (char *ptr)
 		}
 		/* standard func */
 		else {
-			if (nargs)
-				gpusharg(INTSIZE);
 			expression(NO);
+			gpusharg(INTSIZE);
 		}
-		nargs = nargs + INTSIZE;
-		cnt++;
+		argsiz = argsiz + INTSIZE;
+		argcnt++;
 		if (!match(","))
 			break;
 	}
 
 	/* adjust arg stack */
-	if (nb) {
-		if (cnt) {
+	if (is_fc) {
+		if (argcnt) {
 			arg_list[arg_idx - 1][1] = ins_stack_idx;
-			arg_idx -= cnt;
+			arg_idx -= argcnt;
 		}
-		if (arg_idx)
+		if (argcnt && arg_idx)
 			ins_stack_idx = arg_list[arg_idx - 1][1];
 		else {
 			ins_stack_idx = 0;
@@ -624,20 +627,20 @@ void callfunction (char *ptr)
 	}
 
 	/* fastcall func */
-	if (nb) {
-		nb = fastcall_look(ptr, cnt, &fast);
+	if (is_fc) {
+		is_fc = fastcall_look(ptr, argcnt, &fast);
 
 		/* flush arg instruction stacks */
-		if (nb) {
+		if (is_fc) {
 			/* fastcall */
-			for (i = 0, j = 0, adj = 0; i < cnt; i++) {
+			for (i = 0, j = 0, adj = 0; i < argcnt; i++) {
 				/* flush arg stack (except for farptr and dword args) */
 				if ((fast->argtype[j] != TYPE_FARPTR) &&
 				    (fast->argtype[j] != TYPE_DWORD))
 					arg_flush(arg_idx + i, adj);
 
 				/* Either store the argument in its designated
-				   location, or save it on the (native) stack
+				   location, or save it on the hardware-stack
 				   if there is another fastcall ahead. */
 				switch (fast->argtype[j]) {
 				case TYPE_BYTE:
@@ -690,12 +693,10 @@ void callfunction (char *ptr)
 			}
 		}
 		else {
-			/* standard call */
-			for (i = 0; i < cnt;) {
+			/* not really a fastcall after all! */
+			for (i = 0; i < argcnt; i++) {
 				arg_flush(arg_idx + i, 0);
-				i++;
-				if (i < cnt)
-					gpusharg(0);
+				gpusharg(0);
 			}
 		}
 	}
@@ -708,7 +709,7 @@ void callfunction (char *ptr)
 	needbrack(")");
 
 	/* call function */
-	/* Reload fastcall arguments spilled to the native stack. */
+	/* Reload fastcall arguments spilled to the hardware-stack. */
 	if (sparg_idx) {
 		/* Reloading corrupts acc, so we need to save it if it
 		   is used by the callee. */
@@ -717,11 +718,11 @@ void callfunction (char *ptr)
 
 		for (i = sparg_idx - 1; i > -1; i--) {
 			if (spilled_arg_sizes[i] == 1) {
-				out_ins(I_RESB, 0, 0);
+				out_ins(I_SPOPB, 0, 0);
 				out_ins(I_STB, T_LITERAL, (intptr_t)spilled_args[i]);
 			}
 			else {
-				out_ins(I_RESW, 0, 0);
+				out_ins(I_SPOPW, 0, 0);
 				if (spilled_args[i])
 					out_ins(I_STW, T_LITERAL, (intptr_t)spilled_args[i]);
 			}
@@ -731,31 +732,47 @@ void callfunction (char *ptr)
 			out_ins(I_LDW, T_LITERAL, (intptr_t)"<__temp");
 	}
 
-	if (ptr == NULL)
-		callstk(nargs);
-	else {
-		if (fast && ((fast->flags & FASTCALL_NOP) || (fast->flags & FASTCALL_MACRO))) {
+	if (ptr == NULL) {
+		/* restore indirect call function-ptr from the hardware-stack */
+		out_ins(I_SPOPW, 0, 0);
+		out_ins(I_CALLP, 0, 0);
+	} else {
+		if (fast && !(fast->flags & FASTCALL_XSAFE))
+			out_ins(I_SAVESP, 0, 0);
+		if (fast && (fast->flags & (FASTCALL_NOP | FASTCALL_MACRO))) {
 
 			// Only macro fastcalls get a name generated
 			if (fast->flags & FASTCALL_MACRO) {
-				if (nb)
-					gmacro(ptr, cnt);
+				if (is_fc)
+					gmacro(ptr, argcnt);
 				else
 					gmacro(ptr, 0);
 			}
 		}
 		// Else not a NOP or MACRO fastcall
-		else if (nb)
-			gcall(ptr, cnt);
+		else if (is_fc)
+			gcall(ptr, argcnt);
 		else
 			gcall(ptr, 0);
+		if (fast && !(fast->flags & FASTCALL_XSAFE))
+			out_ins(I_LOADSP, 0, 0);
 	}
 
 	/* adjust stack */
-	if (nargs > INTSIZE) {
-		nargs = nargs - INTSIZE;
-		stkp = stkp + nargs;
-		out_ins(I_ADDMI, T_NOP, nargs);
+	if (argsiz) {
+		stkp = stkp + argsiz;
+		/* this is put into the instruction stream to balance the stack */
+		/* calculations during the peephole optimization phase, but the */
+		/* T_NOP stops the code-output from writing it to the .S file.  */
+		/* The function that is called is actually the one responsible  */
+		/* for removing the arguments from the stack. */
+		out_ins(I_MODSP, T_NOP, argsiz);
+	}
+
+	/* load acc.l if this a standard func returning a value */
+	if (!is_fc) {
+		if (func == NULL || func->type != CVOID || func->ptr_order != 0)
+			out_ins(I_GETACC, 0, 0);
 	}
 }
 

@@ -958,8 +958,8 @@ lv1_loop:
 			 *  cycles : 29+29 = 58         --> 29
 			 *
 			 */
-			else if ((p[0]->code == I_ADDMI) &&
-				 (p[1]->code == I_ADDMI) &&
+			else if ((p[0]->code == I_MODSP) &&
+				 (p[1]->code == I_MODSP) &&
 
 				 (p[0]->type == T_STACK) &&
 				 (p[1]->type == T_STACK)) {
@@ -1603,7 +1603,6 @@ lv1_loop:
 		if (q_nb > 1 &&
 		    (q_ins[q_wr].code == I_STWPS ||
 		     q_ins[q_wr].code == I_STBPS ||
-		     q_ins[q_wr].code == I_CALLS ||
 		     q_ins[q_wr].code == I_ADDWS ||
 		     q_ins[q_wr].code == I_ORWS ||
 		     q_ins[q_wr].code == I_EORWS ||
@@ -1631,13 +1630,12 @@ lv1_loop:
 						offset += 2;
 					break;
 
-				case I_ADDMI:
+				case I_MODSP:
 					if ((q_ins[j].type == T_STACK) ||
 					    (q_ins[j].type == T_NOP))
 						offset += (int)q_ins[j].data;
 					break;
 
-				case I_CALLS:
 				case I_ADDBS:
 				case I_ADDWS:
 				case I_SUBWS:
@@ -1667,17 +1665,12 @@ lv1_loop:
 						 * this case should never happen, though,
 						 * but better skipping it
 						 */
-						if (q_ins[q_wr].code != I_CALLS)
-							break;
+						break;
 					}
 
 					/* check the first instruction
 					 */
-					if (q_ins[q_wr].code == I_CALLS) {
-						if (q_ins[j].code != X_PUSHW_A)
-							break;
-					}
-					else {
+					{
 						/* Only handle sequences that start with
 						   pea_s or ldwi/pushw. */
 						if (q_ins[j].code != X_PEA_S &&

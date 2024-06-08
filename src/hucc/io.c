@@ -455,10 +455,6 @@ void nl (void)
  */
 void outsymbol (char *ptr)
 {
-	/* Hmmm... try to improve check for things on zero-page */
-
-	if (strcmp(ptr, "_temp") == 0)
-		outstr("<");
 	prefix();
 	outstr(ptr);
 }

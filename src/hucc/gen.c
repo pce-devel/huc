@@ -241,29 +241,6 @@ void gbank (unsigned char bank, unsigned short offset)
 }
 
 /*
- *	return from subroutine
- *
- */
-void gret (void)
-{
-	out_ins(I_RTS, 0, 0);
-}
-
-/*
- *	perform subroutine call to value on top of stack
- *
- */
-void callstk (int nargs)
-{
-	if (nargs <= INTSIZE)
-		out_ins(I_CALLS, T_STACK, 0);
-	else
-		out_ins(I_CALLS, T_STACK, nargs - INTSIZE);
-
-	stkp = stkp + INTSIZE;
-}
-
-/*
  *	jump to specified internal label number
  *
  */
@@ -297,7 +274,7 @@ int modstk (int newstkp)
 	k = newstkp - stkp;
 	if (k) {
 		gtext();
-		out_ins(I_ADDMI, T_STACK, k);
+		out_ins(I_MODSP, T_STACK, k);
 	}
 	return (newstkp);
 }

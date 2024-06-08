@@ -534,7 +534,7 @@ void dogoto (void)
 	clabels[i].label = getlabel();
 	sprintf(sname, "LL%d_stkp", clabels[i].label);
 	/* XXX: memleak */
-	out_ins(I_ADDMI, T_LITERAL, (intptr_t)strdup(sname));
+	out_ins(I_MODSP, T_LITERAL, (intptr_t)strdup(sname));
 	jump(clabels[i].label);
 	clabel_ptr++;
 }

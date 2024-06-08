@@ -419,16 +419,16 @@ int fastcall_look (const char *fname, int nargs, struct fastcall **p)
 	struct fastcall *ptr;
 	struct fastcall *ref;
 	int hash;
-	int nb;
+	int is_fc;
 
 	/* search */
 	hash = symhash(fname);
 	ptr = fastcall_tbl[hash];
 	ref = NULL;
-	nb = 0;
+	is_fc = 0;
 	while (ptr) {
 		if (strcmp(ptr->fname, fname) == 0) {
-			nb++;
+			is_fc++;
 			if (nargs != -1) {
 				if (ptr->nargs == nargs)
 					ref = ptr;
@@ -438,13 +438,13 @@ int fastcall_look (const char *fname, int nargs, struct fastcall **p)
 	}
 	if (nargs != -1) {
 		if (!ref)
-			nb = 0;
+			is_fc = 0;
 	}
 
 	/* return result */
 	if (p)
 		*p = ref;
-	return (nb);
+	return (is_fc);
 }
 
 
