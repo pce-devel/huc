@@ -201,8 +201,11 @@ void readline (void)
 			if (input2 != NULL) {
 				if (globals_h_in_process) {
 					/* Add special treatment to ensure globals.h stuff appears at the beginning */
+					gdata();
+					outstr("huc_globals:\n");
 					dumpglbs();
-					ol(".code");
+					outstr("huc_globals_end:\n");
+					gtext();
 					globals_h_in_process = 0;
 				}
 				input2 = inclstk[--inclsp];
