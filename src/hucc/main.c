@@ -1027,6 +1027,10 @@ char extension (char *s)
 	return (' ');
 }
 
+#ifndef _WIN32
+#include <unistd.h>
+#endif
+
 int assemble (char *s)
 {
 #if defined(_WIN32)
