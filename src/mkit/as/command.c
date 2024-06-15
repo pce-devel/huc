@@ -1554,34 +1554,22 @@ do_ds(int *ip)
 		return;
 	}
 
-	/* section switch */
-	switch (section) {
-	case S_ZP:
-		/* zero page section */
-		limit = machine->zp_limit;
-		break;
-
-	case S_BSS:
-		/* ram section */
-		limit = machine->ram_limit;
-		break;
-
-	case S_CODE:
-	case S_DATA:
-		/* code and data sections */
-		limit = 0x2000;
-		break;
-	}
-
 	/* check range */
-	if ((loccnt + nbytes) > limit) {
+	addr = loccnt + nbytes;
+
+	if ((section_flags[section] & S_IS_ROM) && (bank < UNDEFINED_BANK)) {
+		if (((bank << 13) + addr) > rom_limit) {
+			error("ROM overflow!");
+			return;
+		}
+	}
+	else
+	if (addr > section_limit[section]) {
 		error("The .DS is too large for the current bank or section!");
 		return;
 	}
 
 	/* update max counter for zp and bss sections */
-	addr = loccnt + nbytes;
-
 	switch (section) {
 	case S_ZP:
 		/* zero page */
@@ -1594,13 +1582,6 @@ do_ds(int *ip)
 		if (addr > max_bss)
 			max_bss = addr;
 		break;
-
-	default:
-		/* rom page */
-		if (((bank << 13) + addr) > rom_limit) {
-			error("ROM overflow!");
-			return;
-		}
 	}
 
 	/* output line on last pass */
@@ -2104,8 +2085,14 @@ do_segment(int *ip)
 			optype = S_DATA;
 	}
 	else
+	if (!strcasecmp(&symbol[1], "XDATA"))
+		optype = S_XDATA;
+	else
 	if (!strcasecmp(&symbol[1], "XINIT"))
 		optype = S_XINIT;
+	else
+	if (!strcasecmp(&symbol[1], "CONST"))
+		optype = S_CONST;
 	else
 	if (!strcasecmp(&symbol[1], "RODATA"))
 		optype = S_CONST;
@@ -2135,7 +2122,7 @@ do_segment(int *ip)
 	if (!strcasecmp(&symbol[1], "GSFINAL"))
 		optype = S_NONE;
 	else {
-		fatal_error("Segment can only be CODE, HOME, DATA, BSS or ZP!");
+		fatal_error("Unknown %s name!", (optype) ? ".AREA" : ".SEGMENT");
 		return;
 	}
 
@@ -2482,6 +2469,9 @@ do_alias(int *ip)
 		/* remember where this was defined */
 		lablptr->fileinfo = input_file[infile_num].file;
 		lablptr->fileline = slnum;
+
+		/* the alias needs to inherit any previous references to the label */
+		alias->refthispass += lablptr->refthispass;
 	}
 
 	/* check for circular definition */
