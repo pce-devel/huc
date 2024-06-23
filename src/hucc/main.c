@@ -5,6 +5,7 @@
  * hacked to work on PC Engine by David Michel
  * work resumed by Zeograd
  * work resumed again by Ulrich Hecht
+ * work resumed again by John Brandwood
  *
  * 00/02/22 : added oldargv variable to show real exe name in usage function
  */
@@ -131,46 +132,15 @@ int main (int argc, char *argv[])
 
 	while ((p = *argv++)) {
 		if (*p == '-') {
+			/* Allow GNU style "--" long options */
+			if (p[1] == '-') ++p;
 			while (*++p) switch (*p) {
-				case 't': case 'T':
-					ctext = 1;
-					fprintf(stderr, "\nwarning: Outputting C source to the listing file disables some optimizations!\n\n");
-					break;
-
-				case 'c':
-					if (*(p + 1) == 'd') {
-						cdflag = 1;	/* pass '-cd' to assembler */
-						p++;
-						break;
-					}
-					else {
-						usage(oldargv[0]);
-						break;
-					}
-
-				case 's':
-					if (strncmp(p, "scd", 3) == 0) {
-						cdflag = 2;	/* pass '-scd' to assembler */
-						p += 2;
-						break;
-					}
-					else if (strncmp(p, "sgx", 3) == 0) {
-						strcat(asmdefs, "_SGX = 1\n");
-						defmac("_SGX");
-						p += 2;
-						break;
-					}
-				/* fallthrough */
-				case 'S':
-					sflag = 1;
-					break;
-
 				/* defines to pass to assembler */
 				case 'a':
 					if (strncmp(p, "acd", 3) == 0) {
-						cdflag = 2;	/* pass '-scd' to assembler */
-						strcat(asmdefs, "_AC = 1\n");
-						defmac("_AC");
+						cdflag = 2;	/* pass '--scd' to assembler */
+						acflag = 1;
+						strcat(asmdefs, "_ACD\t\t=\t1\n");
 						p += 2;
 						break;
 					}
@@ -191,12 +161,19 @@ int main (int argc, char *argv[])
 					}
 					break;
 
+				case 'c':
+					if (*(p + 1) == 'd') {
+						cdflag = 1;	/* pass '-cd' to assembler */
+						p++;
+						break;
+					}
+					else {
+						usage(oldargv[0]);
+						break;
+					}
 
-				case 'v':
-					verboseflag = 1;
-					break;
-
-				case 'd': case 'D':
+				case 'd':
+				case 'D':
 					bp = ++p;
 					if (!*p) usage(oldargv[0]);
 					while (*p && *p != '=') p++;
@@ -204,31 +181,6 @@ int main (int argc, char *argv[])
 					while (*p) p++;
 					p--;
 					defmac(bp);
-					break;
-
-				case 'o':
-					if (strncmp(p, "over", 4) == 0) {
-						overlayflag = 1;
-						if (strncmp(p, "overlay", 7) == 0)
-							p += 6;
-						else
-							p += 3;
-					}
-					else {
-						bp = ++p;
-						while (*p && *p != ' ' && *p != '\t')
-							p++;
-						memcpy(user_outfile, bp, p - bp);
-						user_outfile[p - bp] = 0;
-						p--;
-					}
-					break;
-				case 'O':
-					/* David, made -O equal to -O2
-					 * I'm too lazy to tape -O2 each time :)
-					 */
-					if (!p[1]) optimize = 2;
-					else optimize = atoi(++p);
 					break;
 
 				case 'f':
@@ -261,6 +213,11 @@ int main (int argc, char *argv[])
 						goto unknown_option;
 					break;
 
+				case 'g':
+					debug = 1;
+					strcat(asmdefs, "_DEBUG\t\t=\t1\n");
+					break;
+
 				case 'l':
 					bp = ++p;
 					while (*p && *p != ' ' && *p != '\t')
@@ -278,7 +235,7 @@ int main (int argc, char *argv[])
 
 				case 'm':
 					if (!strcmp(p + 1, "small")) {
-						strcat(asmdefs, "SMALL\t= 1\n");
+						/* accept this but ignore it */
 						p += 5;
 					}
 					else {
@@ -286,6 +243,65 @@ unknown_option:
 						fprintf(stderr, "unknown option %s\n", p);
 						exit(1);
 					}
+					break;
+
+				case 'o':
+					if (strncmp(p, "over", 4) == 0) {
+						overlayflag = 1;
+						if (strncmp(p, "overlay", 7) == 0)
+							p += 6;
+						else
+							p += 3;
+					}
+					else {
+						bp = ++p;
+						while (*p && *p != ' ' && *p != '\t')
+							p++;
+						memcpy(user_outfile, bp, p - bp);
+						user_outfile[p - bp] = 0;
+						p--;
+					}
+					break;
+				case 'O':
+					/* David, made -O equal to -O2
+					 * I'm too lazy to tape -O2 each time :)
+					 */
+					if (!p[1]) optimize = 2;
+					else optimize = atoi(++p);
+					break;
+
+				case 's':
+					if (strncmp(p, "scd", 3) == 0) {
+						cdflag = 2;	/* pass '-scd' to assembler */
+						p += 2;
+						break;
+					}
+					else if (strncmp(p, "sgx", 3) == 0) {
+						sgflag = 1;
+						strcat(asmdefs, "_SGX\t\t=\t1\n");
+						p += 2;
+						break;
+					}
+				/* fallthrough */
+				case 'S':
+					sflag = 1;
+					break;
+
+				case 't':
+					if (strncmp(p, "ted2", 4) == 0) {
+						ted2flag = 1;
+						strcat(asmdefs, "_TED2\t\t=\t1\n");
+						p += 3;
+						break;
+					}
+				/* fallthrough */
+				case 'T':
+					ctext = 1;
+					fprintf(stderr, "\nwarning: Outputting C source to the listing file disables some optimizations!\n\n");
+					break;
+
+				case 'v':
+					verboseflag = 1;
 					break;
 
 				default:
@@ -370,8 +386,16 @@ unknown_option:
 			addglb_far("vdc", CINT);
 			addglb_far("vram", CCHAR);
 			/* end specific externs */
+
+			/* deprecated ident macros */
 			defmac("huc6280\t1");
 			defmac("huc\t1");
+			/* modern ident macros */
+			defmac("__HUC__\t1");
+			defmac("__HUCC__\t1");
+
+			if (debug)
+				defmac("_DEBUG\t1");
 
 			if (cdflag == 1)
 				defmac("_CD\t1");
@@ -382,6 +406,13 @@ unknown_option:
 
 			if (overlayflag == 1)
 				defmac("_OVERLAY\t1");
+
+			if (acflag)
+				defmac("_ACD\t1");
+			if (sgflag)
+				defmac("_SGX\t1");
+			if (ted2flag)
+				defmac("_TED2\t1");
 
 //			initmac();
 			/*
@@ -452,19 +483,20 @@ void usage (char *exename)
 	fprintf(stderr, "-O[val]           invoke optimization (level <value>)\n");
 	fprintf(stderr, "-fno-recursive    optimize assuming non-recursive code\n");
 	fprintf(stderr, "-fno-short-enums  always use signed int for enums\n");
-	fprintf(stderr, "-msmall           use single-byte stack pointer\n");
 	fprintf(stderr, "\nOutput options:\n");
 	fprintf(stderr, "-s/-S             create asm output only (do not invoke assembler)\n");
 	fprintf(stderr, "\nLinker options:\n");
 	fprintf(stderr, "-lname            add library 'name.c' from include path\n");
-	fprintf(stderr, "-cd               create CD-ROM output\n");
-	fprintf(stderr, "-scd              create Super CD-ROM output\n");
-	fprintf(stderr, "-acd              create Arcade Card CD output\n");
-	fprintf(stderr, "-sgx              enable SuperGrafx support\n");
-	fprintf(stderr, "-over(lay)        create CD-ROM overlay section\n");
+	fprintf(stderr, "--cd              create CD-ROM output\n");
+	fprintf(stderr, "--scd             create Super CD-ROM output\n");
+	fprintf(stderr, "--acd             create Arcade Card CD output\n");
+	fprintf(stderr, "--sgx             enable SuperGrafx support\n");
+	fprintf(stderr, "--ted2            enable Turbo Everdrive2 support\n");
+	fprintf(stderr, "--over(lay)       create CD-ROM overlay section\n");
 	fprintf(stderr, "\nAssembler options:\n");
 	fprintf(stderr, "-Asym[=val]       define symbol 'sym' to assembler\n");
 	fprintf(stderr, "\nDebugging options:\n");
+	fprintf(stderr, "-g                enable extra debugging checks in output code\n");
 	fprintf(stderr, "-t/-T             include C source code in assembler output/listings\n");
 	fprintf(stderr, "-v/-V             increase verbosity of output files\n\n");
 	exit(1);

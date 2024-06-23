@@ -61,7 +61,7 @@ void header (void)
 	outstr(";\n");
 	outstr("\n");
 	outstr("HUC\t\t=\t1\n");
-	outstr("__HUCC\t\t=\t1\n");
+	outstr("HUCC\t\t=\t1\n");
 	/* Reserve space for further global definitions. */
 	output_globdef = ftell(output);
 	outstr("                                                                           ");
