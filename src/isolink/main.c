@@ -1,11 +1,8 @@
-/* ISOLINK
+/* isoLINK
  *
  * This program appends the IPL header together with
  * a list of binary segments which may be overlays or
  * data, and produces an ISO output file
- *
- * An array of segment information is also produced and
- * stored (I'm not sure where yet)
  *
  */
 
@@ -41,8 +38,9 @@ int cderr_ovl = 0;
 int pcfx_flag = 0;
 int asm_flag = 0;
 int sgx_flag = 0;
-static char incpath[10][256];
-static int debug;
+char prj_type[8];
+char incpath[10][256];
+int debug;
 
 int ipl_flag = 0;
 int ipl_load = 0x4000;
@@ -54,7 +52,7 @@ int ipl_mpr5 = 0x03;
 int ipl_mpr6 = 0x04;
 int ipl_mode = 0x60;
 char * ipl_file = NULL;
-char * ipl_name = "isoLink";
+char * ipl_name = "isoLINK";
 char * ipl_nend;
 
 
@@ -391,7 +389,7 @@ file_write(FILE *outfile, FILE *infile, char *filename, int curr_filenum)
          /* wrong place to get an incomplete read */
 
          if ( ((sectors * 2048) == size) || ((i + 1) != sectors) ) {
-            printf("Error while reading file %s\n", filename);
+            printf("Error while reading file \"%s\"\n", filename);
             exit(1);
          } else {
             /* fill buffer with zeroes */
@@ -400,7 +398,7 @@ file_write(FILE *outfile, FILE *infile, char *filename, int curr_filenum)
       }
 
       if (code == 1) {
-         if (i == 0) {  /* ie. boot segment */
+         if (i == 0) {  /* ie. the file's boot segment */
             /* Confirm that this is really a HuC overlay */
             if (buffer[3] != 'H' || buffer[4] != 'u' || buffer[5] != 'C') {
                code = 0;
@@ -482,7 +480,55 @@ ipl_write(FILE *outfile)
    int i;
    size_t sectors = sector_array[1] - sector_array[0];
    unsigned char * ipl_buffer = calloc(sectors, 2048);
-   int beyond128mb = 255;
+   char use_ipl_scd = 0;
+
+   /* custom SuperCD boot sector loader code made from "examples/asm/elmer/ipl-scd/" */
+   static unsigned char ipl_scd [704] = {
+      0x20,0x5A,0xE0,0xE0,0x03,0x90,0x59,0x20,0xDE,0xE0,0xB0,0x54,0x22,0x29,0x7F,0x22,
+      0xE0,0x03,0x90,0x4C,0xA9,0x68,0x53,0x04,0xA0,0x01,0xB9,0x01,0x36,0x38,0xF9,0x00,
+      0x36,0x85,0xF8,0x64,0xF9,0x43,0x04,0x85,0xFA,0x64,0xFB,0x62,0xCC,0x00,0x37,0x90,
+      0x01,0x1A,0x85,0xFC,0xB9,0x00,0x37,0x85,0xFD,0xB9,0x00,0x36,0x85,0xFE,0xA9,0x06,
+      0x85,0xFF,0x20,0x09,0xE0,0xC9,0x00,0xF0,0x06,0xA9,0x67,0xA2,0x31,0x80,0x1A,0x43,
+      0x04,0x1A,0x53,0x08,0x1A,0x53,0x10,0x1A,0x53,0x20,0x1A,0x53,0x40,0x4C,0x00,0x40,
+      0xAC,0xFF,0x35,0xD0,0xB5,0xA9,0x46,0xA2,0x31,0x48,0xDA,0x20,0x99,0xE0,0x20,0x7B,
+      0xE0,0x20,0x84,0x31,0xA9,0x7D,0x85,0xEC,0xA9,0x32,0x85,0xED,0x20,0xC4,0x31,0x62,
+      0xA2,0x20,0xA0,0x1C,0x20,0x6F,0xE0,0xA9,0x01,0x20,0x69,0xE0,0xA9,0x5D,0x8D,0x20,
+      0x22,0xA9,0x32,0x8D,0x21,0x22,0xA9,0x01,0x8D,0x22,0x22,0x9C,0x23,0x22,0x9C,0x24,
+      0x22,0x9C,0x25,0x22,0xA9,0x02,0x8D,0x1F,0x22,0xFA,0x68,0x20,0x1D,0x32,0x20,0x8A,
+      0xE0,0x20,0x7B,0xE0,0x80,0xFE,0x01,0x0D,0x41,0x42,0x43,0x44,0x45,0x40,0x46,0x47,
+      0x48,0x49,0x4A,0x4B,0x4C,0x40,0x41,0x4D,0x4E,0x4F,0x44,0x50,0x40,0x45,0x44,0x57,
+      0x42,0x58,0x45,0x44,0x52,0x53,0x00,0x03,0x0D,0x46,0x47,0x40,0x44,0x45,0x45,0x54,
+      0x45,0x53,0x40,0x46,0x55,0x51,0x51,0x54,0x4F,0x40,0x45,0x42,0x51,0x40,0x56,0x55,
+      0x50,0x44,0x53,0x00,0x44,0x14,0xA2,0x1C,0xC2,0x13,0x00,0x23,0x00,0x23,0x00,0x23,
+      0x00,0x23,0x00,0x88,0xD0,0xF5,0xCA,0xD0,0xF2,0x60,0xA9,0x05,0x85,0xF7,0x03,0x05,
+      0x23,0x00,0xA9,0x00,0x85,0xF7,0x03,0x00,0x9C,0x02,0x02,0x9C,0x03,0x02,0xA9,0x02,
+      0x85,0xF7,0x03,0x02,0xA2,0x08,0xC2,0x13,0x40,0x23,0x01,0x23,0x01,0x88,0xD0,0xF9,
+      0xCA,0xD0,0xF6,0x60,0xA2,0x14,0xA9,0xFF,0x48,0xA9,0x00,0x85,0xF7,0x03,0x00,0x9C,
+      0x02,0x02,0x8E,0x03,0x02,0xA9,0x02,0x85,0xF7,0x03,0x02,0xA9,0x19,0x85,0xF8,0xC2,
+      0x82,0x9E,0x00,0x21,0xB1,0xEC,0x9D,0x01,0x21,0x0A,0x11,0xEC,0x9D,0x02,0x21,0x1D,
+      0x00,0x21,0x5D,0x01,0x21,0x9D,0x00,0x21,0xC8,0xD0,0x02,0xE6,0xED,0xE8,0xE8,0xE0,
+      0x10,0xD0,0xE1,0xE3,0x00,0x21,0x02,0x02,0x10,0x00,0x68,0xA2,0x08,0x8D,0x02,0x02,
+      0x8D,0x03,0x02,0xCA,0xD0,0xFA,0x48,0xC6,0xF8,0xD0,0xC5,0x68,0x60,0x85,0xF8,0x86,
+      0xF9,0xA0,0x01,0xB1,0xF8,0x4A,0xAA,0x62,0x6A,0x22,0x4A,0x22,0x6A,0x12,0xF8,0xC8,
+      0x08,0x78,0x03,0x01,0x8D,0x02,0x02,0x8E,0x03,0x02,0x03,0x00,0x8D,0x02,0x02,0x8E,
+      0x03,0x02,0x03,0x02,0xA9,0x02,0x85,0xF7,0x28,0xB1,0xF8,0xF0,0x0F,0xC8,0x18,0x69,
+      0x00,0x8D,0x02,0x02,0x62,0x69,0x01,0x8D,0x03,0x02,0x80,0xED,0x60,0x00,0x00,0x00,
+      0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+      0x00,0x00,0x00,0x00,0x00,0x02,0x00,0x4C,0x00,0x69,0x01,0xB2,0x01,0x00,0x00,0x00,
+      0x00,0x00,0x00,0x00,0x00,0x3C,0x66,0x60,0x3C,0x06,0x66,0x3C,0x00,0x00,0x00,0x66,
+      0x66,0x66,0x66,0x3E,0x00,0x00,0x00,0x7C,0x66,0x66,0x7C,0x60,0x60,0x00,0x00,0x3C,
+      0x66,0x7E,0x60,0x3C,0x00,0x00,0x00,0x3C,0x66,0x60,0x60,0x60,0x00,0x3C,0x66,0x60,
+      0x60,0x60,0x66,0x3C,0x00,0x7C,0x66,0x66,0x66,0x66,0x66,0x7C,0x00,0x00,0x00,0x00,
+      0x7E,0x00,0x00,0x00,0x00,0x7C,0x66,0x66,0x7C,0x78,0x6C,0x66,0x00,0x3C,0x66,0x66,
+      0x66,0x66,0x66,0x3C,0x00,0x63,0x77,0x7F,0x6B,0x6B,0x63,0x63,0x00,0x3E,0x03,0x1E,
+      0x30,0x3F,0x00,0x00,0x00,0x00,0x00,0x66,0x66,0x66,0x3E,0x06,0x3C,0x00,0x00,0x3E,
+      0x60,0x3C,0x06,0x7C,0x00,0x00,0x18,0x7E,0x18,0x18,0x18,0x0E,0x00,0x00,0x00,0x36,
+      0x7F,0x6B,0x6B,0x63,0x00,0x00,0x00,0x3C,0x66,0x66,0x66,0x66,0x00,0x06,0x06,0x3E,
+      0x66,0x66,0x66,0x3E,0x00,0x18,0x3C,0x3C,0x18,0x18,0x00,0x18,0x00,0x00,0x00,0x3C,
+      0x66,0x66,0x66,0x3C,0x00,0x00,0x00,0x3C,0x06,0x3E,0x66,0x3E,0x00,0x00,0x00,0x3E,
+      0x66,0x66,0x3E,0x06,0x3C,0x00,0x00,0x3E,0x66,0x66,0x3E,0x07,0x06,0x18,0x00,0x38,
+      0x18,0x18,0x18,0x3C,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+   };
 
    /* initialize the CD's IPL sector contents */
    if (ipl_file != NULL) {
@@ -523,43 +569,102 @@ ipl_write(FILE *outfile)
       } else {
          /* Set boot parameters for PC Engine */
 
-         /* prg sector base */
-         ipl_buffer[0x802] = sector_array[1];
-
-         /* nb_sectors */
-         if (asm_flag) {
-            /* ASM boot segment */
-            ipl_buffer[0x803] = sector_array[2] - sector_array[1];
-         } else {
-            ipl_buffer[0x803] = 16;/* HuC boot segments; up to and including */
-                                   /* overlay array.  The boot segments will load */
-                                   /* the remaining segments and relocate code if */
-                                   /* necessary           */
+         /* Does the 1st file on the CD identify the project type? */
+         if (prj_type[0] == 0x4C) {
+            if (prj_type[3] == 'H' && prj_type[4] == 'u' && prj_type[5] == 'C') {
+               /* HuC v4 with startup.asm changes from 2022 */
+               use_ipl_scd = 0;
+               asm_flag = 0;
+            }
+            if (prj_type[3] == ' ' && prj_type[4] == 'C' && prj_type[5] == 'D') {
+               /* HuCC or CORE asm-library CD */
+               use_ipl_scd = 0;
+               asm_flag = 1;
+            }
+            if (prj_type[3] == 'S' && prj_type[4] == 'C' && prj_type[5] == 'D') {
+               /* HuCC or CORE asm-library SuperCD */
+               use_ipl_scd = 1;
+               asm_flag = 1;
+            }
+            if (prj_type[3] == 'S' && prj_type[4] == 'G' && prj_type[5] == 'X') {
+               /* HuCC or CORE asm-library SuperGRAFX SuperCD */
+               use_ipl_scd = 1;
+               asm_flag = 1;
+               sgx_flag = 1;
+            }
          }
 
-         /* loading address */
-         ipl_buffer[0x804] = (ipl_load & 255);
-         ipl_buffer[0x805] = (ipl_load >> 8) & 255;
+         /* Use isoLINK's built-in IPL-SCD loader? */
+         if (use_ipl_scd) {
 
-         /* starting address */
-         ipl_buffer[0x806] = (ipl_exec & 255);
-         ipl_buffer[0x807] = (ipl_exec >> 8) & 255;
+            /* IPL-SCD loader code from the asm example project */
+            memcpy(ipl_buffer + 0x890, ipl_scd, sizeof(ipl_scd));
 
-         /* mpr registers */
-         ipl_buffer[0x808] = ipl_mpr2;
-         ipl_buffer[0x809] = ipl_mpr3;
-         ipl_buffer[0x80A] = ipl_mpr4;
-         ipl_buffer[0x80B] = ipl_mpr5;
-         ipl_buffer[0x80C] = ipl_mpr6; /* HuC boot loader also @ $C000 */
+            /* prg sector base */
+            ipl_buffer[0x802] = 0;
 
-         /* load mode */
-         ipl_buffer[0x80D] = ipl_mode;
+            /* nb_sectors */
+            ipl_buffer[0x803] = 0;
+
+            /* loading address */
+            ipl_buffer[0x804] = 0;
+            ipl_buffer[0x805] = 0;
+
+            /* starting address */
+            ipl_buffer[0x806] = 0x3090 & 255;
+            ipl_buffer[0x807] = 0;
+
+            /* mpr registers */
+            ipl_buffer[0x808] = 0;
+            ipl_buffer[0x809] = 1;
+            ipl_buffer[0x80A] = 2;
+            ipl_buffer[0x80B] = 3;
+            ipl_buffer[0x80C] = 4;
+
+            /* load mode */
+            ipl_buffer[0x80D] = 0;
+
+         } else {
+
+            /* prg sector base */
+            ipl_buffer[0x802] = sector_array[1];
+
+            /* nb_sectors */
+            if (asm_flag) {
+               /* ASM boot segment */
+               ipl_buffer[0x803] = sector_array[2] - sector_array[1];
+            } else {
+               ipl_buffer[0x803] = 16;/* HuC boot segments; up to and including */
+                                      /* overlay array.  The boot segments will load */
+                                      /* the remaining segments and relocate code if */
+                                      /* necessary           */
+            }
+
+            /* loading address */
+            ipl_buffer[0x804] = (ipl_load & 255);
+            ipl_buffer[0x805] = (ipl_load >> 8) & 255;
+
+            /* starting address */
+            ipl_buffer[0x806] = (ipl_exec & 255);
+            ipl_buffer[0x807] = (ipl_exec >> 8) & 255;
+
+            /* mpr registers */
+            ipl_buffer[0x808] = ipl_mpr2;
+            ipl_buffer[0x809] = ipl_mpr3;
+            ipl_buffer[0x80A] = ipl_mpr4;
+            ipl_buffer[0x80B] = ipl_mpr5;
+            ipl_buffer[0x80C] = ipl_mpr6; /* HuC boot loader also @ $C000 */
+
+            /* load mode */
+            ipl_buffer[0x80D] = ipl_mode;
+         }
       }
    }
 
    /* always write this project-specific data */
    if (pcfx_flag) {
       /* Set project-specific data for PC-FX */
+      unsigned char beyond256mb = 255;
 
       /* allow game name to override the one in an ipl_file */
       if (ipl_flag || ipl_file == NULL) {
@@ -579,18 +684,19 @@ ipl_write(FILE *outfile)
          ipl_buffer[2*i + 0xE00] = lba & 255;
          ipl_buffer[2*i + 0xE01] = lba >> 8;
 
-         if ((beyond128mb == 255) && (lba >= 65536))
-            beyond128mb = i;
+         if ((beyond256mb == 255) && (lba >= 65536))
+            beyond256mb = i;
       }
 
       /* store the count of directory entries */
       ipl_buffer[0xE00] = file_count;
 
-      /* store which is the first file beyond the 128Mbyte ISO boundary */
-      ipl_buffer[0xE01] = beyond128mb;
+      /* store which is the first file beyond the 256Mbyte ISO boundary */
+      ipl_buffer[0xE01] = beyond256mb;
 
    } else {
       /* Set project-specific data for PC Engine */
+      unsigned char beyond128mb = 255;
 
       /* allow game name to override the one in an ipl_file */
       if (ipl_flag || ipl_file == NULL) {
@@ -648,12 +754,12 @@ void
 usage(void)
 {
    printf(ISOLINK_VERSION "\n");
-   printf("\nUsage: isolink <outfile> [<options>] <infile_1> <infile_2> -cderr <infile_n>\n");
+   printf("\nUsage: isoLINK <outfile> [<options>] <infile_1> <infile_2> --cderr <infile_n>\n");
    printf("\nOptions:\n\n");
-   printf("-pcfx   :  Write a PC-FX ISO instead of a PC Engine ISO\n\n");
-   printf("-boot=  :  The '=' is followed ... \n");
+   printf("--pcfx  :  Write a PC-FX ISO instead of a PC Engine ISO\n\n");
+   printf("--boot= :  The '=' is followed ... \n");
    printf("             <ipl-file> \n\n");
-   printf("-ipl=   :  The '=' is followed by either ... \n");
+   printf("--ipl=  :  The '=' is followed by either ... \n");
    printf("             <program name> \n\n");
    printf("           ... or (only for PC Engine) ...\n");
    printf("             <program name>, \n");
@@ -668,10 +774,9 @@ usage(void)
    printf("             <program name>, \n");
    printf("             <load address>, \n");
    printf("             <exec address> \n\n");
-   printf("           HuC programs can only set the <program name>!\n\n");
-   printf("-sgx    :  Add a SuperGRAFX signature string to the IPL\n\n");
-   printf("-asm    :  Do not write HuC-specific data into overlays\n\n");
-   printf("-cderr  :  Indicates that the following overlay should be run instead\n");
+   printf("           HuC and HuCC programs can only set the <program name>!\n\n");
+   printf("--sgx   :  Add a SuperGRAFX signature string to the IPL\n\n");
+   printf("--cderr :  Indicates that the following overlay should be run instead\n");
    printf("           of displaying a text message when a SuperCD-ROM program is\n");
    printf("           executed on plain CD-ROM system.\n\n");
 }
@@ -712,11 +817,14 @@ main(int argc, char *argv[])
    for (i = 2; i < argc; i++) {
       /* is this an option? */
       if (argv[i][0] == '-') {
+         /* Convert GNU-style "--" options into "-" options for backwards-compatibility */
+         if (argv[i][1] == '-') argv[i]++;
+
          if ((strcmp(argv[i], "-pcfx") == 0) &&
              (pcfx_flag == 0)) {       /* only valid once on line */
 
             if (file_num != 0 || ipl_flag != 0) {
-               printf("\"-pcfx\" option must appear before \"-ipl\" and before any files!\n");
+               printf("\"--pcfx\" option must appear before \"--ipl\" and before any files!\n");
                printf("Operation aborted\n\n");
                exit(1);
             }
@@ -736,13 +844,13 @@ main(int argc, char *argv[])
             ipl_file = argv[i] + 6;
 
             if (*ipl_file == '\0') {
-               printf("\"-boot=\" option without a file name!\n");
+               printf("\"--boot=\" option without a file name!\n");
                printf("Operation aborted\n\n");
                exit(1);
             }
 
             if (file_num != 0 || ipl_flag != 0) {
-               printf("\"-boot\" option must appear before -ipl or any files!\n");
+               printf("\"--boot\" option must appear before --ipl or any files!\n");
                printf("Operation aborted\n\n");
                exit(1);
             }
@@ -756,13 +864,13 @@ main(int argc, char *argv[])
             char * nxt;
 
             if (*ptr == '\0') {
-               printf("\"-ipl=\" option without any parameters!\n");
+               printf("\"--ipl=\" option without any parameters!\n");
                printf("Operation aborted\n\n");
                exit(1);
             }
 
             if (file_num >= 2 || ipl_flag != 0) {
-               printf("\"-ipl\" option must appear before any files!\n");
+               printf("\"--ipl\" option must appear before any files!\n");
                printf("Operation aborted\n\n");
                exit(1);
             }
@@ -832,13 +940,13 @@ main(int argc, char *argv[])
              (cderr_flag == 0)) {       /* only valid once on line */
 
             if (file_num < 2) {
-               printf("\"-cderr\" cannot be first file!\n");
+               printf("\"--cderr\" cannot be first file!\n");
                printf("Operation aborted\n\n");
                exit(1);
             }
 
             if (i >= (argc - 1)) {
-               printf("\"-cderr\" must be followed by a filename!\n");
+               printf("\"--cderr\" must be followed by a filename!\n");
                printf("Operation aborted\n\n");
                exit(1);
             }
@@ -865,6 +973,13 @@ main(int argc, char *argv[])
          }
       }
 
+      /* is the custom name too long? */
+      if ((ipl_nend - ipl_name) > (pcfx_flag ? 32 : 22)) {
+         printf("\"--ipl=\" name must be 22 characters or less for PCE, 32 or less for PC-FX!\n");
+         printf("Operation aborted\n\n");
+         exit(1);
+      }
+
       /* is the directory full? */
       if (file_num == MAX_FILES) {
          printf("Too many files on the CD!\nThe maximum is %d.\n", MAX_FILES);
@@ -886,9 +1001,17 @@ main(int argc, char *argv[])
       infile = file_open(inname, "rb");
 
       if (infile == NULL) {
-         printf("Could not open file: %s\n", inname);
+         printf("Could not open file: \"%s\"\n", inname);
          printf("Operation aborted\n\n");
          exit(1);
+      }
+
+      if (file_num == 1) {
+         /* read the 1st file's header for identification */
+         if (fread((void *)prj_type, 1, 8, infile) != 8) {
+            printf("Error while reading file \"%s\"\n", inname);
+            exit(1);
+         }
       }
 
       fseek(infile, 0L, SEEK_END);
@@ -913,7 +1036,7 @@ main(int argc, char *argv[])
    }
 
    if (ipl_flag < 0) {
-      printf("Malformed -ipl option: \"%s\"\n", argv[i]);
+      printf("Malformed --ipl option: \"%s\"\n", argv[i]);
       printf("Operation aborted\n\n");
       exit(1);
    }
