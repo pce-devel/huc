@@ -519,15 +519,15 @@ lv1_loop:
 			 *
 			 */
 			else if (p[0]->code == I_JSR &&
-				 (!strcmp((char *)p[0]->data, "asl") ||
-				  !strcmp((char *)p[0]->data, "lsr") ||
-				  !strcmp((char *)p[0]->data, "asr")) &&
+				 (!strcmp((char *)p[0]->data, "aslw") ||
+				  !strcmp((char *)p[0]->data, "lsrw") ||
+				  !strcmp((char *)p[0]->data, "asrw")) &&
 				 (p[1]->code == I_LDWI) &&
 				 p[2]->code == I_PUSHW) {
 				/* replace code */
-				if (!strcmp((char *)p[0]->data, "asl"))
+				if (!strcmp((char *)p[0]->data, "aslw"))
 					p[2]->code = I_ASLWI;
-				else if (!strcmp((char *)p[0]->data, "lsr"))
+				else if (!strcmp((char *)p[0]->data, "lsrw"))
 					p[2]->code = I_LSRWI;
 				else
 					p[2]->code = I_ASRWI;

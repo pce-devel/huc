@@ -423,9 +423,9 @@ void gand (void)
 void gasr (int is_unsigned)
 {
 	if (is_unsigned)
-		out_ins(I_JSR, T_LIB, (intptr_t)"lsr");
+		out_ins(I_JSR, T_LIB, (intptr_t)"lsrw");
 	else
-		out_ins(I_JSR, T_LIB, (intptr_t)"asr");
+		out_ins(I_JSR, T_LIB, (intptr_t)"asrw");
 	stkp = stkp + INTSIZE;
 }
 
@@ -437,7 +437,7 @@ void gasr (int is_unsigned)
  */
 void gasl (void)
 {
-	out_ins(I_JSR, T_LIB, (intptr_t)"asl");
+	out_ins(I_JSR, T_LIB, (intptr_t)"aslw");
 	stkp = stkp + INTSIZE;
 }
 
