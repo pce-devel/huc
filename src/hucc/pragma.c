@@ -378,10 +378,6 @@ void new_fastcall (void)
 			ptr->flags |= FASTCALL_MACRO;
 	}
 
-	/* check arg number */
-	if (ptr->nargs == 0)
-		return;
-
 	/* copy func name */
 	strcpy(ptr->fname, fname);
 
