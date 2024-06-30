@@ -457,6 +457,9 @@ void dopsdinc (void)
 			error("missing (");
 
 		ol(".data");
+		ol(".if\t(* & $1FFF) > $1F00");
+		ol(".align\t$2000");
+		ol(".endif");
 
 		readstr();	/* read the label name */
 		prefix();
