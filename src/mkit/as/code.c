@@ -1187,7 +1187,7 @@ branchopt(void)
 	/* report total changes this pass */
 	branches_changed += just_changed;
 	if (branches_changed)
-		printf("     Changed %3d branches from short to long.\n", branches_changed);
+		printf("     Changed %4d branches from short to long.\n", branches_changed);
 
 	/* do another pass if anything just changed, except if KickC because */
 	/* any changes during the pass itself can change a forward-reference */
