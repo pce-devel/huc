@@ -1599,7 +1599,7 @@ uint8_t * DecompressLZ8 (
   uint8_t * pNibbleOffset = NULL;
 
   uint8_t uWinOffset = 0;
-  uint8_t uMatchOffset;
+  uint8_t uMatchOffset = 0;
 
   uint8_t aWinBuffer[ 256 ];
 
