@@ -52,6 +52,13 @@ classC(int *ip)
 void
 classR(int *ip)
 {
+	/* Check for someone exiting a C function from within a #asm section. */
+	if (hucc_mode && proc_ptr)
+	{
+		error("You cannot exit a C function with an RTS in HuCC!\nPlease read the documentation!");
+		return;
+	}
+
 	/* Only if ".kickc" and currently inside a C function/procedure */
 	if (kickc_mode && scopeptr && proc_ptr)
 	{
