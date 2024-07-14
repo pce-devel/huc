@@ -251,6 +251,7 @@ stinstall(int hash, int type)
 	sym->reason = -1;
 	sym->type = if_expr ? IFUNDEF : UNDEF;
 	sym->value = 0;
+	sym->phase = 0;
 	sym->section = S_NONE;
 	sym->overlay = 0;
 	sym->mprbank = UNDEFINED_BANK;
@@ -261,7 +262,6 @@ stinstall(int hash, int type)
 	sym->vram = -1;
 	sym->pal = -1;
 	sym->reserved = 0;
-	sym->interface = PARAM_NONE;
 	sym->data_type = -1;
 	sym->data_size = 0;
 	sym->deflastpass = 0;
@@ -359,7 +359,7 @@ labldef(int reason)
 				page = (page + 1) & 7;
 		}
 
-		labl_value = loccnt + (page << 13);
+		labl_value = (loccnt + (page << 13) + phase_offset) & 0xFFFF;
 		labl_rombank = bank;
 		labl_mprbank = bank2mprbank(bank, section);
 		labl_overlay = bank2overlay(bank, section);
@@ -436,6 +436,7 @@ labldef(int reason)
 		if (section_flags[section] & S_IS_CODE)
 			lablptr->proc = proc_ptr;
 
+		lablptr->phase = phase_offset;
 		lablptr->page = page;
 
 		/* check if it's a local or global symbol */

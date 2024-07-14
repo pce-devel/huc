@@ -25,6 +25,7 @@ t_symbol pc_symbol = {
 	CONSTANT,       /* reason */
 	DEFABS,         /* type */
 	0,              /* value */
+	0,              /* phase */
 	S_NONE,         /* section */
 	0,              /* overlay */
 	0,              /* mprbank */
@@ -35,7 +36,6 @@ t_symbol pc_symbol = {
 	0,              /* vram */
 	0,              /* pal */
 	1,              /* reserved */
-	0,              /* interface */
 	0,              /* data_type */
 	0,              /* data_size */
 	1,              /* deflastpass */
@@ -625,7 +625,7 @@ push_val(int type)
 
 			pc_symbol.page = page;
 
-			pc_symbol.value += (page << 13);
+			pc_symbol.value = (pc_symbol.value + (page << 13) + phase_offset) & 0xFFFF;
 
 			expr_mprbank = pc_symbol.mprbank;
 			expr_overlay = pc_symbol.overlay;

@@ -242,6 +242,12 @@ do_proc(int *ip)
 		}
 	}
 
+	/* not allowed while .phase is active */
+	if (phase_offset) {
+		fatal_error("Cannot declare a .PROC/.PROCGROUP a .PHASE'd chunk of code!");
+		return;
+	}
+
 	/* do not mix different types of label-scope */
 	if (scopeptr) {
 		fatal_error("Cannot declare a .PROC/.PROCGROUP inside a .STRUCT!");
@@ -409,6 +415,12 @@ do_endp(int *ip)
 			fatal_error("Cannot use \"{}\" syntax in .PCEAS mode!");
 			return;
 		}
+	}
+
+	/* not allowed while .phase is active */
+	if (phase_offset) {
+		fatal_error("Cannot .ENDP/.ENDPROCGROUP within a .PHASE'd chunk of code!");
+		return;
 	}
 
 	if (proc_ptr == NULL) {
@@ -729,7 +741,8 @@ proc_reloc(void)
 					sym->overlay = bank2overlay(sym->rombank, sym->section);
 				}
 
-				sym->value += (proc_ptr->org - proc_ptr->base);
+				if (sym->phase == 0)
+					sym->value += (proc_ptr->org - proc_ptr->base);
 
 				/* local symbols */
 				if (sym->local) {
@@ -750,7 +763,8 @@ proc_reloc(void)
 								local->overlay = bank2overlay(local->rombank, local->section);
 							}
 
-							local->value += (proc_ptr->org - proc_ptr->base);
+							if (local->phase == 0)
+								local->value += (proc_ptr->org - proc_ptr->base);
 						}
 
 						/* next */

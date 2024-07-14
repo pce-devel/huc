@@ -66,12 +66,6 @@
 #define ARG_STRING	5
 #define ARG_LABEL	6
 
-/* function interface parameter types */
-#define PARAM_NONE	0 /* none or unknown */
-#define PARAM_A_LO	1 /* 16-bit in XA for SDCC */
-#define PARAM_X_LO	2 /* 16-bit in AX for HuC */
-#define PARAM_Y_LO	3 /* 16-bit in XY for newproc */
-
 /* section types */
 /* update pseudo_allowed when adding or changing! */
 /* update section_name  when adding or changing! */
@@ -180,6 +174,7 @@
 #define P_3PASS		65	// .3pass
 #define P_ALIAS		66	// .alias
 #define P_REF		67	// .ref
+#define P_PHASE		68	// .phase
 
 /* symbol flags */
 #define UNDEF	1	/* undefined - may be zero page */
@@ -298,6 +293,7 @@ typedef struct t_symbol {
 	int reason;
 	int type;
 	int value;
+	int phase;
 	int section;
 	int overlay;
 	int mprbank;
@@ -308,7 +304,6 @@ typedef struct t_symbol {
 	int vram;
 	int pal;
 	int reserved;
-	int interface;
 	int data_type;
 	int data_size;
 	int deflastpass;

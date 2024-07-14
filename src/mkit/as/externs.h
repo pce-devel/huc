@@ -12,6 +12,7 @@ extern int max_bank;                            /* last bank used */
 extern int data_loccnt;                         /* data location counter */
 extern int data_size;                           /* size of binary output (in bytes) */
 extern int data_level;                          /* data output level, must be <= listlevel to be outputed */
+extern int phase_offset;                        /* location counter offset for .phase */
 extern int loccnt;                              /* location counter */
 extern int bank;                                /* current bank */
 extern int bank_base;                           /* bank base index */
@@ -23,6 +24,7 @@ extern int rs_mprbank;                          /* .rs counter */
 extern int rs_overlay;                          /* .rs counter */
 extern int section;                             /* current section: S_ZP, S_BSS, S_CODE or S_DATA */
 extern int section_bank[MAX_S];                 /* current bank for each section */
+extern int section_phase[MAX_S];                /* current phase offset for each section */
 extern int section_flags[MAX_S];                /* current flags for each section */
 extern int section_limit[MAX_S];                /* current loccnt limit for each section */
 extern int in_if;                               /* true if in a '.if' statement */

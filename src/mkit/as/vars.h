@@ -12,6 +12,7 @@ int max_bank;                                   /* last bank used */
 int data_loccnt;                                /* data location counter */
 int data_size;                                  /* size of binary output (in bytes) */
 int data_level;                                 /* data output level, must be <= listlevel to be outputed */
+int phase_offset;                               /* location counter offset for .phase */
 int loccnt;                                     /* location counter */
 int bank;                                       /* current bank */
 int bank_base;                                  /* bank base index */
@@ -23,6 +24,7 @@ int rs_mprbank;                                 /* .rs counter */
 int rs_overlay;                                 /* .rs counter */
 int section;                                    /* current section: S_ZP, S_BSS, S_CODE or S_DATA */
 int section_bank[MAX_S];                        /* current bank for each section */
+int section_phase[MAX_S];                       /* current phase offset for each section */
 int stop_pass;                                  /* stop the program; set by fatal_error() */
 int errcnt;                                     /* error counter */
 int kickc_mode;                                 /* NZ if assembling KickC code */

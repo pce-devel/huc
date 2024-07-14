@@ -688,6 +688,8 @@ main(int argc, char **argv)
 
 		/* reset bank arrays */
 		for (i = 0; i < MAX_S; i++) {
+			section_bank[i] = 0;
+			section_phase[i] = 0;
 			for (j = 0; j < MAX_BANKS; j++) {
 				bank_maxloc[j] = 0;
 				bank_loccnt[i][j] = 0;
@@ -714,6 +716,11 @@ main(int argc, char **argv)
 		section_bank[S_CODE] = 0x00;
 		bank_page[S_CODE][0x00] = 0x07;
 		bank_loccnt[S_CODE][0x00] = 0x0000;
+
+		/* .home */
+		section_bank[S_HOME] = 0x00;
+		bank_page[S_HOME][0x00] = 0x07;
+		bank_loccnt[S_HOME][0x00] = 0x0000;
 
 		/* .data */
 		section_bank[S_DATA] = 0x00;

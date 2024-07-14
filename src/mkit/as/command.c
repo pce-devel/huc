@@ -89,7 +89,8 @@ unsigned short pseudo_allowed[] = {
 /* P_ENDS        */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
 /* P_3PASS       */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
 /* P_ALIAS       */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
-/* P_REF         */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS
+/* P_REF         */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_PHASE       */	IN_CODE + IN_HOME
 };
 
 
@@ -799,7 +800,7 @@ do_equ(int *ip)
 	if (!evaluate(ip, ';', 1))
 		return;
 
-	/* check for undefined symbols - they are not allowed in .equ or .set */
+	/* check for undefined symbols - they are only allowed in the FIRST_PASS */
 	if (undef != 0) {
 		if ((asm_opt[OPT_FORWARD] == 0) || (pass != FIRST_PASS))
 			error("Undefined symbol in operand field!");
@@ -828,6 +829,12 @@ do_equ(int *ip)
 void
 do_page(int *ip)
 {
+	/* not allowed while .phase is active */
+	if (phase_offset) {
+		fatal_error(".PAGE cannot be changed within a .PHASE'd chunk of code!");
+		return;
+	}
+
 	/* not allowed in procs */
 	if (proc_ptr && (section_flags[section] & S_IS_CODE)) {
 		fatal_error("Code .PAGE cannot be changed within a .PROC!");
@@ -863,6 +870,12 @@ do_page(int *ip)
 void
 do_org(int *ip)
 {
+	/* not allowed while .phase is active */
+	if (phase_offset) {
+		fatal_error(".ORG cannot be changed within a .PHASE'd chunk of code!");
+		return;
+	}
+
 	/* get the .org value */
 	if (!evaluate(ip, ';', 0))
 		return;
@@ -935,6 +948,12 @@ void
 do_bank(int *ip)
 {
 	char name[128];
+
+	/* not allowed while .phase is active */
+	if (phase_offset) {
+		fatal_error(".BANK cannot be changed within a .PHASE'd chunk of code!");
+		return;
+	}
 
 	/* not allowed in procs */
 	if (proc_ptr && (section_flags[section] & S_IS_CODE)) {
@@ -1500,7 +1519,6 @@ do_rs(int *ip)
 void
 do_ds(int *ip)
 {
-	int limit = 0;
 	int addr;
 	int step;
 	int nbytes;
@@ -1869,6 +1887,12 @@ do_align(int *ip)
 {
 	int offset;
 
+	/* not allowed while .phase is active - but could be implemented if needed */
+	if (phase_offset) {
+		fatal_error("Cannot .ALIGN within a .PHASE'd chunk of code!");
+		return;
+	}
+
 	/* get the .align value */
 	if (!evaluate(ip, ';', 0))
 		return;
@@ -2204,6 +2228,12 @@ do_label(int *ip)
 void
 do_struct(int *ip)
 {
+	/* not allowed while .phase is active */
+	if (phase_offset) {
+		fatal_error("Cannot declare a .STRUCT within a .PHASE'd chunk of code!");
+		return;
+	}
+
 	/* the code is written to handle nesting, but try */
 	/* this temporarily, while we see if it is needed */
 	if (scopeptr != NULL) {
@@ -2516,6 +2546,72 @@ do_ref(int *ip)
 
 
 /* ----
+ * do_phase()
+ * ----
+ * .phase   pseudo (optype == 0)
+ * .dephase pseudo (optype == 1)
+ */
+
+void
+do_phase(int *ip)
+{
+	/* set label value if there was one */
+	labldef(LOCATION);
+
+	if (optype == 0) {
+		/* not allowed while .phase is active */
+		if (phase_offset) {
+			error("Already in a .PHASE'd chunk of code!");
+			return;
+		}
+
+		/* get the .phase value */
+		if (!evaluate(ip, ';', 0))
+			return;
+
+		/* check for undefined symbols - they are only allowed in the FIRST_PASS */
+		if (undef != 0) {
+			phase_offset = 1;
+
+			if ((asm_opt[OPT_FORWARD] == 0) || (pass != FIRST_PASS))
+				error("Undefined symbol in operand field!");
+			else
+				need_another_pass = 1;
+			return;
+		}
+
+		/* check for address out of range */
+		if (value > 0xFFFF) {
+			error(".PHASE value must be an address $0000..$FFFF!");
+			return;
+		}
+
+	} else {
+		/* not allowed while .phase is inactive */
+		if (!phase_offset) {
+			error("Not in a .PHASE'd chunk of code!");
+			return;
+		}
+
+		/* check end of line */
+		if (!check_eol(ip))
+			return;
+
+		value = (loccnt + (page << 13));
+	}
+
+	/* output line on last pass */
+	if (pass == LAST_PASS) {
+		loadlc(loccnt, 0);
+		println();
+	}
+
+	/* set the phase_offset to add to subsequent location labels */
+	phase_offset = value - (loccnt + (page << 13));
+}
+
+
+/* ----
  * htoi()
  * ----
  */
@@ -2559,6 +2655,7 @@ set_section(int new_section)
 		bank_glabl[section][bank] = glablptr;
 		bank_loccnt[section][bank] = loccnt;
 		bank_page[section][bank] = page;
+		section_phase[section] = phase_offset;
 
 		/* change section */
 		section = new_section;
@@ -2568,6 +2665,7 @@ set_section(int new_section)
 		page = bank_page[section][bank];
 		loccnt = bank_loccnt[section][bank];
 		glablptr = bank_glabl[section][bank];
+		phase_offset = section_phase[section];
 
 		/* signal discontiguous change in loccnt */
 		discontiguous = 1;

@@ -150,7 +150,7 @@ class2(int *ip)
 			putbyte(data_loccnt, opval);
 
 			/* calculate branch offset */
-			addr = (value & 0xFFFF) - (loccnt + (page << 13));
+			addr = (value & 0xFFFF) - (loccnt + (page << 13) + phase_offset);
 
 			/* check range */
 			if (addr > 0x7Fu && addr < ~0x7Fu) {
@@ -372,7 +372,7 @@ class5(int *ip)
 			putbyte(data_loccnt + 1, zp);
 
 			/* calculate branch offset */
-			addr = (value & 0xFFFF) - (loccnt + (page << 13));
+			addr = (value & 0xFFFF) - (loccnt + (page << 13) + phase_offset);
 
 			/* check range */
 			if (addr > 0x7Fu && addr < ~0x7Fu) {
@@ -643,7 +643,7 @@ class10(int *ip)
 			putbyte(data_loccnt + 1, zp);
 
 			/* calculate branch offset */
-			addr = (value & 0xFFFF) - (loccnt + (page << 13));
+			addr = (value & 0xFFFF) - (loccnt + (page << 13) + phase_offset);
 
 			/* check range */
 			if (addr > 0x7Fu && addr < ~0x7Fu) {
@@ -1122,7 +1122,7 @@ getbranch(int opcode_length)
 		}
 	}
 
-	branch->addr = (loccnt + (page << 13)) & 0xFFFF;
+	branch->addr = (loccnt + (page << 13) + phase_offset) & 0xFFFF;
 	branch->checked = 0;
 
 	if (pass == LAST_PASS) {
