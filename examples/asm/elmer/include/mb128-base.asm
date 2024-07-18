@@ -101,7 +101,7 @@ mb1_detected:	ds	1			; NZ if MB128 ever detected.
 ; Args: _al = Sector address (0..255).
 ; Args: _ah = Sector count (0..255).
 ;
-; Uses: _temp
+; Uses: __temp
 ;
 ; Returns: Y,A,Z-flag,N-flag = MB1_OK or an error code.
 ;
@@ -189,7 +189,7 @@ mb1_read_data	.proc
 ; Args: _al = Sector address (0..255).
 ; Args: _ah = Sector count (0..255).
 ;
-; Uses: _temp
+; Uses: __temp
 ;
 ; Returns: Y,A,Z-flag,N-flag = MB1_OK or an error code.
 ;
@@ -279,7 +279,7 @@ mb1_write_data	.proc
 ; Args: _al = Sector address (0..255).
 ; Args: _ah = Sector count (0..255).
 ;
-; Uses: _temp
+; Uses: __temp
 ;
 ; Returns: Y,A,Z-flag,N-flag = MB1_OK or an error code.
 ;
@@ -371,7 +371,7 @@ mb1_check_data	.proc
 ;
 ; mb1_detect - Detect whether an MB128 is present.
 ;
-; Uses: _temp
+; Uses: __temp
 ;
 ; Returns: Y,A,Z-flag,N-flag = MB1_OK or an error code.
 ;
@@ -421,7 +421,7 @@ mb1_detect	.proc
 ;
 ; Returns: Y,A,Z-flag,N-flag = MB1_OK or an error code.
 ;
-; Uses: _temp
+; Uses: __temp
 ;
 ; N.B. For INTERNAL use, not for APPLICATION use!
 ;
@@ -438,7 +438,7 @@ mb1_wakeup:	ldy	#$80 + 1		; Max 128KB of data to "unjam".
 
 		lda	IO_PORT			; Read buttons.
 		and	#$0F
-		sta	<_temp
+		sta	<__temp
 
 		lda	#%11			; Send '1' bit to MB128.
 		jsr	mb1_send_bits		; Selects direction-pad.
@@ -449,7 +449,7 @@ mb1_wakeup:	ldy	#$80 + 1		; Max 128KB of data to "unjam".
 		asl	a
 		asl	a
 
-.self_mod:	ora	<_temp			; Composite the buttons.
+.self_mod:	ora	<__temp			; Composite the buttons.
 		cmp	#$40			; Magic value for detection.
 		bne	.not_detected		; L, R, U, RUN, SEL, I & II.
 

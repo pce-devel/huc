@@ -342,7 +342,7 @@ dropfntbox_vdc	.proc
 		sta.l	<_di			; data at the beginning of the
 		lda.h	<_bp			; font data.
 		sta.h	<_di
-		stz	<_temp			; Initialize flag buffer.
+		stz	<__temp			; Initialize flag buffer.
 
 		ldy	#256 / 8		; Max bytes to skip.
 
@@ -369,13 +369,13 @@ dropfntbox_vdc	.proc
 .tile_loop:	phx				; Preserve VDC/SGX offset.
 
 		clc
-		ror	<_temp
+		ror	<__temp
 		bne	.tile_type
 
 		lda	[_di]
 		sec
 		ror	a
-		sta	<_temp
+		sta	<__temp
 		inc.l	<_di
 		bne	.tile_type
 		inc.h	<_di

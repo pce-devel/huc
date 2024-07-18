@@ -807,7 +807,7 @@ f32_set_cluster:clx				; Copy the cluster # from the
 ; N.B. This includes unused ($E5) and end-of-directory ($00) entries.
 ;
 ; Uses: f32_ptr = Pointer to directory entry within f32_cache_buf.
-; Uses: _temp = Temporary variable (trashed).
+; Uses: __temp = Temporary variable (trashed).
 ;
 ; Returns: f32_ptr, Y,Z-flag,N-flag = F32_OK or an error code
 ;
@@ -1011,7 +1011,7 @@ f32_nxt_entry	.proc
 		pla
 		jmp	!nxt_entry-		; Get the next part of it!
 
-.copy_utf16:	sta	<_temp			; Copy UTF16 glyphs to the
+.copy_utf16:	sta	<__temp			; Copy UTF16 glyphs to the
 .copy_loop:	lda	[f32_ptr], y		; long name buffer.
 		sta	f32_long_name, x
 		iny
@@ -1028,7 +1028,7 @@ f32_nxt_entry	.proc
 .copy_next:	iny
 		inx
 		beq	.too_long		; Is name > than 255 glyphs?
-		cpy	<_temp
+		cpy	<__temp
 		bne	.copy_loop
 		rts
 

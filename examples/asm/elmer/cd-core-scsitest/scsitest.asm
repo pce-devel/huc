@@ -472,13 +472,13 @@ print_log	.proc
 		pla
 		and	#SCSI_MSK
 		pha
-		sta	<_temp
+		sta	<__temp
 
 		clx
 		cly
 
 .bit_loop:	phy
-		asl	<_temp
+		asl	<__temp
 		bcs	!+
 		ldy	#.nul - .bsy
 
