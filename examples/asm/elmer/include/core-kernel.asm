@@ -5,7 +5,7 @@
 ;
 ; The "CORE(not TM)" PC Engine library kernel code that runs after startup.
 ;
-; Copyright John Brandwood 2021-2022.
+; Copyright John Brandwood 2021-2024.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -73,10 +73,10 @@ bit_mask:	db	$01,$02,$04,$08,$10,$20,$40,$80
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; core_irq2	 - Minimal interrupt handler compatible with System Card.
-; core_irq1	 - Minimal interrupt handler compatible with System Card.
-; core_timer_irq - Minimal interrupt handler compatible with System Card.
-; core_nmi_irq	 - Minimal interrupt handler compatible with System Card.
+; core_irq2  - Minimal interrupt handler compatible with System Card.
+; core_irq1  - Minimal interrupt handler compatible with System Card.
+; core_timer - Minimal interrupt handler compatible with System Card.
+; core_rti   - Minimal interrupt handler compatible with System Card.
 ;
 ; Note that it takes 8 cycles to respond to an IRQ.
 ;
@@ -109,7 +109,7 @@ bit_mask:	db	$01,$02,$04,$08,$10,$20,$40,$80
 ; ***************************************************************************
 ; ***************************************************************************
 
-core_irq2:	bbs0	<irq_vec, .hook		; 8 cycles if taken.
+core_irq2:	bbs0	<irq_vec, .hook		; 8 cycles if using hook.
 
 	.if	CDROM
 		; N.B. Do NOT change ANY of this code without understanding
@@ -127,6 +127,9 @@ core_irq2:	bbs0	<irq_vec, .hook		; 8 cycles if taken.
 
 		pla				; Restore caller's MPR7.
 		tam7
+
+		cli				; Allow IRQ1 to interrupt.
+
 		pla
 		rti
 
@@ -144,8 +147,8 @@ core_irq2:	bbs0	<irq_vec, .hook		; 8 cycles if taken.
 		bit	#IFU_INT_END
 		beq	!+
 
-		lda  	#IFU_INT_END + IFU_INT_HALF
-		trb  	IFU_IRQ_MSK
+		lda	#IFU_INT_END + IFU_INT_HALF
+		trb	IFU_IRQ_MSK
 		lda	#ADPCM_PLAY + ADPCM_AUTO
 		trb	IFU_ADPCM_CTL
 !:		pla
@@ -156,110 +159,85 @@ core_irq2:	bbs0	<irq_vec, .hook		; 8 cycles if taken.
 .hook:		jmp	[irq2_hook]		; 7 cycles.
 	.endif	CDROM
 
-		;
-
-core_irq1:	bbs1	<irq_vec, .hook		; 8 cycles if taken.
-
-		bit	VDC_SR			; Clear VDC interrupt.
-	.if	SUPPORT_SGX
-		bit	SGX_SR			; Clear SGX interrupt.
-	.endif	SUPPORT_SGX
-		rti
-
-.hook:		jmp	[irq1_hook]		; 7 cycles.
-
-		;
-
-core_timer_irq: bbs2	<irq_vec, .hook		; 8 cycles if taken.
-
-		stz	IRQ_ACK			; Clear timer interrupt.
-		rti
-
-.hook:		jmp	[timer_hook]		; 7 cycles.
-
-		;
-
-core_nmi_irq:	rti				; No NMI on the PC Engine!
-
 
 
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; core_clr_hooks - Reset default "CORE(not TM)" interrupt-handling hooks.
-;
-
-core_clr_hooks:	php				; Preserve interrupt state.
-		sei				; Disable interrupts.
-
-	.if	USING_PSGDRIVER
-		lda	#$80			; Disable sound driver calls.
-		sta	<main_sw
-	.else
-		stz	sound_hook + 1		; Disable sound driver calls.
-	.endif
-
-		lda	#<core_sw_reset		; Set up the soft-reset hook.
-		sta	reset_hook + 0
-		lda	#>core_sw_reset
-		sta	reset_hook + 1
-
-		lda	#<irq1_handler		; Set up the IRQ1 hook.
-		sta	irq1_hook + 0
-		lda	#>irq1_handler
-		sta	irq1_hook + 1
-
-		lda	#%10100010		; Disable System Card IRQ1
-		sta	<irq_vec		; processing and take over.
-
-		plp				; Restore interrupt state.
-		rts
-
-
-
-; ***************************************************************************
-; ***************************************************************************
+; core_irq1 - Minimal interrupt handler compatible with System Card.
 ;
 ; irq1_handler - Basic "CORE(not TM)" IRQ1 handler to use as the "irq1_hook".
 ;
 ; Doing the IRQ1 handler processing in this hook means that things operate
 ; the same whether the System Card or an Overlay is paged into MPR7.
-;
 
-irq1_handler:	pha				; Save all registers.
-		phx
-		phy
+core_irq1:	;;;				; 8 (cycles for the INT)
+	.if	CDROM || !defined(NO_CORE_TIRQ_HOOK)
+		jmp	[irq1_hook]		; 7 cycles.
+	.endif
 
-	.if	CDROM
-	.if	USING_MPR7
-		tma7				; Preserve MPR7.
-		pha
-		lda	<core_1stbank		; Allow users to put IRQ
-		tam7				; handlers in CORE_BANK.
+irq1_handler:	pha				; 3 Save all registers.
+		phx				; 3
+		phy				; 3
+
+	.ifndef	USING_RCR_MACROS		;   This slows things down
+	.if	CDROM				;   if using macros, so do
+	.if	USING_MPR7			;   it only for VBLANK.
+		tma7				; 4 Preserve MPR7.
+		pha				; 3
+		lda	<core_1stbank		; 4 Allow users to put IRQ
+		tam7				; 5 handlers in CORE_BANK.
 	.endif
 	.endif	CDROM
+	.endif	USING_RCR_MACROS
 
-		lda	VDC_SR			; Acknowledge the VDC's IRQ.
-		sta	<vdc_sr			; Remember what caused it.
+		lda	VDC_SR			; 6 Acknowledge the VDC's IRQ.
+		sta	<vdc_sr			; 4 Remember what caused it.
 
-;	.if	SUPPORT_SGX
-;		lda	SGX_SR			; Read SGX_SR after VDC_SR in
-;		sta	<sgx_sr			; case this is not an SGX!
-;	.endif
+	.if	SUPPORT_SGX
+		ldx	SGX_SR			; 6 Read SGX_SR after VDC_SR in
+		stx	<sgx_sr			; 4 case this is not an SGX!
+	.endif
 
-		; HSYNC ?
+		; Handle the VDC's RCR interrupt.
 
-.check_hsync:	bbr2	<vdc_sr, .check_vsync	; Is this an HSYNC interrupt?
+!:		and	#$04			; 2 Is this an HSYNC interrupt?
+		beq	!+			; 2
 
-		bbr6	<irq_vec, .check_vsync	; Is a driver registered?
+	.ifdef	USING_RCR_MACROS
+		VDC_RCR_MACRO
+	.else
+		jsr	.user_hsync_vdc		; 7 Call game's HSYNC code.
+	.endif
 
-		bsr	.user_hsync		; Call game's HSYNC code.
+	.if	SUPPORT_SGX
 
-		; END OF HSYNC HANDLER
+		; Handle the SGX's RCR interrupt.
 
-		; VSYNC ?
+!:		bbr2	<sgx_sr, !+		; 6 Is this an HSYNC interrupt?
 
-.check_vsync:	bbr5	<vdc_sr, .exit_irq1	; Is this a VBLANK interrupt?
+	.ifdef	USING_RCR_MACROS
+		SGX_RCR_MACRO
+	.else
+		jsr	.user_hsync_sgx		; 7 Call game's HSYNC code.
+	.endif
+
+	.endif	SUPPORT_SGX
+
+		; Handle the VDC's VBL interrupt.
+
+!:		bbr5	<vdc_sr, .exit_irq1	; Is this a VBLANK interrupt?
+
+	.ifdef	USING_RCR_MACROS
+	.if	CDROM
+	.if	USING_MPR7
+		tma7				; 4 Preserve MPR7.
+		pha				; 3
+		lda	<core_1stbank		; 4 Allow users to put IRQ
+		tam7				; 5 handlers in CORE_BANK.
+	.endif
+	.endif	CDROM
+	.endif	USING_RCR_MACROS
 
 	.if	SUPPORT_SGX
 		lda	#VDC_CR			; Update the SGX's Control
@@ -286,24 +264,24 @@ irq1_handler:	pha				; Save all registers.
 
 		inc	irq_cnt			; Mark that a VBLANK occurred.
 
-;		inc	rndseed			; Keep random ticking over.
-
 		bbr4	<irq_vec, .skip_hookv	; Is a driver registered?
 
 		bsr	.user_vsync		; Call game's VBLANK code.
 
-.skip_hookv:	cli				; Allow HSYNC and TIMER IRQ.
+.skip_hookv:	bbs5	<irq_vec, .exit_vbl	; Should we skip "BIOS" stuff?
+
+		cli				; Allow HSYNC and TIMER IRQ.
 
 		call	read_joypads		; Update joypad state.
 
 	.if	USING_PSGDRIVER
 		lda	<main_sw		; Is the PSG driver running in
 		cmp	#1			; VBLANK 60Hz update mode?
-		bne	.exit_irq1
+		bne	.exit_vbl
 
 		lda	#$80			; Acquire sound mutex to avoid
 		tsb	sound_mutex		; conflict with a delayed VBL.
-		bmi	.exit_irq1
+		bmi	.exit_vbl
 
 		cla				; Call the BIOS PSG driver in
 		tam7				; the System Card.
@@ -312,20 +290,39 @@ irq1_handler:	pha				; Save all registers.
 		stz	sound_mutex		; Release sound mutex.
 	.else
 		lda	sound_hook + 1		; Is a driver registered?
-		beq	.exit_irq1
+		beq	.exit_vbl
 
 		lda	#$80			; Acquire sound mutex to avoid
 		tsb	sound_mutex		; conflict with a delayed VBL.
-		bmi	.exit_irq1
+		bmi	.exit_vbl
 
 		bsr	.user_sound		; Call the driver hook.
 
 		stz	sound_mutex		; Release sound mutex.
 	.endif	USING_PSGDRIVER
 
-		; END OF VSYNC HANDLER
+.exit_vbl:
+
+	.ifdef	USING_RCR_MACROS		; If USING_RCR_MACROS then 
+	.if	CDROM				; restore after the VBLANK.
+	.if	USING_MPR7
+		pla				; Restore original MPR7.
+		tam7
+	.endif
+	.endif	CDROM
+	.endif	USING_RCR_MACROS
 
 .exit_irq1:
+
+	.ifndef	USING_RCR_MACROS		; If !USING_RCR_MACROS then
+	.if	CDROM				; restore at IRQ1 exit.
+	.if	USING_MPR7
+		pla				; Restore original MPR7.
+		tam7
+	.endif
+	.endif	CDROM
+	.endif	USING_RCR_MACROS
+
 	.if	SUPPORT_SGX
 		lda	<sgx_reg		; Restore SGX_AR first, just
 		sta	SGX_AR			; in case this is not an SGX!
@@ -334,38 +331,86 @@ irq1_handler:	pha				; Save all registers.
 		lda	<vdc_reg		; Restore VDC_AR in case we
 		sta	VDC_AR			; changed it.
 
-	.if	CDROM
-	.if	USING_MPR7
-		pla				; Restore original MPR7.
-		tam7
-	.endif
-	.endif	CDROM
-
 		ply				; Restore all registers.
 		plx
 		pla
 
 		rti				; Return from interrupt.
 
-.user_hsync:	jmp	[hsync_hook]
-.user_vsync:	jmp	[vsync_hook]
-.user_sound:	jmp	[sound_hook]
+.user_vsync:	jmp	[vsync_hook]		; 7
+.user_sound:	jmp	[sound_hook]		; 7
 
-	.if	(* >= $4000)			; If not running in RAM, then
-		.bss				; put the variables in RAM.
-	.endif
-
-sound_mutex:	ds	1			; NZ when controller port busy.
-
+	.ifndef	USING_RCR_MACROS
+.user_hsync_vdc:jmp	[hsync_hook]		; 7
 	.if	SUPPORT_SGX
-sgx_detected:	ds	1			; NZ if SuperGrafx detected.
+.user_hsync_sgx:jmp	[hsync_hook_sgx]	; 7
+	.endif
+	.endif	USING_RCR_MACROS
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; core_timer - Minimal interrupt handler compatible with System Card.
+;
+; tirq_handler - Basic "CORE(not TM)" TIRQ handler to use as the "timer_hook".
+;
+; Doing the TIRQ handler processing in this hook means that things operate
+; the same whether the System Card or an Overlay is paged into MPR7.
+
+core_timer:	;;;				; 8 (cycles for the INT)
+	.if	CDROM || !defined(NO_CORE_TIRQ_HOOK)
+		jmp	[timer_hook]		; 7 cycles.
 	.endif
 
-	.if	SUPPORT_ACD
-acd_detected:	ds	1			; NZ if ArcadeCard detected.
+tirq_handler:
+	.ifdef	USING_TIRQ_MACRO
+		TIMER_IRQ_MACRO
+	.else
+		stz	IRQ_ACK			; 5 Clear timer interrupt.
 	.endif
 
-		.code
+core_rti:	rti
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; core_clr_hooks - Reset default "CORE(not TM)" interrupt-handling hooks.
+;
+
+core_clr_hooks:	php				; Preserve interrupt state.
+		sei				; Disable interrupts.
+
+	.if	USING_PSGDRIVER
+		lda	#$80			; Disable sound driver calls.
+		sta	<main_sw
+	.else
+		stz.h	sound_hook		; Disable sound driver calls.
+	.endif
+
+		lda	#<core_sw_reset		; Set up the soft-reset hook.
+		sta.l	reset_hook
+		lda	#>core_sw_reset
+		sta.h	reset_hook
+
+		lda	#<irq1_handler		; Set up the IRQ1 hook.
+		sta.l	irq1_hook
+		lda	#>irq1_handler
+		sta.h	irq1_hook
+
+		lda	#<tirq_handler		; Set up the TIRQ hook.
+		sta.l	timer_hook
+		lda	#>tirq_handler
+		sta.h	timer_hook
+
+		lda	#%00000110		; Replace the System Card's
+		sta	<irq_vec		; IRQ1 and TIRQ processing.
+
+		plp				; Restore interrupt state.
+		rts
 
 
 
@@ -447,21 +492,22 @@ call_bios:	sty	.self_mod_func + 1	; Which System Card function?
 ; ***************************************************************************
 ;
 ; get_file_info - Get a file's starting sector and length from the directory.
+; get_file_lba	- Get just a file's starting sector from the directory.
 ;
 ; Args: X reg = File #.
 ;
 ; ***************************************************************************
 ; ***************************************************************************
 
-get_file_info:	sec				; Calculate file length.
-		lda	iso_dirlo + 1, x
+get_file_info:	sec				; Calculate file length in
+		lda	iso_dirlo + 1, x	; sectors.
 		sbc	iso_dirlo + 0, x
 		sta	<_al
 		lda	iso_dirhi + 1, x
 		sbc	iso_dirhi + 0, x
 		sta	<_ah
 
-		cla				; Set file start location.
+get_file_lba:	cla				; Set file start location.
 		cpx	iso_128mb
 		bcc	.set_rec_h
 		inc	a
@@ -539,3 +585,27 @@ exec_overlay:	jsr	core_clr_hooks		; Reset default hooks.
 		jmp	$4000			; Execute the overlay.
 
 	.endif	!CDROM
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+
+	.if	(core_kernel >= $4000)		; If not running in RAM, then
+		.bss				; put these variables in RAM.
+	.endif
+
+sound_mutex:	ds	1			; NZ when controller port busy.
+
+	.if	SUPPORT_SGX
+sgx_detected:	ds	1			; NZ if SuperGrafx detected.
+hsync_hook_sgx:	ds	2			; SGX version of hsync_hook.
+	.endif
+
+	.if	SUPPORT_ACD
+acd_detected:	ds	1			; NZ if ArcadeCard detected.
+	.endif
+
+	.if	(core_kernel >= $4000)
+		.code
+	.endif

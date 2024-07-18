@@ -5,7 +5,7 @@
 ;
 ; CD-ROM Stage1 loader using the "CORE(not TM)" PC Engine library code.
 ;
-; Copyright John Brandwood 2021.
+; Copyright John Brandwood 2021-2024.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -38,8 +38,8 @@ bit_mask
 
 core_irq2
 core_irq1
-core_timer_irq
-core_nmi_irq
+core_timer
+core_rti
 
 read_joypads
 port_mutex
@@ -61,9 +61,10 @@ core_sw_reset
 
 call_bios
 get_file_info
+get_file_lba
 exec_overlay
 
-core_ramcpy
+core_ramiso
 
 iso_count
 iso_cderr

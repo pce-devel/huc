@@ -5,7 +5,7 @@
 ;
 ; The "CORE(not TM)" PC Engine library startup code that runs at boot/reset.
 ;
-; Copyright John Brandwood 2021-2022.
+; Copyright John Brandwood 2021-2024.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -36,33 +36,33 @@
 ; other, and can be written in different programming languages.
 ;
 ;
-; 1) If we're running on a HuCard, the initialization is simple!
+; 1) If we're running on a HuCARD, the initialization is simple!
 ;
 ;    The PC Engine's memory map is set to ...
 ;
 ;      MPR0 = bank $FF : PCE hardware
 ;      MPR1 = bank $F8 : PCE RAM with Stack & ZP
-;      MPR2 = bank $00 : HuCard ROM
-;      MPR3 = bank $01 : HuCard ROM
-;      MPR4 = bank $02 : HuCard ROM
-;      MPR5 = bank $03 : HuCard ROM
-;      MPR6 = bank $04 : HuCard ROM
-;      MPR7 = bank $00 : HuCard ROM
+;      MPR2 = bank $00 : HuCARD ROM
+;      MPR3 = bank $01 : HuCARD ROM
+;      MPR4 = bank $02 : HuCARD ROM
+;      MPR5 = bank $03 : HuCARD ROM
+;      MPR6 = bank $04 : HuCARD ROM
+;      MPR7 = bank $00 : HuCARD ROM
 ;
 ;
-; 2) If we're running on a HuCard that supports the Turbo Everdrive, then the
+; 2) If we're running on a HuCARD that supports the Turbo Everdrive, then the
 ;    first 2 banks are reserved for mapping the TED2 hardware and a RAM bank.
 ;
 ;    The PC Engine's memory map is set to ...
 ;
 ;      MPR0 = bank $FF : PCE hardware
 ;      MPR1 = bank $F8 : PCE RAM with Stack & ZP
-;      MPR2 = bank $02 : HuCard ROM
-;      MPR3 = bank $03 : HuCard ROM
-;      MPR4 = bank $04 : HuCard ROM
-;      MPR5 = bank $05 : HuCard ROM
-;      MPR6 = bank $06 : HuCard ROM
-;      MPR7 = bank $02 : HuCard ROM
+;      MPR2 = bank $02 : HuCARD ROM
+;      MPR3 = bank $03 : HuCARD ROM
+;      MPR4 = bank $04 : HuCARD ROM
+;      MPR5 = bank $05 : HuCARD ROM
+;      MPR6 = bank $06 : HuCARD ROM
+;      MPR7 = bank $02 : HuCARD ROM
 ;
 ;
 ; 3) If we're running on an old CD System, the overlay is loaded from the ISO
@@ -103,16 +103,16 @@
 		.bank	0
 
 	.if	SUPPORT_TED2			; Do we want to use a TED2?
-	.if	!CDROM				; Only applies to a HuCard!
+	.if	!CDROM				; Only applies to a HuCARD!
 
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; RESET VECTORS (when booted as a HuCard for the Turbo Everdrive 2)
+; RESET VECTORS (when booted as a HuCARD for the Turbo Everdrive 2)
 ;
 
-		; Minimal HuCard startup code that immediately trampoline's
-		; to the normal HuCard startup code in bank 2.
+		; Minimal HuCARD startup code that immediately trampoline's
+		; to the normal HuCARD startup code in bank 2.
 
 		.org	$FF00
 
@@ -134,7 +134,7 @@ ted2_hw_reset:	sei				; Disable interrupts.
 		jmp	[$FFFE]			; Call reset, just like boot.
 
 		; This string at this location tells both TEOS and Mednafen
-		; that this HuCard ROM is TED2-aware, and to run the HuCard
+		; that this HuCARD ROM is TED2-aware, and to run the HuCARD
 		; with 1MB RAM enabled.
 
 		.org	$FFD0
@@ -173,9 +173,6 @@ __trampolinebnk =	2			; are in MPR7, tell PCEAS to
 
 	.else	!CDROM
 		.fail	You cannot currently build for CD-ROM and SUPPORT_TED2!
-;	.if	!USING_MPR7
-;		.fail	You cannot build for CD-ROM and SUPPORT_TED2 without using MPR7!
-;	.endif	!USING_MPR7
 	.endif	!CDROM
 	.endif	SUPPORT_TED2
 
@@ -186,7 +183,7 @@ __trampolinebnk =	2			; are in MPR7, tell PCEAS to
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; RESET VECTORS (when running in MPR7, either as a HuCard, or a CD overlay)
+; RESET VECTORS (when running in MPR7, either as a HuCARD, or a CD overlay)
 ;
 
 		; Hardware reset and interrupt vectors.
@@ -198,8 +195,8 @@ core_version:	db	CORE_VERSION		; CORE(not TM) Version.
 
 		dw	core_irq2		; IRQ2	(from CD/ADPCM)
 		dw	core_irq1		; IRQ1	(from VDC)
-		dw	core_timer_irq		; TIMER (from CPU)
-		dw	core_nmi_irq		; NMI	(unused)
+		dw	core_timer		; TIMER (from CPU)
+		dw	core_rti		; NMI	(unused)
 	.if	CDROM
 		dw	core_sw_reset		; RESET (CD-ROM)
 	.else
@@ -234,7 +231,7 @@ __trampolineptr =	$5FFF			; are in MPR2, tell PCEAS to
 
 		; Switch to MPR2 for the "CORE(not TM)" library init.
 		;
-		; This is also executed by a HuCard once it has run
+		; This is also executed by a HuCARD once it has run
 		; its initial hardware-reset code.
 		;
 		; When run, MPR2-MPR6 are always mapped to the 1st 5 banks of
@@ -244,7 +241,37 @@ __trampolineptr =	$5FFF			; are in MPR2, tell PCEAS to
 
 CORE_BANK	=	bank(*) - _bank_base	; It isn't always zero! ;-)
 
-core_boot:	jmp	* + 3			; Allow someone to patch this.
+core_boot:	jmp	* + 6			; Allow someone to patch this.
+
+		; Add an ident string so isoLINK can autodetect configuration.
+		;
+		; This allows isoLINK to decide whether to use the IPL-SCD boot
+		; sector hack, and whether to include a SuperGRAFX signature in
+		; the boot sector, without the user having to manually use some
+		; command line parameters, although they are free to do that if
+		; they wish.
+
+	.if	SUPPORT_SGX
+	.if	BUILDING_STAGE1
+		db	"SG1"			; SGX SuperCD Stage1 loader.
+	.else
+		db	"SGX"			; SGX SuperCD or SGX HuCARD.
+	.endif	BUILDING_STAGE1
+	.else
+	.if	CDROM
+	.if	CDROM == 2
+	.if	BUILDING_STAGE1
+		db	"SC1"			; PCE SuperCD Stage1 loader.
+	.else
+		db	"SCD"			; PCE SuperCD.
+	.endif	BUILDING_STAGE1
+	.else
+		db	" CD"			; PCE CD.
+	.endif	CDROM == 2
+	.else
+		db	"PCE"			; PCE HuCARD.
+	.endif	CDROM
+	.endif	SUPPORT_SGX
 
 	.if	CDROM
 
@@ -273,7 +300,7 @@ core_boot:	jmp	* + 3			; Allow someone to patch this.
 
 		; Copy the kernel code to its destination in MPR1.
 
-		tii	(core_kernel + $2000), core_ram1st, (core_ramcpy - core_ram1st)
+		tii	core_rom1st, core_ram1st, (core_ramiso - core_ram1st)
 
 		; Copy the ISO's directory into kernel memory in MPR1.
 
@@ -340,16 +367,16 @@ core_boot:	jmp	* + 3			; Allow someone to patch this.
 ; core_ramend - End of code to relocate to MPR1.
 ;
 
-		; In a HuCard, BSS variables start as low as possible.
+		; In a HuCARD, BSS variables start as low as possible.
 
 		.bss
 		.org	core_ram1st
 core_ramend	=	*
 		.code
 
-		; Normal HuCard hardware-reset code, executed in MPR7.
+		; Normal HuCARD hardware-reset code, executed in MPR7.
 		;
-		; This does the basic PCE startup that every HuCard (including
+		; This does the basic PCE startup that every HuCARD (including
 		; a System Card) needs to do, and then it remaps memory to be
 		; compatible with the "CORE(not TM)" CD overlay program start.
 
@@ -386,7 +413,7 @@ core_hw_reset:	sei				; Disable interrupts.
 
 		jmp	core_boot		; Continue execution in MPR2.
 
-		; In a HuCard, the kernel code is permanently in MPR7.
+		; In a HuCARD, the kernel code is permanently in MPR7.
 
 		include "core-kernel.asm"
 
@@ -399,8 +426,9 @@ core_hw_reset:	sei				; Disable interrupts.
 ;
 ; CD-ROM Kernel Code
 ;
-; core_ram1st - Start of code to relocate to MPR1.
-; core_ramend - End of code to relocate to MPR1.
+; core_rom1st - Start of code to relocate from MPR2 to MPR1.
+; core_ram1st - Start of code when relocated to MPR1.
+; core_ramend - End of code when relocated to MPR1.
 ;
 
 		;
@@ -414,42 +442,24 @@ core_hw_reset:	sei				; Disable interrupts.
 	.if	USING_STAGE1
 
 		; Read the already-assembled equates for the kernel code.
-		;
-		; N.B. The tag() changes are only here to test PCEAS!
-
-;!:		.overlay 1			; Tag the STAGE1 symbols.
 
 		include "core-stage1.s"
-
-;		.overlay overlay(!-)		; Restore previous area.
 
 	.if	(core_kernel != core_ram1st)
 		.fail	Stage1 kernel has not been built with the same core_ram1st!
 	.endif
 
-;	.if	(overlay(*) != 0) || (overlay(core_kernel) != 1)
-;		.fail	.OVERLAY is not working correctly!
-;	.endif
-
 	.else	USING_STAGE1
 
-		; Remember where the startup code ends in MPR2.
-		;
-		; There are a few hundred bytes of unused space between the
-		; startup code, and the kernel code that gets copied to RAM,
-		; and the Stage1 loader code fits nicely into that space!
+		; Use .PHASE/.DEPHASE to assemble the kernel to run in MPR1.
 
-core_stage1	=	*
-
-		; Switch to MPR1 to build the kernel code that runs in RAM.
-
-		.org	core_ram1st
+core_rom1st:	.phase	core_ram1st		; Assemble the code for RAM.
 
 		include "core-kernel.asm"
 
 		; Remember where the kernel code ends in MPR1.
 
-core_ramcpy	=	*
+core_ramiso:	.dephase			; Restore normal assembly.
 
 		; ISOlink CD-ROM File Directory :
 		;
@@ -475,7 +485,7 @@ core_ramcpy	=	*
 		; sector number, the directory stores the index of the first
 		; file that starts beyond that boundary.
 
-		rsset	core_ramcpy
+		rsset	core_ramiso
 
 iso_cderr	rs	1			; index # of CDERR file
 iso_dirlo	rs	MAX_DIRSIZE		; lo-byte of file's sector #
@@ -512,8 +522,9 @@ core_ramend	rs	0
 ;
 ; With the availability of so many different configuration options, we've now
 ; built somewhere between a few hundred bytes, and a couple of KB, of code in
-; this first bank of the HuCARD / overlay program. But this is the end of the
-; "CORE(not TM)" library code!
+; the CORE_BANK of the HuCARD / overlay program.
+;
+; This is the end of the "CORE(not TM)" library code!
 ;
 ; Remember that the ".proc" trampolines are located at the end of this bank,
 ; so the amount of free space left depends upon the number of ".proc" calls.
@@ -554,10 +565,43 @@ core_ramend	rs	0
 ; RESERVE_BANKS is normally defined in each project's "core-config.inc".
 ;
 
-DATA_BANK	=	CORE_BANK + 1 + RESERVE_BANKS
+		.opt	d+			; DATA labels use fixed MPR.
 
+		.rsset	CORE_BANK + 1
+
+	.ifdef	NEED_HOME_BANK
+	.if	NEED_HOME_BANK
+HOME_BANK	.rs	1
+		.home				; HuCC permanent code and
+		.bank	HOME_BANK, ".home"	; initialized data runs in
+		.org	$A000			; MPR5 (.section CODE).
+	.endif
+	.endif
+
+	.ifdef	NEED_SOUND_BANK			; Defined in sound.inc if needed
+	.if	NEED_SOUND_BANK
+SOUND_BANK	.rs	1
+	.endif
+	.endif
+
+	.ifdef	RESERVE_BANKS			; For CORE projects.
+RESERVED_BANK	.rs	RESERVE_BANKS
+	.endif
+
+	.ifdef	HUCC
+	.ifdef	HUC_RESERVE_BANKS		; For HuCC projects.
+HUC_USER_BANK	.rs	HUC_RESERVE_BANKS
+	.endif
+
+CONST_BANK	.rs	2
 		.data
-		.bank	DATA_BANK
+		.bank	CONST_BANK, ".const"
 		.org	$6000
-		.opt	d+			; Force DATA labels to MPR3.
+	.endif	HUCC
+
+DATA_BANK	.rs	0
+		.data
+		.bank	DATA_BANK, ".data"
+		.org	$6000
+
 		.code

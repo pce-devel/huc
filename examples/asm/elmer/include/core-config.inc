@@ -5,7 +5,7 @@
 ;
 ; Configuration settings for the "CORE(not TM)" PC Engine library code.
 ;
-; Copyright John Brandwood 2021-2022.
+; Copyright John Brandwood 2021-2024.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -55,6 +55,19 @@ USING_MPR7	=	1	; (0 or 1)
 
 	.ifndef	USING_STAGE1
 USING_STAGE1	=	0	; (0 or 1)
+	.endif
+
+;
+; Are we currently building the CD-ROM Stage1 loader?
+;
+; If this is set, the library's startup code does not call the __sound_init
+; macro because the sound driver code is not usually a part of the kernel.
+;
+; N.B. The CD-ROM Stage1 loader sets BUILDING_STAGE1=1 so it builds correctly.
+;
+
+	.ifndef	BUILDING_STAGE1
+BUILDING_STAGE1	=	0	; (0 or 1)
 	.endif
 
 ;
@@ -192,9 +205,9 @@ MAX_PADS	=	5	; (1..5)
 ;
 
 	.ifndef	RESERVE_BANKS
-	.ifndef	_KICKC
-RESERVE_BANKS	=	0
-	.else
+	.ifdef	_KICKC
 RESERVE_BANKS	=	1
+	.else
+RESERVE_BANKS	=	0
 	.endif	_KICKC
 	.endif	RESERVE_BANKS

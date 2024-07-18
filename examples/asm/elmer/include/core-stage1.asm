@@ -5,7 +5,7 @@
 ;
 ; CD-ROM Stage1 loader using the "CORE(not TM)" PC Engine library code.
 ;
-; Copyright John Brandwood 2021-2022.
+; Copyright John Brandwood 2021-2024.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -49,6 +49,18 @@ USING_STAGE1	=	0
 
 USING_MPR7	=	0
 
+		; Yes, we're currently builing the Stage1 loader.
+
+BUILDING_STAGE1	=	1
+
+		; Do NOT allocate HOME_BANK for the Stage1 loader!
+
+NEED_HOME_BANK	=	0
+
+		; Do NOT allocate SOUND_BANK for the Stage1 loader!
+
+NEED_SOUND_BANK	=	0
+
 		; This loader wants to keep DATA_BANK == CORE_BANK, so ...
 
 RESERVE_BANKS	=	-1
@@ -61,21 +73,6 @@ RESERVE_BANKS	=	-1
 		.list
 		.mlist
 
-		; Pad the kernel out to the end of the current CD sector.
-		;
-		; This file is being assembled with the PCEAS "-bin" option,
-		; so only the data used is written out, allowing the output
-		; file to be sector-aligned rather than bank-aligned.
-
-		.bss
-		.org	core_ramend
-
-		.data
-		.org	core_ramcpy
-
-		.if	(* & 2047)
-		ds	2048 - (* & 2047), 255	; Pad to end of CD sector.
-		.endif
 
 
 		.code
@@ -93,8 +90,6 @@ RESERVE_BANKS	=	-1
 ; there is at-least 192KB of extra SCD RAM available, and then it chooses to
 ; either execute the 2nd overlay file, or the CDERR overlay file.
 ;
-
-		.org	core_stage1
 
 	.if	(CDROM == SUPER_CD)		; If SuperCDROM, then ...
 
@@ -414,10 +409,12 @@ font_data:	incbin	"font8x8-stage1-exos.dat"
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; Sanity Check to ensure that this loader code fits into the chunk of memory
-; between the startup code and the kernel code.
+; Pad this loader out to the end of the current CD sector.
 ;
+; This file is being assembled with the PCEAS "-bin" option,
+; so only the data used is written out, allowing the output
+; file to be sector-aligned rather than bank-aligned.
 
-	.if	(core_ram1st & $1FFF) < (* & $1FFF)
-		.fail	The Stage1 loader overruns the kernel code!
+	.if	(* & 2047)
+		ds	2048 - (* & 2047), 255	; Pad to end of CD sector.
 	.endif

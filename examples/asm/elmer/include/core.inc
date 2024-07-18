@@ -93,8 +93,8 @@ SGX_VDC_OFFSET	=	$10		; Offset to SGX VDC chip & shadow vars.
 
 		.zp
 		.org	$2000
-_temp		ds	2		; $F8:2000 Use within any ASM routine.
-_bp_bank	ds	1		; $F8:2002 Use within any ASM routine.
+__temp		ds	2		; $F8:2000 Use within any ASM routine.
+_bp_bank	ds	1		; $F8:2002 Use within any ASM/HuCC routine.
 sgx_crl		ds	1		; $F8:2003 SGX shadow (vdc_crl = $20F3).
 sgx_crh		ds	1		; $F8:2004 SGX shadow (vdc_crh = $20F4).
 core_1stbank	ds	1		; $F8:2005 1st bank of library code.
@@ -107,8 +107,8 @@ core_zp1st	=	*		; $F8:2008 1st free user address.
 
 		.zp
 		.org	$2000
-_temp		ds	2		; Use within any ASM routine.
-_bp_bank	ds	1		; Use within any ASM routine.
+__temp		ds	2		; Use within any ASM routine.
+_bp_bank	ds	1		; Use within any ASM/HuCC routine.
 core_1stbank	ds	1		; 1st bank of engine code.
 
 core_zp1st	=	*		; 1st free user address.
