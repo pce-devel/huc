@@ -38,6 +38,8 @@ SGX_AR		= $FF:0210	; Address Register
 SGX_DL		= $FF:0212	; Data (Read/Write) Low
 SGX_DH		= $FF:0213	; Data (Read/Write) High
 
+SGX_DETECT	= $FF:0218	; $FF if SGX or VDC_SR mirror (i.e. < $80)
+
 VDC_MAWR	= 0		; Memory Address Write
 VDC_MARR	= 1		; Memory Address Read
 VDC_VWR		= 2		; VRAM Data Write
@@ -84,6 +86,10 @@ VCE_CR		= $FF:0400	; Control Register
 VCE_CTA		= $FF:0402	; Color Table Address
 VCE_CTW		= $FF:0404	; Color Table Data Write
 VCE_CTR		= $FF:0404	; Color Table Data Read
+
+XRES_SHARP	= $00
+XRES_SOFT	= $04
+XRES_BW		= $80
 
 
 
@@ -369,6 +375,11 @@ joyold		= $F8:2232 ; 5
 irq_cnt		= $F8:2241 ; 1
 vdc_mwr		= $F8:2242 ; 1	officially called mwr_m
 vdc_dcr		= $F8:2243 ; 1	officially called dcr_m
+vce_cr		= $F8:2244 ; 1	*UNDOCUMENTED* set by ex_scrmod (not 10MHz!)
+vdc_hdw		= $F8:2245 ; 1	*UNDOCUMENTED* set by ex_scrmod
+vdc_vdw		= $F8:2246 ; 1	*UNDOCUMENTED* set by ex_scrmod
+cd_not_rdy	= $F8:2247 ; 1	*UNDOCUMENTED* set if CDERR_NOT_READY from scsi_req_sense()
+cd_searching	= $F8:2248 ; 1	*UNDOCUMENTED* 1 when background cd_search() requested
 rndseed		= $F8:2249 ; 1
 rndl		= $F8:2249 ; 1
 rndh		= $F8:224A ; 1
@@ -421,7 +432,15 @@ ad_play_size	= $F8:22A6 ; 2	*UNDOCUMENTED*
 ad_play_addr	= $F8:22A8 ; 2	*UNDOCUMENTED*
 ad_play_rate	= $F8:22AA ; 1	*UNDOCUMENTED*
 
-;mprsav		= $F8:22B5 ; 8 backups of MPR when BIOS needs major bank swapping.
+;bram_count	= $F8:22B3 ; 2	*UNDOCUMENTED*
+;mprsav		= $F8:22B5 ; 8	*UNDOCUMENTED* backups of MPR when BIOS needs major bank swapping.
+;?		= $F8:22BD ; 1	*UNDOCUMENTED*
+;?		= $F8:22BE ; 1	*UNDOCUMENTED*
+
+;?		= $F8:22C1 ; 1	*UNDOCUMENTED*
+;?		= $F8:22C2 ; 1	*UNDOCUMENTED*
+;?		= $F8:22C3 ; 1	*UNDOCUMENTED*
+;?		= $F8:22C4 ; 1	*UNDOCUMENTED*
 
 ramend		= $F8:22D0 ; 1
 
@@ -619,12 +638,15 @@ VDC_HDR_336	= $0529 ; HDE HDW
 VDC_HSR_352	= $0303 ; HDS HSW (Normal)
 VDC_HDR_352	= $042B ; HDE HDW
 
-; VDC constants for 480 & 512 wide display (Set VDC_MWR_2CYCLE).
+; VDC constants for 480, 496 & 512 wide display (Set VDC_MWR_2CYCLE).
 
 VCE_CR_10MHz	= $02	   ; 86 chr (actually 85.5) -> 684 pixel slots.
 
 VDC_HSR_480	= $0D05 ; HDS HSW (Reduced)
 VDC_HDR_480	= $053B ; HDE HDW
+
+VDC_HSR_496	= $0C05 ; HDS HSW (Reduced)
+VDC_HDR_496	= $043D ; HDE HDW
 
 VDC_HSR_512	= $0B05 ; HDS HSW (Normal)
 VDC_HDR_512	= $033F ; HDE HDW

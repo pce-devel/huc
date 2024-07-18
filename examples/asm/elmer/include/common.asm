@@ -7,7 +7,7 @@
 ;
 ; These should be located in permanently-accessible memory!
 ;
-; Copyright John Brandwood 2021-2022.
+; Copyright John Brandwood 2021-2024.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -15,16 +15,6 @@
 ;
 ; ***************************************************************************
 ; ***************************************************************************
-
-;
-; Useful variables.
-;
-
-	.ifndef	_temp
-		.zp
-_temp		ds	2			; For use within a subroutine.
-		.code
-	.endif
 
 
 
@@ -63,7 +53,7 @@ wait_nvsync:	bsr	wait_vsync		; # of VBLANK IRQs to wait in
 ; banks, with the 2nd bank having no specific relation to the 1st, there
 ; is no way to deal with a bank-increment, so do not map that region.
 ;
-; N.B. Library code relies on this preserving X!
+; N.B. Library code relies on this preserving X and V!
 ;
 
 set_bp_to_mpr3:	lda.h	<_bp			; Do not remap a ptr to RAM,
@@ -95,7 +85,7 @@ set_bp_to_mpr34:lda.h	<_bp			; Do not remap a ptr to RAM,
 ;
 ; Increment the hi-byte of _bp and change TMA3 if necessary.
 ;
-; N.B. Library code relies on this preserving A,X,Y!
+; N.B. Library code relies on this preserving A,X,Y and V!
 ;
 
 inc.h_bp_mpr3:	inc.h	<_bp			; Increment hi-byte of _bp.
@@ -116,10 +106,8 @@ inc.h_bp_mpr3:	inc.h	<_bp			; Increment hi-byte of _bp.
 ;
 ; Increment the hi-byte of _bp and change TMA3 and TMA4 if necessary.
 ;
-; N.B. Library code relies on this preserving A,X,Y!
+; N.B. Library code relies on this preserving A,X,Y and V!
 ;
-
-	.if	1				; Save memory, for now.
 
 inc.h_bp_mpr34:	inc.h	<_bp			; Increment hi-byte of _bp.
 		bpl	!+			; OK if within MPR0-MPR3.
@@ -132,8 +120,6 @@ inc.h_bp_mpr34:	inc.h	<_bp			; Increment hi-byte of _bp.
 		sta.h	<_bp
 		pla
 !:		rts
-
-	.endif
 
 
 
@@ -203,157 +189,6 @@ inc.h_di_mpr4:	inc.h	<_di			; Increment hi-byte of _di.
 		sta.h	<_di
 		pla
 !:		rts
-	.endif
-
-
-
-; ***************************************************************************
-; ***************************************************************************
-;
-; Far-call a function in another bank.
-;
-; This is compatible with PCEAS's "-newproc" procedure calls, but avoids
-; generating a 10-byte procedure trampoline.
-;
-; To use this ...
-;
-;  jsr far_call
-;  tst #bank( myfunc ), myfunc - 1
-;
-; The "TST" instruction itself is skipped and NOT executed after the call,
-; it only exists to make things easier to read in a listing/debugger.
-;
-; The called .PROC routine must exit with "jmp leave_proc" and not "rts".
-;
-; leave_proc:	pla
-;		tam6
-;		tya
-;		rts
-;
-; N.B. This costs 32 bytes, and takes 82 cycles vs 18 for the trampoline
-;      code (when you exclude preserving YA in zero-page).
-;
-; N.B. This is NOT re-entrant, and must NOT be used in an IRQ handler if
-;      _temp is not saved and restored!
-;
-; N.B. This was written as an excerise, and I wouldn't recommend using it!
-;
-
-	.if	0
-
-far_call:	sta.l	<_bp			; Preserve YA registers as
-		sty.h	<_bp			; an address parameter.
-
-		pla				; Get return address.
-		sta.l	<_temp
-		clc				; Skip the far_call()
-		adc	#4			; address parameter.
-		tay
-		pla
-		sta.h	<_temp
-		adc	#0
-		pha				; Put return address.
-		phy
-
-		tma6				; Preserve MPR6.
-		pha
-
-		ldy	#4			; Push far_call() addr.
-		lda	[_temp], y
-		pha
-		dey
-		lda	[_temp], y
-		pha
-
-		dey				; Read far_call() bank.
-		lda	[_temp], y
-		tam6
-
-		rts				; Jump to routine.
-
-	.endif
-
-
-
-; ***************************************************************************
-; ***************************************************************************
-;
-; Far-call a function in another bank.
-;
-; This is compatible with PCEAS's "-newproc" procedure calls, but avoids
-; generating a 10-byte procedure trampoline.
-;
-; To use this ...
-;
-;  brk
-;  tst #bank( myfunc ), myfunc - 1
-;
-; The "TST" instruction itself is skipped and NOT executed after the call,
-; it only exists to make things easier to read in a listing/debugger.
-;
-; The called .PROC routine must exit with "jmp leave_proc" and not "rts".
-;
-; leave_proc:	pla
-;		tam6
-;		tya
-;		rts
-;
-; N.B. This costs 45 bytes, and takes 103 cycles (or 84 on HuCARD) vs 18 for
-;      the trampoline code (when you exclude preserving YA in zero-page).
-;
-; N.B. This is NOT re-entrant, and must NOT be used in an IRQ handler if
-;      _temp is not saved and restored!
-;
-; N.B. This was written as an excerise, and I wouldn't recommend using it!
-;
-
-	.if	0
-
-irq2_handler:	phx				; Preserve X register
-		tsx				;
-		tst	#$10, $2102, x		; Is the B flag set?
-		beq	.got_irq2		;
-		plx				; Restore X register.
-
-		; Handle interrupt as BRK.
-
-.got_brk:	plp				; Restore interrupt flag.
-
-		sta.l	<_bp			; Preserve YA registers as
-		sty.h	<_bp			; an address parameter.
-
-		pla				; Get return address lo-byte.
-		sta.l	<_temp
-		clc				; Skip the far_call()
-		adc	#2			; address parameter.
-		tay
-
-		pla				; Get return address hi-byte.
-		sta.h	<_temp
-		adc	#0
-		pha				; Put updated return address.
-		phy
-
-		tma6				; Preserve MPR6.
-		pha
-
-		ldy	#2			; Push far_call() addr.
-		lda	[_temp], y
-		pha
-		dey
-		lda	[_temp], y
-		pha
-
-		lda	[_temp]			; Read far_call() bank.
-		tam6
-
-		rts				; Jump to routine.
-
-		; Handle interrupt as IRQ2.
-
-.got_irq2:	plx				; Process as an interrupt.
-		; ...
-
 	.endif
 
 

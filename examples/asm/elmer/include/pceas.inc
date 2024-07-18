@@ -72,10 +72,6 @@ leave		.macro
 	.else
 
 leave		.macro
-	.ifdef	HUC
-		clx
-	.endif	HUC
-		tya
 		rts
 		.endm
 

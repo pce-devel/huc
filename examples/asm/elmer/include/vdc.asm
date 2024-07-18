@@ -237,17 +237,23 @@ set_mode_vdc	.proc
 		cly				; Table size is < 256 bytes.
 
 .loop:		lda	[_bp], y		; Get the register #, +ve for
-		beq	.done			; VDC, -128 for VCE.
+		beq	.done			; VDC, -128 for VCE_CR.
 		bpl	.set_vdc_reg
 
-		; Set a VCE register.
+		; Set the VCE_CR register.
 
-.set_vce_reg:	iny
+.set_vce_cr:	iny
 
 		lda	[_bp], y		; Get lo-byte of register.
 		iny
-		sta	VCE_CR			; Set the VCE clock speed and
-		bra	.loop			; artifact reduction.
+		sta	vce_cr			; No SGX shadow for this!
+		sta	VCE_CR			; Set the VCE clock speed.
+
+		and	#2			; Is this VCE_CR_10MHz?
+		beq	.mwr_shadow		; VDC_MWR_1CYCLE when <= 7MHz.
+		lda	#VDC_MWR_2CYCLE		; VDC_MWR_2CYCLE when == 10MHz.
+.mwr_shadow:	sta	vdc_mwr			; No SGX shadow for this!
+		bra	.loop			; Do not set VDC_MWR reg bits!
 
 		; Set a VDC register.
 
@@ -258,7 +264,14 @@ set_mode_vdc	.proc
 		beq	.skip_cc
 		clc				; CC if not VDC_CR.
 
-.skip_cc:	lda	[_bp], y		; Get lo-byte of register.
+		eor	#VDC_MWR		; Check if this the VDC_MWR
+		bne	.skip_cc		; without changing CC.
+
+		lda	vdc_mwr			; Get MWR access speed bits.
+		db	$B0			; Use "BCS" to skip "CLA".
+
+.skip_cc:	cla
+		ora	[_bp], y		; Get lo-byte of register.
 		iny
 		bcc	.not_vdc_cr
 
@@ -314,9 +327,7 @@ set_mode_vdc	.proc
 ;
 ; sgx_detect - Detect whether we're running on a SuperGrafx (and init VPC).
 ;
-; Returns: Y,Z-flag,N-flag, and "sgx_detected" = NZ if detected.
-;
-; Note that this clears VRAM address $7F7F in both the VDC and SGX.
+; Returns: X,C-flag, and "sgx_detected" = NZ, CS if detected.
 ;
 ; ***************************************************************************
 ;
@@ -341,7 +352,7 @@ set_mode_vdc	.proc
 ;  Bit 2: Bit 0 of priority setting
 ;  Bit 3: Bit 1 of priority setting
 ;
-;   Priority Setting $00xx: (useful when VDC #1 is a fullscreen HUD)
+;   Priority Setting 0b00xx: (useful when VDC #1 is a fullscreen HUD)
 ;
 ;    FRONT
 ;     SP1'= VDC #1 high priority sprites
@@ -352,7 +363,7 @@ set_mode_vdc	.proc
 ;     SP2 = VDC #2 low priority sprites
 ;    BACK
 ;
-;   Priority Setting $01xx: (useful for parallax backgrounds)
+;   Priority Setting 0b01xx: (useful for parallax backgrounds)
 ;
 ;    FRONT
 ;     SP1'= VDC #1 high priority sprites
@@ -363,7 +374,7 @@ set_mode_vdc	.proc
 ;     SP2 = VDC #2 low priority sprites
 ;    BACK
 ;
-;   Priority Setting $10xx: (only useful for special effects)
+;   Priority Setting 0b10xx: (only useful for special effects)
 ;
 ;    FRONT
 ;     BG1 = VDC #1 background (with holes for sprites)
@@ -373,35 +384,22 @@ set_mode_vdc	.proc
 ;     SP1'= VDC #1 high priority sprites
 ;     SP1 = VDC #1 low priority sprites
 ;    BACK
-;
 
 	.if	SUPPORT_SGX
 sgx_detect	.proc
 
-		ldy	#$7F			; Use VRAM address $7F7F
-		sty.l	<_di			; because it won't cause
-		sty.h	<_di			; a screen glitch.
-
-		jsr	sgx_di_to_mawr		; Write $007F to SGX VRAM.
-		sty	SGX_DL
-		stz	SGX_DH
-
-		jsr	vdc_di_to_mawr		; Write $0000 to VDC VRAM.
-		stz	VDC_DL
-		stz	VDC_DH
-
-		jsr	sgx_di_to_marr		; Check value in SGX VRAM.
-		ldy	SGX_DL			; $7F if found, $00 if not.
-		sty	sgx_detected
-		beq	!+			; Skip the rest if not SGX.
-
-		jsr	sgx_di_to_mawr		; Write $0000 to SGX VRAM
-		stz	SGX_DL			; to clean VRAM contents.
-		stz	SGX_DH
+		lda	#$80			; Check the top bit, 1 if SGX
+		and	SGX_DETECT		; or 0 if a mirror of VDC_SR.
+		beq	!+
 
 		tii	.vpc_mode, VPC_CR, 8	; Initialize the HuC6202 VPC.
+		lda	#$FF
 
-!:		leave				; All done, phew!
+!:		sta	sgx_detected
+		tax				; "leave" copies X back to A.
+		lsr	a			; Also CC if PCE, CS if SGX.
+
+		leave				; All done, phew!
 
 	.ifndef	SGX_PARALLAX
 SGX_PARALLAX	=	1			; The most common default.
@@ -429,9 +427,8 @@ sgx_detected:	ds	1			; NZ if SuperGrafx detected.
 
 	.endif	SUPPORT_SGX
 
-;
-;
-;
+
+
 
 vdc_copy_to	.procgroup			; These routines share code!
 
@@ -447,70 +444,6 @@ vdc_copy_to	.procgroup			; These routines share code!
 ;
 ; N.B. This kind of self-modifying spaghetti code is why folks hate asm! ;-)
 ;
-
-		;
-		; This subroutine does the core of the transfer.
-		;
-		; Because it self-modifies, it needs to be in RAM on a HuCARD.
-		;
-
-tia_to_vram_len	=	51			; Size of self-modifying code.
-
-	.if	CDROM
-tia_to_vram_ram:				; CD-ROM code can self-modify.
-	.else
-		.bss
-tia_to_vram_ram:ds	tia_to_vram_len		; HuCARD must put code in RAM.
-		.code
-	.endif
-
-tia_to_vram_rom:
-
-.next_page:	iny				; Increment source page.
-		bpl	.same_bank		; Still in MPR3?
-.next_bank:	tay				; Preserve address lo-byte.
-		tma4
-		tam3
-		inc	a
-		tam4
-		tya				; Restore address lo-byte.
-		ldy.h	#$6000			; Wrap address hi-byte.
-.same_bank:	dex				; Number of chunks (lo-byte).
-		beq	.next_block		; ... or drop through!
-
-		;
-		; The subroutine execution actually starts here!
-		;
-		; Because procedures are relocated just before the final
-		; pass, these addresses can change in the final pass and
-		; so must be ".set" because ".equ" will flag the changed
-		; address as an error!
-		;
-
-tia_to_vram	.set	tia_to_vram_ram + (* - .next_page)
-tia_to_vram_tia	.set	tia_to_vram + 7
-
-.entry_point:	clc
-		sty.h	tia_to_vram_tia + 1	; TIA source address hi-byte.
-.chunk_loop:	sta.l	tia_to_vram_tia + 1	; TIA source address lo-byte.
-		tia	$1234, VDC_DL, VRAM_XFER_SIZE
-		adc	#VRAM_XFER_SIZE		; Increment source address.
-		bcs	.next_page
-.same_page:	dex				; Number of chunks (lo-byte).
-		bne	.chunk_loop
-.next_block:	dec.h	<_ax			; Number of chunks (hi-byte).
-		bpl	.entry_point
-
-		pla				; Restore MPR4.
-		tam4
-		pla				; Restore MPR3.
-		tam3
-
-		leave				; All done, phew!
-
-	.if	tia_to_vram_len != (* - .next_page)
-		.fail	The tia_to_vram code length has changed!
-	.endif
 
 		;
 		; Main procedure entry points that set up the registers for the
@@ -537,17 +470,44 @@ copy_to_vdc	.proc
 
 		jsr	set_bp_to_mpr34		; Map data to MPR3 & MPR4.
 
-		jsr	set_di_to_mawr		; Set VRAM write address.
+	.if	!CDROM
+		lda	tia_to_vram		; Is the self-modifying code
+		bne	!+			; already in RAM?
+		tii	tia_to_vram_rom, tia_to_vram_ram, tia_to_vram_len
+	.endif
+
+!:		jsr	set_di_to_mawr		; Set VRAM write address.
 
 	.if	SUPPORT_SGX
 		inx				; Set VDC or SGX destination.
 		inx
-		stx	tia_to_vram_tia + 3
+		stx	!modify_tia+ + 3
 	.endif
 
+	.if	0
+		ldx.l	<_bp			; Source address in CPU RAM.
+		ldy.h	<_bp
+
+		lda	#VRAM_XFER_SIZE
+		sta	!modify_tia+ + 5	; TIA length lo-byte.
+
+		lda.l	<_ax
+	.if	VRAM_XFER_SIZE == 16
+		lsr.h	<_ax
+		ror	a
+	.endif
+		lsr.h	<_ax
+		ror	a
+		lsr.h	<_ax
+		ror	a
+		lsr.h	<_ax
+		ror	a			; Number of chunks (lo-byte).
+		sax
+	.else
 		lda.l	<_bp			; Source address in CPU RAM.
 		ldy.h	<_bp
 		ldx.l	<_ax			; Number of chunks (lo-byte).
+	.endif
 
 	.if	CDROM
 		bne	tia_to_vram		; On CD-ROM, the code is close.
@@ -561,27 +521,64 @@ copy_to_vdc	.proc
 
 		.endp
 
-
+		;
+		; This subroutine does the core of the transfer.
+		;
+		; Because it self-modifies, it needs to be in RAM on a HuCARD.
+		;
 
 	.if	!CDROM
+tia_to_vram_rom	.phase	tia_to_vram_ram		; Assemble this to run in RAM.
+	.endif
 
-; ***************************************************************************
-; ***************************************************************************
-;
-; init_vram_copy - Initialize the copy-to-vram subroutine in PCE RAM.
-;
-; N.B. Only needed on HuCARD, because SCD/ACD can just modify in-place.
-;
+!next_page:	iny				; Increment source page.
+		bpl	!same_bank+		; Still in MPR3?
+!next_bank:	tay				; Preserve address lo-byte.
+		tma4
+		tam3
+		inc	a
+		tam4
+		tya				; Restore address lo-byte.
+		ldy.h	#$6000			; Wrap address hi-byte.
+!same_bank:	dex				; Number of chunks (lo-byte).
+		beq	!next_block+		; ... or drop through!
 
-init_vram_copy	.proc
+		; The subroutine execution actually starts here!
 
-		tii	tia_to_vram_rom, tia_to_vram_ram, tia_to_vram_len
+tia_to_vram:	clc
+		sty.h	!modify_tia+ + 1	; TIA source address hi-byte.
+!chunk_loop:	sta.l	!modify_tia+ + 1	; TIA source address lo-byte.
+!modify_tia:	tia	$1234, VDC_DL, VRAM_XFER_SIZE
+		adc	#VRAM_XFER_SIZE		; Increment source address.
+		bcs	!next_page-
+!same_page:	dex				; Number of chunks (lo-byte).
+		bne	!chunk_loop-
+!next_block:	dec.h	<_ax			; Number of chunks (hi-byte).
+		bpl	tia_to_vram
+
+;		lda.l	<_ax
+;		and	#VRAM_XFER_SIZE - 1
+;		bne	!last_words+
+
+		pla				; Restore MPR4.
+		tam4
+		pla				; Restore MPR3.
+		tam3
 
 		leave				; All done, phew!
 
-		.endp
+;!last_words:	stz.l	<_ax
+;		sta	!modify_tia- + 5	; TIA length lo-byte.
+;		inx
+;		bra	tia_to_vram
 
-	.endif	!CDROM
+	.if	!CDROM
+		.dephase			; Continue assembling in ROM.
+tia_to_vram_len =	(* - tia_to_vram_rom)
+		.bss
+tia_to_vram_ram	ds	tia_to_vram_len		; HuCARD must put code in RAM.
+		.code
+	.endif
 
 		.endprocgroup
 
@@ -628,7 +625,7 @@ init_240x208	.proc
 
 	.if	SUPPORT_SGX
 		call	sgx_detect		; Are we really on an SGX?
-		beq	!+
+		bcc	!+
 		ldy	#^.mode_240x208		; Set SGX 1st, with no VBL.
 		call	set_mode_sgx
 	.endif
@@ -721,7 +718,7 @@ init_256x224	.proc
 
 	.if	SUPPORT_SGX
 		call	sgx_detect		; Are we really on an SGX?
-		beq	!+
+		bcc	!+
 		ldy	#^.mode_256x224		; Set SGX 1st, with no VBL.
 		call	set_mode_sgx
 	.endif
@@ -741,7 +738,7 @@ init_256x224	.proc
 		; A standard 256x224 screen with overscan.
 
 .mode_256x224:	db	$80			; VCE Control Register.
-		db	VCE_CR_5MHz + 4		;   Video Clock + Artifact Reduction
+		db	VCE_CR_5MHz + XRES_SOFT	;   Video Clock + Artifact Reduction
 
 		db	VDC_MWR			; Memory-access Width Register
 		dw	VDC_MWR_64x32 + VDC_MWR_1CYCLE
@@ -814,7 +811,7 @@ init_352x224	.proc
 
 	.if	SUPPORT_SGX
 		call	sgx_detect		; Are we really on an SGX?
-		beq	!+
+		bcc	!+
 		ldy	#^.mode_352x224		; Set SGX 1st, with no VBL.
 		call	set_mode_sgx
 	.endif
@@ -834,7 +831,7 @@ init_352x224	.proc
 		; A standard 352x224 screen with overscan.
 
 .mode_352x224:	db	$80			; VCE Control Register.
-		db	VCE_CR_7MHz + 4		;   Video Clock + Artifact Reduction
+		db	VCE_CR_7MHz + XRES_SOFT	;   Video Clock + Artifact Reduction
 
 		db	VDC_MWR			; Memory-access Width Register
 		dw	VDC_MWR_64x32 + VDC_MWR_1CYCLE
@@ -907,7 +904,7 @@ init_512x224	.proc
 
 	.if	SUPPORT_SGX
 		call	sgx_detect		; Are we really on an SGX?
-		beq	!+
+		bcc	!+
 		ldy	#^.mode_512x224		; Set SGX 1st, with no VBL.
 		call	set_mode_sgx
 	.endif
@@ -927,7 +924,7 @@ init_512x224	.proc
 		; A standard 512x224 screen with overscan.
 
 .mode_512x224:	db	$80			; VCE Control Register.
-		db	VCE_CR_10MHz + 4	;   Video Clock + Artifact Reduction
+		db	VCE_CR_10MHz + XRES_SOFT;   Video Clock + Artifact Reduction
 
 		db	VDC_MWR			; Memory-access Width Register
 		dw	VDC_MWR_64x32 + VDC_MWR_2CYCLE
@@ -1002,7 +999,7 @@ init_320x208	.proc
 
 	.if	SUPPORT_SGX
 		call	sgx_detect		; Are we really on an SGX?
-		beq	!+
+		bcc	!+
 		ldy	#^.mode_320x208		; Set SGX 1st, with no VBL.
 		call	set_mode_sgx
 	.endif
@@ -1022,7 +1019,7 @@ init_320x208	.proc
 		; A standard 352x224 screen with overscan.
 
 .mode_320x208:	db	$80			; VCE Control Register.
-		db	VCE_CR_7MHz + 4		;   Video Clock + Artifact Reduction
+		db	VCE_CR_7MHz + XRES_SOFT	;   Video Clock + Artifact Reduction
 
 		db	VDC_MWR			; Memory-access Width Register
 		dw	VDC_MWR_64x32 + VDC_MWR_1CYCLE
