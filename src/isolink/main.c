@@ -571,24 +571,44 @@ ipl_write(FILE *outfile)
 
          /* Does the 1st file on the CD identify the project type? */
          if (prj_type[0] == 0x4C) {
-            if (prj_type[3] == 'H' && prj_type[4] == 'u' && prj_type[5] == 'C') {
+            if (memcmp("HuC", prj_type + 3, 3) == 0) {
                /* HuC v4 with startup.asm changes from 2022 */
                use_ipl_scd = 0;
                asm_flag = 0;
             }
-            if (prj_type[3] == ' ' && prj_type[4] == 'C' && prj_type[5] == 'D') {
+            else
+            if (memcmp(" CD", prj_type + 3, 3) == 0) {
                /* HuCC or CORE asm-library CD */
                use_ipl_scd = 0;
                asm_flag = 1;
             }
-            if (prj_type[3] == 'S' && prj_type[4] == 'C' && prj_type[5] == 'D') {
+            else
+            if (memcmp("SCD", prj_type + 3, 3) == 0) {
                /* HuCC or CORE asm-library SuperCD */
                use_ipl_scd = 1;
                asm_flag = 1;
             }
-            if (prj_type[3] == 'S' && prj_type[4] == 'G' && prj_type[5] == 'X') {
+            else
+            if (memcmp("SGX", prj_type + 3, 3) == 0) {
                /* HuCC or CORE asm-library SuperGRAFX SuperCD */
                use_ipl_scd = 1;
+               asm_flag = 1;
+               sgx_flag = 1;
+            }
+            else
+            if (memcmp("SC1", prj_type + 3, 3) == 0) {
+               /* HuCC or CORE asm-library SuperCD Stage1 loader */
+               /* If use_ipl_scd then the kernel won't be loaded */
+               /* when running on the wrong System Card! */
+               use_ipl_scd = 0;
+               asm_flag = 1;
+            }
+            else
+            if (memcmp("SG1", prj_type + 3, 3) == 0) {
+               /* HuCC or CORE asm-library SuperGRAFX SuperCD Stage1 loader */
+               /* If use_ipl_scd then the kernel won't be loaded */
+               /* when running on the wrong System Card! */
+               use_ipl_scd = 0;
                asm_flag = 1;
                sgx_flag = 1;
             }
