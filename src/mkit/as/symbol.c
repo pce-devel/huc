@@ -408,7 +408,7 @@ labldef(int reason)
 	else if (pass == LAST_PASS) {
 		if ((lablptr->value != labl_value) || (lablptr->overlay != labl_overlay) ||
 		    ((reason == LOCATION) && (labl_mprbank < UNDEFINED_BANK) && (lablptr->mprbank != labl_mprbank))) {
-			fatal_error("Symbol's bank or address changed in final pass!");
+			error("Symbol's bank or address changed in final pass!");
 			#if 0
 			fprintf(ERROUT, "lablptr->value = $%04x, labl_value = $%04x\n", lablptr->value, labl_value);
 			fprintf(ERROUT, "lablptr->mprbank = $%02x, labl_mprbank = $%02x\n", lablptr->mprbank, labl_mprbank);
