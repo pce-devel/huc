@@ -142,6 +142,12 @@ color_bank:	ds	8			; Ring buffer - Data Ptr (bank).
 ; N.B. Y==0 is only useful if the palette data is permanently mapped!
 ;
 
+palette_group	.procgroup
+
+;_load_palette	.proc
+;		ldy	<_bp_bank
+;		.endp
+
 load_palettes	.proc
 
 		ldx	color_queue_w		; Get the queue's write index.
@@ -170,6 +176,7 @@ load_palettes	.proc
 
 		.endp
 
+		.endprocgroup			; palette_group
 
 
 ; ***************************************************************************
