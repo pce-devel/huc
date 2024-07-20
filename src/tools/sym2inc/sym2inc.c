@@ -18,8 +18,10 @@
 
 #include "elmer.h"
 
+#ifndef __APPLE__
 #include "strlcpy.c"
 #include "strlcat.c"
+#endif
 
 #ifndef GIT_VERSION
   #define GIT_VERSION "unknown"
