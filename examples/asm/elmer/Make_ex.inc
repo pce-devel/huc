@@ -38,7 +38,7 @@ endif
 
 # GNU Make wants UNIX path separators in the makefile.
 
-VPATH = ../include:../font:../data
+VPATH = ../include:../font:../data:../../../../include/hucc
 
 # PCE_INCLUDE needs platform-specific path separators.
 
