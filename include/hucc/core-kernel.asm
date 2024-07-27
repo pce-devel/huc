@@ -128,8 +128,6 @@ core_irq2:	bbs0	<irq_vec, .hook		; 8 cycles if using hook.
 		pla				; Restore caller's MPR7.
 		tam7
 
-		cli				; Allow IRQ1 to interrupt.
-
 		pla
 		rti
 
