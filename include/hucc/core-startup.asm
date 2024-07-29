@@ -578,8 +578,8 @@ HOME_BANK	.rs	1
 	.endif
 	.endif
 
-	.ifdef	NEED_SOUND_BANK			; Defined in sound.inc if needed
-	.if	NEED_SOUND_BANK
+	.ifdef	NEED_SOUND_BANK			; Defined in hucc-sound.inc
+	.if	NEED_SOUND_BANK			; if the driver wants a bank.
 SOUND_BANK	.rs	1
 	.endif
 	.endif

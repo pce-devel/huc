@@ -564,6 +564,9 @@ void callfunction (char *ptr)
 		}
 	}
 
+//	flush_ins();
+//	ot("__calling\n");
+
 	if (ptr == NULL) {
 		/* save indirect call function-ptr on the hardware-stack */
 		out_ins(I_SPUSHW, 0, 0);
@@ -757,6 +760,9 @@ void callfunction (char *ptr)
 		if (fast && !(fast->flags & FASTCALL_XSAFE))
 			out_ins(I_LOADSP, 0, 0);
 	}
+
+//	flush_ins();
+//	ot("__called\n");
 
 	/* adjust stack */
 	if (argsiz) {

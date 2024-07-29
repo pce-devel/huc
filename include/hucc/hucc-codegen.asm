@@ -260,7 +260,7 @@ __leave		.macro
 ; cannot push/pop because the user can jump to another #asm section
 
 __savesp	.macro	; __STACK
-		stx	<__sp
+		phx
 		.endm
 
 ; **************
@@ -268,7 +268,26 @@ __savesp	.macro	; __STACK
 ; used when leaving a #asm section that is not __xsafe
 
 __loadsp	.macro	; __STACK
-		ldx	<__sp
+		plx
+		.endm
+
+; **************
+; the compiler can generate this to aid debugging C data-stack
+; balance problems before/after a function call
+
+__calling	.macro
+		phx
+		.endm
+
+; **************
+; the compiler can generate this to aid debugging C data-stack
+; balance problems before/after a function call
+
+__called	.macro
+		stx	<__sp
+		plx
+		cpx	<__sp
+!hang:		bne	!hang-
 		.endm
 
 ; **************
@@ -2461,3 +2480,6 @@ ___case:	sta.l	<__temp		; store the value to check to
 ; ----
 
 call_indirect:	jmp	[__ptr]
+
+
+
