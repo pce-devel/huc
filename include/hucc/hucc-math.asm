@@ -90,6 +90,7 @@ __mulint:	sta	<multiplicand + 0
 		rts
 
 
+
 ; ***************************************************************************
 ; unsigned int
 ; _divuint (unsigned int x, unsigned int y)
@@ -103,6 +104,7 @@ __divuint:	jsr	__moduint		; Call the basic uint division.
 		lda.l	<quotient		; Then get the result from where
 		ldy.h	<quotient		; it was calculated.
 		rts
+
 
 
 ; ***************************************************************************
@@ -243,6 +245,7 @@ __divsint:	jsr	__modsint		; Call the basic sint division.
 		rts
 
 
+
 ; ***************************************************************************
 ; int
 ; _modsint (int x, int y)
@@ -298,6 +301,7 @@ __modsint:	sty.h	<dividend
 		rts
 
 
+
 ; ***************************************************************************
 ; unsigned int
 ; _muluchar (unsigned char x, unsigned char y)
@@ -332,6 +336,7 @@ muluchar_a:	ldy	#8			; Loop 8 times.
 		rts
 
 
+
 ; ***************************************************************************
 ; signed int
 ; abs (signed int x)
@@ -350,6 +355,9 @@ neg_yacs:	eor	#$FF
 		adc	#0
 		say
 !:		rts
+
+_abs.1		.alias	_abs
+
 
 
 ; ***************************************************************************
@@ -386,6 +394,7 @@ __mulschar:	sta	<multiplicand		; Remember multiplicand sign.
 		rts
 
 
+
 ; ***************************************************************************
 ; unsigned int
 ; _mulsuchar (signed char x, signed char y)
@@ -398,6 +407,7 @@ __mulschar:	sta	<multiplicand		; Remember multiplicand sign.
 
 __mulsuchar:	say				; Put the signed param in A.
 		; drop through to __muluschar
+
 
 
 ; ***************************************************************************
@@ -419,6 +429,7 @@ __muluschar:	cmp	#$80			; Is multiplicand -ve?
 		plp				; Was multiplicand -ve?
 		bcs	neg_yacs		; Then negate the product.
 		rts
+
 
 
 ; ***************************************************************************
@@ -449,6 +460,7 @@ divmodu8_a:	asl	a			; Rotate dividend, MSB -> C.
 		rts				; Return the 16-bit remainder.
 
 
+
 ; ***************************************************************************
 ; unsigned int
 ; _divuchar (unsigned char x, unsigned char y)
@@ -461,6 +473,7 @@ __divuchar:	jsr	__moduchar
 
 		lda	<dividend		; Get the dividend lo-byte.
 		rts				; Return the 16-bit dividend.
+
 
 
 ; ***************************************************************************
@@ -516,6 +529,7 @@ divmods8_a:	jsr	divmodu8_a		; Do the unsigned division.
 !:		rts
 
 
+
 ; ***************************************************************************
 ; signed int
 ; _moduschar (unsigned char x, unsigned char y)
@@ -531,6 +545,7 @@ __moduschar:	sty.l	<divisor
 		php				; Remember quotient sign.
 		bmi	divmods8_neg
 		bra	divmods8_a
+
 
 
 ; ***************************************************************************
@@ -555,6 +570,7 @@ __modsuchar:	tax				; Preserve the dividend.
 		bra	divmods8_a
 
 
+
 ; ***************************************************************************
 ; signed int
 ; _divschar (signed char x, signed char y)
@@ -570,6 +586,7 @@ __divschar:	jsr	__modschar
 		rts
 
 
+
 ; ***************************************************************************
 ; signed int
 ; _divuschar (unsigned char x, unsigned char y)
@@ -583,6 +600,7 @@ __divuschar:	jsr	__moduschar
 		lda.l	<dividend
 		ldy.h	<dividend
 		rts
+
 
 
 ; ***************************************************************************

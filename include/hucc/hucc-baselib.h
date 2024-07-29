@@ -107,6 +107,8 @@ extern unsigned char __fastcall __xsafe rand( void );
 extern unsigned char __fastcall __xsafe __macro cd_execoverlay( unsigned char ovl_index<acc> );
 extern unsigned char __fastcall __xsafe __macro ac_exists( void );
 
+extern unsigned int __fastcall __xsafe abs( int value<acc> );
+
 #endif // __HUCC__
 
 #endif // _hucc_baselib_h
