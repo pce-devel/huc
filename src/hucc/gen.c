@@ -246,7 +246,7 @@ void gbank (unsigned char bank, unsigned short offset)
  */
 void jump (int label)
 {
-	out_ins(I_LBRA, T_LABEL, label);
+	out_ins(I_BRA, T_LABEL, label);
 }
 
 /*
@@ -257,9 +257,9 @@ void testjump (int label, int ft)
 {
 	out_ins(I_TSTW, 0, 0);
 	if (ft)
-		out_ins(I_LBNE, T_LABEL, label);
+		out_ins(I_BNE, T_LABEL, label);
 	else
-		out_ins(I_LBEQ, T_LABEL, label);
+		out_ins(I_BEQ, T_LABEL, label);
 }
 
 /*

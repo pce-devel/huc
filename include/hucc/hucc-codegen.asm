@@ -1287,15 +1287,24 @@ __mulwi		.macro
 
 ; **************
 
-__lbra		.macro
+__bra		.macro
 		bra	\1
 		.endm
 
 ; **************
+; boolean test and branch
 
-__lbeq		.macro
+__beq		.macro
 		cmp	#0
 		beq	\1
+		.endm
+
+; **************
+; boolean test and branch
+
+__bne		.macro
+		cmp	#0
+		bne	\1
 		.endm
 
 ; ************** NEW and UNIMPLEMENTED!
@@ -1304,13 +1313,6 @@ __lbeqw		.macro
 		sty	<__temp
 		ora	<__temp
 		beq	\1
-		.endm
-
-; **************
-
-__lbne		.macro
-		cmp	#0
-		bne	\1
 		.endm
 
 ; **************

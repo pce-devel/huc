@@ -66,9 +66,9 @@
 #define I_PUSHW         33
 #define I_POPW          34
 #define I_TSTW          35
-#define I_LBRA          36
-#define I_LBEQ          37
-#define I_LBNE          38
+#define I_BRA           36
+#define I_BEQ           37
+#define I_BNE           38
 #define I_BANK          39
 #define I_OFFSET        40
 #define I_FARPTR        41

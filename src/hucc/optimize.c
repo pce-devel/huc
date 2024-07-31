@@ -943,7 +943,7 @@ lv1_loop:
 		/* 2-instruction patterns */
 		if (q_nb >= 2) {
 			if (p[0]->code == I_LABEL &&
-			    (p[1]->code == I_LBRA) &&
+			    (p[1]->code == I_BRA) &&
 			    p[1]->type == T_LABEL &&
 			    p[0]->data == p[1]->data) {
 				*p[1] = *p[0];
@@ -1798,7 +1798,7 @@ void flush_ins_label (int nextlabel)
 	while (q_nb) {
 		/* skip last op if it's a branch to nextlabel */
 		if (q_nb > 1 || nextlabel == -1 ||
-		    (q_ins[q_rd].code != I_LBRA) ||
+		    (q_ins[q_rd].code != I_BRA) ||
 		    q_ins[q_rd].data != nextlabel) {
 			/* gen code */
 			if (arg_stack_flag)

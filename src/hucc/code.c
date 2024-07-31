@@ -701,20 +701,20 @@ void gen_code (INS *tmp)
 		ol("__tstw");
 		break;
 
-	case I_LBRA:
-		ot("__lbra\t");
+	case I_BRA:
+		ot("__bra\t");
 		outlabel((int)data);
 		nl();
 		break;
 
-	case I_LBEQ:
-		ot("__lbeq\t");
+	case I_BEQ:
+		ot("__beq\t");
 		outlabel((int)data);
 		nl();
 		break;
 
-	case I_LBNE:
-		ot("__lbne\t");
+	case I_BNE:
+		ot("__bne\t");
 		outlabel((int)data);
 		nl();
 		break;
