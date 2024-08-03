@@ -241,6 +241,12 @@ __trampolineptr =	$5FFF			; are in MPR2, tell PCEAS to
 
 CORE_BANK	=	bank(*) - _bank_base	; It isn't always zero! ;-)
 
+	.if	USING_MPR7
+CORE_PAGE	=	7			; User code runs in MPR7.
+	.else
+CORE_PAGE	=	2			; User code runs in MPR2.
+	.endif	USING_MPR7
+
 core_boot:	jmp	* + 6			; Allow someone to patch this.
 
 		; Add an ident string so isoLINK can autodetect configuration.
@@ -530,15 +536,8 @@ core_ramend	rs	0
 ; so the amount of free space left depends upon the number of ".proc" calls.
 ;
 
-	.if	USING_MPR7
-		; Switch to MPR7 to run the developer's game code.
-
-		.page	7			; User code runs in MPR7.
-	.else
-		; Switch to MPR2 to run the developer's game code.
-
-		.page	2			; User code runs in MPR2.
-	.endif	USING_MPR7
+		; Switch to CORE_PAGE to run the developer's game code.
+		.page	CORE_PAGE
 
 
 
