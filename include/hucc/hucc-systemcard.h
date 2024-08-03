@@ -34,8 +34,8 @@
 #define  BM_DIR_CORRUPTED  3
 #define  BM_FILE_EMPTY     4
 #define  BM_FULL           5
-#define  BM_NOT_FORMATED   0xFF			; HuC incorrect spelling.
-#define  BM_NOT_FORMATTED  0xFF			; HuCC can use a dictionary!
+#define  BM_NOT_FORMATED   0xFF			// HuC incorrect spelling.
+#define  BM_NOT_FORMATTED  0xFF			// HuCC can use a dictionary!
 
 #define  BRAM_STARTPTR     0x8010
 
