@@ -290,7 +290,8 @@ core_main:	tma7				; Get the CORE_BANK.
 
 		call	_main			; Execute the HuCC program.
 
-.hang:		jmp	.hang			; Why did it return???
+		lda	<__hucc_ret		; Pass the exit code on, then
+		jmp	_exit.1			; hang if not running TGEMU.
 
 .stack_fill:	db	$EA,$EA			; To make it easier to see.
 
