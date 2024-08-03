@@ -25,6 +25,7 @@
 
 		.code
 		.bank	CORE_BANK
+		.page	CORE_PAGE
 
 		include	"hucc-final-extra.asm"
 
@@ -32,6 +33,7 @@
 
 		.code
 		.bank	CORE_BANK
+		.page	CORE_PAGE
 
 		include	"common.asm"		; Common helpers.
 		include	"vce.asm"		; Useful VCE routines.
