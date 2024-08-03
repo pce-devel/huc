@@ -19,6 +19,42 @@
 ; ***************************************************************************
 ; ***************************************************************************
 ;
+; void __fastcall __xsafe dump_screen( void );
+;
+; THIS IS AN ILLEGAL INSTRUCTION ONLY IMPLEMENTED BY THE TGEMU EMULATOR!
+
+_dump_screen:	db	0x33
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; void __fastcall __xsafe abort( void );
+;
+; THIS IS AN ILLEGAL INSTRUCTION ONLY IMPLEMENTED BY THE TGEMU EMULATOR!
+
+_abort:		db	0xE2
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; void __fastcall __xsafe exit( int value<acc> );
+;
+; THIS IS AN ILLEGAL INSTRUCTION ONLY IMPLEMENTED BY THE TGEMU EMULATOR!
+
+_exit.1:	tax				; Put the return code into X.
+		db	0x63
+
+.hang:		bra	.hang			; Hang if used in normal code.
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
 ; unsigned char __fastcall __xsafe __macro cd_execoverlay( unsigned char ovl_index<acc> );
 ;
 ; Execute program overlay from disc

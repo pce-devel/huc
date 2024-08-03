@@ -109,6 +109,13 @@ extern unsigned char __fastcall __xsafe __macro ac_exists( void );
 
 extern unsigned int __fastcall __xsafe abs( int value<acc> );
 
+// Functions that are only implemented in the TGEMU emulator for unit-testing
+// the compiler and which should never be used in normal HuCC projects ...
+
+extern void __fastcall __xsafe dump_screen( void );
+extern void __fastcall __xsafe abort( void );
+extern void __fastcall __xsafe exit( int value<acc> );
+
 #endif // __HUCC__
 
 #endif // _hucc_baselib_h
