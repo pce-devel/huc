@@ -327,14 +327,6 @@ int primary (LVALUE *lval, int comma)
 					/* special variables */
 					blanks();
 					if ((ch() != '[') && (ch() != '(')) {
-						/* vram */
-						if (strcmp(ptr->name, "vram") == 0) {
-							if (indflg)
-								return (1);
-							else
-								error("can't access vram this way");
-						}
-						/* others */
 						immed(T_SYMBOL, (intptr_t)ptr);
 //						error ("can't access far array");
 					}

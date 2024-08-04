@@ -56,18 +56,6 @@ void getmem (SYMBOL *sym)
 }
 
 /*
- *	fetch a hardware register into the primary register
- */
-void getio (SYMBOL *sym)
-{
-	out_ins(I_CALL, T_LIB, (intptr_t)"getvdc");
-}
-void getvram (SYMBOL *sym)
-{
-	out_ins(I_CALL, T_LIB, (intptr_t)"readvram");
-}
-
-/*
  *	fetch the address of the specified symbol into the primary register
  *
  */
@@ -125,22 +113,6 @@ void putstk (char typeobj)
 		out_ins(I_STBPS, 0, 0);
 	else
 		out_ins(I_STWPS, 0, 0);
-	stkp = stkp + INTSIZE;
-}
-
-/*
- *	store the primary register
- *	at the address on the top of the stack
- *
- */
-void putio (SYMBOL *sym)
-{
-	out_ins(I_JSR, T_LIB, (intptr_t)"setvdc");
-	stkp = stkp + INTSIZE;
-}
-void putvram (SYMBOL *sym)
-{
-	out_ins(I_JSR, T_LIB, (intptr_t)"writevram");
 	stkp = stkp + INTSIZE;
 }
 

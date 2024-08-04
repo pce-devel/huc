@@ -3,13 +3,9 @@
 
 int getlabel (void);
 void getmem (SYMBOL *sym);
-void getio (SYMBOL *sym);
-void getvram (SYMBOL *sym);
 void getloc (SYMBOL *sym);
 void putmem (SYMBOL *sym);
 void putstk (char typeobj);
-void putio (SYMBOL *sym);
-void putvram (SYMBOL *sym);
 void indirect (char typeobj);
 void farpeek (SYMBOL *ptr);
 void immed (int type, intptr_t data);

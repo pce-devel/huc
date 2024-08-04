@@ -319,14 +319,6 @@ void gen_code (INS *tmp)
 		ol("  jsr\t_farpeekw.fast");
 		break;
 
-	case I_VGETW:
-		ol("__ldw\tvideo_data");
-		break;
-
-	case I_VPUTW:
-		ol("__stw\tvideo_data");
-		break;
-
 	case I_LDB:
 	case I_LDBY:
 		if (code == I_LDBY)

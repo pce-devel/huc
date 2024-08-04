@@ -383,8 +383,6 @@ unknown_option:
 			addglb("edata", ARRAY, CCHAR, 0, EXTERN, 0);
 			/* PCE specific externs */
 			addglb("font_base", VARIABLE, CINT, 0, EXTERN, 0);
-			addglb_far("vdc", CINT);
-			addglb_far("vram", CCHAR);
 			/* end specific externs */
 
 			/* deprecated ident macros */

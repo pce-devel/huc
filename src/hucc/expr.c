@@ -617,12 +617,6 @@ int heir10 (LVALUE *lval, int comma)
 		k = heir10(lval, comma);
 		indflg = 0;
 		ptr = lval->symbol;
-		/* vram */
-		if (ptr && !strcmp(ptr->name, "vram")) {
-			lval->ptr_type = 0;
-			lval->ptr_order = 0;
-			return (1);
-		}
 		if (k)
 			rvalue(lval);
 		if (lval->ptr_order < 2)
@@ -669,10 +663,6 @@ int heir10 (LVALUE *lval, int comma)
 				needlval();
 				return (0);
 			}
-			/* vram */
-			if (ptr && !strcmp(ptr->name, "vram"))
-				return (0);
-
 			if (lval->indirect)
 				gpush();
 			rvalue(lval);
@@ -684,11 +674,6 @@ int heir10 (LVALUE *lval, int comma)
 		else if (match("--")) {
 			if (k == 0) {
 				needlval();
-				return (0);
-			}
-			/* vram */
-			if (ptr && !strcmp(ptr->name, "vram")) {
-				error("can't decrement vram pointer");
 				return (0);
 			}
 			if (lval->indirect)
@@ -882,24 +867,16 @@ int heir11 (LVALUE *lval, int comma)
 void store (LVALUE *lval)
 {
 	if (lval->symbol2) {
-		/* far arrays (or special arrays) */
-		if (!strcmp(lval->symbol2->name, "vdc"))
-			putio(lval->symbol2);
-		else if (!strcmp(lval->symbol2->name, "vram"))
-			putvram(lval->symbol2);
-		else {
-			error("const arrays can't be written");
-			gpop();
-		}
+		/* far arrays */
+		error("const arrays can't be written");
+		gpop();
 	}
 	else {
 		/* other */
 		if (lval->indirect != 0)
 			putstk(lval->indirect);
 		else {
-			if (lval->symbol && strcmp(lval->symbol->name, "vram") == 0)
-				out_ins(I_VPUTW, 0, 0);
-			else if (lval->symbol)
+			if (lval->symbol)
 				putmem(lval->symbol);
 			else
 				out_ins(I_STW, T_VALUE, lval->value);
@@ -910,22 +887,14 @@ void store (LVALUE *lval)
 void rvalue (LVALUE *lval)
 {
 	if ((lval->symbol != 0) && (lval->indirect == 0)) {
-		if (strcmp(lval->symbol->name, "vram") == 0)
-			out_ins(I_VGETW, 0, 0);
-		else
-			getmem(lval->symbol);
+		getmem(lval->symbol);
 	}
 	else {
 		if (lval->symbol2 == 0)
 			indirect(lval->indirect);
 		else {
-			/* far arrays (or special arrays) */
-			if (!strcmp(lval->symbol2->name, "vdc"))
-				getio(lval->symbol2);
-			else if (!strcmp(lval->symbol2->name, "vram"))
-				getvram(lval->symbol2);
-			else
-				farpeek(lval->symbol2);
+			/* far arrays */
+			farpeek(lval->symbol2);
 		}
 	}
 }
