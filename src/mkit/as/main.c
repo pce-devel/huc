@@ -97,7 +97,7 @@ int rom_free;
 /* current flags for each section */
 int section_flags[MAX_S] = {
 /* S_NONE  */	S_NO_DATA,
-/* S_ZP    */	S_IS_RAM + S_NO_DATA, 
+/* S_ZP    */	S_IS_RAM + S_NO_DATA,
 /* S_BSS   */	S_IS_RAM + S_NO_DATA,
 /* S_CODE  */	S_IS_ROM + S_IS_CODE,
 /* S_DATA  */	S_IS_ROM,
@@ -106,6 +106,20 @@ int section_flags[MAX_S] = {
 /* S_XINIT */	S_IS_ROM,
 /* S_CONST */	S_IS_ROM,
 /* S_OSEG  */	S_IS_RAM
+};
+
+/* initial page for the banks for each section */
+const int section_default_page[MAX_S] = {
+/* S_NONE  */	0,
+/* S_ZP    */	2,
+/* S_BSS   */	2,
+/* S_CODE  */	7,
+/* S_DATA  */	3,
+/* S_HOME  */	5,
+/* S_XDATA */	0,
+/* S_XINIT */	0,
+/* S_CONST */	0,
+/* S_OSEG  */	0
 };
 
 /* maximum loccnt limit for each section */
@@ -651,7 +665,6 @@ main(int argc, char **argv)
 	for (pass = FIRST_PASS; pass <= LAST_PASS; pass++) {
 		extra_file = extra_source;
 		infile_error = -1;
-		page = 7;
 		bank = 0;
 		loccnt = 0;
 		slnum = 0;
@@ -688,19 +701,21 @@ main(int argc, char **argv)
 
 		/* reset bank arrays */
 		for (i = 0; i < MAX_S; i++) {
+			page = newproc_opt ? section_default_page[i] : 0;
 			section_bank[i] = 0;
 			section_phase[i] = 0;
 			for (j = 0; j < MAX_BANKS; j++) {
 				bank_maxloc[j] = 0;
 				bank_loccnt[i][j] = 0;
 				bank_glabl[i][j] = NULL;
-				bank_page[i][j] = 0;
+				bank_page[i][j] = page;
 			}
 		}
 
 		/* reset sections */
 		ram_bank = machine->ram_bank;
 		section = S_CODE;
+		page = 7;
 
 		/* .zp */
 		section_bank[S_ZP] = ram_bank;
@@ -719,12 +734,12 @@ main(int argc, char **argv)
 
 		/* .home */
 		section_bank[S_HOME] = 0x00;
-		bank_page[S_HOME][0x00] = 0x07;
+		bank_page[S_HOME][0x00] = 0x05;
 		bank_loccnt[S_HOME][0x00] = 0x0000;
 
 		/* .data */
 		section_bank[S_DATA] = 0x00;
-		bank_page[S_DATA][0x00] = 0x07;
+		bank_page[S_DATA][0x00] = 0x03;
 		bank_loccnt[S_DATA][0x00] = 0x0000;
 
 		/* reset symbol table and include files */
