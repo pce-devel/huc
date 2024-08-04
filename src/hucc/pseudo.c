@@ -541,7 +541,7 @@ void dopsdinc (void)
 		// If page argument, then get it. Else default it.
 		if (match(",")) {
 			if (number(&dummy) != 0) {
-				ot(".page ");
+				ot(".page\t");
 				if (dummy > 8)
 					outdec(dummy / 0x2000);
 				else
@@ -555,7 +555,7 @@ void dopsdinc (void)
 			}
 		}
 		else {
-			ol(".page 2");
+			ol(".page\t2");
 		}
 
 		// Output the label name:
@@ -563,10 +563,12 @@ void dopsdinc (void)
 		outstr(str_buf);
 		outstr(":\n");
 
-		ot(".include \"");
+		ot("include\t\"");
 		outstr(litq2);
 		outstr("\"");
 		nl();
+
+		ol(".page\t7");	/* assumes code bank is mapped at 0xE000 */
 
 		if (!match(")"))
 			error("missing )");
@@ -602,12 +604,12 @@ void dopsdinc (void)
 			}
 		}
 
-		ot(".include \"");
+		ot("include\t\"");
 		outstr(litq2);
 		outstr("\"");
 		nl();
 
-		ol(".page 3");	/* assumes data bank is mapped at 0x6000 */
+		ol(".page\t3");	/* assumes data bank is mapped at 0x6000 */
 
 		if (!match(")"))
 			error("missing )");
