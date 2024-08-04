@@ -1,3 +1,13 @@
+#ifdef __HUCC__
+
+// malloc() is not supported in HuCC at this time.
+main()
+{
+    exit (0);
+}
+
+#else
+
 #include <stdlib.h>
 
 int *a, *b;
@@ -29,3 +39,5 @@ main ()
     abort ();
   exit (0);
 }
+
+#endif // __HUCC__

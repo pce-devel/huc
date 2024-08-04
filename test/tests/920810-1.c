@@ -1,3 +1,13 @@
+#ifdef __HUCC__
+
+// malloc() is not supported in HuCC at this time.
+main()
+{
+    exit (0);
+}
+
+#else
+
 //#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -21,3 +31,5 @@ main()
   if(bar->super!=&foo||bar->name!=0||bar->size!=sizeof(t))abort();
   exit(0);
 }
+
+#endif // __HUCC__
