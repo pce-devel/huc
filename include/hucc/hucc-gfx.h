@@ -71,6 +71,12 @@ extern void __fastcall __xsafe sgx_set_xres( unsigned int x_pixels<_ax>, unsigne
 extern unsigned int __fastcall __xsafe __macro vram_addr( unsigned char bat_x<_al>, unsigned char bat_y<_ah> );
 extern unsigned int __fastcall __xsafe __macro sgx_vram_addr( unsigned char bat_x<_al>, unsigned char bat_y<_ah> );
 
+extern unsigned int __fastcall __xsafe __macro get_vram( unsigned int address<_di> );
+extern unsigned int __fastcall __xsafe __macro sgx_get_vram( unsigned int address<_di> );
+
+extern void __fastcall __xsafe __macro put_vram( unsigned int address<_di>, unsigned int data<acc> );
+extern void __fastcall __xsafe __macro sgx_put_vram( unsigned int address<_di>, unsigned int data<acc> );
+
 extern void __fastcall set_tile_address( unsigned int vram<acc> );
 extern void __fastcall sgx_set_tile_address( unsigned int vram<acc> );
 

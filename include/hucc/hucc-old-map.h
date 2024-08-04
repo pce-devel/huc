@@ -46,6 +46,9 @@ extern void __fastcall __xsafe __nop set_map_tile_type( unsigned char tile_type<
 extern void __fastcall __xsafe __nop sgx_set_map_pals( unsigned char __far *palette_table<sgx_attr_bank:sgx_attr_addr> );
 extern void __fastcall __xsafe __nop sgx_set_map_tile_type( unsigned char tile_type<sgx_tile_type> );
 
+extern void __fastcall set_map_tile_base( unsigned int vram<acc> );
+extern void __fastcall sgx_set_map_tile_base( unsigned int vram<acc> );
+
 #endif // __HUCC__
 
 #endif // _hucc_old_map_h

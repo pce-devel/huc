@@ -128,6 +128,8 @@ inc.h_bp_mpr34:	inc.h	<_bp			; Increment hi-byte of _bp.
 ;
 ; Put the _di data pointer into the VDC's MARR or MAWR register.
 ;
+; N.B. Library code relies on this preserving Y!
+;
 
 	.if	SUPPORT_SGX
 sgx_di_to_marr:	ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.

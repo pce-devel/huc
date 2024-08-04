@@ -109,6 +109,8 @@ extern unsigned char __fastcall __xsafe __macro ac_exists( void );
 
 extern unsigned int __fastcall __xsafe abs( int value<acc> );
 
+extern unsigned char __fastcall __builtin_ffs( unsigned int value<__temp> );
+
 // Functions that are only implemented in the TGEMU emulator for unit-testing
 // the compiler and which should never be used in normal HuCC projects ...
 

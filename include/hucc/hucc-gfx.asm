@@ -643,6 +643,9 @@ set_tile_base:	sty	<__temp			; Set TILE base = (VRAM / 16).
 		.alias	_set_tile_address.1	= set_tiles_vdc
 		.alias	_sgx_set_tile_address.1	= set_tiles_sgx
 
+		.alias	_set_map_tile_base.1	= set_tiles_vdc
+		.alias	_sgx_set_map_tile_base.1= set_tiles_sgx
+
 
 
 ; ***************************************************************************

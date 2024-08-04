@@ -335,10 +335,12 @@ _set_xres.1	.macro
 ; ***************************************************************************
 ; ***************************************************************************
 ;
+; N.B. Declared in hucc-gfx.h, but defined here because they're macros!
+;
 ; unsigned int __fastcall __xsafe __macro vram_addr( unsigned char bat_x<_al>, unsigned char bat_y<_ah> );
 ; unsigned int __fastcall __xsafe __macro sgx_vram_addr( unsigned char bat_x<_al>, unsigned char bat_y<_ah> );
 
-_vram_addr.2	.macro	
+		.macro	_vram_addr.2
 		cla
 		bit	vdc_bat_width
 		bmi	!w128+
@@ -367,6 +369,57 @@ _vram_addr.2	.macro
 		ror	a
 		ora	<_al
 		ldy	<_ah
+		.endm
+	.endif
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; N.B. Declared in hucc-gfx.h, but defined here because they're macros!
+;
+; unsigned int __fastcall __xsafe __macro get_vram( unsigned int address<_di> );
+; void __fastcall __xsafe __macro put_vram( unsigned int address<_di>, unsigned int data<acc> );
+;
+; unsigned int __fastcall __xsafe __macro sgx_get_vram( unsigned int address<_di> );
+; void __fastcall __xsafe __macro sgx_put_vram( unsigned int address<_di>, unsigned int data<acc> );
+
+		.macro	_get_vram.1
+		phx
+		jsr	vdc_di_to_marr
+		plx
+		lda	VDC_DL
+		ldy	VDC_DH
+		.endm
+
+		.macro	_put_vram.2
+		pha
+		phx
+		jsr	vdc_di_to_mawr
+		plx
+		pla
+		sta	VDC_DL
+		sty	VDC_DH
+		.endm
+
+	.if	SUPPORT_SGX
+		.macro	_sgx_get_vram.1
+		phx
+		jsr	sgx_di_to_marr
+		plx
+		lda	SGX_DL
+		ldy	SGX_DH
+		.endm
+
+		.macro	_sgx_put_vram.2
+		pha
+		phx
+		jsr	sgx_di_to_mawr
+		plx
+		pla
+		sta	SGX_DL
+		sty	SGX_DH
 		.endm
 	.endif
 
@@ -430,3 +483,32 @@ _random.1:	pha				; Preserve the limit.
 		cly				; do a 8.0 x 0.8 fixed point
 		rts				; fractional multiply.
 	.endif
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; unsigned char __fastcall __builtin_ffs( unsigned int value<__temp> );
+
+		.proc	___builtin_ffs.1
+
+		lda.l	<__temp
+		ldy	#-16
+
+.search:	lsr.h	<__temp
+		ror	a
+		bcs	.found
+		iny
+		bne	.search
+		bra	.finished
+
+.found:		tya				; CS, return 17 + y.
+		adc	#16
+
+.finished:	tax				; Put return code in X.
+		cly				; Return code in Y:X, X -> A.
+
+		leave				; Return and copy X -> A.
+
+		.endp
