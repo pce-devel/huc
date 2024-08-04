@@ -273,6 +273,12 @@ _memset:	sec				; ram_tii_dst = ram_tii_src + 1
 ; ***************************************************************************
 ; ***************************************************************************
 ;
+; int __fastcall strcmp( char *destination<_di>, char *source<_bp> );
+; int __fastcall strncmp( char *destination<_di>, char *source<_bp>, unsigned char count<_al> );
+; int __fastcall memcmp( unsigned char *destination<_di>, unsigned char *source<_bp>, unsigned int count<_ax> );
+;
+; NOT WORKING YET (needs compiler changes) ...
+;
 ; int __fastcall strcmp( char *destination<_di>, char __far *source<_bp_bank:_bp> );
 ; int __fastcall strncmp( char *destination<_di>, char __far *source<_bp_bank:_bp>, unsigned char count<_al> );
 ; int __fastcall memcmp( unsigned char *destination<_di>, unsigned char __far *source<_bp_bank:_bp>, unsigned int count<_ax> );
@@ -304,7 +310,8 @@ _memcmp		.proc
 		tma4
 		pha
 
-		ldy	<_bp_bank		; Map the source string.
+;		ldy	<_bp_bank		; Map the source string.
+		ldy	#0			; Map the source memory.
 		beq	.no_bank
 		jsr	set_bp_to_mpr34
 
