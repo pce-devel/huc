@@ -117,6 +117,12 @@ FILE *file_open (char *name, char *mode)
 		}
 	}
 
+#ifdef DEBUG_PREPROC
+	if (fp) {
+		printf("HuCC opened \"%s\".\n", testname);
+	}
+#endif
+
 	return (fp);
 }
 
@@ -146,17 +152,21 @@ void doinclude (void)
 	kill();
 }
 
-void incl_globals (void)
+void incl_globals_h (void)
 {
 	FILE *inp2;
 
 	/* open the globals.h file to include those variables */
 	/* but if we can't open it, it's no problem */
 
-	inp2 = fopen("globals.h", "r");
+	if ((inp2 = fopen("globals.h", "r")) == NULL)
+		inp2 = file_open("globals.h", "r");
 
 	if (inp2) {
 		if (inclsp < INCLSIZ) {
+#ifdef DEBUG_PREPROC
+			printf("HuCC opened \"globals.h\".\n");
+#endif
 			inclstk_line[inclsp] = line_number;
 			line_number = 0;
 			strcpy(inclstk_name[inclsp], "globals.h");
@@ -171,6 +181,33 @@ void incl_globals (void)
 	}
 }
 
+void incl_huc_h (void)
+{
+	FILE *inp2;
+
+	/* open the huc.h file to include those variables */
+	/* but if we can't open it, it's no problem */
+
+	if ((inp2 = fopen("huc.h", "r")) == NULL)
+		inp2 = file_open("huc.h", "r");
+
+	if (inp2) {
+		if (inclsp < INCLSIZ) {
+#ifdef DEBUG_PREPROC
+			printf("HuCC opened \"huc.h\".\n");
+#endif
+			inclstk_line[inclsp] = line_number;
+			line_number = 0;
+			strcpy(inclstk_name[inclsp], "huc.h");
+			inclstk[inclsp++] = input2;
+			input2 = inp2;
+		}
+		else {
+			fclose(inp2);
+			error("too many nested includes");
+		}
+	}
+}
 
 /*
  *	fixiname - remove "brackets" around include file name
@@ -204,6 +241,11 @@ FILE *fixiname (void)
 	strcpy(inclstk_name[inclsp], buf);
 	if ((c1 == '<') || ((fp = fopen(buf, "r")) == NULL))
 		fp = file_open(buf, "r");
+#ifdef DEBUG_PREPROC
+	if (fp) {
+		printf("HuCC opening #include \"%s\".\n", buf);
+	}
+#endif
 	return (fp);
 }
 
@@ -256,7 +298,7 @@ void doasmdef (void)
 	sval[i++] = '\0';
 
 	outstr(sname);
-	outstr("\t= ");
+	outstr(" = ");
 	outstr(sval);
 	nl();
 }

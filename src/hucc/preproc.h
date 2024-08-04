@@ -3,7 +3,9 @@
 
 void doinclude (void);
 
-void incl_globals (void);
+void incl_globals_h (void);
+
+void incl_huc_h (void);
 
 FILE *fixiname (void);
 

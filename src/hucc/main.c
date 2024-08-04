@@ -513,7 +513,8 @@ void parse (void)
 {
 	if (!startup_incl) {
 		inc_startup();
-		incl_globals();
+		incl_huc_h();
+		incl_globals_h();
 	}
 
 	while (1) {
