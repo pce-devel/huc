@@ -37,9 +37,10 @@ void dump_screen(void)
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 , 0x00, 0x00,
     };
 
-    char *scrname = strdup(rom_name);
-    *strrchr(scrname, '.') = 0;
-    strcat(scrname, ".bmp");
+    char *scrname = strcpy( malloc( strlen(rom_name)+10), rom_name);
+    char *nameext = strrchr(scrname, '.');
+    if (nameext) *nameext = '\0';
+    strcat(scrname, memcmp(rom+3, "HuC", 3) ? "-hucc.bmp" : "-huc.bmp");
 
 #ifndef LSB_FIRST
     /* XXX: Is this guaranteed to work? man page doesn't say anything about
