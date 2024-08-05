@@ -184,7 +184,7 @@ MAX_PADS	=	5	; (1..5)
 ;
 
 	.ifndef HUCC_STACK_SZ
-HUCC_STACK_SZ	=	96			; (16 .. 128)
+HUCC_STACK_SZ	=	128	; (16 .. 128)
 	.endif
 
 ;
@@ -195,7 +195,7 @@ HUCC_STACK_SZ	=	96			; (16 .. 128)
 ;
 
 	.ifndef	HUC_NUM_SCROLLS
-HUC_NUM_SCROLLS	=	4			; (4 .. 8)
+HUC_NUM_SCROLLS	=	4	; (4 .. 8)
 	.endif	HUC_NUM_SCROLLS
 
 ;
@@ -208,11 +208,11 @@ HUC_NUM_SCROLLS	=	4			; (4 .. 8)
 ;
 
 	.ifndef	HUCC_PCE_SPLITS
-HUCC_PCE_SPLITS =	8			; (4 .. 128) PCE VDC layer.
+HUCC_PCE_SPLITS =	8	; (4 .. 128) PCE VDC layer.
 	.endif
 
 	.ifndef	HUCC_SGX_SPLITS
-HUCC_SGX_SPLITS =	8			; (4 .. 128) SGX VDC layer.
+HUCC_SGX_SPLITS =	8	; (4 .. 128) SGX VDC layer.
 	.endif
 
 ;
@@ -235,8 +235,8 @@ HUCC_SGX_SPLITS =	8			; (4 .. 128) SGX VDC layer.
 ;
 
 	.ifndef ZX0_WINBUF
-ZX0_WINBUF	=	($3800)			; Default to a 2KB window in
-ZX0_WINMSK	=	($0800 - 1)		; RAM, located at $3800.
+ZX0_WINBUF	=	($3800)	; Default to a 2KB window in RAM at $3800.
+ZX0_WINMSK	=	($0800 - 1)
 	.endif
 
 ;

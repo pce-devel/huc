@@ -91,6 +91,8 @@ _strlcat:	phx				; Preserve X (aka __sp).
 		iny
 		dex
 		bne	.find
+		tya				; A:Y = buffer length.
+		cla
 		bra	str_overflow
 
 .adjust:	tya				; Subtract Y from _bp so that
@@ -136,11 +138,11 @@ str_copy:	lda	[_bp], y
 		dex
 		bne	str_copy
 
-str_overflow:	dey
+		dey
 		cla
 		sta	[_di], y
 		iny				; A:Y = buffer length.
-		bne	str_exit
+str_overflow:	bne	str_exit
 		inc	a			; A:Y = buffer length = 256.
 		bra	str_exit
 
