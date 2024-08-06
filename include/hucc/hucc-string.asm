@@ -192,15 +192,20 @@ str_exit:	tax				; X:Y = string or buffer length.
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe memcpy( unsigned char *destination<ram_tii_dst>, unsigned char  *source<ram_tii_src>, unsigned int count<ram_tii_len> );
-; unsigned char * __fastcall __xsafe mempcpy( unsigned char *destination<ram_tii_dst>, unsigned char  *source<ram_tii_src>, unsigned int count<ram_tii_len> );
+; void __fastcall __xsafe memcpy( unsigned char *destination<ram_tii_dst>, unsigned char  *source<ram_tii_src>, unsigned int count<acc> );
+; unsigned char * __fastcall __xsafe mempcpy( unsigned char *destination<ram_tii_dst>, unsigned char  *source<ram_tii_src>, unsigned int count<acc> );
 ;
 ; NOT WORKING YET (needs compiler changes) ...
-; void __fastcall __xsafe memcpy( unsigned char *destination<ram_tii_dst>, unsigned char __far *source<_bp_bank:ram_tii_src>, unsigned int count<ram_tii_len> );
-; unsigned char * __fastcall __xsafe mempcpy( unsigned char *destination<ram_tii_dst>, unsigned char __far *source<_bp_bank:ram_tii_src>, unsigned int count<ram_tii_len> );
+; void __fastcall __xsafe memcpy( unsigned char *destination<ram_tii_dst>, unsigned char __far *source<_bp_bank:ram_tii_src>, unsigned int count<acc> );
+; unsigned char * __fastcall __xsafe mempcpy( unsigned char *destination<ram_tii_dst>, unsigned char __far *source<_bp_bank:ram_tii_src>, unsigned int count<acc> );
 
 _memcpy:
-_mempcpy:	tma3				; Preserve MPR3 and MPR4.
+_mempcpy:	sty.h	ram_tii_len		; Check for zero length.
+		sta.l	ram_tii_len
+		ora.h	ram_tii_len
+		beq	.zero_length
+
+		tma3				; Preserve MPR3 and MPR4.
 		pha
 		tma4
 		pha
@@ -223,12 +228,12 @@ _mempcpy:	tma3				; Preserve MPR3 and MPR4.
 
 .no_bank:	jsr	ram_tii			; Copy the memory.
 
-mem_finish:	pla				; Restore MPR3 and MPR4.
+		pla				; Restore MPR3 and MPR4.
 		tam4
 		pla
 		tam3
 
-		clc				; Return the end address
+.zero_length:	clc				; Return the end address
 		lda.l	ram_tii_dst		; like mempcpy().
 		adc.l	ram_tii_len
 		tay
@@ -246,10 +251,18 @@ mem_finish:	pla				; Restore MPR3 and MPR4.
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe memset( unsigned char *destination<ram_tii_src>, unsigned char value<_al>, unsigned int count<ram_tii_len> );
+; void __fastcall __xsafe memset( unsigned char *destination<ram_tii_src>, unsigned char value<_al>, unsigned int count<acc> );
 
-_memset:	sec				; ram_tii_dst = ram_tii_src + 1
-		lda.l	ram_tii_src
+_memset:	cmp	#0			; Decrement the length, check
+		bne	!+			; for zero and set C. 
+		cpy	#0
+		beq	.zero_length
+		dey
+!:		dec	a
+		sta.l	ram_tii_len
+		sty.h	ram_tii_len
+
+		lda.l	ram_tii_src		; ram_tii_dst = ram_tii_src + 1
 		sta.l	<__ptr
 		adc	#0
 		sta.l	ram_tii_dst
@@ -261,12 +274,9 @@ _memset:	sec				; ram_tii_dst = ram_tii_src + 1
 		lda	<_al			; Set the fill value.
 		sta	[__ptr]
 
-		lda.l	ram_tii_len		; Decrement the length.
-		bne	!+
-		dec.h	ram_tii_len
-!:		dec.l	ram_tii_len
-
 		jmp	ram_tii			; Copy the memory.
+
+.zero_length:	rts
 
 		.alias	_memset.3		= _memset
 
@@ -276,7 +286,7 @@ _memset:	sec				; ram_tii_dst = ram_tii_src + 1
 ; ***************************************************************************
 ;
 ; int __fastcall strcmp( char *destination<_di>, char *source<_bp> );
-; int __fastcall strncmp( char *destination<_di>, char *source<_bp>, unsigned char count<_al> );
+; int __fastcall strncmp( char *destination<_di>, char *source<_bp>, unsigned int count<_ax> );
 ; int __fastcall memcmp( unsigned char *destination<_di>, unsigned char *source<_bp>, unsigned int count<_ax> );
 ;
 ; NOT WORKING YET (needs compiler changes) ...
@@ -292,16 +302,16 @@ _memset:	sec				; ram_tii_dst = ram_tii_src + 1
 hucc_memcmp	.procgroup
 
 _strcmp		.proc
-		lda	#255			; Set length.l for string.
-		sta.l	<_ax
-		.ref	_strncmp.3		; Don't strip _strncmp.3!
+		stz.l	<_ax			; Max string length == 256!
+		lda.h	#256
+		sta.h	<_ax
+		.ref	_strncmp		; Don't strip _strncmp.3!
 		.endp				; Fall through.
 
 _strncmp	.proc
-		stz.h	<_ax			; Clr length.h for string.
 		bit	#$40			; Set the V bit for strcmp.
 		db	$50			; Turn "clv" into "bvc".
-		.ref	_memcmp.3		; Don't strip _memcmp.3!
+		.ref	_memcmp			; Don't strip _memcmp.3!
 		.endp				; Fall through.
 
 _memcmp		.proc
@@ -319,7 +329,6 @@ _memcmp		.proc
 
 .no_bank:	cly
 
-;		inc.h	<_ax			; Increment length.h 
 		ldx.l	<_ax			; Increment length.l
 		inx
 .loop:		dex				; Decrement length.l
@@ -338,19 +347,18 @@ _memcmp		.proc
 		bra	.loop
 
 .page:		dec.h	<_ax			; Decrement length.h 
-;		bne	.test
 		bpl	.test			; Limit comparison to 32KB.
 ;		bra	cmp_same
 
-.return_same:	clx
+.return_same:	clx				; Return code in Y:X, X -> A.
 		cly
 		bra	!+
 
-.return_pos:	ldx	#$01
+.return_pos:	ldx	#$01			; Return code in Y:X, X -> A.
 		cly
 		bra	!+
 
-.return_neg:	ldx	#$FF
+.return_neg:	ldx	#$FF			; Return code in Y:X, X -> A.
 		ldy	#$FF
 
 !:		pla				; Restore MPR3 and MPR4.
@@ -358,7 +366,7 @@ _memcmp		.proc
 		pla
 		tam3
 
-		leave
+		leave				; Return and copy X -> A.
 
 		.endp
 
@@ -367,8 +375,3 @@ _memcmp		.proc
 		.alias	_strcmp.2		= _strcmp
 		.alias	_strncmp.3		= _strncmp
 		.alias	_memcmp.3		= _memcmp
-
-;		cla				;  0
-;		adc	#0			;  0 or 1
-;		asl	a			;  0 or 2
-;		dec	a			; -1 or 1

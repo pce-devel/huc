@@ -33,7 +33,7 @@
 ;
 ; strncpy() and strncat() are not provided, because strncpy() was not created
 ; for the purpose of avoiding string overruns, and strncat() is just a poorly
-; designed function.
+; designed function IMHO.
 ;
 ; POSIX strlcpy() and strlcat() are provided instead, but once again they are
 ; slightly non-standard in that the return value when there is an overflow is
@@ -59,13 +59,13 @@ extern unsigned int __fastcall __xsafe strlen( char *source<_bp> );
 extern unsigned int __fastcall __xsafe strlcpy( char *destination<_di>, char *source<_bp>, unsigned char size<acc> );
 extern unsigned int __fastcall __xsafe strlcat( char *destination<_di>, char *source<_bp>, unsigned char size<acc> );
 
-extern void __fastcall __xsafe memcpy( unsigned char *destination<ram_tii_dst>, unsigned char *source<ram_tii_src>, unsigned int count<ram_tii_len> );
-extern unsigned char * __fastcall __xsafe mempcpy( unsigned char *destination<ram_tii_dst>, unsigned char *source<ram_tii_src>, unsigned int count<ram_tii_len> );
+extern void __fastcall __xsafe memcpy( unsigned char *destination<ram_tii_dst>, unsigned char *source<ram_tii_src>, unsigned int count<acc> );
+extern unsigned char * __fastcall __xsafe mempcpy( unsigned char *destination<ram_tii_dst>, unsigned char *source<ram_tii_src>, unsigned int count<acc> );
 
-extern void __fastcall __xsafe memset( unsigned char *destination<ram_tii_src>, unsigned char value<_al>, unsigned int count<ram_tii_len> );
+extern void __fastcall __xsafe memset( unsigned char *destination<ram_tii_src>, unsigned char value<_al>, unsigned int count<acc> );
 
 extern int __fastcall strcmp( char *destination<_di>, char *source<_bp> );
-extern int __fastcall strncmp( char *destination<_di>, char *source<_bp>, unsigned char count<acc> );
+extern int __fastcall strncmp( char *destination<_di>, char *source<_bp>, unsigned int count<_ax> );
 extern int __fastcall memcmp( unsigned char *destination<_di>, unsigned char *source<_bp>, unsigned int count<acc> );
 
 /*
@@ -80,8 +80,8 @@ extern unsigned int __fastcall __xsafe strlcpy( char *destination<_di>, char __f
 extern unsigned int __fastcall __xsafe strlcat( char *destination<_di>, char __far *source<_bp_bank:_bp>, unsigned char size<acc> );
 
 extern int __fastcall strcmp( char *destination<_di>, char __far *source<_bp_bank:_bp> );
-extern int __fastcall strncmp( char *destination<_di>, char __far *source<_bp_bank:_bp>, unsigned char count<acc> );
-extern int __fastcall memcmp( unsigned char *destination<_di>, unsigned char __far *source<_bp_bank:_bp>, unsigned int count<acc> );
+extern int __fastcall strncmp( char *destination<_di>, char __far *source<_bp_bank:_bp>, unsigned int count<_ax> );
+extern int __fastcall memcmp( unsigned char *destination<_di>, unsigned char __far *source<_bp_bank:_bp>, unsigned int count<_ax> );
 */
 
 #endif // __HUCC__
