@@ -912,6 +912,12 @@ __lsrwi		.macro
 
 ; **************
 
+__extuw		.macro
+		cly
+		.endm
+
+; **************
+
 __extw		.macro
 		tay
 		cly

@@ -79,7 +79,7 @@ void inc_startup (void)
 		startup_incl = 1;
 
 		nl();
-		outstr("\t\t.include\t\"hucc.asm\"\n");
+		outstr("\t\tinclude\t\"hucc.asm\"\n");
 		outstr("\t\t.data\n");
 		outstr("\t\t.bank\tDATA_BANK\n\n");
 		gtext();
@@ -674,19 +674,19 @@ void gen_code (INS *tmp)
 		break;
 
 	case I_SPUSHW:
-		ol("__spillw");
+		ol("__spushw");
 		break;
 
 	case I_SPOPW:
-		ol("__restorew");
+		ol("__spopw");
 		break;
 
 	case I_SPUSHB:
-		ol("__spillb");
+		ol("__spushb");
 		break;
 
 	case I_SPOPB:
-		ol("__restoreb");
+		ol("__spopb");
 		break;
 
 	case I_TSTW:
@@ -764,7 +764,6 @@ void gen_code (INS *tmp)
 	case I_LABEL:
 		outlabel((int)data);
 		col();
-		nl();
 		break;
 
 	case I_MULWI:
@@ -774,7 +773,7 @@ void gen_code (INS *tmp)
 		break;
 
 	case I_EXTUW:
-		ol("cla");
+		ol("__extuw");
 		break;
 
 	case I_DEF:
