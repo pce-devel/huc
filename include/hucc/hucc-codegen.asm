@@ -1971,9 +1971,7 @@ gt_sw:		cmp.l	<__stack, x	; Subtract memory from Y:A.
 ;		signed compatible
 ; ----
 
-aslw:		cmp	#16
-		bcs	.zero
-		pha				; preserve count
+aslw:		pha				; preserve count
 		lda.h	<__stack, x
 		sta	<__temp
 		lda.l	<__stack, x
@@ -1981,6 +1979,8 @@ aslw:		cmp	#16
 		inx
 		ply				; restore count
 		beq	.done
+		cpy	#16
+		bcs	.zero
 .loop:		asl	a
 		rol	<__temp
 		dey
@@ -2053,41 +2053,28 @@ aslw0:		ldy	<__temp
 
 ; **************
 
-asrw:		cmp	#16
-		bcs	.sign
-		pha				; preserve count
-		ldy.h	<__stack, x
-		sty	<__temp
+asrw:		pha				; preserve count
+		lda.h	<__stack, x
+		bpl	asrw_positive
+asrw_negative:	sta	<__temp
 		lda.l	<__stack, x
 		inx
 		inx
-		stx	<__sp
-		plx				; restore count
+		ply				; restore count
 		beq	.done
-.loop:		cpy	#$80
+		cpy	#16
+		bcs	.sign
+.loop:		sec
 		ror	<__temp
 		ror	a
-		dex
+		dey
 		bne	.loop
-		ldy	<__temp
-.done:		ldx	<__sp
+.done:		ldy	<__temp
 		rts
 
-.sign:		lda.h	<__stack, x
-		cla
-		bpl	!+
-		dec	a
-!:		tay
+.sign:		lda	#$FF
+		tay
 		rts
-
-;		asl	a
-;		tax
-;		sty	<__temp
-;		cpx	#8 * 2
-;		bcc	!+
-;		tya
-;!:		jmp	(table, x)
-
 
 ; **************
 
@@ -2148,17 +2135,16 @@ asrw0:		ldy	<__temp
 ; REMARK :	only the lower byte of the right operand is taken in account
 ;		signed compatible
 
-lsrw:		cmp	#16
-		bcs	.zero
-
-		pha				; preserve count
+lsrw:		pha				; preserve count
 		lda.h	<__stack, x
-		sta	<__temp
+asrw_positive:	sta	<__temp
 		lda.l	<__stack, x
 		inx
 		inx
 		ply				; restore count
 		beq	.done
+		cpy	#16
+		bcs	.zero
 .loop:		lsr	<__temp
 		ror	a
 		dey
