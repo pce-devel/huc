@@ -128,6 +128,7 @@ int h6280_execute(int cycles)
     {
 		h6280.ppc = h6280.pc;
 
+// printf("Executing $%02X:%02X\n", h6280.mmr[PCW >> 13], PCW);
 		/* Execute 1 instruction */
 		in=RDOP();
 		PCW++;

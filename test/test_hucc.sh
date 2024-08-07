@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export PCE_INCLUDE=`pwd`/../include/huc
+export PCE_INCLUDE=`pwd`/../include/hucc
 export PCE_PCEAS=`pwd`/../bin/pceas
 echo $PCE_INCLUDE $PCE_PCEAS
 
@@ -18,23 +18,22 @@ fi
 
 echo exesuffix="$exesuffix"
 
-for d in large small norec noopt
+for d in small norec noopt
 do
 	fails=0
 	nocompiles=0
 	passes=0
-	test "$d" = "large" && opt="-DSTACK_SIZE=1024"
-	test "$d" = "small" && opt="-msmall -DSTACK_SIZE=256 -DSMALL"
-	test "$d" = "norec" && opt="-DSTACK_SIZE=1024 -DNORECURSE -fno-recursive"
-	test "$d" = "noopt" && opt="-DSTACK_SIZE=1024 -O0 -DNOOPT"
+	test "$d" = "small" && opt="-DSTACK_SIZE=128 -DSMALL -msmall"
+	test "$d" = "norec" && opt="-DSTACK_SIZE=128 -DNORECURSE -fno-recursive"
+	test "$d" = "noopt" && opt="-DSTACK_SIZE=128 -DNOOPT -O0"
 	echo "testing $d"
 	echo opt="$opt"
 	for i in $tests
 	do
-		echo "HuC Type: $d   Test: $i"
-		if ! ../bin/huc${exesuffix} -DNO_LABEL_VALUES $opt $i -lmalloc >/dev/null ; then
+		echo "HuCC Type: $d   Test: $i"
+		if ! ../bin/hucc${exesuffix} -DNO_LABEL_VALUES $opt $i >/dev/null ; then
 			echo NOCOMPILE
-			../bin/huc${exesuffix} $opt $i
+			../bin/hucc${exesuffix} $opt $i
 			exit
 #			nocompiles=$((nocompiles + 1))
 #			continue
