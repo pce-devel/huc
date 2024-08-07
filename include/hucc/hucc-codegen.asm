@@ -836,7 +836,7 @@ __asrwi		.macro
 	.if (\1 = 8)
 		tya
 		cly
-		bmi	!+
+		bpl	!+
 		dey
 !:
 	.else
