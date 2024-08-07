@@ -120,11 +120,11 @@ HUCC		=	1
 
 		.zp
 		.align	2
-__ptr		.ds	2
 __fptr		.ds	2
 __fbank		.ds	1
 __sp		.ds	1
 __stack		.ds	HUCC_STACK_SZ
+__ptr		.ds	2
 
 		; Data pointer used by SDCC for indirect indexed memory access
 
