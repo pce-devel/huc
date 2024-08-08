@@ -1151,9 +1151,7 @@ int assemble (char *s)
 	else
 		opts[i++] = "-l 0";
 
-	opts[i++] = "-O";		/* optimize procedure packing */
-	opts[i++] = "--newproc";	/* use newproc procedure thunks */
-	opts[i++] = "--strip";		/* strip unused procedures */
+	opts[i++] = "--hucc";		/* --newproc --strip -O and more! */
 
 	strcpy(buf, s);
 	buf[strlen(buf) - 1] = 's';
