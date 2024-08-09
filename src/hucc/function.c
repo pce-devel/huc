@@ -283,6 +283,8 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 				return;
 			}
 
+//			printf("Registered __fastcall %s with %d arguments.\n", n, fc->nargs);
+
 			/* insert function into fastcall table */
 			fc = (void *)malloc(sizeof(struct fastcall));
 			if (!fc) {

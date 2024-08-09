@@ -132,6 +132,11 @@ static char *pragma_init[] = {
 	"fastcall ad_play(word __bx, word __ax, byte __dh, byte __dl)",
 
 	"fastcall __builtin_ffs(word acc)",
+
+	/* TGEMU funcs used for unit tests, not for regular HuCC users! */
+	"fastcall abort()",
+	"fastcall exit(word acc)",
+	"fastcall dump_screen()",
 #endif
 	NULL
 };

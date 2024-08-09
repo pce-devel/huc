@@ -6,9 +6,9 @@
 // #define DEBUG_OPTIMIZER
 
 #ifdef DEBUG_OPTIMIZER
-#define ODEBUG(x, ...) printf(x ...)
+#define ODEBUG(...) printf( __VA_ARGS__ )
 #else
-#define ODEBUG(x, ...)
+#define ODEBUG(...)
 #endif
 
 #include <stdint.h>
@@ -113,7 +113,7 @@ static int is_sprel (INS *i)
 void push_ins (INS *ins)
 {
 #ifdef DEBUG_OPTIMIZER
-	printf("push "); dump_ins(ins);
+	printf("\npush "); dump_ins(ins);
 #endif
 	/* check queue size */
 	if (q_nb == Q_SIZE) {
@@ -155,6 +155,9 @@ lv1_loop:
 			nb = 10;
 		else
 			nb = q_nb;
+#ifdef DEBUG_OPTIMIZER
+		printf("\nlv1_loop:\n");
+#endif
 		for (i = 0, j = q_wr; i < nb; i++) {
 			/* save pointer */
 			p[i] = &q_ins[j];
@@ -1470,7 +1473,7 @@ lv1_loop:
 				nb = 1;
 			}
 
-			/*  jsr eq/ne/eqzp/nezp         --> jsr eq/ne/eqzp/nezp
+			/*  jsr eq/ne/ge/lt/gt/le       --> jsr eq/ne/ge/lt/gt/le
 			 *  __tstw
 			 *
 			 *  ====
@@ -1500,27 +1503,7 @@ lv1_loop:
 			  (strcmp((char *)p[1]->data, "le_sw") == 0) ||
 			  (strcmp((char *)p[1]->data, "le_sb") == 0) ||
 			  (strcmp((char *)p[1]->data, "le_uw") == 0) ||
-			  (strcmp((char *)p[1]->data, "le_ub") == 0) ||
-			  (strcmp((char *)p[1]->data, "eq_wzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "eq_bzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "ne_wzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "ne_bzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "ge_swzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "ge_sbzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "ge_uwzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "ge_ubzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "lt_swzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "lt_sbzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "lt_uwzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "lt_ubzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "gt_swzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "gt_sbzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "gt_uwzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "gt_ubzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "le_swzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "le_sbzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "le_uwzp") == 0) ||
-			  (strcmp((char *)p[1]->data, "le_ubzp") == 0)))
+			  (strcmp((char *)p[1]->data, "le_ub") == 0)))
 				nb = 1;
 
 			/*  __boolw         --> __tstw
@@ -1752,8 +1735,9 @@ lv1_loop:
 						j += 1;
 						if (j >= Q_SIZE)
 							j -= Q_SIZE;
-
-						ODEBUG("re");
+#ifdef DEBUG_OPTIMIZER
+						printf("\nReinserting after rescheduling ...");
+#endif
 						push_ins(&q_ins[j]);
 					}
 					break;

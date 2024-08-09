@@ -504,6 +504,27 @@ __ldw		.macro
 	.endif
 		.endm
 
+; **************
+
+__ldwi		.macro
+	.if	((\?1 == ARG_ABS) && (\1 >= 0) && (\1 < 256))
+		lda.l	#\1
+		cly
+	.else
+		lda.l	#\1
+		ldy.h	#\1
+	.endif
+		.endm
+
+; **************
+
+__ldwp		.macro
+		ldy	#1
+		lda	[\1], y
+		tay
+		lda	[\1]
+		.endm
+
 ; ************** NEW and UNIMPLEMENTED!
 
 __incw_		.macro
@@ -571,27 +592,6 @@ __decws2_	.macro
 		bne	!+
 		dec.h	<__stack, x
 !:		dec.l	<__stack, x
-		.endm
-
-; **************
-
-__ldwp		.macro
-		ldy	#1
-		lda	[\1], y
-		tay
-		lda	[\1]
-		.endm
-
-; **************
-
-__ldwi		.macro
-	.if	((\?1 == ARG_ABS) && (\1 >= 0) && (\1 < 256))
-		lda.l	#\1
-		cly
-	.else
-		lda.l	#\1
-		ldy.h	#\1
-	.endif
 		.endm
 
 ; **************
@@ -726,6 +726,7 @@ __stbip		.macro
 		.endm
 
 ; **************
+; only used before a __beq or __bne
 
 __tstw		.macro
 		sty	<__temp
@@ -733,6 +734,69 @@ __tstw		.macro
 		beq	!+
 		lda	#1
 !:		cly
+		.endm
+
+; **************
+; optimized into __tstw if used before a __tstw
+
+__boolw		.macro
+		sty	<__temp
+		ora	<__temp
+		beq	!+
+		lda	#1
+!:		cly
+		.endm
+
+; **************
+; optimized into __notw if used before a __tstw
+
+__notw		.macro
+		sty	<__temp
+		ora	<__temp
+		cla
+		bne	!+
+		inc	a
+!:		cly
+		.endm
+
+; **************
+; always preceeded by a __tstw before peephole optimization
+
+__beq		.macro
+		cmp	#0
+		beq	\1
+		.endm
+
+; **************
+; always preceeded by a __tstw before peephole optimization
+
+__bne		.macro
+		cmp	#0
+		bne	\1
+		.endm
+
+; **************
+
+__cmpwi_eq	.macro
+		cmp.l	#\1
+		cla
+		bne	!f+
+		cpy.h	#\1
+		bne	!f+
+		inc	a
+!f:		cly
+		.endm
+
+; **************
+
+__cmpwi_ne	.macro
+		cmp.l	#\1
+		cla
+		bne	!t+
+		cpy.h	#\1
+		beq	!f+
+!t:		lda	#1
+!f:		cly
 		.endm
 
 ; **************
@@ -946,35 +1010,6 @@ __negw		.macro
 		adc	#0
 		say
 		.endm
-
-; **************
-
-__boolw		.macro
-		sty	<__temp
-		ora	<__temp
-		beq	!+
-		lda	#1
-!:		cly
-		.endm
-
-; **************
-
-__notw		.macro
-		sty	<__temp
-		ora	<__temp
-		cla
-		bne	!+
-		inc	a
-!:		cly
-		.endm
-
-;		sty	<__temp
-;		ora	<__temp
-;		cly
-;		bne	!+
-;		iny
-;!:		tya
-;		cly
 
 ; **************
 
@@ -1298,54 +1333,6 @@ __bra		.macro
 		.endm
 
 ; **************
-; boolean test and branch
-
-__beq		.macro
-		cmp	#0
-		beq	\1
-		.endm
-
-; **************
-; boolean test and branch
-
-__bne		.macro
-		cmp	#0
-		bne	\1
-		.endm
-
-; ************** NEW and UNIMPLEMENTED!
-
-__lbeqw		.macro
-		sty	<__temp
-		ora	<__temp
-		beq	\1
-		.endm
-
-; **************
-
-__cmpwi_eq	.macro
-		cmp.l	#\1
-		cla
-		bne	!f+
-		cpy.h	#\1
-		bne	!f+
-		inc	a
-!f:		cly
-		.endm
-
-; **************
-
-__cmpwi_ne	.macro
-		cmp.l	#\1
-		cla
-		bne	!t+
-		cpy.h	#\1
-		beq	!f+
-!t:		lda	#1
-!f:		cly
-		.endm
-
-; **************
 
 __call		.macro
 		call	\1
@@ -1453,6 +1440,13 @@ __ldb_s		.macro	; __STACK
 
 ; **************
 
+__ldub_s	.macro	; __STACK
+		lda	<__stack + \1, x
+		cly
+		.endm
+
+; **************
+
 __addb_s	.macro	; __STACK
 		bit	<__stack + \1, x
 		bpl	!+
@@ -1466,52 +1460,12 @@ __addb_s	.macro	; __STACK
 
 ; **************
 
-__ldub_s	.macro	; __STACK
-		lda	<__stack + \1, x
-		cly
-		.endm
-
-; **************
-
 __addub_s	.macro	; __STACK
 		clc
 		adc	<__stack + \1, x
 		bcc	!+
 		iny
 !:
-		.endm
-
-; **************
-
-__ldb_p		.macro
-		sta.l	<__ptr
-		sty.h	<__ptr
-		lda	[__ptr]
-		cly
-		bpl	!+
-		dey
-!:
-		.endm
-
-; **************
-
-__addbi_p	.macro
-		sta.l	<__ptr
-		sty.h	<__ptr
-		lda	[__ptr]
-		clc
-		adc	#\1
-		sta	[__ptr]
-		cly
-		.endm
-
-; **************
-
-__ldub_p	.macro
-		sta.l	<__ptr
-		sty.h	<__ptr
-		lda	[__ptr]
-		cly
 		.endm
 
 ; **************
@@ -1559,6 +1513,39 @@ __addw_s	.macro	; __STACK
 		say
 		adc.h	<__stack + \1, x
 		say
+		.endm
+
+; **************
+
+__ldb_p		.macro
+		sta.l	<__ptr
+		sty.h	<__ptr
+		lda	[__ptr]
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+
+__addbi_p	.macro
+		sta.l	<__ptr
+		sty.h	<__ptr
+		lda	[__ptr]
+		clc
+		adc	#\1
+		sta	[__ptr]
+		cly
+		.endm
+
+; **************
+
+__ldub_p	.macro
+		sta.l	<__ptr
+		sty.h	<__ptr
+		lda	[__ptr]
+		cly
 		.endm
 
 ; **************
@@ -1685,16 +1672,6 @@ __ldd_s_w	.macro	; __STACK
 ; REMARK : signed compatible
 ; ----
 
-eq_bzp:		cmp.l	<__temp
-		bne	ret_false_zp
-		bra	ret_true_zp
-
-eq_wzp:		cmp.l	<__temp
-		bne	ret_false_zp
-		cpy.h	<__temp
-		bne	ret_false_zp
-		bra	ret_true_zp
-
 eq_b:		cmp	<__stack, x
 		bne	ret_false_sp
 		bra	ret_true_sp
@@ -1718,16 +1695,6 @@ eq_w:		cmp.l	<__stack, x
 ; ----
 ; REMARK : signed compatible
 ; ----
-
-ne_bzp:		cmp.l	<__temp
-		bne	ret_true_zp
-		bra	ret_false_zp
-
-ne_wzp:		cmp.l	<__temp
-		bne	ret_true_zp
-		cpy.h	<__temp
-		bne	ret_true_zp
-		bra	ret_false_zp
 
 ne_b:		cmp	<__stack, x
 		bne	ret_true_sp
@@ -2474,6 +2441,3 @@ ___case:	sta.l	<__temp		; store the value to check to
 ; ----
 
 call_indirect:	jmp	[__ptr]
-
-
-
