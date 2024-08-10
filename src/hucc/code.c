@@ -585,12 +585,26 @@ void gen_code (INS *tmp)
 		ol("__extw");
 		break;
 
-	case I_BOOLW:
-		ol("__boolw");
-		break;
-
 	case I_NOTW:
 		ol("__notw");
+		break;
+
+	case I_TSTW:
+		ol("__tstw");
+		break;
+
+	case I_BFALSE:
+		ot("__bfalse\t");
+		outlabel((int)data);
+		nl();
+		nl();
+		break;
+
+	case I_BTRUE:
+		ot("__btrue\t");
+		outlabel((int)data);
+		nl();
+		nl();
 		break;
 
 	case I_JMP:
@@ -689,24 +703,8 @@ void gen_code (INS *tmp)
 		ol("__spopb");
 		break;
 
-	case I_TSTW:
-		ol("__tstw");
-		break;
-
 	case I_BRA:
 		ot("__bra\t");
-		outlabel((int)data);
-		nl();
-		break;
-
-	case I_BEQ:
-		ot("__beq\t");
-		outlabel((int)data);
-		nl();
-		break;
-
-	case I_BNE:
-		ot("__bne\t");
 		outlabel((int)data);
 		nl();
 		break;

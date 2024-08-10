@@ -1473,7 +1473,16 @@ lv1_loop:
 				nb = 1;
 			}
 
-			/*  jsr eq/ne/ge/lt/gt/le       --> jsr eq/ne/ge/lt/gt/le
+			/*  __cmpw         --> __cmpw
+			 *  __tstw
+			 *
+			 *  __notw         --> __notw
+			 *  __tstw
+			 *
+			 *  __tstw         --> __tstw
+			 *  __tstw
+			 *
+			 *  LLnn:          --> LLnn:
 			 *  __tstw
 			 *
 			 *  ====
@@ -1483,45 +1492,10 @@ lv1_loop:
 			 */
 			else if
 			((p[0]->code == I_TSTW) &&
-			 (p[1]->code == I_CMPW) &&
-			 ((strcmp((char *)p[1]->data, "eq_w") == 0) ||
-			  (strcmp((char *)p[1]->data, "eq_b") == 0) ||
-			  (strcmp((char *)p[1]->data, "ne_w") == 0) ||
-			  (strcmp((char *)p[1]->data, "ne_b") == 0) ||
-			  (strcmp((char *)p[1]->data, "ge_sw") == 0) ||
-			  (strcmp((char *)p[1]->data, "ge_sb") == 0) ||
-			  (strcmp((char *)p[1]->data, "ge_uw") == 0) ||
-			  (strcmp((char *)p[1]->data, "ge_ub") == 0) ||
-			  (strcmp((char *)p[1]->data, "lt_sw") == 0) ||
-			  (strcmp((char *)p[1]->data, "lt_sb") == 0) ||
-			  (strcmp((char *)p[1]->data, "lt_uw") == 0) ||
-			  (strcmp((char *)p[1]->data, "lt_ub") == 0) ||
-			  (strcmp((char *)p[1]->data, "gt_sw") == 0) ||
-			  (strcmp((char *)p[1]->data, "gt_sb") == 0) ||
-			  (strcmp((char *)p[1]->data, "gt_uw") == 0) ||
-			  (strcmp((char *)p[1]->data, "gt_ub") == 0) ||
-			  (strcmp((char *)p[1]->data, "le_sw") == 0) ||
-			  (strcmp((char *)p[1]->data, "le_sb") == 0) ||
-			  (strcmp((char *)p[1]->data, "le_uw") == 0) ||
-			  (strcmp((char *)p[1]->data, "le_ub") == 0)))
-				nb = 1;
-
-			/*  __boolw         --> __tstw
-			 *  __tstw
-			 *
-			 */
-			else if ((p[0]->code == I_TSTW) &&
-				 (p[1]->code == I_BOOLW)) {
-				p[1]->code = I_TSTW;
-				nb = 1;
-			}
-
-			/*  __notw         --> __notw
-			 *  __tstw
-			 *
-			 */
-			else if ((p[0]->code == I_TSTW) &&
-				 (p[1]->code == I_NOTW))
+			 (p[1]->code == I_CMPW ||
+			  p[1]->code == I_NOTW ||
+			  p[1]->code == I_TSTW ||
+			  p[1]->code == I_LABEL))
 				nb = 1;
 
 			/*  __cmpwi_*         --> __cmpwi_*

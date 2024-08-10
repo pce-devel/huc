@@ -229,9 +229,9 @@ void testjump (int label, int ft)
 {
 	out_ins(I_TSTW, 0, 0);
 	if (ft)
-		out_ins(I_BNE, T_LABEL, label);
+		out_ins(I_BTRUE, T_LABEL, label);
 	else
-		out_ins(I_BEQ, T_LABEL, label);
+		out_ins(I_BFALSE, T_LABEL, label);
 }
 
 /*
@@ -437,7 +437,7 @@ void gcom (void)
  */
 void gbool (void)
 {
-	out_ins(I_BOOLW, 0, 0);
+	out_ins(I_TSTW, 0, 0);
 }
 
 /*

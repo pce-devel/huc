@@ -738,7 +738,8 @@ __cmpw		.macro
 		.endm
 
 ; **************
-; only used before a __beq or __bne
+; boolean test, always output immediately before a __bfalse or __btrue
+; this MUST set the Z flag for the susequent branches!
 
 __tstw		.macro
 		sty	<__temp
@@ -749,41 +750,29 @@ __tstw		.macro
 		.endm
 
 ; **************
-; optimized into __tstw if used before a __tstw
-
-__boolw		.macro
-		sty	<__temp
-		ora	<__temp
-		beq	!+
-		lda	#1
-!:		cly
-		.endm
-
-; **************
-; optimized into __notw if used before a __tstw
+; boolean test, optimized into __notw if used before a __tstw
+; this MUST set the Z flag for the susequent branches!
 
 __notw		.macro
 		sty	<__temp
 		ora	<__temp
-		cla
-		bne	!+
-		inc	a
-!:		cly
+		beq	!+
+		lda	#1
+!:		eor	#1
+		cly
 		.endm
 
 ; **************
 ; always preceeded by a __tstw before peephole optimization
 
-__beq		.macro
-		cmp	#0
+__bfalse	.macro
 		beq	\1
 		.endm
 
 ; **************
 ; always preceeded by a __tstw before peephole optimization
 
-__bne		.macro
-		cmp	#0
+__btrue		.macro
 		bne	\1
 		.endm
 
@@ -1721,18 +1710,18 @@ ne_w:		cmp.l	<__stack, x
 		bra	ret_false_sp
 
 ;
-;
+; boolean results, these MUST set the Z flag for the susequent branches!
 ;
 
 ret_true_sp:	inx
 		inx			; don't push Y:A, they are thrown away
-ret_true_zp:	cly
+		cly
 		lda	#1		; Also set valid Z flag.
 		rts
 
 ret_false_sp:	inx
 		inx			; don't push Y:A, they are thrown away
-ret_false_zp:	cly
+		cly
 		lda	#0		; Also set valid Z flag.
 		rts
 

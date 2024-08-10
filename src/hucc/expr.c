@@ -202,8 +202,8 @@ int heir1b (LVALUE *lval, int comma)
 		testjump(lab = getlabel(), TRUE);
 		if (heir1c(lval2, comma))
 			rvalue(lval2);
-		gnlabel(lab);
 		gbool();
+		gnlabel(lab);
 	}
 	else
 		return (0);
@@ -226,8 +226,8 @@ int heir1c (LVALUE *lval, int comma)
 		testjump(lab = getlabel(), FALSE);
 		if (heir2(lval2, comma))
 			rvalue(lval2);
-		gnlabel(lab);
 		gbool();
+		gnlabel(lab);
 	}
 	else
 		return (0);
