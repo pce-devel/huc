@@ -496,9 +496,9 @@ void gdec (LVALUE *lval)
 void geq (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_JSR, T_LIB, (intptr_t)"eq_b");
+		out_ins(I_CMPW, T_LIB, (intptr_t)"eq_b");
 	else
-		out_ins(I_JSR, T_LIB, (intptr_t)"eq_w");
+		out_ins(I_CMPW, T_LIB, (intptr_t)"eq_w");
 	stkp = stkp + INTSIZE;
 }
 
@@ -509,9 +509,9 @@ void geq (int is_byte)
 void gne (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_JSR, T_LIB, (intptr_t)"ne_b");
+		out_ins(I_CMPW, T_LIB, (intptr_t)"ne_b");
 	else
-		out_ins(I_JSR, T_LIB, (intptr_t)"ne_w");
+		out_ins(I_CMPW, T_LIB, (intptr_t)"ne_w");
 	stkp = stkp + INTSIZE;
 }
 
@@ -522,9 +522,9 @@ void gne (int is_byte)
 void glt (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_JSR, T_LIB, (intptr_t)"lt_sb");
+		out_ins(I_CMPW, T_LIB, (intptr_t)"lt_sb");
 	else
-		out_ins(I_JSR, T_LIB, (intptr_t)"lt_sw");
+		out_ins(I_CMPW, T_LIB, (intptr_t)"lt_sw");
 	stkp = stkp + INTSIZE;
 }
 
@@ -535,9 +535,9 @@ void glt (int is_byte)
 void gle (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_JSR, T_LIB, (intptr_t)"le_sb");
+		out_ins(I_CMPW, T_LIB, (intptr_t)"le_sb");
 	else
-		out_ins(I_JSR, T_LIB, (intptr_t)"le_sw");
+		out_ins(I_CMPW, T_LIB, (intptr_t)"le_sw");
 	stkp = stkp + INTSIZE;
 }
 
@@ -548,9 +548,9 @@ void gle (int is_byte)
 void ggt (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_JSR, T_LIB, (intptr_t)"gt_sb");
+		out_ins(I_CMPW, T_LIB, (intptr_t)"gt_sb");
 	else
-		out_ins(I_JSR, T_LIB, (intptr_t)"gt_sw");
+		out_ins(I_CMPW, T_LIB, (intptr_t)"gt_sw");
 	stkp = stkp + INTSIZE;
 }
 
@@ -561,9 +561,9 @@ void ggt (int is_byte)
 void gge (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_JSR, T_LIB, (intptr_t)"ge_sb");
+		out_ins(I_CMPW, T_LIB, (intptr_t)"ge_sb");
 	else
-		out_ins(I_JSR, T_LIB, (intptr_t)"ge_sw");
+		out_ins(I_CMPW, T_LIB, (intptr_t)"ge_sw");
 	stkp = stkp + INTSIZE;
 }
 
@@ -574,9 +574,9 @@ void gge (int is_byte)
 void gult (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_JSR, T_LIB, (intptr_t)"lt_ub");
+		out_ins(I_CMPW, T_LIB, (intptr_t)"lt_ub");
 	else
-		out_ins(I_JSR, T_LIB, (intptr_t)"lt_uw");
+		out_ins(I_CMPW, T_LIB, (intptr_t)"lt_uw");
 	stkp = stkp + INTSIZE;
 }
 
@@ -587,9 +587,9 @@ void gult (int is_byte)
 void gule (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_JSR, T_LIB, (intptr_t)"le_uw");
+		out_ins(I_CMPW, T_LIB, (intptr_t)"le_ub");
 	else
-		out_ins(I_JSR, T_LIB, (intptr_t)"le_uw");
+		out_ins(I_CMPW, T_LIB, (intptr_t)"le_uw");
 	stkp = stkp + INTSIZE;
 }
 
@@ -600,9 +600,9 @@ void gule (int is_byte)
 void gugt (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_JSR, T_LIB, (intptr_t)"gt_ub");
+		out_ins(I_CMPW, T_LIB, (intptr_t)"gt_ub");
 	else
-		out_ins(I_JSR, T_LIB, (intptr_t)"gt_uw");
+		out_ins(I_CMPW, T_LIB, (intptr_t)"gt_uw");
 	stkp = stkp + INTSIZE;
 }
 
@@ -613,9 +613,9 @@ void gugt (int is_byte)
 void guge (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_JSR, T_LIB, (intptr_t)"ge_ub");
+		out_ins(I_CMPW, T_LIB, (intptr_t)"ge_ub");
 	else
-		out_ins(I_JSR, T_LIB, (intptr_t)"ge_uw");
+		out_ins(I_CMPW, T_LIB, (intptr_t)"ge_uw");
 	stkp = stkp + INTSIZE;
 }
 

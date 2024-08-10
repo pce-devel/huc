@@ -776,7 +776,7 @@ lv1_loop:
 			 *
 			 */
 			else if
-			((p[0]->code == I_JSR) &&
+			((p[0]->code == I_CMPW) &&
 			 (p[1]->code == I_LDWI ||
 			  p[1]->code == I_LDW ||
 			  p[1]->code == X_LDW_S ||
@@ -853,7 +853,7 @@ lv1_loop:
 				goto lv1_loop;
 			}
 
-			else if (p[0]->code == I_JSR &&
+			else if (p[0]->code == I_CMPW &&
 				 (!strcmp((char *)p[0]->data, "eq_wzp") ||
 				  !strcmp((char *)p[0]->data, "ne_wzp")) &&
 				 p[1]->code == I_LDWI &&
@@ -1483,7 +1483,7 @@ lv1_loop:
 			 */
 			else if
 			((p[0]->code == I_TSTW) &&
-			 (p[1]->code == I_JSR) &&
+			 (p[1]->code == I_CMPW) &&
 			 ((strcmp((char *)p[1]->data, "eq_w") == 0) ||
 			  (strcmp((char *)p[1]->data, "eq_b") == 0) ||
 			  (strcmp((char *)p[1]->data, "ne_w") == 0) ||
@@ -1609,6 +1609,8 @@ lv1_loop:
 				/* check instruction */
 				switch (q_ins[j].code) {
 				case I_JSR:
+				case I_CMPB:
+				case I_CMPW:
 					if (q_ins[j].type == T_LIB)
 						offset += 2;
 					break;

@@ -726,6 +726,18 @@ __stbip		.macro
 		.endm
 
 ; **************
+
+__cmpb		.macro
+		jsr	\1
+		.endm
+
+; **************
+
+__cmpw		.macro
+		jsr	\1
+		.endm
+
+; **************
 ; only used before a __beq or __bne
 
 __tstw		.macro

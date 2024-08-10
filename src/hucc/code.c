@@ -803,6 +803,34 @@ void gen_code (INS *tmp)
 		ol("__getacc");
 		break;
 
+	case I_CMPB:
+		ot("__cmpb\t");
+
+		switch (type) {
+		case T_SYMBOL:
+			outsymbol((char *)data);
+			break;
+		case T_LIB:
+			outstr((const char *)data);
+			break;
+		}
+		nl();
+		break;
+
+	case I_CMPW:
+		ot("__cmpw\t");
+
+		switch (type) {
+		case T_SYMBOL:
+			outsymbol((char *)data);
+			break;
+		case T_LIB:
+			outstr((const char *)data);
+			break;
+		}
+		nl();
+		break;
+
 	default:
 		gen_asm(tmp);
 		break;

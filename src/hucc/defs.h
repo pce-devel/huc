@@ -119,6 +119,8 @@
 #define I_SAVESP        86
 #define I_LOADSP        87
 #define I_GETACC        88
+#define I_CMPW          89
+#define I_CMPB          90
 
 /* optimized pseudo instructions */
 #define X_MASK          0xFFFF0
