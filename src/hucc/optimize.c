@@ -781,24 +781,38 @@ lv1_loop:
 			else if
 			((p[0]->code == I_CMPW) &&
 			 (p[1]->code == I_LDWI) &&
-			 (p[1]->type == T_VALUE) &&
-			 (p[1]->data == 0) &&
 			 (p[2]->code == I_PUSHW) &&
+
+			 (p[1]->type == T_VALUE) &&
 			 ((strcmp((char *)p[0]->data, "eq_w") == 0) ||
 			  (strcmp((char *)p[0]->data, "eq_b") == 0) ||
 			  (strcmp((char *)p[0]->data, "ne_w") == 0) ||
 			  (strcmp((char *)p[0]->data, "ne_b") == 0))) {
 				/* replace code */
-				if (strcmp((char *)p[0]->data, "eq_w") == 0)
-					p[2]->code = I_NOTW;
-				else if (strcmp((char *)p[0]->data, "eq_b") == 0)
-					p[2]->code = I_NOTW;
-				else if (strcmp((char *)p[0]->data, "ne_w") == 0)
-					p[2]->code = I_TSTW;
-				else if (strcmp((char *)p[0]->data, "ne_b") == 0)
-					p[2]->code = I_TSTW;
-				p[2]->type = 0;
-				p[2]->data = 0;
+				if (p[1]->data == 0) {
+					if (strcmp((char *)p[0]->data, "eq_w") == 0)
+						p[2]->code = I_NOTW;
+					else if (strcmp((char *)p[0]->data, "eq_b") == 0)
+						p[2]->code = I_NOTW;
+					else if (strcmp((char *)p[0]->data, "ne_w") == 0)
+						p[2]->code = I_TSTW;
+					else if (strcmp((char *)p[0]->data, "ne_b") == 0)
+						p[2]->code = I_TSTW;
+					p[2]->type = 0;
+					p[2]->data = 0;
+				} else {
+					if (strcmp((char *)p[0]->data, "eq_w") == 0)
+						p[2]->code = I_CMPWI_EQ;
+					else if (strcmp((char *)p[0]->data, "eq_b") == 0)
+						p[2]->code = I_CMPWI_EQ;
+					else if (strcmp((char *)p[0]->data, "ne_w") == 0)
+						p[2]->code = I_CMPWI_NE;
+					else if (strcmp((char *)p[0]->data, "ne_b") == 0)
+						p[2]->code = I_CMPWI_NE;
+					p[2]->type = T_VALUE;
+					p[2]->data = p[1]->data;
+				}
+
 				nb = 2;
 			}
 
@@ -888,21 +902,6 @@ lv1_loop:
 					p[0]->data = (intptr_t)"le_ubzp";
 				/* loop */
 				goto lv1_loop;
-			}
-
-			else if (p[0]->code == I_CMPW &&
-				 (!strcmp((char *)p[0]->data, "eq_wzp") ||
-				  !strcmp((char *)p[0]->data, "ne_wzp")) &&
-				 p[1]->code == I_LDWI &&
-				 p[2]->code == I_STW &&
-				 p[2]->type == T_SYMBOL &&
-				 !strcmp((char *)p[2]->data, "_temp")) {
-				*p[2] = *p[1];
-				if (!strcmp((char *)p[0]->data, "eq_wzp"))
-					p[2]->code = I_CMPWI_EQ;
-				else
-					p[2]->code = I_CMPWI_NE;
-				nb = 2;
 			}
 #endif
 
@@ -1193,6 +1192,7 @@ lv1_loop:
 			 (!strcmp((char *)p[0]->data, "umul") ||
 			  !strcmp((char *)p[0]->data, "smul")) &&
 			 (p[1]->code == I_LDWI) &&
+
 			 (p[1]->type == T_VALUE) &&
 			 __builtin_popcount((unsigned int)p[1]->data) == 1 &&
 			 p[1]->data > 0 && p[1]->data < 0x8000) {
@@ -1562,21 +1562,18 @@ lv1_loop:
 			else if
 			((p[0]->code == I_TSTW) &&
 			 (p[1]->code == I_CMPW ||
+			  p[1]->code == I_CMPWI_EQ ||
+			  p[1]->code == I_CMPWI_NE ||
 			  p[1]->code == I_NOTW ||
 			  p[1]->code == I_TSTW ||
 			  p[1]->code == I_LABEL)) {
 				nb = 1;
 			}
 
-			/*  __cmpwi_*         --> __cmpwi_*
+			/*  __stwi n          --> __cmpwi_*
 			 *  __tstw
 			 *
 			 */
-			else if ((p[0]->code == I_TSTW) &&
-				 (p[1]->code == I_CMPWI_EQ ||
-				  p[1]->code == I_CMPWI_NE))
-				nb = 1;
-
 			else if (p[1]->code == I_STWI &&
 				 p[1]->imm_type == T_VALUE &&
 				 p[1]->imm_data == 0 &&
@@ -1584,6 +1581,7 @@ lv1_loop:
 				 p[0]->code != X_LDB_P &&
 				 p[0]->code != X_LDUB_P)
 				p[1]->code = I_STWZ;
+
 			else if (p[1]->code == I_STBI &&
 				 p[1]->imm_type == T_VALUE &&
 				 p[1]->imm_data == 0 &&

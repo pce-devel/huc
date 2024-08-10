@@ -777,27 +777,53 @@ __btrue		.macro
 		.endm
 
 ; **************
+; optimized boolean test
+; this MUST set the Z flag for the susequent branches!
 
-__cmpwi_eq	.macro
-		cmp.l	#\1
-		cla
-		bne	!f+
-		cpy.h	#\1
-		bne	!f+
-		inc	a
-!f:		cly
+__cmpbi_eq	.macro
+		eor.l	#\1
+		beq	!true+
+!false:		lda	#$FF
+!true:		inc	a
+		cly
 		.endm
 
 ; **************
+; optimized boolean test
+; this MUST set the Z flag for the susequent branches!
+
+__cmpbi_ne	.macro
+		eor.l	#\1
+		beq	!false+
+		lda	#1
+!false:		cly
+		.endm
+
+; **************
+; optimized boolean test
+; this MUST set the Z flag for the susequent branches!
+
+__cmpwi_eq	.macro
+		eor.l	#\1
+		bne	!false+
+		cpy.h	#\1
+		beq	!true+
+!false:		lda	#$FF
+!true:		inc	a
+		cly
+		.endm
+
+; **************
+; optimized boolean test
+; this MUST set the Z flag for the susequent branches!
 
 __cmpwi_ne	.macro
-		cmp.l	#\1
-		cla
-		bne	!t+
+		eor.l	#\1
+		bne	!true+
 		cpy.h	#\1
-		beq	!f+
-!t:		lda	#1
-!f:		cly
+		beq	!false+
+!true:		lda	#1
+!false:		cly
 		.endm
 
 ; **************
