@@ -7,6 +7,20 @@ unsigned int d = 0;
 unsigned int count = 0;
 
 int
+try_zero( void )
+{
+  if ((0 == 0) != 1)
+    abort();
+  if ((1 != 0) != 1)
+    abort();
+  if (!(0 == 0) == 1)
+    abort();
+  if (!(1 != 0) == 1)
+    abort();
+  return 0;
+}
+
+int
 try_and( void )
 {
   if (a == 3 && b == 4 && c )
@@ -66,10 +80,12 @@ try_early( void )
 unsigned int
 main( void )
 {
+  try_zero();
   try_and();
   try_or();
   try_both();
   try_assign();
   try_early();
+
   return 0;
 }

@@ -765,6 +765,43 @@ lv1_loop:
 				nb = 1;
 			}
 
+			/*  __pushw                    --> __notw
+			 *  __ldwi 0
+			 *  __cmpw eq_w
+			 *
+			 *  __pushw                    --> __tstw
+			 *  __ldwi 0
+			 *  __cmpw ne_w
+			 *
+			 *  ====
+			 *  bytes  :  ? -->  ?
+			 *  cycles :  ? -->  ?
+			 *
+			 */
+			else if
+			((p[0]->code == I_CMPW) &&
+			 (p[1]->code == I_LDWI) &&
+			 (p[1]->type == T_VALUE) &&
+			 (p[1]->data == 0) &&
+			 (p[2]->code == I_PUSHW) &&
+			 ((strcmp((char *)p[0]->data, "eq_w") == 0) ||
+			  (strcmp((char *)p[0]->data, "eq_b") == 0) ||
+			  (strcmp((char *)p[0]->data, "ne_w") == 0) ||
+			  (strcmp((char *)p[0]->data, "ne_b") == 0))) {
+				/* replace code */
+				if (strcmp((char *)p[0]->data, "eq_w") == 0)
+					p[2]->code = I_NOTW;
+				else if (strcmp((char *)p[0]->data, "eq_b") == 0)
+					p[2]->code = I_NOTW;
+				else if (strcmp((char *)p[0]->data, "ne_w") == 0)
+					p[2]->code = I_TSTW;
+				else if (strcmp((char *)p[0]->data, "ne_b") == 0)
+					p[2]->code = I_TSTW;
+				p[2]->type = 0;
+				p[2]->data = 0;
+				nb = 2;
+			}
+
 #if 0
 			/*  __pushw                    --> __stw  <__temp
 			 *  __ldw(i)  n / __ldw_s n          __ldw(i) n / __ldw_s n-2
@@ -1473,6 +1510,36 @@ lv1_loop:
 				nb = 1;
 			}
 
+			/*  __tstw         --> __notw
+			 *  __notw
+			 *
+			 *  ====
+			 *  bytes  : ?               --> ?
+			 *  cycles : ?               --> ?
+			 *
+			 */
+			else if
+			((p[0]->code == I_NOTW) &&
+			 (p[1]->code == I_TSTW)) {
+				p[1]->code = I_NOTW;
+				nb = 1;
+			}
+
+			/*  __notw         --> __tstw
+			 *  __notw
+			 *
+			 *  ====
+			 *  bytes  : ?               --> ?
+			 *  cycles : ?               --> ?
+			 *
+			 */
+			else if
+			((p[0]->code == I_NOTW) &&
+			 (p[1]->code == I_NOTW)) {
+				p[1]->code = I_TSTW;
+				nb = 1;
+			}
+
 			/*  __cmpw         --> __cmpw
 			 *  __tstw
 			 *
@@ -1482,12 +1549,14 @@ lv1_loop:
 			 *  __tstw         --> __tstw
 			 *  __tstw
 			 *
+			 * this removes redundant tests in compound conditionals ...
+			 *
 			 *  LLnn:          --> LLnn:
 			 *  __tstw
 			 *
 			 *  ====
-			 *  bytes  : x+4         --> x
-			 *  cycles : y+8         --> y
+			 *  bytes  : ?               --> ?
+			 *  cycles : ?               --> ?
 			 *
 			 */
 			else if
@@ -1495,8 +1564,9 @@ lv1_loop:
 			 (p[1]->code == I_CMPW ||
 			  p[1]->code == I_NOTW ||
 			  p[1]->code == I_TSTW ||
-			  p[1]->code == I_LABEL))
+			  p[1]->code == I_LABEL)) {
 				nb = 1;
+			}
 
 			/*  __cmpwi_*         --> __cmpwi_*
 			 *  __tstw
