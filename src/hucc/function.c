@@ -721,7 +721,7 @@ void callfunction (char *ptr)
 		/* Reloading corrupts acc, so we need to save it if it
 		   is used by the callee. */
 		if (uses_acc)
-			out_ins(I_STW, T_LITERAL, (intptr_t)"<__temp");
+			out_ins(I_STW, T_LITERAL, (intptr_t)"__temp");
 
 		for (i = sparg_idx - 1; i > -1; i--) {
 			if (spilled_arg_sizes[i] == 1) {
@@ -736,7 +736,7 @@ void callfunction (char *ptr)
 		}
 
 		if (uses_acc)
-			out_ins(I_LDW, T_LITERAL, (intptr_t)"<__temp");
+			out_ins(I_LDW, T_LITERAL, (intptr_t)"__temp");
 	}
 
 	if (ptr == NULL) {
