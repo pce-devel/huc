@@ -72,17 +72,14 @@ static int is_load (INS *i)
 		i->code == I_LDWP ||
 		i->code == I_LDUB ||
 		i->code == I_LDUBP ||
-		i->code == I_LDYB ||
 		i->code == X_LDB ||
 		i->code == X_LDB_S ||
-		i->code == X_LDB_P ||
 		i->code == X_LDW_S ||
 		i->code == X_LDD_I ||
 		i->code == X_LDD_S_B ||
 		i->code == X_LDD_S_W ||
 		i->code == X_LDUB ||
-		i->code == X_LDUB_S ||
-		i->code == X_LDUB_P);
+		i->code == X_LDUB_S);
 }
 
 static int is_sprel (INS *i)
@@ -289,24 +286,6 @@ lv1_loop:
 				nb = 2;
 			}
 
-			/* __ldwi a	--> __ldyb i
-			 * __pushw	    __ldby a
-			 * __ldub i
-			 * __addws
-			 * __ldb_p
-			 */
-			else if (p[0]->code == X_LDB_P &&
-				 p[1]->code == I_ADDWS &&
-				 p[2]->code == I_LDUB &&
-				 p[3]->code == I_PUSHW &&
-				 p[4]->code == I_LDWI) {
-				*p[3] = *p[4];
-				p[3]->code = I_LDBY;
-				*p[4] = *p[2];
-				p[4]->code = I_LDYB;
-				nb = 3;
-			}
-
 			/* flush queue */
 			if (nb) {
 				q_wr -= nb;
@@ -389,11 +368,20 @@ lv1_loop:
 				nb = 3;
 			}
 
+#if 0
 			/* __pushw		--> addbi_p i
 			 * __ldb_p
 			 * __addwi i
 			 * __stbps
 			 */
+
+			/* __pushw		--> addbi_p i
+			 * __stw   __ptr
+			 * __ldbp  __ptr
+			 * __addwi i
+			 * __stbps
+			 */
+
 			else if (p[0]->code == I_STBPS &&
 				 p[1]->code == I_ADDWI &&
 				 p[2]->code == X_LDB_P &&
@@ -402,6 +390,7 @@ lv1_loop:
 				p[3]->code = I_ADDBI_P;
 				nb = 3;
 			}
+#endif
 
 			/* flush queue */
 			if (nb) {
@@ -700,7 +689,7 @@ lv1_loop:
 				nb = 2;
 			}
 
-			/*  @_lea_s i                   --> @_ldw_s i
+			/*  @_lea_s i                   --> @_ldw_s/_ldub_s i
 			 *  __stw   __ptr
 			 *  __ldwp  __ptr
 			 *
@@ -710,14 +699,22 @@ lv1_loop:
 			 *
 			 */
 			else if
-			((p[0]->code == I_LDWP) &&
+			((p[0]->code == I_LDWP ||
+			  p[0]->code == I_LDBP ||
+			  p[0]->code == I_LDUBP) &&
 			 (p[1]->code == I_STW) &&
 			 (p[2]->code == X_LEA_S) &&
 
 			 (p[0]->type == T_PTR) &&
 			 (p[1]->type == T_PTR)) {
 				/* replace code */
-				p[2]->code = X_LDW_S;
+				if (p[0]->code == I_LDWP)
+					p[2]->code = X_LDW_S;
+				else
+				if (p[0]->code == I_LDBP)
+					p[2]->code = X_LDB_S;
+				else
+					p[2]->code = X_LDUB_S;
 				nb = 2;
 			}
 
@@ -726,7 +723,9 @@ lv1_loop:
 			 *  __ldwp/__ldubp  __ptr
 			 */
 			else if
-			((p[0]->code == I_LDWP || p[0]->code == I_LDUBP) &&
+			((p[0]->code == I_LDWP ||
+			  p[0]->code == I_LDBP ||
+			  p[0]->code == I_LDUBP) &&
 			 (p[1]->code == I_STW) &&
 			 (p[2]->code == I_LDWI) &&
 
@@ -735,6 +734,9 @@ lv1_loop:
 				/* replace code */
 				if (p[0]->code == I_LDWP)
 					p[2]->code = I_LDW;
+				else
+				if (p[0]->code == I_LDBP)
+					p[2]->code = I_LDB;
 				else
 					p[2]->code = I_LDUB;
 				nb = 2;
@@ -750,7 +752,9 @@ lv1_loop:
 			 *
 			 */
 			else if
-			((p[0]->code == I_LDWP) &&
+			((p[0]->code == I_LDWP ||
+			  p[0]->code == I_LDBP ||
+			  p[0]->code == I_LDUBP) &&
 			 (p[1]->code == I_STW) &&
 			 (p[2]->code == X_PEA_S) &&
 
@@ -759,7 +763,13 @@ lv1_loop:
 
 			 (optimize >= 2)) {
 				/* replace code */
-				p[1]->code = X_LDW_S;
+				if (p[0]->code == I_LDWP)
+					p[1]->code = X_LDW_S;
+				else
+				if (p[0]->code == I_LDBP)
+					p[1]->code = X_LDB_S;
+				else
+					p[1]->code = X_LDUB_S;
 				p[1]->data = p[2]->data + 2;
 				p[1]->sym = p[2]->sym;
 				nb = 1;
@@ -1201,46 +1211,6 @@ lv1_loop:
 				nb = 0;
 			}
 
-			/*  __ldw   __stack             --> @_pea_s 0
-			 *  __pushw
-			 *
-			 *  ====
-			 *  bytes  : 4+23 = 27          --> 25
-			 *  cycles : 8+49 = 57          --> 44
-			 *
-			 */
-//			else if
-//			   ((p[0]->code == I_PUSHW) &&
-//				(p[1]->code == I_LDW) &&
-//
-//				(p[1]->type == T_STACK))
-//			{
-//				/* replace code */
-//				p[1]->code = X_PEA_S;
-//				p[1]->data = 0;
-//				nb = 1;
-//			}
-
-			/*  __ldw   __stack             --> @_lea_s i
-			 *  __addwi i
-			 *
-			 *  ====
-			 *  bytes  : 4+ 7 = 11          --> 10
-			 *  cycles : 8+12 = 20          --> 16
-			 *
-			 */
-//			else if
-//			   ((p[0]->code == I_ADDWI) &&
-//				(p[1]->code == I_LDW) &&
-//
-//				(p[1]->type == T_STACK))
-//			{
-//				/* replace code */
-//				p[1]->code = X_LEA_S;
-//				p[1]->data = p[0]->data;
-//				nb = 1;
-//			}
-
 			/*  __stw a                  --> __stw a
 			 *  __ldw a
 			 *
@@ -1268,7 +1238,6 @@ lv1_loop:
 			  p[0]->code == X_LEA_S ||
 			  p[0]->code == I_LDB ||
 			  p[0]->code == I_LDBP ||
-			  p[0]->code == I_LDBY ||
 			  p[0]->code == X_LDB ||
 			  p[0]->code == X_LDB_S ||
 			  p[0]->code == I_LDUB ||
@@ -1281,7 +1250,6 @@ lv1_loop:
 			  p[1]->code == X_LEA_S ||
 			  p[1]->code == I_LDB ||
 			  p[1]->code == I_LDBP ||
-			  p[1]->code == I_LDBY ||
 			  p[1]->code == X_LDB ||
 			  p[1]->code == X_LDB_S ||
 			  p[1]->code == I_LDUB ||
@@ -1362,110 +1330,6 @@ lv1_loop:
 				/* replace code */
 				p[1]->code = X_PEA_S;
 				nb = 1;
-			}
-
-			/*  __stw   __ptr               --> @_ldb_p
-			 *  __ldbp  __ptr
-			 *
-			 *  ====
-			 *  bytes  : 4+10 = 14          --> 11
-			 *  cycles : 8+19 = 27          --> 23
-			 *
-			 */
-			else if
-			((p[0]->code == I_LDBP) &&
-			 (p[1]->code == I_STW) &&
-
-			 (p[1]->type == T_PTR)) {
-				/* replace code */
-				p[1]->code = X_LDB_P;
-				nb = 1;
-			}
-			else if
-			((p[0]->code == I_LDUBP) &&
-			 (p[1]->code == I_STW) &&
-
-			 (p[1]->type == T_PTR)) {
-				/* replace code */
-				p[1]->code = X_LDUB_P;
-				nb = 1;
-			}
-
-			/*  @_lea_s i                   --> @_ld(u)b_s i
-			 *  @_ld(u)b_p
-			 *
-			 *  ====
-			 *  bytes  : 10+11 = 21         -->  9
-			 *  cycles : 16+23 = 39         --> 17
-			 *
-			 */
-			else if
-			((p[0]->code == X_LDB_P) &&
-			 (p[1]->code == X_LEA_S)) {
-				/* replace code */
-				p[1]->code = X_LDB_S;
-				nb = 1;
-			}
-			else if
-			((p[0]->code == X_LDUB_P) &&
-			 (p[1]->code == X_LEA_S)) {
-				/* replace code */
-				p[1]->code = X_LDUB_S;
-				nb = 1;
-			}
-
-			/*  @_ldwi i                   --> @_ld(u)b i
-			 *  @_ld(u)b_p
-			 *
-			 */
-			else if
-			((p[0]->code == X_LDB_P) &&
-			 (p[1]->code == I_LDWI)) {
-				/* replace code */
-				p[1]->code = I_LDB;
-				nb = 1;
-			}
-			else if
-			((p[0]->code == X_LDUB_P) &&
-			 (p[1]->code == I_LDWI)) {
-				/* replace code */
-				p[1]->code = I_LDUB;
-				nb = 1;
-			}
-
-			/*  @_pea_s i                   --> @_pea_s i
-			 *  @_ldb_p                         @_ldb_s i+2
-			 *
-			 *  ====
-			 *  bytes  : 25+11 = 36         --> 25+ 9 = 34
-			 *  cycles : 44+23 = 67         --> 44+17 = 61
-			 *
-			 */
-			else if
-			((p[0]->code == X_LDB_P) &&
-			 (p[1]->code == X_PEA_S) &&
-
-			 (optimize >= 2)) {
-				/* replace code */
-				p[0]->code = X_LDB_S;
-				p[0]->data = p[1]->data + 2;
-				p[0]->sym = p[1]->sym;
-
-				/* loop */
-				goto lv1_loop;
-			}
-			else if
-			((p[0]->code == X_LDUB_P) &&
-			 (p[1]->code == X_PEA_S) &&
-
-			 (optimize >= 2)) {
-				/* replace code */
-				p[0]->code = X_LDUB_S;
-				p[0]->data = p[1]->data + 2;
-				p[0]->sym = p[1]->sym;
-
-				/* loop */
-				goto lv1_loop;
 			}
 
 			/* ldwi i; stwip j	--> stwi i, j */
@@ -1570,24 +1434,24 @@ lv1_loop:
 				nb = 1;
 			}
 
-			/*  __stwi n          --> __cmpwi_*
-			 *  __tstw
+			/*  is_load()      --> __stwz
+			 *  __stwi 0
+			 *
+			 *  ====
+			 *  bytes  : ?               --> ?
+			 *  cycles : ?               --> ?
 			 *
 			 */
 			else if (p[1]->code == I_STWI &&
 				 p[1]->imm_type == T_VALUE &&
 				 p[1]->imm_data == 0 &&
-				 is_load(p[0]) &&
-				 p[0]->code != X_LDB_P &&
-				 p[0]->code != X_LDUB_P)
+				 is_load(p[0]))
 				p[1]->code = I_STWZ;
 
 			else if (p[1]->code == I_STBI &&
 				 p[1]->imm_type == T_VALUE &&
 				 p[1]->imm_data == 0 &&
-				 is_load(p[0]) &&
-				 p[0]->code != X_LDB_P &&
-				 p[0]->code != X_LDUB_P)
+				 is_load(p[0]))
 				p[1]->code = I_STBZ;
 
 			/* flush queue */
@@ -1677,7 +1541,6 @@ lv1_loop:
 
 				case I_PUSHW:
 				case X_PEA_S:
-				case X_PUSHW_A:
 					offset -= 2;
 					break;
 				}

@@ -320,17 +320,7 @@ void gen_code (INS *tmp)
 		break;
 
 	case I_LDB:
-	case I_LDBY:
-		if (code == I_LDBY)
-			ot("__ldby\t");
-		else
-			ot("__ldb\t");
-		out_type(type, data);
-		nl();
-		break;
-
-	case I_LDYB:
-		ot("  ldy\t");
+		ot("__ldb\t");
 		out_type(type, data);
 		nl();
 		break;
@@ -842,14 +832,6 @@ void gen_code (INS *tmp)
 void gen_asm (INS *inst)
 {
 	switch (inst->code) {
-	case X_LDB_P:
-		ol("__ldb_p");
-		break;
-
-	case X_LDUB_P:
-		ol("__ldub_p");
-		break;
-
 	case X_LDB_S:
 		ot("__ldb_s\t");
 		outdec((int)inst->data);

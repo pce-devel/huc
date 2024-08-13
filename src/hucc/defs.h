@@ -31,124 +31,119 @@
 #define T_LITERAL       12
 
 /* basic pseudo instructions */
-#define I_LDB           1
-#define I_LDBP          2
-#define I_LDW           3
-#define I_LDWI          4
-#define I_LDWP          5
-#define I_STB           6
-#define I_STBPS         7
-#define I_STW           8
-#define I_STWPS         9
-#define I_ADDWI         10
-#define I_ADDWS         11
-#define I_MODSP         12
-#define I_SUBWI         13
-#define I_SUBWS         14
-#define I_ORWS          15
-#define I_EORWS         16
-#define I_ANDWS         17
-#define I_ASLW          18
-#define I_ASLWS         19
-#define I_ASRW          20
-#define I_COMW          21
-#define I_NEGW          22
-#define I_EXTW          23
-#define I_NOTW          24
-#define I_TSTW          25
-#define I_BFALSE        26
-#define I_BTRUE         27
-#define I_JMP           28
-#define I_JSR           29
-#define I_ENTER         30
-#define I_LEAVE         31
-#define I_CALL          32
-#define I_MACRO         33
-#define I_CALLP         34
-#define I_PUSHW         35
-#define I_POPW          36
-#define I_BRA           37
-#define I_BANK          38
-#define I_OFFSET        39
-#define I_FARPTR        40
-#define I_FARPTR_I      41
-#define I_FARPTR_GET    42
-#define I_FGETB         43
-#define I_FGETW         44
-#define I_INCW          45
-#define I_ANDWI         46
-#define I_ORWI          47
-#define I_ADDW          48
-#define I_SUBW          49
-#define I_LDUB          50
-#define I_LDUBP         51
-#define I_FGETUB        52
-#define I_ADDBS         53
-#define I_ADDBI         54
-#define I_LABEL         55
-#define I_STWIP         56
-#define I_STBIP         57
-#define I_MULWI         58
-#define I_STWI          59
-#define I_STBI          60
-#define I_ASLWI         61
-#define I_LSRWI         62
-#define I_ASRWI         63
-#define I_LDYB          64
-#define I_LDBY          65
-#define I_ADDB          66
-#define I_ADDUB         67
-#define I_ADDBI_P       68
-#define I_INCB          69
-#define I_STWZ          70
-#define I_STBZ          71
-#define I_CMPWI_EQ      72
-#define I_CMPWI_NE      73
-#define I_STBP          74
-#define I_STWP          75
-#define I_EORWI         76
-#define I_SPUSHW        77 /* push and pop on the hw-stack */
-#define I_SPUSHB        78 /* to temporarily save data */
-#define I_SPOPW         79
-#define I_SPOPB         80
-#define I_EXTUW         81
-#define I_DEF           82
-#define I_SEI           83
-#define I_CLI           84
-#define I_SAVESP        85
-#define I_LOADSP        86
-#define I_GETACC        87
-#define I_CMPW          88
-#define I_CMPB          89
-
-/* optimized pseudo instructions */
-#define X_MASK          0xFFFF0
-#define X_LDB           0x10000
-#define X_LDB_S         0x10001
-#define X_LDB_P         0x10002
-#define X_LDW_S         0x10011
-#define X_LDD_I         0x10100
-#define X_LDD_B         0x10101
-#define X_LDD_W         0x10102
-#define X_LDD_S_B       0x10105
-#define X_LDD_S_W       0x10106
-#define X_LEA_S         0x10021
-#define X_PEA           0x10030
-#define X_PEA_S         0x10031
-#define X_PUSHW_A       0x10040	/* XXX: unused? */
-#define X_STB_S         0x10051
-#define X_STW_S         0x10061
-#define X_STBI_S        0x10071
-#define X_STWI_S        0x10081
-#define X_ADDW_S        0x10091
-#define X_INCW_S        0x100A1
-#define X_DECW_S        0x100B1
-#define X_LDUB          0x10003
-#define X_LDUB_S        0x10004
-#define X_LDUB_P        0x10005
-#define X_ADDB_S        0x100C1
-#define X_ADDUB_S       0x100D1
-#define X_INCB_S        0x100E1
+enum ICODE {
+	I_PLACEHOLDER,
+	I_LDB,
+	I_LDBP,
+	I_LDW,
+	I_LDWI,
+	I_LDWP,
+	I_STB,
+	I_STBPS,
+	I_STW,
+	I_STWPS,
+	I_ADDWI,
+	I_ADDWS,
+	I_MODSP,
+	I_SUBWI,
+	I_SUBWS,
+	I_ORWS,
+	I_EORWS,
+	I_ANDWS,
+	I_ASLW,
+	I_ASLWS,
+	I_ASRW,
+	I_COMW,
+	I_NEGW,
+	I_EXTW,
+	I_NOTW,
+	I_TSTW,
+	I_BFALSE,
+	I_BTRUE,
+	I_JMP,
+	I_JSR,
+	I_ENTER,
+	I_LEAVE,
+	I_CALL,
+	I_MACRO,
+	I_CALLP,
+	I_PUSHW,
+	I_POPW,
+	I_BRA,
+	I_BANK,
+	I_OFFSET,
+	I_FARPTR,
+	I_FARPTR_I,
+	I_FARPTR_GET,
+	I_FGETB,
+	I_FGETW,
+	I_INCW,
+	I_ANDWI,
+	I_ORWI,
+	I_ADDW,
+	I_SUBW,
+	I_LDUB,
+	I_LDUBP,
+	I_FGETUB,
+	I_ADDBS,
+	I_ADDBI,
+	I_LABEL,
+	I_STWIP,
+	I_STBIP,
+	I_MULWI,
+	I_STWI,
+	I_STBI,
+	I_ASLWI,
+	I_LSRWI,
+	I_ASRWI,
+	I_ADDB,
+	I_ADDUB,
+	I_ADDBI_P,
+	I_INCB,
+	I_STWZ,
+	I_STBZ,
+	I_CMPWI_EQ,
+	I_CMPWI_NE,
+	I_STBP,
+	I_STWP,
+	I_EORWI,
+	I_SPUSHW,	/* push and pop on the hw-stack */
+	I_SPUSHB,	/* to temporarily save data */
+	I_SPOPW,
+	I_SPOPB,
+	I_EXTUW,
+	I_DEF,
+	I_SEI,
+	I_CLI,
+	I_SAVESP,
+	I_LOADSP,
+	I_GETACC,
+	I_CMPW,
+	I_CMPB,
+	X_LDB,
+	X_LDB_S,
+	X_LDW_S,
+	X_LDD_I,
+	X_LDD_B,
+	X_LDD_W,
+	X_LDD_S_B,
+	X_LDD_S_W,
+	X_LEA_S,
+	X_PEA,
+	X_PEA_S,
+	X_STB_S,
+	X_STW_S,
+	X_STBI_S,
+	X_STWI_S,
+	X_ADDW_S,
+	X_INCW_S,
+	X_DECW_S,
+	X_LDUB,		/* Uli added these ... */
+	X_LDUB_S,
+	X_ADDB_S,
+	X_ADDUB_S,
+	X_INCB_S
+};
 
 #define FOREVER for (;;)
 #define FALSE   0

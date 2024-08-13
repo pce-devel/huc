@@ -681,14 +681,8 @@ __stwps		.macro	; __STACK
 
 ;__stwps_ns	sta	[__stack, x]
 ;		inc.l	<__stack, x
-;!:		say
-;		sta	[__stack, x]
-;		say
-;		inx
-;		inx
-
-;__stwps_ns	sta	[__stack, x]
-;		inc.l	<__stack, x
+;		bne	!+
+;		inc.h	<__stack, x
 ;!:		tya
 ;		sta	[__stack, x]
 ;		inx
@@ -1544,18 +1538,6 @@ __addw_s	.macro	; __STACK
 
 ; **************
 
-__ldb_p		.macro
-		sta.l	<__ptr
-		sty.h	<__ptr
-		lda	[__ptr]
-		cly
-		bpl	!+
-		dey
-!:
-		.endm
-
-; **************
-
 __addbi_p	.macro
 		sta.l	<__ptr
 		sty.h	<__ptr
@@ -1563,15 +1545,6 @@ __addbi_p	.macro
 		clc
 		adc	#\1
 		sta	[__ptr]
-		cly
-		.endm
-
-; **************
-
-__ldub_p	.macro
-		sta.l	<__ptr
-		sty.h	<__ptr
-		lda	[__ptr]
 		cly
 		.endm
 
