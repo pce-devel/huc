@@ -211,7 +211,7 @@ lv1_loop:
 
 		/* 5-instruction patterns */
 		if (q_nb >= 5) {
-			/*  Classical Base-offset array access:
+			/*  Classical Base+offset word array access:
 			 *
 			 *  __ldwi  label              --> @_ldw_s  n-2
 			 *  __pushw                        __aslw
@@ -245,7 +245,7 @@ lv1_loop:
 				nb = 2;
 			}
 
-			/*  Classical Base-offset array access:
+			/*  Classical Base+offset word array access:
 			 *
 			 *  __ldwi  label1             --> __ldw    label2
 			 *  __pushw                        __aslw
@@ -302,6 +302,75 @@ lv1_loop:
 
 		/* 4-instruction patterns */
 		if (q_nb >= 4) {
+			/*  Classical Base+offset byte array access:
+			 *
+			 *  __ldwi  label              --> @_ldub_s n-2
+			 *  __pushw                        __addwi  label
+			 *  @_ldub_s n
+			 *  __addws
+			 *
+			 *  ====
+			 *  bytes  :  ? -->  ?
+			 *  cycles :  ? -->  ?
+			 *
+			 */
+			if ((p[0]->code == I_ADDWS) &&
+			    (p[1]->code == X_LDUB_S) &&
+			    (p[2]->code == I_PUSHW) &&
+			    (p[3]->code == I_LDWI)) {
+				intptr_t tempdata;
+
+				tempdata = p[1]->data;
+
+				/* replace code */
+				p[2]->code = I_ADDWI;
+				p[2]->type = p[3]->type;
+				p[2]->data = p[3]->data;
+				p[2]->sym = p[3]->sym;
+				p[3]->code = X_LDUB_S;
+				p[3]->data = tempdata - 2;
+
+				nb = 2;
+			}
+
+			/*  Classical Base+offset byte array access:
+			 *
+			 *  __ldwi  label1             --> __ldub   label2
+			 *  __pushw                        __addwi  label1
+			 *  __ldub  label2
+			 *  __addws
+			 *
+			 *  ====
+			 *  bytes  :  ? -->  ?
+			 *  cycles :  ? -->  ?
+			 *
+			 */
+			else
+			if ((p[0]->code == I_ADDWS) &&
+			    (p[1]->code == I_LDUB) &&
+			    (p[2]->code == I_PUSHW) &&
+			    (p[3]->code == I_LDWI)) {
+				intptr_t tempdata;
+				SYMBOL *tempsym;
+				char temptype;
+
+				tempdata = p[1]->data;
+				tempsym = p[1]->sym;
+				temptype = p[1]->type;
+
+				/* replace code */
+				p[2]->code = I_ADDWI;
+				p[2]->type = p[3]->type;
+				p[2]->data = p[3]->data;
+				p[2]->sym = p[3]->sym;
+				p[3]->code = I_LDUB;
+				p[3]->data = tempdata;
+				p[3]->sym = tempsym;
+				p[3]->type = temptype;
+
+				nb = 2;
+			}
+
 			/*  @_ldw/b/ub_s i             --> @_ldw/b/ub_s  i
 			 *  __addwi 1                      @_incw/b_s i
 			 *  @_stw_s i
