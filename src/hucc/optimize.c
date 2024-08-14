@@ -78,7 +78,6 @@ static int is_load (INS *i)
 		i->code == X_LDD_I ||
 		i->code == X_LDD_S_B ||
 		i->code == X_LDD_S_W ||
-		i->code == X_LDUB ||
 		i->code == X_LDUB_S);
 }
 
@@ -1311,7 +1310,6 @@ lv1_loop:
 			  p[0]->code == X_LDB_S ||
 			  p[0]->code == I_LDUB ||
 			  p[0]->code == I_LDUBP ||
-			  p[0]->code == X_LDUB ||
 			  p[0]->code == X_LDUB_S) &&
 			 (p[1]->code == I_LDW ||
 			  p[1]->code == I_LDWI ||
@@ -1323,7 +1321,6 @@ lv1_loop:
 			  p[1]->code == X_LDB_S ||
 			  p[1]->code == I_LDUB ||
 			  p[1]->code == I_LDUBP ||
-			  p[1]->code == X_LDUB ||
 			  p[1]->code == X_LDUB_S)
 			) {
 				/* remove code */

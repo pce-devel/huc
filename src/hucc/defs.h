@@ -138,8 +138,7 @@ enum ICODE {
 	X_ADDW_S,
 	X_INCW_S,
 	X_DECW_S,
-	X_LDUB,		/* Uli added these ... */
-	X_LDUB_S,
+	X_LDUB_S,	/* Uli added these ... */
 	X_ADDB_S,
 	X_ADDUB_S,
 	X_INCB_S
