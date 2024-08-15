@@ -43,7 +43,7 @@ void getmem (SYMBOL *sym)
 		if ((sym->storage & ~WRITTEN) == LSTATIC)
 			out_ins(op, T_LABEL, glint(sym));
 		else
-			out_ins(op, T_SYMBOL, (intptr_t)(sym->name));
+			out_ins(op, T_SYMBOL, (intptr_t)sym);
 	}
 	else {
 		if ((sym->storage & ~WRITTEN) == LSTATIC)
@@ -51,7 +51,7 @@ void getmem (SYMBOL *sym)
 		else if ((sym->storage & ~WRITTEN) == CONST && (data = get_const(sym)))
 			out_ins(I_LDWI, T_LITERAL, (intptr_t)data);
 		else
-			out_ins(I_LDW, T_SYMBOL, (intptr_t)(sym->name));
+			out_ins(I_LDW, T_SYMBOL, (intptr_t)sym);
 	}
 }
 
@@ -99,7 +99,7 @@ void putmem (SYMBOL *sym)
 	if ((sym->storage & ~WRITTEN) == LSTATIC)
 		out_ins(code, T_LABEL, glint(sym));
 	else
-		out_ins(code, T_SYMBOL, (intptr_t)(sym->name));
+		out_ins(code, T_SYMBOL, (intptr_t)sym);
 }
 
 /*
@@ -190,7 +190,7 @@ void gpop (void)
  */
 void gcall (char *sname, int nargs)
 {
-	out_ins_ex(I_CALL, T_SYMBOL, (intptr_t)sname, T_VALUE, nargs);
+	out_ins_ex(I_CALL, T_LITERAL, (intptr_t)sname, T_VALUE, nargs);
 }
 
 /*
@@ -199,7 +199,7 @@ void gcall (char *sname, int nargs)
  */
 void gmacro (char *sname, int nargs)
 {
-	out_ins_ex(I_MACRO, T_SYMBOL, (intptr_t)sname, T_VALUE, nargs);
+	out_ins_ex(I_MACRO, T_LITERAL, (intptr_t)sname, T_VALUE, nargs);
 }
 
 /*
@@ -272,7 +272,7 @@ void gasrint (void)
  */
 void gjcase (void)
 {
-	out_ins(I_JMP, T_SYMBOL, (intptr_t)"__case");
+	out_ins(I_JMP, T_LIB, (intptr_t)"__case");
 }
 
 /*

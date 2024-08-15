@@ -52,7 +52,7 @@ int cmp_operands (INS *p1, INS *p2)
 		return (0);
 
 	if (p1->type == T_SYMBOL) {
-		if (strcmp((char *)p1->data, (char *)p2->data) != 0)
+		if (strcmp(((SYMBOL *)p1->data)->name, ((SYMBOL *)p2->data)->name) != 0)
 			return (0);
 	}
 	else {
@@ -936,8 +936,8 @@ lv1_loop:
 					p[1]->data -= 2;
 				/* replace code */
 				p[2]->code = I_STW;
-				p[2]->type = T_SYMBOL;
-				p[2]->data = (intptr_t)"_temp";
+				p[2]->type = T_LITERAL;
+				p[2]->data = (intptr_t)"__temp";
 				if (strcmp((char *)p[0]->data, "eq_w") == 0)
 					p[0]->data = (intptr_t)"eq_wzp";
 				else if (strcmp((char *)p[0]->data, "eq_b") == 0)

@@ -179,7 +179,7 @@ static void out_type (int type, intptr_t data)
 		outlabel((int)data);
 		break;
 	case T_SYMBOL:
-		outsymbol((char *)data);
+		outsymbol((SYMBOL *)data);
 		break;
 	case T_LITERAL:
 		outstr((const char *)data);
@@ -214,7 +214,7 @@ static void out_addr (int type, intptr_t data)
 		outlabel((int)data);
 		break;
 	case T_SYMBOL:
-		outsymbol((char *)data);
+		outsymbol((SYMBOL *)data);
 		break;
 	case T_LITERAL:
 		outstr((const char *)data);
@@ -270,7 +270,7 @@ void gen_code (INS *tmp)
 			outlabel((int)data);
 			break;
 		case T_SYMBOL:
-			outsymbol((char *)data);
+			outsymbol((SYMBOL *)data);
 			break;
 		}
 		outstr(",");
@@ -282,7 +282,7 @@ void gen_code (INS *tmp)
 
 	case I_FARPTR_I:
 		ot("__farptr_i\t");
-		outsymbol((char *)data);
+		outsymbol((SYMBOL *)data);
 		outstr(",");
 		outstr(tmp->arg[0]);
 		outstr(",");
@@ -300,21 +300,21 @@ void gen_code (INS *tmp)
 
 	case I_FGETB:
 		ot("__farptr_i\t");
-		outsymbol((char *)data);
+		outsymbol((SYMBOL *)data);
 		nl();
 		ol("__fgetb");
 		break;
 
 	case I_FGETUB:
 		ot("__farptr_i\t");
-		outsymbol((char *)data);
+		outsymbol((SYMBOL *)data);
 		nl();
 		ol("__fgetub");
 		break;
 
 	case I_FGETW:
 		ot("__farptr_i\t");
-		outsymbol((char *)data);
+		outsymbol((SYMBOL *)data);
 		nl();
 		ol("  jsr\t_farpeekw.fast");
 		break;
@@ -597,7 +597,15 @@ void gen_code (INS *tmp)
 
 	case I_JMP:
 		ot("  jmp\t");
-		outsymbol((char *)data);
+
+		switch (type) {
+		case T_SYMBOL:
+			outsymbol((SYMBOL *)data);
+			break;
+		case T_LIB:
+			outstr((const char *)data);
+			break;
+		}
 		nl();
 		break;
 
@@ -606,7 +614,7 @@ void gen_code (INS *tmp)
 
 		switch (type) {
 		case T_SYMBOL:
-			outsymbol((char *)data);
+			outsymbol((SYMBOL *)data);
 			break;
 		case T_LIB:
 			outstr((const char *)data);
@@ -616,36 +624,34 @@ void gen_code (INS *tmp)
 		break;
 
 	case I_CALL:
+		/* because functions don't need to be pre-declared
+		   in HuC we get a string and not a symbol */
 		switch (type) {
-		case T_SYMBOL:
+		case T_LITERAL:
 			ot("  call\t");
-			outsymbol((char *)data);
+			prefix();
+			outstr((const char *)data);
 			if (imm_data) {
 				outstr(".");
 				outdec((int)imm_data);
 			}
-			break;
-		case T_LIB:
-			ot("  jsr\t");
-			outstr((const char *)data);
 			break;
 		}
 		nl();
 		break;
 
 	case I_MACRO:
+		/* because functions don't need to be pre-declared
+		   in HuC we get a string and not a symbol */
 		switch (type) {
-		case T_SYMBOL:
+		case T_LITERAL:
 			ot("  \t");
-			outsymbol((char *)data);
+			prefix();
+			outstr((const char *)data);
 			if (imm_data) {
 				outstr(".");
 				outdec((int)imm_data);
 			}
-			break;
-		case T_LIB:
-			ot("  \t");
-			outstr((const char *)data);
 			break;
 		}
 		nl();
@@ -657,7 +663,7 @@ void gen_code (INS *tmp)
 
 	case I_ENTER:
 		ot("__enter\t");
-		outsymbol((char *)data);
+		outsymbol((SYMBOL *)data);
 		nl();
 		break;
 
@@ -794,7 +800,7 @@ void gen_code (INS *tmp)
 
 		switch (type) {
 		case T_SYMBOL:
-			outsymbol((char *)data);
+			outsymbol((SYMBOL *)data);
 			break;
 		case T_LIB:
 			outstr((const char *)data);
@@ -808,7 +814,7 @@ void gen_code (INS *tmp)
 
 		switch (type) {
 		case T_SYMBOL:
-			outsymbol((char *)data);
+			outsymbol((SYMBOL *)data);
 			break;
 		case T_LIB:
 			outstr((const char *)data);
@@ -854,29 +860,35 @@ void gen_asm (INS *inst)
 		ot("__ldd_i\t");
 		outdec((int)inst->data);
 		outstr(",");
-		outsymbol(inst->arg[0]);
+		prefix();
+		outstr(inst->arg[0]);
 		outstr(",");
-		outsymbol(inst->arg[1]);
+		prefix();
+		outstr(inst->arg[1]);
 		nl();
 		break;
 
 	case X_LDD_B:
 		ot("__ldd_b\t");
-		outsymbol((char *)inst->data);
+		outsymbol((SYMBOL *)inst->data);
 		outstr(",");
-		outsymbol(inst->arg[0]);
+		prefix();
+		outstr(inst->arg[0]);
 		outstr(",");
-		outsymbol(inst->arg[1]);
+		prefix();
+		outstr(inst->arg[1]);
 		nl();
 		break;
 
 	case X_LDD_W:
 		ot("__ldd_w\t");
-		outsymbol((char *)inst->data);
+		outsymbol((SYMBOL *)inst->data);
 		outstr(",");
-		outsymbol(inst->arg[0]);
+		prefix();
+		outstr(inst->arg[0]);
 		outstr(",");
-		outsymbol(inst->arg[1]);
+		prefix();
+		outstr(inst->arg[1]);
 		nl();
 		break;
 
@@ -884,9 +896,11 @@ void gen_asm (INS *inst)
 		ot("__ldd_s_b\t");
 		outdec((int)inst->data);
 		outstr(",");
-		outsymbol(inst->arg[0]);
+		prefix();
+		outstr(inst->arg[0]);
 		outstr(",");
-		outsymbol(inst->arg[1]);
+		prefix();
+		outstr(inst->arg[1]);
 		nl();
 		break;
 
@@ -894,9 +908,11 @@ void gen_asm (INS *inst)
 		ot("__ldd_s_w\t");
 		outdec((int)inst->data);
 		outstr(",");
-		outsymbol(inst->arg[0]);
+		prefix();
+		outstr(inst->arg[0]);
 		outstr(",");
-		outsymbol(inst->arg[1]);
+		prefix();
+		outstr(inst->arg[1]);
 		nl();
 		break;
 

@@ -456,10 +456,10 @@ void nl (void)
  * Writes the string ptr preceded with the result of the function prefix
  *
  */
-void outsymbol (char *ptr)
+void outsymbol (SYMBOL *ptr)
 {
 	prefix();
-	outstr(ptr);
+	outstr(ptr->name);
 }
 
 /*

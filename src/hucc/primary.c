@@ -345,7 +345,7 @@ int primary (LVALUE *lval, int comma)
 			if (ptr && (ptr->ident == FUNCTION)) {
 				lval->symbol = ptr;
 				lval->indirect = 0;
-				immed(T_SYMBOL, (intptr_t)ptr->name);
+				immed(T_SYMBOL, (intptr_t)ptr);
 				return (0);
 			}
 			error("undeclared variable");

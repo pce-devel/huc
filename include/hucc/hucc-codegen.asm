@@ -2238,7 +2238,7 @@ smod:		sta.l	<divisor
 		rts
 
 ; **************
-; ___case
+; __case
 ; **************
 ; implement a switch instruction in C
 ; ----
@@ -2265,7 +2265,7 @@ smod:		sta.l	<divisor
 ; REMARK : Also use remain variable as a temporary value
 ; ----
 
-___case:	sta.l	<__temp		; store the value to check to
+__case:		sta.l	<__temp		; store the value to check to
 		sty.h	<__temp
 
 		__popw
