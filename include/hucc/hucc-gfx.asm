@@ -806,7 +806,7 @@ huc_load_vram:	tma3
 		ldy	<_bp_bank
 		jsr	set_bp_to_mpr34		; Map data to MPR3 & MPR4.
 
-		jsr	vdc_di_to_mawr
+		jsr	set_di_to_mawr
 
 ;		tii	.vdc_tai, ram_tia, 8
 
@@ -943,7 +943,7 @@ load_bat_group	.procgroup			; These routines share code!
 		ldy.l	<_bp
 		stz.l	<_bp
 
-.line_loop:	jsr	vdc_di_to_mawr
+.line_loop:	jsr	set_di_to_mawr
 
 		ldx	<_al
 .tile_loop:	lda	[_bp], y

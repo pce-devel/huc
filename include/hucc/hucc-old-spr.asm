@@ -36,8 +36,6 @@
 		.zp
 spr_ptr:	ds	2
 		.bss
-spr_max:	ds	1
-spr_clr:	ds	1
 spr_sat:	ds	512
 		.code
 
@@ -45,11 +43,20 @@ spr_sat:	ds	512
 		.zp
 sgx_spr_ptr:	ds	2
 		.bss
-sgx_spr_max:	ds	1
-sgx_spr_clr:	ds	1
-sgx_spr_sat:	ds	512
+sgx_spr_sat:	ds	512	; N.B. Directly after spr_sat!
 		.code
 	.endif
+
+; Moved to hucc-old-map.asm just to save space. This NEEDS to be changed!
+;
+;		.bss
+;spr_max:	ds	1
+;spr_clr:	ds	1
+;	.if	SUPPORT_SGX
+;sgx_spr_max:	ds	1
+;sgx_spr_clr:	ds	1
+;	.endif
+;		.code
 
 
 
@@ -119,7 +126,7 @@ old_satb_group	.procgroup
 ;		lda.h	#$0800			; but we put it here instead
 		stz.l	<_di
 		sta.h	<_di
-		jsr	vdc_di_to_mawr
+		jsr	set_di_to_mawr
 
 	.if	SUPPORT_SGX
 		txa				; Select which VDC to write
@@ -131,12 +138,12 @@ old_satb_group	.procgroup
 		lda	#VRAM_XFER_SIZE		; Split into 16-byte chunks
 		sta.l	ram_tia_len		; for stable IRQ response.
 
-		ldy	spr_max			; Highest sprite that was set.
+		ldy	spr_max, x		; Highest sprite that was set.
 		iny
 
-		lda	spr_clr
+		lda	spr_clr, x
 		beq	!+
-		stz	spr_clr
+		stz	spr_clr, x
 		ldy	#64
 
 !:		tya
@@ -151,9 +158,17 @@ old_satb_group	.procgroup
 		tay
 
 		lda.h	#spr_sat
-		sta.h	ram_tia_src
 
-		lda.l	#spr_sat
+	.if	SUPPORT_SGX
+		cpx	#0
+		beq	!+
+
+		lda.h	#sgx_spr_sat
+	.endif
+
+!:		sta.h	ram_tia_src
+
+		lda.l	#spr_sat		; Same for SGX and PCE!
 .chunk_loop:	sta.l	ram_tia_src
 
 		jsr	ram_tia			; transfer 16-bytes

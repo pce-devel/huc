@@ -386,6 +386,39 @@ set_mode_vdc	.proc
 ;    BACK
 
 	.if	SUPPORT_SGX
+	.if	1
+sgx_detect	.proc
+
+		ldy	#$7F			; Use VRAM address $7F7F
+		sty.l	<_di			; because it won't cause
+		sty.h	<_di			; a screen glitch.
+
+		jsr	sgx_di_to_mawr		; Write $0001 to SGX VRAM.
+		ldy	#$01
+		sty	SGX_DL
+		stz	SGX_DH
+
+		jsr	vdc_di_to_mawr		; Write $0000 to VDC VRAM.
+		stz	VDC_DL
+		stz	VDC_DH
+
+		jsr	sgx_di_to_marr		; Check value in SGX VRAM.
+		ldy	SGX_DL			; $01 if found, $00 if not.
+		sty	sgx_detected
+		beq	!+			; Skip the rest if not SGX.
+
+		jsr	sgx_di_to_mawr		; Write $0000 to SGX VRAM
+		stz	SGX_DL			; to clean VRAM contents.
+		stz	SGX_DH
+
+		tii	.vpc_mode, VPC_CR, 8	; Initialize the HuC6202 VPC.
+
+!:		tya
+		tax				; "leave" copies X back to A.
+		lsr	a			; Also CC if PCE, CS if SGX.
+
+		leave				; All done, phew!
+	.else
 sgx_detect	.proc
 
 		lda	#$80			; Check the top bit, 1 if SGX
@@ -393,13 +426,14 @@ sgx_detect	.proc
 		beq	!+
 
 		tii	.vpc_mode, VPC_CR, 8	; Initialize the HuC6202 VPC.
-		lda	#$FF
+		lda	#$01
 
 !:		sta	sgx_detected
 		tax				; "leave" copies X back to A.
 		lsr	a			; Also CC if PCE, CS if SGX.
 
 		leave				; All done, phew!
+	.endif
 
 	.ifndef	SGX_PARALLAX
 SGX_PARALLAX	=	1			; The most common default.

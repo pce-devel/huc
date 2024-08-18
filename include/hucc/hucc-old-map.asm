@@ -53,7 +53,11 @@ vdc_map_addr	ds	2
 vdc_map_width	ds	1
 vdc_map_height	ds	1
 
-		ds	10			; WASTED (at the moment)
+; From hucc-old-spr.asm just to save space. This NEEDS to be changed!
+spr_max:	ds	1
+spr_clr:	ds	1
+
+		ds	8			; WASTED (at the moment)
 
 	.if	SUPPORT_SGX
 
@@ -68,6 +72,10 @@ sgx_map_bank	ds	1
 sgx_map_addr	ds	2
 sgx_map_width	ds	1
 sgx_map_height	ds	1
+
+; From hucc-old-spr.asm just to save space. This NEEDS to be changed!
+sgx_spr_max:	ds	1
+sgx_spr_clr:	ds	1
 
 	.endif
 
