@@ -61,6 +61,17 @@ color_data	=	$FF:0404		; Color Table Data Read/Write
 color_data_l	=	$FF:0404		; Color Table Data Read/Write
 color_data_h	=	$FF:0405		; Color Table Data Read/Write
 
+psg_ch		=	$FF:0800		; Channel Select
+psg_mainvol	=	$FF:0801		; Main Amplitude Level
+psg_freqlo	=	$FF:0802		; Frequency Low
+psg_freqhi	=	$FF:0803		; Frequency High
+psg_ctrl	=	$FF:0804		; Control & Channel Amplitude
+psg_pan		=	$FF:0805		; L/R Amplitude Level
+psg_wavebuf	=	$FF:0806		; Waveform
+psg_noise	=	$FF:0807		; Noise
+psg_lfofreq	=	$FF:0808		; LFO Frequency
+psg_lfoctrl	=	$FF:0809		; LFO Control
+
 irq_m		=	irq_vec			; Old System Card name.
 irq2_jmp	=	irq2_hook		; Old System Card name.
 irq1_jmp	=	irq1_hook		; Old System Card name.
