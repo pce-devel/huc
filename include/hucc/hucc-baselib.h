@@ -77,6 +77,9 @@ extern unsigned char dh;
 
 #asmdef	HUCC_USES_BASELIB 1
 
+extern unsigned char __fastcall __xsafe __macro sgx_detect( void );
+extern unsigned char __fastcall __xsafe __macro ac_exists( void );
+
 extern unsigned int __fastcall __xsafe __macro peek( unsigned int addr<__ptr> );
 extern unsigned int __fastcall __xsafe __macro peekw( unsigned int addr<__ptr> );
 extern void __fastcall __xsafe __macro poke( unsigned int addr<__ptr>, unsigned char with<acc> );
@@ -105,7 +108,6 @@ extern unsigned char __fastcall __xsafe random( unsigned char limit<acc> );
 extern unsigned char __fastcall __xsafe rand( void );
 
 extern unsigned char __fastcall __xsafe __macro cd_execoverlay( unsigned char ovl_index<acc> );
-extern unsigned char __fastcall __xsafe __macro ac_exists( void );
 
 extern unsigned int __fastcall __xsafe abs( int value<acc> );
 
