@@ -14,6 +14,7 @@
 #include "preproc.h"
 #include "main.h"
 #include "code.h"
+#include "sym.h"
 
 /*
  *	open input file
@@ -458,8 +459,12 @@ void nl (void)
  */
 void outsymbol (SYMBOL *ptr)
 {
-	prefix();
-	outstr(ptr->name);
+	if ((ptr->storage & STORAGE) == LSTATIC) {
+		outlabel(glint(ptr));
+	} else {
+		prefix();
+		outstr(ptr->name);
+	}
 }
 
 /*

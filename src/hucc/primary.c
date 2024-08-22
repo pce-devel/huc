@@ -278,7 +278,7 @@ int primary (LVALUE *lval, int comma)
 			if (ptr->type == CSTRUCT)
 				lval->tagsym = &tag_table[ptr->tagidx];
 			if (ptr->ident == POINTER) {
-				if ((ptr->storage & ~WRITTEN) == LSTATIC)
+				if ((ptr->storage & STORAGE) == LSTATIC)
 					lval->indirect = 0;
 				else {
 					lval->indirect = CUINT;
@@ -299,7 +299,7 @@ int primary (LVALUE *lval, int comma)
 				else
 					return (0);
 			}
-			if ((ptr->storage & ~WRITTEN) == LSTATIC)
+			if ((ptr->storage & STORAGE) == LSTATIC)
 				lval->indirect = 0;
 			else
 				getloc(ptr);

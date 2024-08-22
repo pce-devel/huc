@@ -865,7 +865,7 @@ next:
 			if (cptr->ident != FUNCTION) {
 //				ppubext(cptr);
 				if ((cptr->storage & WRITTEN) == 0 &&	/* Not yet written to file */
-				    cptr->storage != EXTERN) {
+				    (cptr->storage & STORAGE) != EXTERN) {
 					dim = cptr->offset;
 					if (find_symbol_initials(cptr->name)) {
 						// has initials
@@ -876,7 +876,7 @@ next:
 							/* define space for initialized data */
 							current_buffer = data_buffer;
 							current_offset = data_offset;
-							if (cptr->storage != LSTATIC)
+							if ((cptr->storage & STORAGE) != LSTATIC)
 								prefixBuffer();
 							outstrBuffer(cptr->name);
 							outstrBuffer(":\t");
@@ -947,7 +947,7 @@ next:
 							nl();
 							gdata();
 						}
-						if (cptr->storage != LSTATIC)
+						if ((cptr->storage & STORAGE) != LSTATIC)
 							prefix();
 						outstr(cptr->name);
 						outstr(":\t");

@@ -37,18 +37,16 @@ void getmem (SYMBOL *sym)
 	char *data;
 
 	if ((sym->ident != POINTER) && (sym->type == CCHAR || sym->type == CUCHAR)) {
-		int op = I_LDB;
-		if (sym->type & CUNSIGNED)
-			op = I_LDUB;
-		if ((sym->storage & ~WRITTEN) == LSTATIC)
+		int op = (sym->type & CUNSIGNED) ? I_LDUB : I_LDB;
+		if ((sym->storage & STORAGE) == LSTATIC)
 			out_ins(op, T_LABEL, glint(sym));
 		else
 			out_ins(op, T_SYMBOL, (intptr_t)sym);
 	}
 	else {
-		if ((sym->storage & ~WRITTEN) == LSTATIC)
+		if ((sym->storage & STORAGE) == LSTATIC)
 			out_ins(I_LDW, T_LABEL, glint(sym));
-		else if ((sym->storage & ~WRITTEN) == CONST && (data = get_const(sym)))
+		else if ((sym->storage & STORAGE) == CONST && (data = get_const(sym)))
 			out_ins(I_LDWI, T_LITERAL, (intptr_t)data);
 		else
 			out_ins(I_LDW, T_SYMBOL, (intptr_t)sym);
@@ -63,7 +61,7 @@ void getloc (SYMBOL *sym)
 {
 	int value;
 
-	if ((sym->storage & ~WRITTEN) == LSTATIC)
+	if ((sym->storage & STORAGE) == LSTATIC)
 		out_ins(I_LDWI, T_LABEL, glint(sym));
 	else {
 		value = glint(sym);
@@ -96,7 +94,7 @@ void putmem (SYMBOL *sym)
 	else
 		code = I_STW;
 
-	if ((sym->storage & ~WRITTEN) == LSTATIC)
+	if ((sym->storage & STORAGE) == LSTATIC)
 		out_ins(code, T_LABEL, glint(sym));
 	else
 		out_ins(code, T_SYMBOL, (intptr_t)sym);

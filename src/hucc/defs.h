@@ -242,6 +242,9 @@ struct tag_symbol {
 #define DEFAUTO 6
 #define CONST   7
 
+#define STORAGE 15 /* bitmask for the storage type */
+
+#define WASAUTO 64
 #define WRITTEN 128
 
 /* "do"/"for"/"while"/"switch" statement stack */

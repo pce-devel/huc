@@ -184,7 +184,7 @@ int declglb (char typ, char stor, TAG_SYMBOL *mtag, int otag, int is_struct)
 				return (2);
 			}
 			if ((s = findglb(sname))) {
-				if (s->storage != EXTERN && !mtag)
+				if ((s->storage & STORAGE) != EXTERN && !mtag)
 					multidef(sname);
 			}
 			if (mtag && find_member(mtag, sname))
@@ -292,6 +292,7 @@ void declloc (char typ, char stclass, int otag)
 	int totalk = 0;
 
 	for (;;) {
+		SYMBOL * ssym = NULL;
 		for (;;) {
 			int ptr_order = 0;
 			if (endst()) {
@@ -337,7 +338,7 @@ void declloc (char typ, char stclass, int otag)
 				else
 					k = INTSIZE;
 			}
-			if (stclass == LSTATIC) {
+			if ((stclass & STORAGE) == LSTATIC) {
 				/* Local statics are identified in two
 				   different ways: The human-readable
 				   identifier as given in the source text,
@@ -357,19 +358,22 @@ void declloc (char typ, char stclass, int otag)
 				int label = getlabel();
 				sprintf(lsname, "LL%d", label);
 
-				j = initials(lsname, typ, j, k, otag);
+				/* do static initialization unless from norecurse */
+				if ((stclass & WASAUTO) == 0)
+					j = initials(lsname, typ, j, k, otag);
+
 				/* NB: addglb() expects the number of
 				   elements, not a byte size.  Unless, of
 				   course, we have a CSTRUCT. *sigh* */
 				if (typ == CSTRUCT)
-					addglb(lsname, j, typ, k, LSTATIC, 0);
+					ssym = addglb(lsname, j, typ, k, stclass, 0);
 				else
-					addglb(lsname, j, typ, elements, LSTATIC, 0);
+					ssym = addglb(lsname, j, typ, elements, stclass, 0);
 
-				SYMBOL *c = addloc(sname, j, typ, label, LSTATIC, k);
+				ssym = addloc(sname, j, typ, label, stclass, k);
 				if (typ == CSTRUCT)
-					c->tagidx = otag;
-				c->ptr_order = ptr_order;
+					ssym->tagidx = otag;
+				ssym->ptr_order = ptr_order;
 			}
 			else {
 				SYMBOL *c;
@@ -388,31 +392,37 @@ void declloc (char typ, char stclass, int otag)
 			break;
 		}
 		if (match("=")) {
-			int num[1];
+			int num;
+
+			/* this should have been done in initials() above */
+			if (stclass == LSTATIC)
+				error("initialization of static local variables unimplemented");
+
 			if (!norecurse)
 				stkp = modstk(stkp - totalk);
 			else
 				locals_ptr -= totalk;
 			totalk -= k;
-			if (const_expr(num, ",", ";")) {
+
+			if (const_expr(&num, ",", ";")) {
 				/* XXX: minor memory leak */
 				char *locsym = calloc(1,sizeof(SYMBOL));
 				gtext();
 				if (k == 1) {
 					if (norecurse) {
 						sprintf(locsym, "_%s_lend - %d", current_fn, (int) -locals_ptr);
-						out_ins_ex(I_STBI, T_SYMBOL, (intptr_t)locsym, T_VALUE, *num);
+						out_ins_ex(I_STBI, T_SYMBOL, (intptr_t)locsym, T_VALUE, num);
 					}
 					else
-						out_ins_ex(X_STBI_S, T_VALUE, 0, T_VALUE, *num);
+						out_ins_ex(X_STBI_S, T_VALUE, 0, T_VALUE, num);
 				}
 				else if (k == 2) {
 					if (norecurse) {
 						sprintf(locsym, "_%s_lend - %d", current_fn, (int) -locals_ptr);
-						out_ins_ex(I_STWI, T_SYMBOL, (intptr_t)locsym, T_VALUE, *num);
+						out_ins_ex(I_STWI, T_SYMBOL, (intptr_t)locsym, T_VALUE, num);
 					}
 					else
-						out_ins_ex(X_STWI_S, T_VALUE, 0, T_VALUE, *num);
+						out_ins_ex(X_STWI_S, T_VALUE, 0, T_VALUE, num);
 				}
 				else
 					error("complex type initialization not implemented");
