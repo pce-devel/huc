@@ -119,43 +119,33 @@ init_random	.proc
 ;
 ; The pseudo-random sequence repeats after (2^24)-1 calls.
 ;
-; Written by Brad Smith, see https://github.com/bbbradsmith/prng_6502
+; Written by Wim Couwenberg, see ...
 ;
-; Takes 88 cycles on the HuC6280, incl JSR & RTS.
+; "https://wimcouwenberg.wordpress.com/2020/11/15/ ...
+;  a-fast-24-bit-prng-algorithm-for-the-6502-processor/"
+;
+; Takes 68 cycles on the HuC6280, incl JSR & RTS.
+;
+; N.B. HuCC library code relies on this preserving X and Y!
 ;
 
-get_random:	; Rotate the middle byte left
+_rand8:		cly				; Entry point for HuCC.
 
-		ldy	<random + 1		; will move to random+2 at the end
-
-		; Compute random+1 ($1B>>1 = %00001101)
-
-		lda	<random + 2
-		lsr	a
-		lsr	a
-		lsr	a
-		lsr	a
-		sta	<random + 1		; reverse: %1011
-		lsr	a
-		lsr	a
+get_random:	lda	<random + 0		; Operation 7 (with carry clear).
+		asl	a
 		eor	<random + 1
-		lsr	a
-		eor	<random + 1
-		eor	<random + 0
 		sta	<random + 1
-
-		; Compute random+0 ($1B = %00011011)
-
-		lda	<random + 2
-		asl	a
+		rol	a             		; Operation 9.
 		eor	<random + 2
-		asl	a
-		asl	a
-		eor	<random + 2
-		asl	a
-		eor	<random + 2
-		sty	<random + 2		; finish rotating byte 1 into 2
+		sta	<random + 2
+		eor	<random + 0		; Operation 5.
 		sta	<random + 0
+		lda	<random + 1		; Operation 15.
+		ror	a
+		eor	<random + 2
+		sta	<random + 2
+		eor	<random + 1		; Operation 6.
+		sta	<random + 1
 		rts
 
 
@@ -324,6 +314,5 @@ get_random24:	lda	<random + 0		; Operation 7 (with carry clear).
 		eor	<random + 1		; Operation 6.
 		sta	<random + 1
 		rts
-
 
 	.endif

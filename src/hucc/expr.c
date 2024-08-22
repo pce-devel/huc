@@ -808,6 +808,8 @@ int heir11 (LVALUE *lval, int comma)
 					lval->ptr_type = s->type;
 					lval->ptr_order = s->ptr_order;
 				}
+				if (s->type)
+					lval->type = s->type;
 				if (s->type == CSTRUCT)
 					lval->tagsym = &tag_table[s->tagidx];
 				lval->symbol = 0;

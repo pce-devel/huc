@@ -446,7 +446,7 @@ _set_xres.1	.macro
 __lbltsbi	.macro
 		sec			; Subtract memory from A.
 		sbc.l	#\1		; "cmp" does not set V flag!
-		bvc	!+		
+		bvc	!+
 		eor	#$80		; +ve if A >= memory (signed).
 !:		bmi	\2		; -ve if A  < memory (signed).
 		.endm
@@ -468,20 +468,52 @@ __lbltswi	.macro
 ; ***************************************************************************
 ;
 ; void __fastcall __xsafe srand( unsigned char seed<acc> );
-; unsigned char __fastcall __xsafe rand( void );
-;
-; unsigned char __fastcall __xsafe random( unsigned char limit<acc> );
-;
-; IN :	A = range (1 - 128)
-; OUT : A = random number interval 0 <= x < A
+; unsigned int __fastcall __xsafe rand( void );
+; unsigned char __fastcall __xsafe rand8( void );
 
 	.ifndef	HUCC_NO_DEFAULT_RANDOM
 		.alias	_srand.1		= init_random
-		.alias	_rand			= get_random
 
-_random.1:	pha				; Preserve the limit.
-		jsr	get_random		; Get an 8-bit random number.
-		ply				; Restore the limit.
+_rand:		jsr	get_random		; Random in A, preserve Y.
+		tay
+		jmp	get_random		; Random in A, preserve Y.
+	.endif
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; unsigned char __fastcall __xsafe random8( unsigned char limit<acc> );
+;
+; IN :	A = range (0..255)
+; OUT : A = random number interval 0 <= x < A
+
+	.ifndef	HUCC_NO_DEFAULT_RANDOM
+
+_random8.1:	tay				; Preserve the limit.
+		jsr	get_random		; Random in A, preserve Y.
+
+		jsr	__muluchar		; This is __xsafe!
+		tya				; Do a 8.0 x 0.8 fixed point
+		cly				; fractional multiply.
+		rts
+	.endif
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; unsigned char __fastcall __xsafe random( unsigned char limit<acc> );
+;
+; IN :	A = range (0..128), 129..255 is treated as 128
+; OUT : A = random number interval 0 <= x < A
+
+	.ifndef	HUCC_NO_DEFAULT_RANDOM
+
+_random.1:	tay				; Preserve the limit.
+		jsr	get_random		; Random in A, preserve Y.
 
 		cpy	#128			; Check the limit.
 		bcc	!+

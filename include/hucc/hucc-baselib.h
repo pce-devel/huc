@@ -103,15 +103,19 @@ extern unsigned char __fastcall __xsafe __macro clock_ss( void );
 extern unsigned char __fastcall __xsafe __macro clock_tt( void );
 extern void __fastcall __xsafe __macro clock_reset( void );
 
-extern void __fastcall __xsafe srand( unsigned char seed<acc> );
-extern unsigned char __fastcall __xsafe random( unsigned char limit<acc> );
-extern unsigned char __fastcall __xsafe rand( void );
-
 extern unsigned char __fastcall __xsafe __macro cd_execoverlay( unsigned char ovl_index<acc> );
 
-extern unsigned int __fastcall __xsafe abs( int value<acc> );
+extern int __fastcall __xsafe abs( int value<acc> );
 
-extern unsigned char __fastcall __builtin_ffs( unsigned int value<__temp> );
+extern void __fastcall __xsafe srand( unsigned char seed<acc> );
+extern unsigned int __fastcall __xsafe rand( void );
+extern unsigned char __fastcall __xsafe rand8( void );
+
+// Note: "limit" is 0..255.
+extern unsigned char __fastcall __xsafe random8( unsigned char limit<acc> );
+
+// Note: "limit" is 0..128, 129..255 is treated as 128!
+extern unsigned char __fastcall __xsafe random( unsigned char limit<acc> );
 
 // Functions that are only implemented in the TGEMU emulator for unit-testing
 // the compiler and which should never be used in normal HuCC projects ...
@@ -119,6 +123,8 @@ extern unsigned char __fastcall __builtin_ffs( unsigned int value<__temp> );
 extern void __fastcall __xsafe dump_screen( void );
 extern void __fastcall __xsafe abort( void );
 extern void __fastcall __xsafe exit( int value<acc> );
+
+extern unsigned char __fastcall __builtin_ffs( unsigned int value<__temp> );
 
 #endif // __HUCC__
 
