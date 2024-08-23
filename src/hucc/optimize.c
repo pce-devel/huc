@@ -233,10 +233,8 @@ lv1_loop:
 				tempdata = p[2]->data;
 
 				/* replace code */
+				*p[2] = *p[4];
 				p[2]->code = I_ADDWI;
-				p[2]->type = p[4]->type;
-				p[2]->data = p[4]->data;
-				p[2]->sym = p[4]->sym;
 				p[3]->code = I_ASLW;
 				p[4]->code = X_LDW_S;
 				p[4]->data = tempdata - 2;
@@ -267,20 +265,21 @@ lv1_loop:
 				SYMBOL *tempsym;
 				char temptype;
 
+				temptype = p[2]->type;
 				tempdata = p[2]->data;
 				tempsym = p[2]->sym;
-				temptype = p[2]->type;
 
 				/* replace code */
+				*p[2] = *p[4];
 				p[2]->code = I_ADDWI;
 				p[2]->type = p[4]->type;
 				p[2]->data = p[4]->data;
 				p[2]->sym = p[4]->sym;
 				p[3]->code = I_ASLW;
 				p[4]->code = I_LDW;
+				p[4]->type = temptype;
 				p[4]->data = tempdata;
 				p[4]->sym = tempsym;
-				p[4]->type = temptype;
 
 				nb = 2;
 			}
@@ -317,17 +316,11 @@ lv1_loop:
 			    (p[1]->code == X_LDUB_S) &&
 			    (p[2]->code == I_PUSHW) &&
 			    (p[3]->code == I_LDWI)) {
-				intptr_t tempdata;
-
-				tempdata = p[1]->data;
-
 				/* replace code */
+				*p[2] = *p[3];
 				p[2]->code = I_ADDWI;
-				p[2]->type = p[3]->type;
-				p[2]->data = p[3]->data;
-				p[2]->sym = p[3]->sym;
 				p[3]->code = X_LDUB_S;
-				p[3]->data = tempdata - 2;
+				p[3]->data = p[1]->data - 2;
 
 				nb = 2;
 			}
@@ -349,23 +342,10 @@ lv1_loop:
 			    (p[1]->code == I_LDUB) &&
 			    (p[2]->code == I_PUSHW) &&
 			    (p[3]->code == I_LDWI)) {
-				intptr_t tempdata;
-				SYMBOL *tempsym;
-				char temptype;
-
-				tempdata = p[1]->data;
-				tempsym = p[1]->sym;
-				temptype = p[1]->type;
-
 				/* replace code */
+				*p[2] = *p[3];
 				p[2]->code = I_ADDWI;
-				p[2]->type = p[3]->type;
-				p[2]->data = p[3]->data;
-				p[2]->sym = p[3]->sym;
-				p[3]->code = I_LDUB;
-				p[3]->data = tempdata;
-				p[3]->sym = tempsym;
-				p[3]->type = temptype;
+				*p[3] = *p[1];
 
 				nb = 2;
 			}
@@ -861,7 +841,7 @@ lv1_loop:
 			 (p[1]->code == I_LDWI) &&
 			 (p[2]->code == I_PUSHW) &&
 
-			 (p[1]->type == T_VALUE) &&
+			 (p[1]->type == T_VALUE || p[1]->type == T_SYMBOL) &&
 			 ((strcmp((char *)p[0]->data, "eq_w") == 0) ||
 			  (strcmp((char *)p[0]->data, "eq_b") == 0) ||
 			  (strcmp((char *)p[0]->data, "ne_w") == 0) ||
@@ -887,7 +867,7 @@ lv1_loop:
 						p[2]->code = I_CMPWI_NE;
 					else if (strcmp((char *)p[0]->data, "ne_b") == 0)
 						p[2]->code = I_CMPWI_NE;
-					p[2]->type = T_VALUE;
+					p[2]->type = p[1]->type;
 					p[2]->data = p[1]->data;
 				}
 
@@ -1113,6 +1093,7 @@ lv1_loop:
 			((p[0]->code == I_ADDWI || p[0]->code == I_ADDBI) &&
 			 (p[1]->code == I_LDWI) &&
 
+			 (p[0]->type == T_VALUE) &&
 			 (p[1]->type == T_VALUE)) {
 				/* replace code */
 				p[1]->data += p[0]->data;
@@ -1126,6 +1107,8 @@ lv1_loop:
 			else if
 			((p[0]->code == I_ADDWI || p[0]->code == I_ADDBI) &&
 			 (p[1]->code == I_LDWI) &&
+
+			 (p[0]->type == T_VALUE) &&
 			 (p[1]->type == T_SYMBOL)) {
 				/* replace code */
 				if (p[0]->data != 0) {
@@ -1134,7 +1117,34 @@ lv1_loop:
 					if (NAMEALLOC <=
 						snprintf(newsym->name, NAMEALLOC, "%s+%ld", oldsym->name, (long) p[0]->data))
 						error("optimized symbol+offset name too long");
+					p[1]->type = T_SYMBOL;
 					p[1]->data = (intptr_t)newsym;
+				}
+				nb = 1;
+			}
+
+			/*  __ldwi  j                     --> __ldwi sym+j
+			 *  __add[bw]i sym
+			 *
+			 */
+			else if
+			((p[0]->code == I_ADDWI || p[0]->code == I_ADDBI) &&
+			 (p[1]->code == I_LDWI) &&
+
+			 (p[0]->type == T_SYMBOL) &&
+			 (p[1]->type == T_VALUE)) {
+				/* replace code */
+				if (p[1]->data != 0) {
+					SYMBOL * oldsym = (SYMBOL *)p[0]->data;
+					SYMBOL * newsym = copysym(oldsym);
+					if (NAMEALLOC <=
+						snprintf(newsym->name, NAMEALLOC, "%s+%ld", oldsym->name, (long) p[1]->data))
+						error("optimized symbol+offset name too long");
+					p[1]->type = T_SYMBOL;
+					p[1]->data = (intptr_t)newsym;
+				} else {
+					*p[1] = *p[0];
+					p[1]->code = I_LDWI;
 				}
 				nb = 1;
 			}
