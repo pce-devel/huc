@@ -3,6 +3,8 @@
 #ifndef INCLUDE_DEFS_H
 #define INCLUDE_DEFS_H
 
+#define ULI_NORECURSE 1
+
 /*
  *	INTSIZE is the size of an integer in the target machine
  *	BYTEOFF is the offset of an byte within an integer on the

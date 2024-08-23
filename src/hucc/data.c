@@ -95,7 +95,9 @@ int startup_incl;
 int errs;
 
 int norecurse = 0;
+#if ULI_NORECURSE
 int locals_ptr;
+#endif
 
 struct type *typedefs;
 int typedef_ptr = 0;

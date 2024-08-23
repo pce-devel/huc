@@ -381,10 +381,14 @@ void declloc (char typ, char stclass, int otag)
 				totalk += k;
 				// stkp = modstk (stkp - k);
 				// addloc (sname, j, typ, stkp, AUTO);
+#if ULI_NORECURSE
 				if (!norecurse)
 					c = addloc(sname, j, typ, stkp - totalk, AUTO, k);
 				else
 					c = addloc(sname, j, typ, locals_ptr - totalk, AUTO, k);
+#else
+				c = addloc(sname, j, typ, stkp - totalk, AUTO, k);
+#endif
 				if (typ == CSTRUCT)
 					c->tagidx = otag;
 				c->ptr_order = ptr_order;
@@ -398,30 +402,59 @@ void declloc (char typ, char stclass, int otag)
 			if (stclass == LSTATIC)
 				error("initialization of static local variables unimplemented");
 
+#if ULI_NORECURSE
 			if (!norecurse)
 				stkp = modstk(stkp - totalk);
 			else
 				locals_ptr -= totalk;
 			totalk -= k;
+#else
+			if (!norecurse) {
+				stkp = modstk(stkp - totalk);
+				totalk -= k;
+			}
+#endif
 
 			if (const_expr(&num, ",", ";")) {
+#if ULI_NORECURSE
 				/* XXX: minor memory leak */
 				char *locsym = calloc(1,sizeof(SYMBOL));
+#endif
 				gtext();
 				if (k == 1) {
+#if ULI_NORECURSE
 					if (norecurse) {
 						sprintf(locsym, "_%s_lend - %d", current_fn, (int) -locals_ptr);
 						out_ins_ex(I_STBI, T_SYMBOL, (intptr_t)locsym, T_VALUE, num);
 					}
 					else
+#else
+					if (stclass == (LSTATIC | WASAUTO)) {
+						if (num == 0)
+							out_ins(I_STBZ, T_SYMBOL, (intptr_t)ssym);
+						else
+							out_ins_ex(I_STBI, T_SYMBOL, (intptr_t)ssym, T_VALUE, num);
+					}
+					else
+#endif
 						out_ins_ex(X_STBI_S, T_VALUE, 0, T_VALUE, num);
 				}
 				else if (k == 2) {
+#if ULI_NORECURSE
 					if (norecurse) {
 						sprintf(locsym, "_%s_lend - %d", current_fn, (int) -locals_ptr);
 						out_ins_ex(I_STWI, T_SYMBOL, (intptr_t)locsym, T_VALUE, num);
 					}
 					else
+#else
+					if (stclass == (LSTATIC | WASAUTO)) {
+						if (num == 0)
+							out_ins(I_STWZ, T_SYMBOL, (intptr_t)ssym);
+						else
+							out_ins_ex(I_STWI, T_SYMBOL, (intptr_t)ssym, T_VALUE, num);
+					}
+					else
+#endif
 						out_ins_ex(X_STWI_S, T_VALUE, 0, T_VALUE, num);
 				}
 				else
@@ -433,8 +466,10 @@ void declloc (char typ, char stclass, int otag)
 		if (!match(",")) {
 			if (!norecurse)
 				stkp = modstk(stkp - totalk);
+#if ULI_NORECURSE
 			else
 				locals_ptr -= totalk;
+#endif
 			return;
 		}
 	}

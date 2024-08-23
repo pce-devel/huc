@@ -64,6 +64,7 @@ void getloc (SYMBOL *sym)
 	if ((sym->storage & STORAGE) == LSTATIC)
 		out_ins(I_LDWI, T_LABEL, glint(sym));
 	else {
+#if ULI_NORECURSE
 		value = glint(sym);
 		if (norecurse && value < 0) {
 			/* XXX: bit of a memory leak, but whatever... */
@@ -77,6 +78,10 @@ void getloc (SYMBOL *sym)
 			value -= stkp;
 			out_ins_sym(X_LEA_S, T_STACK, value, sym);
 		}
+#else
+		value = glint(sym) - stkp;
+		out_ins_sym(X_LEA_S, T_STACK, value, sym);
+#endif
 	}
 }
 

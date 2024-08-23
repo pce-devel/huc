@@ -82,6 +82,10 @@ int doldcls (int stclass)
 	blanks();
 	/* we don't do optimizations that would require "volatile" */
 	if (match_type(&t, NO, YES)) {
+#if ULI_NORECURSE == 0
+		if (norecurse && stclass != LSTATIC)
+			stclass = LSTATIC | WASAUTO;
+#endif
 		if (t.type == CSTRUCT && t.otag == -1)
 			t.otag = define_struct(t.sname, stclass, !!(t.flags & F_STRUCT));
 		if (t.type == CVOID) {
@@ -202,7 +206,11 @@ void compound (int func)
 	ncmp++;
 	/* remember stack pointer before entering the first compound
 	   statement inside a function */
+#if ULI_NORECURSE
 	if (!func && top_level_stkp == 1 && !norecurse)
+#else
+	if (!func && top_level_stkp == 1)
+#endif
 		top_level_stkp = stkp;
 	while (!match("}")) {
 		if (feof(input))

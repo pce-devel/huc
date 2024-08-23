@@ -363,11 +363,13 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 	/* generate the function prolog */
 	out_ins(I_ENTER, T_STRING, (intptr_t)ptr->name);
 
+#if ULI_NORECURSE
 	/* When using fixed-address locals, locals_ptr is used to
 	   keep track of their memory offset instead of stkp, so
 	   we have to reset it before producing code. */
 	if (norecurse)
 		locals_ptr = 0;
+#endif
 
 	/* generate all the code for the function */
 	statement(YES);
@@ -381,6 +383,7 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 
 	ol(".endp");	/* David, .endp directive support */
 
+#if ULI_NORECURSE
 	/* Add space for fixed-address locals to .bss section. */
 	if (norecurse && locals_ptr < 0) {
 		if (is_leaf_function) {
@@ -398,6 +401,7 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 			ot(".code"); nl();
 		}
 	}
+#endif
 
 	/* Signal that we're not in a function anymore. */
 	fexitlab = 0;
