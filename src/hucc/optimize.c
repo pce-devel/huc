@@ -98,6 +98,11 @@ static int is_sprel (INS *i)
 		i->code == X_ADDB_S ||
 		i->code == X_ADDUB_S ||
 		i->code == X_INCB_S ||
+		i->code == X_TZB_S ||
+		i->code == X_TZW_S ||
+		i->code == X_TNZB_S ||
+		i->code == X_TNZW_S ||
+		i->code == X_STBI_S ||
 		i->code == X_STWI_S);
 }
 
@@ -1020,6 +1025,72 @@ lv1_loop:
 				p[2]->type = p[1]->type;
 				p[2]->data = p[1]->data;
 				p[1]->code = I_INCB;
+				nb = 1;
+			}
+
+			/*  __ldw/b/ub          --> __tzw/b/ub
+			 *  __tstw                  __btrue (or __bfalse)
+			 *  __btrue (or __bfalse)
+			 *
+			 *  __ldw/b/ub          --> __tnzw/b/ub
+			 *  __notw                  __btrue (or __bfalse)
+			 *  __btrue (or __bfalse)
+			 *
+			 *  N.B. This deliberately tests for the branch/label
+			 *  i-codes in order to delay a match until after any
+			 *  duplicate __TSTW and __NOTW i-codes are merged.
+			 *
+			 *  ====
+			 *  bytes  :  ? -->  ?
+			 *  cycles :  ? -->  ?
+			 *
+			 */
+			else if
+			((p[0]->code == I_LABEL ||
+			  p[0]->code == I_BTRUE ||
+			  p[0]->code == I_BFALSE) &&
+			 (p[1]->code == I_TSTW ||
+			  p[1]->code == I_NOTW) &&
+			 (p[2]->code == I_LDB ||
+			  p[2]->code == I_LDUB ||
+			  p[2]->code == I_LDBP ||
+			  p[2]->code == I_LDUBP ||
+			  p[2]->code == I_LDW ||
+			  p[2]->code == I_LDWP ||
+			  p[2]->code == X_LDB_S ||
+			  p[2]->code == X_LDUB_S ||
+			  p[2]->code == X_LDW_S)
+			) {
+				/* remove code */
+				if (p[1]->code == I_TSTW) {
+					switch (p[2]->code) {
+					case I_LDB:
+					case I_LDUB:   p[2]->code = X_TNZB; break;
+					case I_LDBP:
+					case I_LDUBP:  p[2]->code = X_TNZBP; break;
+					case I_LDW:    p[2]->code = X_TNZW; break;
+					case I_LDWP:   p[2]->code = X_TNZWP; break;
+					case X_LDB_S:
+					case X_LDUB_S: p[2]->code = X_TNZB_S; break;
+					case X_LDW_S:  p[2]->code = X_TNZW_S; break;
+					default: abort();
+					}
+				} else {
+					switch (p[2]->code) {
+					case I_LDB:
+					case I_LDUB:   p[2]->code = X_TZB; break;
+					case I_LDBP:
+					case I_LDUBP:  p[2]->code = X_TZBP; break;
+					case I_LDW:    p[2]->code = X_TZW; break;
+					case I_LDWP:   p[2]->code = X_TZWP; break;
+					case X_LDB_S:
+					case X_LDUB_S: p[2]->code = X_TZB_S; break;
+					case X_LDW_S:  p[2]->code = X_TZW_S; break;
+					default: abort();
+					}
+				}
+
+				*p[1] = *p[0];
 				nb = 1;
 			}
 

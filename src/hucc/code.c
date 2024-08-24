@@ -837,6 +837,9 @@ void gen_code (INS *tmp)
  */
 void gen_asm (INS *inst)
 {
+	int type = inst->type;
+	intptr_t data = inst->data;
+
 	switch (inst->code) {
 	case X_LDB_S:
 		ot("__ldb_s\t");
@@ -973,16 +976,91 @@ void gen_asm (INS *inst)
 		outdec((int)inst->data);
 		nl();
 		break;
+
 	case X_ADDB_S:
 		ot("__addb_s\t");
 		outdec((int)inst->data);
 		nl();
 		break;
+
 	case X_ADDUB_S:
 		ot("__addub_s\t");
 		outdec((int)inst->data);
 		nl();
 		break;
+
+	case X_TZB:
+		ot("__tzb\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_TZBP:
+		ot("__tzbp\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_TZB_S:
+		ot("__tzb_s\t");
+		outdec((int)inst->data);
+		nl();
+		break;
+
+	case X_TZW:
+		ot("__tzw\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_TZWP:
+		ot("__tzwp\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_TZW_S:
+		ot("__tzw_s\t");
+		outdec((int)inst->data);
+		nl();
+		break;
+
+	case X_TNZB:
+		ot("__tnzb\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_TNZBP:
+		ot("__tnzbp\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_TNZB_S:
+		ot("__tnzb_s\t");
+		outdec((int)inst->data);
+		nl();
+		break;
+
+	case X_TNZW:
+		ot("__tnzw\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_TNZWP:
+		ot("__tnzwp\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_TNZW_S:
+		ot("__tnzw_s\t");
+		outdec((int)inst->data);
+		nl();
+		break;
+
 	default:
 		error("internal error: invalid instruction");
 		break;

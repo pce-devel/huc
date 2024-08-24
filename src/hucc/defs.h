@@ -143,7 +143,19 @@ enum ICODE {
 	X_LDUB_S,	/* Uli added these ... */
 	X_ADDB_S,
 	X_ADDUB_S,
-	X_INCB_S
+	X_INCB_S,
+	X_TZB,		/* John added these ... */
+	X_TZBP,
+	X_TZB_S,
+	X_TZW,
+	X_TZWP,
+	X_TZW_S,
+	X_TNZB,
+	X_TNZBP,
+	X_TNZB_S,
+	X_TNZW,
+	X_TNZWP,
+	X_TNZW_S
 };
 
 #define FOREVER for (;;)

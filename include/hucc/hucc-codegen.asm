@@ -730,7 +730,7 @@ __btrue		.macro
 __cmpbi_eq	.macro
 		eor.l	#\1
 		beq	!true+
-!false:		lda	#$FF
+!false:		lda	#-1
 !true:		inc	a
 		cly
 		.endm
@@ -755,7 +755,7 @@ __cmpwi_eq	.macro
 		bne	!false+
 		cpy.h	#\1
 		beq	!true+
-!false:		lda	#$FF
+!false:		lda	#-1
 !true:		inc	a
 		cly
 		.endm
@@ -771,6 +771,152 @@ __cmpwi_ne	.macro
 		beq	!false+
 !true:		lda	#1
 !false:		cly
+		.endm
+
+; **************
+; optimized boolean test
+; this MUST set the Z flag for the susequent branches!
+
+__tzb		.macro
+		lda	\1
+		beq	!+
+		lda	#-1
+!:		inc	a
+		cly
+		.endm
+
+; **************
+; optimized boolean test
+; this MUST set the Z flag for the susequent branches!
+
+__tzbp		.macro
+		lda	[\1]
+		beq	!+
+		lda	#-1
+!:		inc	a
+		cly
+		.endm
+
+; **************
+; optimized boolean test
+; this MUST set the Z flag for the susequent branches!
+
+__tzb_s		.macro	; __STACK
+		lda.l	<__stack + \1, x
+		beq	!+
+		lda	#-1
+!:		inc	a
+		cly
+		.endm
+
+; **************
+; optimized boolean test
+; this MUST set the Z flag for the susequent branches!
+
+__tzw		.macro
+		lda.l	\1
+		ora.h	\1
+		beq	!+
+		lda	#-1
+!:		inc	a
+		cly
+		.endm
+
+; **************
+; optimized boolean test
+; this MUST set the Z flag for the susequent branches!
+
+__tzwp		.macro
+		ldy	#1
+		lda	[\1], y
+		ora	[\1]
+		beq	!+
+		lda	#-1
+!:		inc	a
+		cly
+		.endm
+
+; **************
+; optimized boolean test
+; this MUST set the Z flag for the susequent branches!
+
+__tzw_s		.macro	; __STACK
+		lda.l	<__stack + \1, x
+		ora.h	<__stack + \1, x
+		beq	!+
+		lda	#-1
+!:		inc	a
+		cly
+		.endm
+
+; **************
+; optimized boolean test
+; this MUST set the Z flag for the susequent branches!
+
+__tnzb		.macro
+		lda	\1
+		beq	!+
+		lda	#1
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test
+; this MUST set the Z flag for the susequent branches!
+
+__tnzbp		.macro
+		lda	[\1]
+		beq	!+
+		lda	#1
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test
+; this MUST set the Z flag for the susequent branches!
+
+__tnzb_s	.macro	; __STACK
+		lda.l	<__stack + \1, x
+		beq	!+
+		lda	#1
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test
+; this MUST set the Z flag for the susequent branches!
+
+__tnzw		.macro
+		lda.l	\1
+		ora.h	\1
+		beq	!+
+		lda	#1
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test
+; this MUST set the Z flag for the susequent branches!
+
+__tnzwp		.macro
+		ldy	#1
+		lda	[\1], y
+		ora	[\1]
+		beq	!+
+		lda	#1
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test
+; this MUST set the Z flag for the susequent branches!
+
+__tnzw_s	.macro	; __STACK
+		lda.l	<__stack + \1, x
+		ora.h	<__stack + \1, x
+		beq	!+
+		lda	#1
+!:		cly
 		.endm
 
 ; **************
