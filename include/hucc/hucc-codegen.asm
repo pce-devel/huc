@@ -419,55 +419,18 @@ __callp		.macro
 ; **************
 
 __ldb		.macro
-	.if (\# = 2)
-		lda	\1
-		clc
-		adc.l	#\2
-		tay
-		cla
-		adc.h	#\2
-		say
-	.else
 		lda	\1
 		cly
 		bpl	!+
 		dey
 !:
-	.endif
 		.endm
-
-; **************
-
-__ldby		.macro
-		lda	\1, y
-		cly
-		bpl	!+
-		dey
-!:
-		.endm
-
-;		stx	<__sp
-;		lda.l	\1, x
-;		ldy.h	\1, x
-;		ldx	<__sp
-
-;		lda.h	\1, y
-;		pha
-;		lda.l	\1, y
-;		ply
 
 ; **************
 
 __ldub		.macro
-	.if (\# = 2)
-		lda	\1
-		clc
-		adc.l	#\2
-		cly
-	.else
 		lda	\1
 		cly
-	.endif
 		.endm
 
 ; **************
@@ -490,18 +453,8 @@ __ldubp		.macro
 ; **************
 
 __ldw		.macro
-	.if (\# = 2)
-		clc
-		lda.l	\1
-		adc.l	#\2
-		tay
-		lda.h	\1
-		adc.h	#\2
-		say
-	.else
 		lda.l	\1
 		ldy.h	\1
-	.endif
 		.endm
 
 ; **************
