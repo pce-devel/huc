@@ -693,9 +693,10 @@ int heir11 (LVALUE *lval, int comma)
 {
 	int direct, k;
 	SYMBOL *ptr;
+	bool deferred = false;
 	char sname[NAMESIZE];
 
-	k = primary(lval, comma);
+	k = primary(lval, comma, &deferred);
 	ptr = lval->symbol;
 	blanks();
 	for (;;) {
@@ -737,7 +738,7 @@ int heir11 (LVALUE *lval, int comma)
 				error("can't subscript");
 				k = 0;
 			}
-			if (!ptr->far)
+			if (!deferred && !ptr->far)
 				gpush();
 			expression(YES);
 			needbrack("]");
@@ -751,8 +752,12 @@ int heir11 (LVALUE *lval, int comma)
 				else if (size > 1)
 					gmult_imm(size);
 			}
-			if (!ptr->far)
+			if (!deferred && !ptr->far)
 				gadd(NULL, NULL);
+			if (deferred) {
+				out_ins(I_ADDWI, T_SYMBOL, (intptr_t)ptr);
+				deferred = false;
+			}
 			lval->symbol = 0;
 			if (lval->ptr_order > 1 || (ptr->ident == ARRAY && lval->ptr_order > 0))
 				lval->indirect = CUINT;

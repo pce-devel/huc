@@ -150,7 +150,7 @@ invalid_cast:
 	return (0);
 }
 
-int primary (LVALUE *lval, int comma)
+int primary (LVALUE *lval, int comma, bool *deferred)
 {
 	SYMBOL *ptr;
 	char sname[NAMESIZE];
@@ -259,6 +259,7 @@ int primary (LVALUE *lval, int comma)
 	}
 
 	if (symname(sname)) {
+		blanks();
 		if (find_enum(sname, &num)) {
 			indflg = 0;
 			lval->value = num;
@@ -321,11 +322,15 @@ int primary (LVALUE *lval, int comma)
 					}
 					return (1);
 				}
-				if (!ptr->far)
-					immed(T_SYMBOL, (intptr_t)ptr);
+				if (!ptr->far) {
+					/* add array base address after index calculation */
+					if (ch() == '[')
+						*deferred = true;
+					else
+						immed(T_SYMBOL, (intptr_t)ptr);
+				}
 				else {
 					/* special variables */
-					blanks();
 					if ((ch() != '[') && (ch() != '(')) {
 						immed(T_SYMBOL, (intptr_t)ptr);
 //						error ("can't access far array");
@@ -340,7 +345,6 @@ int primary (LVALUE *lval, int comma)
 					return (0);
 			}
 		}
-		blanks();
 		if (ch() != '(') {
 			if (ptr && (ptr->ident == FUNCTION)) {
 				lval->symbol = ptr;

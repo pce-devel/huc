@@ -6,7 +6,7 @@
 #ifndef _PRIMARY_H
 #define _PRIMARY_H
 
-int primary (LVALUE *lval, int comma);
+int primary (LVALUE *lval, int comma, bool *deferred);
 bool dbltest (LVALUE val1[], LVALUE val2[]);
 void result (LVALUE lval[], LVALUE lval2[]);
 int constant (int *val);
