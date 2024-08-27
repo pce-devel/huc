@@ -322,6 +322,103 @@ _get_color.1	.macro
 ; ***************************************************************************
 ; ***************************************************************************
 ;
+; void __fastcall __xsafe srand( unsigned char seed<acc> );
+; unsigned int __fastcall __xsafe rand( void );
+; unsigned char __fastcall __xsafe rand8( void );
+
+	.ifndef	HUCC_NO_DEFAULT_RANDOM
+		.alias	_srand.1		= init_random
+
+_rand:		jsr	get_random		; Random in A, preserve Y.
+		tay
+		jmp	get_random		; Random in A, preserve Y.
+	.endif
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; unsigned char __fastcall __xsafe random8( unsigned char limit<acc> );
+;
+; IN :	A = range (0..255)
+; OUT : A = random number interval 0 <= x < A
+
+	.ifndef	HUCC_NO_DEFAULT_RANDOM
+
+_random8.1:	tay				; Preserve the limit.
+		jsr	get_random		; Random in A, preserve Y.
+
+		jsr	__muluchar		; This is __xsafe!
+		tya				; Do a 8.0 x 0.8 fixed point
+		cly				; fractional multiply.
+		rts
+	.endif
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; unsigned char __fastcall __xsafe random( unsigned char limit<acc> );
+;
+; IN :	A = range (0..128), 129..255 is treated as 128
+; OUT : A = random number interval 0 <= x < A
+
+	.ifndef	HUCC_NO_DEFAULT_RANDOM
+
+_random.1:	tay				; Preserve the limit.
+		jsr	get_random		; Random in A, preserve Y.
+
+		cpy	#128			; Check the limit.
+		bcc	!+
+
+		and	#$7F			; Just mask the random if
+		cly				; the limit is >= 128.
+		rts
+
+!:		jsr	__muluchar		; This is __xsafe!
+		tya				; If the limit is < 128 then
+		cly				; do a 8.0 x 0.8 fixed point
+		rts				; fractional multiply.
+	.endif
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; unsigned char __fastcall __builtin_ffs( unsigned int value<__temp> );
+
+		.proc	___builtin_ffs.1
+
+		lda.l	<__temp
+		ldy	#-16
+
+.search:	lsr.h	<__temp
+		ror	a
+		bcs	.found
+		iny
+		bne	.search
+		bra	.finished
+
+.found:		tya				; CS, return 17 + y.
+		adc	#16
+
+.finished:	tax				; Put return code in X.
+		cly				; Return code in Y:X, X -> A.
+
+		leave				; Return and copy X -> A.
+
+		.endp
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; N.B. Declared in hucc-gfx.h, but defined here because they're macros!
+;
 ; void __fastcall __xsafe _macro set_xres( unsigned int x_pixels<_ax> );
 ; void __fastcall __xsafe _macro sgx_set_xres( unsigned int x_pixels<_ax> );
 ;
@@ -440,7 +537,39 @@ _set_xres.1	.macro
 ; ***************************************************************************
 ; ***************************************************************************
 ;
+; N.B. Declared in hucc-gfx.h, but defined here because they're macros!
+;
+; void __fastcall __xsafe __macro set_bgpal( unsigned char palette<_al>, unsigned char __far *data<_bp_bank:_bp> );
+; void __fastcall __xsafe __macro set_bgpal( unsigned char palette<_al>, unsigned char __far *data<_bp_bank:_bp>, unsigned int num_palettes<_ah> );
+; void __fastcall __xsafe __macro set_sprpal( unsigned char palette<_al>, unsigned char __far *data<_bp_bank:_bp> );
+; void __fastcall __xsafe __macro set_sprpal( unsigned char palette<_al>, unsigned char __far *data<_bp_bank:_bp>, unsigned int num_palettes<_ah> );
 
+_set_bgpal.2	.macro
+		lda	#1
+		sta	<_ah
+		call	_load_palette.3
+		.endm
+
+_set_bgpal.3	.macro
+		call	_load_palette.3
+		.endm
+
+_set_sprpal.2	.macro
+		lda	#1
+		sta	<_ah
+		smb4	<_al
+		call	_load_palette.3
+		.endm
+
+_set_sprpal.3	.macro
+		smb4	<_al
+		call	_load_palette.3
+		.endm
+
+
+
+; ***************************************************************************
+; ***************************************************************************
 
 	.if	0
 __lbltsbi	.macro
@@ -461,98 +590,3 @@ __lbltswi	.macro
 !:		bmi	\2		; -ve if Y:A  < memory (signed).
 		.endm
 	.endif
-
-
-
-; ***************************************************************************
-; ***************************************************************************
-;
-; void __fastcall __xsafe srand( unsigned char seed<acc> );
-; unsigned int __fastcall __xsafe rand( void );
-; unsigned char __fastcall __xsafe rand8( void );
-
-	.ifndef	HUCC_NO_DEFAULT_RANDOM
-		.alias	_srand.1		= init_random
-
-_rand:		jsr	get_random		; Random in A, preserve Y.
-		tay
-		jmp	get_random		; Random in A, preserve Y.
-	.endif
-
-
-
-; ***************************************************************************
-; ***************************************************************************
-;
-; unsigned char __fastcall __xsafe random8( unsigned char limit<acc> );
-;
-; IN :	A = range (0..255)
-; OUT : A = random number interval 0 <= x < A
-
-	.ifndef	HUCC_NO_DEFAULT_RANDOM
-
-_random8.1:	tay				; Preserve the limit.
-		jsr	get_random		; Random in A, preserve Y.
-
-		jsr	__muluchar		; This is __xsafe!
-		tya				; Do a 8.0 x 0.8 fixed point
-		cly				; fractional multiply.
-		rts
-	.endif
-
-
-
-; ***************************************************************************
-; ***************************************************************************
-;
-; unsigned char __fastcall __xsafe random( unsigned char limit<acc> );
-;
-; IN :	A = range (0..128), 129..255 is treated as 128
-; OUT : A = random number interval 0 <= x < A
-
-	.ifndef	HUCC_NO_DEFAULT_RANDOM
-
-_random.1:	tay				; Preserve the limit.
-		jsr	get_random		; Random in A, preserve Y.
-
-		cpy	#128			; Check the limit.
-		bcc	!+
-
-		and	#$7F			; Just mask the random if
-		cly				; the limit is >= 128.
-		rts
-
-!:		jsr	__muluchar		; This is __xsafe!
-		tya				; If the limit is < 128 then
-		cly				; do a 8.0 x 0.8 fixed point
-		rts				; fractional multiply.
-	.endif
-
-
-
-; ***************************************************************************
-; ***************************************************************************
-;
-; unsigned char __fastcall __builtin_ffs( unsigned int value<__temp> );
-
-		.proc	___builtin_ffs.1
-
-		lda.l	<__temp
-		ldy	#-16
-
-.search:	lsr.h	<__temp
-		ror	a
-		bcs	.found
-		iny
-		bne	.search
-		bra	.finished
-
-.found:		tya				; CS, return 17 + y.
-		adc	#16
-
-.finished:	tax				; Put return code in X.
-		cly				; Return code in Y:X, X -> A.
-
-		leave				; Return and copy X -> A.
-
-		.endp

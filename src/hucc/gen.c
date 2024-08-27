@@ -19,6 +19,7 @@
 #include "expr.h"
 #include "const.h"
 #include "error.h"
+#include "io.h"
 
 /*
  *	return next available internal label number
@@ -206,16 +207,6 @@ void gmacro (char *sname, int nargs)
 }
 
 /*
- *         generate a bank pseudo instruction
- *
- */
-void gbank (unsigned char bank, unsigned short offset)
-{
-	out_ins(I_BANK, T_VALUE, bank);
-	out_ins(I_OFFSET, T_VALUE, offset);
-}
-
-/*
  *	jump to specified internal label number
  *
  */
@@ -271,11 +262,21 @@ void gasrint (void)
 }
 
 /*
- *	Case jump instruction
+ *	execute optimized "switch" library routine
  */
-void gjcase (void)
+void gswitch (void)
 {
-	out_ins(I_JMP, T_LIB, (intptr_t)"__case");
+	out_ins(I_SWITCH, 0, 0);
+}
+
+/*
+ *	mark the start of a case or default statement
+ */
+void gcase (int nlab)
+{
+	out_ins(I_ENDCASE, 0, 0);
+	gnlabel(nlab);
+	out_ins(I_CASE, 0, 0);
 }
 
 /*
@@ -285,6 +286,7 @@ void gjcase (void)
 void gadd (LVALUE *lval, LVALUE *lval2)
 {
 	/* XXX: isn't this done in expr.c already? */
+	/* Nope, it is used when calculating a pointer variable address into a word array */
 	if (dbltest(lval2, lval))
 		out_ins(I_ASLWS, 0, 0);
 	if (lval && lval2 && is_byte(lval) && is_byte(lval2))

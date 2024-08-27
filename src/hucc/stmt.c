@@ -373,8 +373,8 @@ void doswitch (void)
 	needbrack("(");
 	expression(YES);
 	needbrack(")");
-	stkp = stkp + INTSIZE;	/* '?case' will adjust the stack */
-	gjcase();
+	stkp = stkp + INTSIZE;	/* 'switch' routine pops from the stack */
+	gswitch();
 	statement(NO);
 	ptr = readswitch();
 	jump((int)ptr[WSEXIT]);
@@ -419,7 +419,7 @@ void dodefault (void)
 	ptr = readswitch();
 	if (ptr) {
 		ptr[WSDEF] = lab = getlabel();
-		gnlabel(lab);
+		gcase(lab);
 		if (!match(":"))
 			error("missing colon");
 	}

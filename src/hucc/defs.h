@@ -34,117 +34,59 @@
 
 /* basic pseudo instructions */
 enum ICODE {
-	I_PLACEHOLDER,
-	I_LDB,
-	I_LDBP,
-	I_LDW,
-	I_LDWI,
-	I_LDWP,
-	I_STB,
-	I_STBPS,
-	I_STW,
-	I_STWPS,
-	I_ADDWI,
-	I_ADDWS,
-	I_MODSP,
-	I_SUBWI,
-	I_SUBWS,
-	I_ORWS,
-	I_EORWS,
-	I_ANDWS,
-	I_ASLW,
-	I_ASLWS,
-	I_ASRW,
-	I_COMW,
-	I_NEGW,
-	I_EXTW,
-	I_NOTW,
-	I_TSTW,
-	I_BFALSE,
-	I_BTRUE,
-	I_JMP,
-	I_JSR,
-	I_ENTER,
-	I_LEAVE,
-	I_CALL,
-	I_MACRO,
-	I_CALLP,
-	I_PUSHW,
-	I_POPW,
-	I_BRA,
-	I_BANK,
-	I_OFFSET,
+	/* i-codes for handling farptr */
+
 	I_FARPTR,
 	I_FARPTR_I,
 	I_FARPTR_GET,
-	I_FGETB,
 	I_FGETW,
-	I_INCW,
-	I_ANDWI,
-	I_ORWI,
-	I_ADDW,
-	I_SUBW,
-	I_LDUB,
-	I_LDUBP,
+	I_FGETB,
 	I_FGETUB,
-	I_ADDBS,
-	I_ADDBI,
-	I_LABEL,
-	I_STWIP,
-	I_STBIP,
-	I_MULWI,
-	I_STWI,
-	I_STBI,
-	I_ASLWI,
-	I_LSRWI,
-	I_ASRWI,
-	I_ADDB,
-	I_ADDUB,
-	I_ADDBI_P,
-	I_INCB,
-	I_STWZ,
-	I_STBZ,
-	I_CMPWI_EQ,
-	I_CMPWI_NE,
-	I_STBP,
-	I_STWP,
-	I_EORWI,
+
+	/* i-codes for interrupts */
+
+	I_SEI,
+	I_CLI,
+
+	/* i-codes for calling functions */
+
+	I_MACRO,
+	I_CALL,
+	I_CALLP,
+	I_JSR,
+
+	/* i-codes for C functions and the C parameter stack */
+
+	I_ENTER,
+	I_LEAVE,
+	I_GETACC,
+	I_SAVESP,
+	I_LOADSP,
+	I_MODSP,
+	I_PUSHW,
+	I_POPW,
 	I_SPUSHW,	/* push and pop on the hw-stack */
 	I_SPUSHB,	/* to temporarily save data */
 	I_SPOPW,
 	I_SPOPB,
-	I_EXTUW,
+
+	/* i-codes for handling boolean tests and branching */
+
+	I_SWITCH,
+	I_CASE,
+	I_ENDCASE,
+	I_LABEL,
+	I_BRA,
 	I_DEF,
-	I_SEI,
-	I_CLI,
-	I_SAVESP,
-	I_LOADSP,
-	I_GETACC,
 	I_CMPW,
 	I_CMPB,
-	X_LDB,
-	X_LDB_S,
-	X_LDW_S,
-	X_LDD_I,
-	X_LDD_B,
-	X_LDD_W,
-	X_LDD_S_B,
-	X_LDD_S_W,
-	X_LEA_S,
-	X_PEA,
-	X_PEA_S,
-	X_STB_S,
-	X_STW_S,
-	X_STBI_S,
-	X_STWI_S,
-	X_ADDW_S,
-	X_INCW_S,
-	X_DECW_S,
-	X_LDUB_S,	/* Uli added these ... */
-	X_ADDB_S,
-	X_ADDUB_S,
-	X_INCB_S,
-	X_TZB,		/* John added these ... */
+	X_CMPWI_EQ,
+	X_CMPWI_NE,
+	I_NOTW,
+	I_TSTW,
+	I_BFALSE,
+	I_BTRUE,
+	X_TZB,
 	X_TZBP,
 	X_TZB_S,
 	X_TZW,
@@ -155,7 +97,108 @@ enum ICODE {
 	X_TNZB_S,
 	X_TNZW,
 	X_TNZWP,
-	X_TNZW_S
+	X_TNZW_S,
+
+	/* i-codes for loading the primary register */
+
+	I_LDWI,
+	I_LDW,
+	I_LDB,
+	I_LDUB,
+	I_LDWP,
+	I_LDBP,
+	I_LDUBP,
+
+	/* i-codes for saving the primary register */
+
+	I_STWZ,
+	I_STBZ,
+	I_STWI,
+	I_STBI,
+	I_STWIP,
+	I_STBIP,
+	I_STW,
+	I_STB,
+	I_STWP,
+	I_STBP,
+	I_STWPS,
+	I_STBPS,
+
+	/* i-codes for extending the primary register */
+
+	I_EXTW,
+	I_EXTUW,
+
+	/* i-codes for math with the primary register  */
+
+	I_COMW,
+	I_NEGW,
+
+	I_INCW,
+	I_INCB,
+
+	I_ADDWI,
+	I_ADDBI,
+	I_ADDWS,
+	I_ADDBS,
+	I_ADDW,
+	I_ADDB,
+	I_ADDUB,
+
+	I_ADDBI_P,
+
+	I_SUBWI,
+	I_SUBWS,
+	I_SUBW,
+
+	I_ANDWI,
+	I_ANDWS,
+
+	I_EORWI,
+	I_EORWS,
+
+	I_ORWI,
+	I_ORWS,
+
+	I_ASLWI,
+	I_ASLWS,
+	I_ASLW,
+
+	I_ASRWI,
+	I_ASRW,
+
+	I_LSRWI,
+
+	I_MULWI,
+
+	/* optimized i-codes for local variables on the C stack */
+
+	X_LEA_S,
+	X_PEA_S,
+
+	X_LDW_S,
+	X_LDB_S,
+	X_LDUB_S,
+
+	X_STWI_S,
+	X_STBI_S,
+	X_STW_S,
+	X_STB_S,
+
+	X_ADDW_S,
+	X_ADDB_S,
+	X_ADDUB_S,
+
+	X_INCW_S,
+	X_INCB_S,
+
+	/* i-codes for 32-bit longs */
+
+	X_LDD_I,
+	X_LDD_W,
+	X_LDD_B,
+	X_LDD_S_W,
+	X_LDD_S_B
 };
 
 #define FOREVER for (;;)

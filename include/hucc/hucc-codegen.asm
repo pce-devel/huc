@@ -9,7 +9,11 @@
 ; Based on the original HuC macros created by David Michel and the other HuC
 ; developers, later modified and improved by Ulrich Hecht.
 ;
+; Modifications copyright John Brandwood 2024.
 ;
+; Distributed under the Boost Software License, Version 1.0.
+; (See accompanying file LICENSE_1_0.txt or copy at
+;  http://www.boost.org/LICENSE_1_0.txt)
 ;
 ; ***************************************************************************
 ; ***************************************************************************
@@ -18,13 +22,9 @@
 
 ; ***************************************************************************
 ; ***************************************************************************
-
-; **************
-; **************
-; **************
-; macros
-; ----
-
+; i-codes for handling farptr
+; ***************************************************************************
+; ***************************************************************************
 
 ;	/* far pointer support funcs */
 ;	"fastcall farpeekb(farptr __fbank:__fptr)",
@@ -70,9 +70,6 @@
 ;		nl();
 ;		ol("  jsr\t_farpeekw.fast");
 ;		break;
-
-
-
 
 ; **************
 ; __farptr
@@ -126,50 +123,6 @@ __farptr_i	.macro
 		.endm
 
 ; **************
-; only executed immediately after a 1-parameter __farptr_i!
-; expects Y=bank, __fptr=addr
-; N.B. Preserves MPR3 unlike original HuC code.
-
-__fgetb		.macro
-		tma3
-		pha
-		tya
-		tam3
-		lda	[__fptr]
-		tay
-		pla
-		tam3
-		tya
-		cly
-		bpl	!+
-		dey
-!:
-		.endm
-
-; **************
-; only executed immediately after a 1-parameter __farptr_i!
-; expects Y=bank, __fptr=addr
-; N.B. Preserves MPR3 unlike original HuC code.
-
-__fgetub	.macro
-		tma3
-		pha
-		tya
-		tam3
-		lda	[__fptr]
-		tay
-		pla
-		tam3
-		tya
-		cly
-		.endm
-
-;		stx	<__sp
-;		lda.l	\1, x
-;		ldy.h	\1, x
-;		ldx	<__sp
-
-; **************
 ; JCB: I don't know what this is supposed to do!
 
 	.if	0
@@ -216,60 +169,52 @@ _farpeekw.fast:	tma3
 		ldy	<__temp
 		rts
 
+; **************
+; only executed immediately after a 1-parameter __farptr_i!
+; expects Y=bank, __fptr=addr
+; N.B. Preserves MPR3 unlike original HuC code.
+
+__fgetb		.macro
+		tma3
+		pha
+		tya
+		tam3
+		lda	[__fptr]
+		tay
+		pla
+		tam3
+		tya
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+; only executed immediately after a 1-parameter __farptr_i!
+; expects Y=bank, __fptr=addr
+; N.B. Preserves MPR3 unlike original HuC code.
+
+__fgetub	.macro
+		tma3
+		pha
+		tya
+		tam3
+		lda	[__fptr]
+		tay
+		pla
+		tam3
+		tya
+		cly
+		.endm
+
 
 
 ; ***************************************************************************
 ; ***************************************************************************
-
-; **************
-; function prolog
-
-__enter		.macro
-;
-		.endm
-
-; **************
-; function epilog
-
-__leave		.macro
-	.if	(\1 != 0)
-		sta	<__hucc_ret
-	.endif
-		jmp	leave_proc
-		.endm
-
-; **************
-; main C data-stack for arguments/locals/expressions
-; used when calling a function that is not __xsafe
-
-;__push_sp	.macro	; __STACK
-;		phx
-;		.endm
-
-; **************
-; main C data-stack for arguments/locals/expressions
-; used when calling a function that is not __xsafe
-
-;__pop_sp	.macro	; __STACK
-;		plx
-;		.endm
-
-; **************
-; main C data-stack for arguments/locals/expressions
-; used when entering a #asm section that is not __xsafe
-; cannot push/pop because the user can jump to another #asm section
-
-__savesp	.macro	; __STACK
-		phx
-		.endm
-
-; **************
-; main C data-stack for arguments/locals/expressions
-; used when leaving a #asm section that is not __xsafe
-
-__loadsp	.macro	; __STACK
-		plx
-		.endm
+; i-codes for calling functions
+; ***************************************************************************
+; ***************************************************************************
 
 ; **************
 ; the compiler can generate this to aid debugging C data-stack
@@ -288,6 +233,69 @@ __called	.macro
 		plx
 		cpx	<__sp
 !hang:		bne	!hang-
+		.endm
+
+; **************
+
+__call		.macro
+		call	\1
+		.endm
+
+; **************
+
+__callp		.macro
+		sta.l	<__ptr
+		sty.h	<__ptr
+		jsr	call_indirect
+		.endm
+
+call_indirect:	jmp	[__ptr]
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+; i-codes for C functions and the C parameter stack
+; ***************************************************************************
+; ***************************************************************************
+
+; **************
+; function prolog
+
+__enter		.macro
+		.endm
+
+; **************
+; function epilog
+
+__leave		.macro
+	.if	(\1 != 0)
+		sta	<__hucc_ret
+	.endif
+		jmp	leave_proc
+		.endm
+
+; **************
+; get the acc lo-byte after returning from a function
+
+__getacc	.macro
+		lda	<__hucc_ret
+		.endm
+
+; **************
+; main C data-stack for arguments/locals/expressions
+; used when entering a #asm section that is not __xsafe
+
+__savesp	.macro	; __STACK
+		phx
+		.endm
+
+; **************
+; main C data-stack for arguments/locals/expressions
+; used when leaving a #asm section that is not __xsafe
+
+__loadsp	.macro	; __STACK
+		plx
 		.endm
 
 ; **************
@@ -337,13 +345,6 @@ __modsp		.macro
 
 	.endif
 		.endm
-
-;__modsp		.macro
-;		sax
-;		clc
-;		adc.l	#\1
-;		sax
-;		.endm
 
 ; **************
 ; main C data-stack for arguments/locals/expressions
@@ -408,342 +409,53 @@ __spopb		.macro
 		pla
 		.endm
 
-; **************
 
-__callp		.macro
-		sta.l	<__ptr
-		sty.h	<__ptr
-		jsr	call_indirect
-		.endm
 
-; **************
-
-__ldb		.macro
-		lda	\1
-		cly
-		bpl	!+
-		dey
-!:
-		.endm
+; ***************************************************************************
+; ***************************************************************************
+; i-codes for handling boolean tests and branching
+; ***************************************************************************
+; ***************************************************************************
 
 ; **************
 
-__ldub		.macro
-		lda	\1
-		cly
+__switch	.macro
+		jmp	do_switch
 		.endm
 
 ; **************
-
-__ldbp		.macro
-		lda	[\1]
-		cly
-		bpl	!+
-		dey
-!:
+; the start of a "case" statement
+__case		.macro
 		.endm
 
 ; **************
+; the end of the previous "case" statement if it drops through
+; liberally used so that optimization can remove redundant copies
 
-__ldubp		.macro
-		lda	[\1]
-		cly
+__endcase	.macro
 		.endm
 
 ; **************
+; branch to the end of a statement or to a C label
 
-__ldw		.macro
-		lda.l	\1
-		ldy.h	\1
+__bra		.macro
+		bra	\1
 		.endm
 
 ; **************
-
-__ldwi		.macro
-	.if	((\?1 == ARG_ABS) && (\1 >= 0) && (\1 < 256))
-		lda.l	#\1
-		cly
-	.else
-		lda.l	#\1
-		ldy.h	#\1
-	.endif
-		.endm
-
-; **************
-
-__ldwp		.macro
-		ldy	#1
-		lda	[\1], y
-		tay
-		lda	[\1]
-		.endm
-
-; ************** NEW and UNIMPLEMENTED!
-
-__incw_		.macro
-		inc.l	\1
-		bne	!+
-		inc.h	\1
-!:
-		.endm
-
-; ************** NEW and UNIMPLEMENTED!
-
-__decw_		.macro
-		lda.l	\1
-		bne	!+
-		dec.h	\1
-!:		dec.l	\1
-		.endm
-
-; ************** NEW and UNIMPLEMENTED!
-
-__decwa_	.macro
-		cmp	#0
-		bne	!+
-		dey
-!:		dec	a
-		.endm
-
-__decwa2_	.macro
-		sec
-		sbc	#2
-		say
-		sbc	#0
-		say
-		.endm
-
-__decwm_	.macro
-		lda.l	\1
-		bne	!+
-		dec.h	\1
-!:		dec.l	\1
-		.endm
-
-__decwm2_	.macro
-		lda.l	\1
-		bne	!+
-		dec.h	\1
-!:		dec.l	\1
-		bne	!+
-		dec.h	\1
-!:		dec.l	\1
-		.endm
-
-__decws_	.macro
-		lda.l	<__stack, x
-		bne	!+
-		dec.h	<__stack, x
-!:		dec.l	<__stack, x
-		.endm
-
-__decws2_	.macro
-		lda.l	<__stack, x
-		bne	!+
-		dec.h	<__stack, x
-!:		dec.l	<__stack, x
-		bne	!+
-		dec.h	<__stack, x
-!:		dec.l	<__stack, x
-		.endm
-
-; **************
-
-__stw		.macro
-		sta.l	\1
-		sty.h	\1
-		.endm
-
-; **************
-
-__stwi		.macro
-		lda.l	#\2
-		sta.l	\1
-		ldy.h	#\2
-		sty.h	\1
-		.endm
-
-; **************
-
-__stb		.macro
-		sta	\1
-		.endm
-
-; **************
-
-__stbi		.macro
-		lda.l	#\2
-		sta	\1
-		.endm
-
-;		cly
-
-; **************
-
-__stbz		.macro
-		stz	\1
-		.endm
-
-; **************
-
-__stwz		.macro
-		stz.l	\1
-		stz.h	\1
-		.endm
-
-; **************
-
-__stwp		.macro
-		sta	[\1]
-		pha
-		tya
-		ldy	#1
-		sta	[\1], y
-		tay
-		pla
-		.endm
-
-; ************** NEW and UNIMPLEMENTED!
-
-__stwp_ns	.macro
-		sta	[\1]
-		tya
-		ldy	#1
-		sta	[\1], y
-		.endm
-
-; **************
-
-__stbp		.macro
-		sta	[\1]
-		.endm
-
-; **************
-
-__stwps		.macro	; __STACK
-		sta	[__stack, x]
-		inc.l	<__stack, x
-		bne	!+
-		inc.h	<__stack, x
-!:		say
-		sta	[__stack, x]
-		say
-		inx
-		inx
-		.endm
-
-;__stwps_ns	sta	[__stack, x]
-;		inc.l	<__stack, x
-;		bne	!+
-;		inc.h	<__stack, x
-;!:		tya
-;		sta	[__stack, x]
-;		inx
-;		inx
-
-; **************
-
-__stbps		.macro	; __STACK
-		sta	[__stack, x]
-		inx
-		inx
-		.endm
-
-; **************
-
-__stwip		.macro
-		sta.l	<__ptr
-		sty.h	<__ptr
-		lda.h	#\1
-		ldy	#1
-		sta	[__ptr], y
-		tay
-		lda.l	#\1
-		sta	[__ptr]
-		.endm
-
-; **************
-
-__stbip		.macro
-		sta.l	<__ptr
-		sty.h	<__ptr
-		lda.l	#\1
-		sta	[__ptr]
-		cly
-		.endm
-
-; **************
-
-__cmpb		.macro
-		jsr	\1
-		.endm
-
-; **************
+; boolean test, always followed by a __tstw or __notw
+; this MUST set the Z flag for the susequent branches!
 
 __cmpw		.macro
 		jsr	\1
 		.endm
 
 ; **************
-; boolean test, always output immediately before a __bfalse or __btrue
+; boolean test, always followed by a __tstw or __notw
 ; this MUST set the Z flag for the susequent branches!
 
-__tstw		.macro
-		sty	<__temp
-		ora	<__temp
-		beq	!+
-		lda	#1
-!:		cly
-		.endm
-
-; **************
-; boolean test, optimized into __notw if used before a __tstw
-; this MUST set the Z flag for the susequent branches!
-
-__notw		.macro
-		sty	<__temp
-		ora	<__temp
-		beq	!+
-		lda	#1
-!:		eor	#1
-		cly
-		.endm
-
-; **************
-; always preceeded by a __tstw before peephole optimization
-
-__bfalse	.macro
-		beq	\1
-		.endm
-
-; **************
-; always preceeded by a __tstw before peephole optimization
-
-__btrue		.macro
-		bne	\1
-		.endm
-
-; **************
-; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
-
-__cmpbi_eq	.macro
-		eor.l	#\1
-		beq	!true+
-!false:		lda	#-1
-!true:		inc	a
-		cly
-		.endm
-
-; **************
-; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
-
-__cmpbi_ne	.macro
-		eor.l	#\1
-		beq	!false+
-		lda	#1
-!false:		cly
+__cmpb		.macro
+		jsr	\1
 		.endm
 
 ; **************
@@ -771,6 +483,68 @@ __cmpwi_ne	.macro
 		beq	!false+
 !true:		lda	#1
 !false:		cly
+		.endm
+
+; **************
+; optimized boolean test
+; this MUST set the Z flag for the susequent branches!
+
+__cmpbi_eq	.macro
+		eor.l	#\1
+		beq	!true+
+!false:		lda	#-1
+!true:		inc	a
+		cly
+		.endm
+
+; **************
+; optimized boolean test
+; this MUST set the Z flag for the susequent branches!
+
+__cmpbi_ne	.macro
+		eor.l	#\1
+		beq	!false+
+		lda	#1
+!false:		cly
+		.endm
+
+; **************
+; boolean test, optimized into __notw if used before a __tstw
+; this MUST set the Z flag for the susequent branches!
+
+__notw		.macro
+		sty	<__temp
+		ora	<__temp
+		beq	!+
+		lda	#1
+!:		eor	#1
+		cly
+		.endm
+
+; **************
+; boolean test, always output immediately before a __bfalse or __btrue
+; this MUST set the Z flag for the susequent branches!
+
+__tstw		.macro
+		sty	<__temp
+		ora	<__temp
+		beq	!+
+		lda	#1
+!:		cly
+		.endm
+
+; **************
+; always preceeded by a __tstw before peephole optimization
+
+__bfalse	.macro
+		beq	\1
+		.endm
+
+; **************
+; always preceeded by a __tstw before peephole optimization
+
+__btrue		.macro
+		bne	\1
 		.endm
 
 ; **************
@@ -919,186 +693,196 @@ __tnzw_s	.macro	; __STACK
 !:		cly
 		.endm
 
+
+
+; ***************************************************************************
+; ***************************************************************************
+; i-codes for loading the primary register
+; ***************************************************************************
+; ***************************************************************************
+
 ; **************
 
-__aslw		.macro
-		asl	a
-		say
-		rol	a
-		say
-		.endm
-
-; **************
-
-__aslwi		.macro
-	.if (\1 = 1)
-		asl	a
-		say
-		rol	a
-		say
-	.else
-	.if (\1 = 2)
-		asl	a
-		say
-		rol	a
-		say
-		asl	a
-		say
-		rol	a
-		say
-	.else
-	.if (\1 < 8)
-		sty	<__temp
-		jsr	aslw\1
-	.else
-	.if (\1 = 8)
-		tay
-		cla
-	.else
-	.if (\1 < 16)
-		jsr	aslw\1
-	.else
-		cla
+__ldwi		.macro
+	.if	((\?1 == ARG_ABS) && (\1 >= 0) && (\1 < 256))
+		lda.l	#\1
 		cly
-	.endif
-	.endif
-	.endif
-	.endif
+	.else
+		lda.l	#\1
+		ldy.h	#\1
 	.endif
 		.endm
 
 ; **************
 
-__aslws		.macro
-		asl.l	<__stack, x
-		rol.h	<__stack, x
-		.endm
-
-;__asrws	.macro
-;		lda.h	<__stack, x
-;		asl	a
-;		ror.h	<__stack, x
-;		ror.l	<__stack, x
-;		.endm
-
-; **************
-
-__asrw		.macro
-		cpy	#$80
-		say
-		ror	a
-		say
-		ror	a
+__ldw		.macro
+		lda.l	\1
+		ldy.h	\1
 		.endm
 
 ; **************
 
-__asrwi		.macro
-	.if (\1 = 1)
-		cpy	#$80
-		say
-		ror	a
-		say
-		ror	a
-	.else
-	.if (\1 = 2)
-		cpy	#$80
-		say
-		ror	a
-		say
-		ror	a
-		cpy	#$80
-		say
-		ror	a
-		say
-		ror	a
-	.else
-	.if (\1 < 8)
-		sty	<__temp
-		jsr	asrw\1
-	.else
-	.if (\1 = 8)
-		tya
+__ldb		.macro
+		lda	\1
 		cly
 		bpl	!+
 		dey
 !:
-	.else
-	.if (\1 < 16)
-		tya
-		jsr	asrw\1
-	.else
-		cpy	#$80
-		cly
-		bcc	!+
-		dey
-!:		tya
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
 		.endm
 
 ; **************
 
-__lsrw		.macro
-		say
-		lsr	a
-		say
-		ror	a
+__ldub		.macro
+		lda	\1
+		cly
 		.endm
 
 ; **************
 
-__lsrwi		.macro
-	.if (\1 = 1)
-		say
-		lsr	a
-		say
-		ror	a
-	.else
-	.if (\1 = 2)
-		say
-		lsr	a
-		say
-		ror	a
-		say
-		lsr	a
-		say
-		ror	a
-	.else
-	.if (\1 < 8)
-		sty	<__temp
-		jsr	lsrw\1
-	.else
-	.if (\1 = 8)
-		tya
+__ldwp		.macro
+		ldy	#1
+		lda	[\1], y
+		tay
+		lda	[\1]
+		.endm
+
+; **************
+
+__ldbp		.macro
+		lda	[\1]
 		cly
-		bmi	!+
+		bpl	!+
 		dey
 !:
-	.else
-	.if (\1 < 16)
-		tya
-		jsr	lsrw\1
-	.else
-		cly
-		bcc	!+
-		dey
-!:		tya
-	.endif
-	.endif
-	.endif
-	.endif
-	.endif
 		.endm
 
 ; **************
 
-__extuw		.macro
+__ldubp		.macro
+		lda	[\1]
 		cly
 		.endm
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+; i-codes for saving the primary register
+; ***************************************************************************
+; ***************************************************************************
+
+; **************
+
+__stwz		.macro
+		stz.l	\1
+		stz.h	\1
+		.endm
+
+; **************
+
+__stbz		.macro
+		stz	\1
+		.endm
+
+; **************
+
+__stwi		.macro
+		lda.l	#\2
+		sta.l	\1
+		ldy.h	#\2
+		sty.h	\1
+		.endm
+
+; **************
+
+__stbi		.macro
+		lda.l	#\2
+		sta	\1
+		.endm
+
+; **************
+
+__stwip		.macro
+		sta.l	<__ptr
+		sty.h	<__ptr
+		lda.h	#\1
+		ldy	#1
+		sta	[__ptr], y
+		tay
+		lda.l	#\1
+		sta	[__ptr]
+		.endm
+
+; **************
+
+__stbip		.macro
+		sta.l	<__ptr
+		sty.h	<__ptr
+		lda.l	#\1
+		sta	[__ptr]
+		cly
+		.endm
+
+; **************
+
+__stw		.macro
+		sta.l	\1
+		sty.h	\1
+		.endm
+
+; **************
+
+__stb		.macro
+		sta	\1
+		.endm
+
+; **************
+
+__stwp		.macro
+		sta	[\1]
+		pha
+		tya
+		ldy	#1
+		sta	[\1], y
+		tay
+		pla
+		.endm
+
+; **************
+
+__stbp		.macro
+		sta	[\1]
+		.endm
+
+; **************
+
+__stwps		.macro	; __STACK
+		sta	[__stack, x]
+		inc.l	<__stack, x
+		bne	!+
+		inc.h	<__stack, x
+!:		say
+		sta	[__stack, x]
+		say
+		inx
+		inx
+		.endm
+
+; **************
+
+__stbps		.macro	; __STACK
+		sta	[__stack, x]
+		inx
+		inx
+		.endm
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+; i-codes for extending the primary register
+; ***************************************************************************
+; ***************************************************************************
 
 ; **************
 
@@ -1109,6 +893,20 @@ __extw		.macro
 		dey
 !:
 		.endm
+
+; **************
+
+__extuw		.macro
+		cly
+		.endm
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+; i-codes for math with the primary register
+; ***************************************************************************
+; ***************************************************************************
 
 ; **************
 
@@ -1133,36 +931,78 @@ __negw		.macro
 
 ; **************
 
-__addw		.macro
-		clc
-		adc.l	\1
-		say
-		adc.h	\1
-		say
-		.endm
-
-; **************
-
-__addb		.macro
-		clc
-		adc	\1
-		bcc	!+
-		iny
-!:		bit	\1
-		bpl	!+
-		dey
+__incw		.macro
+		inc.l	\1
+		bne	!+
+		inc.h	\1
 !:
 		.endm
 
 ; **************
 
-__addub		.macro
-		clc
-		adc	\1
-		bcc	!+
-		iny
-!:
+__incb		.macro
+		inc	\1
 		.endm
+
+;	; ************** NEW and UNIMPLEMENTED!
+;
+;	__decw_		.macro
+;			lda.l	\1
+;			bne	!+
+;			dec.h	\1
+;	!:		dec.l	\1
+;			.endm
+;
+;	; ************** NEW and UNIMPLEMENTED!
+;
+;	__decwa_	.macro
+;			cmp	#0
+;			bne	!+
+;			dey
+;	!:		dec	a
+;			.endm
+;
+;	__decwa2_	.macro
+;			sec
+;			sbc	#2
+;			say
+;			sbc	#0
+;			say
+;			.endm
+;
+;	__decwm_	.macro
+;			lda.l	\1
+;			bne	!+
+;			dec.h	\1
+;	!:		dec.l	\1
+;			.endm
+;
+;	__decwm2_	.macro
+;			lda.l	\1
+;			bne	!+
+;			dec.h	\1
+;	!:		dec.l	\1
+;			bne	!+
+;			dec.h	\1
+;	!:		dec.l	\1
+;			.endm
+;
+;	__decws_	.macro
+;			lda.l	<__stack, x
+;			bne	!+
+;			dec.h	<__stack, x
+;	!:		dec.l	<__stack, x
+;			.endm
+;
+;	__decws2_	.macro
+;			lda.l	<__stack, x
+;			bne	!+
+;			dec.h	<__stack, x
+;	!:		dec.l	<__stack, x
+;			bne	!+
+;			dec.h	<__stack, x
+;	!:		dec.l	<__stack, x
+;			.endm
 
 ; **************
 
@@ -1217,12 +1057,69 @@ __addbi		.macro
 
 ; **************
 
-__subw		.macro
-		sec
-		sbc.l	\1
+__addws		.macro	; __STACK
+		clc
+		adc.l	<__stack, x
 		say
-		sbc.h	\1
+		adc.h	<__stack, x
 		say
+		inx
+		inx
+		.endm
+
+; **************
+
+__addbs		.macro	; __STACK
+		clc
+		adc.l	<__stack, x
+		cly
+		inx
+		inx
+		.endm
+
+; **************
+
+__addw		.macro
+		clc
+		adc.l	\1
+		say
+		adc.h	\1
+		say
+		.endm
+
+; **************
+
+__addb		.macro
+		clc
+		adc	\1
+		bcc	!+
+		iny
+!:		bit	\1
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+
+__addub		.macro
+		clc
+		adc	\1
+		bcc	!+
+		iny
+!:
+		.endm
+
+; **************
+
+__addbi_p	.macro
+		sta.l	<__ptr
+		sty.h	<__ptr
+		lda	[__ptr]
+		clc
+		adc	#\1
+		sta	[__ptr]
+		cly
 		.endm
 
 ; **************
@@ -1248,29 +1145,6 @@ __subwi		.macro
 
 ; **************
 
-__addws		.macro	; __STACK
-		clc
-		adc.l	<__stack, x
-		say
-		adc.h	<__stack, x
-		say
-		inx
-		inx
-		.endm
-
-
-; **************
-
-__addbs		.macro	; __STACK
-		clc
-		adc.l	<__stack, x
-		cly
-		inx
-		inx
-		.endm
-
-; **************
-
 __subws		.macro	; __STACK
 		sec
 		eor	#$FF
@@ -1285,42 +1159,12 @@ __subws		.macro	; __STACK
 
 ; **************
 
-__orws		.macro	; __STACK
-		ora.l	<__stack, x
+__subw		.macro
+		sec
+		sbc.l	\1
 		say
-		ora.h	<__stack, x
+		sbc.h	\1
 		say
-		inx
-		inx
-		.endm
-
-; **************
-
-__orwi		.macro
-		ora.l	#\1
-		say
-		ora.h	#\1
-		say
-		.endm
-
-; **************
-
-__orw		.macro
-		ora.l	\1
-		say
-		ora.h	\1
-		say
-		.endm
-
-; **************
-
-__andws		.macro	; __STACK
-		and.l	<__stack, x
-		say
-		and.h	<__stack, x
-		say
-		inx
-		inx
 		.endm
 
 ; **************
@@ -1346,12 +1190,23 @@ __andwi		.macro
 
 ; **************
 
-__andw		.macro
-		and.l	\1
+__andws		.macro	; __STACK
+		and.l	<__stack, x
 		say
-		and.h	\1
+		and.h	<__stack, x
 		say
+		inx
+		inx
 		.endm
+
+;	; **************
+;
+;	__andw		.macro
+;			and.l	\1
+;			say
+;			and.h	\1
+;			say
+;			.endm
 
 ; **************
 
@@ -1372,6 +1227,213 @@ __eorws		.macro	; __STACK
 		inx
 		inx
 		.endm
+
+;	; **************
+;
+;	__eorw		.macro
+;			eor.l	\1
+;			say
+;			eor.h	\1
+;			say
+;			.endm
+
+; **************
+
+__orwi		.macro
+		ora.l	#\1
+		say
+		ora.h	#\1
+		say
+		.endm
+
+; **************
+
+__orws		.macro	; __STACK
+		ora.l	<__stack, x
+		say
+		ora.h	<__stack, x
+		say
+		inx
+		inx
+		.endm
+
+;	; **************
+;
+;	__orw		.macro
+;			ora.l	\1
+;			say
+;			ora.h	\1
+;			say
+;			.endm
+
+; **************
+
+__aslwi		.macro
+	.if (\1 = 1)
+		asl	a
+		say
+		rol	a
+		say
+	.else
+	.if (\1 = 2)
+		asl	a
+		say
+		rol	a
+		say
+		asl	a
+		say
+		rol	a
+		say
+	.else
+	.if (\1 < 8)
+		sty	<__temp
+		jsr	aslw\1
+	.else
+	.if (\1 = 8)
+		tay
+		cla
+	.else
+	.if (\1 < 16)
+		jsr	aslw\1
+	.else
+		cla
+		cly
+	.endif
+	.endif
+	.endif
+	.endif
+	.endif
+		.endm
+
+; **************
+; N.B. Used when calculating a pointer into a word array.
+
+__aslws		.macro
+		asl.l	<__stack, x
+		rol.h	<__stack, x
+		.endm
+
+; **************
+
+__aslw		.macro
+		asl	a
+		say
+		rol	a
+		say
+		.endm
+
+; **************
+
+__asrwi		.macro
+	.if (\1 = 1)
+		cpy	#$80
+		say
+		ror	a
+		say
+		ror	a
+	.else
+	.if (\1 = 2)
+		cpy	#$80
+		say
+		ror	a
+		say
+		ror	a
+		cpy	#$80
+		say
+		ror	a
+		say
+		ror	a
+	.else
+	.if (\1 < 8)
+		sty	<__temp
+		jsr	asrw\1
+	.else
+	.if (\1 = 8)
+		tya
+		cly
+		bpl	!+
+		dey
+!:
+	.else
+	.if (\1 < 16)
+		tya
+		jsr	asrw\1
+	.else
+		cpy	#$80
+		cly
+		bcc	!+
+		dey
+!:		tya
+	.endif
+	.endif
+	.endif
+	.endif
+	.endif
+		.endm
+
+; **************
+
+__asrw		.macro
+		cpy	#$80
+		say
+		ror	a
+		say
+		ror	a
+		.endm
+
+; **************
+
+__lsrwi		.macro
+	.if (\1 = 1)
+		say
+		lsr	a
+		say
+		ror	a
+	.else
+	.if (\1 = 2)
+		say
+		lsr	a
+		say
+		ror	a
+		say
+		lsr	a
+		say
+		ror	a
+	.else
+	.if (\1 < 8)
+		sty	<__temp
+		jsr	lsrw\1
+	.else
+	.if (\1 = 8)
+		tya
+		cly
+		bmi	!+
+		dey
+!:
+	.else
+	.if (\1 < 16)
+		tya
+		jsr	lsrw\1
+	.else
+		cly
+		bcc	!+
+		dey
+!:		tya
+	.endif
+	.endif
+	.endif
+	.endif
+	.endif
+		.endm
+
+;	; **************
+;
+;	__lsrw		.macro
+;			say
+;			lsr	a
+;			say
+;			ror	a
+;			.endm
 
 ; **************
 
@@ -1446,81 +1508,15 @@ __mulwi		.macro
 	.endif
 		.endm
 
-; **************
 
-__bra		.macro
-		bra	\1
-		.endm
 
-; **************
-
-__call		.macro
-		call	\1
-		.endm
+; ***************************************************************************
+; ***************************************************************************
+; optimized i-codes for local variables on the C stack
+; ***************************************************************************
+; ***************************************************************************
 
 ; **************
-
-_set_bgpal.2	.macro
-		lda	#1
-		sta	<_ah
-		call	_load_palette.3
-		.endm
-
-; **************
-
-_set_bgpal.3	.macro
-		call	_load_palette.3
-		.endm
-
-; **************
-
-_set_sprpal.2	.macro
-		lda	#1
-		sta	<_ah
-		smb4	<_al
-		call	_load_palette.3
-		.endm
-
-; **************
-
-_set_sprpal.3	.macro
-		smb4	<_al
-		call	_load_palette.3
-		.endm
-
-; **************
-
-;_load_background	.macro
-;		vload		$1000,\1,#$4000
-;		vsync
-;		set_bgpal	#0, \2,#16
-;		batcpy		#$0, \3, \4, \5
-;		.endm
-
-; **************
-
-; **************
-; **************
-; **************
-; **************
-; **************
-; **************
-; **************
-; **************
-; **************
-; **************
-; **************
-; **************
-
-;
-; Hu-C internal include file
-;
-
-; optimized macros
-; ----
-
-; **************
-; lea_s
 
 __lea_s		.macro	; __STACK
 		txa
@@ -1529,23 +1525,24 @@ __lea_s		.macro	; __STACK
 		ldy.h	#__stack
 		.endm
 
-;		tsx
-;		txa
-;		clc
-;		adc.l	#__stack + (\1)
-;		ldy.h	#__stack
-
 ; **************
 
 __pea_s		.macro	; __STACK
-		dex
-		dex
 		txa
 		clc
-		adc.l	#__stack + 2 + (\1)
-		sta.l	<__stack, x
+		adc.l	#__stack + (\1)
 		ldy.h	#__stack
+		dex
+		dex
+		sta.l	<__stack, x
 		sty.h	<__stack, x
+		.endm
+
+; **************
+
+__ldw_s		.macro	; __STACK
+		lda.l	<__stack + \1, x
+		ldy.h	<__stack + \1, x
 		.endm
 
 ; **************
@@ -1563,6 +1560,46 @@ __ldb_s		.macro	; __STACK
 __ldub_s	.macro	; __STACK
 		lda	<__stack + \1, x
 		cly
+		.endm
+
+; **************
+
+__stwi_s	.macro	; __STACK
+		lda.l	#\1
+		sta.l	<__stack + \2, x
+		ldy.h	#\1
+		sty.h	<__stack + \2, x
+		.endm
+
+; **************
+
+__stbi_s	.macro	; __STACK
+		lda.l	#\1
+		sta.l	<__stack + \2, x
+		cly
+		.endm
+
+; **************
+
+__stw_s		.macro	; __STACK
+		sta.l	<__stack + \1, x
+		sty.h	<__stack + \1, x
+		.endm
+
+; **************
+
+__stb_s		.macro	; __STACK
+		sta.l	<__stack + \1, x
+		.endm
+
+; **************
+
+__addw_s	.macro	; __STACK
+		clc
+		adc.l	<__stack + \1, x
+		say
+		adc.h	<__stack + \1, x
+		say
 		.endm
 
 ; **************
@@ -1589,79 +1626,6 @@ __addub_s	.macro	; __STACK
 		.endm
 
 ; **************
-;
-__ldw_s		.macro	; __STACK
-		lda.l	<__stack + \1, x
-		ldy.h	<__stack + \1, x
-		.endm
-
-; **************
-
-__stbi_s	.macro	; __STACK
-		lda.l	#\1
-		sta.l	<__stack + \2, x
-		cly
-		.endm
-
-; **************
-
-__stwi_s	.macro	; __STACK
-		lda.l	#\1
-		sta.l	<__stack + \2, x
-		ldy.h	#\1
-		sty.h	<__stack + \2, x
-		.endm
-
-; **************
-
-__stb_s		.macro	; __STACK
-		sta.l	<__stack + \1, x
-		.endm
-
-; **************
-
-__stw_s		.macro	; __STACK
-		sta.l	<__stack + \1, x
-		sty.h	<__stack + \1, x
-		.endm
-
-; **************
-
-__addw_s	.macro	; __STACK
-		clc
-		adc.l	<__stack + \1, x
-		say
-		adc.h	<__stack + \1, x
-		say
-		.endm
-
-; **************
-
-__addbi_p	.macro
-		sta.l	<__ptr
-		sty.h	<__ptr
-		lda	[__ptr]
-		clc
-		adc	#\1
-		sta	[__ptr]
-		cly
-		.endm
-
-; **************
-; get the acc lo-byte after returning from a function
-
-__getacc	.macro
-		lda	<__hucc_ret
-		.endm
-
-; **************
-; XXX: the semantics of this are ridiculous: It assumes the value of
-; the incremented variable to be in AX, the memory location to
-; be incremented and the previous value retained in AX, making it
-; necessary to spill A.
-; incw_s
-;
-; JCB: Hahaha, the joys of C post-increment!
 
 __incw_s	.macro	; __STACK
 		inc.l	<__stack + \1, x
@@ -1671,14 +1635,20 @@ __incw_s	.macro	; __STACK
 		.endm
 
 ; **************
-; incb_s
 
 __incb_s	.macro	; __STACK
 		inc	<__stack + \1, x
 		.endm
 
+
+
+; ***************************************************************************
+; ***************************************************************************
+; i-codes for 32-bit longs
+; ***************************************************************************
+; ***************************************************************************
+
 ; **************
-; ldd_i
 
 __ldd_i		.macro
 		lda.l	#(\1) >> 16
@@ -1692,19 +1662,6 @@ __ldd_i		.macro
 		.endm
 
 ; **************
-; ldd_b
-
-__ldd_b		.macro
-		lda	\1
-		cly
-		sta.l	<\2
-		stz.h	<\2
-		stz.l	<\3
-		stz.h	<\3
-		.endm
-
-; **************
-; ldd_w
 
 __ldd_w		.macro
 		lda.l	\1
@@ -1716,7 +1673,27 @@ __ldd_w		.macro
 		.endm
 
 ; **************
-; ldd_s_b
+
+__ldd_b		.macro
+		lda	\1
+		cly
+		sta.l	<\2
+		stz.h	<\2
+		stz.l	<\3
+		stz.h	<\3
+		.endm
+
+; **************
+
+__ldd_s_w	.macro	; __STACK
+		lda.l	<__stack + \1, x
+		ldy.h	<__stack + \1, x
+		sta.l	<\2
+		sty.h	<\2
+		stz.l	<\3
+		stz.h	<\3
+		.endm
+; **************
 
 __ldd_s_b	.macro	; __STACK
 		lda.l	<__stack + \1, x
@@ -1729,204 +1706,38 @@ __ldd_s_b	.macro	; __STACK
 		stz.h	<\3
 		.endm
 
-; **************
-; ldd_s_w
-
-__ldd_s_w	.macro	; __STACK
-		lda.l	<__stack + \1, x
-		ldy.h	<__stack + \1, x
-		sta.l	<\2
-		sty.h	<\2
-		stz.l	<\3
-		stz.h	<\3
-		.endm
-
-; **************
 
 
 ; ***************************************************************************
 ; ***************************************************************************
-;
+; subroutines for comparison tests with signed and unsigned words
 ; ***************************************************************************
 ; ***************************************************************************
-;
-
-
-
 
 ; **************
-; **************
-; **************
-
-
-; **************
-; eq_w, eq_b
-; **************
-; test equality of two words
-; ----
-; IN :	1st word in memory, 2nd word in Y:A
-; ----
-; OUT : Y:A is true if memory == Y:A, else false.
-; ----
-; REMARK : signed compatible
-; ----
-
-eq_b:		cmp	<__stack, x
-		bne	ret_false_sp
-		bra	ret_true_sp
+; Y:A is true if stacked-value == Y:A, else false
 
 eq_w:		cmp.l	<__stack, x
-		bne	ret_false_sp
+		bne	return_false
 		say
 		cmp.h	<__stack, x
 		say
-		bne	ret_false_sp
-		bra	ret_true_sp
+		bne	return_false
+		bra	return_true
 
 ; **************
-; ne_w, ne_b
-; **************
-; compare two words
-; ----
-; IN :	1st word in memory, 2nd word in Y:A
-; ----
-; OUT : Y:A is true if memory != Y:A, else false.
-; ----
-; REMARK : signed compatible
-; ----
-
-ne_b:		cmp	<__stack, x
-		bne	ret_true_sp
-		bra	ret_false_sp
+; Y:A is true if stacked-value != Y:A, else false
 
 ne_w:		cmp.l	<__stack, x
-		bne	ret_true_sp
+		bne	return_true
 		say
 		cmp.h	<__stack, x
 		say
-		bne	ret_true_sp
-		bra	ret_false_sp
-
-;
-; boolean results, these MUST set the Z flag for the susequent branches!
-;
-
-ret_true_sp:	inx
-		inx			; don't push Y:A, they are thrown away
-		cly
-		lda	#1		; Also set valid Z flag.
-		rts
-
-ret_false_sp:	inx
-		inx			; don't push Y:A, they are thrown away
-		cly
-		lda	#0		; Also set valid Z flag.
-		rts
-
-;
-;
-;
+		bne	return_true
+		bra	return_false
 
 ; **************
-; lt_uw, lt_ub
-; **************
-; compare two words
-; ----
-; IN :	1st word in memory, 2nd word in Y:A
-; ----
-; OUT : Y:A is true if memory < Y:A, else false.
-; ----
-
-lt_ub:		clc			; Subtract memory+1 from A.
-		sbc.l	<__stack, x
-		bcs	ret_true_sp	; CS if A  > memory.
-		bra	ret_false_sp
-
-lt_uw:		clc			; Subtract memory+1 from Y:A.
-		sbc.l	<__stack, x
-		tya
-		sbc.h	<__stack, x
-		bcs	ret_true_sp	; CS if Y:A  > memory.
-		bra	ret_false_sp
-
-; **************
-; ge_uw, ge_ub
-; **************
-; compare two signed words
-; ----
-; IN :	1st word in memory, 2nd word in Y:A
-; ----
-; OUT : Y:A is true if memory >= Y:A, else false.
-; ----
-
-ge_ub:		clc			; Subtract memory+1 from A.
-		sbc.l	<__stack, x
-		bcc	ret_true_sp	; CC if A <= memory.
-		bra	ret_false_sp
-
-ge_uw:		clc			; Subtract memory+1 from Y:A.
-		sbc.l	<__stack, x
-		tya
-		sbc.h	<__stack, x
-		bcc	ret_true_sp	; CC if Y:A <= memory.
-		bra	ret_false_sp
-
-; **************
-; le_uw, le_ub
-; **************
-; compare two words
-; ----
-; IN :	1st word in memory, 2nd word in Y:A
-; ----
-; OUT : Y:A is true if memory is <= Y:A, else false.
-; ----
-
-le_ub:		cmp.l	<__stack, x	; Subtract memory from A.
-		bcs	ret_true_sp	; CS if Y:A >= memory.
-		bra	ret_false_sp
-
-le_uw:		cmp.l	<__stack, x	; Subtract memory from Y:A.
-		tya
-		sbc.h	<__stack, x
-		bcs	ret_true_sp	; CS if Y:A >= memory.
-		bra	ret_false_sp
-
-; **************
-; gt_uw, gt_ub
-; **************
-; compare two words
-; ----
-; IN :	1st word in memory, 2nd word in Y:A
-; ----
-; OUT : Y:A is true if memory > Y:A, else false.
-; ----
-
-gt_ub:		cmp.l	<__stack, x	; Subtract memory from A.
-		bcc	ret_true_sp	; CC if A  < memory.
-		bra	ret_false_sp
-
-gt_uw:		cmp.l	<__stack, x	; Subtract memory from Y:A.
-		tya
-		sbc.h	<__stack, x
-		bcc	ret_true_sp	; CC if Y:A  < memory.
-		bra	ret_false_sp
-
-; **************
-; lt_sw, lt_sb
-; **************
-; compare two words
-; ----
-; IN :	1st word in memory, 2nd word in Y:A
-; ----
-; OUT : Y:A is true if memory < Y:A, else false.
-; ----
-
-lt_sb:		clc			; Subtract memory+1 from A.
-		sbc.l	<__stack, x
-		bvc	!+
-		eor	#$80
-!:		bpl	ret_true_sp	; +ve if A  > memory (signed).
-		bra	ret_false_sp	; -ve if A <= memory (signed).
+; Y:A is true if stacked-value < Y:A, else false
 
 lt_sw:		clc			; Subtract memory+1 from Y:A.
 		sbc.l	<__stack, x
@@ -1934,25 +1745,11 @@ lt_sw:		clc			; Subtract memory+1 from Y:A.
 		sbc.h	<__stack, x
 		bvc	!+
 		eor	#$80
-!:		bpl	ret_true_sp	; +ve if Y:A  > memory (signed).
-		bra	ret_false_sp	; -ve if Y:A <= memory (signed).
+!:		bpl	return_true	; +ve if Y:A  > memory (signed).
+		bra	return_false	; -ve if Y:A <= memory (signed).
 
 ; **************
-; ge_sw, ge_sb
-; **************
-; compare two signed words
-; ----
-; IN :	1st word in memory, 2nd word in Y:A
-; ----
-; OUT : Y:A is true if memory >= Y:A, else false.
-; ----
-
-ge_sb:		clc			; Subtract memory+1 from A.
-		sbc.l	<__stack, x
-		bvc	!+
-		eor	#$80
-!:		bmi	ret_true_sp	; -ve if A <= memory (signed).
-		bra	ret_false_sp	; +ve if A  > memory (signed).
+; Y:A is true if stacked-value >= Y:A, else false
 
 ge_sw:		clc			; Subtract memory+1 from Y:A.
 		sbc.l	<__stack, x
@@ -1960,121 +1757,189 @@ ge_sw:		clc			; Subtract memory+1 from Y:A.
 		sbc.h	<__stack, x
 		bvc	!+
 		eor	#$80
-!:		bmi	ret_true_sp	; -ve if Y:A <= memory (signed).
-		bra	ret_false_sp	; +ve if Y:A  > memory (signed).
+!:		bmi	return_true	; -ve if Y:A <= memory (signed).
+		bra	return_false	; +ve if Y:A  > memory (signed).
 
 ; **************
-; le_sw, le_sb
-; **************
-; compare two signed words
-; ----
-; IN :	1st word in memory, 2nd word in Y:A
-; ----
-; OUT : Y:A is true if memory <= Y:A, else false.
-; ----
-
-le_sb:		sec			; Subtract memory from A.
-		sbc.l	<__stack, x	; Cannot use a "cmp" as it
-		bvc	!+		; does not set the V flag!
-		eor	#$80
-!:		bpl	ret_true_sp	; +ve if A >= memory (signed).
-		bra	ret_false_sp	; -ve if A  < memory (signed).
+; Y:A is true if stacked-value <= Y:A, else false
 
 le_sw:		cmp.l	<__stack, x	; Subtract memory from Y:A.
 		tya
 		sbc.h	<__stack, x
 		bvc	!+
 		eor	#$80
-!:		bpl	ret_true_sp	; +ve if Y:A >= memory (signed).
-		bra	ret_false_sp	; -ve if Y:A  < memory (signed).
+!:		bpl	return_true	; +ve if Y:A >= memory (signed).
+		bra	return_false	; -ve if Y:A  < memory (signed).
 
 ; **************
-; gt_sw, gt_sb
-; **************
-; compare two words
-; ----
-; IN :	1st word in memory, 2nd word in Y:A
-; ----
-; OUT : Y:A is true if memory > Y:A, else false.
-; ----
-
-gt_sb:		sec			; Subtract memory from A.
-		sbc.l	<__stack, x	; Cannot use a "cmp" as it
-		bvc	!+		; does not set the V flag!
-		eor	#$80
-!:		bmi	ret_true_sp	; -ve if A  < memory (signed).
-		bra	ret_false_sp	; +ve if A >= memory (signed).
+; Y:A is true if stacked-value > Y:A, else false
 
 gt_sw:		cmp.l	<__stack, x	; Subtract memory from Y:A.
 		tya
 		sbc.h	<__stack, x
 		bvc	!+
 		eor	#$80
-!:		bmi	ret_true_sp	; -ve if Y:A  < memory (signed).
-		bra	ret_false_sp	; +ve if Y:A >= memory (signed).
-
-
-
-
-;*******************************************************************
-;*******************************************************************
-;*******************************************************************
-;*******************************************************************
-;*******************************************************************
-
-
+!:		bmi	return_true	; -ve if Y:A  < memory (signed).
+		bra	return_false	; +ve if Y:A >= memory (signed).
 
 ; **************
-; asl - shift the memory left by the register word
-;
-; IN :	First word on the C stack
-;	Another word in A:X
-;
-; OUT : Register word egals the previous pushed value
-;	shifted left by A:X
-; ----
-; REMARK :	only the lower byte of the right operand is taken in account
-;		signed compatible
-; ----
+; Y:A is true if stacked-value < Y:A, else false
 
-aslw:		pha				; preserve count
-		lda.h	<__stack, x
-		sta	<__temp
-		lda.l	<__stack, x
-		inx
-		inx
-		ply				; restore count
-		beq	.done
-		cpy	#16
-		bcs	.zero
-.loop:		asl	a
-		rol	<__temp
-		dey
-		bne	.loop
-.done:		ldy	<__temp
-		rts
-.zero:		cla
+lt_uw:		clc			; Subtract memory+1 from Y:A.
+		sbc.l	<__stack, x
+		tya
+		sbc.h	<__stack, x
+		bcs	return_true	; CS if Y:A  > memory.
+		bra	return_false
+
+; **************
+; Y:A is true if stacked-value >= Y:A, else false
+
+ge_uw:		clc			; Subtract memory+1 from Y:A.
+		sbc.l	<__stack, x
+		tya
+		sbc.h	<__stack, x
+		bcc	return_true	; CC if Y:A <= memory.
+		bra	return_false
+
+; **************
+; Y:A is true if stacked-value <= Y:A, else false
+
+le_uw:		cmp.l	<__stack, x	; Subtract memory from Y:A.
+		tya
+		sbc.h	<__stack, x
+		bcs	return_true	; CS if Y:A >= memory.
+		bra	return_false
+
+; **************
+; Y:A is true if stacked-value > Y:A, else false
+
+gt_uw:		cmp.l	<__stack, x	; Subtract memory from Y:A.
+		tya
+		sbc.h	<__stack, x
+		bcc	return_true	; CC if Y:A  < memory.
+		bra	return_false
+
+; **************
+; boolean result, this MUST set the Z flag for the susequent branches!
+
+return_true:	inx
+		inx			; don't push Y:A, they are thrown away
 		cly
+		lda	#1		; Also set valid Z flag.
 		rts
 
-;		.dw	aslw0
-;		.dw	aslw1
-;		.dw	aslw2
-;		.dw	aslw3
-;		.dw	aslw4
-;		.dw	aslw5
-;		.dw	aslw6
-;		.dw	aslw7
-;		.dw	aslw8
-;		.dw	aslw9
-;		.dw	aslw10
-;		.dw	aslw11
-;		.dw	aslw12
-;		.dw	aslw13
-;		.dw	aslw14
-;		.dw	aslw15
+; **************
+; boolean result, this MUST set the Z flag for the susequent branches!
+
+return_false:	inx
+		inx			; don't push Y:A, they are thrown away
+		cly
+		lda	#0		; Also set valid Z flag.
+		rts
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+; subroutines for comparison tests with signed and unsigned bytes
+; ***************************************************************************
+; ***************************************************************************
 
 ; **************
+; Y:A is true if stacked-value == Y:A, else false
+
+eq_b:		cmp	<__stack, x
+		bne	return_false
+		bra	return_true
+
+; **************
+; Y:A is true if stacked-value != Y:A, else false
+
+ne_b:		cmp	<__stack, x
+		bne	return_true
+		bra	return_false
+
+; **************
+; Y:A is true if stacked-value < Y:A, else false
+
+lt_sb:		clc			; Subtract memory+1 from A.
+		sbc.l	<__stack, x
+		bvc	!+
+		eor	#$80
+!:		bpl	return_true	; +ve if A  > memory (signed).
+		bra	return_false	; -ve if A <= memory (signed).
+
+; **************
+; Y:A is true if stacked-value >= Y:A, else false
+
+ge_sb:		clc			; Subtract memory+1 from A.
+		sbc.l	<__stack, x
+		bvc	!+
+		eor	#$80
+!:		bmi	return_true	; -ve if A <= memory (signed).
+		bra	return_false	; +ve if A  > memory (signed).
+
+; **************
+; Y:A is true if stacked-value <= Y:A, else false
+
+le_sb:		sec			; Subtract memory from A.
+		sbc.l	<__stack, x	; Cannot use a "cmp" as it
+		bvc	!+		; does not set the V flag!
+		eor	#$80
+!:		bpl	return_true	; +ve if A >= memory (signed).
+		bra	return_false	; -ve if A  < memory (signed).
+
+; **************
+; Y:A is true if stacked-value > Y:A, else false
+
+gt_sb:		sec			; Subtract memory from A.
+		sbc.l	<__stack, x	; Cannot use a "cmp" as it
+		bvc	!+		; does not set the V flag!
+		eor	#$80
+!:		bmi	return_true	; -ve if A  < memory (signed).
+		bra	return_false	; +ve if A >= memory (signed).
+
+; **************
+; Y:A is true if stacked-value < Y:A, else false
+
+lt_ub:		clc			; Subtract memory+1 from A.
+		sbc.l	<__stack, x
+		bcs	return_true	; CS if A  > memory.
+		bra	return_false
+
+; **************
+; Y:A is true if stacked-value >= Y:A, else false
+
+ge_ub:		clc			; Subtract memory+1 from A.
+		sbc.l	<__stack, x
+		bcc	return_true	; CC if A <= memory.
+		bra	return_false
+
+; **************
+; Y:A is true if stacked-value <= Y:A, else false
+
+le_ub:		cmp.l	<__stack, x	; Subtract memory from A.
+		bcs	return_true	; CS if Y:A >= memory.
+		bra	return_false
+
+; **************
+; Y:A is true if stacked-value > Y:A, else false
+
+gt_ub:		cmp.l	<__stack, x	; Subtract memory from A.
+		bcc	return_true	; CC if A  < memory.
+		bra	return_false
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+; subroutines for logical and arithmetic shifts by a constant amount
+; ***************************************************************************
+; ***************************************************************************
+
+; **************
+; Y:A = Y:A << const
 
 aslw15:		asl	a
 aslw14:		asl	a
@@ -2105,44 +1970,7 @@ aslw0:		ldy	<__temp
 		rts
 
 ; **************
-; asr - shift the memory right by the register word
-;
-; IN :	First word on the C stack
-;	Another word in A:X
-;
-; OUT : Register word egals the previous pushed value
-;	shifted right by A:X
-; ----
-; REMARK :	only the lower byte of the right operand is taken in account
-;		signed compatible
-; ----
-
-; **************
-
-asrw:		pha				; preserve count
-		lda.h	<__stack, x
-		bpl	asrw_positive
-asrw_negative:	sta	<__temp
-		lda.l	<__stack, x
-		inx
-		inx
-		ply				; restore count
-		beq	.done
-		cpy	#16
-		bcs	.sign
-.loop:		sec
-		ror	<__temp
-		ror	a
-		dey
-		bne	.loop
-.done:		ldy	<__temp
-		rts
-
-.sign:		lda	#$FF
-		tay
-		rts
-
-; **************
+; Y:A = Y:A >> const
 
 asrw15:		cmp	#$80
 		ror	a
@@ -2188,41 +2016,8 @@ asrw1:		cpy	#$80
 asrw0:		ldy	<__temp
 		rts
 
-
 ; **************
-; lsr - shift the memory right by the register word
-;
-; IN :	First word on the C stack
-;	Another word in A:X
-;
-; OUT : Register word egals the previous pushed value
-;	shifted right by A:X
-;
-; REMARK :	only the lower byte of the right operand is taken in account
-;		signed compatible
-
-lsrw:		pha				; preserve count
-		lda.h	<__stack, x
-asrw_positive:	sta	<__temp
-		lda.l	<__stack, x
-		inx
-		inx
-		ply				; restore count
-		beq	.done
-		cpy	#16
-		bcs	.zero
-.loop:		lsr	<__temp
-		ror	a
-		dey
-		bne	.loop
-.done:		ldy	<__temp
-		rts
-
-.zero:		cla
-		cly
-		rts
-
-; **************
+; Y:A = Y:A >> const
 
 lsrw15:		lsr	a
 lsrw14:		lsr	a
@@ -2251,15 +2046,97 @@ lsrw1:		lsr	<__temp
 lsrw0:		ldy	<__temp
 		rts
 
+
+
+; ***************************************************************************
+; ***************************************************************************
+; subroutines for logical and arithmetic shifts by a variable amount
+; ***************************************************************************
+; ***************************************************************************
+
 ; **************
-; umul - multiply two UNSIGNED words
-; smul - multiply two SIGNED words
-;
-; IN :	First word on the C stack
-;	Another word in Y:A
-;
-; OUT : Register word equals the previous pushed value
-;	multiplied by Y:A
+; Y:A = stacked-value << Y:A
+
+aslw:		pha				; preserve count
+		lda.h	<__stack, x
+		sta	<__temp
+		lda.l	<__stack, x
+		inx
+		inx
+		ply				; restore count
+		beq	.done
+		cpy	#16
+		bcs	.zero
+.loop:		asl	a
+		rol	<__temp
+		dey
+		bne	.loop
+.done:		ldy	<__temp
+		rts
+.zero:		cla
+		cly
+		rts
+
+; **************
+; Y:A = stacked-value >> Y:A
+
+asrw:		pha				; preserve count
+		lda.h	<__stack, x
+		bpl	asrw_positive
+asrw_negative:	sta	<__temp
+		lda.l	<__stack, x
+		inx
+		inx
+		ply				; restore count
+		beq	.done
+		cpy	#16
+		bcs	.sign
+.loop:		sec
+		ror	<__temp
+		ror	a
+		dey
+		bne	.loop
+.done:		ldy	<__temp
+		rts
+
+.sign:		lda	#$FF
+		tay
+		rts
+
+; **************
+; Y:A = stacked-value >> Y:A
+
+lsrw:		pha				; preserve count
+		lda.h	<__stack, x
+asrw_positive:	sta	<__temp
+		lda.l	<__stack, x
+		inx
+		inx
+		ply				; restore count
+		beq	.done
+		cpy	#16
+		bcs	.zero
+.loop:		lsr	<__temp
+		ror	a
+		dey
+		bne	.loop
+.done:		ldy	<__temp
+		rts
+
+.zero:		cla
+		cly
+		rts
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+; subroutines for signed and unsigned multiplication and division
+; ***************************************************************************
+; ***************************************************************************
+
+; **************
+; Y:A = stacked-value * Y:A
 ;
 ; N.B. signed and unsigned multiply only differ in the top 16 of the 32bits!
 
@@ -2273,12 +2150,7 @@ smul:		sta.l	<multiplier
 		rts
 
 ; **************
-; udiv - divide two UNSIGNED words
-;
-; IN :	First word on the C stack
-;	Another word in Y:A:
-;
-; OUT : Register word = stacked-value / Y:A
+; Y:A = stacked-value / Y:A
 
 udiv:		sta.l	<divisor
 		sty.h	<divisor
@@ -2289,12 +2161,7 @@ udiv:		sta.l	<divisor
 		rts
 
 ; **************
-; sdiv - divide two SIGNED words
-;
-; IN :	First word on the C stack
-;	Another word in Y:A
-;
-; OUT : Register word = stacked-value / Y:A
+; Y:A = stacked-value / Y:A
 
 sdiv:		sta.l	<divisor
 		sty.h	<divisor
@@ -2305,12 +2172,7 @@ sdiv:		sta.l	<divisor
 		rts
 
 ; **************
-; umod - give the integer remainder of the two words
-;
-; IN :	First word on the C stack
-;	Another word in Y:A
-;
-; OUT : Register word = the remainder of stacked-value / Y:A
+; Y:A = stacked-value % Y:A
 
 umod:		sta.l	<divisor
 		sty.h	<divisor
@@ -2321,12 +2183,7 @@ umod:		sta.l	<divisor
 		rts
 
 ; **************
-; smod - give the integer remainder of the two words
-;
-; IN :	First word on the C stack
-;	Another word in Y:A
-;
-; OUT : Register word = the remainder of stacked-value / Y:A
+; Y:A = stacked-value % Y:A
 
 smod:		sta.l	<divisor
 		sty.h	<divisor
@@ -2336,8 +2193,16 @@ smod:		sta.l	<divisor
 		plx				; Restore X (aka __sp).
 		rts
 
+
+
+; ***************************************************************************
+; ***************************************************************************
+; subroutine for implementing a switch() statement
+; ***************************************************************************
+; ***************************************************************************
+
 ; **************
-; __case
+; do_switch
 ; **************
 ; implement a switch instruction in C
 ; ----
@@ -2358,13 +2223,8 @@ smod:		sta.l	<divisor
 ;	array) can be recognized with its 'label_to_jump_to' field set to 0.
 ;	Then the 'value_to_check' field become the default label we have to
 ;	use for the rest of the execution.
-; ----
-; OUT : The execution goes to another place
-; ----
-; REMARK : Also use remain variable as a temporary value
-; ----
 
-__case:		sta.l	<__temp		; store the value to check to
+do_switch:	sta.l	<__temp		; store the value to check to
 		sty.h	<__temp
 
 		__popw
@@ -2404,65 +2264,39 @@ __case:		sta.l	<__temp		; store the value to check to
 		iny
 		bra	.case_vector
 
-
-
-
-;___case:	lda	[__ptr]
+; *********************
+;
+;		lda	[__ptr]
 ;		tay
 ;
-;.next_hi:	dey
+;!loop:		lda	[__ptr], y
 ;		dey
-;.test_hi:	lda	[__ptr], y
 ;		cmp.h	<__temp
-;		bne	.next_hi
-;		dey
+;		bne	!fail
 ;		lda	[__ptr], y
 ;		cmp.l	<__temp
-;		beq	.found		; also CS
-;		dey
-;		bne	.test_hi
-;		dey
-;
-;.found:	tya
-;		clc
-;		adc	[_ptr]
-;		sax
-;		rts
-;
-;cmp_table:	db	6+2		; length
-;12		dw	75		;
-;34		dw	75		;
-;56		dw	75		;
-;
-;78		dw	def
-;9A		dw	jmp1
-;BC		dw	jmp3
-;DE		dw	jmp5
-;
-;
-;
-;**NEEDS FIXING**
-;
-;___case:	ldy	table
-;.next_hi:	dey
-;		dey
-;!loop:		lda	table, y
-;		dey
-;		cmp.h	<__temp
-;		bne	!fail+
-;		lda	table, y
-;		cmp.l	<__temp
-;		beq	.found		; also CS
+;		beq	!found
 ;!fail:		dey
 ;		bne	!loop-
-;		dey
-;.found:	tya
-;		clc
-;		adc	table
-;		sax
-;		jmp	[table, x]
 ;
-;cmp_table:	db	6+2		; length
+;!default:	sec
+;		dey
+;
+;!found:	iny
+;		tya
+;;		sec
+;		adc	[_ptr]
+;		tay
+;
+;		lda	[__ptr], y	; read func lo-byte
+;		sta.l	<__temp
+;		iny
+;		lda	[__ptr], y	; read func hi-byte
+;		sta.h	<__temp
+;		jmp	[__temp]
+;
+;cmp_table:
+; 0		db	6
 ;12		dw	75		;
 ;34		dw	75		;
 ;56		dw	75		;
@@ -2473,25 +2307,24 @@ __case:		sta.l	<__temp		; store the value to check to
 ;DE		dw	jmp5
 ;
 ;
-;
+; **************
+; 29 bytes, max 127 cases
 ;
 ;___casew:	sta.l	<__temp		; store the value to check to
 ;		sty.h	<__temp
-;		ldy	#5
-;!loop:		lda	table, y
-;		dey
-;		cmp.h	<__temp
-;		bne	!fail+
-;		lda	table, y
+;		ldy	#6
+;!loop:		lda	table-2, y
 ;		cmp.l	<__temp
-;		beq	!found+		; also CS
+;		bne	!fail+
+;		lda	table-1, y
+;		cmp.h	<__temp
+;		beq	!found+
 ;!fail:		dey
-;		bpl	!loop-
-;		clc
+;		dey
+;		bne	!loop-
 ;!found:	tya
-;		adc	#7
 ;		sax
-;		jmp	[table, x]
+;		jmp	[table+6, x]
 ;
 ;cmp_table:
 ;01		dw	75		;
@@ -2504,19 +2337,18 @@ __case:		sta.l	<__temp		; store the value to check to
 ;CD		dw	jmp5
 ;
 ;
+; **************
+; 16 bytes, max 127 cases
 ;
-;
-;___caseb:	ldy	#2
-;!loop:		cmp	table, y
-;		beq	!found+		; also CS
+;___caseb:	ldy	#3
+;!loop:		cmp	table-1, y
+;		beq	!found+
 ;		dey
-;		bpl	!loop-
-;!found:	iny
-;		tya
+;		bne	!loop-
+;!found:	tya
 ;		asl	a
-;		adc	#3
 ;		sax
-;		jmp	[table, x]
+;		jmp	[table+3, x]
 ;
 ;cmp_table:				;0 *2->0 +3->3
 ;0		db	75		;1 *2->2 +3->5
@@ -2527,16 +2359,3 @@ __case:		sta.l	<__temp		; store the value to check to
 ;56		dw	jmp1
 ;78		dw	jmp3
 ;9A		dw	jmp5
-
-
-; **************
-
-; ----
-; hook
-; ----
-; indirect call to sub-routine
-; ----
-; IN :	sub-routine addr in __ptr
-; ----
-
-call_indirect:	jmp	[__ptr]
