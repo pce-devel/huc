@@ -264,19 +264,22 @@ void gasrint (void)
 /*
  *	execute optimized "switch" library routine
  */
-void gswitch (void)
+void gswitch (int nlab)
 {
-	out_ins(I_SWITCH, 0, 0);
+	out_ins(I_SWITCHW, T_LABEL, nlab);
 }
 
 /*
  *	mark the start of a case or default statement
  */
-void gcase (int nlab)
+void gcase (int nlab, int value)
 {
 	out_ins(I_ENDCASE, 0, 0);
 	gnlabel(nlab);
-	out_ins(I_CASE, 0, 0);
+	if (value == INT_MAX)
+		out_ins(I_CASE, 0, 0);
+	else
+		out_ins(I_CASE, T_VALUE, value);
 }
 
 /*

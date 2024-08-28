@@ -72,7 +72,8 @@ enum ICODE {
 
 	/* i-codes for handling boolean tests and branching */
 
-	I_SWITCH,
+	I_SWITCHW,
+	I_SWITCHB,
 	I_CASE,
 	I_ENDCASE,
 	I_LABEL,

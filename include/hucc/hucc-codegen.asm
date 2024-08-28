@@ -419,18 +419,34 @@ __spopb		.macro
 
 ; **************
 
-__switch	.macro
-		jmp	do_switch
+__switchw	.macro
+		pha
+		lda.l	#\1
+		sta.l	__ptr
+		lda.h	#\1
+		sta.h	__ptr
+		pla
+		jmp	do_switchw
+		.endm
+
+; **************
+
+__switchb	.macro
+		ldy.l	#\1
+		sty.l	__ptr
+		ldy.h	#\1
+		sty.h	__ptr
+		jmp	do_switchb
 		.endm
 
 ; **************
 ; the start of a "case" statement
+
 __case		.macro
 		.endm
 
 ; **************
 ; the end of the previous "case" statement if it drops through
-; liberally used so that optimization can remove redundant copies
 
 __endcase	.macro
 		.endm
@@ -2198,115 +2214,69 @@ smod:		sta.l	<divisor
 ; ***************************************************************************
 ; ***************************************************************************
 ; subroutine for implementing a switch() statement
+;
+; case_table:
+; +  0		db	6		; #bytes of case values.
+; + 12		dw	val1
+; + 34		dw	val2
+; + 56		dw	val3
+; + 78		dw	jmpdefault
+; + 9A		dw	jmp1
+; + BC		dw	jmp2
+; + DE		dw	jmp3
 ; ***************************************************************************
 ; ***************************************************************************
 
 ; **************
-; do_switch
-; **************
-; implement a switch instruction in C
-; ----
-; IN :	primary register (A:X) contain the discriminant value
-;	i.e. the one that will be checked against those indicated in the
-;	various case instructions
-;	On the stack, a pointer is passed
-;	This is a pointer toward an array
-;	Each item of this array is a 4 bytes long structure
-;	The structure is the following :
-;	  WORD value_to_check
-;	  WORD label_to_jump_to
-;	We have to parse the whole array in order to compare the primary
-;	register with all the 'value_to_check' field. If we ever find that
-;	the primary register is egal to such a value, we must jump to the
-;	corresponding 'label_to_jump_to'.
-;	The default value (which also means that we reached the end of the
-;	array) can be recognized with its 'label_to_jump_to' field set to 0.
-;	Then the 'value_to_check' field become the default label we have to
-;	use for the rest of the execution.
 
-do_switch:	sta.l	<__temp		; store the value to check to
+do_switchw:	sta.l	<__temp		; Remember the value to check for.
 		sty.h	<__temp
 
-		__popw
+		lda	[__ptr]		; Read #bytes of case values to check.
+		tay
+		beq	zero_cases
 
-		sta.l	<__ptr		; __ptr contain the address of the array
-		sty.h	<__ptr
-
-		cly
-		bra	.begin_case
-
-.next_case_lo:	iny
-
-.next_case_hi:	iny
-
-.begin_case:	iny			; skip func lo-byte
-		lda	[__ptr], y	; test func hi-byte
-		beq	.case_default
-		iny
+.loop:		lda	[__ptr], y	; Test the case value.
+		dey
+		cmp.h	<__temp
+		bne	.fail
 		lda	[__ptr], y
 		cmp.l	<__temp
-		bne	.next_case_lo
-		iny
-		lda	[__ptr], y
-		cmp.h	<__temp
-		bne	.next_case_hi
-		dey			; found match
-		dey
+		beq	case_found	; CS if case_found.
+.fail:		dey
+		bne	.loop
 
-.case_vector:	lda	[__ptr], y	; read func hi-byte
-		sta.h	<__temp
+.default:	clc			; CC if default.
+		bra	case_found
+
+; **************
+
+do_switchb:	tay			; Remember the value to check for.
+
+		lda	[__ptr]		; Read #bytes of case values to check.
+		say
+		beq	zero_cases
+
+.loop:		dey			; Test the case value (lo-byte only).
+		cmp	[__ptr], y
+		beq	case_found	; CS if case_found.
 		dey
-		lda	[__ptr], y	; read func lo-byte
+		bne	.loop
+
+.default:	clc			; CC if default.
+
+case_found:	tya			; Add the offset to the label address.
+		adc	[__ptr]
+		tay
+zero_cases:	iny
+
+		lda	[__ptr], y	; Read label address lo-byte.
 		sta.l	<__temp
+		iny
+		lda	[__ptr], y	; Read label address hi-byte.
+		sta.h	<__temp
 		jmp	[__temp]
 
-.case_default:	iny
-		iny
-		bra	.case_vector
-
-; *********************
-;
-;		lda	[__ptr]
-;		tay
-;
-;!loop:		lda	[__ptr], y
-;		dey
-;		cmp.h	<__temp
-;		bne	!fail
-;		lda	[__ptr], y
-;		cmp.l	<__temp
-;		beq	!found
-;!fail:		dey
-;		bne	!loop-
-;
-;!default:	sec
-;		dey
-;
-;!found:	iny
-;		tya
-;;		sec
-;		adc	[_ptr]
-;		tay
-;
-;		lda	[__ptr], y	; read func lo-byte
-;		sta.l	<__temp
-;		iny
-;		lda	[__ptr], y	; read func hi-byte
-;		sta.h	<__temp
-;		jmp	[__temp]
-;
-;cmp_table:
-; 0		db	6
-;12		dw	75		;
-;34		dw	75		;
-;56		dw	75		;
-;
-;78		dw	def
-;9A		dw	jmp1
-;BC		dw	jmp3
-;DE		dw	jmp5
-;
-;
 ; **************
 ; 29 bytes, max 127 cases
 ;

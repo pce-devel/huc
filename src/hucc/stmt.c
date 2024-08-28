@@ -360,6 +360,7 @@ void doswitch (void)
 {
 	intptr_t ws[WSSIZ];
 	intptr_t *ptr;
+	bool auto_default = false;
 
 	ws[WSSYM] = (intptr_t)locptr;
 	ws[WSSP] = stkp;
@@ -368,17 +369,22 @@ void doswitch (void)
 	ws[WSTAB] = getlabel();
 	ws[WSDEF] = ws[WSEXIT] = getlabel();
 	addwhile(ws);
-	immed(T_LABEL, ws[WSTAB]);
-	gpush();
 	needbrack("(");
 	expression(YES);
 	needbrack(")");
-	stkp = stkp + INTSIZE;	/* 'switch' routine pops from the stack */
-	gswitch();
+	gswitch((int)ws[WSTAB]);
 	statement(NO);
 	ptr = readswitch();
 	jump((int)ptr[WSEXIT]);
+	if (ptr[WSDEF] == ptr[WSEXIT]) {
+		ptr[WSDEF] = getlabel();
+		auto_default = true;
+	}
 	dumpsw(ptr);
+	if (auto_default) {
+		gnlabel((int)ptr[WSDEF]);
+		out_ins(I_CASE, 0, 0);
+	}
 	gnlabel((int)ptr[WSEXIT]);
 	locptr = (SYMBOL *)ptr[WSSYM];
 	stkp = modstk((int)ptr[WSSP]);
@@ -419,7 +425,7 @@ void dodefault (void)
 	ptr = readswitch();
 	if (ptr) {
 		ptr[WSDEF] = lab = getlabel();
-		gcase(lab);
+		gcase(lab, INT_MAX);
 		if (!match(":"))
 			error("missing colon");
 	}
@@ -547,39 +553,69 @@ void dogoto (void)
 	clabel_ptr++;
 }
 
-
 /*
  *	dump switch table
+ *
+ *	case_table:
+ *	+  0		db	6		; #bytes of case values.
+ *	+ 12		dw	val1
+ *	+ 34		dw	val2
+ *	+ 56		dw	val3
+ *	+ 78		dw	jmpdefault
+ *	+ 9A		dw	jmp1
+ *	+ BC		dw	jmp2
+ *	+ DE		dw	jmp3
  */
 void dumpsw (intptr_t *ws)
 {
-	int i, j;
+	int i, j, column;
 
-//	gdata ();
 	gnlabel((int)ws[WSTAB]);
 	flush_ins();
-	if (ws[WSCASEP] != swstp) {
-		j = (int)ws[WSCASEP];
-		while (j < swstp) {
-			defword();
-			i = 4;
-			while (i--) {
-				outlabel(swstlab[j]);
-				outbyte(',');
-				outdec(swstcase[j++]);
-				if ((i == 0) | (j >= swstp)) {
-					nl();
-					break;
-				}
-				outbyte(',');
+
+	i = (int)ws[WSCASEP];
+
+	if ((swstp - i) > 63) {
+		error("too many case statements in switch(), there must be less than 64");
+		return;
+	}
+
+	defbyte();
+	outdec((swstp - i) << 1);
+	nl();
+
+	j = swstp;
+	while (j > i) {
+		defword();
+		column = 8;
+		while (column--) {
+			outdec(swstcase[--j]);
+			if ((column == 0) | (j == i)) {
+				nl();
+				break;
 			}
+			outbyte(',');
 		}
 	}
+
 	defword();
-	outstr("0,");
 	outlabel((int)ws[WSDEF]);
 	nl();
-//	gtext ();
+
+	j = swstp;
+	while (j > i) {
+		defword();
+		column = 8;
+		while (column--) {
+			outlabel(swstlab[--j]);
+			if ((column == 0) | (j == i)) {
+				nl();
+				break;
+			}
+			outbyte(',');
+		}
+	}
+	nl();
 }
 
 void test (int label, int ft)

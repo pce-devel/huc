@@ -76,6 +76,6 @@ void addcase (int val)
 	else {
 		swstcase[swstp] = val;
 		swstlab[swstp++] = lab = getlabel();
-		gcase(lab);
+		gcase(lab, val);
 	}
 }

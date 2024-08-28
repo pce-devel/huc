@@ -451,13 +451,22 @@ void gen_code (INS *tmp)
 
 	/* i-codes for handling boolean tests and branching */
 
-	case I_SWITCH:
-		ot("__switch");
+	case I_SWITCHW:
+		ot("__switchw\t");
+		outlabel((int)data);
+		nl();
+		break;
+
+	case I_SWITCHB:
+		ot("__switchb\t");
+		outlabel((int)data);
 		nl();
 		break;
 
 	case I_CASE:
-		ot("__case");
+		ot("__case\t");
+		if (type == T_VALUE)
+			outdec((int)data);
 		nl();
 		break;
 

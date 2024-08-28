@@ -473,11 +473,33 @@ lv1_loop:
 		/* 3-instruction patterns */
 		if (q_nb >= 3) {
 			/*
+			 *  __case			-->	LLnn:
+			 *  __endcase
+			 *  LLnn:
+			 *
+			 *  I_ENDCASE is only generated in order to catch which
+			 *  case statements could fall through to the next case
+			 *  so that an SAX instruction can be generated.
+			 *
+			 *  This removes redundant I_CASE/I_ENDCASE i-codes that
+			 *  just fall through to the next case.
+			 */
+			if
+			((p[0]->code == I_LABEL) &&
+			 (p[1]->code == I_ENDCASE) &&
+			 (p[2]->code == I_CASE)
+			) {
+				/* remove code */
+				*p[2] = *p[0];
+				nb = 2;
+			}
+
+			/*
 			 *  __pushw			-->	__add[bw]i i
 			 *  __ldwi  i
 			 *  __add[bw]s
 			 */
-			if
+			else if
 			((p[0]->code == I_ADDWS ||
 			  p[0]->code == I_ADDBS) &&
 			 (p[1]->code == I_LDWI) &&
@@ -1034,13 +1056,29 @@ lv1_loop:
 			}
 
 			/*
-			 *  __switch			-->	__switch
+			 *  __ldb/__lbub/etc		-->	__ldb/__lbub/etc
+			 *  __switchw				__switchb
+			 *
+			 */
+			else if
+			((p[0]->code == I_SWITCHW) &&
+			 (p[1]->code == I_LDB ||
+			  p[1]->code == I_LDUB ||
+			  p[1]->code == I_LDBP ||
+			  p[1]->code == I_LDUBP ||
+			  p[1]->code == X_LDB_S ||
+			  p[1]->code == X_LDUB_S)
+			) {
+				/* optimize code */
+				p[0]->code = I_SWITCHB;
+				nb = 0;
+			}
+
+			/*
+			 *  __switchw/__switchb		-->	__switchw/__switchb
 			 *  __endcase
 			 *
 			 *  __bra LLnn			-->	__bra LLnn
-			 *  __endcase
-			 *
-			 *  __case			-->	__case
 			 *  __endcase
 			 *
 			 *  I_ENDCASE is only generated in order to catch which
@@ -1051,27 +1089,11 @@ lv1_loop:
 			 */
 			else if
 			((p[0]->code == I_ENDCASE) &&
-			 (p[1]->code == I_SWITCH ||
-			  p[1]->code == I_CASE ||
+			 (p[1]->code == I_SWITCHW ||
+			  p[1]->code == I_SWITCHB ||
 			  p[1]->code == I_BRA)
 			) {
 				/* remove code */
-				nb = 1;
-			}
-
-			/*
-			 *  __case			-->	LLnn:
-			 *  LLnn:
-			 *
-			 *  This removes any orphaned I_CASE after the previous
-			 *  optimization.
-			 */
-			else if
-			((p[0]->code == I_LABEL) &&
-			 (p[1]->code == I_CASE)
-			) {
-				/* remove code */
-				*p[1] = *p[0];
 				nb = 1;
 			}
 
