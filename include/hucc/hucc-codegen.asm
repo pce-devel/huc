@@ -418,24 +418,23 @@ __spopb		.macro
 ; ***************************************************************************
 
 ; **************
+; Y:A is the value to check for.
 
 __switchw	.macro
-		pha
-		lda.l	#\1
-		sta.l	__ptr
-		lda.h	#\1
-		sta.h	__ptr
-		pla
+		sty.h	__temp
+		ldy.l	#\1
+		sty.l	__ptr
+		ldy.h	#\1
 		jmp	do_switchw
 		.endm
 
 ; **************
+; Y:A is the value to check for.
 
 __switchb	.macro
 		ldy.l	#\1
 		sty.l	__ptr
 		ldy.h	#\1
-		sty.h	__ptr
 		jmp	do_switchb
 		.endm
 
@@ -2217,20 +2216,20 @@ smod:		sta.l	<divisor
 ;
 ; case_table:
 ; +  0		db	6		; #bytes of case values.
-; + 12		dw	val1
+; + 12		dw	val3
 ; + 34		dw	val2
-; + 56		dw	val3
+; + 56		dw	val1
 ; + 78		dw	jmpdefault
-; + 9A		dw	jmp1
+; + 9A		dw	jmp3
 ; + BC		dw	jmp2
-; + DE		dw	jmp3
+; + DE		dw	jmp1
 ; ***************************************************************************
 ; ***************************************************************************
 
 ; **************
 
-do_switchw:	sta.l	<__temp		; Remember the value to check for.
-		sty.h	<__temp
+do_switchw:	sty.h	<__ptr		; Save hi-byte of the table address.
+		sta.l	<__temp		; Save lo-byte of the value to find.
 
 		lda	[__ptr]		; Read #bytes of case values to check.
 		tay
@@ -2251,7 +2250,8 @@ do_switchw:	sta.l	<__temp		; Remember the value to check for.
 
 ; **************
 
-do_switchb:	tay			; Remember the value to check for.
+do_switchb:	sty.h	<__ptr		; Save hi-byte of the table address.
+		tay			; Save lo-byte of the value to find.
 
 		lda	[__ptr]		; Read #bytes of case values to check.
 		say
