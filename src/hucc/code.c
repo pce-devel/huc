@@ -339,7 +339,7 @@ void gen_code (INS *tmp)
 		   in HuC we get a string and not a symbol */
 		switch (type) {
 		case T_LITERAL:
-			ot("  \t");
+			ot(" ");
 			prefix();
 			outstr((const char *)data);
 			if (imm_data) {
@@ -671,6 +671,72 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_LDWA:
+		ot("__ldwa\t");
+		outsymbol((SYMBOL *)imm_data);
+		outstr(",");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_LDBA:
+		ot("__ldba\t");
+		outsymbol((SYMBOL *)imm_data);
+		outstr(",");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_LDUBA:
+		ot("__lduba\t");
+		outsymbol((SYMBOL *)imm_data);
+		outstr(",");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_LDW_S:
+		ot("__ldw_s\t");
+		outdec((int)data);
+		nl();
+		break;
+
+	case X_LDB_S:
+		ot("__ldb_s\t");
+		outdec((int)data);
+		nl();
+		break;
+
+	case X_LDUB_S:
+		ot("__ldub_s\t");
+		outdec((int)data);
+		nl();
+		break;
+
+	case X_LDWA_S:
+		ot("__ldwa_s\t");
+		outsymbol((SYMBOL *)imm_data);
+		outstr(",");
+		outdec((int)data);
+		nl();
+		break;
+
+	case X_LDBA_S:
+		ot("__ldba_s\t");
+		outsymbol((SYMBOL *)imm_data);
+		outstr(",");
+		outdec((int)data);
+		nl();
+		break;
+
+	case X_LDUBA_S:
+		ot("__lduba_s\t");
+		outsymbol((SYMBOL *)imm_data);
+		outstr(",");
+		outdec((int)data);
+		nl();
+		break;
+
 	/* i-codes for saving the primary register */
 
 	case I_STWZ:
@@ -743,6 +809,50 @@ void gen_code (INS *tmp)
 
 	case I_STBPS:
 		ol("__stbps");
+		break;
+
+	case X_STWI_S:
+		ot("__stwi_s\t");
+		outdec((int)imm_data);
+		outstr(",");
+		outdec((int)data);
+		nl();
+		break;
+
+	case X_STBI_S:
+		ot("__stbi_s\t");
+		outdec((int)imm_data);
+		outstr(",");
+		outdec((int)data);
+		nl();
+		break;
+
+	case X_STW_S:
+		ot("__stw_s\t");
+		outdec((int)data);
+		nl();
+		break;
+
+	case X_STB_S:
+		ot("__stb_s\t");
+		outdec((int)data);
+		nl();
+		break;
+
+	case X_STWA_S:
+		ot("__stwa_s\t");
+		outsymbol((SYMBOL *)imm_data);
+		outstr(",");
+		outdec((int)data);
+		nl();
+		break;
+
+	case X_STBA_S:
+		ot("__stba_s\t");
+		outsymbol((SYMBOL *)imm_data);
+		outstr(",");
+		outdec((int)data);
+		nl();
 		break;
 
 	/* i-codes for extending a byte to a word */
@@ -913,52 +1023,6 @@ void gen_code (INS *tmp)
 
 	case X_PEA_S:
 		ot("__pea_s\t");
-		outdec((int)data);
-		nl();
-		break;
-
-	case X_LDW_S:
-		ot("__ldw_s\t");
-		outdec((int)data);
-		nl();
-		break;
-
-	case X_LDB_S:
-		ot("__ldb_s\t");
-		outdec((int)data);
-		nl();
-		break;
-
-	case X_LDUB_S:
-		ot("__ldub_s\t");
-		outdec((int)data);
-		nl();
-		break;
-
-	case X_STWI_S:
-		ot("__stwi_s\t");
-		outdec((int)imm_data);
-		outstr(",");
-		outdec((int)data);
-		nl();
-		break;
-
-	case X_STBI_S:
-		ot("__stbi_s\t");
-		outdec((int)imm_data);
-		outstr(",");
-		outdec((int)data);
-		nl();
-		break;
-
-	case X_STW_S:
-		ot("__stw_s\t");
-		outdec((int)data);
-		nl();
-		break;
-
-	case X_STB_S:
-		ot("__stb_s\t");
 		outdec((int)data);
 		nl();
 		break;

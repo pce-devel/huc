@@ -65,44 +65,59 @@ int cmp_operands (INS *p1, INS *p2)
 
 static int is_load (INS *i)
 {
-	return (i->code == I_LDB ||
-		i->code == I_LDBP ||
+	return (i->code == I_LDWI ||
 		i->code == I_LDW ||
-		i->code == I_LDWI ||
-		i->code == I_LDWP ||
+		i->code == I_LDB ||
 		i->code == I_LDUB ||
+		i->code == I_LDWP ||
+		i->code == I_LDBP ||
 		i->code == I_LDUBP ||
-		i->code == X_LDB_S ||
+		i->code == X_LDWA ||
+		i->code == X_LDBA ||
+		i->code == X_LDUBA ||
 		i->code == X_LDW_S ||
+		i->code == X_LDB_S ||
+		i->code == X_LDUB_S ||
+		i->code == X_LDWA_S ||
+		i->code == X_LDBA_S ||
+		i->code == X_LDUBA_S ||
 		i->code == X_LDD_I ||
-		i->code == X_LDD_S_B ||
 		i->code == X_LDD_S_W ||
-		i->code == X_LDUB_S);
+		i->code == X_LDD_S_B);
 }
 
 static int is_sprel (INS *i)
 {
 	return (i->code == X_LEA_S ||
 		i->code == X_PEA_S ||
+		i->code == X_LDW_S ||
 		i->code == X_LDB_S ||
 		i->code == X_LDUB_S ||
-		i->code == X_LDW_S ||
-		i->code == X_LDD_S_B ||
-		i->code == X_LDD_S_W ||
-		i->code == X_STB_S ||
-		i->code == X_STW_S ||
-		i->code == X_INCW_S ||
-		i->code == X_ADDW_S ||
+		i->code == X_LDWA_S ||
+		i->code == X_LDBA_S ||
+		i->code == X_LDUBA_S ||
+		i->code == X_STWI_S ||
 		i->code == X_STBI_S ||
+		i->code == X_STW_S ||
+		i->code == X_STB_S ||
+		i->code == X_STWA_S ||
+		i->code == X_STBA_S ||
+		i->code == X_INCW_S ||
+		i->code == X_INCB_S ||
+		i->code == X_ADDW_S ||
 		i->code == X_ADDB_S ||
 		i->code == X_ADDUB_S ||
-		i->code == X_INCB_S ||
-		i->code == X_TZB_S ||
 		i->code == X_TZW_S ||
-		i->code == X_TNZB_S ||
+		i->code == X_TZB_S ||
 		i->code == X_TNZW_S ||
-		i->code == X_STBI_S ||
-		i->code == X_STWI_S);
+		i->code == X_TNZB_S ||
+		i->code == X_LDD_S_W ||
+		i->code == X_LDD_S_B);
+}
+
+inline bool is_small_array (SYMBOL *sym)
+{
+	return (sym->ident == ARRAY && sym->size > 0 && sym->size <= 256);
 }
 
 /* ----
@@ -285,6 +300,44 @@ lv1_loop:
 				nb = 2;
 			}
 
+			/*
+			 *  __ldw/b/ub or __ldw/b/ub_s	-->	__ldwa p, i
+			 *  __aslw
+			 *  __addwi_sym array
+			 *  __stw _ptr
+			 *  __ldwp _ptr
+			 */
+			else if
+			((p[0]->code == I_LDWP) &&
+			 (p[0]->type == T_PTR) &&
+			 (p[1]->code == I_STW) &&
+			 (p[1]->type == T_PTR) &&
+			 (p[2]->code == I_ADDWI) &&
+			 (p[2]->type == T_SYMBOL) &&
+			 (is_small_array((SYMBOL *)p[2]->data)) &&
+			 (p[3]->code == I_ASLW) &&
+			 (p[4]->code == I_LDW ||
+			  p[4]->code == I_LDB ||
+			  p[4]->code == I_LDUB ||
+			  p[4]->code == X_LDW_S ||
+			  p[4]->code == X_LDB_S ||
+			  p[4]->code == X_LDUB_S)
+			) {
+				/* replace code */
+				switch (p[4]->code) {
+				case I_LDW:
+				case I_LDB:
+				case I_LDUB: p[4]->code = X_LDWA; break;
+				case X_LDW_S:
+				case X_LDB_S:
+				case X_LDUB_S: p[4]->code = X_LDWA_S; break;
+				default: abort();
+				}
+				p[4]->imm_type = p[2]->type;
+				p[4]->imm_data = p[2]->data;
+				nb = 4;
+			}
+
 			/* flush queue */
 			if (nb) {
 				q_wr -= nb;
@@ -455,6 +508,43 @@ lv1_loop:
 				nb = 3;
 			}
 #endif
+
+			/*
+			 *  __ldw/b/ub or __ldw/b/ub_s	-->	__ldwa p, i
+			 *  __addwi_sym array
+			 *  __stw _ptr
+			 *  __ldbp/__ldubp _ptr
+			 */
+			else if
+			((p[0]->code == I_LDBP ||
+			  p[0]->code == I_LDUBP) &&
+			 (p[0]->type == T_PTR) &&
+			 (p[1]->code == I_STW) &&
+			 (p[1]->type == T_PTR) &&
+			 (p[2]->code == I_ADDWI) &&
+			 (p[2]->type == T_SYMBOL) &&
+			 (is_small_array((SYMBOL *)p[2]->data)) &&
+			 (p[3]->code == I_LDW ||
+			  p[3]->code == I_LDB ||
+			  p[3]->code == I_LDUB ||
+			  p[3]->code == X_LDW_S ||
+			  p[3]->code == X_LDB_S ||
+			  p[3]->code == X_LDUB_S)
+			) {
+				/* replace code */
+				switch (p[3]->code) {
+				case I_LDW:
+				case I_LDB:
+				case I_LDUB: p[3]->code = (p[0]->code == I_LDBP) ? X_LDBA : X_LDUBA; break;
+				case X_LDW_S:
+				case X_LDB_S:
+				case X_LDUB_S: p[3]->code =  (p[0]->code == I_LDBP) ? X_LDBA_S : X_LDUBA_S; break;
+				default: abort();
+				}
+				p[3]->imm_type = p[2]->type;
+				p[3]->imm_data = p[2]->data;
+				nb = 3;
+			}
 
 			/* flush queue */
 			if (nb) {

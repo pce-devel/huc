@@ -778,6 +778,92 @@ __ldubp		.macro
 		cly
 		.endm
 
+; **************
+
+__ldwa		.macro
+		lda	\2
+		asl	a
+		tay
+		lda.h	\1, y
+		pha
+		lda.l	\1, y
+		ply
+		.endm
+
+; **************
+
+__ldba		.macro
+		ldy	\2
+		lda	\1, y
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+
+__lduba		.macro
+		ldy	\2
+		lda	\1, y
+		cly
+		.endm
+
+; **************
+
+__ldw_s		.macro	; __STACK
+		lda.l	<__stack + \1, x
+		ldy.h	<__stack + \1, x
+		.endm
+
+; **************
+
+__ldb_s		.macro	; __STACK
+		lda.l	<__stack + \1, x
+		cly
+		bpl	!+	; signed
+		dey
+!:
+		.endm
+
+; **************
+
+__ldub_s	.macro	; __STACK
+		lda	<__stack + \1, x
+		cly
+		.endm
+
+; **************
+
+__ldwa_s	.macro	; __STACK
+		lda	<__stack + \2, x
+		asl	a
+		tay
+		lda.h	\1, y
+		pha
+		lda.l	\1, y
+		ply
+		.endm
+
+; **************
+
+__ldba_s	.macro	; __STACK
+		ldy	<__stack + \2, x
+		lda	\1, y
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+
+__lduba_s	.macro	; __STACK
+		ldy	<__stack + \2, x
+		lda	\1, y
+		cly
+		.endm
+
 
 
 ; ***************************************************************************
@@ -889,6 +975,83 @@ __stbps		.macro	; __STACK
 		sta	[__stack, x]
 		inx
 		inx
+		.endm
+
+
+; **************
+
+__stwa		.macro
+		phy
+		pha
+		lda	\2
+		asl	a
+		say
+		sta.h	\1, y
+		pla
+		sta.l	\1, y
+		ply
+		.endm
+
+; **************
+
+__stba		.macro
+		phy
+		ldy	\2
+		sta	\1, y
+		ply
+		.endm
+
+; **************
+
+__stwi_s	.macro	; __STACK
+		lda.l	#\1
+		sta.l	<__stack + \2, x
+		ldy.h	#\1
+		sty.h	<__stack + \2, x
+		.endm
+
+; **************
+
+__stbi_s	.macro	; __STACK
+		lda.l	#\1
+		sta.l	<__stack + \2, x
+		cly
+		.endm
+
+; **************
+
+__stw_s		.macro	; __STACK
+		sta.l	<__stack + \1, x
+		sty.h	<__stack + \1, x
+		.endm
+
+; **************
+
+__stb_s		.macro	; __STACK
+		sta.l	<__stack + \1, x
+		.endm
+
+; **************
+
+__stwa_s	.macro	; __STACK
+		phy
+		pha
+		lda	<__stack + \2, x
+		asl	a
+		say
+		sta.h	\1, y
+		pla
+		sta.l	\1, y
+		ply
+		.endm
+
+; **************
+
+__stba_s	.macro	; __STACK
+		phy
+		ldy	<__stack + \2, x
+		sta	\1, y
+		ply
 		.endm
 
 
@@ -1551,60 +1714,6 @@ __pea_s		.macro	; __STACK
 		dex
 		sta.l	<__stack, x
 		sty.h	<__stack, x
-		.endm
-
-; **************
-
-__ldw_s		.macro	; __STACK
-		lda.l	<__stack + \1, x
-		ldy.h	<__stack + \1, x
-		.endm
-
-; **************
-
-__ldb_s		.macro	; __STACK
-		lda.l	<__stack + \1, x
-		cly
-		bpl	!+	; signed
-		dey
-!:
-		.endm
-
-; **************
-
-__ldub_s	.macro	; __STACK
-		lda	<__stack + \1, x
-		cly
-		.endm
-
-; **************
-
-__stwi_s	.macro	; __STACK
-		lda.l	#\1
-		sta.l	<__stack + \2, x
-		ldy.h	#\1
-		sty.h	<__stack + \2, x
-		.endm
-
-; **************
-
-__stbi_s	.macro	; __STACK
-		lda.l	#\1
-		sta.l	<__stack + \2, x
-		cly
-		.endm
-
-; **************
-
-__stw_s		.macro	; __STACK
-		sta.l	<__stack + \1, x
-		sty.h	<__stack + \1, x
-		.endm
-
-; **************
-
-__stb_s		.macro	; __STACK
-		sta.l	<__stack + \1, x
 		.endm
 
 ; **************
