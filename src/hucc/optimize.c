@@ -233,6 +233,7 @@ lv1_loop:
 
 		/* 5-instruction patterns */
 		if (q_nb >= 5) {
+#if 0
 			/*  Classical Base+offset word array access:
 			 *
 			 *  __ldwi  label		-->	@_ldw_s	 n-2
@@ -299,6 +300,7 @@ lv1_loop:
 
 				nb = 2;
 			}
+#endif
 
 			/*
 			 *  __ldw/b/ub or __ldw/b/ub_s	-->	__ldwa p, i
@@ -307,7 +309,7 @@ lv1_loop:
 			 *  __stw _ptr
 			 *  __ldwp _ptr
 			 */
-			else if
+			if
 			((p[0]->code == I_LDWP) &&
 			 (p[0]->type == T_PTR) &&
 			 (p[1]->code == I_STW) &&
@@ -354,6 +356,7 @@ lv1_loop:
 
 		/* 4-instruction patterns */
 		if (q_nb >= 4) {
+#if 0
 			/*  Classical Base+offset byte array access:
 			 *
 			 *  __ldwi  label		-->	@_ldub_s n-2
@@ -396,6 +399,7 @@ lv1_loop:
 
 				nb = 2;
 			}
+#endif
 
 			/*
 			 *  @_ldw/b/ub_s i		-->	@_ldw/b/ub_s  i
@@ -403,7 +407,7 @@ lv1_loop:
 			 *  @_stw_s i
 			 *  __subwi 1
 			 */
-			else if
+			if
 			((p[0]->code == I_SUBWI) &&
 			 (p[1]->code == X_STW_S) &&
 			 (p[2]->code == I_ADDWI) &&
@@ -1616,18 +1620,17 @@ lv1_loop:
 			}
 
 			/*
-			 * subwi/addwi i		-->	ldw j
-			 * ldw j
+			 * subwi/addwi i		-->	is_load()
+			 * is_load()
 			 *
 			 * This is a frequent case in which the result
 			 * of a post-increment or decrement is not used.
 			 */
 			else if
-			((p[0]->code == I_LDW ||
-			  p[0]->code == I_LDWI ||
-			  p[0]->code == X_LDW_S) &&
-			 (p[1]->code == I_SUBWI ||
-			  p[1]->code == I_ADDWI)
+			((p[1]->code == I_SUBWI ||
+			  p[1]->code == I_ADDWI) &&
+			 (p[1]->type == T_VALUE) &&
+			 (is_load(p[0]))
 			) {
 				*p[1] = *p[0];
 				nb = 1;
