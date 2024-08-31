@@ -60,6 +60,22 @@ static int is_unsigned (LVALUE *lval)
 	return (0);
 }
 
+static int is_ptrptr (LVALUE *lval)
+{
+	SYMBOL *s = lval->symbol;
+
+	return (s && (s->ptr_order > 1 || (s->ident == ARRAY && s->ptr_order > 0)));
+}
+
+int is_byte (LVALUE *lval)
+{
+	if (lval->symbol && !lval->ptr_type &&
+	    (lval->symbol->type == CCHAR || lval->symbol->type == CUCHAR))
+		return (1);
+
+	return (0);
+}
+
 static void gen_scale_right (LVALUE *lval, LVALUE *lval2)
 {
 	if (dbltest(lval, lval2)) {
@@ -73,13 +89,6 @@ static void gen_scale_right (LVALUE *lval, LVALUE *lval2)
 		else
 			gaslint();
 	}
-}
-
-static int is_ptrptr (LVALUE *lval)
-{
-	SYMBOL *s = lval->symbol;
-
-	return (s && (s->ptr_order > 1 || (s->ident == ARRAY && s->ptr_order > 0)));
 }
 
 int heir1 (LVALUE *lval, int comma)
@@ -309,15 +318,6 @@ int heir4 (LVALUE *lval, int comma)
 		else
 			return (0);
 	}
-}
-
-int is_byte (LVALUE *lval)
-{
-	if (lval->symbol && !lval->ptr_type &&
-	    (lval->symbol->type == CCHAR || lval->symbol->type == CUCHAR))
-		return (1);
-
-	return (0);
 }
 
 int heir5 (LVALUE *lval, int comma)

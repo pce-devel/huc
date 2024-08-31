@@ -236,6 +236,8 @@ lv1_loop:
 #if 0
 			/*  Classical Base+offset word array access:
 			 *
+			 *  N.B. This arrary access optimization is now done in the code generator.
+			 *
 			 *  __ldwi  label		-->	@_ldw_s	 n-2
 			 *  __pushw				__aslw
 			 *  @_ldw_s n				__addwi	 label
@@ -264,6 +266,8 @@ lv1_loop:
 			}
 
 			/*  Classical Base+offset word array access:
+			 *
+			 *  N.B. This arrary access optimization is now done in the code generator.
 			 *
 			 *  __ldwi  label1		-->	__ldw	 label2
 			 *  __pushw				__aslw
@@ -359,6 +363,8 @@ lv1_loop:
 #if 0
 			/*  Classical Base+offset byte array access:
 			 *
+			 *  N.B. This arrary access optimization is now done in the code generator.
+			 *
 			 *  __ldwi  label		-->	@_ldub_s n-2
 			 *  __pushw				__addwi	 label
 			 *  @_ldub_s n
@@ -380,6 +386,8 @@ lv1_loop:
 			}
 
 			/*  Classical Base+offset byte array access:
+			 *
+			 *  N.B. This arrary access optimization is now done in the code generator.
 			 *
 			 *  __ldwi  label1		-->	__ldub	 label2
 			 *  __pushw				__addwi	 label1
@@ -589,77 +597,32 @@ lv1_loop:
 			}
 
 			/*
-			 *  __pushw			-->	__add[bw]i i
+			 *  __pushw			-->	__addwi/__subwi/__andwi/etc i
 			 *  __ldwi  i
-			 *  __add[bw]s
+			 *  __addws/__subws/__andws/etc
 			 */
 			else if
 			((p[0]->code == I_ADDWS ||
-			  p[0]->code == I_ADDBS) &&
+			  p[0]->code == I_ADDBS ||
+			  p[0]->code == I_SUBWS ||
+			  p[0]->code == I_ANDWS ||
+			  p[0]->code == I_EORWS ||
+			  p[0]->code == I_ORWS) &&
 			 (p[1]->code == I_LDWI) &&
-			 (p[2]->code == I_PUSHW) &&
-
-			 (p[1]->type == T_VALUE)
+//			 (p[1]->type == T_VALUE) &&
+			 (p[2]->code == I_PUSHW)
 			) {
 				/* replace code */
-				p[2]->code = (p[0]->code == I_ADDWS) ? I_ADDWI : I_ADDBI;
-				p[2]->data = p[1]->data;
-				p[2]->type = T_VALUE;
-				nb = 2;
-			}
-
-			/*
-			 *  __pushw			-->	__subwi i
-			 *  __ldwi  i
-			 *  __subws
-			 */
-			else if
-			((p[0]->code == I_SUBWS) &&
-			 (p[1]->code == I_LDWI) &&
-			 (p[2]->code == I_PUSHW) &&
-
-			 (p[1]->type == T_VALUE)
-			) {
-				/* replace code */
-				p[2]->code = I_SUBWI;
-				p[2]->data = p[1]->data;
-				nb = 2;
-			}
-
-			/*
-			 *  __pushw			-->	__andwi i
-			 *  __ldwi  i
-			 *  __andws
-			 *
-			 */
-			else if
-			((p[0]->code == I_ANDWS) &&
-			 (p[1]->code == I_LDWI) &&
-			 (p[2]->code == I_PUSHW) &&
-
-			 (p[1]->type == T_VALUE)
-			) {
-				/* replace code */
-				p[2]->code = I_ANDWI;
-				p[2]->data = p[1]->data;
-				nb = 2;
-			}
-
-			/*
-			 *  __pushw			-->	__orwi i
-			 *  __ldwi  i
-			 *  __orws
-			 */
-			else if
-			((p[0]->code == I_ORWS) &&
-			 (p[1]->code == I_LDWI) &&
-			 (p[2]->code == I_PUSHW) &&
-
-			 (p[1]->type == T_VALUE)
-			) {
-				/* replace code */
-				p[2]->code = I_ORWI;
-				p[2]->data = p[1]->data;
+				*p[2] = *p[1];
+				switch (p[0]->code) {
+				case I_ADDWS: p[2]->code = I_ADDWI; break;
+				case I_ADDBS: p[2]->code = I_ADDBI; break;
+				case I_SUBWS: p[2]->code = I_SUBWI; break;
+				case I_ANDWS: p[2]->code = I_ANDWI; break;
+				case I_EORWS: p[2]->code = I_EORWI; break;
+				case I_ORWS: p[2]->code = I_ORWI; break;
+				default: abort();
+				}
 				nb = 2;
 			}
 

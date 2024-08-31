@@ -963,6 +963,12 @@ void gen_code (INS *tmp)
 		ol("__andws");
 		break;
 
+	case I_EORWI:
+		ot("__eorwi\t");
+		outdec((int)data);
+		nl();
+		break;
+
 	case I_EORWS:
 		ol("__eorws");
 		break;
