@@ -2325,9 +2325,9 @@ smod:		sta.l	<divisor
 ;
 ; case_table:
 ; +  0		db	6		; #bytes of case values.
-; + 12		dw	val3
-; + 34		dw	val2
-; + 56		dw	val1
+; + 12		db	>val3, <val3
+; + 34		db	>val2, <val2
+; + 56		db	>val1, <val1
 ; + 78		dw	jmpdefault
 ; + 9A		dw	jmp3
 ; + BC		dw	jmp2
@@ -2344,36 +2344,14 @@ do_switchw:	sty.h	<__ptr		; Save hi-byte of the table address.
 		tay
 		beq	zero_cases
 
-.loop:		lda	[__ptr], y	; Test the case value.
+test_case_lo:	lda.l	<__temp		; Fast test loop for the lo-byte, which
+.loop:		cmp	[__ptr], y	; is the most-likely to fail the match.
+		beq	test_case_hi
 		dey
-		cmp.h	<__temp
-		bne	.fail
-		lda	[__ptr], y
-		cmp.l	<__temp
-		beq	case_found	; CS if case_found.
-.fail:		dey
-		bne	.loop
-
-.default:	clc			; CC if default.
-		bra	case_found
-
-; **************
-
-do_switchb:	sty.h	<__ptr		; Save hi-byte of the table address.
-		tay			; Save lo-byte of the value to find.
-
-		lda	[__ptr]		; Read #bytes of case values to check.
-		say
-		beq	zero_cases
-
-.loop:		dey			; Test the case value (lo-byte only).
-		cmp	[__ptr], y
-		beq	case_found	; CS if case_found.
 		dey
 		bne	.loop
 
-.default:	clc			; CC if default.
-
+default_case:	clc			; Need to CC for default or do_switchb!
 case_found:	tya			; Add the offset to the label address.
 		adc	[__ptr]
 		tay
@@ -2386,55 +2364,26 @@ zero_cases:	iny
 		sta.h	<__temp
 		jmp	[__temp]
 
+test_case_hi:	lda.h	<__temp		; Slow test loop for the hi-byte, which
+		dey			; should rarely be checked.
+		cmp	[__ptr], y
+		beq	case_found	; CS if case_found.
+		dey
+		bne	test_case_lo
+		bra	default_case
+
 ; **************
-; 29 bytes, max 127 cases
-;
-;___casew:	sta.l	<__temp		; store the value to check to
-;		sty.h	<__temp
-;		ldy	#6
-;!loop:		lda	table-2, y
-;		cmp.l	<__temp
-;		bne	!fail+
-;		lda	table-1, y
-;		cmp.h	<__temp
-;		beq	!found+
-;!fail:		dey
-;		dey
-;		bne	!loop-
-;!found:	tya
-;		sax
-;		jmp	[table+6, x]
-;
-;cmp_table:
-;01		dw	75		;
-;23		dw	75		;
-;45		dw	75		;
-;
-;67		dw	def
-;89		dw	jmp1
-;AB		dw	jmp3
-;CD		dw	jmp5
-;
-;
-; **************
-; 16 bytes, max 127 cases
-;
-;___caseb:	ldy	#3
-;!loop:		cmp	table-1, y
-;		beq	!found+
-;		dey
-;		bne	!loop-
-;!found:	tya
-;		asl	a
-;		sax
-;		jmp	[table+3, x]
-;
-;cmp_table:				;0 *2->0 +3->3
-;0		db	75		;1 *2->2 +3->5
-;1		db	75		;2 *2->4 +3->7
-;2		db	75		;3 *2->6 +3->9
-;
-;34		dw	def
-;56		dw	jmp1
-;78		dw	jmp3
-;9A		dw	jmp5
+
+do_switchb:	sty.h	<__ptr		; Save hi-byte of the table address.
+		tay			; Save lo-byte of the value to find.
+
+		lda	[__ptr]		; Read #bytes of case values to check.
+		say
+		beq	zero_cases
+
+.loop:		cmp	[__ptr], y
+		beq	default_case	; Need to CC if case_found!
+		dey
+		dey
+		bne	.loop
+		bra	default_case

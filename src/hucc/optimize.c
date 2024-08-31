@@ -303,7 +303,7 @@ lv1_loop:
 #endif
 
 			/*
-			 *  __ldw/b/ub or __ldw/b/ub_s	-->	__ldwa p, i
+			 *  __ldw or __ldw_s		-->	__ldwa p, i/__ldwa_s p, i
 			 *  __aslw
 			 *  __addwi_sym array
 			 *  __stw _ptr
@@ -514,7 +514,7 @@ lv1_loop:
 #endif
 
 			/*
-			 *  __ldw/b/ub or __ldw/b/ub_s	-->	__ldwa p, i
+			 *  __ldub or __ldub_s		-->	__lduba p, i/__lduba_s p, i
 			 *  __addwi_sym array
 			 *  __stw _ptr
 			 *  __ldbp/__ldubp _ptr
@@ -1160,8 +1160,12 @@ lv1_loop:
 			  p[1]->code == I_LDUB ||
 			  p[1]->code == I_LDBP ||
 			  p[1]->code == I_LDUBP ||
+			  p[1]->code == X_LDBA ||
+			  p[1]->code == X_LDUBA ||
 			  p[1]->code == X_LDB_S ||
-			  p[1]->code == X_LDUB_S)
+			  p[1]->code == X_LDUB_S ||
+			  p[1]->code == X_LDBA_S ||
+			  p[1]->code == X_LDUBA_S)
 			) {
 				/* optimize code */
 				p[0]->code = I_SWITCHB;

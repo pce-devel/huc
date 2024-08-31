@@ -587,10 +587,14 @@ void dumpsw (intptr_t *ws)
 
 	j = swstp;
 	while (j > i) {
-		defword();
+		defbyte();
 		column = 8;
 		while (column--) {
+			outbyte('>');
 			outdec(swstcase[--j]);
+			outbyte(',');
+			outbyte('<');
+			outdec(swstcase[j]);
 			if ((column == 0) | (j == i)) {
 				nl();
 				break;
