@@ -887,12 +887,13 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case I_ADDWS:
+		ol("__addws");
+		break;
+
 	case I_ADDWI:
-	case I_ADDBI:
-		if (code == I_ADDBI)
-			ot("__addbi");
-		else
-			ot("__addwi");
+		ot("__addwi\t");
+#if 0
 		/* Assembler workaround; pceas doesn't like if the code
 		   size changes as it resolved a symbol, so we use the
 		   variant without ".if"s if there is a symbol involved. */
@@ -901,26 +902,13 @@ void gen_code (INS *tmp)
 		    type == T_STRING)
 			outstr("_sym");
 		outstr("\t");
+#endif
 		out_type(type, data);
 		nl();
 		break;
 
-	case I_ADDWS:
-		ol("__addws");
-		break;
-
-	case I_ADDBS:
-		ol("__addbs");
-		break;
-
 	case I_ADDW:
 		ot("__addw\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case I_ADDB:
-		ot("__addb\t");
 		out_addr(type, data);
 		nl();
 		break;
@@ -931,20 +919,32 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_ADDW_S:
+		ot("__addw_s\t");
+		outdec((int)data);
+		nl();
+		break;
+
+	case X_ADDUB_S:
+		ot("__addub_s\t");
+		outdec((int)data);
+		nl();
+		break;
+
 	case I_ADDBI_P:
 		ot("__addbi_p\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case I_SUBWI:
-		ot("__subwi\t");
-		outdec((int)data);
-		nl();
-		break;
-
 	case I_SUBWS:
 		ol("__subws");
+		break;
+
+	case I_SUBWI:
+		ot("__subwi\t");
+		out_type(type, data);
+		nl();
 		break;
 
 	case I_SUBW:
@@ -953,9 +953,9 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case I_ANDWI:
-		ot("__andwi\t");
-		outdec((int)data);
+	case I_SUBUB:
+		ot("__subub\t");
+		out_addr(type, data);
 		nl();
 		break;
 
@@ -963,9 +963,21 @@ void gen_code (INS *tmp)
 		ol("__andws");
 		break;
 
-	case I_EORWI:
-		ot("__eorwi\t");
-		outdec((int)data);
+	case I_ANDWI:
+		ot("__andwi\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case I_ANDW:
+		ot("__andw\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case I_ANDUB:
+		ot("__andub\t");
+		out_addr(type, data);
 		nl();
 		break;
 
@@ -973,9 +985,21 @@ void gen_code (INS *tmp)
 		ol("__eorws");
 		break;
 
-	case I_ORWI:
-		ot("__orwi\t");
-		outdec((int)data);
+	case I_EORWI:
+		ot("__eorwi\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case I_EORW:
+		ot("__eorw\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case I_EORUB:
+		ot("__eorub\t");
+		out_addr(type, data);
 		nl();
 		break;
 
@@ -983,14 +1007,32 @@ void gen_code (INS *tmp)
 		ol("__orws");
 		break;
 
-	case I_ASLWI:
-		ot("__aslwi\t");
+	case I_ORWI:
+		ot("__orwi\t");
 		out_type(type, data);
+		nl();
+		break;
+
+	case I_ORW:
+		ot("__orw\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case I_ORUB:
+		ot("__orub\t");
+		out_addr(type, data);
 		nl();
 		break;
 
 	case I_ASLWS:
 		ol("__aslws");
+		break;
+
+	case I_ASLWI:
+		ot("__aslwi\t");
+		out_type(type, data);
+		nl();
 		break;
 
 	case I_ASLW:
@@ -1029,24 +1071,6 @@ void gen_code (INS *tmp)
 
 	case X_PEA_S:
 		ot("__pea_s\t");
-		outdec((int)data);
-		nl();
-		break;
-
-	case X_ADDW_S:
-		ot("__addw_s\t");
-		outdec((int)data);
-		nl();
-		break;
-
-	case X_ADDB_S:
-		ot("__addb_s\t");
-		outdec((int)data);
-		nl();
-		break;
-
-	case X_ADDUB_S:
-		ot("__addub_s\t");
 		outdec((int)data);
 		nl();
 		break;

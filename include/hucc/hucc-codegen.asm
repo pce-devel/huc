@@ -1184,57 +1184,6 @@ __incb		.macro
 
 ; **************
 
-__addwi		.macro
-	.if (\1 == 0)
-	.else
-	.if ((\1 >= 0) && (\1 < 256))
-		clc
-		adc.l	#\1
-		bcc	!+
-		iny
-!:
-	.else
-		clc
-		adc.l	#\1
-		say
-		adc.h	#\1
-		say
-	.endif
-	.endif
-		.endm
-
-; **************
-; pceas workaround; the regular __addwi doesn't work if the argument is
-; symbolic because the code size changes as it is resolved.
-; **************
-
-__addwi_sym	.macro
-		clc
-		adc.l	#\1
-		say
-		adc.h	#\1
-		say
-		.endm
-
-; **************
-
-__addbi		.macro
-	.if (\1 = 1)
-		inc	a
-	.else
-	.if (\1 = 2)
-		inc	a
-		inc	a
-	.else
-		clc
-		adc	#\1
-	.endif
-	.endif
-		cly
-		.endm
-
-; **************
-
 __addws		.macro	; __STACK
 		clc
 		adc.l	<__stack, x
@@ -1247,13 +1196,34 @@ __addws		.macro	; __STACK
 
 ; **************
 
-__addbs		.macro	; __STACK
+__addwi		.macro
+	.if	((\?1 == ARG_ABS) && (\1 >= 0) && (\1 < 256))
 		clc
-		adc.l	<__stack, x
-		cly
-		inx
-		inx
+		adc.l	#\1
+		bcc	!+
+		iny
+!:
+	.else
+		clc
+		adc.l	#\1
+		say
+		adc.h	#\1
+		say
+	.endif
 		.endm
+
+;	; **************
+;	; pceas workaround; the regular __addwi doesn't work if the argument is
+;	; symbolic because the code size changes as it is resolved.
+;	; **************
+;
+;	__addwi_sym	.macro
+;			clc
+;			adc.l	#\1
+;			say
+;			adc.h	#\1
+;			say
+;			.endm
 
 ; **************
 
@@ -1267,22 +1237,29 @@ __addw		.macro
 
 ; **************
 
-__addb		.macro
+__addub		.macro
 		clc
 		adc	\1
 		bcc	!+
 		iny
-!:		bit	\1
-		bpl	!+
-		dey
 !:
 		.endm
 
 ; **************
 
-__addub		.macro
+__addw_s	.macro	; __STACK
 		clc
-		adc	\1
+		adc.l	<__stack + \1, x
+		say
+		adc.h	<__stack + \1, x
+		say
+		.endm
+
+; **************
+
+__addub_s	.macro	; __STACK
+		clc
+		adc	<__stack + \1, x
 		bcc	!+
 		iny
 !:
@@ -1302,27 +1279,6 @@ __addbi_p	.macro
 
 ; **************
 
-__subwi		.macro
-	.if (\1 == 0)
-	.else
-	.if ((\1 >= 0) && (\1 < 256))
-		sec
-		sbc.l	#\1
-		bcs	!+
-		dey
-!:
-	.else
-		sec
-		sbc.l	#\1
-		say
-		sbc.h	#\1
-		say
-	.endif
-	.endif
-		.endm
-
-; **************
-
 __subws		.macro	; __STACK
 		sec
 		eor	#$FF
@@ -1337,6 +1293,24 @@ __subws		.macro	; __STACK
 
 ; **************
 
+__subwi		.macro
+	.if	((\?1 == ARG_ABS) && (\1 >= 0) && (\1 < 256))
+		sec
+		sbc.l	#\1
+		bcs	!+
+		dey
+!:
+	.else
+		sec
+		sbc.l	#\1
+		say
+		sbc.h	#\1
+		say
+	.endif
+		.endm
+
+; **************
+
 __subw		.macro
 		sec
 		sbc.l	\1
@@ -1347,8 +1321,35 @@ __subw		.macro
 
 ; **************
 
+__subub		.macro
+		sec
+		sbc	\1
+		bcs	!+
+		dey
+!:
+		.endm
+
+; **************
+
+__andws		.macro	; __STACK
+		and.l	<__stack, x
+		say
+		and.h	<__stack, x
+		say
+		inx
+		inx
+		.endm
+
+; **************
+
 __andwi		.macro
-	.if	(\1 < 256)
+	.if	(\?1 != ARG_ABS)
+		and.l	#\1
+		say
+		and.h	#\1
+		say
+	.else
+	.if	((\1 >= 0) && (\1 < 256))
 		and	#\1
 		cly
 	.else
@@ -1364,35 +1365,23 @@ __andwi		.macro
 		cla
 	.endif
 	.endif
+	.endif
 		.endm
 
 ; **************
 
-__andws		.macro	; __STACK
-		and.l	<__stack, x
+__andw		.macro
+		and.l	\1
 		say
-		and.h	<__stack, x
+		and.h	\1
 		say
-		inx
-		inx
 		.endm
-
-;	; **************
-;
-;	__andw		.macro
-;			and.l	\1
-;			say
-;			and.h	\1
-;			say
-;			.endm
 
 ; **************
 
-__eorwi		.macro
-		eor.l	#\1
-		say
-		eor.h	#\1
-		say
+__andub		.macro
+		and	\1
+		cly
 		.endm
 
 ; **************
@@ -1406,22 +1395,38 @@ __eorws		.macro	; __STACK
 		inx
 		.endm
 
-;	; **************
-;
-;	__eorw		.macro
-;			eor.l	\1
-;			say
-;			eor.h	\1
-;			say
-;			.endm
+; **************
+
+__eorwi		.macro
+	.if	((\1 >= 0) && (\1 < 256))
+		eor	#\1
+	.else
+	.if	(\1 & 255)
+		eor.l	#\1
+		say
+		eor.h	#\1
+		say
+	.else
+		say
+		eor.h	#\1
+		say
+	.endif
+	.endif
+		.endm
 
 ; **************
 
-__orwi		.macro
-		ora.l	#\1
+__eorw		.macro
+		eor.l	\1
 		say
-		ora.h	#\1
+		eor.h	\1
 		say
+		.endm
+
+; **************
+
+__eorub		.macro
+		eor	\1
 		.endm
 
 ; **************
@@ -1435,14 +1440,47 @@ __orws		.macro	; __STACK
 		inx
 		.endm
 
-;	; **************
-;
-;	__orw		.macro
-;			ora.l	\1
-;			say
-;			ora.h	\1
-;			say
-;			.endm
+; **************
+
+__orwi		.macro
+	.if	((\1 >= 0) && (\1 < 256))
+		ora	#\1
+	.else
+	.if	(\1 & 255)
+		ora.l	#\1
+		say
+		ora.h	#\1
+		say
+	.else
+		say
+		ora.h	#\1
+		say
+	.endif
+	.endif
+		.endm
+
+; **************
+
+__orw		.macro
+		ora.l	\1
+		say
+		ora.h	\1
+		say
+		.endm
+
+; **************
+
+__orub		.macro
+		ora	\1
+		.endm
+
+; **************
+; N.B. Used when calculating a pointer into a word array.
+
+__aslws		.macro
+		asl.l	<__stack, x
+		rol.h	<__stack, x
+		.endm
 
 ; **************
 
@@ -1481,14 +1519,6 @@ __aslwi		.macro
 	.endif
 	.endif
 	.endif
-		.endm
-
-; **************
-; N.B. Used when calculating a pointer into a word array.
-
-__aslws		.macro
-		asl.l	<__stack, x
-		rol.h	<__stack, x
 		.endm
 
 ; **************
@@ -1714,39 +1744,6 @@ __pea_s		.macro	; __STACK
 		dex
 		sta.l	<__stack, x
 		sty.h	<__stack, x
-		.endm
-
-; **************
-
-__addw_s	.macro	; __STACK
-		clc
-		adc.l	<__stack + \1, x
-		say
-		adc.h	<__stack + \1, x
-		say
-		.endm
-
-; **************
-
-__addb_s	.macro	; __STACK
-		bit	<__stack + \1, x
-		bpl	!+
-		dey
-!:		clc
-		adc	<__stack + \1, x
-		bcc	!+
-		iny
-!:
-		.endm
-
-; **************
-
-__addub_s	.macro	; __STACK
-		clc
-		adc	<__stack + \1, x
-		bcc	!+
-		iny
-!:
 		.endm
 
 ; **************

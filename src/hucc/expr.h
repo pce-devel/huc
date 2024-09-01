@@ -26,6 +26,4 @@ void store (LVALUE *lval);
 void rvalue (LVALUE *lval);
 void needlval (void);
 
-int is_byte (LVALUE *lval);
-
 #endif

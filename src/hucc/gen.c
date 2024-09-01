@@ -293,10 +293,7 @@ void gadd (LVALUE *lval, LVALUE *lval2)
 	/* Nope, it is used when calculating a pointer variable address into a word array */
 	if (dbltest(lval2, lval))
 		out_ins(I_ASLWS, 0, 0);
-	if (lval && lval2 && is_byte(lval) && is_byte(lval2))
-		out_ins(I_ADDBS, 0, 0);
-	else
-		out_ins(I_ADDWS, 0, 0);
+	out_ins(I_ADDWS, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 

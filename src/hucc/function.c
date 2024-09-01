@@ -874,7 +874,6 @@ void arg_flush (int arg, int adj)
 			case X_STWA_S:
 			case X_INCW_S:
 			case X_ADDW_S:
-			case X_ADDB_S:
 			case X_ADDUB_S:
 			case X_LDD_S_W:
 			case X_LDD_S_B:

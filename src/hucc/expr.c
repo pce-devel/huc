@@ -67,7 +67,7 @@ static int is_ptrptr (LVALUE *lval)
 	return (s && (s->ptr_order > 1 || (s->ident == ARRAY && s->ptr_order > 0)));
 }
 
-int is_byte (LVALUE *lval)
+static int is_byte (LVALUE *lval)
 {
 	if (lval->symbol && !lval->ptr_type &&
 	    (lval->symbol->type == CCHAR || lval->symbol->type == CUCHAR))

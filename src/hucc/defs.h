@@ -153,31 +153,37 @@ enum ICODE {
 	I_INCW,
 	I_INCB,
 
-	I_ADDWI,
-	I_ADDBI,
 	I_ADDWS,
-	I_ADDBS,
+	I_ADDWI,
 	I_ADDW,
-	I_ADDB,
 	I_ADDUB,
+	X_ADDW_S,
+	X_ADDUB_S,
 
 	I_ADDBI_P,
 
-	I_SUBWI,
 	I_SUBWS,
+	I_SUBWI,
 	I_SUBW,
+	I_SUBUB,
 
-	I_ANDWI,
 	I_ANDWS,
+	I_ANDWI,
+	I_ANDW,
+	I_ANDUB,
 
-	I_EORWI,
 	I_EORWS,
+	I_EORWI,
+	I_EORW,
+	I_EORUB,
 
-	I_ORWI,
 	I_ORWS,
+	I_ORWI,
+	I_ORW,
+	I_ORUB,
 
-	I_ASLWI,
 	I_ASLWS,
+	I_ASLWI,
 	I_ASLW,
 
 	I_ASRWI,
@@ -192,9 +198,6 @@ enum ICODE {
 	X_LEA_S,
 	X_PEA_S,
 
-	X_ADDW_S,
-	X_ADDB_S,
-	X_ADDUB_S,
 
 	X_INCW_S,
 	X_INCB_S,

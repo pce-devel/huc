@@ -105,7 +105,6 @@ static int is_sprel (INS *i)
 		i->code == X_INCW_S ||
 		i->code == X_INCB_S ||
 		i->code == X_ADDW_S ||
-		i->code == X_ADDB_S ||
 		i->code == X_ADDUB_S ||
 		i->code == X_TZW_S ||
 		i->code == X_TZB_S ||
@@ -603,26 +602,108 @@ lv1_loop:
 			 */
 			else if
 			((p[0]->code == I_ADDWS ||
-			  p[0]->code == I_ADDBS ||
 			  p[0]->code == I_SUBWS ||
 			  p[0]->code == I_ANDWS ||
 			  p[0]->code == I_EORWS ||
 			  p[0]->code == I_ORWS) &&
 			 (p[1]->code == I_LDWI) &&
-//			 (p[1]->type == T_VALUE) &&
 			 (p[2]->code == I_PUSHW)
 			) {
 				/* replace code */
 				*p[2] = *p[1];
 				switch (p[0]->code) {
 				case I_ADDWS: p[2]->code = I_ADDWI; break;
-				case I_ADDBS: p[2]->code = I_ADDBI; break;
 				case I_SUBWS: p[2]->code = I_SUBWI; break;
 				case I_ANDWS: p[2]->code = I_ANDWI; break;
 				case I_EORWS: p[2]->code = I_EORWI; break;
 				case I_ORWS: p[2]->code = I_ORWI; break;
 				default: abort();
 				}
+				nb = 2;
+				if (p[2]->type == T_VALUE && p[2]->data == 0) {
+					if (p[2]->code == I_ANDWI)
+						p[2]->code = I_LDWI;
+					else
+						nb = 3;
+				}
+			}
+
+			/*
+			 *  __pushw			-->	__addw/__subw/__andw/etc symbol
+			 *  __ldw  symbol
+			 *  __addws/__subws/__andws/etc
+			 */
+			else if
+			((p[0]->code == I_ADDWS ||
+			  p[0]->code == I_SUBWS ||
+			  p[0]->code == I_ANDWS ||
+			  p[0]->code == I_EORWS ||
+			  p[0]->code == I_ORWS) &&
+			 (p[1]->code == I_LDW) &&
+			 (p[2]->code == I_PUSHW)
+			) {
+				/* replace code */
+				*p[2] = *p[1];
+				switch (p[0]->code) {
+				case I_ADDWS: p[2]->code = I_ADDW; break;
+				case I_SUBWS: p[2]->code = I_SUBW; break;
+				case I_ANDWS: p[2]->code = I_ANDW; break;
+				case I_EORWS: p[2]->code = I_EORW; break;
+				case I_ORWS: p[2]->code = I_ORW; break;
+				default: abort();
+				}
+				nb = 2;
+			}
+
+			/*
+			 *  __pushw			-->	__addub/__subub/__andub/etc symbol
+			 *  __ldub  symbol
+			 *  __addws/__subws/__andws/etc
+			 */
+			else if
+			((p[0]->code == I_ADDWS ||
+			  p[0]->code == I_SUBWS ||
+			  p[0]->code == I_ANDWS ||
+			  p[0]->code == I_EORWS ||
+			  p[0]->code == I_ORWS) &&
+			 (p[1]->code == I_LDUB) &&
+			 (p[2]->code == I_PUSHW)
+			) {
+				/* replace code */
+				*p[2] = *p[1];
+				switch (p[0]->code) {
+				case I_ADDWS: p[2]->code = I_ADDUB; break;
+				case I_SUBWS: p[2]->code = I_SUBUB; break;
+				case I_ANDWS: p[2]->code = I_ANDUB; break;
+				case I_EORWS: p[2]->code = I_EORUB; break;
+				case I_ORWS: p[2]->code = I_ORUB; break;
+				default: abort();
+				}
+				nb = 2;
+			}
+
+			/*
+			 *  __pushw			-->	__addw_s  i-2
+			 *  __ldw_s  i
+			 *  __addws
+			 */
+			else if
+			((p[0]->code == I_ADDWS) &&
+			 (p[1]->code == X_LDW_S ||
+			  p[1]->code == X_LDUB_S) &&
+			 (p[2]->code == I_PUSHW)
+			) {
+				/* replace code */
+				*p[2] = *p[1];
+				switch (p[1]->code) {
+				case X_LDW_S: p[2]->code = X_ADDW_S; break;
+				case X_LDUB_S: p[2]->code = X_ADDUB_S; break;
+				default: abort();
+				}
+//				p[2]->type = p[1]->type;
+//				p[2]->data = p[1]->data - 2;
+//				p[2]->sym = p[1]->sym;
+				p[2]->data -= 2;
 				nb = 2;
 			}
 
@@ -668,6 +749,9 @@ lv1_loop:
 				p[2]->type = p[1]->type;
 				p[2]->data = p[1]->data;
 				nb = 2;
+				if (p[2]->type == T_VALUE && p[2]->data == 0) {
+					nb = 3;
+				}
 			}
 
 			/*
@@ -694,70 +778,6 @@ lv1_loop:
 					p[2]->code = I_MULWI;
 					p[2]->data = p[1]->data;
 				}
-				nb = 2;
-			}
-
-			/*
-			 *  __pushw			-->	__addb/w/ub/b_s/ub_s/w_s  nnn
-			 *  __ldb/w/ub/b_s/ub_s/w_s  nnn
-			 *  __addws
-			 */
-			else if
-			((p[0]->code == I_ADDWS) &&
-			 (p[1]->code == I_LDW ||
-			  p[1]->code == I_LDB ||
-			  p[1]->code == I_LDUB ||
-			  p[1]->code == X_LDB_S ||
-			  p[1]->code == X_LDUB_S ||
-			  p[1]->code == X_LDW_S) &&
-			 (p[2]->code == I_PUSHW)
-			) {
-				/* replace code */
-				switch (p[1]->code) {
-				case I_LDW: p[2]->code = I_ADDW; break;
-				case I_LDB: p[2]->code = I_ADDB; break;
-				case I_LDUB: p[2]->code = I_ADDUB; break;
-				case X_LDB_S: p[2]->code = X_ADDB_S; p[1]->data -= 2; break;
-				case X_LDUB_S: p[2]->code = X_ADDUB_S; p[1]->data -= 2; break;
-				case X_LDW_S: p[2]->code = X_ADDW_S; p[1]->data -= 2; break;
-				default: abort();
-				}
-				p[2]->data = p[1]->data;
-				p[2]->type = p[1]->type;
-				nb = 2;
-			}
-
-			/*
-			 *  __pushw			-->	__subw	nnn
-			 *  __ldw  nnn
-			 *  __subws
-			 */
-			else if
-			((p[0]->code == I_SUBWS) &&
-			 (p[1]->code == I_LDW) &&
-			 (p[2]->code == I_PUSHW)
-			) {
-				/* replace code */
-				p[2]->code = I_SUBW;
-				p[2]->data = p[1]->data;
-				p[2]->type = p[1]->type;
-				nb = 2;
-			}
-
-			/*
-			 *  __pushw			-->	@_addw_s i-2
-			 *  @_ldw_s i
-			 *  __addws
-			 */
-			else if
-			((p[0]->code == I_ADDWS) &&
-			 (p[1]->code == X_LDW_S) &&
-			 (p[2]->code == I_PUSHW)
-			) {
-				/* replace code */
-				p[2]->code = X_ADDW_S;
-				p[2]->data = p[1]->data - 2;
-				p[2]->sym = p[1]->sym;
 				nb = 2;
 			}
 
@@ -950,6 +970,8 @@ lv1_loop:
 			 *  __ldw/b/ub	 n		-->	__incw/b  n
 			 *  __addwi 1				__ldw/b/ub   n
 			 *  __stw/b/ub	 n
+			 *
+			 *  is this a pre-increment?
 			 */
 			else if
 			((p[0]->code == I_STW ||
@@ -972,8 +994,8 @@ lv1_loop:
 			}
 
 			/*
-			 *  __incw/b	 n		-->	__ldw/b/ub   n
-			 *  __ldw/b/ub	  n			__incw/b  n
+			 *  __incw  n			-->	__ldw  n
+			 *  __ldw  n				__incw  n
 			 *  __subwi  1
 			 */
 			else if
@@ -993,6 +1015,11 @@ lv1_loop:
 				nb = 1;
 			}
 
+			/*
+			 *  __incb  n			-->	__ldb/ub  n
+			 *  __ldb/ub  n				__incb  n
+			 *  __subwi  1
+			 */
 			else if
 			(((p[0]->code == I_SUBWI) &&
 			  (p[0]->type == T_VALUE) &&
@@ -1245,8 +1272,7 @@ lv1_loop:
 			 *  __add[bw]i j
 			 */
 			else if
-			((p[0]->code == I_ADDWI ||
-			  p[0]->code == I_ADDBI) &&
+			((p[0]->code == I_ADDWI) &&
 			 (p[1]->code == I_LDWI) &&
 
 			 (p[0]->type == T_VALUE) &&
@@ -1262,7 +1288,7 @@ lv1_loop:
 			 *  __add[bw]i j
 			 */
 			else if
-			((p[0]->code == I_ADDWI || p[0]->code == I_ADDBI) &&
+			((p[0]->code == I_ADDWI) &&
 			 (p[1]->code == I_LDWI) &&
 
 			 (p[0]->type == T_VALUE) &&
@@ -1286,8 +1312,7 @@ lv1_loop:
 			 *  __add[bw]i sym
 			 */
 			else if
-			((p[0]->code == I_ADDWI ||
-			  p[0]->code == I_ADDBI) &&
+			((p[0]->code == I_ADDWI) &&
 			 (p[1]->code == I_LDWI) &&
 
 			 (p[0]->type == T_SYMBOL) &&
@@ -1474,24 +1499,6 @@ lv1_loop:
 			) {
 				/* remove code */
 				*p[1] = *p[0];
-				nb = 1;
-			}
-
-			/*
-			 *  ...				-->	...
-			 *  __addwi etc. 0
-			 */
-			else if
-			((p[0]->code == I_ADDWI ||
-			  p[0]->code == I_SUBWI ||
-			  p[0]->code == I_ASLWI ||
-			  p[0]->code == I_ASRWI ||
-			  p[0]->code == I_LSRWI) &&
-
-			 (p[0]->data == 0) &&
-			 (p[0]->type == T_VALUE)
-			) {
-				/* remove code */
 				nb = 1;
 			}
 
@@ -1702,12 +1709,11 @@ lv1_loop:
 						offset += (int)q_ins[j].data;
 					break;
 
-				case I_ADDBS:
 				case I_ADDWS:
 				case I_SUBWS:
-				case I_ORWS:
-				case I_EORWS:
 				case I_ANDWS:
+				case I_EORWS:
+				case I_ORWS:
 				case I_POPW:
 				case I_STWPS:
 				case I_STBPS:
