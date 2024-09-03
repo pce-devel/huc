@@ -1215,7 +1215,7 @@ lv1_loop:
 					SYMBOL * oldsym = (SYMBOL *)p[1]->data;
 					SYMBOL * newsym = copysym(oldsym);
 					if (NAMEALLOC <=
-						snprintf(newsym->name, NAMEALLOC, "%s+%ld", oldsym->name, (long) p[0]->data))
+						snprintf(newsym->name, NAMEALLOC, "%s + %ld", oldsym->name, (long) p[0]->data))
 						error("optimized symbol+offset name too long");
 					p[1]->type = T_SYMBOL;
 					p[1]->data = (intptr_t)newsym;
@@ -1239,7 +1239,7 @@ lv1_loop:
 					SYMBOL * oldsym = (SYMBOL *)p[0]->data;
 					SYMBOL * newsym = copysym(oldsym);
 					if (NAMEALLOC <=
-						snprintf(newsym->name, NAMEALLOC, "%s+%ld", oldsym->name, (long) p[1]->data))
+						snprintf(newsym->name, NAMEALLOC, "%s + %ld", oldsym->name, (long) p[1]->data))
 						error("optimized symbol+offset name too long");
 					p[1]->type = T_SYMBOL;
 					p[1]->data = (intptr_t)newsym;

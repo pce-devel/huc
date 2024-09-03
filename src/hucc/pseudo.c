@@ -54,7 +54,7 @@ void dopsdinc (void)
 			return;
 		}
 
-		ot(".incpal \"");
+		ot(".incpal\t\t\"");
 
 		if (readqstr() == 0) {
 			/* read the filename */
@@ -67,7 +67,7 @@ void dopsdinc (void)
 		outstr("\"");
 
 		if (match(","))
-			outstr(",");
+			outstr(", ");
 
 		numericarg = 0;
 
@@ -77,7 +77,7 @@ void dopsdinc (void)
 			number(&dummy);
 			outdec(dummy);
 			if (match(","))
-				outstr(",");
+				outstr(", ");
 		}
 
 		nl();
@@ -107,7 +107,7 @@ void dopsdinc (void)
 			return;
 		}
 
-		ot(".incbin \"");
+		ot(".incbin\t\t\"");
 		if (readqstr() == 0) {
 			/* read the filename */
 			error("bad filename in incbin");
@@ -143,7 +143,7 @@ void dopsdinc (void)
 			return;
 		}
 
-		ot(".incbat \"");
+		ot(".incbat\t\t\"");
 
 		if (readqstr() == 0) {
 			error("bad filename in incbat");
@@ -155,7 +155,7 @@ void dopsdinc (void)
 		outstr("\"");
 
 		if (match(","))
-			outstr(",");
+			outstr(", ");
 
 		numericarg = 0;
 
@@ -165,7 +165,7 @@ void dopsdinc (void)
 			number(&dummy);
 			outdec(dummy);
 			if (match(","))
-				outstr(",");
+				outstr(", ");
 		}
 
 		nl();
@@ -197,7 +197,7 @@ void dopsdinc (void)
 			return;
 		}
 
-		ot(".incspr \"");
+		ot(".incspr\t\t\"");
 
 		if (readqstr() == 0) {
 			error("bad filename in incspr");
@@ -209,7 +209,7 @@ void dopsdinc (void)
 		outstr("\"");
 
 		if (match(","))
-			outstr(",");
+			outstr(", ");
 
 		numericarg = 0;
 
@@ -219,7 +219,7 @@ void dopsdinc (void)
 			number(&dummy);
 			outdec(dummy);
 			if (match(","))
-				outstr(",");
+				outstr(", ");
 		}
 
 		nl();
@@ -251,7 +251,7 @@ void dopsdinc (void)
 			return;
 		}
 
-		ot(".incsprpal \"");
+		ot(".incsprpal\t\"");
 
 		if (readqstr() == 0) {
 			error("bad filename in incsprpal");
@@ -263,7 +263,7 @@ void dopsdinc (void)
 		outstr("\"");
 
 		if (match(","))
-			outstr(",");
+			outstr(", ");
 
 		numericarg = 0;
 
@@ -273,7 +273,7 @@ void dopsdinc (void)
 			number(&dummy);
 			outdec(dummy);
 			if (match(","))
-				outstr(",");
+				outstr(", ");
 		}
 
 		nl();
@@ -305,7 +305,7 @@ void dopsdinc (void)
 			return;
 		}
 
-		ot(".incchr \"");
+		ot(".incchr\t\t\"");
 
 		if (readqstr() == 0) {
 			error("bad filename in incchr");
@@ -317,7 +317,7 @@ void dopsdinc (void)
 		outstr("\"");
 
 		if (match(","))
-			outstr(",");
+			outstr(", ");
 
 		numericarg = 0;
 
@@ -327,7 +327,7 @@ void dopsdinc (void)
 			number(&dummy);
 			outdec(dummy);
 			if (match(","))
-				outstr(",");
+				outstr(", ");
 		}
 
 		nl();
@@ -359,7 +359,7 @@ void dopsdinc (void)
 			return;
 		}
 
-		ot(".incchrpal \"");
+		ot(".incchrpal\t\"");
 
 		if (readqstr() == 0) {
 			error("bad filename in incchrpal");
@@ -371,7 +371,7 @@ void dopsdinc (void)
 		outstr("\"");
 
 		if (match(","))
-			outstr(",");
+			outstr(", ");
 
 		numericarg = 0;
 
@@ -381,7 +381,7 @@ void dopsdinc (void)
 			number(&dummy);
 			outdec(dummy);
 			if (match(","))
-				outstr(",");
+				outstr(", ");
 		}
 
 		nl();
@@ -416,7 +416,7 @@ void dopsdinc (void)
 			return;
 		}
 
-		ot(".inctile \"");
+		ot(".inctile\t\"");
 
 		if (readqstr() == 0) {
 			error("bad filename in inctile");
@@ -428,7 +428,7 @@ void dopsdinc (void)
 		outstr("\"");
 
 		if (match(","))
-			outstr(",");
+			outstr(", ");
 
 		numericarg = 0;
 
@@ -438,7 +438,7 @@ void dopsdinc (void)
 			number(&dummy);
 			outdec(dummy);
 			if (match(","))
-				outstr(",");
+				outstr(", ");
 		}
 
 		nl();
@@ -457,8 +457,8 @@ void dopsdinc (void)
 			error("missing (");
 
 		ol(".data");
-		ol(".if\t(* & $1FFF) > $1F00");
-		ol(".align\t$2000");
+		ol(".if\t\t(* & $1FFF) > $1F00");
+		ol(".align\t\t$2000");
 		ol(".endif");
 
 		readstr();	/* read the label name */
@@ -473,7 +473,7 @@ void dopsdinc (void)
 			return;
 		}
 
-		ot(".inctilepal \"");
+		ot(".inctilepal\t\"");
 
 		if (readqstr() == 0) {
 			error("bad filename in inctilepal");
@@ -485,7 +485,7 @@ void dopsdinc (void)
 		outstr("\"");
 
 		if (match(","))
-			outstr(",");
+			outstr(", ");
 
 		numericarg = 0;
 
@@ -495,7 +495,7 @@ void dopsdinc (void)
 			number(&dummy);
 			outdec(dummy);
 			if (match(","))
-				outstr(",");
+				outstr(", ");
 		}
 
 		nl();
@@ -541,7 +541,7 @@ void dopsdinc (void)
 		// If page argument, then get it. Else default it.
 		if (match(",")) {
 			if (number(&dummy) != 0) {
-				ot(".page\t");
+				ot(".page\t\t");
 				if (dummy > 8)
 					outdec(dummy / 0x2000);
 				else
@@ -555,7 +555,7 @@ void dopsdinc (void)
 			}
 		}
 		else {
-			ol(".page\t2");
+			ol(".page\t\t2");
 		}
 
 		// Output the label name:
@@ -563,12 +563,12 @@ void dopsdinc (void)
 		outstr(str_buf);
 		outstr(":\n");
 
-		ot("include\t\"");
+		ot(".include\t\"");
 		outstr(litq2);
 		outstr("\"");
 		nl();
 
-		ol(".page\t7");	/* assumes code bank is mapped at 0xE000 */
+		ol(".page\t\t7");	/* assumes code bank is mapped at 0xE000 */
 
 		if (!match(")"))
 			error("missing )");
@@ -590,7 +590,7 @@ void dopsdinc (void)
 
 		if (match(",")) {
 			if (number(&dummy) != 0) {
-				ot(".page ");
+				ot(".page\t\t");
 				if (dummy > 8)
 					outdec(dummy / 0x2000);
 				else
@@ -604,12 +604,12 @@ void dopsdinc (void)
 			}
 		}
 
-		ot("include\t\"");
+		ot(".include\t\"");
 		outstr(litq2);
 		outstr("\"");
 		nl();
 
-		ol(".page\t3");	/* assumes data bank is mapped at 0x6000 */
+		ol(".page\t\t3"); /* assumes data bank is mapped at 0x6000 */
 
 		if (!match(")"))
 			error("missing )");
@@ -660,13 +660,13 @@ void dopsddef (void)
 		prefix();
 		outstr(litq2);
 		outstr(":");
-		ot(".defpal ");
+		ot(".defpal\t\t");
 
 		for (i = 0; i < numericarg; i++) {
 			outhexfix(dummy_array[i], 3);
 
 			if (i < numericarg - 1) {
-				outstr(",");
+				outstr(", ");
 				if (i == 7) {
 					outstr(" \\\n");
 					ot("\t");
@@ -698,7 +698,7 @@ void dopsddef (void)
 			return;
 		}
 
-		ot(".defchr ");
+		ot(".defchr\t\t");
 
 		numericarg = 0;
 
@@ -710,7 +710,7 @@ void dopsddef (void)
 			switch (numericarg) {
 			case 1:
 				outhexfix(dummy, 4);
-				outstr(",");
+				outstr(", ");
 				break;
 			case 2:
 				outdec(dummy);
@@ -756,7 +756,7 @@ void dopsddef (void)
 			return;
 		}
 
-		ot(".defspr ");
+		ot(".defspr\t\t");
 
 		numericarg = 0;
 
@@ -768,7 +768,7 @@ void dopsddef (void)
 			switch (numericarg) {
 			case 1:
 				outhexfix(dummy, 4);
-				outstr(",");
+				outstr(", ");
 				break;
 			case 2:
 				outdec(dummy);
@@ -780,7 +780,7 @@ void dopsddef (void)
 				break;
 			default:
 				outhexfix(dummy, 8);
-				outstr(",");
+				outstr(", ");
 
 				if (!(numericarg & 1)) {
 					outstr("\\");
@@ -989,13 +989,13 @@ void do_inc_ex (int type)
 	outstr(":\n");
 	for (i = 0; i < num; i++) {
 		if (type == 8)
-			ot(".incchr \"");
+			ot(".incchr\t\t\"");
 		else
-			ot(".inctile \"");
+			ot(".inctile\t\"");
 		outstr(tiles[i].fname);
 		outstr("\"");
 		for (j = 0; j < 4; j++) {
-			outstr(",");
+			outstr(", ");
 			outdec(tiles[i].arg[j]);
 		}
 		nl();

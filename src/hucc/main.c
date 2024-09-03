@@ -879,7 +879,7 @@ next:
 							if ((cptr->storage & STORAGE) != LSTATIC)
 								prefixBuffer();
 							outstrBuffer(cptr->name);
-							outstrBuffer(":\t");
+							outstrBuffer(":\n");
 							defstorageBuffer();
 							outdecBuffer(cptr->size);
 							nlBuffer();
@@ -950,7 +950,7 @@ next:
 						if ((cptr->storage & STORAGE) != LSTATIC)
 							prefix();
 						outstr(cptr->name);
-						outstr(":\t");
+						outstr(":\n");
 						defstorage();
 						outdec(cptr->size);
 						nl();
@@ -977,7 +977,7 @@ static void dumpfinal (void)
 	int i;
 
 	if (leaf_cnt) {
-		outstr("leaf_loc: .ds ");
+		outstr("leaf_loc:\n\t.ds\t\t");
 		outdec(leaf_size);
 		nl();
 		for (i = 0; i < leaf_cnt; i++) {

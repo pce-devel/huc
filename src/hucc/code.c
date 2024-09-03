@@ -93,7 +93,7 @@ void inc_startup (void)
  */
 void defbyte (void)
 {
-	ot(".db\t");
+	ot(".db\t\t");
 }
 
 /*
@@ -102,7 +102,7 @@ void defbyte (void)
  */
 void defstorage (void)
 {
-	ot(".ds\t");
+	ot(".ds\t\t");
 }
 
 /*
@@ -111,7 +111,7 @@ void defstorage (void)
  */
 void defword (void)
 {
-	ot(".dw\t");
+	ot(".dw\t\t");
 }
 
 /*
@@ -276,9 +276,9 @@ void gen_code (INS *tmp)
 			outsymbol((SYMBOL *)data);
 			break;
 		}
-		outstr(",");
+		outstr(", ");
 		outstr(tmp->arg[0]);
-		outstr(",");
+		outstr(", ");
 		outstr(tmp->arg[1]);
 		nl();
 		break;
@@ -286,9 +286,9 @@ void gen_code (INS *tmp)
 	case I_FARPTR_I:
 		ot("__farptr_i\t");
 		outsymbol((SYMBOL *)data);
-		outstr(",");
+		outstr(", ");
 		outstr(tmp->arg[0]);
-		outstr(",");
+		outstr(", ");
 		outstr(tmp->arg[1]);
 		nl();
 		break;
@@ -296,7 +296,7 @@ void gen_code (INS *tmp)
 	case I_FARPTR_GET:
 		ot("__farptr_get\t");
 		outstr(tmp->arg[0]);
-		outstr(",");
+		outstr(", ");
 		outstr(tmp->arg[1]);
 		nl();
 		break;
@@ -356,7 +356,7 @@ void gen_code (INS *tmp)
 		   in HuC we get a string and not a symbol */
 		switch (type) {
 		case T_LITERAL:
-			ot("  call\t");
+			ot("  call\t\t");
 			prefix();
 			outstr((const char *)data);
 			if (imm_data) {
@@ -373,7 +373,7 @@ void gen_code (INS *tmp)
 		break;
 
 	case I_JSR:
-		ot("  jsr\t");
+		ot("  jsr\t\t");
 
 		switch (type) {
 		case T_SYMBOL:
@@ -389,13 +389,13 @@ void gen_code (INS *tmp)
 	/* i-codes for C functions and the C parameter stack */
 
 	case I_ENTER:
-		ot("__enter\t");
+		ot("__enter\t\t");
 		outsymbol((SYMBOL *)data);
 		nl();
 		break;
 
 	case I_LEAVE:
-		ot("__leave\t");
+		ot("__leave\t\t");
 		outdec((int)data);
 		nl();
 		break;
@@ -419,7 +419,7 @@ void gen_code (INS *tmp)
 			outstr((const char *)data);
 		}
 		else {
-			outstr("\t");
+			outstr("\t\t");
 			outdec((int)data);
 		}
 		nl();
@@ -464,7 +464,7 @@ void gen_code (INS *tmp)
 		break;
 
 	case I_CASE:
-		ot("__case\t");
+		ot("__case\t\t");
 		if (type == T_VALUE)
 			outdec((int)data);
 		nl();
@@ -481,7 +481,7 @@ void gen_code (INS *tmp)
 		break;
 
 	case I_BRA:
-		ot("__bra\t");
+		ot("__bra\t\t");
 		outlabel((int)data);
 		nl();
 		break;
@@ -494,7 +494,7 @@ void gen_code (INS *tmp)
 		break;
 
 	case I_CMPW:
-		ot("__cmpw\t");
+		ot("__cmpw\t\t");
 
 		switch (type) {
 		case T_SYMBOL:
@@ -508,7 +508,7 @@ void gen_code (INS *tmp)
 		break;
 
 	case I_CMPB:
-		ot("__cmpb\t");
+		ot("__cmpb\t\t");
 
 		switch (type) {
 		case T_SYMBOL:
@@ -549,56 +549,56 @@ void gen_code (INS *tmp)
 		break;
 
 	case I_BTRUE:
-		ot("__btrue\t");
+		ot("__btrue\t\t");
 		outlabel((int)data);
 		nl();
 		nl();
 		break;
 
 	case X_TZW:
-		ot("__tzw\t");
+		ot("__tzw\t\t");
 		out_addr(type, data);
 		nl();
 		break;
 
 	case X_TZWP:
-		ot("__tzwp\t");
+		ot("__tzwp\t\t");
 		out_addr(type, data);
 		nl();
 		break;
 
 	case X_TZW_S:
-		ot("__tzw_s\t");
+		ot("__tzw_s\t\t");
 		outdec((int)data);
 		nl();
 		break;
 
 	case X_TZB:
-		ot("__tzb\t");
+		ot("__tzb\t\t");
 		out_type(type, data);
 		nl();
 		break;
 
 	case X_TZBP:
-		ot("__tzbp\t");
+		ot("__tzbp\t\t");
 		out_addr(type, data);
 		nl();
 		break;
 
 	case X_TZB_S:
-		ot("__tzb_s\t");
+		ot("__tzb_s\t\t");
 		outdec((int)data);
 		nl();
 		break;
 
 	case X_TNZW:
-		ot("__tnzw\t");
+		ot("__tnzw\t\t");
 		out_addr(type, data);
 		nl();
 		break;
 
 	case X_TNZWP:
-		ot("__tnzwp\t");
+		ot("__tnzwp\t\t");
 		out_addr(type, data);
 		nl();
 		break;
@@ -610,13 +610,13 @@ void gen_code (INS *tmp)
 		break;
 
 	case X_TNZB:
-		ot("__tnzb\t");
+		ot("__tnzb\t\t");
 		out_type(type, data);
 		nl();
 		break;
 
 	case X_TNZBP:
-		ot("__tnzbp\t");
+		ot("__tnzbp\t\t");
 		out_addr(type, data);
 		nl();
 		break;
@@ -630,87 +630,87 @@ void gen_code (INS *tmp)
 	/* i-codes for loading the primary register */
 
 	case I_LDWI:
-		ot("__ldwi\t");
+		ot("__ldwi\t\t");
 		out_type(type, data);
 		nl();
 		break;
 
 	case I_LEA_S:
-		ot("__lea_s\t");
+		ot("__lea_s\t\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
 		break;
 
 	case I_LDW:
-		ot("__ldw\t");
+		ot("__ldw\t\t");
 		out_addr(type, data);
 		nl();
 		break;
 
 	case I_LDB:
-		ot("__ldb\t");
+		ot("__ldb\t\t");
 		out_type(type, data);
 		nl();
 		break;
 
 	case I_LDUB:
-		ot("__ldub\t");
+		ot("__ldub\t\t");
 		out_type(type, data);
 		nl();
 		break;
 
 	case I_LDWP:
-		ot("__ldwp\t");
+		ot("__ldwp\t\t");
 		out_addr(type, data);
 		nl();
 		break;
 
 	case I_LDBP:
-		ot("__ldbp\t");
+		ot("__ldbp\t\t");
 		out_addr(type, data);
 		nl();
 		break;
 
 	case I_LDUBP:
-		ot("__ldubp\t");
+		ot("__ldubp\t\t");
 		out_addr(type, data);
 		nl();
 		break;
 
 	case X_LDWA:
-		ot("__ldwa\t");
+		ot("__ldwa\t\t");
 		outsymbol((SYMBOL *)imm_data);
-		outstr(",");
+		outstr(", ");
 		out_addr(type, data);
 		nl();
 		break;
 
 	case X_LDBA:
-		ot("__ldba\t");
+		ot("__ldba\t\t");
 		outsymbol((SYMBOL *)imm_data);
-		outstr(",");
+		outstr(", ");
 		out_addr(type, data);
 		nl();
 		break;
 
 	case X_LDUBA:
-		ot("__lduba\t");
+		ot("__lduba\t\t");
 		outsymbol((SYMBOL *)imm_data);
-		outstr(",");
+		outstr(", ");
 		out_addr(type, data);
 		nl();
 		break;
 
 	case X_LDW_S:
-		ot("__ldw_s\t");
+		ot("__ldw_s\t\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
 		break;
 
 	case X_LDB_S:
-		ot("__ldb_s\t");
+		ot("__ldb_s\t\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
@@ -726,7 +726,7 @@ void gen_code (INS *tmp)
 	case X_LDWA_S:
 		ot("__ldwa_s\t");
 		outsymbol((SYMBOL *)imm_data);
-		outstr(",");
+		outstr(", ");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
@@ -735,7 +735,7 @@ void gen_code (INS *tmp)
 	case X_LDBA_S:
 		ot("__ldba_s\t");
 		outsymbol((SYMBOL *)imm_data);
-		outstr(",");
+		outstr(", ");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
@@ -744,7 +744,7 @@ void gen_code (INS *tmp)
 	case X_LDUBA_S:
 		ot("__lduba_s\t");
 		outsymbol((SYMBOL *)imm_data);
-		outstr(",");
+		outstr(", ");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
@@ -753,19 +753,19 @@ void gen_code (INS *tmp)
 	/* i-codes for saving the primary register */
 
 	case I_STWZ:
-		ot("__stwz\t");
+		ot("__stwz\t\t");
 		out_type(type, data);
 		nl();
 		break;
 
 	case I_STBZ:
-		ot("__stbz\t");
+		ot("__stbz\t\t");
 		out_type(type, data);
 		nl();
 		break;
 
 	case I_STWI:
-		ot("__stwi\t");
+		ot("__stwi\t\t");
 		out_type(type, data);
 		outstr(", ");
 		out_type(imm_type, imm_data);
@@ -773,7 +773,7 @@ void gen_code (INS *tmp)
 		break;
 
 	case I_STBI:
-		ot("__stbi\t");
+		ot("__stbi\t\t");
 		out_type(type, data);
 		outstr(", ");
 		out_type(imm_type, imm_data);
@@ -781,37 +781,37 @@ void gen_code (INS *tmp)
 		break;
 
 	case I_STWIP:
-		ot("__stwip\t");
+		ot("__stwip\t\t");
 		outdec((int)data);
 		nl();
 		break;
 
 	case I_STBIP:
-		ot("__stbip\t");
+		ot("__stbip\t\t");
 		outdec((int)data);
 		nl();
 		break;
 
 	case I_STW:
-		ot("__stw\t");
+		ot("__stw\t\t");
 		out_addr(type, data);
 		nl();
 		break;
 
 	case I_STB:
-		ot("__stb\t");
+		ot("__stb\t\t");
 		out_addr(type, data);
 		nl();
 		break;
 
 	case I_STWP:
-		ot("__stwp\t");
+		ot("__stwp\t\t");
 		out_addr(type, data);
 		nl();
 		break;
 
 	case I_STBP:
-		ot("__stbp\t");
+		ot("__stbp\t\t");
 		out_addr(type, data);
 		nl();
 		break;
@@ -827,7 +827,7 @@ void gen_code (INS *tmp)
 	case X_STWI_S:
 		ot("__stwi_s\t");
 		outdec((int)imm_data);
-		outstr(",");
+		outstr(", ");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
@@ -836,21 +836,21 @@ void gen_code (INS *tmp)
 	case X_STBI_S:
 		ot("__stbi_s\t");
 		outdec((int)imm_data);
-		outstr(",");
+		outstr(", ");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
 		break;
 
 	case X_STW_S:
-		ot("__stw_s\t");
+		ot("__stw_s\t\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
 		break;
 
 	case X_STB_S:
-		ot("__stb_s\t");
+		ot("__stb_s\t\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
@@ -859,7 +859,7 @@ void gen_code (INS *tmp)
 	case X_STWA_S:
 		ot("__stwa_s\t");
 		outsymbol((SYMBOL *)imm_data);
-		outstr(",");
+		outstr(", ");
 		outdec((int)data);
 		nl();
 		break;
@@ -867,7 +867,7 @@ void gen_code (INS *tmp)
 	case X_STBA_S:
 		ot("__stba_s\t");
 		outsymbol((SYMBOL *)imm_data);
-		outstr(",");
+		outstr(", ");
 		outdec((int)data);
 		nl();
 		break;
@@ -893,13 +893,13 @@ void gen_code (INS *tmp)
 		break;
 
 	case I_INCW:
-		ot("__incw\t");
+		ot("__incw\t\t");
 		out_addr(type, data);
 		nl();
 		break;
 
 	case I_INCB:
-		ot("__incb\t");
+		ot("__incb\t\t");
 		out_addr(type, data);
 		nl();
 		break;
@@ -909,29 +909,19 @@ void gen_code (INS *tmp)
 		break;
 
 	case I_ADDWI:
-		ot("__addwi\t");
-#if 0
-		/* Assembler workaround; pceas doesn't like if the code
-		   size changes as it resolved a symbol, so we use the
-		   variant without ".if"s if there is a symbol involved. */
-		if (type == T_SYMBOL ||
-		    type == T_LITERAL ||
-		    type == T_STRING)
-			outstr("_sym");
-		outstr("\t");
-#endif
+		ot("__addwi\t\t");
 		out_type(type, data);
 		nl();
 		break;
 
 	case I_ADDW:
-		ot("__addw\t");
+		ot("__addw\t\t");
 		out_addr(type, data);
 		nl();
 		break;
 
 	case I_ADDUB:
-		ot("__addub\t");
+		ot("__addub\t\t");
 		out_addr(type, data);
 		nl();
 		break;
@@ -961,19 +951,19 @@ void gen_code (INS *tmp)
 		break;
 
 	case I_SUBWI:
-		ot("__subwi\t");
+		ot("__subwi\t\t");
 		out_type(type, data);
 		nl();
 		break;
 
 	case I_SUBW:
-		ot("__subw\t");
+		ot("__subw\t\t");
 		out_addr(type, data);
 		nl();
 		break;
 
 	case I_SUBUB:
-		ot("__subub\t");
+		ot("__subub\t\t");
 		out_addr(type, data);
 		nl();
 		break;
@@ -989,19 +979,19 @@ void gen_code (INS *tmp)
 		break;
 
 	case I_ANDWI:
-		ot("__andwi\t");
+		ot("__andwi\t\t");
 		out_type(type, data);
 		nl();
 		break;
 
 	case I_ANDW:
-		ot("__andw\t");
+		ot("__andw\t\t");
 		out_addr(type, data);
 		nl();
 		break;
 
 	case I_ANDUB:
-		ot("__andub\t");
+		ot("__andub\t\t");
 		out_addr(type, data);
 		nl();
 		break;
@@ -1011,19 +1001,19 @@ void gen_code (INS *tmp)
 		break;
 
 	case I_EORWI:
-		ot("__eorwi\t");
+		ot("__eorwi\t\t");
 		out_type(type, data);
 		nl();
 		break;
 
 	case I_EORW:
-		ot("__eorw\t");
+		ot("__eorw\t\t");
 		out_addr(type, data);
 		nl();
 		break;
 
 	case I_EORUB:
-		ot("__eorub\t");
+		ot("__eorub\t\t");
 		out_addr(type, data);
 		nl();
 		break;
@@ -1033,19 +1023,19 @@ void gen_code (INS *tmp)
 		break;
 
 	case I_ORWI:
-		ot("__orwi\t");
+		ot("__orwi\t\t");
 		out_type(type, data);
 		nl();
 		break;
 
 	case I_ORW:
-		ot("__orw\t");
+		ot("__orw\t\t");
 		out_addr(type, data);
 		nl();
 		break;
 
 	case I_ORUB:
-		ot("__orub\t");
+		ot("__orub\t\t");
 		out_addr(type, data);
 		nl();
 		break;
@@ -1055,7 +1045,7 @@ void gen_code (INS *tmp)
 		break;
 
 	case I_ASLWI:
-		ot("__aslwi\t");
+		ot("__aslwi\t\t");
 		out_type(type, data);
 		nl();
 		break;
@@ -1065,7 +1055,7 @@ void gen_code (INS *tmp)
 		break;
 
 	case I_ASRWI:
-		ot("__asrwi\t");
+		ot("__asrwi\t\t");
 		out_type(type, data);
 		nl();
 		break;
@@ -1075,13 +1065,13 @@ void gen_code (INS *tmp)
 		break;
 
 	case I_LSRWI:
-		ot("__lsrwi\t");
+		ot("__lsrwi\t\t");
 		out_type(type, data);
 		nl();
 		break;
 
 	case I_MULWI:
-		ot("__mulwi\t");
+		ot("__mulwi\t\t");
 		outdec((int)data);
 		nl();
 		break;
@@ -1124,36 +1114,36 @@ void gen_asm (INS *inst)
 	switch (inst->code) {
 
 	case X_LDD_I:
-		ot("__ldd_i\t");
+		ot("__ldd_i\t\t");
 		outdec((int)inst->data);
-		outstr(",");
+		outstr(", ");
 		prefix();
 		outstr(inst->arg[0]);
-		outstr(",");
+		outstr(", ");
 		prefix();
 		outstr(inst->arg[1]);
 		nl();
 		break;
 
 	case X_LDD_W:
-		ot("__ldd_w\t");
+		ot("__ldd_w\t\t");
 		outsymbol((SYMBOL *)inst->data);
-		outstr(",");
+		outstr(", ");
 		prefix();
 		outstr(inst->arg[0]);
-		outstr(",");
+		outstr(", ");
 		prefix();
 		outstr(inst->arg[1]);
 		nl();
 		break;
 
 	case X_LDD_B:
-		ot("__ldd_b\t");
+		ot("__ldd_b\t\t");
 		outsymbol((SYMBOL *)inst->data);
-		outstr(",");
+		outstr(", ");
 		prefix();
 		outstr(inst->arg[0]);
-		outstr(",");
+		outstr(", ");
 		prefix();
 		outstr(inst->arg[1]);
 		nl();
@@ -1162,10 +1152,10 @@ void gen_asm (INS *inst)
 	case X_LDD_S_W:
 		ot("__ldd_s_w\t");
 		outdec((int)inst->data);
-		outstr(",");
+		outstr(", ");
 		prefix();
 		outstr(inst->arg[0]);
-		outstr(",");
+		outstr(", ");
 		prefix();
 		outstr(inst->arg[1]);
 		nl();
@@ -1174,10 +1164,10 @@ void gen_asm (INS *inst)
 	case X_LDD_S_B:
 		ot("__ldd_s_b\t");
 		outdec((int)inst->data);
-		outstr(",");
+		outstr(", ");
 		prefix();
 		outstr(inst->arg[0]);
-		outstr(",");
+		outstr(", ");
 		prefix();
 		outstr(inst->arg[1]);
 		nl();

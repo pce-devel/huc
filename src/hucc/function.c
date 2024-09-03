@@ -355,7 +355,7 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 	comment();
 	outstr("*******\n\n");
 	ol(".hucc");
-	ot(".proc\t");
+	ot(".proc\t\t");
 	prefix();
 	outstr(current_fn);
 	nl();
@@ -395,9 +395,9 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 		else {
 			ot(".data"); nl();
 			ot(".bss"); nl();
-			ot("__"); outstr(current_fn); outstr("_loc: .ds ");
+			outstr("__"); outstr(current_fn); outstr("_loc:\n\t.ds\t\t");
 			outdec(-locals_ptr); nl();
-			ot("__"); outstr(current_fn); outstr("_lend:"); nl();
+			outstr("__"); outstr(current_fn); outstr("_lend:"); nl();
 			ot(".code"); nl();
 		}
 	}

@@ -72,7 +72,7 @@ void getloc (SYMBOL *sym)
 			/* XXX: bit of a memory leak, but whatever... */
 			SYMBOL * locsym = copysym(sym);
 			if (NAMEALLOC <=
-				sprintf(locsym->name, "_%s_lend-%ld", current_fn, (long) -value))
+				sprintf(locsym->name, "_%s_lend - %ld", current_fn, (long) -value))
 				error("norecurse local name too long");
 			out_ins(I_LDWI, T_SYMBOL, (intptr_t)locsym);
 		}
