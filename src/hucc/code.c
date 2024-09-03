@@ -480,6 +480,13 @@ void gen_code (INS *tmp)
 		col();
 		break;
 
+	case I_ALIAS:
+		outlabel((int)data);
+		ot(".alias\t\t");
+		outlabel((int)imm_data);
+		nl();
+		break;
+
 	case I_BRA:
 		ot("__bra\t\t");
 		outlabel((int)data);

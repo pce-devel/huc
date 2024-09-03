@@ -1042,6 +1042,24 @@ lv1_loop:
 			}
 
 			/*
+			 *  LLaa:				LLaa .alias LLbb
+			 *  __bra LLbb			-->	__bra LLbb
+			 */
+			if
+			((p[0]->code == I_BRA) &&
+			 (p[1]->code == I_LABEL)
+			) {
+				int i = 1;
+				do	{
+					if (p[i]->data != p[0]->data) {
+						p[i]->code = I_ALIAS;
+						p[i]->imm_type = T_VALUE;
+						p[i]->imm_data = p[0]->data;
+					}
+				} while (++i < q_nb && i < 10 && p[i]->code == I_LABEL);
+			}
+
+			/*
 			 *  __bra LLaa			-->	LLaa:
 			 *  LLaa:
 			 */

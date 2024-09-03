@@ -77,6 +77,7 @@ enum ICODE {
 	I_CASE,
 	I_ENDCASE,
 	I_LABEL,
+	I_ALIAS,
 	I_BRA,
 	I_DEF,
 	I_CMPW,
