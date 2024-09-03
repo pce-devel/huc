@@ -624,3 +624,19 @@ void outstr (const char *ptr)
 	k = 0;
 	while (outbyte(ptr[k++])) ;
 }
+
+/*
+ *         outlocal
+ * Input : char* ptr
+ * Output : nothing
+ *
+ * Writes the variable name as a comment
+ *
+ */
+void outlocal (SYMBOL *ptr)
+{
+	if (ptr) {
+		outstr(" ; ");
+		outstr(ptr->name);
+	}
+}

@@ -1331,6 +1331,18 @@ __subub		.macro
 
 ; **************
 
+__isubwi	.macro	; __STACK
+		sec
+		eor	#$FF
+		adc.l	#\1
+		say
+		eor	#$FF
+		adc.h	#\1
+		say
+		.endm
+
+; **************
+
 __andws		.macro	; __STACK
 		and.l	<__stack, x
 		say

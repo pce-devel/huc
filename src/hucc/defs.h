@@ -103,6 +103,7 @@ enum ICODE {
 	/* i-codes for loading the primary register */
 
 	I_LDWI,
+	I_LEA_S,
 	I_LDW,
 	I_LDB,
 	I_LDUB,
@@ -167,6 +168,8 @@ enum ICODE {
 	I_SUBW,
 	I_SUBUB,
 
+	I_ISUBWI,
+
 	I_ANDWS,
 	I_ANDWI,
 	I_ANDW,
@@ -194,10 +197,6 @@ enum ICODE {
 	I_MULWI,
 
 	/* optimized i-codes for local variables on the C stack */
-
-	X_LEA_S,
-	X_PEA_S,
-
 
 	X_INCW_S,
 	X_INCB_S,

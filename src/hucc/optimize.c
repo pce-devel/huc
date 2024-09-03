@@ -30,6 +30,11 @@
  #define __builtin_ctz _tzcnt_u32
 #endif
 
+#ifdef __GNUC__
+ /* GCC doesn't like "strcmp((char *)p[0]->data,"! */
+ #pragma GCC diagnostic ignored "-Wstringop-overread"
+#endif
+
 /* defines */
 #define Q_SIZE		16
 
@@ -88,8 +93,7 @@ static int is_load (INS *i)
 
 static int is_sprel (INS *i)
 {
-	return (i->code == X_LEA_S ||
-		i->code == X_PEA_S ||
+	return (i->code == I_LEA_S ||
 		i->code == X_LDW_S ||
 		i->code == X_LDB_S ||
 		i->code == X_LDUB_S ||
@@ -232,85 +236,14 @@ lv1_loop:
 
 		/* 5-instruction patterns */
 		if (q_nb >= 5) {
-#if 0
-			/*  Classical Base+offset word array access:
-			 *
-			 *  N.B. This arrary access optimization is now done in the code generator.
-			 *
-			 *  __ldwi  label		-->	@_ldw_s	 n-2
-			 *  __pushw				__aslw
-			 *  @_ldw_s n				__addwi	 label
-			 *  __aslw
-			 *  __addws
-			 */
-			if
-			((p[0]->code == I_ADDWS) &&
-			 (p[1]->code == I_ASLW) &&
-			 (p[2]->code == X_LDW_S) &&
-			 (p[3]->code == I_PUSHW) &&
-			 (p[4]->code == I_LDWI)
-			) {
-				intptr_t tempdata;
-
-				tempdata = p[2]->data;
-
-				/* replace code */
-				*p[2] = *p[4];
-				p[2]->code = I_ADDWI;
-				p[3]->code = I_ASLW;
-				p[4]->code = X_LDW_S;
-				p[4]->data = tempdata - 2;
-
-				nb = 2;
-			}
-
-			/*  Classical Base+offset word array access:
-			 *
-			 *  N.B. This arrary access optimization is now done in the code generator.
-			 *
-			 *  __ldwi  label1		-->	__ldw	 label2
-			 *  __pushw				__aslw
-			 *  __ldw   label2			__addwi	 label1
-			 *  __aslw
-			 *  __addws
-			 */
-			else if
-			((p[0]->code == I_ADDWS) &&
-			 (p[1]->code == I_ASLW) &&
-			 (p[2]->code == I_LDW) &&
-			 (p[3]->code == I_PUSHW) &&
-			 (p[4]->code == I_LDWI)
-			) {
-				intptr_t tempdata;
-				SYMBOL *tempsym;
-				char temptype;
-
-				temptype = p[2]->type;
-				tempdata = p[2]->data;
-				tempsym = p[2]->sym;
-
-				/* replace code */
-				*p[2] = *p[4];
-				p[2]->code = I_ADDWI;
-				p[2]->type = p[4]->type;
-				p[2]->data = p[4]->data;
-				p[2]->sym = p[4]->sym;
-				p[3]->code = I_ASLW;
-				p[4]->code = I_LDW;
-				p[4]->type = temptype;
-				p[4]->data = tempdata;
-				p[4]->sym = tempsym;
-
-				nb = 2;
-			}
-#endif
-
 			/*
 			 *  __ldw or __ldw_s		-->	__ldwa p, i/__ldwa_s p, i
 			 *  __aslw
 			 *  __addwi_sym array
 			 *  __stw _ptr
 			 *  __ldwp _ptr
+			 *
+			 *  Classic base+offset word-array access.
 			 */
 			if
 			((p[0]->code == I_LDWP) &&
@@ -359,62 +292,121 @@ lv1_loop:
 
 		/* 4-instruction patterns */
 		if (q_nb >= 4) {
-#if 0
-			/*  Classical Base+offset byte array access:
+			/*  __ldwi i			-->	__ldwi i
+			 *  __pushw				__pushw
+			 *  __stw   __ptr			__ldw/_ldub i
+			 *  __ldwp/__ldubp  __ptr
 			 *
-			 *  N.B. This arrary access optimization is now done in the code generator.
-			 *
-			 *  __ldwi  label		-->	@_ldub_s n-2
-			 *  __pushw				__addwi	 label
-			 *  @_ldub_s n
-			 *  __addws
+			 *  Load a variable from memory, this is generated for
+			 *  code like a "+=", where the store can be optimized
+			 *  later on.
 			 */
 			if
-			((p[0]->code == I_ADDWS) &&
-			 (p[1]->code == X_LDUB_S) &&
+			((p[0]->code == I_LDWP ||
+			  p[0]->code == I_LDBP ||
+			  p[0]->code == I_LDUBP) &&
+			 (p[0]->type == T_PTR) &&
+			 (p[1]->code == I_STW) &&
+			 (p[1]->type == T_PTR) &&
 			 (p[2]->code == I_PUSHW) &&
 			 (p[3]->code == I_LDWI)
 			) {
 				/* replace code */
-				*p[2] = *p[3];
-				p[2]->code = I_ADDWI;
-				p[3]->code = X_LDUB_S;
-				p[3]->data = p[1]->data - 2;
-
-				nb = 2;
+				*p[1] = *p[3];
+				if (p[0]->code == I_LDWP)
+					p[1]->code = I_LDW;
+				else
+				if (p[0]->code == I_LDBP)
+					p[1]->code = I_LDB;
+				else
+					p[1]->code = I_LDUB;
+				nb = 1;
 			}
 
-			/*  Classical Base+offset byte array access:
+			/*
+			 *  __lea_s i			-->	__lea_s i
+			 *  __pushw				__pushw
+			 *  __stw   __ptr			__ldw_s/_ldub_s i + 2
+			 *  __ldwp/__ldubp  __ptr
 			 *
-			 *  N.B. This arrary access optimization is now done in the code generator.
-			 *
-			 *  __ldwi  label1		-->	__ldub	 label2
-			 *  __pushw				__addwi	 label1
-			 *  __ldub  label2
+			 *  Load a variable from memory, this is generated for
+			 *  code like a "+=", where the store can be optimized
+			 *  later on.
+			 */
+			else if
+			((p[0]->code == I_LDWP ||
+			  p[0]->code == I_LDBP ||
+			  p[0]->code == I_LDUBP) &&
+			 (p[0]->type == T_PTR) &&
+			 (p[1]->code == I_STW) &&
+			 (p[1]->type == T_PTR) &&
+			 (p[2]->code == I_PUSHW) &&
+			 (p[3]->code == I_LEA_S)
+			) {
+				/* replace code */
+				*p[1] = *p[3];
+				if (p[0]->code == I_LDWP)
+					p[1]->code = X_LDW_S;
+				else
+				if (p[0]->code == I_LDBP)
+					p[1]->code = X_LDB_S;
+				else
+					p[1]->code = X_LDUB_S;
+				p[1]-> data += 2;
+				nb = 1;
+			}
+
+			/*
+			 *  __lea_s i			-->	__stwi_s/__stbi_s i,j
+			 *  __pushw
+			 *  __ldwi  i
+			 *  __stwps/__stbps
+			 */
+			else if
+			((p[0]->code == I_STWPS ||
+			  p[0]->code == I_STBPS) &&
+			 (p[1]->code == I_LDWI) &&
+			 (p[1]->type == T_VALUE) &&
+			 (p[2]->code == I_PUSHW) &&
+			 (p[3]->code == I_LEA_S)
+
+			) {
+				/* replace code */
+				p[3]->code = (p[0]->code == I_STWPS) ? X_STWI_S : X_STBI_S;
+				p[3]->imm_type = p[1]->type;
+				p[3]->imm_data = p[1]->data;
+				nb = 3;
+			}
+
+			/*
+			 *  __lea_s i			-->	__lea_s i+j
+			 *  __pushw
+			 *  __ldwi  j
 			 *  __addws
+			 *
+			 *  This is generated for address calculations into local
+			 *  arrays and structs on the stack.
 			 */
 			else if
 			((p[0]->code == I_ADDWS) &&
-			 (p[1]->code == I_LDUB) &&
+			 (p[1]->code == I_LDWI) &&
+			 (p[1]->type == T_VALUE) &&
 			 (p[2]->code == I_PUSHW) &&
-			 (p[3]->code == I_LDWI)
+			 (p[3]->code == I_LEA_S)
 			) {
 				/* replace code */
-				*p[2] = *p[3];
-				p[2]->code = I_ADDWI;
-				*p[3] = *p[1];
-
-				nb = 2;
+				p[3]->code = I_LEA_S;
+				p[3]->data += p[1]->data;
+				nb = 3;
 			}
-#endif
 
 			/*
-			 *  @_ldw/b/ub_s i		-->	@_ldw/b/ub_s  i
-			 *  __addwi 1				@_incw/b_s i
-			 *  @_stw_s i
+			 *  __ldw_s i			-->	__ldw/b/ub_s  i
+			 *  __addwi 1				__incw/b_s i
+			 *  __stw_s i
 			 *  __subwi 1
 			 */
-			if
+			else if
 			((p[0]->code == I_SUBWI) &&
 			 (p[1]->code == X_STW_S) &&
 			 (p[2]->code == I_ADDWI) &&
@@ -432,6 +424,12 @@ lv1_loop:
 				nb = 2;
 			}
 
+			/*
+			 *  __ldb/ub_s i		-->	__ldb/ub_s  i
+			 *  __addwi 1				__incw/b_s i
+			 *  __stb_s i
+			 *  __subwi 1
+			 */
 			else if
 			((p[0]->code == I_SUBWI) &&
 			 (p[1]->code == X_STB_S) &&
@@ -451,7 +449,7 @@ lv1_loop:
 			}
 
 			/*
-			 *  @_ldwi  i			-->	@_ldwi	 i * j
+			 *  __ldwi  i			-->	__ldwi	 i * j
 			 *  __pushw
 			 *  __ldwi  j
 			 *  jsr	    umul
@@ -459,7 +457,7 @@ lv1_loop:
 			else if
 			((p[0]->code == I_JSR) &&
 			 (p[0]->type == T_LIB) &&
-			 (strcmp((char *)p[0]->data, "umul") == 0) &&
+			 (!strcmp((char *)p[0]->data, "umul")) &&
 			 (p[1]->code == I_LDWI) &&
 			 (p[1]->type == T_VALUE) &&
 			 (p[2]->code == I_PUSHW) &&
@@ -471,7 +469,7 @@ lv1_loop:
 			}
 
 			/*
-			 *  @_ldwi p			-->	__stwi p, i
+			 *  __ldwi p			-->	__stwi p, i
 			 *  __pushw
 			 *  __ldwi  i
 			 *  __st{b|w}ps
@@ -525,6 +523,8 @@ lv1_loop:
 			 *  __addwi_sym array
 			 *  __stw _ptr
 			 *  __ldbp/__ldubp _ptr
+			 *
+			 *  Classic base+offset byte-array access.
 			 */
 			else if
 			((p[0]->code == I_LDBP ||
@@ -592,6 +592,59 @@ lv1_loop:
 			) {
 				/* remove code */
 				*p[2] = *p[0];
+				nb = 2;
+			}
+
+			/*  __ldwi i			-->	__ldw/_ldub i
+			 *  __stw   __ptr
+			 *  __ldwp/__ldubp  __ptr
+			 *
+			 *  Load a global/static variable from memory
+			 */
+			else if
+			((p[0]->code == I_LDWP ||
+			  p[0]->code == I_LDBP ||
+			  p[0]->code == I_LDUBP) &&
+			 (p[0]->type == T_PTR) &&
+			 (p[1]->code == I_STW) &&
+			 (p[1]->type == T_PTR) &&
+			 (p[2]->code == I_LDWI)
+			) {
+				/* replace code */
+				if (p[0]->code == I_LDWP)
+					p[2]->code = I_LDW;
+				else
+				if (p[0]->code == I_LDBP)
+					p[2]->code = I_LDB;
+				else
+					p[2]->code = I_LDUB;
+				nb = 2;
+			}
+
+			/*
+			 *  __lea_s i			-->	__ldw_s/_ldub_s i
+			 *  __stw   __ptr
+			 *  __ldwp  __ptr
+			 *
+			 *  Load a local variable from memory
+			 */
+			else if
+			((p[0]->code == I_LDWP ||
+			  p[0]->code == I_LDBP ||
+			  p[0]->code == I_LDUBP) &&
+			 (p[0]->type == T_PTR) &&
+			 (p[1]->code == I_STW) &&
+			 (p[1]->type == T_PTR) &&
+			 (p[2]->code == I_LEA_S)
+			) {
+				/* replace code */
+				if (p[0]->code == I_LDWP)
+					p[2]->code = X_LDW_S;
+				else
+				if (p[0]->code == I_LDBP)
+					p[2]->code = X_LDB_S;
+				else
+					p[2]->code = X_LDUB_S;
 				nb = 2;
 			}
 
@@ -779,143 +832,6 @@ lv1_loop:
 					p[2]->data = p[1]->data;
 				}
 				nb = 2;
-			}
-
-			/*
-			 *  @_pea_s j			-->	@_stbi_s i,j
-			 *  __ldwi  i
-			 *  __stbps
-			 */
-			else if
-			((p[0]->code == I_STBPS) &&
-			 (p[1]->code == I_LDWI) &&
-			 (p[2]->code == X_PEA_S) &&
-
-			 (p[1]->type == T_VALUE)
-			) {
-				/* replace code */
-				p[2]->code = X_STBI_S;
-				p[2]->imm_type = p[1]->type;
-				p[2]->imm_data = p[1]->data;
-				nb = 2;
-			}
-
-			/*
-			 *  @_pea_s j			-->	@_stwi_s i,j
-			 *  __ldwi  i
-			 *  __stwps
-			 */
-			else if
-			((p[0]->code == I_STWPS) &&
-			 (p[1]->code == I_LDWI) &&
-			 (p[2]->code == X_PEA_S) &&
-
-			 (p[1]->type == T_VALUE)
-			) {
-				/* replace code */
-				p[2]->code = X_STWI_S;
-				p[2]->imm_type = p[1]->type;
-				p[2]->imm_data = p[1]->data;
-				nb = 2;
-			}
-
-			/*
-			 *  @_pea_s i			-->	@_lea_s i+j
-			 *  __ldwi  j
-			 *  __addws
-			 */
-			else if
-			((p[0]->code == I_ADDWS) &&
-			 (p[1]->code == I_LDWI) &&
-			 (p[2]->code == X_PEA_S) &&
-
-			 (p[1]->type == T_VALUE)
-			) {
-				/* replace code */
-				p[2]->code = X_LEA_S;
-				p[2]->data += p[1]->data;
-				nb = 2;
-			}
-
-			/*
-			 *  @_lea_s i			-->	@_ldw_s/_ldub_s i
-			 *  __stw   __ptr
-			 *  __ldwp  __ptr
-			 */
-			else if
-			((p[0]->code == I_LDWP ||
-			  p[0]->code == I_LDBP ||
-			  p[0]->code == I_LDUBP) &&
-			 (p[1]->code == I_STW) &&
-			 (p[2]->code == X_LEA_S) &&
-
-			 (p[0]->type == T_PTR) &&
-			 (p[1]->type == T_PTR)
-			) {
-				/* replace code */
-				if (p[0]->code == I_LDWP)
-					p[2]->code = X_LDW_S;
-				else
-				if (p[0]->code == I_LDBP)
-					p[2]->code = X_LDB_S;
-				else
-					p[2]->code = X_LDUB_S;
-				nb = 2;
-			}
-
-			/*  @_ldwi i			-->	@_ldw/_ldub i
-			 *  __stw   __ptr
-			 *  __ldwp/__ldubp  __ptr
-			 */
-			else if
-			((p[0]->code == I_LDWP ||
-			  p[0]->code == I_LDBP ||
-			  p[0]->code == I_LDUBP) &&
-			 (p[1]->code == I_STW) &&
-			 (p[2]->code == I_LDWI) &&
-
-			 (p[0]->type == T_PTR) &&
-			 (p[1]->type == T_PTR)
-			) {
-				/* replace code */
-				if (p[0]->code == I_LDWP)
-					p[2]->code = I_LDW;
-				else
-				if (p[0]->code == I_LDBP)
-					p[2]->code = I_LDB;
-				else
-					p[2]->code = I_LDUB;
-				nb = 2;
-			}
-
-			/*
-			 *  @_pea_s i			-->	@_pea_s i
-			 *  __stw   __ptr			@_ldw_s i+2
-			 *  __ldwp  __ptr
-			 */
-			else if
-			((p[0]->code == I_LDWP ||
-			  p[0]->code == I_LDBP ||
-			  p[0]->code == I_LDUBP) &&
-			 (p[1]->code == I_STW) &&
-			 (p[2]->code == X_PEA_S) &&
-
-			 (p[0]->type == T_PTR) &&
-			 (p[1]->type == T_PTR) &&
-
-			 (optimize >= 2)
-			) {
-				/* replace code */
-				if (p[0]->code == I_LDWP)
-					p[1]->code = X_LDW_S;
-				else
-				if (p[0]->code == I_LDBP)
-					p[1]->code = X_LDB_S;
-				else
-					p[1]->code = X_LDUB_S;
-				p[1]->data = p[2]->data + 2;
-				p[1]->sym = p[2]->sym;
-				nb = 1;
 			}
 
 			/*
@@ -1479,7 +1395,7 @@ lv1_loop:
 			((p[0]->code == I_LDW ||
 			  p[0]->code == I_LDWI ||
 			  p[0]->code == X_LDW_S ||
-			  p[0]->code == X_LEA_S ||
+			  p[0]->code == I_LEA_S ||
 			  p[0]->code == I_LDB ||
 			  p[0]->code == I_LDBP ||
 			  p[0]->code == X_LDB_S ||
@@ -1489,7 +1405,7 @@ lv1_loop:
 			 (p[1]->code == I_LDW ||
 			  p[1]->code == I_LDWI ||
 			  p[1]->code == X_LDW_S ||
-			  p[1]->code == X_LEA_S ||
+			  p[1]->code == I_LEA_S ||
 			  p[1]->code == I_LDB ||
 			  p[1]->code == I_LDBP ||
 			  p[1]->code == X_LDB_S ||
@@ -1503,8 +1419,8 @@ lv1_loop:
 			}
 
 			/*
-			 *  @_stw_s i			-->	@_stw_s i
-			 *  @_ldw_s i
+			 *  __stw_s i			-->	__stw_s i
+			 *  __ldw_s i
 			 */
 			else if
 			((p[0]->code == X_LDW_S) &&
@@ -1516,8 +1432,8 @@ lv1_loop:
 			}
 
 			/*
-			 *  @_stb_s i			-->	@_stb_s i
-			 *  @_ldb_s i
+			 *  __stb_s i			-->	__stb_s i
+			 *  __ldb_s i
 			 */
 			else if
 			((p[0]->code == X_LDB_S ||
@@ -1530,19 +1446,6 @@ lv1_loop:
 				else
 					p[0]->code = I_EXTUW;
 				p[0]->data = p[0]->type = 0;
-			}
-
-			/*
-			 *  @_lea_s i			-->	@_pea_s i
-			 *  __pushw
-			 */
-			else if
-			((p[0]->code == I_PUSHW) &&
-			 (p[1]->code == X_LEA_S)
-			) {
-				/* replace code */
-				p[1]->code = X_PEA_S;
-				nb = 1;
 			}
 
 			/*
@@ -1655,14 +1558,14 @@ lv1_loop:
 	 * change instruction order to allow direct assignments
 	 * rather than stack based assignments :
 	 *
-	 *  @_pea_s i			-->	...
-	 *    ...				@_stw_s i
+	 *  __ldwi/__lea_s i			-->	...
+	 *  __pushw					__stw_s i
+	 *    ...
 	 *  __stwps
 	 *
-	 *  ====
-	 *  bytes  : 25+??+42 = ??+ 67	--> ??+ 9 = ??+ 9
-	 *  cycles : 44+??+91 = ??+135	--> ??+22 = ??+22
-	 *
+	 *  This is common in complex assignments to a variable, and also in
+	 *  "var++" and other situations that are not covered by the simpler
+	 *  peephole rules earlier.
 	 */
 	if (optimize >= 2) {
 		int offset;
@@ -1672,14 +1575,16 @@ lv1_loop:
 
 		/* check last instruction */
 		if (q_nb > 1 &&
-		    (q_ins[q_wr].code == I_STWPS ||
-		     q_ins[q_wr].code == I_STBPS ||
-		     q_ins[q_wr].code == I_ADDWS ||
-		     q_ins[q_wr].code == I_ORWS ||
-		     q_ins[q_wr].code == I_EORWS ||
-		     q_ins[q_wr].code == I_ANDWS)) {
+		(q_ins[q_wr].code == I_STWPS ||
+		 q_ins[q_wr].code == I_STBPS ||
+		 q_ins[q_wr].code == I_ADDWS ||
+		 q_ins[q_wr].code == I_SUBWS ||
+		 q_ins[q_wr].code == I_ANDWS ||
+		 q_ins[q_wr].code == I_EORWS ||
+		 q_ins[q_wr].code == I_ORWS)
+		) {
 			/* browse back the instruction list and
-			 * etablish a stack history
+			 * establish a stack history
 			 */
 			offset = 2;
 
@@ -1689,7 +1594,7 @@ lv1_loop:
 				if (j < 0)
 					j += Q_SIZE;
 
-				/* Index of insn precdeing j. */
+				/* index of insn preceding j */
 				jp = j - 1;
 				if (jp < 0)
 					jp += Q_SIZE;
@@ -1697,8 +1602,8 @@ lv1_loop:
 				/* check instruction */
 				switch (q_ins[j].code) {
 				case I_JSR:
-				case I_CMPB:
 				case I_CMPW:
+				case I_CMPB:
 					if (q_ins[j].type == T_LIB)
 						offset += 2;
 					break;
@@ -1709,19 +1614,18 @@ lv1_loop:
 						offset += (int)q_ins[j].data;
 					break;
 
+				case I_POPW:
+				case I_STWPS:
+				case I_STBPS:
 				case I_ADDWS:
 				case I_SUBWS:
 				case I_ANDWS:
 				case I_EORWS:
 				case I_ORWS:
-				case I_POPW:
-				case I_STWPS:
-				case I_STBPS:
 					offset += 2;
 					break;
 
 				case I_PUSHW:
-				case X_PEA_S:
 					offset -= 2;
 					break;
 				}
@@ -1732,7 +1636,7 @@ lv1_loop:
 					if (i == 1) {
 						/* hmm, may be not...
 						 * there should be at least one instruction
-						 * between pea_s and stwps.
+						 * between pushw and stwps.
 						 * this case should never happen, though,
 						 * but better skipping it
 						 */
@@ -1742,57 +1646,66 @@ lv1_loop:
 					/* check the first instruction
 					 */
 					{
-						/* Only handle sequences that start with
-						   pea_s or ldwi/pushw. */
-						if (q_ins[j].code != X_PEA_S &&
-						    (q_ins[j].code != I_PUSHW || q_ins[jp].code != I_LDWI)
-						    )
+						/* only handle sequences that start with an
+						 * I_PUSHW preceded by I_LEA_S/I_LDWI
+						 */
+						if (q_ins[j].code != I_PUSHW)
 							break;
 
-						if (q_ins[j].code == X_PEA_S &&
-						    q_ins[q_wr].code != I_STBPS &&
-						    q_ins[q_wr].code != I_STWPS)
+						if (q_ins[jp].code != I_LEA_S &&
+						    q_ins[jp].code != I_LDWI)
+							break;
+
+						if (q_ins[jp].code == I_LEA_S &&
+						    q_ins[q_wr].code != I_STWPS &&
+						    q_ins[q_wr].code != I_STBPS)
 							break;
 
 						/* change stwps into stw_s/stw */
-						if (q_ins[j].code == X_PEA_S) {
-							if (q_ins[q_wr].code == I_STBPS)
-								q_ins[q_wr].code = X_STB_S;
-							else
+						if (q_ins[jp].code == I_LEA_S) {
+							if (q_ins[q_wr].code == I_STWPS)
 								q_ins[q_wr].code = X_STW_S;
-							q_ins[q_wr].data = q_ins[j].data;
+							else
+								q_ins[q_wr].code = X_STB_S;
+							/* use data from the preceding I_LEA_S */
+							q_ins[q_wr].type = q_ins[jp].type;
+							q_ins[q_wr].data = q_ins[jp].data;
+							q_ins[q_wr].sym = q_ins[jp].sym;
 						}
 						else {
 							switch (q_ins[q_wr].code) {
-							case I_STBPS:
-								q_ins[q_wr].code = I_STB;
-								break;
 							case I_STWPS:
 								q_ins[q_wr].code = I_STW;
+								break;
+							case I_STBPS:
+								q_ins[q_wr].code = I_STB;
 								break;
 							case I_ADDWS:
 								q_ins[q_wr].code = I_ADDWI;
 								break;
-							case I_ORWS:
-								q_ins[q_wr].code = I_ORWI;
-								break;
-							case I_EORWS:
-								q_ins[q_wr].code = I_EORWI;
+							case I_SUBWS:
+								q_ins[q_wr].code = I_ISUBWI;
 								break;
 							case I_ANDWS:
 								q_ins[q_wr].code = I_ANDWI;
 								break;
+							case I_EORWS:
+								q_ins[q_wr].code = I_EORWI;
+								break;
+							case I_ORWS:
+								q_ins[q_wr].code = I_ORWI;
+								break;
 							default:
 								abort();
 							}
-							/* Use data from the preceding ldwi. */
+							/* use data from the preceding I_LDWI */
 							q_ins[q_wr].type = q_ins[jp].type;
 							q_ins[q_wr].data = q_ins[jp].data;
 						}
 					}
 
 					/* adjust stack references;
-					 * because of the removal of pea_s
+					 * because of the removal of I_PUSHW
 					 */
 					for (t = i; t > 1; t--) {
 						j += 1;
@@ -1806,9 +1719,9 @@ lv1_loop:
 						}
 					}
 
-					/* remove all the instructions... */
-					q_wr -= (i + 1);
-					q_nb -= (i + 1);
+					/* remove all the instructions ... */
+					q_wr -= (i + 2);
+					q_nb -= (i + 2);
 					j -= (i - 1);
 
 					if (q_wr < 0)

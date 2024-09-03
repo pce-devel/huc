@@ -78,11 +78,11 @@ void getloc (SYMBOL *sym)
 		}
 		else {
 			value -= stkp;
-			out_ins_sym(X_LEA_S, T_STACK, value, sym);
+			out_ins_sym(I_LEA_S, T_STACK, value, sym);
 		}
 #else
 		value = glint(sym) - stkp;
-		out_ins_sym(X_LEA_S, T_STACK, value, sym);
+		out_ins_sym(I_LEA_S, T_STACK, value, sym);
 #endif
 	}
 }
@@ -131,7 +131,8 @@ void indirect (char typeobj)
 	out_ins(I_STW, T_PTR, 0);
 	if (typeobj == CCHAR)
 		out_ins(I_LDBP, T_PTR, 0);
-	else if (typeobj == CUCHAR)
+	else
+	if (typeobj == CUCHAR)
 		out_ins(I_LDUBP, T_PTR, 0);
 	else
 		out_ins(I_LDWP, T_PTR, 0);

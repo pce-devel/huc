@@ -858,8 +858,7 @@ void arg_flush (int arg, int adj)
 		}
 		else {
 			switch (ins->code) {
-			case X_LEA_S:
-			case X_PEA_S:
+			case I_LEA_S:
 			case X_LDW_S:
 			case X_LDB_S:
 			case X_LDUB_S:
@@ -1079,7 +1078,7 @@ void arg_to_dword (struct fastcall *fast, int i, int arg, int adj)
 		}
 
 		/* array */
-		else if (ins->code == X_LEA_S) {
+		else if (ins->code == I_LEA_S) {
 			sym = ins->sym;
 
 			if (sym && (sym->ident == ARRAY)) {

@@ -45,6 +45,7 @@ void tab (void);
 void ol (char *ptr);
 void ot (char *ptr);
 void nl (void);
+void outlocal (SYMBOL *ptr);
 void outsymbol (SYMBOL *ptr);
 void outconst (int label);
 void outlabel (int label);

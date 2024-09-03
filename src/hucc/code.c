@@ -635,6 +635,13 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case I_LEA_S:
+		ot("__lea_s\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
 	case I_LDW:
 		ot("__ldw\t");
 		out_addr(type, data);
@@ -698,18 +705,21 @@ void gen_code (INS *tmp)
 	case X_LDW_S:
 		ot("__ldw_s\t");
 		outdec((int)data);
+		outlocal(tmp->sym);
 		nl();
 		break;
 
 	case X_LDB_S:
 		ot("__ldb_s\t");
 		outdec((int)data);
+		outlocal(tmp->sym);
 		nl();
 		break;
 
 	case X_LDUB_S:
 		ot("__ldub_s\t");
 		outdec((int)data);
+		outlocal(tmp->sym);
 		nl();
 		break;
 
@@ -718,6 +728,7 @@ void gen_code (INS *tmp)
 		outsymbol((SYMBOL *)imm_data);
 		outstr(",");
 		outdec((int)data);
+		outlocal(tmp->sym);
 		nl();
 		break;
 
@@ -726,6 +737,7 @@ void gen_code (INS *tmp)
 		outsymbol((SYMBOL *)imm_data);
 		outstr(",");
 		outdec((int)data);
+		outlocal(tmp->sym);
 		nl();
 		break;
 
@@ -734,6 +746,7 @@ void gen_code (INS *tmp)
 		outsymbol((SYMBOL *)imm_data);
 		outstr(",");
 		outdec((int)data);
+		outlocal(tmp->sym);
 		nl();
 		break;
 
@@ -816,6 +829,7 @@ void gen_code (INS *tmp)
 		outdec((int)imm_data);
 		outstr(",");
 		outdec((int)data);
+		outlocal(tmp->sym);
 		nl();
 		break;
 
@@ -824,18 +838,21 @@ void gen_code (INS *tmp)
 		outdec((int)imm_data);
 		outstr(",");
 		outdec((int)data);
+		outlocal(tmp->sym);
 		nl();
 		break;
 
 	case X_STW_S:
 		ot("__stw_s\t");
 		outdec((int)data);
+		outlocal(tmp->sym);
 		nl();
 		break;
 
 	case X_STB_S:
 		ot("__stb_s\t");
 		outdec((int)data);
+		outlocal(tmp->sym);
 		nl();
 		break;
 
@@ -922,12 +939,14 @@ void gen_code (INS *tmp)
 	case X_ADDW_S:
 		ot("__addw_s\t");
 		outdec((int)data);
+		outlocal(tmp->sym);
 		nl();
 		break;
 
 	case X_ADDUB_S:
 		ot("__addub_s\t");
 		outdec((int)data);
+		outlocal(tmp->sym);
 		nl();
 		break;
 
@@ -956,6 +975,12 @@ void gen_code (INS *tmp)
 	case I_SUBUB:
 		ot("__subub\t");
 		out_addr(type, data);
+		nl();
+		break;
+
+	case I_ISUBWI:
+		ot("__isubwi\t");
+		out_type(type, data);
 		nl();
 		break;
 
@@ -1063,27 +1088,17 @@ void gen_code (INS *tmp)
 
 	/* optimized i-codes for local variables on the C stack */
 
-	case X_LEA_S:
-		ot("__lea_s\t");
-		outdec((int)data);
-		nl();
-		break;
-
-	case X_PEA_S:
-		ot("__pea_s\t");
-		outdec((int)data);
-		nl();
-		break;
-
 	case X_INCW_S:
 		ot("__incw_s\t");
 		outdec((int)data);
+		outlocal(tmp->sym);
 		nl();
 		break;
 
 	case X_INCB_S:
 		ot("__incb_s\t");
 		outdec((int)data);
+		outlocal(tmp->sym);
 		nl();
 		break;
 
