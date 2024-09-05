@@ -67,7 +67,7 @@ char * strupr ( char *pStr )
   char *pChr = pStr;
 
   while (*pChr != '\0') {
-    *pChr = _toupper(*pChr);
+    *pChr = toupper(*pChr);
     ++pChr;
   }
 
