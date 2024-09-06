@@ -685,27 +685,21 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_LDWA:
-		ot("__ldwa\t\t");
-		outsymbol((SYMBOL *)imm_data);
-		outstr(", ");
-		out_addr(type, data);
+	case X_LDWA_A:
+		ot("__ldwa_a\t");
+		out_type(type, data);
 		nl();
 		break;
 
-	case X_LDBA:
-		ot("__ldba\t\t");
-		outsymbol((SYMBOL *)imm_data);
-		outstr(", ");
-		out_addr(type, data);
+	case X_LDBA_A:
+		ot("__ldba_a\t");
+		out_type(type, data);
 		nl();
 		break;
 
-	case X_LDUBA:
-		ot("__lduba\t\t");
-		outsymbol((SYMBOL *)imm_data);
-		outstr(", ");
-		out_addr(type, data);
+	case X_LDUBA_A:
+		ot("__lduba_a\t");
+		out_type(type, data);
 		nl();
 		break;
 
@@ -730,32 +724,50 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_LDWA_S:
-		ot("__ldwa_s\t");
-		outsymbol((SYMBOL *)imm_data);
-		outstr(", ");
-		outdec((int)data);
-		outlocal(tmp->sym);
+	case X_LDPWA_A:
+		ot("__ldpwa_a\t");
+		out_type(type, data);
 		nl();
 		break;
 
-	case X_LDBA_S:
-		ot("__ldba_s\t");
-		outsymbol((SYMBOL *)imm_data);
-		outstr(", ");
-		outdec((int)data);
-		outlocal(tmp->sym);
+	case X_LDPBA_A:
+		ot("__ldpba_a\t");
+		out_type(type, data);
 		nl();
 		break;
 
-	case X_LDUBA_S:
-		ot("__lduba_s\t");
-		outsymbol((SYMBOL *)imm_data);
-		outstr(", ");
-		outdec((int)data);
-		outlocal(tmp->sym);
+	case X_LDPUBA_A:
+		ot("__ldpuba_a\t");
+		out_type(type, data);
 		nl();
 		break;
+
+//	case X_LDWA_S:
+//		ot("__ldwa_s\t");
+//		outsymbol((SYMBOL *)imm_data);
+//		outstr(", ");
+//		outdec((int)data);
+//		outlocal(tmp->sym);
+//		nl();
+//		break;
+//
+//	case X_LDBA_S:
+//		ot("__ldba_s\t");
+//		outsymbol((SYMBOL *)imm_data);
+//		outstr(", ");
+//		outdec((int)data);
+//		outlocal(tmp->sym);
+//		nl();
+//		break;
+//
+//	case X_LDUBA_S:
+//		ot("__lduba_s\t");
+//		outsymbol((SYMBOL *)imm_data);
+//		outstr(", ");
+//		outdec((int)data);
+//		outlocal(tmp->sym);
+//		nl();
+//		break;
 
 	/* i-codes for saving the primary register */
 
@@ -863,21 +875,45 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_STWA_S:
-		ot("__stwa_s\t");
-		outsymbol((SYMBOL *)imm_data);
-		outstr(", ");
-		outdec((int)data);
+	case X_INDEXW:
+		ot("__indexw\t");
+		out_type(type, data);
 		nl();
 		break;
 
-	case X_STBA_S:
-		ot("__stba_s\t");
-		outsymbol((SYMBOL *)imm_data);
-		outstr(", ");
-		outdec((int)data);
+	case X_INDEXB:
+		ot("__indexb\t");
+		out_type(type, data);
 		nl();
 		break;
+
+	case X_STWAS:
+		ot("__stwas\t\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_STBAS:
+		ot("__stbas\t\t");
+		out_type(type, data);
+		nl();
+		break;
+
+//	case X_STWA_S:
+//		ot("__stwa_s\t");
+//		outsymbol((SYMBOL *)imm_data);
+//		outstr(", ");
+//		outdec((int)data);
+//		nl();
+//		break;
+//
+//	case X_STBA_S:
+//		ot("__stba_s\t");
+//		outsymbol((SYMBOL *)imm_data);
+//		outstr(", ");
+//		outdec((int)data);
+//		nl();
+//		break;
 
 	/* i-codes for extending a byte to a word */
 

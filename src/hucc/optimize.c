@@ -5,6 +5,9 @@
 
 // #define DEBUG_OPTIMIZER
 
+#define OPT_ARRAY_RD	1
+#define OPT_ARRAY_WR	1
+
 #ifdef DEBUG_OPTIMIZER
 #define ODEBUG(...) printf( __VA_ARGS__ )
 #else
@@ -77,15 +80,12 @@ static int is_load (INS *i)
 		i->code == I_LDWP ||
 		i->code == I_LDBP ||
 		i->code == I_LDUBP ||
-		i->code == X_LDWA ||
-		i->code == X_LDBA ||
-		i->code == X_LDUBA ||
+//		i->code == X_LDWA_A ||
+//		i->code == X_LDBA_A ||
+//		i->code == X_LDUBA_A ||
 		i->code == X_LDW_S ||
 		i->code == X_LDB_S ||
 		i->code == X_LDUB_S ||
-		i->code == X_LDWA_S ||
-		i->code == X_LDBA_S ||
-		i->code == X_LDUBA_S ||
 		i->code == X_LDD_I ||
 		i->code == X_LDD_S_W ||
 		i->code == X_LDD_S_B);
@@ -97,15 +97,10 @@ static int is_sprel (INS *i)
 		i->code == X_LDW_S ||
 		i->code == X_LDB_S ||
 		i->code == X_LDUB_S ||
-		i->code == X_LDWA_S ||
-		i->code == X_LDBA_S ||
-		i->code == X_LDUBA_S ||
 		i->code == X_STWI_S ||
 		i->code == X_STBI_S ||
 		i->code == X_STW_S ||
 		i->code == X_STB_S ||
-		i->code == X_STWA_S ||
-		i->code == X_STBA_S ||
 		i->code == X_INCW_S ||
 		i->code == X_INCB_S ||
 		i->code == X_ADDW_S ||
@@ -236,46 +231,6 @@ lv1_loop:
 
 		/* 5-instruction patterns */
 		if (q_nb >= 5) {
-			/*
-			 *  __ldw or __ldw_s		-->	__ldwa p, i/__ldwa_s p, i
-			 *  __aslw
-			 *  __addwi_sym array
-			 *  __stw _ptr
-			 *  __ldwp _ptr
-			 *
-			 *  Classic base+offset word-array access.
-			 */
-			if
-			((p[0]->code == I_LDWP) &&
-			 (p[0]->type == T_PTR) &&
-			 (p[1]->code == I_STW) &&
-			 (p[1]->type == T_PTR) &&
-			 (p[2]->code == I_ADDWI) &&
-			 (p[2]->type == T_SYMBOL) &&
-			 (is_small_array((SYMBOL *)p[2]->data)) &&
-			 (p[3]->code == I_ASLW) &&
-			 (p[4]->code == I_LDW ||
-			  p[4]->code == I_LDB ||
-			  p[4]->code == I_LDUB ||
-			  p[4]->code == X_LDW_S ||
-			  p[4]->code == X_LDB_S ||
-			  p[4]->code == X_LDUB_S)
-			) {
-				/* replace code */
-				switch (p[4]->code) {
-				case I_LDW:
-				case I_LDB:
-				case I_LDUB: p[4]->code = X_LDWA; break;
-				case X_LDW_S:
-				case X_LDB_S:
-				case X_LDUB_S: p[4]->code = X_LDWA_S; break;
-				default: abort();
-				}
-				p[4]->imm_type = p[2]->type;
-				p[4]->imm_data = p[2]->data;
-				nb = 4;
-			}
-
 			/* flush queue */
 			if (nb) {
 				q_wr -= nb;
@@ -518,44 +473,32 @@ lv1_loop:
 			}
 #endif
 
+#if OPT_ARRAY_RD
 			/*
-			 *  __ldub or __ldub_s		-->	__lduba p, i/__lduba_s p, i
-			 *  __addwi_sym array
+			 *  __aslw			-->	__ldwa array
+			 *  __addwi array
 			 *  __stw _ptr
-			 *  __ldbp/__ldubp _ptr
+			 *  __ldwp _ptr
 			 *
-			 *  Classic base+offset byte-array access.
+			 *  Classic base+offset word-array access.
 			 */
 			else if
-			((p[0]->code == I_LDBP ||
-			  p[0]->code == I_LDUBP) &&
+			((p[0]->code == I_LDWP) &&
 			 (p[0]->type == T_PTR) &&
 			 (p[1]->code == I_STW) &&
 			 (p[1]->type == T_PTR) &&
 			 (p[2]->code == I_ADDWI) &&
 			 (p[2]->type == T_SYMBOL) &&
 			 (is_small_array((SYMBOL *)p[2]->data)) &&
-			 (p[3]->code == I_LDW ||
-			  p[3]->code == I_LDB ||
-			  p[3]->code == I_LDUB ||
-			  p[3]->code == X_LDW_S ||
-			  p[3]->code == X_LDB_S ||
-			  p[3]->code == X_LDUB_S)
+			 (p[3]->code == I_ASLW)
 			) {
 				/* replace code */
-				switch (p[3]->code) {
-				case I_LDW:
-				case I_LDB:
-				case I_LDUB: p[3]->code = (p[0]->code == I_LDBP) ? X_LDBA : X_LDUBA; break;
-				case X_LDW_S:
-				case X_LDB_S:
-				case X_LDUB_S: p[3]->code =  (p[0]->code == I_LDBP) ? X_LDBA_S : X_LDUBA_S; break;
-				default: abort();
-				}
-				p[3]->imm_type = p[2]->type;
-				p[3]->imm_data = p[2]->data;
+				p[3]->code = X_LDWA_A;
+				p[3]->type = T_SYMBOL;
+				p[3]->data = p[2]->data;
 				nb = 3;
 			}
+#endif
 
 			/* flush queue */
 			if (nb) {
@@ -753,29 +696,7 @@ lv1_loop:
 				case X_LDUB_S: p[2]->code = X_ADDUB_S; break;
 				default: abort();
 				}
-//				p[2]->type = p[1]->type;
-//				p[2]->data = p[1]->data - 2;
-//				p[2]->sym = p[1]->sym;
 				p[2]->data -= 2;
-				nb = 2;
-			}
-
-			/*
-			 *  __pushw			-->	__st{b|w}ip i
-			 *  __ldwi  i
-			 *  __st{b|w}ps
-			 */
-			else if
-			((p[0]->code == I_STWPS ||
-			  p[0]->code == I_STBPS) &&
-			 (p[1]->code == I_LDWI) &&
-			 (p[2]->code == I_PUSHW) &&
-
-			 (p[1]->type == T_VALUE)
-			) {
-				/* replace code */
-				p[2]->code = p[0]->code == I_STWPS ? I_STWIP : I_STBIP;
-				p[2]->data = p[1]->data;
 				nb = 2;
 			}
 
@@ -1014,6 +935,62 @@ lv1_loop:
 				nb = 1;
 			}
 
+#if OPT_ARRAY_RD
+			/*
+			 *  __addwi array		-->	__ldba/__lduba array
+			 *  __stw _ptr
+			 *  __ldbp/__ldubp _ptr
+			 *
+			 *  Classic base+offset byte-array access.
+			 */
+			else if
+			((p[0]->code == I_LDBP ||
+			  p[0]->code == I_LDUBP) &&
+			 (p[0]->type == T_PTR) &&
+			 (p[1]->code == I_STW) &&
+			 (p[1]->type == T_PTR) &&
+			 (p[2]->code == I_ADDWI) &&
+			 (p[2]->type == T_SYMBOL) &&
+			 (is_small_array((SYMBOL *)p[2]->data))
+			) {
+				/* replace code */
+				p[2]->code = (p[0]->code == I_LDBP) ? X_LDBA_A : X_LDUBA_A;
+				nb = 2;
+			}
+#endif
+
+#if OPT_ARRAY_WR
+			/*
+			 *  __indexw or __indexb array	-->	__pldwa/__pldba/__plduba array
+			 *  __stw _ptr
+			 *  __ldwp/__ldbp/__ldubp _ptr
+			 *
+			 *  Optimized base+offset array access.
+			 *
+			 *  This MUST be enabled when the X_INDEXW/X_INDEXB
+			 *  optimization is enabled, else array loads break
+			 *  because the index is pushed instead of an array
+			 *  address!
+			 */
+			else if
+			((p[0]->code == I_LDWP ||
+			  p[0]->code == I_LDBP ||
+			  p[0]->code == I_LDUBP) &&
+			 (p[0]->type == T_PTR) &&
+			 (p[1]->code == I_STW) &&
+			 (p[1]->type == T_PTR) &&
+			 (p[2]->code == X_INDEXW ||
+			  p[2]->code == X_INDEXB)
+			) {
+				/* replace code */
+				if (p[0]->code == I_LDWP)
+					p[2]->code = X_LDPWA_A;
+				else
+					p[2]->code = (p[0]->code == I_LDBP) ? X_LDPBA_A : X_LDPUBA_A;
+				nb = 2;
+			}
+#endif
+
 			/* flush queue */
 			if (nb) {
 				q_wr -= nb;
@@ -1084,12 +1061,10 @@ lv1_loop:
 			  p[1]->code == I_LDUB ||
 			  p[1]->code == I_LDBP ||
 			  p[1]->code == I_LDUBP ||
-			  p[1]->code == X_LDBA ||
-			  p[1]->code == X_LDUBA ||
+			  p[1]->code == X_LDBA_A ||
+			  p[1]->code == X_LDUBA_A ||
 			  p[1]->code == X_LDB_S ||
-			  p[1]->code == X_LDUB_S ||
-			  p[1]->code == X_LDBA_S ||
-			  p[1]->code == X_LDUBA_S)
+			  p[1]->code == X_LDUB_S)
 			) {
 				/* optimize code */
 				p[0]->code = I_SWITCHB;
@@ -1105,7 +1080,7 @@ lv1_loop:
 			 *
 			 *  I_ENDCASE is only generated in order to catch which
 			 *  case statements could fall through to the next case
-			 *  so that an SAX instruction can be generated.
+			 *  so that an SAX instruction can be inserted.
 			 *
 			 *  This removes obviously-redundant I_ENDCASE i-codes.
 			 */
@@ -1203,7 +1178,7 @@ lv1_loop:
 
 			/*
 			 *  __ldwi  i			-->	__ldwi i+j
-			 *  __add[bw]i j
+			 *  __addwi j
 			 */
 			else if
 			((p[0]->code == I_ADDWI) &&
@@ -1219,7 +1194,7 @@ lv1_loop:
 
 			/*
 			 *  __ldwi  sym			-->	__ldwi sym+j
-			 *  __add[bw]i j
+			 *  __addwi j
 			 */
 			else if
 			((p[0]->code == I_ADDWI) &&
@@ -1243,7 +1218,7 @@ lv1_loop:
 
 			/*
 			 *  __ldwi  j			-->	__ldwi sym+j
-			 *  __add[bw]i sym
+			 *  __addwi sym
 			 */
 			else if
 			((p[0]->code == I_ADDWI) &&
@@ -1467,34 +1442,6 @@ lv1_loop:
 			}
 
 			/*
-			 *  ldwi i			-->	stwi i, j
-			 *  stwip j
-			 */
-			else if
-			((p[0]->code == I_STWIP) &&
-			 (p[1]->code == I_LDWI)
-			) {
-				p[1]->code = I_STWI;
-				p[1]->imm_type = p[0]->type;
-				p[1]->imm_data = p[0]->data;
-				nb = 1;
-			}
-
-			/*
-			 *  ldwi i			-->	stbi i, j
-			 *  stbip j
-			 */
-			else if
-			((p[0]->code == I_STBIP) &&
-			 (p[1]->code == I_LDWI)
-			) {
-				p[1]->code = I_STBI;
-				p[1]->imm_type = p[0]->type;
-				p[1]->imm_data = p[0]->data;
-				nb = 1;
-			}
-
-			/*
 			 *  ldwi i			-->	stwi const, i
 			 *  stw const
 			 *
@@ -1525,15 +1472,18 @@ lv1_loop:
 			((p[1]->code == I_SUBWI ||
 			  p[1]->code == I_ADDWI) &&
 			 (p[1]->type == T_VALUE) &&
-			 (is_load(p[0]))
+			 (is_load(p[0])) &&
+			 (p[0]->type != X_LDWA_A) &&
+			 (p[0]->type != X_LDBA_A) &&
+			 (p[0]->type != X_LDUBA_A)
 			) {
 				*p[1] = *p[0];
 				nb = 1;
 			}
 
 			/*
-			 *  is_load()			-->	__stwz
-			 *  __stwi 0
+			 *  __stwi 0			-->	__stwz
+			 *  is_load()
 			 */
 			else if
 			((p[1]->code == I_STWI) &&
@@ -1545,8 +1495,8 @@ lv1_loop:
 			}
 
 			/*
-			 *  is_load()			-->	__stbz
-			 *  __stbi 0
+			 *  __stbi 0			-->	__stwz
+			 *  is_load()
 			 */
 			else if
 			((p[1]->code == I_STBI) &&
@@ -1572,24 +1522,62 @@ lv1_loop:
 		}
 	}
 
-	/* optimization level 2 - instruction re-scheduler,
-	 * change instruction order to allow direct assignments
-	 * rather than stack based assignments :
+	/*
+	 * optimization level 2 - instruction re-scheduler,
 	 *
-	 *  __ldwi/__lea_s i			-->	...
-	 *  __pushw					__stw_s i
+	 * change the instruction order to allow for direct assignments rather
+	 * than the stack-based assignments that are generated by complex math
+	 * or things like "var++" that are not covered by the simpler peephole
+	 * rules earlier.
+	 *
+	 * this covers storing to global and static variables, plus
+	 * a whole bunch of math with integers ...
+	 *
+	 *  __ldwi i				-->	...
+	 *  __pushw					__stw i or __stb i or __addwi i
+	 *    ...
+	 *  __stwps or __stbps or __addws
+	 *
+	 * this covers storing to local variables ...
+	 *
+	 *  __lea_s i				-->	...
+	 *  __pushw					__stw_s i or __stb_s i
+	 *    ...
+	 *  __stwps or __stbps
+	 *
+	 * this covers storing to global and static arrays with "=" ...
+	 *
+	 *  __aslw				-->	__index2
+	 *  __addwi array				...
+	 *  __pushw					__stwa_a array
 	 *    ...
 	 *  __stwps
 	 *
-	 *  This is common in complex assignments to a variable, and also in
-	 *  "var++" and other situations that are not covered by the simpler
-	 *  peephole rules earlier.
+	 *  __addwi array			-->	__index1
+	 *  __pushw					...
+	 *    ...					__stba_a array
+	 *  __stbps
+	 *
+	 * this covers storing to global and static arrays with "+=", "-=", etc ...
+	 *
+	 *  __aslw				-->	__ldpwa_a array
+	 *  __addwi array				...
+	 *  __pushw					__stwa_a array
+	 *  __stw _ptr
+	 *  __ldwp _ptr
+	 *    ...
+	 *  __stwps
+	 *
+	 *  __addwi array			-->	__ldpuba_a array
+	 *  __pushw					...
+	 *  __stw _ptr					__stba_a array
+	 *  __ldubp _ptr
+	 *    ...
+	 *  __stbps
 	 */
 	if (optimize >= 2) {
 		int offset;
-		int i, j;
-		int t;
-		int jp;
+		int copy, scan, prev;
 
 		/* check last instruction */
 		if (q_nb > 1 &&
@@ -1606,30 +1594,30 @@ lv1_loop:
 			 */
 			offset = 2;
 
-			for (i = 1, j = q_wr; i < q_nb; i++) {
-				j -= 1;
+			for (copy = 1, scan = q_wr; copy < q_nb; copy++) {
+				scan -= 1;
 
-				if (j < 0)
-					j += Q_SIZE;
+				if (scan < 0)
+					scan += Q_SIZE;
 
-				/* index of insn preceding j */
-				jp = j - 1;
-				if (jp < 0)
-					jp += Q_SIZE;
+				/* index of insn preceding scan */
+				prev = scan - 1;
+				if (prev < 0)
+					prev += Q_SIZE;
 
 				/* check instruction */
-				switch (q_ins[j].code) {
+				switch (q_ins[scan].code) {
 				case I_JSR:
 				case I_CMPW:
 				case I_CMPB:
-					if (q_ins[j].type == T_LIB)
+					if (q_ins[scan].type == T_LIB)
 						offset += 2;
 					break;
 
 				case I_MODSP:
-					if ((q_ins[j].type == T_STACK) ||
-					    (q_ins[j].type == T_NOP))
-						offset += (int)q_ins[j].data;
+					if ((q_ins[scan].type == T_STACK) ||
+					    (q_ins[scan].type == T_NOP))
+						offset += (int)q_ins[scan].data;
 					break;
 
 				case I_POPW:
@@ -1650,47 +1638,51 @@ lv1_loop:
 
 				/* check offset */
 				if (offset == 0) {
-					/* good! */
-					if (i == 1) {
+					/*
+					 * found the I_PUSHW that matches the I_STWPS
+					 */
+					int from = scan + 1; /* begin copying after the I_PUSHW */
+					int drop = 2; /* drop I_PUSHW and the i-code before it */
+
+					if (copy == 1) {
 						/* hmm, may be not...
 						 * there should be at least one instruction
-						 * between pushw and stwps.
+						 * between I_PUSHW and I_STWPS.
 						 * this case should never happen, though,
 						 * but better skipping it
 						 */
 						break;
 					}
 
-					/* check the first instruction
+					/*
+					 * check the first instruction
 					 */
 					{
-						/* only handle sequences that start with an
-						 * I_PUSHW preceded by I_LEA_S/I_LDWI
+						/*
+						 * only handle sequences that start with an
+						 * I_PUSHW preceded by I_LEA_S/I_LDWI/I_ADDWI
 						 */
-						if (q_ins[j].code != I_PUSHW)
+						if (q_ins[scan].code != I_PUSHW)
 							break;
 
-						if (q_ins[jp].code != I_LEA_S &&
-						    q_ins[jp].code != I_LDWI)
+#if OPT_ARRAY_WR
+						if (q_ins[prev].code != I_LDWI &&
+						    q_ins[prev].code != I_LEA_S &&
+						    q_ins[prev].code != I_ADDWI)
 							break;
+#else
+						if (q_ins[prev].code != I_LDWI &&
+						    q_ins[prev].code != I_LEA_S)
+							break;
+#endif
 
-						if (q_ins[jp].code == I_LEA_S &&
+						if (q_ins[prev].code != I_LDWI &&
 						    q_ins[q_wr].code != I_STWPS &&
 						    q_ins[q_wr].code != I_STBPS)
 							break;
 
 						/* change stwps into stw_s/stw */
-						if (q_ins[jp].code == I_LEA_S) {
-							if (q_ins[q_wr].code == I_STWPS)
-								q_ins[q_wr].code = X_STW_S;
-							else
-								q_ins[q_wr].code = X_STB_S;
-							/* use data from the preceding I_LEA_S */
-							q_ins[q_wr].type = q_ins[jp].type;
-							q_ins[q_wr].data = q_ins[jp].data;
-							q_ins[q_wr].sym = q_ins[jp].sym;
-						}
-						else {
+						if (q_ins[prev].code == I_LDWI) {
 							switch (q_ins[q_wr].code) {
 							case I_STWPS:
 								q_ins[q_wr].code = I_STW;
@@ -1717,84 +1709,210 @@ lv1_loop:
 								abort();
 							}
 							/* use data from the preceding I_LDWI */
-							q_ins[q_wr].type = q_ins[jp].type;
-							q_ins[q_wr].data = q_ins[jp].data;
+							q_ins[q_wr].type = q_ins[prev].type;
+							q_ins[q_wr].data = q_ins[prev].data;
+						} else
+						if (q_ins[prev].code == I_LEA_S) {
+							if (q_ins[q_wr].code == I_STWPS)
+								q_ins[q_wr].code = X_STW_S;
+							else
+								q_ins[q_wr].code = X_STB_S;
+							/* use data from the preceding I_LEA_S */
+							q_ins[q_wr].type = q_ins[prev].type;
+							q_ins[q_wr].data = q_ins[prev].data;
+							q_ins[q_wr].sym = q_ins[prev].sym;
+#if OPT_ARRAY_WR
+
+						} else {
+							int push = X_INDEXB;
+							int code = X_STBAS;
+
+							/* make sure that I_ADDWI is really a short array */
+							if (q_ins[prev].type != T_SYMBOL ||
+							    !is_small_array((SYMBOL *)q_ins[prev].data))
+								break;
+
+							copy = copy + 1;
+							from = scan;
+							drop = 1;
+
+							/* make sure that an I_STWPS has an I_ASLW */
+							if (q_ins[q_wr].code == I_STWPS) {
+								int aslw = prev - 1;
+								if (aslw < 0)
+									aslw += Q_SIZE;
+								if (copy == q_nb || q_ins[aslw].code != I_ASLW)
+									break;
+								drop = 2;
+								push = X_INDEXW;
+								code = X_STWAS;
+							}
+
+							/* push the index from the preceding I_ADDWI */
+							q_ins[scan].code = push;
+							q_ins[scan].type = T_SYMBOL;
+							q_ins[scan].data = q_ins[prev].data;
+
+							/* use data from the preceding I_ADDWI */
+							q_ins[q_wr].code = code;
+							q_ins[q_wr].type = T_SYMBOL;
+							q_ins[q_wr].data = q_ins[prev].data;
+#endif
 						}
 					}
 
-					/* adjust stack references;
-					 * because of the removal of I_PUSHW
+					/*
+					 * adjust stack references for the
+					 * removal of the I_PUSHW
 					 */
-					for (t = i; t > 1; t--) {
-						j += 1;
-						if (j >= Q_SIZE)
-							j -= Q_SIZE;
+					for (int temp = copy; temp > 1; temp--) {
+						scan += 1;
+						if (scan >= Q_SIZE)
+							scan -= Q_SIZE;
 
 						/* check instruction */
-						if (is_sprel(&q_ins[j])) {
+						if (is_sprel(&q_ins[scan])) {
 							/* adjust stack offset */
-							q_ins[j].data -= 2;
+							q_ins[scan].data -= 2;
 						}
 					}
 
-					/* remove all the instructions ... */
-					q_wr -= (i + 2);
-					q_nb -= (i + 2);
-					j -= (i - 1);
-
+					/*
+					 * remove all the instructions ...
+					 */
+					q_nb -= (drop + copy);
+					q_wr -= (drop + copy);
 					if (q_wr < 0)
 						q_wr += Q_SIZE;
-					if (j < 0)
-						j += Q_SIZE;
 
-					/* ... and re-insert them one by one
+					/*
+					 * ... and re-insert them one by one
 					 * in the queue (for further optimizations)
 					 */
-					for (; i > 0; i--) {
-						j += 1;
-						if (j >= Q_SIZE)
-							j -= Q_SIZE;
+					for (; copy > 0; copy--) {
+						if (from >= Q_SIZE)
+							from -= Q_SIZE;
 #ifdef DEBUG_OPTIMIZER
 						printf("\nReinserting after rescheduling ...");
 #endif
-						push_ins(&q_ins[j]);
+						push_ins(&q_ins[from++]);
 					}
 					break;
 				}
 			}
 		}
 
+		/*
+		 * optimization level 2b - after the instruction re-scheduler
+		 */
 		if (q_nb >= 3) {
+			INS *p[3];
+			int i, j;
+			int nb = 0;
+
+lv2_loop:
+			/* precalculate pointers to instructions */
+			for (i = 0, j = q_wr; i < 3; i++) {
+				/* save pointer */
+				p[i] = &q_ins[j];
+
+				/* next */
+				j -= 1;
+				if (j < 0)
+					j += Q_SIZE;
+			}
+
 			/*
-			 *  __pushw			-->	__stw __ptr
-			 *  <load>				<load>
-			 *  __st*ps				__st*p __ptr
+			 *  __pushw			-->	__st{b|w}ip i
+			 *  __ldwi  i
+			 *  __st{b|w}ps
 			 *
 			 *  This cannot be done earlier because it screws up
 			 *  the reordering optimization above.
 			 */
 			if
-			((q_ins[q_wr].code == I_STBPS ||
-			  q_ins[q_wr].code == I_STWPS) &&
-			 (is_load(&q_ins[q_wr - 1])) &&
-			 (q_ins[q_wr - 2].code == I_PUSHW)
+			((p[0]->code == I_STWPS ||
+			  p[0]->code == I_STBPS) &&
+			 (p[1]->code == I_LDWI) &&
+			 (p[1]->type == T_VALUE) &&
+			 (p[2]->code == I_PUSHW)
 			) {
-				q_ins[q_wr - 2].code = I_STW;
-				q_ins[q_wr - 2].type = T_PTR;
+				/* replace code */
+				p[2]->code = p[0]->code == I_STWPS ? I_STWIP : I_STBIP;
+				p[2]->data = p[1]->data;
+				nb = 2;
+			}
+
+			/*
+			 *  ldwi i			-->	stwi i, j
+			 *  stwip j
+			 */
+			else if
+			((p[0]->code == I_STWIP) &&
+			 (p[1]->code == I_LDWI)
+			) {
+				p[1]->code = I_STWI;
+				p[1]->imm_type = p[0]->type;
+				p[1]->imm_data = p[0]->data;
+				nb = 1;
+			}
+
+			/*
+			 *  ldwi i			-->	stbi i, j
+			 *  stbip j
+			 */
+			else if
+			((p[0]->code == I_STBIP) &&
+			 (p[1]->code == I_LDWI)
+			) {
+				p[1]->code = I_STBI;
+				p[1]->imm_type = p[0]->type;
+				p[1]->imm_data = p[0]->data;
+				nb = 1;
+			}
+
+			/*
+			 *  __pushw			-->	__stw __ptr
+			 *  <load>				<load>
+			 *  __st{b|w}ps				__st{b|w}p __ptr
+			 *
+			 *  This cannot be done earlier because it screws up
+			 *  the reordering optimization above.
+			 */
+			else if
+			((p[0]->code == I_STBPS ||
+			  p[0]->code == I_STWPS) &&
+			 (is_load(p[1])) &&
+			 (p[2]->code == I_PUSHW)
+			) {
+				p[2]->code = I_STW;
+				p[2]->type = T_PTR;
 				/* We just removed a push, adjust SP-relative
 				   addresses. */
-				if (is_sprel(&q_ins[q_wr - 1]))
-					q_ins[q_wr - 1].data -= 2;
-				if (q_ins[q_wr].code == I_STBPS)
-					q_ins[q_wr].code = I_STBP;
+				if (is_sprel(p[1]))
+					p[1]->data -= 2;
+				if (p[0]->code == I_STBPS)
+					p[0]->code = I_STBP;
 				else
-					q_ins[q_wr].code = I_STWP;
+					p[0]->code = I_STWP;
 				q_ins[q_wr].type = T_PTR;
+			}
+
+			/* flush queue */
+			if (nb) {
+				q_wr -= nb;
+				q_nb -= nb;
+				nb = 0;
+
+				if (q_wr < 0)
+					q_wr += Q_SIZE;
+
+				/* loop */
+				goto lv2_loop;
 			}
 		}
 	}
 }
-
 
 /* ----
  * flush_ins_label(int nextlabel)

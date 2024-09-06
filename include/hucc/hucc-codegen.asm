@@ -730,6 +730,15 @@ __ldwi		.macro
 
 ; **************
 
+__lea_s		.macro	; __STACK
+		txa
+		clc
+		adc.l	#__stack + (\1)
+		ldy.h	#__stack
+		.endm
+
+; **************
+
 __ldw		.macro
 		lda.l	\1
 		ldy.h	\1
@@ -780,7 +789,37 @@ __ldubp		.macro
 
 ; **************
 
-__ldwa		.macro
+__ldwa_a	.macro
+		asl	a
+		tay
+		lda.h	\1, y
+		pha
+		lda.l	\1, y
+		ply
+		.endm
+
+; **************
+
+__ldba_a	.macro
+		tay
+		lda	\1, y
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+
+__lduba_a	.macro
+		tay
+		lda	\1, y
+		cly
+		.endm
+
+; **************
+
+__ldwa_m	.macro
 		lda	\2
 		asl	a
 		tay
@@ -792,7 +831,7 @@ __ldwa		.macro
 
 ; **************
 
-__ldba		.macro
+__ldba_m	.macro
 		ldy	\2
 		lda	\1, y
 		cly
@@ -803,8 +842,44 @@ __ldba		.macro
 
 ; **************
 
-__lduba		.macro
+__lduba_m	.macro
 		ldy	\2
+		lda	\1, y
+		cly
+		.endm
+
+; **************
+; special load for when array writes are optimized
+
+__ldpwa_a	.macro
+		asl	a
+		tay
+		phy
+		lda.h	\1, y
+		pha
+		lda.l	\1, y
+		ply
+		.endm
+
+; **************
+; special load for when array writes are optimized
+
+__ldpba_a	.macro
+		tay
+		phy
+		lda	\1, y
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+; special load for when array writes are optimized
+
+__ldpuba_a	.macro
+		tay
+		phy
 		lda	\1, y
 		cly
 		.endm
@@ -977,28 +1052,38 @@ __stbps		.macro	; __STACK
 		inx
 		.endm
 
-
 ; **************
 
-__stwa		.macro
-		phy
-		pha
-		lda	\2
+__indexw	.macro
 		asl	a
-		say
-		sta.h	\1, y
-		pla
-		sta.l	\1, y
-		ply
+		pha
 		.endm
 
 ; **************
 
-__stba		.macro
-		phy
-		ldy	\2
-		sta	\1, y
-		ply
+__indexb	.macro
+		pha
+		.endm
+
+; **************
+
+__stwas		.macro
+		stx	<__sp
+		plx
+		sta.l	\1, x
+		say
+		sta.h	\1, x
+		say
+		ldx	<__sp
+		.endm
+
+; **************
+
+__stbas		.macro
+		stx	<__sp
+		plx
+		sta.l	\1, x
+		ldx	<__sp
 		.endm
 
 ; **************
@@ -1738,28 +1823,6 @@ __mulwi		.macro
 
 ; **************
 
-__lea_s		.macro	; __STACK
-		txa
-		clc
-		adc.l	#__stack + (\1)
-		ldy.h	#__stack
-		.endm
-
-; **************
-
-__pea_s		.macro	; __STACK
-		txa
-		clc
-		adc.l	#__stack + (\1)
-		ldy.h	#__stack
-		dex
-		dex
-		sta.l	<__stack, x
-		sty.h	<__stack, x
-		.endm
-
-; **************
-
 __incw_s	.macro	; __STACK
 		inc.l	<__stack + \1, x
 		bne	!+
@@ -2396,3 +2459,133 @@ do_switchb:	sty.h	<__ptr		; Save hi-byte of the table address.
 		dey
 		bne	.loop
 		bra	default_case
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+; POTENTIAL OPTIMIZATIONS, NOT YET ADDED
+; ***************************************************************************
+; ***************************************************************************
+
+; **************
+
+__ldincw	.macro
+		lda.l	\1
+		ldy.h	\1
+		inc.l	\1
+		bne
+		inc.h	\1
+!:
+		.endm
+
+; **************
+
+__ldincb	.macro
+		lda	\1
+		cly
+		bpl	!+
+		dey
+!:		inc	\1
+		.endm
+
+; **************
+
+__ldincub	.macro
+		lda	\1
+		cly
+		inc	\1
+		.endm
+
+; **************
+
+__lddecw	.macro
+		ldy.h	\1
+		lda.l	\1
+		bne	!+
+		dec.h	\1
+!:		dec.l	\1
+		.endm
+
+; **************
+
+__lddecb	.macro
+		lda	\1
+		cly
+		bpl	!+
+		dey
+!:		dec	\1
+		.endm
+
+; **************
+
+__lddecub	.macro
+		lda	\1
+		cly
+		dec	\1
+		.endm
+
+; **************
+
+__lddecwa_a	.macro
+		phx
+		asl	a
+		tax
+		ldy.h	\1, x
+		lda.l	\1, x
+		bne	!+
+		dec.h	\1, x
+!:		dec.l	\1, x
+		plx
+		.endm
+
+; **************
+
+__lddecuba_a	.macro
+		tay
+		lda.l	\1, y
+		dec	a
+		sta.l	\1, y
+		inc	a
+		cly
+		.endm
+
+; **************
+
+__stwa		.macro
+		phy
+		pha
+		lda	\2
+		asl	a
+		say
+		sta.h	\1, y
+		pla
+		sta.l	\1, y
+		ply
+		.endm
+
+; **************
+
+__stba		.macro
+		phy
+		ldy	\2
+		sta	\1, y
+		ply
+		.endm
+
+; **************
+
+__stpwaq	.macro
+		sty	<__temp
+		ply
+		sta.l	\1, y
+		lda	<__temp
+		sta.h	\1, y
+		.endm
+
+; **************
+
+__stpbaq	.macro
+		ply
+		sta.l	\1, y
+		.endm

@@ -111,15 +111,16 @@ enum ICODE {
 	I_LDWP,
 	I_LDBP,
 	I_LDUBP,
-	X_LDWA,
-	X_LDBA,
-	X_LDUBA,
+	X_LDWA_A,
+	X_LDBA_A,
+	X_LDUBA_A,
 	X_LDW_S,
 	X_LDB_S,
 	X_LDUB_S,
-	X_LDWA_S,
-	X_LDBA_S,
-	X_LDUBA_S,
+
+	X_LDPWA_A,
+	X_LDPBA_A,
+	X_LDPUBA_A,
 
 	/* i-codes for saving the primary register */
 
@@ -139,8 +140,11 @@ enum ICODE {
 	X_STBI_S,
 	X_STW_S,
 	X_STB_S,
-	X_STWA_S,
-	X_STBA_S,
+
+	X_INDEXW,
+	X_INDEXB,
+	X_STWAS,
+	X_STBAS,
 
 	/* i-codes for extending the primary register */
 
