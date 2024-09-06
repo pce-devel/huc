@@ -85,6 +85,38 @@ dcr_m		=	vdc_dcr			; Old System Card name.
 
 		; Macros for compatibility with #asm usage in old HuC projects.
 
+stw		.macro
+		lda.l	\1
+		sta.l	\2
+		lda.h	\1
+		sta.h	\2
+		.endm
+
+stb		.macro
+		lda	\1
+		sta	\2
+		.endm
+
+addw		.macro
+	.if	(\# = 3)
+		clc
+		lda.l	\2
+		adc.l	\1
+		sta.l	\3
+		lda.h	\2
+		adc.h	\1
+		sta.h	\3
+	.else
+		clc
+		lda.l	\2
+		adc.l	\1
+		sta.l	\2
+		lda.h	\2
+		adc.h	\1
+		sta.h	\2
+	.endif
+		.endm
+
 add		.macro			; add byte-sized value to
 	.if (\# = 2)			; register A (handle carry
 		lda	\2		; flag)
@@ -95,6 +127,16 @@ add		.macro			; add byte-sized value to
 		clc
 		adc	\1
 	.endif
+		.endm
+
+subw		.macro
+		sec
+		lda.l	\2
+		sbc.l	\1
+		sta.l	\2
+		lda.h	\2
+		sbc.h	\1
+		sta.h	\2
 		.endm
 
 sub		.macro			; subtract byte-sized value
@@ -121,4 +163,36 @@ decw		.macro			; decrement a word-sized
 		bne	!+		; location
 		dec.h	\1
 !:		dec.l	\1
+		.endm
+
+lbne		.macro
+		bne	\1
+		.endm
+
+lbeq		.macro
+		beq	\1
+		.endm
+
+lbpl		.macro
+		bpl	\1
+		.endm
+
+lbmi		.macro
+		bmi	\1
+		.endm
+
+lbcc		.macro
+		bcc	\1
+		.endm
+
+lbcs		.macro
+		bcs	\1
+		.endm
+
+lblo		.macro
+		bcc	\1
+		.endm
+
+lbhs		.macro
+		bcs	\1
 		.endm
