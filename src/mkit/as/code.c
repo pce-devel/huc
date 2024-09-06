@@ -52,6 +52,13 @@ classC(int *ip)
 void
 classR(int *ip)
 {
+	/* Check for someone exiting a C function from within a #asm section. */
+	if (hucc_mode && proc_ptr)
+	{
+		error("You cannot exit a C function with an RTS in HuCC!\nPlease read the documentation!");
+		return;
+	}
+
 	/* Only if ".kickc" and currently inside a C function/procedure */
 	if (kickc_mode && scopeptr && proc_ptr)
 	{
@@ -143,7 +150,7 @@ class2(int *ip)
 			putbyte(data_loccnt, opval);
 
 			/* calculate branch offset */
-			addr = (value & 0xFFFF) - (loccnt + (page << 13));
+			addr = (value & 0xFFFF) - (loccnt + (page << 13) + phase_offset);
 
 			/* check range */
 			if (addr > 0x7Fu && addr < ~0x7Fu) {
@@ -365,7 +372,7 @@ class5(int *ip)
 			putbyte(data_loccnt + 1, zp);
 
 			/* calculate branch offset */
-			addr = (value & 0xFFFF) - (loccnt + (page << 13));
+			addr = (value & 0xFFFF) - (loccnt + (page << 13) + phase_offset);
 
 			/* check range */
 			if (addr > 0x7Fu && addr < ~0x7Fu) {
@@ -636,7 +643,7 @@ class10(int *ip)
 			putbyte(data_loccnt + 1, zp);
 
 			/* calculate branch offset */
-			addr = (value & 0xFFFF) - (loccnt + (page << 13));
+			addr = (value & 0xFFFF) - (loccnt + (page << 13) + phase_offset);
 
 			/* check range */
 			if (addr > 0x7Fu && addr < ~0x7Fu) {
@@ -916,9 +923,10 @@ getoperand(int *ip, int flag, int last_char)
 				else if (opext != 0)
 					error("Instruction extension not supported in immediate mode!");
 				else {
-					/* check value validity (-256..255) */
-					if ((value & ~0xFF) && ((value & ~0xFF) != ~0xFF))
-						error("Incorrect immediate value!");
+					/* check for overflow, except in SDCC code (-256..255 are ok) */
+					/* SDCC's code generator assumes that the assembler doesn't care */
+					if ((sdcc_mode == 0) && (value & ~0xFF) && ((value & ~0xFF) != ~0xFF))
+						error("Operand too large to fit in a byte!");
 				}
 			}
 
@@ -1114,7 +1122,7 @@ getbranch(int opcode_length)
 		}
 	}
 
-	branch->addr = (loccnt + (page << 13)) & 0xFFFF;
+	branch->addr = (loccnt + (page << 13) + phase_offset) & 0xFFFF;
 	branch->checked = 0;
 
 	if (pass == LAST_PASS) {
@@ -1186,7 +1194,7 @@ branchopt(void)
 	/* report total changes this pass */
 	branches_changed += just_changed;
 	if (branches_changed)
-		printf("     Changed %3d branches from short to long.\n", branches_changed);
+		printf("     Changed %4d branches from short to long.\n", branches_changed);
 
 	/* do another pass if anything just changed, except if KickC because */
 	/* any changes during the pass itself can change a forward-reference */

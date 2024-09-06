@@ -15,30 +15,33 @@ static char allow_numeric_bank = 0;
  */
 
 t_symbol pc_symbol = {
-	NULL, /* next */
-	NULL, /* local */
-	NULL, /* scope */
-	NULL, /* proc */
-	CONSTANT, /* reason */
-	DEFABS, /* type */
-	0, /* value */
-	S_NONE, /* section */
-	0, /* overlay */
-	0, /* mprbank */
+	NULL,           /* next */
+	NULL,           /* local */
+	NULL,           /* scope */
+	NULL,           /* proc */
+	"\1*",          /* name */
+	NULL,           /* fileinfo */
+	0,              /* fileline */
+	CONSTANT,       /* reason */
+	DEFABS,         /* type */
+	0,              /* value */
+	0,              /* phase */
+	S_NONE,         /* section */
+	0,              /* overlay */
+	0,              /* mprbank */
 	UNDEFINED_BANK, /* bank */
-	0, /* page */
-	0, /* nb */
-	0, /* size */
-	0, /* vram */
-	0, /* pal */
-	1, /* reserved */
-	0, /* data_type */
-	0, /* data_size */
-	1, /* deflastpass */
-	1, /* reflastpass */
-	1, /* defthispass */
-	1, /* refthispass */
-	"*" /* name */
+	0,              /* page */
+	0,              /* nb */
+	0,              /* size */
+	0,              /* vram */
+	0,              /* pal */
+	1,              /* reserved */
+	0,              /* data_type */
+	0,              /* data_size */
+	1,              /* deflastpass */
+	1,              /* reflastpass */
+	1,              /* defthispass */
+	1               /* refthispass */
 };
 
 
@@ -49,7 +52,7 @@ t_symbol pc_symbol = {
  * this is complicated because a "multi-label" looks like a "not" or a "not-equal".
  */
 
-static inline int is_multi_label_ref (char * pstr)
+static inline int is_multi_label_ref (const char * pstr)
 {
 	unsigned char c = *pstr++;
 
@@ -466,7 +469,7 @@ cont:
 	}
 
 	/* convert back the pointer to an array index */
-	*ip = expr - prlnbuf;
+	*ip = (int)(expr - prlnbuf);
 
 	/* ok */
 	return (1);
@@ -487,9 +490,9 @@ error:
 int
 push_val(int type)
 {
-	unsigned int mul, val;
+	unsigned int val;
 	int op;
-	char c;
+	char c, mul;
 	char *symexpr;
 
 	val = 0;
@@ -606,6 +609,9 @@ push_val(int type)
 			symbol[2] = '\0';
 			expr++;
 
+			pc_symbol.fileinfo = input_file[infile_num].file;
+			pc_symbol.fileline = slnum;
+
 			/* complicated because loccnt & data_loccnt can be >= $2000 */
 			if (data_loccnt == -1)
 				pc_symbol.value = loccnt;
@@ -619,7 +625,7 @@ push_val(int type)
 
 			pc_symbol.page = page;
 
-			pc_symbol.value += (page << 13);
+			pc_symbol.value = (pc_symbol.value + (page << 13) + phase_offset) & 0xFFFF;
 
 			expr_mprbank = pc_symbol.mprbank;
 			expr_overlay = pc_symbol.overlay;
@@ -917,7 +923,7 @@ getsym(struct t_symbol * curscope)
 		/* create the target multi-label name */
 		sprintf(tail, "!%d", 0x7FFFF & whichlabl);
 		strncat(symbol, tail, SBOLSZ - 1 - strlen(symbol));
-		i = symbol[0] = strlen(&symbol[1]);
+		i = symbol[0] = (char)strlen(&symbol[1]);
 	}
 
 	if (i >= SBOLSZ - 1) {

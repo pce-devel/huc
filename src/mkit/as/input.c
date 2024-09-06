@@ -8,7 +8,7 @@
 #include "protos.h"
 
 int file_count;
-t_file_names * file_names;
+t_str_pool * str_pool;
 t_file * file_hash[HASH_COUNT];
 
 #define INCREMENT_BASE 256
@@ -17,6 +17,7 @@ t_file * file_hash[HASH_COUNT];
 char full_path[PATHSZ * 2];
 int infile_error;
 int infile_num;
+t_file *extra_file;
 t_input input_file[MAX_NESTING + 1];
 
 static char *incpath = NULL;
@@ -128,9 +129,9 @@ init_path(void)
 
 		/* Compute new substring size */
 		if (pl == NULL)
-			l = strlen(p) + 1;
+			l = (int)strlen(p) + 1;
 		else
-			l = pl - p + 1;
+			l = (int)(pl - p + 1);
 
 		/* Might be empty, jump to next char */
 		if (l <= 1)
@@ -163,7 +164,8 @@ init_path(void)
 int
 readline(void)
 {
-	char *ptr, *arg, num[8];
+	char *arg, num[8];
+	const char *ptr;
 	int j, n;
 	int i;		/* pointer into prlnbuf */
 	int c;		/* current character		*/
@@ -191,7 +193,7 @@ start:
 		/* expand line */
 		if (mlptr) {
 			i = SFIELD;
-			ptr = mlptr->data;
+			ptr = mlptr->line;
 			for (;;) {
 				c = *ptr++;
 				if (c == '\0')
@@ -236,7 +238,7 @@ start:
 					/* \1 - \9 */
 					else if (c >= '1' && c <= '9') {
 						j = c - '1';
-						n = strlen(marg[midx][j]);
+						n = (int)strlen(marg[midx][j]);
 						arg = marg[midx][j];
 					}
 
@@ -280,16 +282,26 @@ start:
 	c = getc(in_fp);
 	if (c == EOF) {
 		if (close_input()) {
-			if (stop_pass != 0 || ((sdcc_final == 0) && (kickc_final == 0))) {
+			if (stop_pass != 0 || ((extra_file == NULL) && (hucc_final == 0) && (kickc_final == 0))) {
 				return (-1);
 			} else {
-				const char * name = (sdcc_final) ? "sdcc-final.asm" : "kickc-final.asm";
-				sdcc_final = kickc_final = 0;
+				const char * name;
+				if (extra_file != NULL) {
+					/* include the next file from the command-line */
+					name = extra_file->name;
+					extra_file = extra_file->next;
+				} else {
+					/* auto-include a final source file */
+					name = (hucc_final) ? "hucc-final.asm" : "kickc-final.asm";
+					hucc_final = kickc_final = 0;
+					in_final = 1;
+				}
 				if (open_input(name) == -1) {
 					fatal_error("Cannot open \"%s\" file!", name);
 					return (-1);
 				}
-				in_final = 1;
+				/* switch to the CODE section */
+				set_section(S_CODE);
 			}
 		}
 		goto start;
@@ -384,6 +396,33 @@ start:
 
 
 /* ----
+ * remember_string()
+ * ----
+ * remember all source file names
+ */
+
+const char *
+remember_string(const char * string, size_t size)
+{
+	const char * output;
+
+	if ((str_pool == NULL) || (str_pool->remain < size)) {
+		t_str_pool *temp = malloc(sizeof(t_str_pool));
+		if (temp == NULL)
+			return (NULL);
+		temp->remain = STR_POOL_SIZE;
+		temp->next = str_pool;
+		str_pool = temp;
+	}
+
+	output = memcpy(str_pool->buffer + STR_POOL_SIZE - str_pool->remain, string, size);
+	str_pool->remain -= (int)size;
+
+	return (output);
+}
+
+
+/* ----
  * remember_file()
  * ----
  * remember all source file names
@@ -392,26 +431,12 @@ start:
 t_file *
 remember_file(int hash)
 {
-	int need;
 	t_file * file = malloc(sizeof(t_file));
 
 	if (file == NULL)
 		return (NULL);
 
-	need = strlen(full_path) + 1;
-
-	if ((file_names == NULL) || (file_names->remain < need)) {
-		t_file_names *temp = malloc(sizeof(t_file_names));
-		if (temp == NULL)
-			return (NULL);
-		temp->remain = FILE_NAMES_SIZE;
-		temp->next = file_names;
-		file_names = temp;
-	}
-
-	file->name = memcpy(file_names->buffer + FILE_NAMES_SIZE - file_names->remain, full_path, need);
-	file_names->remain -= need;
-
+	file->name = remember_string(full_path, strlen(full_path) + 1);
 	file->number = ++file_count;
 	file->included = 0;
 

@@ -18,6 +18,11 @@
 
 #include "elmer.h"
 
+#ifndef __APPLE__
+#include "strlcpy.c"
+#include "strlcat.c"
+#endif
+
 #ifndef GIT_VERSION
   #define GIT_VERSION "unknown"
 #endif
@@ -27,6 +32,16 @@
 #endif
 
 #define VERSION_STR "sym2inc (" GIT_VERSION ", " GIT_DATE ")"
+
+#ifdef _WIN32
+#define PATH_SEPARATOR         ';'
+#define DIR_SEPARATOR          '\\'
+#define DIR_SEPARATOR_STRING   "\\"
+#else
+#define PATH_SEPARATOR         ':'
+#define DIR_SEPARATOR          '/'
+#define DIR_SEPARATOR_STRING   "/"
+#endif
 
 //
 // Simple symbol table structure.
@@ -45,6 +60,14 @@ typedef struct SYMBOL_S {
 SYMBOL *g_pHeadSymbol;
 SYMBOL *g_pTailSymbol;
 SYMBOL *g_aSymbolHash [256];
+
+//
+//
+//
+
+#define NUM_PATHS 10
+
+char g_aIncludePath[ NUM_PATHS ][ 256 ];
 
 //
 //
@@ -198,6 +221,67 @@ uint32_t CalculateCRC32 ( const void * pData, size_t iSize )
 // **************************************************************************
 // **************************************************************************
 //
+// InitSearchPath ()
+//
+
+void InitSearchPath( void )
+{
+  const char *pPceInclude, *pEnd;
+  int i, len;
+
+  strcpy( g_aIncludePath[0], "." );
+  strcat( g_aIncludePath[0], DIR_SEPARATOR_STRING );
+
+  pPceInclude = getenv( "PCE_INCLUDE" );
+
+  if (pPceInclude == NULL) {
+    pPceInclude =
+#ifdef _WIN32
+      "c:\\huc\\include\\huc";
+#else
+      "/usr/local/lib/huc/include/huc:"
+      "/usr/local/huc/include/huc:" \
+      "/usr/local/share/huc/include/huc:" \
+      "/usr/local/include/huc:" \
+      "/usr/lib/huc/include/huc:" \
+      "/usr/share/huc/include/huc:" \
+      "/usr/include/huc";
+#endif
+  }
+
+  for (i = 1; i < NUM_PATHS;) {
+    pEnd = strchr( pPceInclude, PATH_SEPARATOR );
+
+    if (pEnd == NULL)
+      len = strlen( pPceInclude );
+    else
+      len = pEnd - pPceInclude;
+
+    if (len >= sizeof(g_aIncludePath[0])-2) {
+      printf( "A path segment in PCE_INCLUDE is too long!\n" );
+      continue;
+    }
+
+    if (len != 0) {
+      memcpy( g_aIncludePath[i], pPceInclude, len );
+
+      pPceInclude += len;
+      while (*pPceInclude == PATH_SEPARATOR)
+        pPceInclude++;
+
+      if (g_aIncludePath[i][len - 1] != DIR_SEPARATOR)
+        g_aIncludePath[i][len++] = DIR_SEPARATOR;
+    }
+
+    g_aIncludePath[i++][len] = '\0';
+  }
+}
+
+
+
+// **************************************************************************
+// **************************************************************************
+//
 // ReadBinaryFile ()
 //
 // Uses POSIX file functions rather than C file functions.
@@ -212,13 +296,33 @@ bool ReadBinaryFile ( const char * pName, void ** pBuffer, size_t * pLength )
   uint8_t *   pData = NULL;
   off_t       uSize;
   struct stat cStat;
+  int hFile = -1;
+  static char aName[PATH_MAX];
 
-  int hFile = open( pName, O_BINARY | O_RDONLY );
+  for (int i = 0; i < NUM_PATHS; i++) {
+    if (g_aIncludePath[i][0] != '\0') {
+      if (strlcpy( aName, g_aIncludePath[i], PATH_MAX ) >= PATH_MAX)
+        continue;
+
+      if (strlcat( aName, pName, PATH_MAX ) >= PATH_MAX)
+        continue;
+
+      hFile = open( aName, O_BINARY | O_RDONLY );
+
+      if (hFile == -1)
+        continue;
+
+      if ((fstat( hFile, &cStat ) != 0) || (!S_ISREG( cStat.st_mode ))) {
+        close( hFile );
+        hFile = -1;
+        continue;
+      }
+
+      break;
+    }
+  }
 
   if (hFile == -1)
-    goto errorExit;
-
-  if ((fstat( hFile, &cStat ) != 0) || (!S_ISREG( cStat.st_mode )))
     goto errorExit;
 
   if (cStat.st_size > 0x7FFFFFFF)
@@ -253,6 +357,7 @@ bool ReadBinaryFile ( const char * pName, void ** pBuffer, size_t * pLength )
 
     return false;
 }
+
 
 
 // **************************************************************************
@@ -586,9 +691,15 @@ int main ( int argc, char* argv[] )
     exit(EXIT_FAILURE);
   }
 
+  // Initialize the search path.
+
+  InitSearchPath();
+
   // Create input filename, and locate its extension.
 
-  pFilePath = malloc( strlen( argv[iArg] ) + 4 + 1 );
+  if (!(pFilePath = malloc( strlen( argv[iArg] ) + 4 + 1 ))) {
+    exit(EXIT_FAILURE);
+  }
   strcpy( pFilePath, argv[iArg] );
 
   pFileName = strrchr( pFilePath, '/' );

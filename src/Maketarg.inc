@@ -7,8 +7,9 @@
 clean::
 	$(RM) core
 	$(RM) *.o *.gcno *.gcda *.gcov
+	$(RM) -rf msbuild/.vs msbuild/.x86 msbuild/.x64
 ifneq "$(EXE)" ""
-	$(RM) $(EXE) $(BINDIR)/$(EXE)
+	$(RM) $(EXE) $(BINDIR)/$(EXE) $(BINDIR)/*.pdb
 endif
 
 %.o: %.c

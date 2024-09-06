@@ -367,8 +367,8 @@ DATA_BANK	=	BASE_BANK + 1 + RESERVE_BANKS
 
 		.zp
 		.org	$2000
-_temp		ds	2			; Use within any ASM routine.
-_bank		ds	1			; Use within any ASM routine.
+__temp		ds	2			; Use within any ASM routine.
+_bp_bank	ds	1			; Use within any ASM routine.
 
 base_zp1st	=	$F8:2003		; 1st free user address.
 base_zpend	=	$F8:20EC

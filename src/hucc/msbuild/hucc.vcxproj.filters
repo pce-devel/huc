@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\code.c" />
+    <ClCompile Include="..\const.c" />
+    <ClCompile Include="..\data.c" />
+    <ClCompile Include="..\enum.c" />
+    <ClCompile Include="..\error.c" />
+    <ClCompile Include="..\expr.c" />
+    <ClCompile Include="..\function.c" />
+    <ClCompile Include="..\gen.c" />
+    <ClCompile Include="..\initials.c" />
+    <ClCompile Include="..\io.c" />
+    <ClCompile Include="..\lex.c" />
+    <ClCompile Include="..\main.c" />
+    <ClCompile Include="..\optimize.c" />
+    <ClCompile Include="..\pragma.c" />
+    <ClCompile Include="..\preproc.c" />
+    <ClCompile Include="..\primary.c" />
+    <ClCompile Include="..\pseudo.c" />
+    <ClCompile Include="..\stmt.c" />
+    <ClCompile Include="..\struct.c" />
+    <ClCompile Include="..\sym.c" />
+    <ClCompile Include="..\while.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\const.h" />
+    <ClInclude Include="..\data.h" />
+    <ClInclude Include="..\defs.h" />
+    <ClInclude Include="..\enum.h" />
+    <ClInclude Include="..\error.h" />
+    <ClInclude Include="..\expr.h" />
+    <ClInclude Include="..\fastcall.h" />
+    <ClInclude Include="..\function.h" />
+    <ClInclude Include="..\gen.h" />
+    <ClInclude Include="..\initials.h" />
+    <ClInclude Include="..\io.h" />
+    <ClInclude Include="..\lex.h" />
+    <ClInclude Include="..\main.h" />
+    <ClInclude Include="..\optimize.h" />
+    <ClInclude Include="..\pragma.h" />
+    <ClInclude Include="..\preproc.h" />
+    <ClInclude Include="..\primary.h" />
+    <ClInclude Include="..\pseudo.h" />
+    <ClInclude Include="..\stmt.h" />
+    <ClInclude Include="..\struct.h" />
+    <ClInclude Include="..\sym.h" />
+    <ClInclude Include="..\version.h" />
+    <ClInclude Include="..\while.h" />
+  </ItemGroup>
+</Project>

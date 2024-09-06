@@ -40,7 +40,7 @@ symhash(void)
 int
 addscope(struct t_symbol * curscope, int i)
 {
-	char * string;
+	const char * string;
 
 	/* stop at the end of scope chain */
 	if (curscope == NULL) {
@@ -100,7 +100,7 @@ colsym(int *ip, int flag)
 		i = addscope(scopeptr, i);
 	}
 
-	/* remember where the symbol itself starts */
+	/* remember where the symbol itself starts after the scope */
 	j = i;
 
 	/* get the symbol */
@@ -119,12 +119,14 @@ colsym(int *ip, int flag)
 	if (i == j) { i = 0; }
 
 	symbol[0] = i;
-	symbol[i + 1] = '\0';
 
-	if (i >= SBOLSZ - 1) {
-		fatal_error("Symbol name too long ('%s' is %d chars long, max is %d)", symbol + 1, i, SBOLSZ - 2);
+	if (i == SBOLSZ - 1) {
+		symbol[SBOLSZ - 1] = '\0';
+		fatal_error("Symbol name too long, maximum is %d characters.", SBOLSZ - 2);
 		return (0);
 	}
+
+	symbol[i + 1] = '\0';
 
 	/* skip passed the first ':' if there are two in SDCC code */
 	if (sdcc_mode && (prlnbuf[*ip] == ':') && (prlnbuf[(*ip)+1] == ':'))
@@ -146,8 +148,6 @@ colsym(int *ip, int flag)
 	/* error */
 	if (err) {
 		fatal_error("Reserved symbol!");
-//		symbol[0] = 0;
-//		symbol[1] = '\0';
 		return (0);
 	}
 
@@ -211,6 +211,12 @@ stlook(int type)
 		}
 	}
 
+	/* resolve symbol alias */
+	unaliased = sym;
+	while ((sym != NULL) && (sym->type == ALIAS)) {
+		sym = sym->local;
+	}
+
 	/* increment symbol reference counter */
 	if ((sym != NULL) && (type == SYM_REF) && (if_expr == 0)) {
 		sym->refthispass++;
@@ -245,6 +251,7 @@ stinstall(int hash, int type)
 	sym->reason = -1;
 	sym->type = if_expr ? IFUNDEF : UNDEF;
 	sym->value = 0;
+	sym->phase = 0;
 	sym->section = S_NONE;
 	sym->overlay = 0;
 	sym->mprbank = UNDEFINED_BANK;
@@ -261,7 +268,7 @@ stinstall(int hash, int type)
 	sym->reflastpass = 1; /* so that .ifref triggers in 1st pass */
 	sym->defthispass = 0;
 	sym->refthispass = 0;
-	strcpy(sym->name, symbol);
+	sym->name = remember_string(symbol, (size_t)symbol[0] + 2);
 
 	/* add the symbol to the hash table */
 	if (type) {
@@ -298,6 +305,10 @@ labldef(int reason)
 		return (0);
 
 	/* is the symbol already used for somthing else */
+	if (lablptr->type == ALIAS) {
+		error("Symbol already used by an alias!");
+		return (-1);
+	}
 	if (lablptr->type == MACRO) {
 		error("Symbol already used by a macro!");
 		return (-1);
@@ -306,10 +317,15 @@ labldef(int reason)
 		error("Symbol already used by a function!");
 		return (-1);
 	}
+
 	if (lablptr->reserved) {
 		fatal_error("Reserved symbol!");
 		return (-1);
 	}
+
+	/* remember where this was defined */
+	lablptr->fileinfo = input_file[infile_num].file;
+	lablptr->fileline = slnum;
 
 	if (reason == LOCATION) {
 		/* label is set from the current LOCATION */
@@ -328,7 +344,7 @@ labldef(int reason)
 			strcpy(symbol, lablptr->name);
 			sprintf(tail, "!%d", 0x7FFFF & ++(lablptr->defthispass));
 			strncat(symbol, tail, SBOLSZ - 1 - strlen(symbol));
-			symbol[0] = strlen(&symbol[1]);
+			symbol[0] = (char)strlen(&symbol[1]);
 			if ((lablptr = stlook(SYM_DEF)) == NULL) {
 				fatal_error("Out of memory!");
 				return (-1);
@@ -343,7 +359,7 @@ labldef(int reason)
 				page = (page + 1) & 7;
 		}
 
-		labl_value = loccnt + (page << 13);
+		labl_value = (loccnt + (page << 13) + phase_offset) & 0xFFFF;
 		labl_rombank = bank;
 		labl_mprbank = bank2mprbank(bank, section);
 		labl_overlay = bank2overlay(bank, section);
@@ -379,9 +395,9 @@ labldef(int reason)
 	if ((lablptr->type == UNDEF) || (lablptr->type == IFUNDEF)) {
 		/* allow the definition */
 	}
-	/* don't allow the reason, or a constant, to change */
+	/* don't allow the reason, or the value, to change during a single pass */
 	else if ((lablptr->reason != reason) ||
-		 (lablptr->reason == CONSTANT && lablptr->value != labl_value && lablptr->defthispass)) {
+		 (lablptr->defthispass && lablptr->value != labl_value)) {
 		/* normal label */
 		lablptr->type = MDEF;
 		lablptr->value = 0;
@@ -392,7 +408,7 @@ labldef(int reason)
 	else if (pass == LAST_PASS) {
 		if ((lablptr->value != labl_value) || (lablptr->overlay != labl_overlay) ||
 		    ((reason == LOCATION) && (labl_mprbank < UNDEFINED_BANK) && (lablptr->mprbank != labl_mprbank))) {
-			fatal_error("Symbol's bank or address changed in final pass!");
+			error("Symbol's bank or address changed in final pass!");
 			#if 0
 			fprintf(ERROUT, "lablptr->value = $%04x, labl_value = $%04x\n", lablptr->value, labl_value);
 			fprintf(ERROUT, "lablptr->mprbank = $%02x, labl_mprbank = $%02x\n", lablptr->mprbank, labl_mprbank);
@@ -420,6 +436,7 @@ labldef(int reason)
 		if (section_flags[section] & S_IS_CODE)
 			lablptr->proc = proc_ptr;
 
+		lablptr->phase = phase_offset;
 		lablptr->page = page;
 
 		/* check if it's a local or global symbol */
@@ -451,7 +468,7 @@ lablset(char *name, int val)
 {
 	int len;
 
-	len = strlen(name);
+	len = (int)strlen(name);
 	lablptr = NULL;
 
 	if (len) {
@@ -483,7 +500,7 @@ lablexists(char *name)
 {
 	int len;
 
-	len = strlen(name);
+	len = (int)strlen(name);
 	lablptr = NULL;
 
 	if (len) {

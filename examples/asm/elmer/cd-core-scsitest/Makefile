@@ -13,7 +13,7 @@ core-scsitest.iso: $(SRC_ISO)
 	$(IL) core-scsitest.iso -ipl="test-CD CD-ROM2",0x4000,0x4000,0,1,2,3,4 -asm $(SRC_ISO)
 
 scsitest.ovl: $(SRC_OVL) $(SRC_INC) scsitest.pce
-	$(AS) $(AFLAGS) -cd -overlay scsitest.asm
+	$(AS) $(AFLAGS) -cd -overlay scsitest.asm cdrom.asm
 
 scsitest.pce: $(SRC_OVL) $(SRC_INC)
-	$(AS) $(AFLAGS) -raw scsitest.asm
+	$(AS) $(AFLAGS) -raw scsitest.asm cdrom.asm

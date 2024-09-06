@@ -798,7 +798,7 @@ huv_play_from:	stz.l	bg_x1			; Reset screen flip.
 		sbc	#BUFFER_1ST_BANK	; data is being read from.
 		asl	a
 		asl	a
-		sta	<_temp
+		sta	<__temp
 		sec
 		lda.h	<huv_video_pxl
 		sbc.h	#$6000
@@ -806,7 +806,7 @@ huv_play_from:	stz.l	bg_x1			; Reset screen flip.
 		lsr	a
 		lsr	a
 		clc
-		adc	<_temp
+		adc	<__temp
 		rts
 
 ;

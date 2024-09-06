@@ -8,5 +8,5 @@ LIBS =
 shmup.pce: shmup.c
 	$(CC) -fsigned-char $(CFLAGS) $(LIBS) $<
 
-shmup.iso: shmup.c
+shmup.iso: shmup.c shmup.pce
 	$(CC) -scd -fsigned-char $(CFLAGS) $(LIBS) $<

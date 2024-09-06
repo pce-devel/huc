@@ -5,6 +5,34 @@ const char *y = "Uepsilon";
 
 int main()
 {
+#ifdef __HUCC__
+  /* HuCC replaces strncpy()/strncat() with strlcpy()/strlcat() */
+
+  char a[20];
+  a[0] = 0;
+  strlcpy(a, y, 20);
+  if (strcmp(a, y))
+    exit(1);
+  if (strlcat(a, y, 20) != 16)
+    exit(2);
+  if (strcmp(a, "UepsilonUepsilon"))
+    exit(3);
+  if (strlcat(a, y, 20) < 20)
+    exit(4);
+  if (strcmp(a, "UepsilonUepsilonUep"))
+    exit(5);
+  if (strlcat(a, x, 8) != 8)
+    exit(6);
+  if (strcmp(a, "UepsilonUepsilonUep"))
+    exit(7);
+  if (strlcpy(a, x, 4) < 4)
+    exit(8);
+  if (strcmp(a, "Ick"))
+    exit(9);
+  exit(0);
+
+#else
+
   // N.B. HuC has non-standard behavior & return values.
   char a[20];
   a[0] = 0;
@@ -27,4 +55,6 @@ int main()
   if (strcmp(a, "Ic")) /* standard wants : "Icpsilon" */
     exit(7);
   exit(0);
+
+#endif
 }

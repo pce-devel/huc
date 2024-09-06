@@ -145,7 +145,7 @@ loadlc(int offset, int pos)
 			}
 		}
 		prlnbuf[i++] = ':';
-		offset += page << 13;
+		offset = (offset + (page << 13) + phase_offset) & 0xFFFF;
 	}
 	hexcon(4, offset);
 	prlnbuf[i++] = hex[1];

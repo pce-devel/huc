@@ -242,6 +242,12 @@ do_proc(int *ip)
 		}
 	}
 
+	/* not allowed while .phase is active */
+	if (phase_offset) {
+		fatal_error("Cannot declare a .PROC/.PROCGROUP a .PHASE'd chunk of code!");
+		return;
+	}
+
 	/* do not mix different types of label-scope */
 	if (scopeptr) {
 		fatal_error("Cannot declare a .PROC/.PROCGROUP inside a .STRUCT!");
@@ -274,8 +280,11 @@ do_proc(int *ip)
 
 		/* extract name */
 		if (!colsym(ip, 0)) {
+			/* was there a bad symbol */
 			if (symbol[0])
 				return;
+
+			/* or just no symbol at all */
 			if (optype == P_PROC) {
 				fatal_error(".PROC name is missing!");
 				return;
@@ -283,7 +292,7 @@ do_proc(int *ip)
 
 			/* default name */
 			sprintf(&symbol[1], "__group_%d_%d__", input_file[infile_num].file->number, slnum);
-			symbol[0] = strlen(&symbol[1]);
+			symbol[0] = (char)strlen(&symbol[1]);
 		}
 
 		/* lookup symbol table */
@@ -408,6 +417,12 @@ do_endp(int *ip)
 		}
 	}
 
+	/* not allowed while .phase is active */
+	if (phase_offset) {
+		fatal_error("Cannot .ENDP/.ENDPROCGROUP within a .PHASE'd chunk of code!");
+		return;
+	}
+
 	if (proc_ptr == NULL) {
 		fatal_error("Unexpected .ENDP/.ENDPROCGROUP!");
 		return;
@@ -428,25 +443,7 @@ do_endp(int *ip)
 	}
 
 	/* restore procedure's initial section */
-	if (section != proc_ptr->label->section) {
-		/* backup current section data */
-		section_bank[section] = bank;
-		bank_glabl[section][bank] = glablptr;
-		bank_loccnt[section][bank] = loccnt;
-		bank_page[section][bank] = page;
-
-		/* change section */
-		section = proc_ptr->label->section;
-
-		/* switch to the new section */
-		bank = section_bank[section];
-		page = bank_page[section][bank];
-		loccnt = bank_loccnt[section][bank];
-		glablptr = bank_glabl[section][bank];
-
-		/* signal discontiguous change in loccnt */
-		discontiguous = 1;
-	}
+	set_section(proc_ptr->label->section);
 
 	/* define label */
 	labldef(LOCATION);
@@ -744,7 +741,8 @@ proc_reloc(void)
 					sym->overlay = bank2overlay(sym->rombank, sym->section);
 				}
 
-				sym->value += (proc_ptr->org - proc_ptr->base);
+				if (sym->phase == 0)
+					sym->value += (proc_ptr->org - proc_ptr->base);
 
 				/* local symbols */
 				if (sym->local) {
@@ -765,7 +763,8 @@ proc_reloc(void)
 								local->overlay = bank2overlay(local->rombank, local->section);
 							}
 
-							local->value += (proc_ptr->org - proc_ptr->base);
+							if (local->phase == 0)
+								local->value += (proc_ptr->org - proc_ptr->base);
 						}
 
 						/* next */
@@ -805,7 +804,10 @@ proc_reloc(void)
 		/* install code for leaving .proc */
 		/* fix do_proc() if this changes! */
 		poke(call_ptr--, 0x60);			// rts
-		poke(call_ptr--, 0x98);			// tya
+		if (hucc_opt)
+			poke(call_ptr--, 0x8A);			// txa
+		else
+			poke(call_ptr--, 0x98);			// tya
 		poke(call_ptr--, 0x40);
 		poke(call_ptr--, 0x53);			// tam #6
 		poke(call_ptr--, 0x68);			// pla

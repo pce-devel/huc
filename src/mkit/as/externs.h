@@ -12,6 +12,7 @@ extern int max_bank;                            /* last bank used */
 extern int data_loccnt;                         /* data location counter */
 extern int data_size;                           /* size of binary output (in bytes) */
 extern int data_level;                          /* data output level, must be <= listlevel to be outputed */
+extern int phase_offset;                        /* location counter offset for .phase */
 extern int loccnt;                              /* location counter */
 extern int bank;                                /* current bank */
 extern int bank_base;                           /* bank base index */
@@ -23,6 +24,7 @@ extern int rs_mprbank;                          /* .rs counter */
 extern int rs_overlay;                          /* .rs counter */
 extern int section;                             /* current section: S_ZP, S_BSS, S_CODE or S_DATA */
 extern int section_bank[MAX_S];                 /* current bank for each section */
+extern int section_phase[MAX_S];                /* current phase offset for each section */
 extern int section_flags[MAX_S];                /* current flags for each section */
 extern int section_limit[MAX_S];                /* current loccnt limit for each section */
 extern int in_if;                               /* true if in a '.if' statement */
@@ -66,6 +68,8 @@ extern int infile_num;
 extern FILE *out_fp;                            /* file pointers, output */
 extern FILE *in_fp;                             /* input */
 extern FILE *lst_fp;                            /* listing */
+extern char *section_name[MAX_S + 1];
+extern t_file *extra_file;
 extern t_input input_file[MAX_NESTING + 1];
 extern char full_path[PATHSZ * 2];              /* full path name of last file opened */
 
@@ -80,6 +84,7 @@ extern t_symbol *glablptr;                      /* pointer to the latest defined
 extern t_symbol *scopeptr;                      /* pointer to the latest defined scope label */
 extern t_symbol *lastlabl;                      /* last label we have seen */
 extern t_symbol *bank_glabl[MAX_S][MAX_BANKS];  /* latest global label in each bank */
+extern t_symbol *unaliased;                     /* unaliased version of last symbol lookup */
 extern t_branch *branchlst;                     /* first branch instruction assembled */
 extern t_branch *branchptr;                     /* last branch instruction assembled */
 
@@ -105,7 +110,7 @@ extern unsigned int value;                      /* operand field value */
 extern int newproc_opt;                         /* use "new" style of procedure thunks */
 extern int strip_opt;                           /* strip unused procedures? */
 extern int kickc_opt;                           /* NZ if -kc flag on command line */
-extern int sdcc_opt;                            /* NZ if -sdcc flag on command line */
+extern int hucc_opt;                            /* NZ if -hucc flag on command line */
 extern int mlist_opt;                           /* macro listing main flag */
 extern int xlist;                               /* listing file main flag */
 extern int list_level;                          /* output level */
@@ -114,8 +119,9 @@ extern int opvaltab[6][16];
 extern int call_bank;                           /* bank for .proc thunks */
 extern int kickc_mode;                          /* NZ if currently in KickC mode */
 extern int sdcc_mode;                           /* NZ if assembling SDCC code */
+extern int hucc_mode;                           /* NZ if assembling HuCC code */
 extern int kickc_final;                         /* auto-include "kickc-final.asm" */
-extern int sdcc_final;                          /* auto-include "sdcc-final.asm" */
+extern int hucc_final;                          /* auto-include "hucc-final.asm" */
 extern int in_final;                            /* set when in xxxx-final.asm include */
 extern int preproc_inblock;                     /* C-style comment: within block comment */
 extern int preproc_sfield;                      /* C-style comment: SFIELD as a variable */

@@ -26,8 +26,6 @@ int continued_line;	/* set when a line is the continuation of another line */
 void
 assemble(int do_label)
 {
-	struct t_line *ptr;
-	char *buf;
 	char c;
 	int flag;
 	int ip, i, j;			/* prlnbuf pointer */
@@ -64,19 +62,20 @@ assemble(int do_label)
 			}
 		}
 		if (pass == FIRST_PASS) {
+			struct t_line *ptr;
+			const char *buf;
 			if (preproc_modidx != 0) {
 				/* Remove C-style comments within a macro */
 				prlnbuf[preproc_modidx] = '\0';
 			}
 			ptr = (void *)malloc(sizeof(struct t_line));
-			buf = (void *)malloc(strlen(&prlnbuf[preproc_sfield]) + 1);
+			buf = (void *)remember_string(&prlnbuf[preproc_sfield], strlen(&prlnbuf[preproc_sfield]) + 1);
 			if ((ptr == NULL) || (buf == NULL)) {
 				error("Out of memory!");
 				return;
 			}
-			strcpy(buf, &prlnbuf[preproc_sfield]);
 			ptr->next = NULL;
-			ptr->data = buf;
+			ptr->line = buf;
 			if (mlptr)
 				mlptr->next = ptr;
 			else
@@ -435,7 +434,7 @@ addinst(struct t_opcode *optbl)
 	while (optbl->name) {
 		/* calculate instruction hash value */
 		hash = 0;
-		len = strlen(optbl->name);
+		len = (int)strlen(optbl->name);
 		ptr = optbl->name;
 
 		for (i = 0; i < len; i++) {

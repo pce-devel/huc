@@ -30,7 +30,7 @@ const char *use(const char *str)
 
 const char *func(char *a, char *b)
 {
-	char buf[128];
+	char buf[64];
 	unsigned char i;
 	/*const*/ char *result;
 

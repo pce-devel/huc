@@ -22,7 +22,7 @@ test_file ../examples/huc/acd/ac_test.iso \
  "SHA1(../examples/huc/acd/ac_test.iso)= 53294fcffdb77644d452b5ad089780cf4cc76e20"
 
 test_file ../examples/huc/overlay/overlay.iso \
- "SHA1(../examples/huc/overlay/overlay.iso)= 57bc35ed5d83b4b510110a06969400626322259e"
+ "SHA1(../examples/huc/overlay/overlay.iso)= 40881bbfbe72b81e3fe80fe4e68de6b518ec2830"
 
 test_file ../examples/huc/promotion/promotion.pce \
  "SHA1(../examples/huc/promotion/promotion.pce)= 218cefc1258f566ebd581e7d192797f667e487da"

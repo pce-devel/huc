@@ -61,6 +61,10 @@ do_macro(int *ip)
 		}
 		if (lablptr->defthispass || lablptr->refthispass) {
 			switch (lablptr->type) {
+			case ALIAS:
+				fatal_error("Symbol already used by an alias!");
+				return;
+
 			case MACRO:
 				fatal_error("Macro already defined!");
 				return;
@@ -100,7 +104,7 @@ struct t_macro *
 macro_look(int *ip)
 {
 	struct t_macro *ptr;
-	char name[32];
+	char name[SBOLSZ];
 	char c;
 	int hash;
 	int l;
@@ -118,7 +122,7 @@ macro_look(int *ip)
 			if (isdigit(c))
 				return (NULL);
 		}
-		if (l == 31)
+		if (l == (SBOLSZ-2))
 			return (NULL);
 		name[l++] = c;
 		hash += c;
@@ -130,7 +134,7 @@ macro_look(int *ip)
 	/* browse the hash table */
 	ptr = macro_tbl[hash];
 	while (ptr) {
-		if (!strcmp(name, ptr->name))
+		if (!strcmp(name, ptr->label->name + 1))
 			break;
 		ptr = ptr->next;
 	}
@@ -346,6 +350,10 @@ macro_install(void)
 	lablptr->type = MACRO;
 	lablptr->defthispass = 1;
 
+	/* remember where this was defined */
+	lablptr->fileinfo = input_file[infile_num].file;
+	lablptr->fileline = slnum;
+
 	/* check macro name syntax */
 	/*
 	   if (strchr(&symbol[1], '.')) {
@@ -369,7 +377,7 @@ macro_install(void)
 	}
 
 	/* initialize it */
-	strcpy(mptr->name, &symbol[1]);
+	mptr->label = lablptr;
 	mptr->line = NULL;
 	mptr->next = macro_tbl[hash];
 	macro_tbl[hash] = mptr;

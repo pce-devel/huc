@@ -27,8 +27,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
 #include <ctype.h>
+#ifdef _MSC_VER
+#include "xgetopt.h"
+#else
+#include <getopt.h>
+#endif
 #include "defs.h"
 #include "externs.h"
 #include "protos.h"
@@ -51,23 +55,23 @@ char zeroes[2048];	/* CDROM sector full of zeores */
 char *prg_name;		/* program name */
 FILE *in_fp;		/* file pointers, input */
 FILE *lst_fp;		/* listing */
-char section_name[MAX_S + 1][8] = {
-	" NULL",
-	"   ZP",
-	"  BSS",
-	" CODE",
-	" DATA",
-	" HOME",
+char *section_name[MAX_S + 1] = {
+	"NULL",
+	"ZP",
+	"BSS",
+	"CODE",
+	"DATA",
+	"HOME",
 	"XDATA",
 	"XINIT",
 	"CONST",
-	" OSEG",
-	" PROC"
+	"OSEG",
+	"PROC"
 };
 int newproc_opt;
 int strip_opt;
 int kickc_opt;
-int sdcc_opt;
+int hucc_opt;
 int dump_seg;
 int overlayflag;
 int develo_opt;
@@ -93,7 +97,7 @@ int rom_free;
 /* current flags for each section */
 int section_flags[MAX_S] = {
 /* S_NONE  */	S_NO_DATA,
-/* S_ZP    */	S_IS_RAM + S_NO_DATA, 
+/* S_ZP    */	S_IS_RAM + S_NO_DATA,
 /* S_BSS   */	S_IS_RAM + S_NO_DATA,
 /* S_CODE  */	S_IS_ROM + S_IS_CODE,
 /* S_DATA  */	S_IS_ROM,
@@ -102,6 +106,20 @@ int section_flags[MAX_S] = {
 /* S_XINIT */	S_IS_ROM,
 /* S_CONST */	S_IS_ROM,
 /* S_OSEG  */	S_IS_RAM
+};
+
+/* initial page for the banks for each section */
+const int section_default_page[MAX_S] = {
+/* S_NONE  */	0,
+/* S_ZP    */	2,
+/* S_BSS   */	2,
+/* S_CODE  */	7,
+/* S_DATA  */	3,
+/* S_HOME  */	5,
+/* S_XDATA */	0,
+/* S_XINIT */	0,
+/* S_CONST */	0,
+/* S_OSEG  */	0
 };
 
 /* maximum loccnt limit for each section */
@@ -255,34 +273,40 @@ main(int argc, char **argv)
 	FILE *fp;
 	char *p;
 	int i, j, opt;
-	int file;
 	int ram_bank;
-	int cd_type;
-	const char *cmd_line_options = "sSl:mhI:o:O";
-	const struct option cmd_line_long_options[] = {
-		{"segment",     no_argument,       0,           's'},
+	static t_file *extra_source = NULL;
+	static t_file *final_source = NULL;
+
+	static int cd_type;
+	static const char *cmd_line_options = "I:OShl:mo:s";
+	static const struct option cmd_line_long_options[] = {
+		{"include",     required_argument, 0,           'I'},
+		{"pack",        no_argument,       0,           'O'},
 		{"fullsegment", no_argument,       0,           'S'},
+		{"help",        no_argument,       0,           'h'},
 		{"listing",     required_argument, 0,           'l'},
 		{"macro",       no_argument,       0,           'm'},
-		{"raw",         no_argument,       &header_opt,  0 },
-		{"pad",         no_argument,       &padding_opt, 1 },
-		{"trim",        no_argument,       &trim_opt,    1 },
-		{"sf2",         no_argument,       &sf2_opt,     1 },
+		{"output",      required_argument, 0,           'o'},
+		{"segment",     no_argument,       0,           's'},
+
 		{"cd",          no_argument,       &cd_type,     1 },
-		{"scd",         no_argument,       &cd_type,     2 },
-		{"sgx",         no_argument,       &sgx_opt,     1 },
-		{"ipl",         no_argument,       &ipl_opt,     1 },
-		{"over",        no_argument,       &overlayflag, 1 },
-		{"overlay",     no_argument,       &overlayflag, 1 },
-		{"dev",         no_argument,       &develo_opt,  1 },
 		{"develo",      no_argument,       &develo_opt,  1 },
-		{"mx",          no_argument,       &mx_opt,      1 },
-		{"srec",        no_argument,       &srec_opt,    1 },
-		{"help",        no_argument,       0,           'h'},
-		{"strip",       no_argument,       &strip_opt,   1 },
-		{"newproc",     no_argument,       &newproc_opt, 1 },
+		{"hucc",        no_argument,       &hucc_opt,    1 },
+		{"ipl",         no_argument,       &ipl_opt,     1 },
 		{"kc",          no_argument,       &kickc_opt,   1 },
-		{"sdcc",        no_argument,       &sdcc_opt,    1 },
+		{"mx",          no_argument,       &mx_opt,      1 },
+		{"overlay",     no_argument,       &overlayflag, 1 },
+		{"newproc",     no_argument,       &newproc_opt, 1 },
+		{"pad",         no_argument,       &padding_opt, 1 },
+		{"raw",         no_argument,       &header_opt,  0 },
+		{"scd",         no_argument,       &cd_type,     2 },
+		{"sdcc",        no_argument,       &hucc_opt,    1 },
+		{"sf2",         no_argument,       &sf2_opt,     1 },
+		{"sgx",         no_argument,       &sgx_opt,     1 },
+		{"srec",        no_argument,       &srec_opt,    1 },
+		{"strip",       no_argument,       &strip_opt,   1 },
+		{"trim",        no_argument,       &trim_opt,    1 },
+
 		{0,		no_argument,       0,		 0 }
 	};
 
@@ -338,32 +362,56 @@ main(int argc, char **argv)
 	scd_opt = 0;
 	cd_opt = 0;
 	mx_opt = 0;
-	file = 0;
 	cd_type = 0;
 	strip_opt = 0;
 	kickc_opt = 0;
 	newproc_opt = 0;
 
-	memset(out_fname, 0, 256);
-
 	/* display assembler version message */
 	printf("%s\n\n", machine->asm_title);
 
+	/* process the command line options */
 	while ((opt = getopt_long_only (argc, argv, cmd_line_options, cmd_line_long_options, NULL)) != -1)
 	{
 		switch(opt)
 		{
-			case 's':
-				dump_seg = 1;
+			case 'I':
+				/* optarg can have a leading space on linux/mac */
+				while (*optarg == ' ') { ++optarg; }
+
+				if (*optarg == '-') {
+					fprintf(stderr, "%s: include path missing after \"-I\"!\n", argv[0]);
+					return (1);
+				}
+				if (!add_path(optarg, (int)strlen(optarg)+1)) {
+					fprintf(stderr, "%s: could not add path to list of include directories\n", argv[0]);
+					return (1);
+				}
+				break;
+
+			case 'O':
+				asm_opt[OPT_OPTIMIZE] = 1;
 				break;
 
 			case 'S':
 				dump_seg = 2;
 				break;
 
+			case 'h':
+				help();
+				return (0);
+
 			case 'l':
+				/* optarg can have a leading space on linux/mac */
+				while (*optarg == ' ') { ++optarg; }
+
+				if ((isdigit(*optarg) == 0) || (optarg[1] != '\0')) {
+					fprintf(stderr, "%s: \"-l\" option must be followed by a single digit\n", argv[0]);
+					return (1);
+				}
+
 				/* get level */
-				list_level = atol(optarg);
+				list_level = *optarg - '0';
 
 				/* check range */
 				if (list_level < 0 || list_level > 3)
@@ -374,30 +422,32 @@ main(int argc, char **argv)
 				mlist_opt = 1;
 				break;
 
-			case 'I':
-				if (!add_path(optarg, strlen(optarg)+1))
-				{
-					fprintf(ERROUT, "Error: Could not add '-I' include path!\n");
+			case 'o':
+				/* optarg can have a leading space on linux/mac */
+				while (*optarg == ' ') { ++optarg; }
+
+				if (*optarg == '-') {
+					fprintf(stderr, "%s: output filename missing after \"-o\"\n", argv[0]);
 					return (1);
 				}
-				break;
-
-			case 'o':
+				if (strlen(optarg) >= PATHSZ) {
+					fprintf(stderr, "%s: output filename too long, maximum %d characters\n", argv[0], PATHSZ - 1);
+					return (1);
+				}
 				strcpy(out_fname, optarg);
 				break;
 
-			case 'O':
-				asm_opt[OPT_OPTIMIZE] = 1;
+			case 's':
+				dump_seg = 1;
 				break;
 
-			case 'h':
-				help();
-				return (0);
-
+			/* when a long-option has been processed */
 			case 0:
 				break;
 
+			/* unknown option */
 			default:
+				help();
 				return (1);
 		}
 	}
@@ -416,20 +466,15 @@ main(int argc, char **argv)
 		overlayflag = 0;
 	}
 
-	/* enable optimized procedure packing if stripping */
-	asm_opt[OPT_OPTIMIZE] |= strip_opt;
-
-	/* check for missing asm file */
-	if (optind == argc)
+	/* HuCC option requires newproc_opt and strip_opt as well */
+	if (hucc_opt)
 	{
-		fprintf(ERROUT, "Error: Missing input file!\n");
-		return (1);
+		newproc_opt = 1;
+		strip_opt = 1;
 	}
 
-	/* get file names */
-	for ( ; optind < argc; ++optind, ++file) {
-		strcpy(in_fname, argv[optind]);
-	}
+	/* enable optimized procedure packing if stripping */
+	asm_opt[OPT_OPTIMIZE] |= (newproc_opt | strip_opt);
 
 	if (machine->type == MACHINE_PCE) {
 		/* Adjust cdrom type values ... */
@@ -458,10 +503,21 @@ main(int argc, char **argv)
 		ipl_opt = 0;
 	}
 
-	if (!file) {
-		help();
+	/* check for input file name missing */
+	if (optind == argc)
+	{
+		fprintf(ERROUT, "Error: Input file name missing!\n");
 		return (1);
 	}
+
+	/* check for input file name too long (including room to add an extension) */
+	if (strlen(argv[optind]) > (PATHSZ - 5)) {
+		fprintf(ERROUT, "Error: Input file name too long!\n");
+		return (1);
+	}
+
+	/* get the input file name */
+	strcpy(in_fname, argv[optind++]);
 
 	/* search file extension */
 	if ((p = strrchr(in_fname, '.')) != NULL) {
@@ -498,6 +554,23 @@ main(int argc, char **argv)
 		*p = '.';
 	else
 		strcat(in_fname, ".asm");
+
+	/* get any additional file names */
+	while (optind < argc) {
+		t_file *file = malloc(sizeof(t_file));
+		if (file == NULL) {
+			fprintf(ERROUT, "Error: Not enough memory!\n");
+			exit(1);
+		}
+		file->next = NULL;
+		file->name = argv[optind++];
+
+		if (extra_source == NULL)
+			extra_source = file;
+		if (final_source != NULL)
+			final_source->next = file;
+		final_source = file;
+	}
 
 	/* init include path */
 	init_path();
@@ -590,8 +663,8 @@ main(int argc, char **argv)
 
 	/* assemble */
 	for (pass = FIRST_PASS; pass <= LAST_PASS; pass++) {
+		extra_file = extra_source;
 		infile_error = -1;
-		page = 7;
 		bank = 0;
 		loccnt = 0;
 		slnum = 0;
@@ -612,7 +685,7 @@ main(int argc, char **argv)
 		kickc_mode = 0;
 		sdcc_mode = 0;
 		kickc_final = 0;
-		sdcc_final = 0;
+		hucc_final = 0;
 		in_final = 0;
 
 		/* reset assembler options */
@@ -628,17 +701,21 @@ main(int argc, char **argv)
 
 		/* reset bank arrays */
 		for (i = 0; i < MAX_S; i++) {
+			page = newproc_opt ? section_default_page[i] : 0;
+			section_bank[i] = 0;
+			section_phase[i] = 0;
 			for (j = 0; j < MAX_BANKS; j++) {
 				bank_maxloc[j] = 0;
 				bank_loccnt[i][j] = 0;
 				bank_glabl[i][j] = NULL;
-				bank_page[i][j] = 0;
+				bank_page[i][j] = page;
 			}
 		}
 
 		/* reset sections */
 		ram_bank = machine->ram_bank;
 		section = S_CODE;
+		page = 7;
 
 		/* .zp */
 		section_bank[S_ZP] = ram_bank;
@@ -655,9 +732,14 @@ main(int argc, char **argv)
 		bank_page[S_CODE][0x00] = 0x07;
 		bank_loccnt[S_CODE][0x00] = 0x0000;
 
+		/* .home */
+		section_bank[S_HOME] = 0x00;
+		bank_page[S_HOME][0x00] = 0x05;
+		bank_loccnt[S_HOME][0x00] = 0x0000;
+
 		/* .data */
 		section_bank[S_DATA] = 0x00;
-		bank_page[S_DATA][0x00] = 0x07;
+		bank_page[S_DATA][0x00] = 0x03;
 		bank_loccnt[S_DATA][0x00] = 0x0000;
 
 		/* reset symbol table and include files */
@@ -1039,30 +1121,31 @@ help(void)
 		prg_name = machine->asm_name;
 
 	/* display help */
-	printf("%s [-options] [-? (for help)] [-o outfile] infile\n\n", prg_name);
-	printf("-s/S       : show segment usage\n");
-	printf("-l #       : listing file output level (0-3)\n");
+	printf("%s [options] [-h (for help)] [-o outfile] infiles\n\n", prg_name);
+	printf("-s         : show segment usage\n");
+	printf("-S         : show segment usage and contents\n");
+	printf("-l <0..3>  : listing file output level (0-3), default is 2\n");
 	printf("-m         : force macro expansion in listing\n");
-	printf("-raw       : prevent adding a ROM header\n");
-	printf("-pad       : pad ROM size to power-of-two\n");
-	printf("-trim      : strip unused head and tail from ROM\n");
+	printf("--raw      : prevent adding a ROM header\n");
+	printf("--pad      : pad ROM size to power-of-two\n");
+	printf("--trim     : strip unused head and tail from ROM\n");
 	printf("-I         : add include path\n");
 	if (machine->type == MACHINE_PCE) {
-		printf("-sf2       : create a StreetFighterII HuCARD\n");
-		printf("-cd        : create a CD-ROM track image\n");
-		printf("-scd       : create a Super CD-ROM track image\n");
-		printf("-sgx       : add a SuperGRAFX signature to the CD-ROM\n");
-		printf("-over(lay) : create an executable 'overlay' program segment\n");
-		printf("-ipl       : create a custom CD-ROM IPL file\n");
-		printf("-dev       : assemble and run on the Develo Box\n");
-		printf("-mx        : create a Develo MX file\n");
+		printf("--sf2      : create a StreetFighterII HuCARD\n");
+		printf("--cd       : create a CD-ROM track image\n");
+		printf("--scd      : create a Super CD-ROM track image\n");
+		printf("--sgx      : add a SuperGRAFX signature to the CD-ROM\n");
+		printf("--overlay  : create an executable 'overlay' program segment\n");
+		printf("--ipl      : create a custom CD-ROM IPL file\n");
+		printf("--develo   : assemble and run on the Develo Box\n");
+		printf("--mx       : create a Develo MX file\n");
 		printf("-O         : optimize .proc packing (compared to HuC v3.21)\n");
-		printf("-strip     : strip unused .proc & .procgroup\n");
-		printf("-newproc   : run .proc code in MPR6, instead of MPR5\n");
+		printf("--strip    : strip unused .proc & .procgroup\n");
+		printf("--newproc  : run .proc code in MPR6, instead of MPR5\n");
 	}
-	printf("-kc        : assemble code generated by the KickC compiler\n");
-	printf("-srec      : create a Motorola S-record file\n");
-	printf("infile     : file to be assembled\n");
+	printf("--kc       : assemble code generated by the KickC compiler\n");
+	printf("--srec     : create a Motorola S-record file\n");
+	printf("infiles    : one or more files to be assembled\n");
 	printf("\n");
 }
 
@@ -1123,7 +1206,7 @@ show_bank_usage(FILE *fp, int which_bank)
 				break;
 
 		/* display section infos */
-		fprintf(fp, "    %s    $%04X-$%04X  [%4i]\n",
+		fprintf(fp, "    %5s    $%04X-$%04X  [%4i]\n",
 			section_name[section],		/* section name */
 			start + page,			/* starting address */
 			addr + page - 1,		/* end address */

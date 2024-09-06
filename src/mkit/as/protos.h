@@ -64,7 +64,11 @@ void do_star(int *ip);
 void do_label(int *ip);
 void do_struct(int *ip);
 void do_ends(int *ip);
+void do_alias(int *ip);
+void do_ref(int *ip);
+void do_phase(int *ip);
 int  htoi(char *str, int nb);
+void set_section(int new_section);
 
 /* CRC.C */
 unsigned int crc_calc(const unsigned char *data, int len);
@@ -92,6 +96,8 @@ int   add_path(char*, int);
 void  cleanup_path(void);
 int   init_path(void);
 int   readline(void);
+const char *remember_string(const char * string, size_t length);
+t_file *remember_file(int hash);
 void  clear_included(void);
 int   open_input(const char *name);
 int   close_input(void);

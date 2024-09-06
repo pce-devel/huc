@@ -1,11 +1,18 @@
 #include <string.h>
 
-//#if defined (STACK_SIZE)
-//#define MEMCPY_SIZE (STACK_SIZE / 3)
-//#else
-#define MEMCPY_SIZE 512 //(1 << 17)
-//#endif
-
+#ifdef __HUCC__
+ #ifdef NORECURSE
+  #define MEMCPY_SIZE 512 //(1 << 17)
+ #else
+  #define MEMCPY_SIZE (STACK_SIZE / 3)
+ #endif
+#else
+ //#if defined (STACK_SIZE)
+ //#define MEMCPY_SIZE (STACK_SIZE / 3)
+ //#else
+ #define MEMCPY_SIZE 512 //(1 << 17)
+ //#endif
+#endif
 
 void *copy (void *o, const void *i, unsigned l)
 {

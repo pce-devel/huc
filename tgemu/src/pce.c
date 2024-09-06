@@ -144,11 +144,11 @@ void io_page_w(int address, int data)
     switch(address & 0x1C00)
     {
         case 0x0000: /* VDC */
-            if(address <= 0x0003) { vdc_w(address, data); return; }
+            vdc_w(address & 0x1C03, data); return;
             break;
 
         case 0x0400: /* VCE */
-            if(address <= 0x0405) { vce_w(address, data); return; }
+            vce_w(address & 0x1C07, data); return;
             break;
 
         case 0x0800: /* PSG */
@@ -189,11 +189,11 @@ int io_page_r(int address)
     switch(address & 0x1C00)
     {
         case 0x0000: /* VDC */
-            if(address <= 0x0003) return (vdc_r(address));
+            return (vdc_r(address & 0x1C03));
             break;
 
         case 0x0400: /* VCE */
-            if(address <= 0x0405) return (vce_r(address));
+            return (vce_r(address & 0x1C07));
             break;
 
         case 0x0800: /* PSG */

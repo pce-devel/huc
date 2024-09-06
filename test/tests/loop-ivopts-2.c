@@ -33,7 +33,7 @@ check (unsigned int *l)
 int
 main (void)
 {
-#ifndef SMALL
+#ifdef NORECURSE
   int i;
   unsigned int l[288];
 

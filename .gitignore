@@ -8,9 +8,15 @@
 *.s
 *.sgx
 *.sym
+*.user
+.vs
+.x86
+.x64
 bin
 src/huc/huc
 src/huc/huc.exe
+src/hucc/hucc
+src/hucc/hucc.exe
 src/isolink/isolink
 src/isolink/isolink.exe
 src/mkit/as/fujias

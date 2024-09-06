@@ -8,7 +8,7 @@
 #define FUJI_ASM_VERSION ("Fuji Assembler for Atari (" GIT_VERSION ", " GIT_DATE ")")
 
 /* send errors and warnings to either stdout or stderr */
-#define ERROUT stderr
+#define ERROUT stdout
 
 /* path separator */
 #if defined(_WIN32)
@@ -172,6 +172,9 @@
 #define P_STRUCT	63	// .struct
 #define P_ENDS		64	// .ends
 #define P_3PASS		65	// .3pass
+#define P_ALIAS		66	// .alias
+#define P_REF		67	// .ref
+#define P_PHASE		68	// .phase
 
 /* symbol flags */
 #define UNDEF	1	/* undefined - may be zero page */
@@ -180,6 +183,7 @@
 #define DEFABS	4	/* defined - two byte address */
 #define MACRO	5	/* used for a macro name */
 #define FUNC	6	/* used for a function */
+#define ALIAS	7	/* used for an alias */
 
 /* symbol lookup flags */
 #define SYM_CHK	0	/* does it exist? */
@@ -225,7 +229,7 @@
 #define HASH_COUNT	256
 
 /* size of remembered filename strings */
-#define FILE_NAMES_SIZE 65536
+#define STR_POOL_SIZE 65536
 
 /* structs */
 typedef struct t_opcode {
@@ -237,17 +241,17 @@ typedef struct t_opcode {
 	int type_idx;
 } t_opcode;
 
-typedef struct t_file_names {
-	struct t_file_names *next;
+typedef struct t_str_pool {
+	struct t_str_pool *next;
 	int remain;
-	char buffer [FILE_NAMES_SIZE];
-} t_file_names;
+	char buffer [STR_POOL_SIZE];
+} t_str_pool;
 
 typedef struct t_file {
 	struct t_file *next;
 	int number;
 	int included;
-	char *name;
+	const char *name;
 } t_file;
 
 typedef struct t_input {
@@ -283,9 +287,13 @@ typedef struct t_symbol {
 	struct t_symbol *local;
 	struct t_symbol *scope;
 	struct t_proc *proc;
+	const char *name;
+	struct t_file *fileinfo;
+	int fileline;
 	int reason;
 	int type;
 	int value;
+	int phase;
 	int section;
 	int overlay;
 	int mprbank;
@@ -302,7 +310,6 @@ typedef struct t_symbol {
 	int reflastpass;
 	int defthispass;
 	int refthispass;
-	char name[SBOLSZ];
 } t_symbol;
 
 typedef struct t_branch {
@@ -315,19 +322,19 @@ typedef struct t_branch {
 
 typedef struct t_line {
 	struct t_line *next;
-	char *data;
+	const char *line;
 } t_line;
 
 typedef struct t_macro {
 	struct t_macro *next;
+	struct t_symbol *label;
 	struct t_line *line;
-	char name[SBOLSZ];
 } t_macro;
 
 typedef struct t_func {
 	struct t_func *next;
-	char line[128];
-	char name[SBOLSZ];
+	struct t_symbol *label;
+	char *line;
 } t_func;
 
 typedef struct t_tile {
