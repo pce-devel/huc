@@ -19,7 +19,7 @@ int define_enum (char *sname, int storage)
 	int count, min, max;
 	int start = enum_ptr;
 
-	printf("defenum %s\n", sname);
+//	printf("defenum %s\n", sname);
 	needbrack("{");
 	count = min = max = 0;
 	for (;;) {
@@ -79,7 +79,7 @@ int define_enum (char *sname, int storage)
 		else
 			et->base = CUCHAR;
 	}
-	printf("enum base type %d\n", et->base);
+//	printf("enum base type %d\n", et->base);
 	return (enum_type_ptr++);
 }
 
