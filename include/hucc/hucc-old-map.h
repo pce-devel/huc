@@ -38,6 +38,9 @@ extern unsigned char __fastcall sgx_map_get_tile( unsigned char map_x<_bl>, unsi
 extern void __fastcall __xsafe map_put_tile( unsigned char map_x<_bl>, unsigned char map_y<_bh>, unsigned char tile<_al> );
 extern void __fastcall __xsafe sgx_map_put_tile( unsigned char map_x<_bl>, unsigned char map_y<_bh>, unsigned char tile<_al> );
 
+extern void __fastcall __xsafe put_tile( unsigned char tile<_bl>, unsigned char bat_x<_al>, unsigned char bat_y<_ah> );
+extern void __fastcall __xsafe sgx_put_tile( unsigned char tile<_bl>, unsigned char bat_x<_al>, unsigned char bat_y<_ah> );
+
 // Deprecated functions ...
 
 extern void __fastcall __xsafe __nop set_map_pals( unsigned char __far *palette_table<vdc_attr_bank:vdc_attr_addr> );
