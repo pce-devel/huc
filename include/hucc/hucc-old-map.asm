@@ -86,7 +86,7 @@ sgx_spr_clr:	ds	1
 		.proc	_sgx_load_map.6
 
 		ldy	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$F0		        ; Turn "cly" into a "beq".
+		db	$F0			; Turn "cly" into a "beq".
 
 		.ref	_load_map.6
 		.endp
@@ -114,7 +114,7 @@ sgx_spr_clr:	ds	1
 
 .wrap_map_x:	lda.l	<_bx
 		ldy	vdc_map_width, x	; If map_width == 256, then
-		beq	.mapx_ok                ; just take the lo-byte of X.
+		beq	.mapx_ok		; just take the lo-byte of X.
 
 		ldy.h	<_bx
 		bmi	.mapx_neg
@@ -134,7 +134,7 @@ sgx_spr_clr:	ds	1
 		; wrap 16-bit signed map y coordinate, and only use the bottom byte.
 
 .wrap_map_y:	lda.l	<_dx
-		ldy	vdc_map_height, x	; If map_height == 256, then 
+		ldy	vdc_map_height, x	; If map_height == 256, then
 		beq	.mapy_ok		; just take the lo-byte of Y.
 
 		ldy.h	<_dx
@@ -163,47 +163,7 @@ sgx_spr_clr:	ds	1
 		; Calculate the map/bat pointers
 		; ******************************
 
-		lda	vdc_tile_type, x	; what tile type?
-		cmp	#16
-
-		ldy	<.bat_x
-		lda	<.bat_y
-		bcc	!+			; CC if 8x8 not 16x16
-
-		say				; 16x16 aligned in the bat
-		asl	a			; bat_x = bat_x * 2;
-		say
-		asl	a			; bat_y = bat_y * 2;
-
-!:		and	vdc_bat_y_mask, x	; Calculate bat_addr
-		sta	<.bat_y			; bat_y (masked)
-
-		stz.l	<.bat_line		; A = bat_y, Y = bat_x
-		bit	vdc_bat_width, x	; set N and V bits
-		bmi	.width128
-		bvs	.width64
-.width32:	lsr	a			; bat_line = bat_y * 32
-		ror.l	<.bat_line
-.width64:	lsr	a			; bat_line = bat_y * 64
-		ror.l	<.bat_line
-.width128:	lsr	a			; bat_line = bat_y * 128
-		ror.l	<.bat_line
-		say
-		and	vdc_bat_x_mask, x
-		sta	<.bat_x			; bat_x (masked)
-
-		ora.l	<.bat_line		; bat_line |= bat_x
-		sta.l	<.bat_line
-		sty.h	<.bat_line
-
-		lda.l	vdc_attr_addr, x	; Put attr_ table in MPR2
-		sta.l	<.attr_tbl
-		lda.h	vdc_attr_addr, x
-		and	#$1F
-		ora	#$40
-		sta.h	<.attr_tbl
-		lda	vdc_attr_bank, x
-		tam2
+		jsr	!calc_bat_tile+		; Calculate bat tile address.
 
 		jsr	!calc_map_line+		; Calculate map line address.
 
@@ -226,15 +186,15 @@ sgx_spr_clr:	ds	1
 
 		lda	vdc_bat_width, x	; calculate #tiles to edge
 		sec
-		sbc	<.bat_x			
+		sbc	<.bat_x
 		sta.h	<__temp			; wrap counter in __temp.h
 
-		ldy	<.map_x			
+		ldy	<.map_x
 
 		stz	<vdc_reg, x		; select MAWR
 		stz	VDC_AR, x
 
-		lda.l	<.bat_line		
+		lda.l	<.bat_line
 		sta	VDC_DL, x
 		lda.h	<.bat_line
 		sta	VDC_DH, x
@@ -252,7 +212,7 @@ sgx_spr_clr:	ds	1
 
 		lda	vdc_bat_x_mask, x	; mask bat_line to start of line
 		eor	#$FF
-		and.l	<.bat_line		
+		and.l	<.bat_line
 		sta	VDC_DL, x
 		lda.h	<.bat_line
 		sta	VDC_DH, x
@@ -329,11 +289,11 @@ sgx_spr_clr:	ds	1
 
 		lda	[.map_line], y		; get tile index from map data
 		tay				; get tile palette from index
-		lda	[.attr_tbl], y		
+		lda	[.attr_tbl], y
 		say				; put tile palette in Y
 		asl	a			; tile# lo-byte
 		bcc	!+
-		iny				; tile# hi-byte 
+		iny				; tile# hi-byte
 		iny
 !:		asl	a			; tile# lo-byte
 		bcc	!+
@@ -405,14 +365,14 @@ sgx_spr_clr:	ds	1
 
 .next_map_line:	lda	vdc_bat_x_mask, x
 		eor	#$FF
-		and.l	<.bat_line		
+		and.l	<.bat_line
 		bcc	!+			; CC = 8x8, CS = 16x16
 		ora	vdc_bat_width, x
 		clc
 !:		adc	vdc_bat_width, x	; Widths are a power-of-two
 		bne	!+			; so just check for zero.
 
-		lda.h	<.bat_line		
+		lda.h	<.bat_line
 		inc	a
 		and	vdc_bat_limit, x
 		sta.h	<.bat_line
@@ -456,6 +416,54 @@ sgx_spr_clr:	ds	1
 		and	#$1F
 		ora	#$60
 		sta.h	<.map_line
+		rts
+
+		; ******************************
+		; Calculate the bat tile pointer
+		; ******************************
+
+!calc_bat_tile:	lda	vdc_tile_type, x	; what tile type?
+		cmp	#16
+
+		ldy	<.bat_x
+		lda	<.bat_y
+		bcc	!+			; CC if 8x8 not 16x16
+
+		say				; 16x16 aligned in the bat
+		asl	a			; bat_x = bat_x * 2;
+		say
+		asl	a			; bat_y = bat_y * 2;
+
+!:		and	vdc_bat_y_mask, x	; Calculate bat_addr
+		sta	<.bat_y			; bat_y (masked)
+
+		stz.l	<.bat_line		; A = bat_y, Y = bat_x
+		bit	vdc_bat_width, x	; set N and V bits
+		bmi	.width128
+		bvs	.width64
+.width32:	lsr	a			; bat_line = bat_y * 32
+		ror.l	<.bat_line
+.width64:	lsr	a			; bat_line = bat_y * 64
+		ror.l	<.bat_line
+.width128:	lsr	a			; bat_line = bat_y * 128
+		ror.l	<.bat_line
+		say
+		and	vdc_bat_x_mask, x
+		sta	<.bat_x			; bat_x (masked)
+
+		ora.l	<.bat_line		; bat_line |= bat_x
+		sta.l	<.bat_line
+		sty.h	<.bat_line
+
+		lda.l	vdc_attr_addr, x	; Put attr_ table in MPR2
+		sta.l	<.attr_tbl
+		lda.h	vdc_attr_addr, x
+		and	#$1F
+		ora	#$40
+		sta.h	<.attr_tbl
+		lda	vdc_attr_bank, x
+		tam2
+
 		rts
 
 		; ******************************
@@ -527,7 +535,7 @@ sgx_spr_clr:	ds	1
 		.proc	_sgx_map_get_tile.2
 
 		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$F0		        ; Turn "clx" into a "beq".
+		db	$F0			; Turn "clx" into a "beq".
 
 		.ref	_map_get_tile.2
 		.endp
@@ -553,7 +561,7 @@ sgx_spr_clr:	ds	1
 		lda	[.map_line], y
 		tax				; Put return code in X.
 
-.draw_finished:	pla				; Restore MPR3, MPR4.
+		pla				; Restore MPR3, MPR4.
 		tam4
 		pla
 		tam3
@@ -575,17 +583,17 @@ sgx_spr_clr:	ds	1
 
 	.if	SUPPORT_SGX
 
-		.proc	_sgx_map_put_tile.2
+		.proc	_sgx_map_put_tile.3
 
 		ldy	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$F0		        ; Turn "cly" into a "beq".
+		db	$F0			; Turn "cly" into a "beq".
 
-		.ref	_map_put_tile.2
+		.ref	_map_put_tile.3
 		.endp
 
 	.endif
 
-		.proc	_map_put_tile.2
+		.proc	_map_put_tile.3
 
 .map_x		=	_bl			; N.B. These MUST be the same
 .map_y		=	_bh			; addresses used by _load_map.6
@@ -601,14 +609,145 @@ sgx_spr_clr:	ds	1
 		tma4
 		pha
 
+		jsr	!calc_map_line-		; Calculate map line address.
+
 		ldy	<.map_x			; Write the tile to the map.
 		lda	<_al
 		sta	[.map_line], y
 
-.draw_finished:	pla				; Restore MPR3, MPR4.
+		pla				; Restore MPR3, MPR4.
 		tam4
 		pla
 		tam3
+
+		plx				; Restore X (aka __sp).
+
+		leave				; All done!
+
+		.ref	_load_map.6
+		.endp
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; void __fastcall __xsafe put_tile( unsigned char tile<_bl>, unsigned char bat_x<_al>, unsigned char bat_y<_ah> );
+; void __fastcall __xsafe sgx_put_tile( unsigned char tile<_bl>, unsigned char bat_x<_al>, unsigned char bat_y<_ah> );
+;
+; Transfer a single HuC map tile to the BAT in VRAM
+;
+; _al = BAT x screen coordinate (in tile units)
+; _ah = BAT y screen coordinate
+; _di = BAT address
+; _bl = MAP tile number to write
+
+	.if	SUPPORT_SGX
+
+		.proc	_sgx_put_tile.3
+
+		ldy	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		db	$F0			; Turn "cly" into a "beq".
+
+		.ref	_put_tile.3
+		.endp
+
+	.endif
+
+		.proc	_put_tile.3
+
+.bat_x		=	_al			; N.B. These MUST be the same
+.bat_y		=	_ah			; addresses used by _load_map.6
+.bat_tile	=	_bl
+.bat_line	=	_di
+.attr_tbl	=	_si
+
+		cly				; Offset to PCE VDC.
+
+		phx				; Preserve X (aka __sp).
+		sxy				; Put VDC offset in X.
+
+		tma2				; Preserve MPR2.
+		pha
+
+		jsr	!calc_bat_tile-		; Calculate bat tile address.
+
+		stz	<vdc_reg, x		; set MAWR to bat_line
+		stz	VDC_AR, x
+		lda.l	<.bat_line
+		sta	VDC_DL, x
+		lda.h	<.bat_line
+		sta	VDC_DH, x
+		lda	#VDC_VWR
+		sta	<vdc_reg, x
+		sta	VDC_AR, x
+
+		lda	vdc_tile_type, x
+		cmp	#16
+		bcs	.draw_tile16
+
+.draw_tile8:	clc
+		lda	<.bat_tile		; get tile index to write
+		tay
+		adc.l	vdc_tile_base, x	; calculate BAT value (tile + palette)
+		sta	VDC_DL, x
+		lda	[.attr_tbl], y		; get tile palette
+		adc.h	vdc_tile_base, x
+		sta	VDC_DH, x
+		bra	.finished
+
+.draw_tile16:	lda	<.bat_tile		; get tile index to write
+		tay				; get tile palette from index
+		lda	[.attr_tbl], y
+		say				; put tile palette in Y
+		asl	a			; tile# lo-byte
+		bcc	!+
+		iny				; tile# hi-byte
+		iny
+!:		asl	a			; tile# lo-byte
+		bcc	!+
+		iny				; tile# hi-byte
+		clc
+!:		adc.l	vdc_tile_base, x
+		say				; tile# lo-byte in Y
+		adc.h	vdc_tile_base, x
+		sta.h	<__temp			; tile# hi-byte in __temp.h
+
+		tya				; tile# lo-byte
+		sta	VDC_DL, x
+		lda.h	<__temp			; tile# hi-byte
+		sta	VDC_DH, x
+		iny
+		tya
+		sta	VDC_DL, x
+		lda.h	<__temp
+		sta	VDC_DH, x
+		iny
+
+		stz	<vdc_reg, x		; set MAWR to bat_line + bat_width
+		stz	VDC_AR, x
+		lda.l	<.bat_line
+		ora	vdc_bat_width, x
+		sta	VDC_DL, x
+		lda.h	<.bat_line
+		sta	VDC_DH, x
+		lda	#VDC_VWR
+		sta	<vdc_reg, x
+		sta	VDC_AR, x
+
+		tya				; tile# lo-byte
+		sta	VDC_DL, x
+		lda.h	<__temp			; tile# hi-byte
+		sta	VDC_DH, x
+		iny
+		tya
+		sta	VDC_DL, x
+		lda.h	<__temp
+		sta	VDC_DH, x
+;		iny
+
+.finished:	pla				; Restore MPR2.
+		tam2
 
 		plx				; Restore X (aka __sp).
 
