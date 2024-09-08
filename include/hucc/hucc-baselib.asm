@@ -127,10 +127,13 @@ _peekw.1	.macro
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __macro __xsafe poke( unsigned int addr<__ptr>, unsigned char with<acc> );
+; void __fastcall __macro __xsafe poke( unsigned int addr<__poke>, unsigned char with<acc> );
+;
+; N.B. Because the <acc> value can be a complex C calculation, it isn't safe
+; to use __ptr as the destination, which can be overwritten in C macros.
 
 _poke.2		.macro
-		sta	[__ptr]
+		sta	[__poke]
 		.endm
 
 
@@ -138,13 +141,16 @@ _poke.2		.macro
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __macro __xsafe pokew( unsigned int addr<__ptr>, unsigned int with<acc> );
+; void __fastcall __macro __xsafe pokew( unsigned int addr<__poke>, unsigned int with<acc> );
+;
+; N.B. Because the <acc> value can be a complex C calculation, it isn't safe
+; to use __ptr as the destination, which can be overwritten in C macros.
 
 _pokew.2	.macro
-		sta	[__ptr]
+		sta	[__poke]
 		tya
 		ldy	#1
-		sta	[__ptr], y
+		sta	[__poke], y
 		.endm
 
 
