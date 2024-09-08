@@ -82,8 +82,8 @@ extern unsigned char __fastcall __xsafe __macro ac_exists( void );
 
 extern unsigned int __fastcall __xsafe __macro peek( unsigned int addr<__ptr> );
 extern unsigned int __fastcall __xsafe __macro peekw( unsigned int addr<__ptr> );
-extern void __fastcall __xsafe __macro poke( unsigned int addr<__ptr>, unsigned char with<acc> );
-extern void __fastcall __xsafe __macro pokew( unsigned int addr<__ptr>, unsigned int with<acc> );
+extern void __fastcall __xsafe __macro poke( unsigned int addr<__poke>, unsigned char with<acc> );
+extern void __fastcall __xsafe __macro pokew( unsigned int addr<__poke>, unsigned int with<acc> );
 
 extern unsigned int __fastcall __xsafe __farpeekw( void __far *addr<__fbank:__fptr> );
 

@@ -125,6 +125,7 @@ __fbank		.ds	1
 __sp		.ds	1
 __stack		.ds	HUCC_STACK_SZ
 __ptr		.ds	2
+__poke		.ds	2
 
 		; Data pointer used by SDCC for indirect indexed memory access
 
