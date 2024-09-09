@@ -40,6 +40,9 @@ int expression_ex (LVALUE *lval, int comma, int norval)
 			rvalue(lval);
 		if (!comma)
 			return (k);
+		blanks();
+		if (ch() == ',')
+			gfence();
 	} while (match(","));
 	return (k);
 }

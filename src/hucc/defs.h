@@ -34,6 +34,10 @@
 
 /* basic pseudo instructions */
 enum ICODE {
+	/* i-code that retires the primary register contents */
+
+	I_FENCE = 1,
+
 	/* i-codes for handling farptr */
 
 	I_FARPTR,

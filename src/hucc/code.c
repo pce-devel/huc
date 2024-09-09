@@ -263,6 +263,13 @@ void gen_code (INS *tmp)
 
 	switch (code) {
 
+	/* i-code that retires the primary register contents */
+
+	case I_FENCE:
+		ot("__fence");
+		nl();
+		break;
+
 	/* i-codes for handling farptr */
 
 	case I_FARPTR:

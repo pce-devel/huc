@@ -189,6 +189,7 @@ void stst (void)
 			lastst = STEXP;
 		}
 	}
+	gfence();
 }
 
 /*
@@ -327,6 +328,7 @@ void dofor (void)
 	if (!match(";")) {
 		expression(YES);
 		ns();
+		gfence();
 	}
 	gnlabel((int)pws[WSTEST]);
 	if (!match(";")) {
@@ -341,6 +343,7 @@ void dofor (void)
 	if (!match(")")) {
 		expression(YES);
 		needbrack(")");
+		gfence();
 		jump((int)pws[WSTEST]);
 	}
 	else

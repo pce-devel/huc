@@ -668,3 +668,7 @@ void gcli (void)
 {
 	out_ins(I_CLI, 0, 0);
 }
+void gfence (void)
+{
+	out_ins(I_FENCE, 0, 0);
+}
