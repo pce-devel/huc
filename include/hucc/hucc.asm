@@ -283,6 +283,12 @@ core_main:	tma7				; Get the CORE_BANK.
 		sta	monofont_fg
 		stz	monofont_bg
 		call	_load_default_font
+		lda	#$01			; Set the font palette entry to
+		sta.l	VCE_CTA			; cyan which is a) visible, but
+		stz.h	VCE_CTA			; b) a clear indicator that the
+		ldy	#$96			; user hasn't set a palette yet.
+		sty.l	VCE_CTW
+		sta.h	VCE_CTW
 	.endif
 
 	.ifndef	HUCC_NO_DEFAULT_RANDOM
