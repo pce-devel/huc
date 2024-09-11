@@ -125,11 +125,14 @@ __fbank		.ds	1
 __sp		.ds	1
 __stack		.ds	HUCC_STACK_SZ
 __ptr		.ds	2
-__poke		.ds	2
 
-		; Data pointer used by SDCC for indirect indexed memory access
+		; Pointer used by poke() because __ptr could be overwritten.
 
-DPTR:		=	__ptr
+__poke		=	__si
+
+		; Data pointer used by SDCC for indirect indexed memory access.
+
+DPTR		=	__ptr
 
 		; REGTEMP stack for temporaries used by SDCC
 		; Keep this in sync with NUM_TEMP_REGS in mos6502/gen.c
@@ -280,6 +283,12 @@ core_main:	tma7				; Get the CORE_BANK.
 		sta	monofont_fg
 		stz	monofont_bg
 		call	_load_default_font
+		lda	#$01			; Set the font palette entry to
+		sta.l	VCE_CTA			; cyan which is a) visible, but
+		stz.h	VCE_CTA			; b) a clear indicator that the
+		ldy	#$96			; user hasn't set a palette yet.
+		sty.l	VCE_CTW
+		sta.h	VCE_CTW
 	.endif
 
 	.ifndef	HUCC_NO_DEFAULT_RANDOM

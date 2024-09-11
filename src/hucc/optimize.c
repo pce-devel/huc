@@ -187,6 +187,36 @@ lv1_loop:
 		/* LEVEL 1 - FUN STUFF STARTS HERE */
 		nb = 0;
 
+		/* first check for I_FENCE, then remove it ASAP */
+		if (q_nb >= 1 && p[0]->code == I_FENCE) {
+			/* remove I_FENCE after it has been checked */
+			nb = 1;
+
+			/*
+			 *  __getacc			-->
+			 *  __fence
+			 */
+			if
+			((q_nb >= 2) &&
+			 (p[1]->code == I_GETACC)
+			) {
+				nb = 2;
+			}
+
+			/* flush queue */
+			if (nb) {
+				q_wr -= nb;
+				q_nb -= nb;
+				nb = 0;
+
+				if (q_wr < 0)
+					q_wr += Q_SIZE;
+
+				/* loop */
+				goto lv1_loop;
+			}
+		}
+
 		/* 6-instruction patterns */
 		if (q_nb >= 6) {
 			/*

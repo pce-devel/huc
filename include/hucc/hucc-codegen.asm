@@ -22,6 +22,17 @@
 
 ; ***************************************************************************
 ; ***************************************************************************
+; i-code that retires the primary register contents
+; ***************************************************************************
+; ***************************************************************************
+
+__fence		.macro
+		.endm
+
+
+
+; ***************************************************************************
+; ***************************************************************************
 ; i-codes for handling farptr
 ; ***************************************************************************
 ; ***************************************************************************
@@ -85,39 +96,48 @@ __farptr	.macro
 		.endm
 
 ; **************
-; adds offset in Y:A to data address in \1
+; adds 16-bit unsigned offset in Y:A to data address in \1
 ; if 1-param then Y=bank, __fptr=addr, used for farpeekb() and farpeekw()
 ; if 3-param then \2=bank, \3=addr
 
 __farptr_i	.macro
+	.if	(\# = 3)
 		clc
 		adc.l	#(\1) & $1FFF
-	.if (\# = 3)
 		sta.l	\3
-	.else
-		sta.l	<__fptr
-	.endif
 		tya
 		adc.h	#(\1) & $1FFF
 		tay
 		and	#$1F
 		ora	#$60
-	.if (\# = 3)
 		sta.h	\3
-	.else
-		sta.h	<__fptr
-	.endif
 		tya
-		rol	a
-		rol	a
-		rol	a
-		rol	a
-		and	#$0F
+		ror	a
+		lsr	a
+		lsr	a
+		lsr	a
+		lsr	a
 		clc
 		adc	#bank(\1)
-	.if (\# = 3)
 		sta	\2
 	.else
+		clc
+		adc.l	#(\1) & $1FFF
+		sta.l	<__fptr
+		tya
+		adc.h	#(\1) & $1FFF
+		tay
+		and	#$1F
+		ora	#$60
+		sta.h	<__fptr
+		tya
+		ror	a
+		lsr	a
+		lsr	a
+		lsr	a
+		lsr	a
+		clc
+		adc	#bank(\1)
 		tay
 	.endif
 		.endm

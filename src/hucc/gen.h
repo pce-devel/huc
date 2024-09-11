@@ -52,6 +52,7 @@ void guge (int is_byte);
 void gcast (int type);
 void gsei (void);
 void gcli (void);
+void gfence (void);
 
 void scale_const (int type, int otag, int *size);
 

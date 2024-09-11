@@ -62,7 +62,7 @@ BM_NOT_FORMATTED= $FF			; HuCC can use a dictionary!
 
 
 		.bss
-bm_error	.ds	1
+__bm_error	.ds	1
 		.code
 
 
@@ -661,18 +661,18 @@ _bm_check	.proc
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; unsigned char __fastcall _bm_format( void );
+; unsigned char __fastcall bm_format( void );
 ;
 ; If BRAM is already formatted (*_PROPERLY_*) return OK, else format it.
 ;
 ; Returns either BM_OK, BM_NOT_FOUND.
 ;
-; After return bm_error = BM_OK, BM_NOT_FOUND.
+; After return __bm_error = BM_OK, BM_NOT_FOUND.
 
 _bm_format	.proc
 
 		system	bm_free
-		sta	bm_error
+		sta	__bm_error
 		tax
 		beq	.done
 
@@ -682,13 +682,13 @@ _bm_format	.proc
 		sta.h	<_ax
 
 		system	bm_format
-		sta	bm_error
+		sta	__bm_error
 		tax
 		beq	.done
 
 		ldx	#BM_NOT_FORMATTED
 
-.done:		stx	bm_error		; Return code in Y:X, X -> A.
+.done:		stx	__bm_error		; Return code in Y:X, X -> A.
 		cly
 		leave				; Return and copy X -> A.
 
@@ -705,12 +705,12 @@ _bm_format	.proc
 ;
 ; Returns (int) number of user bytes available in BRAM, or 0 if error.
 ;
-; After return bm_error = BM_OK or BM_NOT_FORMATTED.
+; After return __bm_error = BM_OK or BM_NOT_FORMATTED.
 
 _bm_free	.macro
 		phx				; Preserve X (aka __sp).
 		system	bm_free
-		sta	bm_error
+		sta	__bm_error
 		tay
 		beq	!ok+
 		stz.l	<_cx			; Return size 0 if error.
@@ -730,17 +730,17 @@ _bm_free	.macro
 ; Check for existence of BRAM file with a matching name
 ;
 ; Note: name is 12 bytes; first 2 bytes are a uniqueness value
-;	(should be zeroes), and the next10 bytes are ASCII name
-;	with trailing spaces as padding
+; (should be zeroes), and the next 10 bytes are the ASCII name
+; with trailing spaces as padding.
 ;
 ; Returns either BM_OK, BM_NOT_FOUND, BM_BAD_CHECKSUM or BM_NOT_FORMATTED.
 ;
-; After return bm_error = BM_OK or BM_NOT_FORMATTED.
+; After return __bm_error = BM_OK or BM_NOT_FORMATTED.
 
 _bm_read.4	.macro
 		phx				; Preserve X (aka __sp).
 		system	bm_read
-		sta	bm_error
+		sta	__bm_error
 		cly
 		plx				; Restore X (aka __sp).
 		.endm
@@ -755,17 +755,17 @@ _bm_read.4	.macro
 ; Given the name of a BRAM file, update some info inside of it
 ;
 ; Note: name is 12 bytes; first 2 bytes are a uniqueness value
-;	(should be zeroes), and the next10 bytes are ASCII name
-;	with trailing spaces as padding
+; (should be zeroes), and the next 10 bytes are the ASCII name
+; with trailing spaces as padding.
 ;
 ; Returns either BM_OK, BM_NOT_FOUND (i.e. not enough memory) or BM_NOT_FORMATTED.
 ;
-; After return bm_error = BM_OK, BM_NOT_FOUND (i.e. not enough memory) or BM_NOT_FORMATTED.
+; After return __bm_error = BM_OK, BM_NOT_FOUND (i.e. not enough memory) or BM_NOT_FORMATTED.
 
 _bm_write.4	.macro
 		phx				; Preserve X (aka __sp).
 		system	bm_write
-		sta	bm_error
+		sta	__bm_error
 		cly
 		plx				; Restore X (aka __sp).
 		.endm
@@ -780,17 +780,17 @@ _bm_write.4	.macro
 ; Delete the entry specified by the name provided
 ;
 ; Note: name is 12 bytes; first 2 bytes are a uniqueness value
-;	(should be zeroes), and the next10 bytes are ASCII name
-;	with trailing spaces as padding
+; (should be zeroes), and the next 10 bytes are the ASCII name
+; with trailing spaces as padding.
 ;
 ; Returns either BM_OK, BM_NOT_FOUND or BM_NOT_FORMATTED.
 ;
-; After return bm_error = BM_OK, BM_NOT_FOUND or BM_NOT_FORMATTED.
+; After return __bm_error = BM_OK, BM_NOT_FOUND or BM_NOT_FORMATTED.
 
 _bm_delete.1	.macro
 		phx				; Preserve X (aka __sp).
 		system	bm_delete
-		sta	bm_error
+		sta	__bm_error
 		cly
 		plx				; Restore X (aka __sp).
 		.endm
@@ -805,8 +805,8 @@ _bm_delete.1	.macro
 ; Check for existence of BRAM file with a matching name
 ;
 ; Note: name is 12 bytes; first 2 bytes are a uniqueness value
-;	(should be zeroes), and the next10 bytes are ASCII name
-;	with trailing spaces as padding
+; (should be zeroes), and the next 10 bytes are the ASCII name
+; with trailing spaces as padding.
 ;
 ; Returns 1 (TRUE) if the file exists and is OK, else 0 (FALSE).
 ;
@@ -821,7 +821,7 @@ _bm_exist.1	.macro
 		stz.h	<_dx
 		phx				; Preserve X (aka __sp).
 		system	bm_read
-		sta	bm_error
+		sta	__bm_error
 		tay				; $00 if file OK, else NZ.
 		beq	!done+
 		lda	#$FF
@@ -840,12 +840,12 @@ _bm_exist.1	.macro
 ; Create a new BRAM file, given the name and size
 ;
 ; Note: name is 12 bytes; first 2 bytes are a uniqueness value
-;	(should be zeroes), and the next10 bytes are ASCII name
-;	with trailing spaces as padding
+; (should be zeroes), and the next 10 bytes are the ASCII name
+; with trailing spaces as padding.
 ;
 ; Returns either BM_OK, BM_NOT_FOUND (i.e. not enough memory) or BM_NOT_FORMATTED.
 ;
-; After return bm_error = BM_OK, BM_NOT_FOUND (i.e. not enough memory) or BM_NOT_FORMATTED.
+; After return __bm_error = BM_OK, BM_NOT_FOUND (i.e. not enough memory) or BM_NOT_FORMATTED.
 ;
 ; N.B. Pointless HuC function, it's easier to try to write the file.
 
@@ -857,7 +857,7 @@ _bm_create.2	.macro
 		stz.h	<_dx
 		phx				; Preserve X (aka __sp).
 		system	bm_write
-		sta	bm_error
+		sta	__bm_error
 		cly
 		plx				; Restore X (aka __sp).
 		.endm
