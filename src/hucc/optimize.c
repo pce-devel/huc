@@ -24,6 +24,7 @@
 #include "sym.h"
 #include "code.h"
 #include "function.h"
+#include "optimize.h"
 #include "io.h"
 #include "error.h"
 
@@ -37,6 +38,241 @@
  /* GCC doesn't like "strcmp((char *)p[0]->data,"! */
  #pragma GCC diagnostic ignored "-Wstringop-overread"
 #endif
+
+/* flag information for each of the i-code instructions */
+/*
+ * N.B. this table MUST be kept updated and in the same order as the i-code
+ * enum list in defs.h
+ */
+unsigned char icode_flags[] = {
+	0,
+
+	/* i-code that retires the primary register contents */
+
+	/* I_FENCE              */	0,
+
+	/* i-codes for handling farptr */
+
+	/* I_FARPTR             */	0,
+	/* I_FARPTR_I           */	0,
+	/* I_FARPTR_GET         */	0,
+	/* I_FGETW              */	0,
+	/* I_FGETB              */	0,
+	/* I_FGETUB             */	0,
+
+	/* i-codes for interrupts */
+
+	/* I_SEI                */	0,
+	/* I_CLI                */	0,
+
+	/* i-codes for calling functions */
+
+	/* I_MACRO              */	0,
+	/* I_CALL               */	0,
+	/* I_CALLP              */	0,
+	/* I_JSR                */	0,
+
+	/* i-codes for C functions and the C parameter stack */
+
+	/* I_ENTER              */	0,
+	/* I_LEAVE              */	0,
+	/* I_GETACC             */	0,
+	/* I_SAVESP             */	0,
+	/* I_LOADSP             */	0,
+	/* I_MODSP              */	0,
+	/* I_PUSHW              */	0,
+	/* I_POPW               */	0,
+	/* I_SPUSHW             */	0,
+	/* I_SPUSHB             */	0,
+	/* I_SPOPW              */	0,
+	/* I_SPOPB              */	0,
+
+	/* i-codes for handling boolean tests and branching */
+
+	/* I_SWITCHW            */	0,
+	/* I_SWITCHB            */	0,
+	/* I_CASE               */	0,
+	/* I_ENDCASE            */	0,
+	/* I_LABEL              */	0,
+	/* I_ALIAS              */	0,
+	/* I_BRA                */	0,
+	/* I_DEF                */	0,
+	/* I_CMPW               */	0,
+	/* I_CMPB               */	0,
+	/* X_CMPWI_EQ           */	0,
+	/* X_CMPWI_NE           */	0,
+	/* I_NOTW               */	0,
+	/* I_TSTW               */	0,
+	/* I_BFALSE             */	0,
+	/* I_BTRUE              */	0,
+	/* X_TZB                */	0,
+	/* X_TZBP               */	0,
+	/* X_TZB_S              */	IS_SPREL,
+	/* X_TZW                */	0,
+	/* X_TZWP               */	0,
+	/* X_TZW_S              */	IS_SPREL,
+	/* X_TNZB               */	0,
+	/* X_TNZBP              */	0,
+	/* X_TNZB_S             */	IS_SPREL,
+	/* X_TNZW               */	0,
+	/* X_TNZWP              */	0,
+	/* X_TNZW_S             */	IS_SPREL,
+
+	/* i-codes for loading the primary register */
+
+	/* I_LDWI               */	0,
+	/* I_LEA_S              */	IS_SPREL,
+
+	/* I_LDW                */	0,
+	/* I_LDB                */	0,
+	/* I_LDUB               */	0,
+
+	/* I_LDWP               */	0,
+	/* I_LDBP               */	0,
+	/* I_LDUBP              */	0,
+
+	/* X_LDWA_A             */	0,
+	/* X_LDBA_A             */	0,
+	/* X_LDUBA_A            */	0,
+
+	/* X_LDW_S              */	IS_SPREL,
+	/* X_LDB_S              */	IS_SPREL,
+	/* X_LDUB_S             */	IS_SPREL,
+
+	/* X_LDPWA_A            */	0,
+	/* X_LDPBA_A            */	0,
+	/* X_LDPUBA_A           */	0,
+
+	/* i-codes for pre- and post- increment and decrement */
+
+	/* X_INCLD_WM           */	0,
+	/* X_INCLD_BM           */	0,
+	/* X_INCLD_CM           */	0,
+
+	/* X_DECLD_WM           */	0,
+	/* X_DECLD_BM           */	0,
+	/* X_DECLD_CM           */	0,
+
+	/* X_LDINC_WM           */	0,
+	/* X_LDINC_BM           */	0,
+	/* X_LDINC_CM           */	0,
+
+	/* X_LDDEC_WM           */	0,
+	/* X_LDDEC_BM           */	0,
+	/* X_LDDEC_CM           */	0,
+
+	/* X_INC_WMQ            */	0,
+	/* X_INC_CMQ            */	0,
+
+	/* X_DEC_WMQ            */	0,
+	/* X_DEC_CMQ            */	0,
+
+	/* X_INCLD_WS           */	IS_SPREL,
+	/* X_INCLD_BS           */	IS_SPREL,
+	/* X_INCLD_CS           */	IS_SPREL,
+
+	/* X_DECLD_WS           */	IS_SPREL,
+	/* X_DECLD_BS           */	IS_SPREL,
+	/* X_DECLD_CS           */	IS_SPREL,
+
+	/* X_LDINC_WS           */	IS_SPREL,
+	/* X_LDINC_BS           */	IS_SPREL,
+	/* X_LDINC_CS           */	IS_SPREL,
+
+	/* X_LDDEC_WS           */	IS_SPREL,
+	/* X_LDDEC_BS           */	IS_SPREL,
+	/* X_LDDEC_CS           */	IS_SPREL,
+
+	/* X_INC_WSQ            */	IS_SPREL,
+	/* X_INC_CSQ            */	IS_SPREL,
+
+	/* X_DEC_WSQ            */	IS_SPREL,
+	/* X_DEC_CSQ            */	IS_SPREL,
+
+	/* i-codes for saving the primary register */
+
+	/* I_STWZ               */	0,
+	/* I_STBZ               */	0,
+	/* I_STWI               */	0,
+	/* I_STBI               */	0,
+	/* I_STWIP              */	0,
+	/* I_STBIP              */	0,
+	/* I_STW                */	0,
+	/* I_STB                */	0,
+	/* I_STWP               */	0,
+	/* I_STBP               */	0,
+	/* I_STWPS              */	0,
+	/* I_STBPS              */	0,
+	/* X_STWI_S             */	IS_SPREL,
+	/* X_STBI_S             */	IS_SPREL,
+	/* X_STW_S              */	IS_SPREL,
+	/* X_STB_S              */	IS_SPREL,
+
+	/* X_INDEXW             */	0,
+	/* X_INDEXB             */	0,
+	/* X_STWAS              */	0,
+	/* X_STBAS              */	0,
+
+	/* i-codes for extending the primary register */
+
+	/* I_EXTW               */	0,
+	/* I_EXTUW              */	0,
+
+	/* i-codes for math with the primary register  */
+
+	/* I_COMW               */	0,
+	/* I_NEGW               */	0,
+
+	/* I_ADDWS              */	0,
+	/* I_ADDWI              */	0,
+	/* I_ADDW               */	0,
+	/* I_ADDUB              */	0,
+	/* X_ADDW_S             */	IS_SPREL,
+	/* X_ADDUB_S            */	IS_SPREL,
+
+	/* I_ADDBI_P            */	0,
+
+	/* I_SUBWS              */	0,
+	/* I_SUBWI              */	0,
+	/* I_SUBW               */	0,
+	/* I_SUBUB              */	0,
+
+	/* I_ISUBWI             */	0,
+
+	/* I_ANDWS              */	0,
+	/* I_ANDWI              */	0,
+	/* I_ANDW               */	0,
+	/* I_ANDUB              */	0,
+
+	/* I_EORWS              */	0,
+	/* I_EORWI              */	0,
+	/* I_EORW               */	0,
+	/* I_EORUB              */	0,
+
+	/* I_ORWS               */	0,
+	/* I_ORWI               */	0,
+	/* I_ORW                */	0,
+	/* I_ORUB               */	0,
+
+	/* I_ASLWS              */	0,
+	/* I_ASLWI              */	0,
+	/* I_ASLW               */	0,
+
+	/* I_ASRWI              */	0,
+	/* I_ASRW               */	0,
+
+	/* I_LSRWI              */	0,
+
+	/* I_MULWI              */	0,
+
+	/* i-codes for 32-bit longs */
+
+	/* X_LDD_I              */	0,
+	/* X_LDD_W              */	0,
+	/* X_LDD_B              */	0,
+	/* X_LDD_S_W            */	IS_SPREL,
+	/* X_LDD_S_B            */	IS_SPREL
+};
 
 /* defines */
 #define Q_SIZE		16
@@ -70,47 +306,9 @@ int cmp_operands (INS *p1, INS *p2)
 	return (1);
 }
 
-
-static int is_load (INS *i)
+inline bool is_sprel (INS *i)
 {
-	return (i->code == I_LDWI ||
-		i->code == I_LDW ||
-		i->code == I_LDB ||
-		i->code == I_LDUB ||
-		i->code == I_LDWP ||
-		i->code == I_LDBP ||
-		i->code == I_LDUBP ||
-//		i->code == X_LDWA_A ||
-//		i->code == X_LDBA_A ||
-//		i->code == X_LDUBA_A ||
-		i->code == X_LDW_S ||
-		i->code == X_LDB_S ||
-		i->code == X_LDUB_S ||
-		i->code == X_LDD_I ||
-		i->code == X_LDD_S_W ||
-		i->code == X_LDD_S_B);
-}
-
-static int is_sprel (INS *i)
-{
-	return (i->code == I_LEA_S ||
-		i->code == X_LDW_S ||
-		i->code == X_LDB_S ||
-		i->code == X_LDUB_S ||
-		i->code == X_STWI_S ||
-		i->code == X_STBI_S ||
-		i->code == X_STW_S ||
-		i->code == X_STB_S ||
-		i->code == X_INCW_S ||
-		i->code == X_INCB_S ||
-		i->code == X_ADDW_S ||
-		i->code == X_ADDUB_S ||
-		i->code == X_TZW_S ||
-		i->code == X_TZB_S ||
-		i->code == X_TNZW_S ||
-		i->code == X_TNZB_S ||
-		i->code == X_LDD_S_W ||
-		i->code == X_LDD_S_B);
+	return (icode_flags[i->code] & IS_SPREL);
 }
 
 inline bool is_small_array (SYMBOL *sym)
@@ -195,12 +393,85 @@ lv1_loop:
 			/*
 			 *  __getacc			-->
 			 *  __fence
+			 *
+			 *  __addwi / __subwi		-->
+			 *  __fence
 			 */
 			if
 			((q_nb >= 2) &&
-			 (p[1]->code == I_GETACC)
+			 (p[1]->code == I_ADDWI ||
+			  p[1]->code == I_SUBWI ||
+			  p[1]->code == I_GETACC)
 			) {
 				nb = 2;
+			}
+
+			/*
+			 *  __ldinc_wm / __incld_wm	-->	__inc_wm
+			 *  __fence
+			 *
+			 *  __lddec_wm / __decld_wm	-->	__dec_wm
+			 *  __fence
+			 *
+			 *  unused pre-increment or post-increment value
+			 *  unused pre-decrement or post-decrement value
+			 */
+			else if
+			((q_nb >= 2) &&
+			 (p[1]->code == X_INCLD_WM ||
+			  p[1]->code == X_INCLD_BM ||
+			  p[1]->code == X_INCLD_CM ||
+			  p[1]->code == X_LDINC_WM ||
+			  p[1]->code == X_LDINC_BM ||
+			  p[1]->code == X_LDINC_CM ||
+			  p[1]->code == X_DECLD_WM ||
+			  p[1]->code == X_DECLD_BM ||
+			  p[1]->code == X_DECLD_CM ||
+			  p[1]->code == X_LDDEC_WM ||
+			  p[1]->code == X_LDDEC_BM ||
+			  p[1]->code == X_LDDEC_CM ||
+			  p[1]->code == X_INCLD_WS ||
+			  p[1]->code == X_INCLD_BS ||
+			  p[1]->code == X_INCLD_CS ||
+			  p[1]->code == X_LDINC_WS ||
+			  p[1]->code == X_LDINC_BS ||
+			  p[1]->code == X_LDINC_CS ||
+			  p[1]->code == X_DECLD_WS ||
+			  p[1]->code == X_DECLD_BS ||
+			  p[1]->code == X_DECLD_CS ||
+			  p[1]->code == X_LDDEC_WS ||
+			  p[1]->code == X_LDDEC_BS ||
+			  p[1]->code == X_LDDEC_CS)
+			) {
+				/* replace code */
+				switch (p[1]->code) {
+				case X_INCLD_WM:
+				case X_LDINC_WM: p[1]->code = X_INC_WMQ; break;
+				case X_INCLD_BM:
+				case X_INCLD_CM:
+				case X_LDINC_BM:
+				case X_LDINC_CM: p[1]->code = X_INC_CMQ; break;
+				case X_DECLD_WM:
+				case X_LDDEC_WM: p[1]->code = X_DEC_WMQ; break;
+				case X_DECLD_BM:
+				case X_DECLD_CM:
+				case X_LDDEC_BM:
+				case X_LDDEC_CM: p[1]->code = X_DEC_CMQ; break;
+				case X_INCLD_WS:
+				case X_LDINC_WS: p[1]->code = X_INC_WSQ; break;
+				case X_INCLD_BS:
+				case X_INCLD_CS:
+				case X_LDINC_BS:
+				case X_LDINC_CS: p[1]->code = X_INC_CSQ; break;
+				case X_DECLD_WS:
+				case X_LDDEC_WS: p[1]->code = X_DEC_WSQ; break;
+				case X_DECLD_BS:
+				case X_DECLD_CS:
+				case X_LDDEC_BS:
+				case X_LDDEC_CS: p[1]->code = X_DEC_CSQ; break;
+				default: abort();
+				}
+				nb = 1;
 			}
 
 			/* flush queue */
@@ -383,54 +654,6 @@ lv1_loop:
 				p[3]->code = I_LEA_S;
 				p[3]->data += p[1]->data;
 				nb = 3;
-			}
-
-			/*
-			 *  __ldw_s i			-->	__ldw/b/ub_s  i
-			 *  __addwi 1				__incw/b_s i
-			 *  __stw_s i
-			 *  __subwi 1
-			 */
-			else if
-			((p[0]->code == I_SUBWI) &&
-			 (p[1]->code == X_STW_S) &&
-			 (p[2]->code == I_ADDWI) &&
-			 (p[3]->code == X_LDW_S) &&
-
-			 (p[0]->data == 1) &&
-			 (p[2]->data == 1) &&
-			 (p[1]->data == p[3]->data) &&
-			 (p[1]->data < 255)
-			) {
-				/* replace code */
-				p[2]->code = X_INCW_S;
-				p[2]->data = p[3]->data;
-				p[2]->sym = p[3]->sym;
-				nb = 2;
-			}
-
-			/*
-			 *  __ldb/ub_s i		-->	__ldb/ub_s  i
-			 *  __addwi 1				__incw/b_s i
-			 *  __stb_s i
-			 *  __subwi 1
-			 */
-			else if
-			((p[0]->code == I_SUBWI) &&
-			 (p[1]->code == X_STB_S) &&
-			 (p[2]->code == I_ADDWI) &&
-			 (p[3]->code == X_LDB_S ||
-			  p[3]->code == X_LDUB_S) &&
-			 (p[0]->data == 1) &&
-			 (p[2]->data == 1) &&
-			 (p[1]->data == p[3]->data) &&
-			 (p[1]->data < 255)
-			) {
-				/* replace code */
-				p[2]->code = X_INCB_S;
-				p[2]->data = p[3]->data;
-				p[2]->sym = p[3]->sym;
-				nb = 2;
 			}
 
 			/*
@@ -834,73 +1057,74 @@ lv1_loop:
 			}
 
 			/*
-			 *  __ldw/b/ub	 n		-->	__incw/b  n
-			 *  __addwi 1				__ldw/b/ub   n
-			 *  __stw/b/ub	 n
+			 *  __ld{w/b/c}  n		-->	__incld_{w/b/c}m  n
+			 *  __addwi  1
+			 *  __st{w/c}  n
 			 *
-			 *  is this a pre-increment?
+			 *  __ld{w/b/c}  n		-->	__decld_{w/b/c}m  n
+			 *  __subwi  1
+			 *  __st{w/c}  n
+			 *
+			 *  pre-increment, post-increment,
+			 *  pre-decrement, post-decrement!
 			 */
 			else if
-			((p[0]->code == I_STW ||
-			  p[0]->code == I_STB) &&
-			 (p[1]->code == I_ADDWI) &&
+			((p[1]->code == I_ADDWI ||
+			  p[1]->code == I_SUBWI) &&
 			 (p[1]->type == T_VALUE) &&
 			 (p[1]->data == 1) &&
-
+			 (p[0]->code == I_STW ||
+			  p[0]->code == I_STB) &&
 			 (p[2]->code == I_LDW ||
 			  p[2]->code == I_LDB ||
 			  p[2]->code == I_LDUB) &&
-			 (cmp_operands(p[0], p[2]) == 1)
+			 (p[0]->type == p[2]->type) &&
+			 (p[0]->data == p[2]->data)
+//			 (cmp_operands(p[0], p[2]) == 1)
 			) {
 				/* replace code */
-				p[1]->code = p[2]->code;
-				p[1]->type = p[2]->type;
-				p[1]->data = p[2]->data;
-				p[2]->code = (p[0]->code == I_STW) ? I_INCW : I_INCB;
-				nb = 1;
+				switch (p[2]->code) {
+				case I_LDW:	p[2]->code = (p[1]->code == I_ADDWI) ? X_INCLD_WM : X_DECLD_WM; break;
+				case I_LDB:	p[2]->code = (p[1]->code == I_ADDWI) ? X_INCLD_BM : X_DECLD_BM; break;
+				case I_LDUB:	p[2]->code = (p[1]->code == I_ADDWI) ? X_INCLD_CM : X_DECLD_CM; break;
+				default:	break;
+				}
+				nb = 2;
 			}
 
 			/*
-			 *  __incw  n			-->	__ldw  n
-			 *  __ldw  n				__incw  n
+			 *  __ld{w/b/c}_s  n		-->	__incld_{w/b/c}s  n
+			 *  __addwi  1
+			 *  __st{w/c}_s  n
+			 *
+			 *  __ld{w/b/c}_s  n		-->	__decld_{w/b/c}s  n
 			 *  __subwi  1
+			 *  __st{w/c}_s  n
+			 *
+			 *  C pre-increment, post-increment,
+			 *  C pre-decrement, post-decrement!
 			 */
 			else if
-			(((p[0]->code == I_SUBWI) &&
-			  (p[0]->type == T_VALUE) &&
-			  (p[0]->data == 1)) &&
-
-			 (p[1]->code == I_LDW) &&
-			 (p[2]->code == I_INCW) &&
-			 (cmp_operands(p[1], p[2]) == 1)
+			((p[1]->code == I_ADDWI ||
+			  p[1]->code == I_SUBWI) &&
+			 (p[1]->type == T_VALUE) &&
+			 (p[1]->data == 1) &&
+			 (p[0]->code == X_STW_S ||
+			  p[0]->code == X_STB_S) &&
+			 (p[2]->code == X_LDW_S ||
+			  p[2]->code == X_LDB_S ||
+			  p[2]->code == X_LDUB_S) &&
+			 (p[0]->type == p[2]->type) &&
+			 (p[0]->data == p[2]->data)
 			) {
 				/* replace code */
-				p[2]->code = p[1]->code;
-				p[2]->type = p[1]->type;
-				p[2]->data = p[1]->data;
-				p[1]->code = I_INCW;
-				nb = 1;
-			}
-
-			/*
-			 *  __incb  n			-->	__ldb/ub  n
-			 *  __ldb/ub  n				__incb  n
-			 *  __subwi  1
-			 */
-			else if
-			(((p[0]->code == I_SUBWI) &&
-			  (p[0]->type == T_VALUE) &&
-			  (p[0]->data == 1)) &&
-
-			 (p[1]->code == I_LDB || p[1]->code == I_LDUB) &&
-			 (p[2]->code == I_INCB) &&
-			 (cmp_operands(p[1], p[2]) == 1)) {
-				/* replace code */
-				p[2]->code = p[1]->code;
-				p[2]->type = p[1]->type;
-				p[2]->data = p[1]->data;
-				p[1]->code = I_INCB;
-				nb = 1;
+				switch (p[2]->code) {
+				case X_LDW_S:	p[2]->code = (p[1]->code == I_ADDWI) ? X_INCLD_WS : X_DECLD_WS; break;
+				case X_LDB_S:	p[2]->code = (p[1]->code == I_ADDWI) ? X_INCLD_BS : X_DECLD_BS; break;
+				case X_LDUB_S:	p[2]->code = (p[1]->code == I_ADDWI) ? X_INCLD_CS : X_DECLD_CS; break;
+				default:	break;
+				}
+				nb = 2;
 			}
 
 			/*
@@ -1492,28 +1716,77 @@ lv1_loop:
 			}
 
 			/*
-			 * subwi/addwi i		-->	is_load()
-			 * is_load()
+			 *  __decld_{w/b/c}m  n		-->	__lddec_{w/b/c}m  n
+			 *  __addwi  1
 			 *
-			 * This is a frequent case in which the result
-			 * of a post-increment or decrement is not used.
+			 *  __decld_{w/b/c}s  n		-->	__lddec_{w/b/c}s  n
+			 *  __addwi  1
+			 *
+			 *  C post-decrement!
 			 */
 			else if
-			((p[1]->code == I_SUBWI ||
-			  p[1]->code == I_ADDWI) &&
-			 (p[1]->type == T_VALUE) &&
-			 (is_load(p[0])) &&
-			 (p[0]->type != X_LDWA_A) &&
-			 (p[0]->type != X_LDBA_A) &&
-			 (p[0]->type != X_LDUBA_A)
+			((p[0]->code == I_ADDWI) &&
+			 (p[0]->type == T_VALUE) &&
+			 (p[0]->data == 1) &&
+			 (p[1]->code == X_DECLD_WM ||
+			  p[1]->code == X_DECLD_BM ||
+			  p[1]->code == X_DECLD_CM ||
+			  p[1]->code == X_DECLD_WS ||
+			  p[1]->code == X_DECLD_BS ||
+			  p[1]->code == X_DECLD_CS)
 			) {
-				*p[1] = *p[0];
+				/* replace code */
+				switch (p[1]->code) {
+				case X_DECLD_WM: p[1]->code = X_LDDEC_WM; break;
+				case X_DECLD_BM: p[1]->code = X_LDDEC_BM; break;
+				case X_DECLD_CM: p[1]->code = X_LDDEC_CM; break;
+				case X_DECLD_WS: p[1]->code = X_LDDEC_WS; break;
+				case X_DECLD_BS: p[1]->code = X_LDDEC_BS; break;
+				case X_DECLD_CS: p[1]->code = X_LDDEC_CS; break;
+				default:	break;
+				}
 				nb = 1;
 			}
 
 			/*
+			 *  __incld_{w/b/c}m  n		-->	__ldinc_{w/b/c}m  n
+			 *  __subwi  1
+			 *
+			 *  __incld_{w/b/c}s  n		-->	__ldinc_{w/b/c}s  n
+			 *  __subwi  1
+			 *
+			 *  C post-increment!
+			 */
+			else if
+			((p[0]->code == I_SUBWI) &&
+			 (p[0]->type == T_VALUE) &&
+			 (p[0]->data == 1) &&
+			 (p[1]->code == X_INCLD_WM ||
+			  p[1]->code == X_INCLD_BM ||
+			  p[1]->code == X_INCLD_CM ||
+			  p[1]->code == X_INCLD_WS ||
+			  p[1]->code == X_INCLD_BS ||
+			  p[1]->code == X_INCLD_CS)
+			) {
+				/* replace code */
+				switch (p[1]->code) {
+				case X_INCLD_WM: p[1]->code = X_LDINC_WM; break;
+				case X_INCLD_BM: p[1]->code = X_LDINC_BM; break;
+				case X_INCLD_CM: p[1]->code = X_LDINC_CM; break;
+				case X_INCLD_WS: p[1]->code = X_LDINC_WS; break;
+				case X_INCLD_BS: p[1]->code = X_LDINC_BS; break;
+				case X_INCLD_CS: p[1]->code = X_LDINC_CS; break;
+				default:	break;
+				}
+				nb = 1;
+			}
+
+#if 0
+			/*
 			 *  __stwi 0			-->	__stwz
 			 *  is_load()
+			 *
+			 * BETTER HANDLED WITH I_FENCE!
 			 */
 			else if
 			((p[1]->code == I_STWI) &&
@@ -1527,6 +1800,8 @@ lv1_loop:
 			/*
 			 *  __stbi 0			-->	__stwz
 			 *  is_load()
+			 *
+			 * BETTER HANDLED WITH I_FENCE!
 			 */
 			else if
 			((p[1]->code == I_STBI) &&
@@ -1536,6 +1811,7 @@ lv1_loop:
 			) {
 				p[1]->code = I_STBZ;
 			}
+#endif
 
 			/* flush queue */
 			if (nb) {
@@ -1663,6 +1939,8 @@ lv1_loop:
 
 				case I_PUSHW:
 					offset -= 2;
+					break;
+				default:
 					break;
 				}
 
@@ -1901,6 +2179,7 @@ lv2_loop:
 				nb = 1;
 			}
 
+#if 0
 			/*
 			 *  __pushw			-->	__stw __ptr
 			 *  <load>				<load>
@@ -1908,6 +2187,8 @@ lv2_loop:
 			 *
 			 *  This cannot be done earlier because it screws up
 			 *  the reordering optimization above.
+			 *
+			 *  THIS IS VERY RARE, REMOVE IT FOR NOW AND RETHINK IT
 			 */
 			else if
 			((p[0]->code == I_STBPS ||
@@ -1927,6 +2208,7 @@ lv2_loop:
 					p[0]->code = I_STWP;
 				q_ins[q_wr].type = T_PTR;
 			}
+#endif
 
 			/* flush queue */
 			if (nb) {

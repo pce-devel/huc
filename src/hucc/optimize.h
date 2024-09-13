@@ -6,6 +6,12 @@
 #ifndef _OPTIMIZE_H
 #define _OPTIMIZE_H
 
+/* bit-flag definitions for the i-code instructions */
+#define IS_SPREL	1
+
+/* flag information for each of the i-code instructions */
+extern unsigned char icode_flags[];
+
 void push_ins (INS *ins);
 void flush_ins (void);
 void flush_ins_label (int nextlabel);

@@ -246,7 +246,7 @@ void dump_ins (INS *tmp)
  */
 void gen_code (INS *tmp)
 {
-	int code;
+	enum ICODE code;
 	int type;
 	intptr_t data;
 	int imm_type;
@@ -281,6 +281,11 @@ void gen_code (INS *tmp)
 			break;
 		case T_SYMBOL:
 			outsymbol((SYMBOL *)data);
+			break;
+		case T_STRING:
+			outconst(litlab);
+			outbyte('+');
+			outdec((int)data);
 			break;
 		}
 		outstr(", ");
@@ -776,6 +781,216 @@ void gen_code (INS *tmp)
 //		nl();
 //		break;
 
+	/* i-codes for pre- and post- increment and decrement */
+
+	case X_INCLD_WM:
+		ot("__incld.wm\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_INCLD_BM:
+		ot("__incld.bm\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_INCLD_CM:
+		ot("__incld.cm\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_DECLD_WM:
+		ot("__decld.wm\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_DECLD_BM:
+		ot("__decld.bm\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_DECLD_CM:
+		ot("__decld.cm\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_LDINC_WM:
+		ot("__ldinc.wm\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_LDINC_BM:
+		ot("__ldinc.bm\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_LDINC_CM:
+		ot("__ldinc.cm\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_LDDEC_WM:
+		ot("__lddec.wm\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_LDDEC_BM:
+		ot("__lddec.bm\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_LDDEC_CM:
+		ot("__lddec.cm\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_INC_WMQ:
+		ot("__inc.wmq\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_INC_CMQ:
+		ot("__inc.cmq\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_DEC_WMQ:
+		ot("__dec.wmq\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_DEC_CMQ:
+		ot("__dec.cmq\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_INCLD_WS:
+		ot("__incld.ws\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_INCLD_BS:
+		ot("__incld.bs\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_INCLD_CS:
+		ot("__incld.cs\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_DECLD_WS:
+		ot("__decld.ws\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_DECLD_BS:
+		ot("__decld.bs\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_DECLD_CS:
+		ot("__decld.cs\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_LDINC_WS:
+		ot("__ldinc.ws\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_LDINC_BS:
+		ot("__ldinc.bs\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_LDINC_CS:
+		ot("__ldinc.cs\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_LDDEC_WS:
+		ot("__lddec.ws\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_LDDEC_BS:
+		ot("__lddec.bs\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_LDDEC_CS:
+		ot("__lddec.cs\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_INC_WSQ:
+		ot("__inc.wsq\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_INC_CSQ:
+		ot("__inc.csq\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_DEC_WSQ:
+		ot("__dec.wsq\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_DEC_CSQ:
+		ot("__dec.csq\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
 	/* i-codes for saving the primary register */
 
 	case I_STWZ:
@@ -940,18 +1155,6 @@ void gen_code (INS *tmp)
 
 	case I_NEGW:
 		ol("__negw");
-		break;
-
-	case I_INCW:
-		ot("__incw\t\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case I_INCB:
-		ot("__incb\t\t");
-		out_addr(type, data);
-		nl();
 		break;
 
 	case I_ADDWS:
@@ -1123,22 +1326,6 @@ void gen_code (INS *tmp)
 	case I_MULWI:
 		ot("__mulwi\t\t");
 		outdec((int)data);
-		nl();
-		break;
-
-	/* optimized i-codes for local variables on the C stack */
-
-	case X_INCW_S:
-		ot("__incw_s\t");
-		outdec((int)data);
-		outlocal(tmp->sym);
-		nl();
-		break;
-
-	case X_INCB_S:
-		ot("__incb_s\t");
-		outdec((int)data);
-		outlocal(tmp->sym);
 		nl();
 		break;
 

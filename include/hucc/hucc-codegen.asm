@@ -17,6 +17,42 @@
 ;
 ; ***************************************************************************
 ; ***************************************************************************
+;
+; NAMING SCHEME FOR HuCC MACROS ...
+;
+;   __function.parameters
+;
+; {parameters} is a list of alphanumeric specifiers, starting with {size} and
+; followed by {where}, followed by {index} if an array, then optional {value}
+; and finally ending with optional {suffix}
+;
+; {size}
+;   w : 16-bit signed int (default "int" in HuCC)
+;   u : 16-bit unsigned int
+;   b :  8-bit signed char
+;   c :  8-bit unsigned char (default "char" in HuCC)
+;
+; {where} or {index}
+;   i : immediate value, i.e. a decimal number
+;   r : HuCC primary register, made up of the Y:A cpu registers
+;   t : top of arithmetic stack
+;   m : memory, i.e. C global, static, and "-fno-recursive" variables
+;   s : stack, i.e. C function parameters and locals (not "-fno-recursive")
+;   a : array, i.e. C global, static, "-fno-recursive" arrays <= 256 bytes
+;   x : array index already in the X register
+;   y : array index already in the Y register
+;
+; {value} OPTIONAL
+;   i : immediate value, i.e. a decimal number
+;   z : zero value
+;
+; {suffix} OPTIONAL
+;   q : quick, used for optimized math on only 8-bit values, because all math
+;       is normally promoted to "int" size in C; and when optimized stores do
+;       not need to preserve the primary register contents
+;
+; ***************************************************************************
+; ***************************************************************************
 
 
 
@@ -25,6 +61,10 @@
 ; i-code that retires the primary register contents
 ; ***************************************************************************
 ; ***************************************************************************
+
+; **************
+; this only exists to mark the end of a C statement when the primary register
+; contents are no longer needed
 
 __fence		.macro
 		.endm
@@ -963,6 +1003,314 @@ __lduba_s	.macro	; __STACK
 
 ; ***************************************************************************
 ; ***************************************************************************
+; i-codes for pre- and post- increment and decrement
+; ***************************************************************************
+; ***************************************************************************
+
+; **************
+
+__incld.wm	.macro
+		inc.l	\1
+		bne	!+
+		inc.h	\1
+!:		lda.l	\1
+		ldy.h	\1
+		.endm
+
+; **************
+
+__incld.bm	.macro
+		inc	\1
+		lda	\1
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+
+__incld.cm	.macro
+		inc	\1
+		lda	\1
+		cly
+		.endm
+
+; **************
+
+__decld.wm	.macro
+		lda.l	\1
+		bne	!+
+		dec.h	\1
+!:		dec	a
+		sta.l	\1
+		ldy.h	\1
+		.endm
+
+; **************
+
+__decld.bm	.macro
+		dec	\1
+		lda	\1
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+
+__decld.cm	.macro
+		dec	\1
+		lda	\1
+		cly
+		.endm
+
+; **************
+
+__ldinc.wm	.macro
+		lda.l	\1
+		ldy.h	\1
+		inc.l	\1
+		bne	!+
+		inc.h	\1
+!:
+		.endm
+
+; **************
+
+__ldinc.bm	.macro
+		lda	\1
+		cly
+		bpl	!+
+		dey
+!:		inc	\1
+		.endm
+
+; **************
+
+__ldinc.cm	.macro
+		lda	\1
+		cly
+		inc	\1
+		.endm
+
+; **************
+
+__lddec.wm	.macro
+		ldy.h	\1
+		lda.l	\1
+		bne	!+
+		dec.h	\1
+!:		dec.l	\1
+		.endm
+
+; **************
+
+__lddec.bm	.macro
+		lda	\1
+		cly
+		bpl	!+
+		dey
+!:		dec	\1
+		.endm
+
+; **************
+
+__lddec.cm	.macro
+		lda	\1
+		cly
+		dec	\1
+		.endm
+
+; **************
+; optimized macro used when the value isn't needed in the primary register
+
+__inc.wmq	.macro
+		inc.l	\1
+		bne	!+
+		inc.h	\1
+!:
+		.endm
+
+; **************
+; optimized macro used when the value isn't needed in the primary register
+
+__inc.cmq	.macro
+		inc	\1
+		.endm
+
+; **************
+; optimized macro used when the value isn't needed in the primary register
+
+__dec.wmq	.macro
+		lda.l	\1
+		bne	!+
+		dec.h	\1
+!:		dec.l	\1
+		.endm
+
+; **************
+; optimized macro used when the value isn't needed in the primary register
+
+__dec.cmq	.macro
+		dec	\1
+		.endm
+
+; **************
+
+__incld.ws	.macro
+		inc.l	<__stack + \1, x
+		bne	!+
+		inc.h	<__stack + \1, x
+!:		lda.l	<__stack + \1, x
+		ldy.h	<__stack + \1, x
+		.endm
+
+; **************
+
+__incld.bs	.macro
+		inc	<__stack + \1, x
+		lda	<__stack + \1, x
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+
+__incld.cs	.macro
+		inc	<__stack + \1, x
+		lda	<__stack + \1, x
+		cly
+		.endm
+
+; **************
+
+__decld.ws	.macro
+		lda.l	<__stack + \1, x
+		bne	!+
+		dec.h	<__stack + \1, x
+!:		dec	a
+		sta.l	<__stack + \1, x
+		ldy.h	<__stack + \1, x
+		.endm
+
+; **************
+
+__decld.bs	.macro
+		dec	<__stack + \1, x
+		lda	<__stack + \1, x
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+
+__decld.cs	.macro
+		dec	<__stack + \1, x
+		lda	<__stack + \1, x
+		cly
+		.endm
+
+; **************
+
+__ldinc.ws	.macro
+		lda.l	<__stack + \1, x
+		ldy.h	<__stack + \1, x
+		inc.l	<__stack + \1, x
+		bne	!+
+		inc.h	<__stack + \1, x
+!:
+		.endm
+
+; **************
+
+__ldinc.bs	.macro
+		lda	<__stack + \1, x
+		cly
+		bpl	!+
+		dey
+!:		inc	<__stack + \1, x
+		.endm
+
+; **************
+
+__ldinc.cs	.macro
+		lda	<__stack + \1, x
+		cly
+		inc	<__stack + \1, x
+		.endm
+
+; **************
+
+__lddec.ws	.macro
+		ldy.h	<__stack + \1, x
+		lda.l	<__stack + \1, x
+		bne	!+
+		dec.h	<__stack + \1, x
+!:		dec.l	<__stack + \1, x
+		.endm
+
+; **************
+
+__lddec.bs	.macro
+		lda	<__stack + \1, x
+		cly
+		bpl	!+
+		dey
+!:		dec	<__stack + \1, x
+		.endm
+
+; **************
+
+__lddec.cs	.macro
+		lda	<__stack + \1, x
+		cly
+		dec	<__stack + \1, x
+		.endm
+
+; **************
+; optimized macro used when the value isn't needed in the primary register
+
+__inc.wsq	.macro
+		inc.l	<__stack + \1, x
+		bne	!+
+		inc.h	<__stack + \1, x
+!:
+		.endm
+
+; **************
+; optimized macro used when the value isn't needed in the primary register
+
+__inc.csq	.macro
+		inc	<__stack + \1, x
+		.endm
+
+; **************
+; optimized macro used when the value isn't needed in the primary register
+
+__dec.wsq	.macro
+		lda.l	<__stack + \1, x
+		bne	!+
+		dec.h	<__stack + \1, x
+!:		dec.l	<__stack + \1, x
+		.endm
+
+; **************
+; optimized macro used when the value isn't needed in the primary register
+
+__dec.csq	.macro
+		dec	<__stack + \1, x
+		.endm
+
+
+
+; ***************************************************************************
+; ***************************************************************************
 ; i-codes for saving the primary register
 ; ***************************************************************************
 ; ***************************************************************************
@@ -1214,81 +1562,6 @@ __negw		.macro
 
 ; **************
 
-__incw		.macro
-		inc.l	\1
-		bne	!+
-		inc.h	\1
-!:
-		.endm
-
-; **************
-
-__incb		.macro
-		inc	\1
-		.endm
-
-;	; ************** NEW and UNIMPLEMENTED!
-;
-;	__decw_		.macro
-;			lda.l	\1
-;			bne	!+
-;			dec.h	\1
-;	!:		dec.l	\1
-;			.endm
-;
-;	; ************** NEW and UNIMPLEMENTED!
-;
-;	__decwa_	.macro
-;			cmp	#0
-;			bne	!+
-;			dey
-;	!:		dec	a
-;			.endm
-;
-;	__decwa2_	.macro
-;			sec
-;			sbc	#2
-;			say
-;			sbc	#0
-;			say
-;			.endm
-;
-;	__decwm_	.macro
-;			lda.l	\1
-;			bne	!+
-;			dec.h	\1
-;	!:		dec.l	\1
-;			.endm
-;
-;	__decwm2_	.macro
-;			lda.l	\1
-;			bne	!+
-;			dec.h	\1
-;	!:		dec.l	\1
-;			bne	!+
-;			dec.h	\1
-;	!:		dec.l	\1
-;			.endm
-;
-;	__decws_	.macro
-;			lda.l	<__stack, x
-;			bne	!+
-;			dec.h	<__stack, x
-;	!:		dec.l	<__stack, x
-;			.endm
-;
-;	__decws2_	.macro
-;			lda.l	<__stack, x
-;			bne	!+
-;			dec.h	<__stack, x
-;	!:		dec.l	<__stack, x
-;			bne	!+
-;			dec.h	<__stack, x
-;	!:		dec.l	<__stack, x
-;			.endm
-
-; **************
-
 __addws		.macro	; __STACK
 		clc
 		adc.l	<__stack, x
@@ -1316,19 +1589,6 @@ __addwi		.macro
 		say
 	.endif
 		.endm
-
-;	; **************
-;	; pceas workaround; the regular __addwi doesn't work if the argument is
-;	; symbolic because the code size changes as it is resolved.
-;	; **************
-;
-;	__addwi_sym	.macro
-;			clc
-;			adc.l	#\1
-;			say
-;			adc.h	#\1
-;			say
-;			.endm
 
 ; **************
 
@@ -1831,29 +2091,6 @@ __mulwi		.macro
 	.endif
 	.endif
 	.endif
-		.endm
-
-
-
-; ***************************************************************************
-; ***************************************************************************
-; optimized i-codes for local variables on the C stack
-; ***************************************************************************
-; ***************************************************************************
-
-; **************
-
-__incw_s	.macro	; __STACK
-		inc.l	<__stack + \1, x
-		bne	!+
-		inc.h	<__stack + \1, x
-!:
-		.endm
-
-; **************
-
-__incb_s	.macro	; __STACK
-		inc	<__stack + \1, x
 		.endm
 
 
@@ -2490,64 +2727,7 @@ do_switchb:	sty.h	<__ptr		; Save hi-byte of the table address.
 
 ; **************
 
-__ldincw	.macro
-		lda.l	\1
-		ldy.h	\1
-		inc.l	\1
-		bne
-		inc.h	\1
-!:
-		.endm
-
-; **************
-
-__ldincb	.macro
-		lda	\1
-		cly
-		bpl	!+
-		dey
-!:		inc	\1
-		.endm
-
-; **************
-
-__ldincub	.macro
-		lda	\1
-		cly
-		inc	\1
-		.endm
-
-; **************
-
-__lddecw	.macro
-		ldy.h	\1
-		lda.l	\1
-		bne	!+
-		dec.h	\1
-!:		dec.l	\1
-		.endm
-
-; **************
-
-__lddecb	.macro
-		lda	\1
-		cly
-		bpl	!+
-		dey
-!:		dec	\1
-		.endm
-
-; **************
-
-__lddecub	.macro
-		lda	\1
-		cly
-		dec	\1
-		.endm
-
-; **************
-
-__lddecwa_a	.macro
+__lddec.war	.macro
 		phx
 		asl	a
 		tax
@@ -2561,7 +2741,7 @@ __lddecwa_a	.macro
 
 ; **************
 
-__lddecuba_a	.macro
+__lddec.uar	.macro
 		tay
 		lda.l	\1, y
 		dec	a
@@ -2572,7 +2752,65 @@ __lddecuba_a	.macro
 
 ; **************
 
-__stwa		.macro
+__dec.warq	.macro
+		asl	a
+		sax
+		ldy.l	\1, x
+		bne	!+
+		dec.h	\1, x
+!:		dec.l	\1, x
+		tax
+		.endm
+
+; **************
+
+__dec.uarq	.macro
+		sax
+		dec.l	\1, x
+		tax
+		.endm
+
+; **************
+
+__st.wat	.macro
+		stx	<__sp
+		plx
+		sta.l	\1, x
+		say
+		sta.h	\1, x
+		say
+		ldx	<__sp
+		.endm
+
+; **************
+
+__st.bat	.macro
+		sty	<__temp
+		ply
+		sta.l	\1, y
+		ldy	<__temp
+		.endm
+
+; **************
+
+__st.watq	.macro
+		sty	<__temp
+		ply
+		sta.l	\1, y
+		lda	<__temp
+		sta.h	\1, y
+		.endm
+
+; **************
+
+__st.batq	.macro
+		ply
+		sta.l	\1, y
+		.endm
+
+; **************
+
+__st.wam	.macro
 		phy
 		pha
 		lda	\2
@@ -2586,7 +2824,7 @@ __stwa		.macro
 
 ; **************
 
-__stba		.macro
+__st.bam	.macro
 		phy
 		ldy	\2
 		sta	\1, y
@@ -2595,17 +2833,93 @@ __stba		.macro
 
 ; **************
 
-__stpwaq	.macro
-		sty	<__temp
-		ply
-		sta.l	\1, y
-		lda	<__temp
+__st.wamq	.macro
+		pha
+		lda	\2
+		asl	a
+		say
 		sta.h	\1, y
+		pla
+		sta.l	\1, y
 		.endm
 
 ; **************
 
-__stpbaq	.macro
-		ply
-		sta.l	\1, y
+__st.bamq	.macro
+		ldy	\2
+		sta	\1, y
+		.endm
+
+; **************
+
+__add.wam	.macro
+		stx	<__sp
+		tax
+		lda	\2
+		asl	a
+		sax
+		clc
+		adc.l	\1, x
+		say
+		adc.h	\1, x
+		say
+		ldx	<__sp
+		.endm
+
+; **************
+
+__add.bam	.macro
+		stx	<__sp
+		ldx	\2
+		bit.l	\1, x
+		bpl	!+
+		dey
+!:		clc
+		adc.l	\1, x
+		bcc	!+
+		iny
+!:		ldx	<__sp
+		.endm
+
+; **************
+
+__add.uam	.macro
+		stx	<__sp
+		ldx	\2
+		clc
+		adc.l	\1, x
+		bcc	!+
+		iny
+!:		ldx	<__sp
+		.endm
+
+; **************
+
+__add.uamq	.macro
+		ldy	\2
+		clc
+		adc.l	\1, y
+		.endm
+
+; **************
+
+__sub.bam	.macro
+		stx	<__sp
+		ldx	\2
+		bit.l	\1, x
+		bpl	!+
+		iny
+!:		sec
+		sbc.l	\1, x
+		bcs	!+
+		dey
+!:		ldx	<__sp
+		.endm
+
+; **************
+
+__sub.bamq	.macro
+		ldy	\2
+!:		sec
+		sbc.l	\1, y
 		.endm

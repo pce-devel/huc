@@ -32,7 +32,12 @@
 #define T_PAL           11
 #define T_LITERAL       12
 
-/* basic pseudo instructions */
+
+/* i-code pseudo instructions */
+/*
+ * N.B. this i-code enum list MUST be kept updated and in the same order
+ * as the table of i-code flag information in optimize.c
+ */
 enum ICODE {
 	/* i-code that retires the primary register contents */
 
@@ -109,15 +114,19 @@ enum ICODE {
 
 	I_LDWI,
 	I_LEA_S,
+
 	I_LDW,
 	I_LDB,
 	I_LDUB,
+
 	I_LDWP,
 	I_LDBP,
 	I_LDUBP,
+
 	X_LDWA_A,
 	X_LDBA_A,
 	X_LDUBA_A,
+
 	X_LDW_S,
 	X_LDB_S,
 	X_LDUB_S,
@@ -125,6 +134,52 @@ enum ICODE {
 	X_LDPWA_A,
 	X_LDPBA_A,
 	X_LDPUBA_A,
+
+	/* i-codes for pre- and post- increment and decrement */
+
+	X_INCLD_WM,
+	X_INCLD_BM,
+	X_INCLD_CM,
+
+	X_DECLD_WM,
+	X_DECLD_BM,
+	X_DECLD_CM,
+
+	X_LDINC_WM,
+	X_LDINC_BM,
+	X_LDINC_CM,
+
+	X_LDDEC_WM,
+	X_LDDEC_BM,
+	X_LDDEC_CM,
+
+	X_INC_WMQ,
+	X_INC_CMQ,
+
+	X_DEC_WMQ,
+	X_DEC_CMQ,
+
+	X_INCLD_WS,
+	X_INCLD_BS,
+	X_INCLD_CS,
+
+	X_DECLD_WS,
+	X_DECLD_BS,
+	X_DECLD_CS,
+
+	X_LDINC_WS,
+	X_LDINC_BS,
+	X_LDINC_CS,
+
+	X_LDDEC_WS,
+	X_LDDEC_BS,
+	X_LDDEC_CS,
+
+	X_INC_WSQ,
+	X_INC_CSQ,
+
+	X_DEC_WSQ,
+	X_DEC_CSQ,
 
 	/* i-codes for saving the primary register */
 
@@ -159,9 +214,6 @@ enum ICODE {
 
 	I_COMW,
 	I_NEGW,
-
-	I_INCW,
-	I_INCB,
 
 	I_ADDWS,
 	I_ADDWI,
@@ -204,11 +256,6 @@ enum ICODE {
 	I_LSRWI,
 
 	I_MULWI,
-
-	/* optimized i-codes for local variables on the C stack */
-
-	X_INCW_S,
-	X_INCB_S,
 
 	/* i-codes for 32-bit longs */
 
@@ -311,7 +358,6 @@ struct tag_symbol {
 #define PUBLIC  1
 #define AUTO    2
 #define EXTERN  3
-
 #define STATIC  4
 #define LSTATIC 5
 #define DEFAUTO 6
@@ -404,12 +450,12 @@ struct macro {
 /* pseudo instruction structure */
 
 typedef struct {
-	int code;
+	enum ICODE code;
 	int type;
 	intptr_t data;
 	int imm_type;
 	intptr_t imm_data;
-	char *arg[3];
+	const char *arg[3];
 	SYMBOL *sym;
 } INS;
 

@@ -857,23 +857,8 @@ void arg_flush (int arg, int adj)
 			}
 		}
 		else {
-			switch (ins->code) {
-			case I_LEA_S:
-			case X_LDW_S:
-			case X_LDB_S:
-			case X_LDUB_S:
-			case X_STWI_S:
-			case X_STBI_S:
-			case X_STB_S:
-			case X_STW_S:
-			case X_INCW_S:
-			case X_ADDW_S:
-			case X_ADDUB_S:
-			case X_LDD_S_W:
-			case X_LDD_S_B:
+			if (icode_flags[ins->code] & IS_SPREL)
 				ins->data -= adj;
-				break;
-			}
 		}
 
 		/* flush */
@@ -881,6 +866,10 @@ void arg_flush (int arg, int adj)
 	}
 }
 
+/*
+ * convert a function argument into a farptr
+ *
+ */
 void arg_to_fptr (struct fastcall *fast, int i, int arg, int adj)
 {
 	INS *ins, tmp;
@@ -944,6 +933,8 @@ void arg_to_fptr (struct fastcall *fast, int i, int arg, int adj)
 			case I_LDWP:
 				err = 1;
 				break;
+			default:
+				break;
 		}
 	}
 
@@ -992,6 +983,9 @@ void arg_to_fptr (struct fastcall *fast, int i, int arg, int adj)
 	}
 }
 
+/*
+ *
+ */
 void arg_to_dword (struct fastcall *fast, int i, int arg, int adj)
 {
 	INS *ins, *ptr, tmp;
