@@ -849,7 +849,7 @@ __ldubp		.macro
 
 ; **************
 
-__ldwa_a	.macro
+__ld.war	.macro
 		asl	a
 		tay
 		lda.h	\1, y
@@ -860,7 +860,7 @@ __ldwa_a	.macro
 
 ; **************
 
-__ldba_a	.macro
+__ld.bar	.macro
 		tay
 		lda	\1, y
 		cly
@@ -871,7 +871,7 @@ __ldba_a	.macro
 
 ; **************
 
-__lduba_a	.macro
+__ld.car	.macro
 		tay
 		lda	\1, y
 		cly
@@ -879,7 +879,7 @@ __lduba_a	.macro
 
 ; **************
 
-__ldwa_m	.macro
+__ld.wam	.macro
 		lda	\2
 		asl	a
 		tay
@@ -891,7 +891,7 @@ __ldwa_m	.macro
 
 ; **************
 
-__ldba_m	.macro
+__ld.bam	.macro
 		ldy	\2
 		lda	\1, y
 		cly
@@ -902,7 +902,7 @@ __ldba_m	.macro
 
 ; **************
 
-__lduba_m	.macro
+__ld.cam	.macro
 		ldy	\2
 		lda	\1, y
 		cly
@@ -910,8 +910,10 @@ __lduba_m	.macro
 
 ; **************
 ; special load for when array writes are optimized
+; the cpu stack is balanced with an __st.wat
 
-__ldpwa_a	.macro
+__ldp.war	.macro
+		phx
 		asl	a
 		tay
 		phy
@@ -923,8 +925,10 @@ __ldpwa_a	.macro
 
 ; **************
 ; special load for when array writes are optimized
+; the cpu stack is balanced with an __st.cat
 
-__ldpba_a	.macro
+__ldp.bar	.macro
+		phx
 		tay
 		phy
 		lda	\1, y
@@ -936,8 +940,10 @@ __ldpba_a	.macro
 
 ; **************
 ; special load for when array writes are optimized
+; the cpu stack is balanced with an __st.cat
 
-__ldpuba_a	.macro
+__ldp.car	.macro
+		phx
 		tay
 		phy
 		lda	\1, y
@@ -1307,6 +1313,202 @@ __dec.csq	.macro
 		dec	<__stack + \1, x
 		.endm
 
+; **************
+
+__incld.war	.macro
+		phx
+		asl	a
+		tax
+		inc.l	\1, x
+		bne	!+
+		inc.h	\1, x
+!:		lda.l	\1, x
+		ldy.h	\1, x
+		plx
+		.endm
+
+; **************
+
+__incld.bar	.macro
+		tay
+		lda	\1, y
+		inc	a
+		sta	\1, y
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+
+__incld.car	.macro
+		tay
+		lda	\1, y
+		inc	a
+		sta	\1, y
+		cly
+		.endm
+
+; **************
+
+__decld.war	.macro
+		phx
+		asl	a
+		tax
+		lda.l	\1, x
+		bne	!+
+		dec.h	\1, x
+!:		dec	a
+		sta.l	\1, x
+		ldy.h	\1, x
+		plx
+		.endm
+
+; **************
+
+__decld.bar	.macro
+		tay
+		lda	\1, y
+		dec	a
+		sta	\1, y
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+
+__decld.car	.macro
+		tay
+		lda	\1, y
+		dec	a
+		sta	\1, y
+		cly
+		.endm
+
+; **************
+
+__ldinc.war	.macro
+		phx
+		asl	a
+		tax
+		lda.l	\1, x
+		ldy.h	\1, x
+		inc.l	\1, x
+		bne	!+
+		inc.h	\1, x
+!:		plx
+		.endm
+
+; **************
+
+__ldinc.bar	.macro
+		tay
+		lda.l	\1, y
+		inc	a
+		sta.l	\1, y
+		dec	a
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+
+__ldinc.car	.macro
+		tay
+		lda.l	\1, y
+		inc	a
+		sta.l	\1, y
+		dec	a
+		cly
+		.endm
+
+; **************
+
+__lddec.war	.macro
+		phx
+		asl	a
+		tax
+		ldy.h	\1, x
+		lda.l	\1, x
+		bne	!+
+		dec.h	\1, x
+!:		dec.l	\1, x
+		plx
+		.endm
+
+; **************
+
+__lddec.bar	.macro
+		tay
+		lda.l	\1, y
+		dec	a
+		sta.l	\1, y
+		inc	a
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+
+__lddec.car	.macro
+		tay
+		lda.l	\1, y
+		dec	a
+		sta.l	\1, y
+		inc	a
+		cly
+		.endm
+
+; **************
+; optimized macro used when the value isn't needed in the primary register
+
+__inc.warq	.macro
+		asl	a
+		sax
+		inc.l	\1, x
+		bne	!+
+		inc.h	\1, x
+!:		tax
+		.endm
+
+; **************
+; optimized macro used when the value isn't needed in the primary register
+
+__inc.carq	.macro
+		sax
+		inc	\1, x
+		tax
+		.endm
+
+; **************
+; optimized macro used when the value isn't needed in the primary register
+
+__dec.warq	.macro
+		asl	a
+		sax
+		ldy.l	\1, x
+		bne	!+
+		dec.h	\1, x
+!:		dec.l	\1, x
+		tax
+		.endm
+
+; **************
+; optimized macro used when the value isn't needed in the primary register
+
+__dec.carq	.macro
+		sax
+		dec	\1, x
+		tax
+		.endm
+
 
 
 ; ***************************************************************************
@@ -1421,37 +1623,45 @@ __stbps		.macro	; __STACK
 		.endm
 
 ; **************
+; special store for when array writes are optimized
+; the cpu stack is balanced with an __st.wat
 
-__indexw	.macro
+__index.wr	.macro
+		phx
 		asl	a
 		pha
 		.endm
 
 ; **************
+; special store for when array writes are optimized
+; the cpu stack is balanced with an __st.cat
 
-__indexb	.macro
+__index.cr	.macro
+		phx
 		pha
 		.endm
 
 ; **************
+; special store for when array writes are optimized
+; this balances the cpu stack after an __index.wr or __ldp.war
 
-__stwas		.macro
-		stx	<__sp
+__st.wat	.macro
 		plx
 		sta.l	\1, x
 		say
 		sta.h	\1, x
 		say
-		ldx	<__sp
+		plx
 		.endm
 
 ; **************
+; special store for when array writes are optimized
+; this balances the cpu stack after an __index.cr or __ldp.car
 
-__stbas		.macro
-		stx	<__sp
+__st.cat	.macro
 		plx
 		sta.l	\1, x
-		ldx	<__sp
+		plx
 		.endm
 
 ; **************
@@ -2724,202 +2934,3 @@ do_switchb:	sty.h	<__ptr		; Save hi-byte of the table address.
 ; POTENTIAL OPTIMIZATIONS, NOT YET ADDED
 ; ***************************************************************************
 ; ***************************************************************************
-
-; **************
-
-__lddec.war	.macro
-		phx
-		asl	a
-		tax
-		ldy.h	\1, x
-		lda.l	\1, x
-		bne	!+
-		dec.h	\1, x
-!:		dec.l	\1, x
-		plx
-		.endm
-
-; **************
-
-__lddec.uar	.macro
-		tay
-		lda.l	\1, y
-		dec	a
-		sta.l	\1, y
-		inc	a
-		cly
-		.endm
-
-; **************
-
-__dec.warq	.macro
-		asl	a
-		sax
-		ldy.l	\1, x
-		bne	!+
-		dec.h	\1, x
-!:		dec.l	\1, x
-		tax
-		.endm
-
-; **************
-
-__dec.uarq	.macro
-		sax
-		dec.l	\1, x
-		tax
-		.endm
-
-; **************
-
-__st.wat	.macro
-		stx	<__sp
-		plx
-		sta.l	\1, x
-		say
-		sta.h	\1, x
-		say
-		ldx	<__sp
-		.endm
-
-; **************
-
-__st.bat	.macro
-		sty	<__temp
-		ply
-		sta.l	\1, y
-		ldy	<__temp
-		.endm
-
-; **************
-
-__st.watq	.macro
-		sty	<__temp
-		ply
-		sta.l	\1, y
-		lda	<__temp
-		sta.h	\1, y
-		.endm
-
-; **************
-
-__st.batq	.macro
-		ply
-		sta.l	\1, y
-		.endm
-
-; **************
-
-__st.wam	.macro
-		phy
-		pha
-		lda	\2
-		asl	a
-		say
-		sta.h	\1, y
-		pla
-		sta.l	\1, y
-		ply
-		.endm
-
-; **************
-
-__st.bam	.macro
-		phy
-		ldy	\2
-		sta	\1, y
-		ply
-		.endm
-
-; **************
-
-__st.wamq	.macro
-		pha
-		lda	\2
-		asl	a
-		say
-		sta.h	\1, y
-		pla
-		sta.l	\1, y
-		.endm
-
-; **************
-
-__st.bamq	.macro
-		ldy	\2
-		sta	\1, y
-		.endm
-
-; **************
-
-__add.wam	.macro
-		stx	<__sp
-		tax
-		lda	\2
-		asl	a
-		sax
-		clc
-		adc.l	\1, x
-		say
-		adc.h	\1, x
-		say
-		ldx	<__sp
-		.endm
-
-; **************
-
-__add.bam	.macro
-		stx	<__sp
-		ldx	\2
-		bit.l	\1, x
-		bpl	!+
-		dey
-!:		clc
-		adc.l	\1, x
-		bcc	!+
-		iny
-!:		ldx	<__sp
-		.endm
-
-; **************
-
-__add.uam	.macro
-		stx	<__sp
-		ldx	\2
-		clc
-		adc.l	\1, x
-		bcc	!+
-		iny
-!:		ldx	<__sp
-		.endm
-
-; **************
-
-__add.uamq	.macro
-		ldy	\2
-		clc
-		adc.l	\1, y
-		.endm
-
-; **************
-
-__sub.bam	.macro
-		stx	<__sp
-		ldx	\2
-		bit.l	\1, x
-		bpl	!+
-		iny
-!:		sec
-		sbc.l	\1, x
-		bcs	!+
-		dey
-!:		ldx	<__sp
-		.endm
-
-; **************
-
-__sub.bamq	.macro
-		ldy	\2
-!:		sec
-		sbc.l	\1, y
-		.endm

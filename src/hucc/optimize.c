@@ -131,17 +131,17 @@ unsigned char icode_flags[] = {
 	/* I_LDBP               */	0,
 	/* I_LDUBP              */	0,
 
-	/* X_LDWA_A             */	0,
-	/* X_LDBA_A             */	0,
-	/* X_LDUBA_A            */	0,
+	/* X_LD_WAR             */	0,
+	/* X_LD_BAR             */	0,
+	/* X_LD_CAR            */	0,
 
 	/* X_LDW_S              */	IS_SPREL,
 	/* X_LDB_S              */	IS_SPREL,
 	/* X_LDUB_S             */	IS_SPREL,
 
-	/* X_LDPWA_A            */	0,
-	/* X_LDPBA_A            */	0,
-	/* X_LDPUBA_A           */	0,
+	/* X_LDP_WAR            */	0,
+	/* X_LDP_BAR            */	0,
+	/* X_LDP_CAR           */	0,
 
 	/* i-codes for pre- and post- increment and decrement */
 
@@ -189,6 +189,28 @@ unsigned char icode_flags[] = {
 	/* X_DEC_WSQ            */	IS_SPREL,
 	/* X_DEC_CSQ            */	IS_SPREL,
 
+	/* X_INCLD_WAR          */	0,
+	/* X_INCLD_BAR          */	0,
+	/* X_INCLD_CAR          */	0,
+
+	/* X_DECLD_WAR          */	0,
+	/* X_DECLD_BAR          */	0,
+	/* X_DECLD_CAR          */	0,
+
+	/* X_LDINC_WAR          */	0,
+	/* X_LDINC_BAR          */	0,
+	/* X_LDINC_CAR          */	0,
+
+	/* X_LDDEC_WAR          */	0,
+	/* X_LDDEC_BAR          */	0,
+	/* X_LDDEC_CAR          */	0,
+
+	/* X_INC_WARQ           */	0,
+	/* X_INC_CARQ           */	0,
+
+	/* X_DEC_WARQ           */	0,
+	/* X_DEC_CARQ           */	0,
+
 	/* i-codes for saving the primary register */
 
 	/* I_STWZ               */	0,
@@ -208,10 +230,10 @@ unsigned char icode_flags[] = {
 	/* X_STW_S              */	IS_SPREL,
 	/* X_STB_S              */	IS_SPREL,
 
-	/* X_INDEXW             */	0,
-	/* X_INDEXB             */	0,
-	/* X_STWAS              */	0,
-	/* X_STBAS              */	0,
+	/* X_INDEX_WR           */	0,
+	/* X_INDEX_CR           */	0,
+	/* X_ST_WAT             */	0,
+	/* X_ST_CAT             */	0,
 
 	/* i-codes for extending the primary register */
 
@@ -441,7 +463,19 @@ lv1_loop:
 			  p[1]->code == X_DECLD_CS ||
 			  p[1]->code == X_LDDEC_WS ||
 			  p[1]->code == X_LDDEC_BS ||
-			  p[1]->code == X_LDDEC_CS)
+			  p[1]->code == X_LDDEC_CS ||
+			  p[1]->code == X_INCLD_WAR ||
+			  p[1]->code == X_INCLD_BAR ||
+			  p[1]->code == X_INCLD_CAR ||
+			  p[1]->code == X_LDINC_WAR ||
+			  p[1]->code == X_LDINC_BAR ||
+			  p[1]->code == X_LDINC_CAR ||
+			  p[1]->code == X_DECLD_WAR ||
+			  p[1]->code == X_DECLD_BAR ||
+			  p[1]->code == X_DECLD_CAR ||
+			  p[1]->code == X_LDDEC_WAR ||
+			  p[1]->code == X_LDDEC_BAR ||
+			  p[1]->code == X_LDDEC_CAR)
 			) {
 				/* replace code */
 				switch (p[1]->code) {
@@ -469,6 +503,18 @@ lv1_loop:
 				case X_DECLD_CS:
 				case X_LDDEC_BS:
 				case X_LDDEC_CS: p[1]->code = X_DEC_CSQ; break;
+				case X_INCLD_WAR:
+				case X_LDINC_WAR: p[1]->code = X_INC_WARQ; break;
+				case X_INCLD_BAR:
+				case X_INCLD_CAR:
+				case X_LDINC_BAR:
+				case X_LDINC_CAR: p[1]->code = X_INC_CARQ; break;
+				case X_DECLD_WAR:
+				case X_LDDEC_WAR: p[1]->code = X_DEC_WARQ; break;
+				case X_DECLD_BAR:
+				case X_DECLD_CAR:
+				case X_LDDEC_BAR:
+				case X_LDDEC_CAR: p[1]->code = X_DEC_CARQ; break;
 				default: abort();
 				}
 				nb = 1;
@@ -746,7 +792,7 @@ lv1_loop:
 			 (p[3]->code == I_ASLW)
 			) {
 				/* replace code */
-				p[3]->code = X_LDWA_A;
+				p[3]->code = X_LD_WAR;
 				p[3]->type = T_SYMBOL;
 				p[3]->data = p[2]->data;
 				nb = 3;
@@ -1128,6 +1174,42 @@ lv1_loop:
 			}
 
 			/*
+			 *  __ldp_{w/b/c}ar  n		-->	__incld_{w/b/c}ar  n
+			 *  __addwi  1
+			 *  __st{w/c}  n
+			 *
+			 *  __ldp_{w/b/c}ar  n		-->	__decld_{w/b/c}ar  n
+			 *  __subwi  1
+			 *  __st{w/c}  n
+			 *
+			 *  pre-increment, post-increment,
+			 *  pre-decrement, post-decrement!
+			 */
+			else if
+			((p[1]->code == I_ADDWI ||
+			  p[1]->code == I_SUBWI) &&
+			 (p[1]->type == T_VALUE) &&
+			 (p[1]->data == 1) &&
+			 (p[0]->code == X_ST_WAT ||
+			  p[0]->code == X_ST_CAT) &&
+			 (p[2]->code == X_LDP_WAR ||
+			  p[2]->code == X_LDP_BAR ||
+			  p[2]->code == X_LDP_CAR) &&
+			 (p[0]->type == p[2]->type) &&
+			 (p[0]->data == p[2]->data)
+//			 (cmp_operands(p[0], p[2]) == 1)
+			) {
+				/* replace code */
+				switch (p[2]->code) {
+				case X_LDP_WAR:	p[2]->code = (p[1]->code == I_ADDWI) ? X_INCLD_WAR : X_DECLD_WAR; break;
+				case X_LDP_BAR:	p[2]->code = (p[1]->code == I_ADDWI) ? X_INCLD_BAR : X_DECLD_BAR; break;
+				case X_LDP_CAR:	p[2]->code = (p[1]->code == I_ADDWI) ? X_INCLD_CAR : X_DECLD_CAR; break;
+				default:	break;
+				}
+				nb = 2;
+			}
+
+			/*
 			 *  __ldw/b/ub			-->	__tzw/b/ub
 			 *  __tstw				__btrue (or __bfalse)
 			 *  __btrue (or __bfalse)
@@ -1208,14 +1290,14 @@ lv1_loop:
 			 (is_small_array((SYMBOL *)p[2]->data))
 			) {
 				/* replace code */
-				p[2]->code = (p[0]->code == I_LDBP) ? X_LDBA_A : X_LDUBA_A;
+				p[2]->code = (p[0]->code == I_LDBP) ? X_LD_BAR : X_LD_CAR;
 				nb = 2;
 			}
 #endif
 
 #if OPT_ARRAY_WR
 			/*
-			 *  __indexw or __indexb array	-->	__pldwa/__pldba/__plduba array
+			 *  __index.wr or __index.cr	-->	__ldp.{w/b/c}ar array
 			 *  __stw _ptr
 			 *  __ldwp/__ldbp/__ldubp _ptr
 			 *
@@ -1233,14 +1315,14 @@ lv1_loop:
 			 (p[0]->type == T_PTR) &&
 			 (p[1]->code == I_STW) &&
 			 (p[1]->type == T_PTR) &&
-			 (p[2]->code == X_INDEXW ||
-			  p[2]->code == X_INDEXB)
+			 (p[2]->code == X_INDEX_WR ||
+			  p[2]->code == X_INDEX_CR)
 			) {
 				/* replace code */
 				if (p[0]->code == I_LDWP)
-					p[2]->code = X_LDPWA_A;
+					p[2]->code = X_LDP_WAR;
 				else
-					p[2]->code = (p[0]->code == I_LDBP) ? X_LDPBA_A : X_LDPUBA_A;
+					p[2]->code = (p[0]->code == I_LDBP) ? X_LDP_BAR : X_LDP_CAR;
 				nb = 2;
 			}
 #endif
@@ -1315,8 +1397,8 @@ lv1_loop:
 			  p[1]->code == I_LDUB ||
 			  p[1]->code == I_LDBP ||
 			  p[1]->code == I_LDUBP ||
-			  p[1]->code == X_LDBA_A ||
-			  p[1]->code == X_LDUBA_A ||
+			  p[1]->code == X_LD_BAR ||
+			  p[1]->code == X_LD_CAR ||
 			  p[1]->code == X_LDB_S ||
 			  p[1]->code == X_LDUB_S)
 			) {
@@ -1722,6 +1804,9 @@ lv1_loop:
 			 *  __decld_{w/b/c}s  n		-->	__lddec_{w/b/c}s  n
 			 *  __addwi  1
 			 *
+			 *  __decld_{w/b/c}ar  n	-->	__lddec_{w/b/c}ar  n
+			 *  __addwi  1
+			 *
 			 *  C post-decrement!
 			 */
 			else if
@@ -1733,7 +1818,10 @@ lv1_loop:
 			  p[1]->code == X_DECLD_CM ||
 			  p[1]->code == X_DECLD_WS ||
 			  p[1]->code == X_DECLD_BS ||
-			  p[1]->code == X_DECLD_CS)
+			  p[1]->code == X_DECLD_CS ||
+			  p[1]->code == X_DECLD_WAR ||
+			  p[1]->code == X_DECLD_BAR ||
+			  p[1]->code == X_DECLD_CAR)
 			) {
 				/* replace code */
 				switch (p[1]->code) {
@@ -1743,6 +1831,9 @@ lv1_loop:
 				case X_DECLD_WS: p[1]->code = X_LDDEC_WS; break;
 				case X_DECLD_BS: p[1]->code = X_LDDEC_BS; break;
 				case X_DECLD_CS: p[1]->code = X_LDDEC_CS; break;
+				case X_DECLD_WAR: p[1]->code = X_LDDEC_WAR; break;
+				case X_DECLD_BAR: p[1]->code = X_LDDEC_BAR; break;
+				case X_DECLD_CAR: p[1]->code = X_LDDEC_CAR; break;
 				default:	break;
 				}
 				nb = 1;
@@ -1753,6 +1844,9 @@ lv1_loop:
 			 *  __subwi  1
 			 *
 			 *  __incld_{w/b/c}s  n		-->	__ldinc_{w/b/c}s  n
+			 *  __subwi  1
+			 *
+			 *  __incld_{w/b/c}ar  n	-->	__ldinc_{w/b/c}ar  n
 			 *  __subwi  1
 			 *
 			 *  C post-increment!
@@ -1766,7 +1860,10 @@ lv1_loop:
 			  p[1]->code == X_INCLD_CM ||
 			  p[1]->code == X_INCLD_WS ||
 			  p[1]->code == X_INCLD_BS ||
-			  p[1]->code == X_INCLD_CS)
+			  p[1]->code == X_INCLD_CS ||
+			  p[1]->code == X_INCLD_WAR ||
+			  p[1]->code == X_INCLD_BAR ||
+			  p[1]->code == X_INCLD_CAR)
 			) {
 				/* replace code */
 				switch (p[1]->code) {
@@ -1776,6 +1873,9 @@ lv1_loop:
 				case X_INCLD_WS: p[1]->code = X_LDINC_WS; break;
 				case X_INCLD_BS: p[1]->code = X_LDINC_BS; break;
 				case X_INCLD_CS: p[1]->code = X_LDINC_CS; break;
+				case X_INCLD_WAR: p[1]->code = X_LDINC_WAR; break;
+				case X_INCLD_BAR: p[1]->code = X_LDINC_BAR; break;
+				case X_INCLD_CAR: p[1]->code = X_LDINC_CAR; break;
 				default:	break;
 				}
 				nb = 1;
@@ -1853,30 +1953,30 @@ lv1_loop:
 	 *
 	 * this covers storing to global and static arrays with "=" ...
 	 *
-	 *  __aslw				-->	__index2
+	 *  __aslw				-->	__index.wr
 	 *  __addwi array				...
-	 *  __pushw					__stwa_a array
+	 *  __pushw					__st.wat array
 	 *    ...
 	 *  __stwps
 	 *
-	 *  __addwi array			-->	__index1
+	 *  __addwi array			-->	__index.cr
 	 *  __pushw					...
-	 *    ...					__stba_a array
+	 *    ...					__st.cat array
 	 *  __stbps
 	 *
 	 * this covers storing to global and static arrays with "+=", "-=", etc ...
 	 *
-	 *  __aslw				-->	__ldpwa_a array
+	 *  __aslw				-->	__ldp.war array
 	 *  __addwi array				...
-	 *  __pushw					__stwa_a array
+	 *  __pushw					__st.wat array
 	 *  __stw _ptr
 	 *  __ldwp _ptr
 	 *    ...
 	 *  __stwps
 	 *
-	 *  __addwi array			-->	__ldpuba_a array
+	 *  __addwi array			-->	__ldp.car array
 	 *  __pushw					...
-	 *  __stw _ptr					__stba_a array
+	 *  __stw _ptr					__st.cat array
 	 *  __ldubp _ptr
 	 *    ...
 	 *  __stbps
@@ -2032,8 +2132,8 @@ lv1_loop:
 #if OPT_ARRAY_WR
 
 						} else {
-							int push = X_INDEXB;
-							int code = X_STBAS;
+							int push = X_INDEX_CR;
+							int code = X_ST_CAT;
 
 							/* make sure that I_ADDWI is really a short array */
 							if (q_ins[prev].type != T_SYMBOL ||
@@ -2052,8 +2152,8 @@ lv1_loop:
 								if (copy == q_nb || q_ins[aslw].code != I_ASLW)
 									break;
 								drop = 2;
-								push = X_INDEXW;
-								code = X_STWAS;
+								push = X_INDEX_WR;
+								code = X_ST_WAT;
 							}
 
 							/* push the index from the preceding I_ADDWI */

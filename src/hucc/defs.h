@@ -123,17 +123,17 @@ enum ICODE {
 	I_LDBP,
 	I_LDUBP,
 
-	X_LDWA_A,
-	X_LDBA_A,
-	X_LDUBA_A,
+	X_LD_WAR,
+	X_LD_BAR,
+	X_LD_CAR,
 
 	X_LDW_S,
 	X_LDB_S,
 	X_LDUB_S,
 
-	X_LDPWA_A,
-	X_LDPBA_A,
-	X_LDPUBA_A,
+	X_LDP_WAR,
+	X_LDP_BAR,
+	X_LDP_CAR,
 
 	/* i-codes for pre- and post- increment and decrement */
 
@@ -181,6 +181,28 @@ enum ICODE {
 	X_DEC_WSQ,
 	X_DEC_CSQ,
 
+	X_INCLD_WAR,
+	X_INCLD_BAR,
+	X_INCLD_CAR,
+
+	X_DECLD_WAR,
+	X_DECLD_BAR,
+	X_DECLD_CAR,
+
+	X_LDINC_WAR,
+	X_LDINC_BAR,
+	X_LDINC_CAR,
+
+	X_LDDEC_WAR,
+	X_LDDEC_BAR,
+	X_LDDEC_CAR,
+
+	X_INC_WARQ,
+	X_INC_CARQ,
+
+	X_DEC_WARQ,
+	X_DEC_CARQ,
+
 	/* i-codes for saving the primary register */
 
 	I_STWZ,
@@ -200,10 +222,10 @@ enum ICODE {
 	X_STW_S,
 	X_STB_S,
 
-	X_INDEXW,
-	X_INDEXB,
-	X_STWAS,
-	X_STBAS,
+	X_INDEX_WR,
+	X_INDEX_CR,
+	X_ST_WAT,
+	X_ST_CAT,
 
 	/* i-codes for extending the primary register */
 

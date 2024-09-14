@@ -697,20 +697,20 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_LDWA_A:
-		ot("__ldwa_a\t");
+	case X_LD_WAR:
+		ot("__ld.war\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case X_LDBA_A:
-		ot("__ldba_a\t");
+	case X_LD_BAR:
+		ot("__ld.bar\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case X_LDUBA_A:
-		ot("__lduba_a\t");
+	case X_LD_CAR:
+		ot("__ld.car\t");
 		out_type(type, data);
 		nl();
 		break;
@@ -736,20 +736,20 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_LDPWA_A:
-		ot("__ldpwa_a\t");
+	case X_LDP_WAR:
+		ot("__ldp.war\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case X_LDPBA_A:
-		ot("__ldpba_a\t");
+	case X_LDP_BAR:
+		ot("__ldp.bar\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case X_LDPUBA_A:
-		ot("__ldpuba_a\t");
+	case X_LDP_CAR:
+		ot("__ldp.car\t");
 		out_type(type, data);
 		nl();
 		break;
@@ -991,6 +991,102 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_INCLD_WAR:
+		ot("__incld.war\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_INCLD_BAR:
+		ot("__incld.bar\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_INCLD_CAR:
+		ot("__incld.car\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_DECLD_WAR:
+		ot("__decld.war\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_DECLD_BAR:
+		ot("__decld.bar\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_DECLD_CAR:
+		ot("__decld.car\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_LDINC_WAR:
+		ot("__ldinc.war\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_LDINC_BAR:
+		ot("__ldinc.bar\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_LDINC_CAR:
+		ot("__ldinc.car\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_LDDEC_WAR:
+		ot("__lddec.war\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_LDDEC_BAR:
+		ot("__lddec.bar\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_LDDEC_CAR:
+		ot("__lddec.car\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_INC_WARQ:
+		ot("__inc.warq\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_INC_CARQ:
+		ot("__inc.carq\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_DEC_WARQ:
+		ot("__dec.warq\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_DEC_CARQ:
+		ot("__dec.carq\t");
+		out_type(type, data);
+		nl();
+		break;
+
 	/* i-codes for saving the primary register */
 
 	case I_STWZ:
@@ -1097,26 +1193,26 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_INDEXW:
-		ot("__indexw\t");
+	case X_INDEX_WR:
+		ot("__index.wr\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case X_INDEXB:
-		ot("__indexb\t");
+	case X_INDEX_CR:
+		ot("__index.cr\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case X_STWAS:
-		ot("__stwas\t\t");
+	case X_ST_WAT:
+		ot("__st.wat\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case X_STBAS:
-		ot("__stbas\t\t");
+	case X_ST_CAT:
+		ot("__st.cat\t");
 		out_type(type, data);
 		nl();
 		break;
