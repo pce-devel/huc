@@ -522,13 +522,13 @@ int getarg (int t, int syntax, int otag, int is_fastcall)
 #define SPILLB(a) { \
 		spilled_args[sparg_idx] = (a); \
 		spilled_arg_sizes[sparg_idx++] = 1; \
-		out_ins(I_SPUSHB, 0, 0); \
+		out_ins(I_SPUSH_UR, 0, 0); \
 }
 
 #define SPILLW(a) { \
 		spilled_args[sparg_idx] = (a); \
 		spilled_arg_sizes[sparg_idx++] = 2; \
-		out_ins(I_SPUSHW, 0, 0); \
+		out_ins(I_SPUSH_WR, 0, 0); \
 }
 
 void callfunction (char *ptr)
@@ -577,7 +577,7 @@ void callfunction (char *ptr)
 
 	if (ptr == NULL) {
 		/* save indirect call function-ptr on the hardware-stack */
-		out_ins(I_SPUSHW, 0, 0);
+		out_ins(I_SPUSH_WR, 0, 0);
 	} else {
 		/* fastcall check, but don't know how many parameters */
 		if ((is_fc = fastcall_look(ptr, -1, NULL)) == 0) {
@@ -658,20 +658,20 @@ void callfunction (char *ptr)
 					if (i < max_fc_arg)
 						SPILLB(fast->argname[j])
 					else
-						out_ins(I_STB, T_LITERAL, (intptr_t)fast->argname[j]);
+						out_ins(I_ST_UM, T_LITERAL, (intptr_t)fast->argname[j]);
 					break;
 				case TYPE_WORD:
 					if (i < max_fc_arg)
 						SPILLW(fast->argname[j])
 					else
-						out_ins(I_STW, T_LITERAL, (intptr_t)fast->argname[j]);
+						out_ins(I_ST_WM, T_LITERAL, (intptr_t)fast->argname[j]);
 					break;
 				case TYPE_FARPTR:
 					arg_to_fptr(fast, j, arg_idx + i, adj);
 					if (i < max_fc_arg) {
-						out_ins(I_LDUB, T_LITERAL, (intptr_t)fast->argname[j]);
+						out_ins(I_LD_UM, T_LITERAL, (intptr_t)fast->argname[j]);
 						SPILLB(fast->argname[j])
-						out_ins(I_LDW, T_LITERAL, (intptr_t)fast->argname[j + 1]);
+						out_ins(I_LD_WM, T_LITERAL, (intptr_t)fast->argname[j + 1]);
 						SPILLW(fast->argname[j + 1])
 					}
 					j += 1;
@@ -679,11 +679,11 @@ void callfunction (char *ptr)
 				case TYPE_DWORD:
 					arg_to_dword(fast, j, arg_idx + i, adj);
 					if (i < max_fc_arg) {
-						out_ins(I_LDW, T_LITERAL, (intptr_t)fast->argname[j]);
+						out_ins(I_LD_WM, T_LITERAL, (intptr_t)fast->argname[j]);
 						SPILLW(fast->argname[j])
-						out_ins(I_LDW, T_LITERAL, (intptr_t)fast->argname[j + 1]);
+						out_ins(I_LD_WM, T_LITERAL, (intptr_t)fast->argname[j + 1]);
 						SPILLW(fast->argname[j + 1])
-						out_ins(I_LDW, T_LITERAL, (intptr_t)fast->argname[j + 2]);
+						out_ins(I_LD_WM, T_LITERAL, (intptr_t)fast->argname[j + 2]);
 						SPILLW(fast->argname[j + 2])
 					}
 					j += 2;
@@ -725,27 +725,27 @@ void callfunction (char *ptr)
 		/* Reloading corrupts acc, so we need to save it if it
 		   is used by the callee. */
 		if (uses_acc)
-			out_ins(I_STW, T_LITERAL, (intptr_t)"__temp");
+			out_ins(I_ST_WM, T_LITERAL, (intptr_t)"__temp");
 
 		for (i = sparg_idx - 1; i > -1; i--) {
 			if (spilled_arg_sizes[i] == 1) {
-				out_ins(I_SPOPB, 0, 0);
-				out_ins(I_STB, T_LITERAL, (intptr_t)spilled_args[i]);
+				out_ins(I_SPOP_UR, 0, 0);
+				out_ins(I_ST_UM, T_LITERAL, (intptr_t)spilled_args[i]);
 			}
 			else {
-				out_ins(I_SPOPW, 0, 0);
+				out_ins(I_SPOP_WR, 0, 0);
 				if (spilled_args[i])
-					out_ins(I_STW, T_LITERAL, (intptr_t)spilled_args[i]);
+					out_ins(I_ST_WM, T_LITERAL, (intptr_t)spilled_args[i]);
 			}
 		}
 
 		if (uses_acc)
-			out_ins(I_LDW, T_LITERAL, (intptr_t)"__temp");
+			out_ins(I_LD_WM, T_LITERAL, (intptr_t)"__temp");
 	}
 
 	if (ptr == NULL) {
 		/* restore indirect call function-ptr from the hardware-stack */
-		out_ins(I_SPOPW, 0, 0);
+		out_ins(I_SPOP_WR, 0, 0);
 		out_ins(I_CALLP, 0, 0);
 	} else {
 		if (fast && !(fast->flags & FASTCALL_XSAFE))
@@ -849,10 +849,10 @@ void arg_flush (int arg, int adj)
 		i++;
 		ins = &ins_stack[idx];
 
-		if ((ins->type == T_STACK) && (ins->code == I_LDW)) {
+		if ((ins->type == T_STACK) && (ins->code == I_LD_WM)) {
 			if (i < nb) {
 				ins = &ins_stack[idx + 1];
-				if ((ins->code == I_ADDWI) && (ins->type == T_VALUE))
+				if ((ins->code == I_ADD_WI) && (ins->type == T_VALUE))
 					ins->data -= adj;
 			}
 		}
@@ -896,11 +896,11 @@ void arg_to_fptr (struct fastcall *fast, int i, int arg, int adj)
 			switch (sym->ident) {
 				case FUNCTION:
 				case ARRAY:
-					if (ins->code == I_LDWI)
+					if (ins->code == I_LD_WI)
 						err = 0;
 					break;
 				case POINTER:
-					if (ins->code == I_LDW)
+					if (ins->code == I_LD_WM)
 						err = 0;
 					break;
 			}
@@ -914,12 +914,12 @@ void arg_to_fptr (struct fastcall *fast, int i, int arg, int adj)
 				sym = (SYMBOL *)ins->data;
 				switch (sym->ident) {
 					case ARRAY:
-						if ((ins->code == I_LDWI) ||
-							(ins->code == I_ADDWI))
+						if ((ins->code == I_LD_WI) ||
+							(ins->code == I_ADD_WI))
 							err = 0;
 						break;
 					case POINTER:
-						if (ins->code == I_LDW)
+						if (ins->code == I_LD_WM)
 							err = 0;
 						break;
 				}
@@ -929,8 +929,8 @@ void arg_to_fptr (struct fastcall *fast, int i, int arg, int adj)
 
 		/* check if last instruction is a pointer dereference */
 		switch (ins_stack[ arg_list[arg][0] + nb - 1 ].code) {
-			case I_LDBP:
-			case I_LDWP:
+			case I_LD_UP:
+			case I_LD_WP:
 				err = 1;
 				break;
 			default:
@@ -1007,7 +1007,7 @@ void arg_to_dword (struct fastcall *fast, int i, int arg, int adj)
 	/* check arg */
 	if (nb == 1) {
 		/* immediate value */
-		if ((ins->code == I_LDWI) && (ins->type == T_VALUE)) {
+		if ((ins->code == I_LD_WI) && (ins->type == T_VALUE)) {
 			ins->code = X_LDD_I;
 			ins->arg[0] = fast->argname[i + 1];
 			ins->arg[1] = fast->argname[i + 2];
@@ -1015,7 +1015,7 @@ void arg_to_dword (struct fastcall *fast, int i, int arg, int adj)
 		}
 
 		/* var/ptr */
-		else if ((((ins->code == I_LDW) || (ins->code == I_LDB) || (ins->code == I_LDUB))
+		else if ((((ins->code == I_LD_WM) || (ins->code == I_LD_BM) || (ins->code == I_LD_UM))
 			  && (ins->type == T_SYMBOL)) || (ins->type == T_LABEL)) {
 			/* check special cases */
 			if (ins->type == T_LABEL) {
@@ -1030,7 +1030,7 @@ void arg_to_dword (struct fastcall *fast, int i, int arg, int adj)
 			if (sym->ident == POINTER)
 				gen = 1;
 			else if (sym->ident == VARIABLE) {
-				if (ins->code == I_LDW)
+				if (ins->code == I_LD_WM)
 					ins->code = X_LDD_W;
 				else
 					ins->code = X_LDD_B;
@@ -1044,7 +1044,7 @@ void arg_to_dword (struct fastcall *fast, int i, int arg, int adj)
 		}
 
 		/* var/ptr */
-		else if ((ins->code == X_LDW_S) || (ins->code == X_LDB_S) || ins->code == X_LDUB_S) {
+		else if ((ins->code == X_LD_WS) || (ins->code == X_LD_BS) || ins->code == X_LD_US) {
 			/* get symbol */
 			sym = ins->sym;
 
@@ -1053,7 +1053,7 @@ void arg_to_dword (struct fastcall *fast, int i, int arg, int adj)
 				if (sym->ident == POINTER)
 					gen = 1;
 				else if (sym->ident == VARIABLE) {
-					if (ins->code == X_LDW_S)
+					if (ins->code == X_LD_WS)
 						ins->code = X_LDD_S_W;
 					else
 						ins->code = X_LDD_S_B;
@@ -1077,7 +1077,7 @@ void arg_to_dword (struct fastcall *fast, int i, int arg, int adj)
 		}
 
 		/* array */
-		else if ((ins->code == I_LDWI) && (ins->type == T_SYMBOL)) {
+		else if ((ins->code == I_LD_WI) && (ins->type == T_SYMBOL)) {
 			/* get symbol */
 			sym = (SYMBOL *)ins->data;
 
@@ -1088,7 +1088,7 @@ void arg_to_dword (struct fastcall *fast, int i, int arg, int adj)
 	}
 	else if (nb == 2) {
 		/* array */
-		if ((ins->code == I_LDWI) && (ins->type == T_SYMBOL)) {
+		if ((ins->code == I_LD_WI) && (ins->type == T_SYMBOL)) {
 			/* get symbol */
 			sym = (SYMBOL *)ins->data;
 
@@ -1097,7 +1097,7 @@ void arg_to_dword (struct fastcall *fast, int i, int arg, int adj)
 				ptr = ins;
 				ins = &ins_stack[idx + 1];
 
-				if ((ins->code == I_ADDWI) && (ins->type == T_VALUE)) {
+				if ((ins->code == I_ADD_WI) && (ins->type == T_VALUE)) {
 					gen_ins(ptr);
 					gen = 1;
 				}
@@ -1111,7 +1111,7 @@ void arg_to_dword (struct fastcall *fast, int i, int arg, int adj)
 		err = 0;
 
 		if (strcmp(fast->argname[i], "#acc") != 0) {
-			tmp.code = I_STW;
+			tmp.code = I_ST_WM;
 			tmp.type = T_SYMBOL;
 			tmp.data = (intptr_t)fast->argname[i];
 			gen_ins(&tmp);

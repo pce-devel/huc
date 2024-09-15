@@ -437,40 +437,40 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case I_PUSHW:
-		ol("__pushw");
+	case I_PUSH_WR:
+		ol("__push.wr");
 		break;
 
-	case I_POPW:
-		ol("__popw");
+	case I_POP_WR:
+		ol("__pop.wr");
 		break;
 
-	case I_SPUSHW:
-		ol("__spushw");
+	case I_SPUSH_WR:
+		ol("__spush.wr");
 		break;
 
-	case I_SPOPW:
-		ol("__spopw");
+	case I_SPOP_WR:
+		ol("__spop.wr");
 		break;
 
-	case I_SPUSHB:
-		ol("__spushb");
+	case I_SPUSH_UR:
+		ol("__spush.ur");
 		break;
 
-	case I_SPOPB:
-		ol("__spopb");
+	case I_SPOP_UR:
+		ol("__spop.ur");
 		break;
 
 	/* i-codes for handling boolean tests and branching */
 
-	case I_SWITCHW:
-		ot("__switchw\t");
+	case I_SWITCH_WR:
+		ot("__switch.wr\t");
 		outlabel((int)data);
 		nl();
 		break;
 
-	case I_SWITCHB:
-		ot("__switchb\t");
+	case I_SWITCH_UR:
+		ot("__switch.ur\t");
 		outlabel((int)data);
 		nl();
 		break;
@@ -512,8 +512,8 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case I_CMPW:
-		ot("__cmpw\t\t");
+	case I_CMP_WT:
+		ot("__cmp.wt\t");
 
 		switch (type) {
 		case T_SYMBOL:
@@ -526,8 +526,8 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case I_CMPB:
-		ot("__cmpb\t\t");
+	case I_CMP_UT:
+		ot("__cmp.ut\t");
 
 		switch (type) {
 		case T_SYMBOL:
@@ -540,24 +540,24 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_CMPWI_EQ:
-		ot("__cmpwi_eq\t");
+	case X_TST_WI:
+		ot("__tst.wi\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case X_CMPWI_NE:
-		ot("__cmpwi_ne\t");
+	case X_NOT_WI:
+		ot("__not.wi\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case I_TSTW:
-		ol("__tstw");
+	case I_TST_WR:
+		ol("__tst.wr");
 		break;
 
-	case I_NOTW:
-		ol("__notw");
+	case I_NOT_WR:
+		ol("__not.wr");
 		break;
 
 	case I_BFALSE:
@@ -574,125 +574,125 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_TZW:
-		ot("__tzw\t\t");
+	case X_NOT_WM:
+		ot("__not.wm\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case X_TZWP:
-		ot("__tzwp\t\t");
+	case X_NOT_WP:
+		ot("__not.wp\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case X_TZW_S:
-		ot("__tzw_s\t\t");
+	case X_NOT_WS:
+		ot("__not.ws\t");
 		outdec((int)data);
 		nl();
 		break;
 
-	case X_TZB:
-		ot("__tzb\t\t");
+	case X_NOT_UM:
+		ot("__not.um\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case X_TZBP:
-		ot("__tzbp\t\t");
+	case X_NOT_UP:
+		ot("__not.up\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case X_TZB_S:
-		ot("__tzb_s\t\t");
+	case X_NOT_US:
+		ot("__not.us\t");
 		outdec((int)data);
 		nl();
 		break;
 
-	case X_TNZW:
-		ot("__tnzw\t\t");
+	case X_TST_WM:
+		ot("__tst.wm\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case X_TNZWP:
-		ot("__tnzwp\t\t");
+	case X_TST_WP:
+		ot("__tst.wp\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case X_TNZW_S:
-		ot("__tnzw_s\t");
+	case X_TST_WS:
+		ot("__tst.ws\t");
 		outdec((int)data);
 		nl();
 		break;
 
-	case X_TNZB:
-		ot("__tnzb\t\t");
+	case X_TST_UM:
+		ot("__tst.um\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case X_TNZBP:
-		ot("__tnzbp\t\t");
+	case X_TST_UP:
+		ot("__tst.up\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case X_TNZB_S:
-		ot("__tnzb_s\t");
+	case X_TST_US:
+		ot("__tst.us\t");
 		outdec((int)data);
 		nl();
 		break;
 
 	/* i-codes for loading the primary register */
 
-	case I_LDWI:
-		ot("__ldwi\t\t");
+	case I_LD_WI:
+		ot("__ld.wi\t\t");
 		out_type(type, data);
 		nl();
 		break;
 
 	case I_LEA_S:
-		ot("__lea_s\t\t");
+		ot("__lea.s\t\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
 		break;
 
-	case I_LDW:
-		ot("__ldw\t\t");
+	case I_LD_WM:
+		ot("__ld.wm\t\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case I_LDB:
-		ot("__ldb\t\t");
+	case I_LD_BM:
+		ot("__ld.bm\t\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case I_LDUB:
-		ot("__ldub\t\t");
+	case I_LD_UM:
+		ot("__ld.um\t\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case I_LDWP:
-		ot("__ldwp\t\t");
+	case I_LD_WP:
+		ot("__ld.wp\t\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case I_LDBP:
-		ot("__ldbp\t\t");
+	case I_LD_BP:
+		ot("__ld.bp\t\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case I_LDUBP:
-		ot("__ldubp\t\t");
+	case I_LD_UP:
+		ot("__ld.up\t\t");
 		out_addr(type, data);
 		nl();
 		break;
@@ -709,28 +709,28 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_LD_CAR:
-		ot("__ld.car\t");
+	case X_LD_UAR:
+		ot("__ld.uar\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case X_LDW_S:
-		ot("__ldw_s\t\t");
+	case X_LD_WS:
+		ot("__ld.ws\t\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
 		break;
 
-	case X_LDB_S:
-		ot("__ldb_s\t\t");
+	case X_LD_BS:
+		ot("__ld.bs\t\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
 		break;
 
-	case X_LDUB_S:
-		ot("__ldub_s\t");
+	case X_LD_US:
+		ot("__ld.us\t\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
@@ -748,14 +748,14 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_LDP_CAR:
-		ot("__ldp.car\t");
+	case X_LDP_UAR:
+		ot("__ldp.uar\t");
 		out_type(type, data);
 		nl();
 		break;
 
 //	case X_LDWA_S:
-//		ot("__ldwa_s\t");
+//		ot("__ld.was\t");
 //		outsymbol((SYMBOL *)imm_data);
 //		outstr(", ");
 //		outdec((int)data);
@@ -764,7 +764,7 @@ void gen_code (INS *tmp)
 //		break;
 //
 //	case X_LDBA_S:
-//		ot("__ldba_s\t");
+//		ot("__ld.bas\t");
 //		outsymbol((SYMBOL *)imm_data);
 //		outstr(", ");
 //		outdec((int)data);
@@ -773,7 +773,7 @@ void gen_code (INS *tmp)
 //		break;
 //
 //	case X_LDUBA_S:
-//		ot("__lduba_s\t");
+//		ot("__ld.uas\t");
 //		outsymbol((SYMBOL *)imm_data);
 //		outstr(", ");
 //		outdec((int)data);
@@ -795,8 +795,8 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_INCLD_CM:
-		ot("__incld.cm\t");
+	case X_INCLD_UM:
+		ot("__incld.um\t");
 		out_type(type, data);
 		nl();
 		break;
@@ -813,8 +813,8 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_DECLD_CM:
-		ot("__decld.cm\t");
+	case X_DECLD_UM:
+		ot("__decld.um\t");
 		out_type(type, data);
 		nl();
 		break;
@@ -831,8 +831,8 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_LDINC_CM:
-		ot("__ldinc.cm\t");
+	case X_LDINC_UM:
+		ot("__ldinc.um\t");
 		out_type(type, data);
 		nl();
 		break;
@@ -849,8 +849,8 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_LDDEC_CM:
-		ot("__lddec.cm\t");
+	case X_LDDEC_UM:
+		ot("__lddec.um\t");
 		out_type(type, data);
 		nl();
 		break;
@@ -861,8 +861,8 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_INC_CMQ:
-		ot("__inc.cmq\t");
+	case X_INC_UMQ:
+		ot("__inc.umq\t");
 		out_type(type, data);
 		nl();
 		break;
@@ -873,8 +873,8 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_DEC_CMQ:
-		ot("__dec.cmq\t");
+	case X_DEC_UMQ:
+		ot("__dec.umq\t");
 		out_type(type, data);
 		nl();
 		break;
@@ -893,8 +893,8 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_INCLD_CS:
-		ot("__incld.cs\t");
+	case X_INCLD_US:
+		ot("__incld.us\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
@@ -914,8 +914,8 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_DECLD_CS:
-		ot("__decld.cs\t");
+	case X_DECLD_US:
+		ot("__decld.us\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
@@ -935,8 +935,8 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_LDINC_CS:
-		ot("__ldinc.cs\t");
+	case X_LDINC_US:
+		ot("__ldinc.us\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
@@ -956,8 +956,8 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_LDDEC_CS:
-		ot("__lddec.cs\t");
+	case X_LDDEC_US:
+		ot("__lddec.us\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
@@ -970,8 +970,8 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_INC_CSQ:
-		ot("__inc.csq\t");
+	case X_INC_USQ:
+		ot("__inc.usq\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
@@ -984,8 +984,8 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_DEC_CSQ:
-		ot("__dec.csq\t");
+	case X_DEC_USQ:
+		ot("__dec.usq\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
@@ -1003,8 +1003,8 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_INCLD_CAR:
-		ot("__incld.car\t");
+	case X_INCLD_UAR:
+		ot("__incld.uar\t");
 		out_type(type, data);
 		nl();
 		break;
@@ -1021,8 +1021,8 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_DECLD_CAR:
-		ot("__decld.car\t");
+	case X_DECLD_UAR:
+		ot("__decld.uar\t");
 		out_type(type, data);
 		nl();
 		break;
@@ -1039,8 +1039,8 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_LDINC_CAR:
-		ot("__ldinc.car\t");
+	case X_LDINC_UAR:
+		ot("__ldinc.uar\t");
 		out_type(type, data);
 		nl();
 		break;
@@ -1057,8 +1057,8 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_LDDEC_CAR:
-		ot("__lddec.car\t");
+	case X_LDDEC_UAR:
+		ot("__lddec.uar\t");
 		out_type(type, data);
 		nl();
 		break;
@@ -1069,8 +1069,8 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_INC_CARQ:
-		ot("__inc.carq\t");
+	case X_INC_UARQ:
+		ot("__inc.uarq\t");
 		out_type(type, data);
 		nl();
 		break;
@@ -1081,88 +1081,88 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_DEC_CARQ:
-		ot("__dec.carq\t");
+	case X_DEC_UARQ:
+		ot("__dec.uarq\t");
 		out_type(type, data);
 		nl();
 		break;
 
 	/* i-codes for saving the primary register */
 
-	case I_STWZ:
-		ot("__stwz\t\t");
+	case I_ST_WMZ:
+		ot("__st.wmz\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case I_STBZ:
-		ot("__stbz\t\t");
+	case I_ST_UMZ:
+		ot("__st.umz\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case I_STWI:
-		ot("__stwi\t\t");
-		out_type(type, data);
-		outstr(", ");
-		out_type(imm_type, imm_data);
-		nl();
-		break;
-
-	case I_STBI:
-		ot("__stbi\t\t");
+	case I_ST_WMI:
+		ot("__st.wmi\t");
 		out_type(type, data);
 		outstr(", ");
 		out_type(imm_type, imm_data);
 		nl();
 		break;
 
-	case I_STWIP:
-		ot("__stwip\t\t");
+	case I_ST_UMI:
+		ot("__st.umi\t");
+		out_type(type, data);
+		outstr(", ");
+		out_type(imm_type, imm_data);
+		nl();
+		break;
+
+	case I_ST_WPI:
+		ot("__st.wpi\t\t");
 		outdec((int)data);
 		nl();
 		break;
 
-	case I_STBIP:
-		ot("__stbip\t\t");
+	case I_ST_UPI:
+		ot("__st.upi\t\t");
 		outdec((int)data);
 		nl();
 		break;
 
-	case I_STW:
-		ot("__stw\t\t");
+	case I_ST_WM:
+		ot("__st.wm\t\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case I_STB:
-		ot("__stb\t\t");
+	case I_ST_UM:
+		ot("__st.um\t\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case I_STWP:
-		ot("__stwp\t\t");
+	case I_ST_WP:
+		ot("__st.wp\t\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case I_STBP:
-		ot("__stbp\t\t");
+	case I_ST_UP:
+		ot("__st.up\t\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case I_STWPS:
-		ol("__stwps");
+	case I_ST_WPT:
+		ol("__st.wpt");
 		break;
 
-	case I_STBPS:
-		ol("__stbps");
+	case I_ST_UPT:
+		ol("__st.upt");
 		break;
 
-	case X_STWI_S:
-		ot("__stwi_s\t");
+	case X_ST_WSI:
+		ot("__st.wsi\t");
 		outdec((int)imm_data);
 		outstr(", ");
 		outdec((int)data);
@@ -1170,8 +1170,8 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_STBI_S:
-		ot("__stbi_s\t");
+	case X_ST_USI:
+		ot("__st.usi\t");
 		outdec((int)imm_data);
 		outstr(", ");
 		outdec((int)data);
@@ -1179,15 +1179,15 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_STW_S:
-		ot("__stw_s\t\t");
+	case X_ST_WS:
+		ot("__st.ws\t\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
 		break;
 
-	case X_STB_S:
-		ot("__stb_s\t\t");
+	case X_ST_US:
+		ot("__st.us\t\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
@@ -1199,8 +1199,8 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_INDEX_CR:
-		ot("__index.cr\t");
+	case X_INDEX_UR:
+		ot("__index.ur\t");
 		out_type(type, data);
 		nl();
 		break;
@@ -1211,8 +1211,8 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_ST_CAT:
-		ot("__st.cat\t");
+	case X_ST_UAT:
+		ot("__st.uat\t");
 		out_type(type, data);
 		nl();
 		break;
@@ -1235,55 +1235,55 @@ void gen_code (INS *tmp)
 
 	/* i-codes for extending a byte to a word */
 
-	case I_EXTW:
-		ol("__extw");
+	case I_EXT_BR:
+		ol("__ext.br");
 		break;
 
-	case I_EXTUW:
-		ol("__extuw");
+	case I_EXT_UR:
+		ol("__ext.ur");
 		break;
 
 	/* i-codes for math with the primary register  */
 
-	case I_COMW:
-		ol("__comw");
+	case I_COM_WR:
+		ol("__com.wr");
 		break;
 
-	case I_NEGW:
-		ol("__negw");
+	case I_NEG_WR:
+		ol("__neg.wr");
 		break;
 
-	case I_ADDWS:
-		ol("__addws");
+	case I_ADD_WT:
+		ol("__add.wt");
 		break;
 
-	case I_ADDWI:
-		ot("__addwi\t\t");
+	case I_ADD_WI:
+		ot("__add.wi\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case I_ADDW:
-		ot("__addw\t\t");
+	case I_ADD_WM:
+		ot("__add.wm\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case I_ADDUB:
-		ot("__addub\t\t");
+	case I_ADD_UM:
+		ot("__add.um\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case X_ADDW_S:
-		ot("__addw_s\t");
+	case X_ADD_WS:
+		ot("__add.ws\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
 		break;
 
-	case X_ADDUB_S:
-		ot("__addub_s\t");
+	case X_ADD_US:
+		ot("__add.us\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
@@ -1295,132 +1295,132 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case I_SUBWS:
-		ol("__subws");
+	case I_SUB_WT:
+		ol("__sub.wt");
 		break;
 
-	case I_SUBWI:
-		ot("__subwi\t\t");
+	case I_SUB_WI:
+		ot("__sub.wi\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case I_SUBW:
-		ot("__subw\t\t");
+	case I_SUB_WM:
+		ot("__sub.wm\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case I_SUBUB:
-		ot("__subub\t\t");
+	case I_SUB_UM:
+		ot("__sub.um\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case I_ISUBWI:
-		ot("__isubwi\t");
+	case I_ISUB_WI:
+		ot("__isub.wi\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case I_ANDWS:
-		ol("__andws");
+	case I_AND_WT:
+		ol("__and.wt");
 		break;
 
-	case I_ANDWI:
-		ot("__andwi\t\t");
+	case I_AND_WI:
+		ot("__and.wi\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case I_ANDW:
-		ot("__andw\t\t");
+	case I_AND_WM:
+		ot("__and.wm\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case I_ANDUB:
-		ot("__andub\t\t");
+	case I_AND_UM:
+		ot("__and.um\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case I_EORWS:
-		ol("__eorws");
+	case I_EOR_WT:
+		ol("__eor.wt");
 		break;
 
-	case I_EORWI:
-		ot("__eorwi\t\t");
+	case I_EOR_WI:
+		ot("__eor.wi\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case I_EORW:
-		ot("__eorw\t\t");
+	case I_EOR_WM:
+		ot("__eor.wm\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case I_EORUB:
-		ot("__eorub\t\t");
+	case I_EOR_UM:
+		ot("__eor.um\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case I_ORWS:
-		ol("__orws");
+	case I_OR_WT:
+		ol("__or.wt");
 		break;
 
-	case I_ORWI:
-		ot("__orwi\t\t");
+	case I_OR_WI:
+		ot("__or.wi\t\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case I_ORW:
-		ot("__orw\t\t");
+	case I_OR_WM:
+		ot("__or.wm\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case I_ORUB:
-		ot("__orub\t\t");
+	case I_OR_UM:
+		ot("__or.um\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case I_ASLWS:
-		ol("__aslws");
+	case I_ASL_WT:
+		ol("__asl.wt");
 		break;
 
-	case I_ASLWI:
-		ot("__aslwi\t\t");
+	case I_ASL_WI:
+		ot("__asl.wi\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case I_ASLW:
-		ol("__aslw");
+	case I_ASL_WR:
+		ol("__asl.wr");
 		break;
 
-	case I_ASRWI:
-		ot("__asrwi\t\t");
+	case I_ASR_WI:
+		ot("__asr.wi\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case I_ASRW:
-		ol("__asrw");
+	case I_ASR_WR:
+		ol("__asr.wr");
 		break;
 
-	case I_LSRWI:
-		ot("__lsrwi\t\t");
+	case I_LSR_WI:
+		ot("__lsr.wi\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case I_MULWI:
-		ot("__mulwi\t\t");
+	case I_MUL_WI:
+		ot("__mul.wi\t");
 		outdec((int)data);
 		nl();
 		break;

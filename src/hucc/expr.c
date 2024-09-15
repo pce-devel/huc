@@ -758,7 +758,7 @@ int heir11 (LVALUE *lval, int comma)
 			if (!deferred && !ptr->far)
 				gadd(NULL, NULL);
 			if (deferred) {
-				out_ins(I_ADDWI, T_SYMBOL, (intptr_t)ptr);
+				out_ins(I_ADD_WI, T_SYMBOL, (intptr_t)ptr);
 				deferred = false;
 			}
 			lval->symbol = 0;
@@ -837,7 +837,7 @@ int heir11 (LVALUE *lval, int comma)
 			}
 			if (k && direct == 0)
 				rvalue(lval);
-			out_ins(I_ADDWI, T_VALUE, ptr->offset);	// move pointer from struct begin to struct member
+			out_ins(I_ADD_WI, T_VALUE, ptr->offset);	// move pointer from struct begin to struct member
 			lval->symbol = ptr;
 			lval->indirect = ptr->type;		// lval->indirect = lval->val_type = ptr->type
 			lval->ptr_type = 0;
@@ -889,7 +889,7 @@ void store (LVALUE *lval)
 			if (lval->symbol)
 				putmem(lval->symbol);
 			else
-				out_ins(I_STW, T_VALUE, lval->value);
+				out_ins(I_ST_WM, T_VALUE, lval->value);
 		}
 	}
 }
