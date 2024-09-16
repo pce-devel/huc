@@ -74,6 +74,20 @@ __fence		.macro
 
 ; ***************************************************************************
 ; ***************************************************************************
+; i-code that declares a byte sized primary register
+; ***************************************************************************
+; ***************************************************************************
+
+; **************
+; this exists to mark that the primary register only needs byte accuracy
+
+__short		.macro
+		.endm
+
+
+
+; ***************************************************************************
+; ***************************************************************************
 ; i-codes for handling farptr
 ; ***************************************************************************
 ; ***************************************************************************
@@ -781,12 +795,34 @@ __tst.ws	.macro	; __STACK
 ; **************
 
 __ld.wi		.macro
-	.if	((\?1 == ARG_ABS) && (\1 >= 0) && (\1 < 256))
-		lda.l	#\1
-		cly
-	.else
+	.if	(\?1 != ARG_ABS)
 		lda.l	#\1
 		ldy.h	#\1
+	.else
+	.if	(\1 & $00FF)
+		lda.l	#\1
+	.else
+		cla
+	.endif
+	.if	(\1 & $FF00)
+		ldy.h	#\1
+	.else
+		cly
+	.endif
+	.endif
+		.endm
+
+; **************
+
+__ld.uiq	.macro
+	.if	(\?1 != ARG_ABS)
+		lda.l	#\1
+	.else
+	.if	(\1 & $00FF)
+		lda	#\1
+	.else
+		cla
+	.endif
 	.endif
 		.endm
 
@@ -962,7 +998,7 @@ __ld.ws		.macro	; __STACK
 ; **************
 
 __ld.bs		.macro	; __STACK
-		lda.l	<__stack + \1, x
+		lda	<__stack + \1, x
 		cly
 		bpl	!+	; signed
 		dey
@@ -1534,18 +1570,37 @@ __st.umz	.macro
 
 ; **************
 
-__st.wmi	.macro
-		lda.l	#\2
-		sta.l	\1
-		ldy.h	#\2
-		sty.h	\1
+__st.wmiq	.macro
+	.if	(\?1 != ARG_ABS)
+		lda.l	#\1
+		sta.l	\2
+		lda.h	#\1
+		sta.h	\2
+	.else
+	.if	(\1 & $00FF)
+		lda.l	#\1
+		sta.l	\2
+	.else
+		stz.l	\2
+	.endif
+	.if	(\1 & $FF00)
+		lda.h	#\1
+		sta.h	\2
+	.else
+		stz.h	\2
+	.endif
+	.endif
 		.endm
 
 ; **************
 
-__st.umi	.macro
-		lda.l	#\2
-		sta	\1
+__st.umiq	.macro
+	.if	(\1 != 0)
+		lda.l	#\1
+		sta	\2
+	.else
+		stz	\2
+	.endif
 		.endm
 
 ; **************
@@ -1553,8 +1608,8 @@ __st.umi	.macro
 __st.wpi	.macro
 		sta.l	<__ptr
 		sty.h	<__ptr
-		lda.h	#\1
 		ldy	#1
+		lda.h	#\1
 		sta	[__ptr], y
 		tay
 		lda.l	#\1
@@ -1567,8 +1622,8 @@ __st.upi	.macro
 		sta.l	<__ptr
 		sty.h	<__ptr
 		lda.l	#\1
+		ldy.h	#\1
 		sta	[__ptr]
-		cly
 		.endm
 
 ; **************
@@ -1662,25 +1717,43 @@ __st.wat	.macro
 
 __st.uat	.macro
 		plx
-		sta.l	\1, x
+		sta	\1, x
 		plx
 		.endm
 
 ; **************
 
-__st.wsi	.macro	; __STACK
+__st.wsiq	.macro
+	.if	(\?1 != ARG_ABS)
 		lda.l	#\1
 		sta.l	<__stack + \2, x
-		ldy.h	#\1
-		sty.h	<__stack + \2, x
+		lda.h	#\1
+		sta.h	<__stack + \2, x
+	.else
+	.if	(\1 & $00FF)
+		lda.l	#\1
+		sta.l	<__stack + \2, x
+	.else
+		stz.l	<__stack + \2, x
+	.endif
+	.if	(\1 & $FF00)
+		lda.h	#\1
+		sta.h	<__stack + \2, x
+	.else
+		stz.h	<__stack + \2, x
+	.endif
+	.endif
 		.endm
 
 ; **************
 
-__st.usi	.macro	; __STACK
+__st.usiq	.macro
+	.if	(\1 != 0)
 		lda.l	#\1
-		sta.l	<__stack + \2, x
-		cly
+		sta	<__stack + \2, x
+	.else
+		stz	<__stack + \2, x
+	.endif
 		.endm
 
 ; **************
@@ -1693,7 +1766,7 @@ __st.ws		.macro	; __STACK
 ; **************
 
 __st.us		.macro	; __STACK
-		sta.l	<__stack + \1, x
+		sta	<__stack + \1, x
 		.endm
 
 ; **************

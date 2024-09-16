@@ -43,6 +43,10 @@ enum ICODE {
 
 	I_FENCE = 1,
 
+	/* i-code that declares a byte sized primary register */
+
+	I_SHORT,
+
 	/* i-codes for handling farptr */
 
 	I_FARPTR,
@@ -113,6 +117,7 @@ enum ICODE {
 	/* i-codes for loading the primary register */
 
 	I_LD_WI,
+	X_LD_UIQ,
 	I_LEA_S,
 
 	I_LD_WM,
@@ -207,8 +212,8 @@ enum ICODE {
 
 	I_ST_WMZ,
 	I_ST_UMZ,
-	I_ST_WMI,
-	I_ST_UMI,
+	I_ST_WMIQ,
+	I_ST_UMIQ,
 	I_ST_WPI,
 	I_ST_UPI,
 	I_ST_WM,
@@ -217,8 +222,8 @@ enum ICODE {
 	I_ST_UP,
 	I_ST_WPT,
 	I_ST_UPT,
-	X_ST_WSI,
-	X_ST_USI,
+	X_ST_WSIQ,
+	X_ST_USIQ,
 	X_ST_WS,
 	X_ST_US,
 

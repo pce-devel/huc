@@ -425,37 +425,31 @@ void declloc (char typ, char stclass, int otag)
 #if ULI_NORECURSE
 					if (norecurse) {
 						sprintf(locsym, "_%s_lend - %d", current_fn, (int) -locals_ptr);
-						out_ins_ex(I_ST_UMI, T_SYMBOL, (intptr_t)locsym, T_VALUE, num);
+						out_ins_ex(I_ST_UMIQ, T_SYMBOL, (intptr_t)locsym, T_VALUE, num);
 					}
 					else
 #else
 					if (stclass == (LSTATIC | WASAUTO)) {
-						if (num == 0)
-							out_ins(I_ST_UMZ, T_SYMBOL, (intptr_t)ssym);
-						else
-							out_ins_ex(I_ST_UMI, T_SYMBOL, (intptr_t)ssym, T_VALUE, num);
+						out_ins_ex(I_ST_UMIQ, T_SYMBOL, (intptr_t)ssym, T_VALUE, num);
 					}
 					else
 #endif
-						out_ins_ex(X_ST_USI, T_VALUE, 0, T_VALUE, num);
+						out_ins_ex(X_ST_USIQ, T_VALUE, 0, T_VALUE, num);
 				}
 				else if (k == 2) {
 #if ULI_NORECURSE
 					if (norecurse) {
 						sprintf(locsym, "_%s_lend - %d", current_fn, (int) -locals_ptr);
-						out_ins_ex(I_ST_WMI, T_SYMBOL, (intptr_t)locsym, T_VALUE, num);
+						out_ins_ex(I_ST_WMIQ, T_SYMBOL, (intptr_t)locsym, T_VALUE, num);
 					}
 					else
 #else
 					if (stclass == (LSTATIC | WASAUTO)) {
-						if (num == 0)
-							out_ins(I_ST_WMZ, T_SYMBOL, (intptr_t)ssym);
-						else
-							out_ins_ex(I_ST_WMI, T_SYMBOL, (intptr_t)ssym, T_VALUE, num);
+						out_ins_ex(I_ST_WMIQ, T_SYMBOL, (intptr_t)ssym, T_VALUE, num);
 					}
 					else
 #endif
-						out_ins_ex(X_ST_WSI, T_VALUE, 0, T_VALUE, num);
+						out_ins_ex(X_ST_WSIQ, T_VALUE, 0, T_VALUE, num);
 				}
 				else
 					error("complex type initialization not implemented");

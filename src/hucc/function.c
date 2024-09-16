@@ -204,7 +204,8 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 				}
 
 				if (!strcmp(fc->argname[fc_args], "acc"))
-					fc->argtype[fc_args] = TYPE_ACC;
+					fc->argtype[fc_args] =
+						(fc->argtype[fc_args] == TYPE_BYTE) ? TYPE_BYTEACC : TYPE_WORDACC;
 			}
 			nbarg++;
 			if (is_fastcall) {
@@ -271,7 +272,7 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 
 			int i;
 			for (i = 0; i < fc_args - 1; i++) {
-				if (fc->argtype[i] == TYPE_ACC) {
+				if (fc->argtype[i] == TYPE_WORDACC || fc->argtype[i] == TYPE_BYTEACC) {
 					error("fastcall accumulator argument must come last");
 					kill();
 					return;
@@ -616,6 +617,7 @@ void callfunction (char *ptr)
 		else {
 			expression(NO);
 			gpusharg(INTSIZE);
+			gfence();
 		}
 		argsiz = argsiz + INTSIZE;
 		argcnt++;
@@ -657,14 +659,18 @@ void callfunction (char *ptr)
 				case TYPE_BYTE:
 					if (i < max_fc_arg)
 						SPILLB(fast->argname[j])
-					else
+					else {
 						out_ins(I_ST_UM, T_LITERAL, (intptr_t)fast->argname[j]);
+						gfence();
+					}
 					break;
 				case TYPE_WORD:
 					if (i < max_fc_arg)
 						SPILLW(fast->argname[j])
-					else
+					else {
 						out_ins(I_ST_WM, T_LITERAL, (intptr_t)fast->argname[j]);
+						gfence();
+					}
 					break;
 				case TYPE_FARPTR:
 					arg_to_fptr(fast, j, arg_idx + i, adj);
@@ -688,10 +694,17 @@ void callfunction (char *ptr)
 					}
 					j += 2;
 					break;
-				case TYPE_ACC:
+				case TYPE_WORDACC:
 					if (i < max_fc_arg)
 						SPILLW(0)
-						uses_acc = 1;
+					uses_acc = 1;
+					break;
+				case TYPE_BYTEACC:
+					if (i < max_fc_arg)
+						SPILLW(0)
+					else
+						gshort();
+					uses_acc = 1;
 					break;
 				default:
 					error("fastcall internal error");
@@ -708,6 +721,7 @@ void callfunction (char *ptr)
 			for (i = 0; i < argcnt; i++) {
 				arg_flush(arg_idx + i, 0);
 				gpusharg(0);
+				gfence();
 			}
 		}
 	}
@@ -724,18 +738,25 @@ void callfunction (char *ptr)
 	if (sparg_idx) {
 		/* Reloading corrupts acc, so we need to save it if it
 		   is used by the callee. */
-		if (uses_acc)
+		if (uses_acc) {
 			out_ins(I_ST_WM, T_LITERAL, (intptr_t)"__temp");
+			gfence();
+		}
 
 		for (i = sparg_idx - 1; i > -1; i--) {
 			if (spilled_arg_sizes[i] == 1) {
 				out_ins(I_SPOP_UR, 0, 0);
-				out_ins(I_ST_UM, T_LITERAL, (intptr_t)spilled_args[i]);
+				if (spilled_args[i]) {
+					out_ins(I_ST_UM, T_LITERAL, (intptr_t)spilled_args[i]);
+					gfence();
+				}
 			}
 			else {
 				out_ins(I_SPOP_WR, 0, 0);
-				if (spilled_args[i])
+				if (spilled_args[i]) {
 					out_ins(I_ST_WM, T_LITERAL, (intptr_t)spilled_args[i]);
+					gfence();
+				}
 			}
 		}
 

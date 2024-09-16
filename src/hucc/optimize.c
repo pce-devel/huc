@@ -51,6 +51,10 @@ unsigned char icode_flags[] = {
 
 	/* I_FENCE              */	0,
 
+	/* i-code that declares a byte sized primary register */
+
+	/* I_SHORT              */	0,
+
 	// i-codes for handling farptr
 
 	/* I_FARPTR             */	0,
@@ -121,6 +125,7 @@ unsigned char icode_flags[] = {
 	// i-codes for loading the primary register
 
 	/* I_LD_WI              */	0,
+	/* X_LD_UIQ             */	0,
 	/* I_LEA_S              */	IS_SPREL,
 
 	/* I_LD_WM              */	0,
@@ -215,8 +220,8 @@ unsigned char icode_flags[] = {
 
 	/* I_ST_WMZ             */	0,
 	/* I_ST_UMZ             */	0,
-	/* I_ST_WMI             */	0,
-	/* I_ST_UMI             */	0,
+	/* I_ST_WMIQ            */	0,
+	/* I_ST_UMIQ            */	0,
 	/* I_ST_WPI             */	0,
 	/* I_ST_UPI             */	0,
 	/* I_ST_WM              */	0,
@@ -225,8 +230,8 @@ unsigned char icode_flags[] = {
 	/* I_ST_UP              */	0,
 	/* I_ST_WPT             */	0,
 	/* I_ST_UPT             */	0,
-	/* X_ST_WSI             */	IS_SPREL,
-	/* X_ST_USI             */	IS_SPREL,
+	/* X_ST_WSIQ            */	IS_SPREL,
+	/* X_ST_USIQ            */	IS_SPREL,
 	/* X_ST_WS              */	IS_SPREL,
 	/* X_ST_US              */	IS_SPREL,
 
@@ -407,10 +412,43 @@ lv1_loop:
 		/* LEVEL 1 - FUN STUFF STARTS HERE */
 		nb = 0;
 
-		/* first check for I_FENCE, then remove it ASAP */
+		/* first check for I_FENCE, and remove it ASAP */
 		if (q_nb >= 1 && p[0]->code == I_FENCE) {
 			/* remove I_FENCE after it has been checked */
 			nb = 1;
+
+			/*
+			 *  __ld.wi		i	-->	__st.{w/u}miq	symbol, i
+			 *  __st.{w/u}m		symbol
+			 *  __fence
+			 *
+			 *  __ld.wi		i	-->	__st.{w/u}siq	n, 1
+			 *  __st.{w/u}s		n
+			 *  __fence
+			 */
+			if
+			((q_nb >= 3) &&
+			 (p[1]->code == I_ST_WM ||
+			  p[1]->code == I_ST_UM ||
+			  p[1]->code == X_ST_WS ||
+			  p[1]->code == X_ST_US) &&
+			 (p[2]->code == I_LD_WI) &&
+			 (p[2]->type == T_VALUE)
+			) {
+				/* replace code */
+				intptr_t data = p[2]->data;
+				*p[2] = *p[1];
+				switch (p[1]->code) {
+				case I_ST_WM: p[2]->code = I_ST_WMIQ; break;
+				case I_ST_UM: p[2]->code = I_ST_UMIQ; break;
+				case X_ST_WS: p[2]->code = X_ST_WSIQ; break;
+				case X_ST_US: p[2]->code = X_ST_USIQ; break;
+				default: abort();
+				}
+				p[2]->imm_type = T_VALUE;
+				p[2]->imm_data = data;
+				nb = 2;
+			}
 
 			/*
 			 *  __getacc			-->
@@ -419,7 +457,7 @@ lv1_loop:
 			 *  __add.wi / __sub.wi		-->
 			 *  __fence
 			 */
-			if
+			else if
 			((q_nb >= 2) &&
 			 (p[1]->code == I_ADD_WI ||
 			  p[1]->code == I_SUB_WI ||
@@ -517,6 +555,37 @@ lv1_loop:
 				case X_LDDEC_UAR: p[1]->code = X_DEC_UARQ; break;
 				default: abort();
 				}
+				nb = 1;
+			}
+
+			/* flush queue */
+			if (nb) {
+				q_wr -= nb;
+				q_nb -= nb;
+				nb = 0;
+
+				if (q_wr < 0)
+					q_wr += Q_SIZE;
+
+				/* loop */
+				goto lv1_loop;
+			}
+		}
+
+		/* then check for I_SHORT, and remove it ASAP */
+		if (q_nb >= 1 && p[0]->code == I_SHORT) {
+			/* remove I_SHORT after it has been checked */
+			nb = 1;
+
+			/*
+			 *  __ld.wi		i	-->	__ld.uiq	i
+			 *  __short
+			 */
+			if
+			((q_nb >= 2) &&
+			 (p[1]->code == I_LD_WI)
+			) {
+				p[1]->code = X_LD_UIQ;
 				nb = 1;
 			}
 
@@ -661,28 +730,6 @@ lv1_loop:
 			}
 
 			/*
-			 *  __lea.s		i	-->	__st.{w/u}si	i, j
-			 *  __push.wr
-			 *  __ld.wi		j
-			 *  __st.{w/u}pt
-			 */
-			else if
-			((p[0]->code == I_ST_WPT ||
-			  p[0]->code == I_ST_UPT) &&
-			 (p[1]->code == I_LD_WI) &&
-			 (p[1]->type == T_VALUE) &&
-			 (p[2]->code == I_PUSH_WR) &&
-			 (p[3]->code == I_LEA_S)
-
-			) {
-				/* replace code */
-				p[3]->code = (p[0]->code == I_ST_WPT) ? X_ST_WSI : X_ST_USI;
-				p[3]->imm_type = p[1]->type;
-				p[3]->imm_data = p[1]->data;
-				nb = 3;
-			}
-
-			/*
 			 *  __lea.s		i	-->	__lea.s		(i + j)
 			 *  __push.wr
 			 *  __ld.wi		j
@@ -721,26 +768,6 @@ lv1_loop:
 			 (p[3]->type == T_VALUE)
 			) {
 				p[3]->data *= p[1]->data;
-				nb = 3;
-			}
-
-			/*
-			 *  __ld.wi		p	-->	__st.wmi	p, i
-			 *  __push.wr
-			 *  __ld.wi		i
-			 *  __st{w/u}pt
-			 */
-			else if
-			((p[0]->code == I_ST_WPT ||
-			  p[0]->code == I_ST_UPT) &&
-			 (p[1]->code == I_LD_WI) &&
-			 (p[2]->code == I_PUSH_WR) &&
-			 (p[3]->code == I_LD_WI)
-			) {
-				/* replace code */
-				p[3]->code = p[0]->code == I_ST_WPT ? I_ST_WMI : I_ST_UMI;
-				p[3]->imm_type = p[1]->type;
-				p[3]->imm_data = p[1]->data;
 				nb = 3;
 			}
 
@@ -1584,10 +1611,14 @@ lv1_loop:
 			/*
 			 *  __ld.wi		symbol	-->	__ld.wi		(symbol + j)
 			 *  __add.wi		j
+			 *
+			 *  __add.wi		symbol	-->	__add.wi	(symbol + j)
+			 *  __add.wi		j
 			 */
 			else if
 			((p[0]->code == I_ADD_WI) &&
-			 (p[1]->code == I_LD_WI) &&
+			 (p[1]->code == I_LD_WI ||
+			  p[1]->code == I_ADD_WI) &&
 
 			 (p[0]->type == T_VALUE) &&
 			 (p[1]->type == T_SYMBOL)
@@ -1832,26 +1863,6 @@ lv1_loop:
 			}
 
 			/*
-			 *  __ld.wi		i	-->	__st.wmi	const, i
-			 *  __st.wm		const
-			 *
-			 * XXX: This doesn't really do anything...
-			 */
-			else if
-			((p[0]->code == I_ST_WM ||
-			  p[0]->code == I_ST_UM) &&
-			 (p[0]->type == T_VALUE) &&
-			 (p[1]->code == I_LD_WI)
-			) {
-				p[1]->code = (p[0]->code == I_ST_WM) ? I_ST_WMI : I_ST_UMI;
-				p[1]->imm_type = p[1]->type;
-				p[1]->imm_data = p[1]->data;
-				p[1]->type = p[0]->type;
-				p[1]->data = p[0]->data;
-				nb = 1;
-			}
-
-			/*
 			 *  __decld.{w/b/u}m	symbol	-->	__lddec.{w/b/u}m  symbol
 			 *  __add.wi  1
 			 *
@@ -1935,38 +1946,6 @@ lv1_loop:
 				nb = 1;
 			}
 
-#if 0
-			/*
-			 *  __st.wmi		sym, 0	-->	__st.wz		sym
-			 *  is_load()
-			 *
-			 * BETTER HANDLED WITH I_FENCE!
-			 */
-			else if
-			((p[1]->code == I_ST_WMI) &&
-			 (p[1]->imm_type == T_VALUE) &&
-			 (p[1]->imm_data == 0) &&
-			 (is_load(p[0]))
-			) {
-				p[1]->code = I_ST_WMZ;
-			}
-
-			/*
-			 *  __stbmi		sym, 0	-->	__st.wz		sym
-			 *  is_load()
-			 *
-			 * BETTER HANDLED WITH I_FENCE!
-			 */
-			else if
-			((p[1]->code == I_ST_UMI) &&
-			 (p[1]->imm_type == T_VALUE) &&
-			 (p[1]->imm_data == 0) &&
-			 (is_load(p[0]))
-			) {
-				p[1]->code = I_ST_UMZ;
-			}
-#endif
-
 			/* flush queue */
 			if (nb) {
 				q_wr -= nb;
@@ -1999,15 +1978,15 @@ lv1_loop:
 	 *
 	 * this covers storing to global and static variables ...
 	 *
-	 *  __ld.wi			i	-->	...
-	 *  __push.wr					__st.{w/u}m	i
+	 *  __ld.wi			symbol	-->	...
+	 *  __push.wr					__st.{w/u}m	symbol
 	 *    ...
 	 *  __st.{w/u}pt
 	 *
 	 * this covers storing to local variables ...
 	 *
-	 *  __lea.s i				-->	...
-	 *  __push.wr					__st.{w/u}s	i
+	 *  __lea.s			n	-->	...
+	 *  __push.wr					__st.{w/u}s	n
 	 *    ...
 	 *  __st.{w/u}pt
 	 *
@@ -2297,6 +2276,8 @@ lv2_loop:
 			 *
 			 *  This cannot be done earlier because it screws up
 			 *  the reordering optimization above.
+			 *
+			 *  JCB: This is optimizing writes though a pointer variable!
 			 */
 			if
 			((p[0]->code == I_ST_WPT ||
@@ -2309,34 +2290,6 @@ lv2_loop:
 				p[2]->code = p[0]->code == I_ST_WPT ? I_ST_WPI : I_ST_UPI;
 				p[2]->data = p[1]->data;
 				nb = 2;
-			}
-
-			/*
-			 *  ld.wi		i	-->	st.wmi		i, j
-			 *  st.wpi		j
-			 */
-			else if
-			((p[0]->code == I_ST_WPI) &&
-			 (p[1]->code == I_LD_WI)
-			) {
-				p[1]->code = I_ST_WMI;
-				p[1]->imm_type = p[0]->type;
-				p[1]->imm_data = p[0]->data;
-				nb = 1;
-			}
-
-			/*
-			 *  ld.wi		i	-->	st.bmi		i, j
-			 *  st.upi		j
-			 */
-			else if
-			((p[0]->code == I_ST_UPI) &&
-			 (p[1]->code == I_LD_WI)
-			) {
-				p[1]->code = I_ST_UMI;
-				p[1]->imm_type = p[0]->type;
-				p[1]->imm_data = p[0]->data;
-				nb = 1;
 			}
 
 #if 0

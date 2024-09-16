@@ -279,7 +279,7 @@ void new_fastcall (void)
 		if (!symget(sname)) {
 			/* auto */
 			if (*cmdptr != ',')
-				ptr->argtype[i] = TYPE_ACC;
+				ptr->argtype[i] = TYPE_WORDACC;
 			else {
 				error("fastcall register missing");
 				return;
@@ -347,7 +347,7 @@ void new_fastcall (void)
 			else {
 				if (strcmp(sname, "acc") == 0) {
 					/* accumulator */
-					ptr->argtype[i] = TYPE_ACC;
+					ptr->argtype[i] = TYPE_WORDACC;
 				}
 				else {
 					/* variable */

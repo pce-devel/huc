@@ -270,6 +270,13 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	/* i-code that declares a byte sized primary register */
+
+	case I_SHORT:
+		ot("__short");
+		nl();
+		break;
+
 	/* i-codes for handling farptr */
 
 	case I_FARPTR:
@@ -650,6 +657,12 @@ void gen_code (INS *tmp)
 
 	case I_LD_WI:
 		ot("__ld.wi\t\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_LD_UIQ:
+		ot("__ld.uiq\t");
 		out_type(type, data);
 		nl();
 		break;
@@ -1101,19 +1114,19 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case I_ST_WMI:
-		ot("__st.wmi\t");
-		out_type(type, data);
-		outstr(", ");
+	case I_ST_WMIQ:
+		ot("__st.wmiq\t");
 		out_type(imm_type, imm_data);
+		outstr(", ");
+		out_type(type, data);
 		nl();
 		break;
 
-	case I_ST_UMI:
-		ot("__st.umi\t");
-		out_type(type, data);
-		outstr(", ");
+	case I_ST_UMIQ:
+		ot("__st.umiq\t");
 		out_type(imm_type, imm_data);
+		outstr(", ");
+		out_type(type, data);
 		nl();
 		break;
 
@@ -1161,8 +1174,8 @@ void gen_code (INS *tmp)
 		ol("__st.upt");
 		break;
 
-	case X_ST_WSI:
-		ot("__st.wsi\t");
+	case X_ST_WSIQ:
+		ot("__st.wsiq\t");
 		outdec((int)imm_data);
 		outstr(", ");
 		outdec((int)data);
@@ -1170,8 +1183,8 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_ST_USI:
-		ot("__st.usi\t");
+	case X_ST_USIQ:
+		ot("__st.usiq\t");
 		outdec((int)imm_data);
 		outstr(", ");
 		outdec((int)data);

@@ -672,3 +672,7 @@ void gfence (void)
 {
 	out_ins(I_FENCE, 0, 0);
 }
+void gshort (void)
+{
+	out_ins(I_SHORT, 0, 0);
+}
