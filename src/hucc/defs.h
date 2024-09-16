@@ -32,11 +32,20 @@
 #define T_PAL           11
 #define T_LITERAL       12
 
-/* basic pseudo instructions */
+
+/* i-code pseudo instructions */
+/*
+ * N.B. this i-code enum list MUST be kept updated and in the same order
+ * as the table of i-code flag information in optimize.c
+ */
 enum ICODE {
 	/* i-code that retires the primary register contents */
 
 	I_FENCE = 1,
+
+	/* i-code that declares a byte sized primary register */
+
+	I_SHORT,
 
 	/* i-codes for handling farptr */
 
@@ -67,148 +76,213 @@ enum ICODE {
 	I_SAVESP,
 	I_LOADSP,
 	I_MODSP,
-	I_PUSHW,
-	I_POPW,
-	I_SPUSHW,	/* push and pop on the hw-stack */
-	I_SPUSHB,	/* to temporarily save data */
-	I_SPOPW,
-	I_SPOPB,
+	I_PUSH_WR,
+	I_POP_WR,
+	I_SPUSH_WR,	/* push and pop on the hw-stack */
+	I_SPUSH_UR,	/* to temporarily save data */
+	I_SPOP_WR,
+	I_SPOP_UR,
 
 	/* i-codes for handling boolean tests and branching */
 
-	I_SWITCHW,
-	I_SWITCHB,
+	I_SWITCH_WR,
+	I_SWITCH_UR,
 	I_CASE,
 	I_ENDCASE,
 	I_LABEL,
 	I_ALIAS,
 	I_BRA,
 	I_DEF,
-	I_CMPW,
-	I_CMPB,
-	X_CMPWI_EQ,
-	X_CMPWI_NE,
-	I_NOTW,
-	I_TSTW,
+	I_CMP_WT,
+	I_CMP_UT,
+	X_TST_WI,
+	X_NOT_WI,
+	I_NOT_WR,
+	I_TST_WR,
 	I_BFALSE,
 	I_BTRUE,
-	X_TZB,
-	X_TZBP,
-	X_TZB_S,
-	X_TZW,
-	X_TZWP,
-	X_TZW_S,
-	X_TNZB,
-	X_TNZBP,
-	X_TNZB_S,
-	X_TNZW,
-	X_TNZWP,
-	X_TNZW_S,
+	X_NOT_UM,
+	X_NOT_UP,
+	X_NOT_US,
+	X_NOT_WM,
+	X_NOT_WP,
+	X_NOT_WS,
+	X_TST_UM,
+	X_TST_UP,
+	X_TST_US,
+	X_TST_WM,
+	X_TST_WP,
+	X_TST_WS,
 
 	/* i-codes for loading the primary register */
 
-	I_LDWI,
+	I_LD_WI,
+	X_LD_UIQ,
 	I_LEA_S,
-	I_LDW,
-	I_LDB,
-	I_LDUB,
-	I_LDWP,
-	I_LDBP,
-	I_LDUBP,
-	X_LDWA_A,
-	X_LDBA_A,
-	X_LDUBA_A,
-	X_LDW_S,
-	X_LDB_S,
-	X_LDUB_S,
 
-	X_LDPWA_A,
-	X_LDPBA_A,
-	X_LDPUBA_A,
+	I_LD_WM,
+	I_LD_BM,
+	I_LD_UM,
+
+	I_LD_WP,
+	I_LD_BP,
+	I_LD_UP,
+
+	X_LD_WAR,
+	X_LD_BAR,
+	X_LD_UAR,
+
+	X_LD_WS,
+	X_LD_BS,
+	X_LD_US,
+
+	X_LDP_WAR,
+	X_LDP_BAR,
+	X_LDP_UAR,
+
+	/* i-codes for pre- and post- increment and decrement */
+
+	X_INCLD_WM,
+	X_INCLD_BM,
+	X_INCLD_UM,
+
+	X_DECLD_WM,
+	X_DECLD_BM,
+	X_DECLD_UM,
+
+	X_LDINC_WM,
+	X_LDINC_BM,
+	X_LDINC_UM,
+
+	X_LDDEC_WM,
+	X_LDDEC_BM,
+	X_LDDEC_UM,
+
+	X_INC_WMQ,
+	X_INC_UMQ,
+
+	X_DEC_WMQ,
+	X_DEC_UMQ,
+
+	X_INCLD_WS,
+	X_INCLD_BS,
+	X_INCLD_US,
+
+	X_DECLD_WS,
+	X_DECLD_BS,
+	X_DECLD_US,
+
+	X_LDINC_WS,
+	X_LDINC_BS,
+	X_LDINC_US,
+
+	X_LDDEC_WS,
+	X_LDDEC_BS,
+	X_LDDEC_US,
+
+	X_INC_WSQ,
+	X_INC_USQ,
+
+	X_DEC_WSQ,
+	X_DEC_USQ,
+
+	X_INCLD_WAR,
+	X_INCLD_BAR,
+	X_INCLD_UAR,
+
+	X_DECLD_WAR,
+	X_DECLD_BAR,
+	X_DECLD_UAR,
+
+	X_LDINC_WAR,
+	X_LDINC_BAR,
+	X_LDINC_UAR,
+
+	X_LDDEC_WAR,
+	X_LDDEC_BAR,
+	X_LDDEC_UAR,
+
+	X_INC_WARQ,
+	X_INC_UARQ,
+
+	X_DEC_WARQ,
+	X_DEC_UARQ,
 
 	/* i-codes for saving the primary register */
 
-	I_STWZ,
-	I_STBZ,
-	I_STWI,
-	I_STBI,
-	I_STWIP,
-	I_STBIP,
-	I_STW,
-	I_STB,
-	I_STWP,
-	I_STBP,
-	I_STWPS,
-	I_STBPS,
-	X_STWI_S,
-	X_STBI_S,
-	X_STW_S,
-	X_STB_S,
+	I_ST_WMZ,
+	I_ST_UMZ,
+	I_ST_WMIQ,
+	I_ST_UMIQ,
+	I_ST_WPI,
+	I_ST_UPI,
+	I_ST_WM,
+	I_ST_UM,
+	I_ST_WP,
+	I_ST_UP,
+	I_ST_WPT,
+	I_ST_UPT,
+	X_ST_WSIQ,
+	X_ST_USIQ,
+	X_ST_WS,
+	X_ST_US,
 
-	X_INDEXW,
-	X_INDEXB,
-	X_STWAS,
-	X_STBAS,
+	X_INDEX_WR,
+	X_INDEX_UR,
+	X_ST_WAT,
+	X_ST_UAT,
 
 	/* i-codes for extending the primary register */
 
-	I_EXTW,
-	I_EXTUW,
+	I_EXT_BR,
+	I_EXT_UR,
 
 	/* i-codes for math with the primary register  */
 
-	I_COMW,
-	I_NEGW,
+	I_COM_WR,
+	I_NEG_WR,
 
-	I_INCW,
-	I_INCB,
-
-	I_ADDWS,
-	I_ADDWI,
-	I_ADDW,
-	I_ADDUB,
-	X_ADDW_S,
-	X_ADDUB_S,
+	I_ADD_WT,
+	I_ADD_WI,
+	I_ADD_WM,
+	I_ADD_UM,
+	X_ADD_WS,
+	X_ADD_US,
 
 	I_ADDBI_P,
 
-	I_SUBWS,
-	I_SUBWI,
-	I_SUBW,
-	I_SUBUB,
+	I_SUB_WT,
+	I_SUB_WI,
+	I_SUB_WM,
+	I_SUB_UM,
 
-	I_ISUBWI,
+	I_ISUB_WI,
 
-	I_ANDWS,
-	I_ANDWI,
-	I_ANDW,
-	I_ANDUB,
+	I_AND_WT,
+	I_AND_WI,
+	I_AND_WM,
+	I_AND_UM,
 
-	I_EORWS,
-	I_EORWI,
-	I_EORW,
-	I_EORUB,
+	I_EOR_WT,
+	I_EOR_WI,
+	I_EOR_WM,
+	I_EOR_UM,
 
-	I_ORWS,
-	I_ORWI,
-	I_ORW,
-	I_ORUB,
+	I_OR_WT,
+	I_OR_WI,
+	I_OR_WM,
+	I_OR_UM,
 
-	I_ASLWS,
-	I_ASLWI,
-	I_ASLW,
+	I_ASL_WT,
+	I_ASL_WI,
+	I_ASL_WR,
 
-	I_ASRWI,
-	I_ASRW,
+	I_ASR_WI,
+	I_ASR_WR,
 
-	I_LSRWI,
+	I_LSR_WI,
 
-	I_MULWI,
-
-	/* optimized i-codes for local variables on the C stack */
-
-	X_INCW_S,
-	X_INCB_S,
+	I_MUL_WI,
 
 	/* i-codes for 32-bit longs */
 
@@ -311,7 +385,6 @@ struct tag_symbol {
 #define PUBLIC  1
 #define AUTO    2
 #define EXTERN  3
-
 #define STATIC  4
 #define LSTATIC 5
 #define DEFAUTO 6
@@ -404,12 +477,12 @@ struct macro {
 /* pseudo instruction structure */
 
 typedef struct {
-	int code;
+	enum ICODE code;
 	int type;
 	intptr_t data;
 	int imm_type;
 	intptr_t imm_data;
-	char *arg[3];
+	const char *arg[3];
 	SYMBOL *sym;
 } INS;
 

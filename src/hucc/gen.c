@@ -39,7 +39,7 @@ void getmem (SYMBOL *sym)
 	char *data;
 
 	if ((sym->ident != POINTER) && (sym->type == CCHAR || sym->type == CUCHAR)) {
-		int op = (sym->type & CUNSIGNED) ? I_LDUB : I_LDB;
+		int op = (sym->type & CUNSIGNED) ? I_LD_UM : I_LD_BM;
 		if ((sym->storage & STORAGE) == LSTATIC)
 			out_ins(op, T_LABEL, glint(sym));
 		else
@@ -47,11 +47,11 @@ void getmem (SYMBOL *sym)
 	}
 	else {
 		if ((sym->storage & STORAGE) == LSTATIC)
-			out_ins(I_LDW, T_LABEL, glint(sym));
+			out_ins(I_LD_WM, T_LABEL, glint(sym));
 		else if ((sym->storage & STORAGE) == CONST && (data = get_const(sym)))
-			out_ins(I_LDWI, T_LITERAL, (intptr_t)data);
+			out_ins(I_LD_WI, T_LITERAL, (intptr_t)data);
 		else
-			out_ins(I_LDW, T_SYMBOL, (intptr_t)sym);
+			out_ins(I_LD_WM, T_SYMBOL, (intptr_t)sym);
 	}
 }
 
@@ -64,7 +64,7 @@ void getloc (SYMBOL *sym)
 	int value;
 
 	if ((sym->storage & STORAGE) == LSTATIC)
-		out_ins(I_LDWI, T_LABEL, glint(sym));
+		out_ins(I_LD_WI, T_LABEL, glint(sym));
 	else {
 #if ULI_NORECURSE
 		value = glint(sym);
@@ -74,7 +74,7 @@ void getloc (SYMBOL *sym)
 			if (NAMEALLOC <=
 				sprintf(locsym->name, "_%s_lend - %ld", current_fn, (long) -value))
 				error("norecurse local name too long");
-			out_ins(I_LDWI, T_SYMBOL, (intptr_t)locsym);
+			out_ins(I_LD_WI, T_SYMBOL, (intptr_t)locsym);
 		}
 		else {
 			value -= stkp;
@@ -97,9 +97,9 @@ void putmem (SYMBOL *sym)
 
 	/* XXX: What about 1-byte structs? */
 	if ((sym->ident != POINTER) & (sym->type == CCHAR || sym->type == CUCHAR))
-		code = I_STB;
+		code = I_ST_UM;
 	else
-		code = I_STW;
+		code = I_ST_WM;
 
 	if ((sym->storage & STORAGE) == LSTATIC)
 		out_ins(code, T_LABEL, glint(sym));
@@ -115,9 +115,9 @@ void putmem (SYMBOL *sym)
 void putstk (char typeobj)
 {
 	if (typeobj == CCHAR || typeobj == CUCHAR)
-		out_ins(I_STBPS, 0, 0);
+		out_ins(I_ST_UPT, 0, 0);
 	else
-		out_ins(I_STWPS, 0, 0);
+		out_ins(I_ST_WPT, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
@@ -128,14 +128,14 @@ void putstk (char typeobj)
  */
 void indirect (char typeobj)
 {
-	out_ins(I_STW, T_PTR, 0);
+	out_ins(I_ST_WM, T_PTR, 0);
 	if (typeobj == CCHAR)
-		out_ins(I_LDBP, T_PTR, 0);
+		out_ins(I_LD_BP, T_PTR, 0);
 	else
 	if (typeobj == CUCHAR)
-		out_ins(I_LDUBP, T_PTR, 0);
+		out_ins(I_LD_UP, T_PTR, 0);
 	else
-		out_ins(I_LDWP, T_PTR, 0);
+		out_ins(I_LD_WP, T_PTR, 0);
 }
 
 void farpeek (SYMBOL *ptr)
@@ -157,7 +157,7 @@ void immed (int type, intptr_t data)
 {
 	if (type == T_VALUE && (data < -32768 || data > 65535))
 		warning(W_GENERAL, "large integer truncated");
-	out_ins(I_LDWI, type, data);
+	out_ins(I_LD_WI, type, data);
 }
 
 /*
@@ -166,7 +166,7 @@ void immed (int type, intptr_t data)
  */
 void gpush (void)
 {
-	out_ins(I_PUSHW, T_VALUE, INTSIZE);
+	out_ins(I_PUSH_WR, T_VALUE, INTSIZE);
 	stkp = stkp - INTSIZE;
 }
 
@@ -176,7 +176,7 @@ void gpush (void)
  */
 void gpusharg (int size)
 {
-	out_ins(I_PUSHW, T_SIZE, size);
+	out_ins(I_PUSH_WR, T_SIZE, size);
 	stkp = stkp - size;
 }
 
@@ -186,7 +186,7 @@ void gpusharg (int size)
  */
 void gpop (void)
 {
-	out_ins(I_POPW, 0, 0);
+	out_ins(I_POP_WR, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
@@ -223,7 +223,7 @@ void jump (int label)
  */
 void testjump (int label, int ft)
 {
-	out_ins(I_TSTW, 0, 0);
+	out_ins(I_TST_WR, 0, 0);
 	if (ft)
 		out_ins(I_BTRUE, T_LABEL, label);
 	else
@@ -252,7 +252,7 @@ int modstk (int newstkp)
  */
 void gaslint (void)
 {
-	out_ins(I_ASLW, 0, 0);
+	out_ins(I_ASL_WR, 0, 0);
 }
 
 /*
@@ -260,7 +260,7 @@ void gaslint (void)
  */
 void gasrint (void)
 {
-	out_ins(I_ASRW, 0, 0);
+	out_ins(I_ASR_WR, 0, 0);
 }
 
 /*
@@ -268,7 +268,7 @@ void gasrint (void)
  */
 void gswitch (int nlab)
 {
-	out_ins(I_SWITCHW, T_LABEL, nlab);
+	out_ins(I_SWITCH_WR, T_LABEL, nlab);
 }
 
 /*
@@ -293,8 +293,8 @@ void gadd (LVALUE *lval, LVALUE *lval2)
 	/* XXX: isn't this done in expr.c already? */
 	/* Nope, it is used when calculating a pointer variable address into a word array */
 	if (dbltest(lval2, lval))
-		out_ins(I_ASLWS, 0, 0);
-	out_ins(I_ADDWS, 0, 0);
+		out_ins(I_ASL_WT, 0, 0);
+	out_ins(I_ADD_WT, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
@@ -304,7 +304,7 @@ void gadd (LVALUE *lval, LVALUE *lval2)
  */
 void gsub (void)
 {
-	out_ins(I_SUBWS, 0, 0);
+	out_ins(I_SUB_WT, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
@@ -324,7 +324,7 @@ void gmult (int is_unsigned)
 
 void gmult_imm (int value)
 {
-	out_ins(I_MULWI, T_VALUE, (intptr_t)value);
+	out_ins(I_MUL_WI, T_VALUE, (intptr_t)value);
 }
 
 /*
@@ -369,7 +369,7 @@ void gmod (int is_unsigned)
  */
 void gor (void)
 {
-	out_ins(I_ORWS, 0, 0);
+	out_ins(I_OR_WT, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
@@ -379,7 +379,7 @@ void gor (void)
  */
 void gxor (void)
 {
-	out_ins(I_EORWS, 0, 0);
+	out_ins(I_EOR_WT, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
@@ -389,7 +389,7 @@ void gxor (void)
  */
 void gand (void)
 {
-	out_ins(I_ANDWS, 0, 0);
+	out_ins(I_AND_WT, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
@@ -426,7 +426,7 @@ void gasl (void)
  */
 void gneg (void)
 {
-	out_ins(I_NEGW, 0, 0);
+	out_ins(I_NEG_WR, 0, 0);
 }
 
 /*
@@ -435,7 +435,7 @@ void gneg (void)
  */
 void gcom (void)
 {
-	out_ins(I_COMW, 0, 0);
+	out_ins(I_COM_WR, 0, 0);
 }
 
 /*
@@ -444,7 +444,7 @@ void gcom (void)
  */
 void gbool (void)
 {
-	out_ins(I_TSTW, 0, 0);
+	out_ins(I_TST_WR, 0, 0);
 }
 
 /*
@@ -453,7 +453,7 @@ void gbool (void)
  */
 void glneg (void)
 {
-	out_ins(I_NOTW, 0, 0);
+	out_ins(I_NOT_WR, 0, 0);
 }
 
 /*
@@ -465,11 +465,11 @@ void ginc (LVALUE *lval)
 
 	if (lval->ptr_type == CINT || lval->ptr_type == CUINT ||
 	    (sym && (sym->ptr_order > 1 || (sym->ident == ARRAY && sym->ptr_order > 0))))
-		out_ins(I_ADDWI, T_VALUE, 2);
+		out_ins(I_ADD_WI, T_VALUE, 2);
 	else if (lval->ptr_type == CSTRUCT)
-		out_ins(I_ADDWI, T_VALUE, lval->tagsym->size);
+		out_ins(I_ADD_WI, T_VALUE, lval->tagsym->size);
 	else
-		out_ins(I_ADDWI, T_VALUE, 1);
+		out_ins(I_ADD_WI, T_VALUE, 1);
 }
 
 /*
@@ -481,11 +481,11 @@ void gdec (LVALUE *lval)
 
 	if (lval->ptr_type == CINT || lval->ptr_type == CUINT ||
 	    (sym && (sym->ptr_order > 1 || (sym->ident == ARRAY && sym->ptr_order > 0))))
-		out_ins(I_SUBWI, T_VALUE, 2);
+		out_ins(I_SUB_WI, T_VALUE, 2);
 	else if (lval->ptr_type == CSTRUCT)
-		out_ins(I_SUBWI, T_VALUE, lval->tagsym->size);
+		out_ins(I_SUB_WI, T_VALUE, lval->tagsym->size);
 	else
-		out_ins(I_SUBWI, T_VALUE, 1);
+		out_ins(I_SUB_WI, T_VALUE, 1);
 }
 
 /*
@@ -503,9 +503,9 @@ void gdec (LVALUE *lval)
 void geq (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_CMPW, T_LIB, (intptr_t)"eq_b");
+		out_ins(I_CMP_WT, T_LIB, (intptr_t)"eq_b");
 	else
-		out_ins(I_CMPW, T_LIB, (intptr_t)"eq_w");
+		out_ins(I_CMP_WT, T_LIB, (intptr_t)"eq_w");
 	stkp = stkp + INTSIZE;
 }
 
@@ -516,9 +516,9 @@ void geq (int is_byte)
 void gne (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_CMPW, T_LIB, (intptr_t)"ne_b");
+		out_ins(I_CMP_WT, T_LIB, (intptr_t)"ne_b");
 	else
-		out_ins(I_CMPW, T_LIB, (intptr_t)"ne_w");
+		out_ins(I_CMP_WT, T_LIB, (intptr_t)"ne_w");
 	stkp = stkp + INTSIZE;
 }
 
@@ -529,9 +529,9 @@ void gne (int is_byte)
 void glt (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_CMPW, T_LIB, (intptr_t)"lt_sb");
+		out_ins(I_CMP_WT, T_LIB, (intptr_t)"lt_sb");
 	else
-		out_ins(I_CMPW, T_LIB, (intptr_t)"lt_sw");
+		out_ins(I_CMP_WT, T_LIB, (intptr_t)"lt_sw");
 	stkp = stkp + INTSIZE;
 }
 
@@ -542,9 +542,9 @@ void glt (int is_byte)
 void gle (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_CMPW, T_LIB, (intptr_t)"le_sb");
+		out_ins(I_CMP_WT, T_LIB, (intptr_t)"le_sb");
 	else
-		out_ins(I_CMPW, T_LIB, (intptr_t)"le_sw");
+		out_ins(I_CMP_WT, T_LIB, (intptr_t)"le_sw");
 	stkp = stkp + INTSIZE;
 }
 
@@ -555,9 +555,9 @@ void gle (int is_byte)
 void ggt (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_CMPW, T_LIB, (intptr_t)"gt_sb");
+		out_ins(I_CMP_WT, T_LIB, (intptr_t)"gt_sb");
 	else
-		out_ins(I_CMPW, T_LIB, (intptr_t)"gt_sw");
+		out_ins(I_CMP_WT, T_LIB, (intptr_t)"gt_sw");
 	stkp = stkp + INTSIZE;
 }
 
@@ -568,9 +568,9 @@ void ggt (int is_byte)
 void gge (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_CMPW, T_LIB, (intptr_t)"ge_sb");
+		out_ins(I_CMP_WT, T_LIB, (intptr_t)"ge_sb");
 	else
-		out_ins(I_CMPW, T_LIB, (intptr_t)"ge_sw");
+		out_ins(I_CMP_WT, T_LIB, (intptr_t)"ge_sw");
 	stkp = stkp + INTSIZE;
 }
 
@@ -581,9 +581,9 @@ void gge (int is_byte)
 void gult (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_CMPW, T_LIB, (intptr_t)"lt_ub");
+		out_ins(I_CMP_WT, T_LIB, (intptr_t)"lt_ub");
 	else
-		out_ins(I_CMPW, T_LIB, (intptr_t)"lt_uw");
+		out_ins(I_CMP_WT, T_LIB, (intptr_t)"lt_uw");
 	stkp = stkp + INTSIZE;
 }
 
@@ -594,9 +594,9 @@ void gult (int is_byte)
 void gule (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_CMPW, T_LIB, (intptr_t)"le_ub");
+		out_ins(I_CMP_WT, T_LIB, (intptr_t)"le_ub");
 	else
-		out_ins(I_CMPW, T_LIB, (intptr_t)"le_uw");
+		out_ins(I_CMP_WT, T_LIB, (intptr_t)"le_uw");
 	stkp = stkp + INTSIZE;
 }
 
@@ -607,9 +607,9 @@ void gule (int is_byte)
 void gugt (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_CMPW, T_LIB, (intptr_t)"gt_ub");
+		out_ins(I_CMP_WT, T_LIB, (intptr_t)"gt_ub");
 	else
-		out_ins(I_CMPW, T_LIB, (intptr_t)"gt_uw");
+		out_ins(I_CMP_WT, T_LIB, (intptr_t)"gt_uw");
 	stkp = stkp + INTSIZE;
 }
 
@@ -620,9 +620,9 @@ void gugt (int is_byte)
 void guge (int is_byte)
 {
 	if (is_byte)
-		out_ins(I_CMPW, T_LIB, (intptr_t)"ge_ub");
+		out_ins(I_CMP_WT, T_LIB, (intptr_t)"ge_ub");
 	else
-		out_ins(I_CMPW, T_LIB, (intptr_t)"ge_uw");
+		out_ins(I_CMP_WT, T_LIB, (intptr_t)"ge_uw");
 	stkp = stkp + INTSIZE;
 }
 
@@ -645,10 +645,10 @@ void gcast (int type)
 {
 	switch (type) {
 	case CCHAR:
-		out_ins(I_EXTW, 0, 0);
+		out_ins(I_EXT_BR, 0, 0);
 		break;
 	case CUCHAR:
-		out_ins(I_EXTUW, 0, 0);
+		out_ins(I_EXT_UR, 0, 0);
 		break;
 	case CINT:
 	case CUINT:
@@ -671,4 +671,8 @@ void gcli (void)
 void gfence (void)
 {
 	out_ins(I_FENCE, 0, 0);
+}
+void gshort (void)
+{
+	out_ins(I_SHORT, 0, 0);
 }

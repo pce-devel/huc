@@ -140,7 +140,7 @@ assemble(int do_label)
 					}
 					if (if_state[if_level]) {
 						skip_lines = !if_flag[if_level];
-						if (pass == LAST_PASS)
+						if (pass == LAST_PASS && !expand_macro)
 							println();
 					}
 					return;
@@ -155,7 +155,7 @@ assemble(int do_label)
 							return;
 						}
 					}
-					if (if_state[if_level] && (pass == LAST_PASS))
+					if (if_state[if_level] && (pass == LAST_PASS) && !expand_macro)
 						println();
 					skip_lines = !if_state[if_level];
 					if_level--;
@@ -528,7 +528,7 @@ do_if(int *ip)
 	if (!skip_lines)
 		skip_lines = if_flag[if_level] = value ? 0 : 1;
 
-	if (pass == LAST_PASS) {
+	if (pass == LAST_PASS && !expand_macro) {
 		loadlc(value, 1);
 		println();
 	}
@@ -600,7 +600,7 @@ do_ifdef(int *ip)
 		}
 	}
 
-	if (pass == LAST_PASS) {
+	if (pass == LAST_PASS && !expand_macro) {
 		loadlc(!skip_lines, 1);
 		println();
 	}

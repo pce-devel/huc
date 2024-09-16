@@ -829,7 +829,7 @@ void do_asm_func (int type)
 
 	/* gen code */
 	if (ptr)
-		out_ins(I_LDWI, type, (intptr_t)ptr);
+		out_ins(I_LD_WI, type, (intptr_t)ptr);
 	else
 		error("out of memory");
 }
