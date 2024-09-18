@@ -95,24 +95,34 @@ enum ICODE {
 	I_DEF,
 	I_CMP_WT,
 	I_CMP_UT,
-	X_TST_WI,
-	X_NOT_WI,
+	X_EQU_WI,
+	X_NEQ_WI,
 	I_NOT_WR,
 	I_TST_WR,
 	I_BFALSE,
 	I_BTRUE,
-	X_NOT_UM,
-	X_NOT_UP,
-	X_NOT_US,
-	X_NOT_WM,
+
 	X_NOT_WP,
+	X_NOT_WM,
 	X_NOT_WS,
-	X_TST_UM,
-	X_TST_UP,
-	X_TST_US,
-	X_TST_WM,
+	X_NOT_WAR,
+	X_NOT_UP,
+	X_NOT_UM,
+	X_NOT_US,
+	X_NOT_UAR,
+	X_NOT_UAY,
 	X_TST_WP,
+	X_TST_WM,
 	X_TST_WS,
+	X_TST_WAR,
+	X_TST_UP,
+	X_TST_UM,
+	X_TST_US,
+	X_TST_UAR,
+	X_TST_UAY,
+
+	X_NAND_WI,
+	X_TAND_WI,
 
 	/* i-codes for loading the primary register */
 
@@ -124,6 +134,14 @@ enum ICODE {
 	I_LD_BM,
 	I_LD_UM,
 
+	I_LD_WMQ,
+	I_LD_BMQ,
+	I_LD_UMQ,
+
+	I_LDY_WMQ,
+	I_LDY_BMQ,
+	I_LDY_UMQ,
+
 	I_LD_WP,
 	I_LD_BP,
 	I_LD_UP,
@@ -132,13 +150,27 @@ enum ICODE {
 	X_LD_BAR,
 	X_LD_UAR,
 
+	X_LD_BAY,
+	X_LD_UAY,
+
 	X_LD_WS,
 	X_LD_BS,
 	X_LD_US,
 
+	X_LD_WSQ,
+	X_LD_BSQ,
+	X_LD_USQ,
+
+	X_LDY_WSQ,
+	X_LDY_BSQ,
+	X_LDY_USQ,
+
 	X_LDP_WAR,
 	X_LDP_BAR,
 	X_LDP_UAR,
+
+	X_LDP_BAY,
+	X_LDP_UAY,
 
 	/* i-codes for pre- and post- increment and decrement */
 
@@ -187,31 +219,38 @@ enum ICODE {
 	X_DEC_USQ,
 
 	X_INCLD_WAR,
+	X_LDINC_WAR,
+	X_DECLD_WAR,
+	X_LDDEC_WAR,
+
 	X_INCLD_BAR,
 	X_INCLD_UAR,
-
-	X_DECLD_WAR,
-	X_DECLD_BAR,
-	X_DECLD_UAR,
-
-	X_LDINC_WAR,
 	X_LDINC_BAR,
 	X_LDINC_UAR,
-
-	X_LDDEC_WAR,
+	X_DECLD_BAR,
+	X_DECLD_UAR,
 	X_LDDEC_BAR,
 	X_LDDEC_UAR,
 
+	X_INCLD_BAY,
+	X_INCLD_UAY,
+	X_LDINC_BAY,
+	X_LDINC_UAY,
+	X_DECLD_BAY,
+	X_DECLD_UAY,
+	X_LDDEC_BAY,
+	X_LDDEC_UAY,
+
 	X_INC_WARQ,
 	X_INC_UARQ,
+	X_INC_UAYQ,
 
 	X_DEC_WARQ,
 	X_DEC_UARQ,
+	X_DEC_UAYQ,
 
 	/* i-codes for saving the primary register */
 
-	I_ST_WMZ,
-	I_ST_UMZ,
 	I_ST_WMIQ,
 	I_ST_UMIQ,
 	I_ST_WPI,
@@ -229,6 +268,7 @@ enum ICODE {
 
 	X_INDEX_WR,
 	X_INDEX_UR,
+
 	X_ST_WAT,
 	X_ST_UAT,
 

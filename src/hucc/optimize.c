@@ -103,24 +103,34 @@ unsigned char icode_flags[] = {
 	/* I_DEF                */	0,
 	/* I_CMP_WT             */	0,
 	/* I_CMP_UT             */	0,
-	/* X_TST_WI             */	0,
-	/* X_NOT_WI             */	0,
+	/* X_EQU_WI             */	0,
+	/* X_NEQ_WI             */	0,
 	/* I_NOT_WR             */	0,
 	/* I_TST_WR             */	0,
 	/* I_BFALSE             */	0,
 	/* I_BTRUE              */	0,
-	/* X_NOT_UM             */	0,
-	/* X_NOT_UP             */	0,
-	/* X_NOT_US             */	IS_SPREL,
-	/* X_NOT_WM             */	0,
+
 	/* X_NOT_WP             */	0,
+	/* X_NOT_WM             */	0,
 	/* X_NOT_WS             */	IS_SPREL,
-	/* X_TST_UM             */	0,
-	/* X_TST_UP             */	0,
-	/* X_TST_US             */	IS_SPREL,
-	/* X_TST_WM             */	0,
+	/* X_NOT_WAR            */	0,
+	/* X_NOT_UP             */	0,
+	/* X_NOT_UM             */	0,
+	/* X_NOT_US             */	IS_SPREL,
+	/* X_NOT_UAR            */	0,
+	/* X_NOT_UAY            */	0,
 	/* X_TST_WP             */	0,
+	/* X_TST_WM             */	0,
 	/* X_TST_WS             */	IS_SPREL,
+	/* X_TST_WAR            */	0,
+	/* X_TST_UP             */	0,
+	/* X_TST_UM             */	0,
+	/* X_TST_US             */	IS_SPREL,
+	/* X_TST_UAR            */	0,
+	/* X_TST_UAY            */	0,
+
+	/* X_NAND_WI            */	0,
+	/* X_TAND_WI            */	0,
 
 	// i-codes for loading the primary register
 
@@ -132,6 +142,14 @@ unsigned char icode_flags[] = {
 	/* I_LD_BM              */	0,
 	/* I_LD_UM              */	0,
 
+	/* I_LD_WMQ             */	0,
+	/* I_LD_BMQ             */	0,
+	/* I_LD_UMQ             */	0,
+
+	/* I_LDY_WMQ            */	0,
+	/* I_LDY_BMQ            */	0,
+	/* I_LDY_UMQ            */	0,
+
 	/* I_LD_WP              */	0,
 	/* I_LD_BP              */	0,
 	/* I_LD_UP              */	0,
@@ -140,13 +158,27 @@ unsigned char icode_flags[] = {
 	/* X_LD_BAR             */	0,
 	/* X_LD_UAR             */	0,
 
+	/* X_LD_BAY             */	0,
+	/* X_LD_UAY             */	0,
+
 	/* X_LD_WS              */	IS_SPREL,
 	/* X_LD_BS              */	IS_SPREL,
 	/* X_LD_US              */	IS_SPREL,
 
+	/* X_LD_WSQ             */	IS_SPREL,
+	/* X_LD_BSQ             */	IS_SPREL,
+	/* X_LD_USQ             */	IS_SPREL,
+
+	/* X_LDY_WSQ            */	IS_SPREL,
+	/* X_LDY_BSQ            */	IS_SPREL,
+	/* X_LDY_USQ            */	IS_SPREL,
+
 	/* X_LDP_WAR            */	0,
 	/* X_LDP_BAR            */	0,
 	/* X_LDP_UAR            */	0,
+
+	/* X_LDP_BAY            */	0,
+	/* X_LDP_UAY            */	0,
 
 	// i-codes for pre- and post- increment and decrement
 
@@ -195,31 +227,38 @@ unsigned char icode_flags[] = {
 	/* X_DEC_USQ            */	IS_SPREL,
 
 	/* X_INCLD_WAR          */	0,
+	/* X_LDINC_WAR          */	0,
+	/* X_DECLD_WAR          */	0,
+	/* X_LDDEC_WAR          */	0,
+
 	/* X_INCLD_BAR          */	0,
 	/* X_INCLD_UAR          */	0,
-
-	/* X_DECLD_WAR          */	0,
-	/* X_DECLD_BAR          */	0,
-	/* X_DECLD_UAR          */	0,
-
-	/* X_LDINC_WAR          */	0,
 	/* X_LDINC_BAR          */	0,
 	/* X_LDINC_UAR          */	0,
-
-	/* X_LDDEC_WAR          */	0,
+	/* X_DECLD_BAR          */	0,
+	/* X_DECLD_UAR          */	0,
 	/* X_LDDEC_BAR          */	0,
 	/* X_LDDEC_UAR          */	0,
 
+	/* X_INCLD_BAY          */	0,
+	/* X_INCLD_UAY          */	0,
+	/* X_LDINC_BAY          */	0,
+	/* X_LDINC_UAY          */	0,
+	/* X_DECLD_BAY          */	0,
+	/* X_DECLD_UAY          */	0,
+	/* X_LDDEC_BAY          */	0,
+	/* X_LDDEC_UAY          */	0,
+
 	/* X_INC_WARQ           */	0,
 	/* X_INC_UARQ           */	0,
+	/* X_INC_UAYQ           */	0,
 
 	/* X_DEC_WARQ           */	0,
 	/* X_DEC_UARQ           */	0,
+	/* X_DEC_UAYQ           */	0,
 
 	// i-codes for saving the primary register
 
-	/* I_ST_WMZ             */	0,
-	/* I_ST_UMZ             */	0,
 	/* I_ST_WMIQ            */	0,
 	/* I_ST_UMIQ            */	0,
 	/* I_ST_WPI             */	0,
@@ -237,6 +276,7 @@ unsigned char icode_flags[] = {
 
 	/* X_INDEX_WR           */	0,
 	/* X_INDEX_UR           */	0,
+
 	/* X_ST_WAT             */	0,
 	/* X_ST_UAT             */	0,
 
@@ -388,6 +428,8 @@ void push_ins (INS *ins)
 		int nb;
 
 lv1_loop:
+
+
 		/* precalculate pointers to instructions */
 		if (q_nb > 10)
 			nb = 10;
@@ -396,17 +438,20 @@ lv1_loop:
 #ifdef DEBUG_OPTIMIZER
 		printf("\nlv1_loop:\n");
 #endif
-		for (i = 0, j = q_wr; i < nb; i++) {
+		i = 0;
+		j = q_wr;
+		while (i < nb) {
 			/* save pointer */
 			p[i] = &q_ins[j];
 #ifdef DEBUG_OPTIMIZER
 			printf("%d ", i); dump_ins(p[i]);
 #endif
-
 			/* next */
 			j -= 1;
 			if (j < 0)
 				j += Q_SIZE;
+
+			++i;
 		}
 
 		/* LEVEL 1 - FUN STUFF STARTS HERE */
@@ -503,17 +548,25 @@ lv1_loop:
 			  p[1]->code == X_LDDEC_BS ||
 			  p[1]->code == X_LDDEC_US ||
 			  p[1]->code == X_INCLD_WAR ||
+			  p[1]->code == X_LDINC_WAR ||
+			  p[1]->code == X_DECLD_WAR ||
+			  p[1]->code == X_LDDEC_WAR ||
 			  p[1]->code == X_INCLD_BAR ||
 			  p[1]->code == X_INCLD_UAR ||
-			  p[1]->code == X_LDINC_WAR ||
 			  p[1]->code == X_LDINC_BAR ||
 			  p[1]->code == X_LDINC_UAR ||
-			  p[1]->code == X_DECLD_WAR ||
 			  p[1]->code == X_DECLD_BAR ||
 			  p[1]->code == X_DECLD_UAR ||
-			  p[1]->code == X_LDDEC_WAR ||
 			  p[1]->code == X_LDDEC_BAR ||
-			  p[1]->code == X_LDDEC_UAR)
+			  p[1]->code == X_LDDEC_UAR ||
+			  p[1]->code == X_INCLD_BAY ||
+			  p[1]->code == X_INCLD_UAY ||
+			  p[1]->code == X_LDINC_BAY ||
+			  p[1]->code == X_LDINC_UAY ||
+			  p[1]->code == X_DECLD_BAY ||
+			  p[1]->code == X_DECLD_UAY ||
+			  p[1]->code == X_LDDEC_BAY ||
+			  p[1]->code == X_LDDEC_UAY)
 			) {
 				/* replace code */
 				switch (p[1]->code) {
@@ -543,16 +596,24 @@ lv1_loop:
 				case X_LDDEC_US: p[1]->code = X_DEC_USQ; break;
 				case X_INCLD_WAR:
 				case X_LDINC_WAR: p[1]->code = X_INC_WARQ; break;
+				case X_DECLD_WAR:
+				case X_LDDEC_WAR: p[1]->code = X_DEC_WARQ; break;
 				case X_INCLD_BAR:
 				case X_INCLD_UAR:
 				case X_LDINC_BAR:
 				case X_LDINC_UAR: p[1]->code = X_INC_UARQ; break;
-				case X_DECLD_WAR:
-				case X_LDDEC_WAR: p[1]->code = X_DEC_WARQ; break;
 				case X_DECLD_BAR:
 				case X_DECLD_UAR:
 				case X_LDDEC_BAR:
 				case X_LDDEC_UAR: p[1]->code = X_DEC_UARQ; break;
+				case X_INCLD_BAY:
+				case X_INCLD_UAY:
+				case X_LDINC_BAY:
+				case X_LDINC_UAY: p[1]->code = X_INC_UAYQ; break;
+				case X_DECLD_BAY:
+				case X_DECLD_UAY:
+				case X_LDDEC_BAY:
+				case X_LDDEC_UAY: p[1]->code = X_DEC_UAYQ; break;
 				default: abort();
 				}
 				nb = 1;
@@ -580,12 +641,33 @@ lv1_loop:
 			/*
 			 *  __ld.wi		i	-->	__ld.uiq	i
 			 *  __short
+			 *
+			 *  __ld.{w/b/u}m	symbol	-->	__ld.{w/b/u}mq	i
+			 *  __short
+			 *
+			 *  __ld.{w/b/u}s	symbol	-->	__ld.{w/b/u}sq	i
+			 *  __short
 			 */
 			if
 			((q_nb >= 2) &&
-			 (p[1]->code == I_LD_WI)
+			 (p[1]->code == I_LD_WI ||
+			  p[1]->code == I_LD_WM ||
+			  p[1]->code == I_LD_BM ||
+			  p[1]->code == I_LD_UM ||
+			  p[1]->code == X_LD_WS ||
+			  p[1]->code == X_LD_BS ||
+			  p[1]->code == X_LD_US)
 			) {
-				p[1]->code = X_LD_UIQ;
+				switch (p[1]->code) {
+				case I_LD_WI: p[1]->code = X_LD_UIQ; break;
+				case I_LD_WM: p[1]->code = I_LD_WMQ; break;
+				case I_LD_BM: p[1]->code = I_LD_BMQ; break;
+				case I_LD_UM: p[1]->code = I_LD_UMQ; break;
+				case X_LD_WS: p[1]->code = X_LD_WSQ; break;
+				case X_LD_BS: p[1]->code = X_LD_BSQ; break;
+				case X_LD_US: p[1]->code = X_LD_USQ; break;
+				default: abort();
+				}
 				nb = 1;
 			}
 
@@ -808,7 +890,9 @@ lv1_loop:
 			 *  __st.wm		_ptr
 			 *  __ld.wp		_ptr
 			 *
-			 *  Classic base+offset word-array access.
+			 *  Classic base+offset word-array read.
+			 *
+			 *  N.B. The byte-array peephole rule is further down in this file.
 			 */
 			else if
 			((p[0]->code == I_LD_WP) &&
@@ -851,7 +935,8 @@ lv1_loop:
 			 *
 			 *  I_ENDCASE is only generated in order to catch which
 			 *  case statements could fall through to the next case
-			 *  so that an SAX instruction can be generated.
+			 *  so that an SAX instruction could be generated if or
+			 *  when do_switch() uses a "JMP [table, x]".
 			 *
 			 *  This removes redundant I_CASE/I_ENDCASE i-codes that
 			 *  just fall through to the next case.
@@ -1103,11 +1188,11 @@ lv1_loop:
 			}
 
 			/*
-			 *  __push.wr			-->	__tst.wi	i
+			 *  __push.wr			-->	__equ.wi	i
 			 *  __ld.wi		i
 			 *  __cmp.wt		eq_w
 			 *
-			 *  __push.wr			-->	__not.wi	i
+			 *  __push.wr			-->	__neq.wi	i
 			 *  __ld.wi		i
 			 *  __cmp.wt		ne_w
 			 *
@@ -1144,13 +1229,13 @@ lv1_loop:
 					p[2]->data = 0;
 				} else {
 					if (strcmp((char *)p[0]->data, "eq_w") == 0)
-						p[2]->code = X_TST_WI;
+						p[2]->code = X_EQU_WI;
 					else if (strcmp((char *)p[0]->data, "eq_b") == 0)
-						p[2]->code = X_TST_WI;
+						p[2]->code = X_EQU_WI;
 					else if (strcmp((char *)p[0]->data, "ne_w") == 0)
-						p[2]->code = X_NOT_WI;
+						p[2]->code = X_NEQ_WI;
 					else if (strcmp((char *)p[0]->data, "ne_b") == 0)
-						p[2]->code = X_NOT_WI;
+						p[2]->code = X_NEQ_WI;
 					p[2]->type = p[1]->type;
 					p[2]->data = p[1]->data;
 				}
@@ -1238,6 +1323,14 @@ lv1_loop:
 			 *  __sub.wi		1
 			 *  __st.{w/u}at	symbol
 			 *
+			 *  __ldp.{b/u}ay	symbol	-->	__incld_{b/u}ay  symbol
+			 *  __add.wi		1
+			 *  __st.{w/u}at	symbol
+			 *
+			 *  __ldp.{b/u}ay	symbol	-->	__decld_{b/u}ay  symbol
+			 *  __sub.wi		1
+			 *  __st.{w/u}at	symbol
+			 *
 			 *  pre-increment, post-increment,
 			 *  pre-decrement, post-decrement!
 			 */
@@ -1250,7 +1343,9 @@ lv1_loop:
 			  p[0]->code == X_ST_UAT) &&
 			 (p[2]->code == X_LDP_WAR ||
 			  p[2]->code == X_LDP_BAR ||
-			  p[2]->code == X_LDP_UAR) &&
+			  p[2]->code == X_LDP_UAR ||
+			  p[2]->code == X_LDP_BAY ||
+			  p[2]->code == X_LDP_UAY) &&
 			 (p[0]->type == p[2]->type) &&
 			 (p[0]->data == p[2]->data)
 //			 (cmp_operands(p[0], p[2]) == 1)
@@ -1260,85 +1355,128 @@ lv1_loop:
 				case X_LDP_WAR:	p[2]->code = (p[1]->code == I_ADD_WI) ? X_INCLD_WAR : X_DECLD_WAR; break;
 				case X_LDP_BAR:	p[2]->code = (p[1]->code == I_ADD_WI) ? X_INCLD_BAR : X_DECLD_BAR; break;
 				case X_LDP_UAR:	p[2]->code = (p[1]->code == I_ADD_WI) ? X_INCLD_UAR : X_DECLD_UAR; break;
+				case X_LDP_BAY:	p[2]->code = (p[1]->code == I_ADD_WI) ? X_INCLD_BAY : X_DECLD_BAY; break;
+				case X_LDP_UAY:	p[2]->code = (p[1]->code == I_ADD_WI) ? X_INCLD_UAY : X_DECLD_UAY; break;
 				default:	break;
 				}
 				nb = 2;
 			}
 
 			/*
-			 *  __ld.{w/b/u}p	symbol	-->	__tz.{w/b/u}p	symbol
-			 *  __tst.wr				__b{true/false}
-			 *  __b{true/false}
+			 *  __ld.{w/b/u}p	symbol	-->	__not.{w/u}p	symbol
+			 *  __tst.wr				not(__tst.wr or __not.wr)
+			 *  not(__tst.wr or __not.wr)
 			 *
-			 *  __ld.{w/b/u}p	symbol	-->	__tnz.{w/b/u}p	symbol
-			 *  __not.wr				__b{true/false}
-			 *  __b{true/false}
+			 *  __ld.{w/b/u}p	symbol	-->	__tst.{w/u}p	symbol
+			 *  __not.wr				not(__tst.wr or __not.wr)
+			 *  not(__tst.wr or __not.wr)
 			 *
-			 *  __ld.{w/b/u}m	symbol	-->	__tz.{w/b/u}m	symbol
-			 *  __tst.wr				__b{true/false}
-			 *  __b{true/false}
+			 *  __ld.{w/b/u}m	symbol	-->	__not.{w/u}m	symbol
+			 *  __tst.wr				not(__tst.wr or __not.wr)
+			 *  not(__tst.wr or __not.wr)
 			 *
-			 *  __ld.{w/b/u}m	symbol	-->	__tnz.{w/b/u}m	symbol
-			 *  __not.wr				__b{true/false}
-			 *  __b{true/false}
+			 *  __ld.{w/b/u}m	symbol	-->	__tst.{w/u}m	symbol
+			 *  __not.wr				not(__tst.wr or __not.wr)
+			 *  not(__tst.wr or __not.wr)
 			 *
-			 *  __ld.{w/b/u}s	symbol	-->	__tz.{w/b/u}s	symbol
-			 *  __tst.wr				__b{true/false}
-			 *  __b{true/false}
+			 *  __ld.{w/b/u}s	symbol	-->	__not.{w/u}s	symbol
+			 *  __tst.wr				not(__tst.wr or __not.wr)
+			 *  not(__tst.wr or __not.wr)
 			 *
-			 *  __ld.{w/b/u}s	symbol	-->	__tnz.{w/b/u}s	symbol
-			 *  __not.wr				__b{true/false}
-			 *  __b{true/false}
+			 *  __ld.{w/b/u}s	symbol	-->	__tst.{w/u}s	symbol
+			 *  __not.wr				not(__tst.wr or __not.wr)
+			 *  not(__tst.wr or __not.wr)
 			 *
-			 *  N.B. This deliberately tests for the branch/label
-			 *  i-codes in order to delay a match until after any
-			 *  duplicate I_TST_WR and I_NOT_WR i-codes are merged.
+			 *  __ld.{w/b/u}ar	symbol	-->	__not.{w/u}ar	symbol
+			 *  __tst.wr				not(__tst.wr or __not.wr)
+			 *  not(__tst.wr or __not.wr)
+			 *
+			 *  __ld.{w/b/u}ar	symbol	-->	__tst.{w/u}ar	symbol
+			 *  __not.wr				not(__tst.wr or __not.wr)
+			 *  not(__tst.wr or __not.wr)
+			 *
+			 *  __ld.{b/u}ay	symbol	-->	__not.uay	symbol
+			 *  __tst.wr				not(__tst.wr or __not.wr)
+			 *  not(__tst.wr or __not.wr)
+			 *
+			 *  __ld.{b/u}ay	symbol	-->	__tst.uay	symbol
+			 *  __not.wr				not(__tst.wr or __not.wr)
+			 *  not(__tst.wr or __not.wr)
+			 *
+			 *  __and.wi		n	-->	__tand.wi	n
+			 *  __tst.wr				not(__tst.wr or __not.wr)
+			 *  not(__tst.wr or __not.wr)
+			 *
+			 *  __and.wi		n	-->	__nand.wi	n
+			 *  __not.wr				not(__tst.wr or __not.wr)
+			 *  not(__tst.wr or __not.wr)
+			 *
+			 *  N.B. This deliberately tests for the i-code after
+			 *  the target I_TST_WR or I_NOT_WR in order to delay
+			 *  the match until after merging the dupliated tests
+			 *  that the code-generator often emits.
 			 */
 			else if
-			((p[0]->code == I_LABEL ||
-			  p[0]->code == I_BTRUE ||
-			  p[0]->code == I_BFALSE) &&
+			((p[0]->code != I_TST_WR) &&
+			 (p[0]->code != I_NOT_WR) &&
 			 (p[1]->code == I_TST_WR ||
 			  p[1]->code == I_NOT_WR) &&
-			 (p[2]->code == I_LD_BM ||
-			  p[2]->code == I_LD_UM ||
-			  p[2]->code == I_LD_BP ||
-			  p[2]->code == I_LD_UP ||
+			 (p[2]->code == I_LD_WP ||
 			  p[2]->code == I_LD_WM ||
-			  p[2]->code == I_LD_WP ||
+			  p[2]->code == X_LD_WS ||
+			  p[2]->code == X_LD_WAR ||
+			  p[2]->code == I_LD_BP ||
+			  p[2]->code == I_LD_BM ||
 			  p[2]->code == X_LD_BS ||
+			  p[2]->code == X_LD_BAR ||
+			  p[2]->code == X_LD_BAY ||
+			  p[2]->code == I_LD_UP ||
+			  p[2]->code == I_LD_UM ||
 			  p[2]->code == X_LD_US ||
-			  p[2]->code == X_LD_WS)
+			  p[2]->code == X_LD_UAR ||
+			  p[2]->code == X_LD_UAY ||
+			  p[2]->code == I_AND_WI)
 			) {
 				/* remove code */
 				if (p[1]->code == I_TST_WR) {
 					switch (p[2]->code) {
-					case I_LD_BM:
-					case I_LD_UM:   p[2]->code = X_TST_UM; break;
+					case I_LD_WP:  p[2]->code = X_TST_WP; break;
+					case I_LD_WM:  p[2]->code = X_TST_WM; break;
+					case X_LD_WS:  p[2]->code = X_TST_WS; break;
+					case X_LD_WAR: p[2]->code = X_TST_WAR; break;
 					case I_LD_BP:
 					case I_LD_UP:  p[2]->code = X_TST_UP; break;
-					case I_LD_WM:    p[2]->code = X_TST_WM; break;
-					case I_LD_WP:   p[2]->code = X_TST_WP; break;
+					case I_LD_BM:
+					case I_LD_UM:  p[2]->code = X_TST_UM; break;
 					case X_LD_BS:
-					case X_LD_US: p[2]->code = X_TST_US; break;
-					case X_LD_WS:  p[2]->code = X_TST_WS; break;
+					case X_LD_US:  p[2]->code = X_TST_US; break;
+					case X_LD_BAR:
+					case X_LD_UAR: p[2]->code = X_TST_UAR; break;
+					case X_LD_BAY:
+					case X_LD_UAY: p[2]->code = X_TST_UAY; break;
+					case I_AND_WI: p[2]->code = X_TAND_WI; break;
 					default: abort();
 					}
 				} else {
 					switch (p[2]->code) {
-					case I_LD_BM:
-					case I_LD_UM:   p[2]->code = X_NOT_UM; break;
+					case I_LD_WP:  p[2]->code = X_NOT_WP; break;
+					case I_LD_WM:  p[2]->code = X_NOT_WM; break;
+					case X_LD_WS:  p[2]->code = X_NOT_WS; break;
+					case X_LD_WAR: p[2]->code = X_NOT_WAR; break;
 					case I_LD_BP:
 					case I_LD_UP:  p[2]->code = X_NOT_UP; break;
-					case I_LD_WM:    p[2]->code = X_NOT_WM; break;
-					case I_LD_WP:   p[2]->code = X_NOT_WP; break;
+					case I_LD_BM:
+					case I_LD_UM:  p[2]->code = X_NOT_UM; break;
 					case X_LD_BS:
-					case X_LD_US: p[2]->code = X_NOT_US; break;
-					case X_LD_WS:  p[2]->code = X_NOT_WS; break;
+					case X_LD_US:  p[2]->code = X_NOT_US; break;
+					case X_LD_BAR:
+					case X_LD_UAR: p[2]->code = X_NOT_UAR; break;
+					case X_LD_BAY:
+					case X_LD_UAY: p[2]->code = X_NOT_UAY; break;
+					case I_AND_WI: p[2]->code = X_NAND_WI; break;
 					default: abort();
 					}
 				}
-
 				*p[1] = *p[0];
 				nb = 1;
 			}
@@ -1349,7 +1487,9 @@ lv1_loop:
 			 *  __st.wm		_ptr
 			 *  __ld.{b/u}p		_ptr
 			 *
-			 *  Classic base+offset byte-array access.
+			 *  Classic base+offset byte-array read.
+			 *
+			 *  N.B. The word-array peephole rule is further up in this file.
 			 */
 			else if
 			((p[0]->code == I_LD_BP ||
@@ -1373,7 +1513,7 @@ lv1_loop:
 			 *  __st.wm		_ptr
 			 *  __ld.{w/b/u}p	_ptr
 			 *
-			 *  Optimized base+offset array access.
+			 *  Optimized base+offset array write.
 			 *
 			 *  This MUST be enabled when the X_INDEX_WR / X_INDEX_UR
 			 *  optimization is enabled, or array loads break because
@@ -1552,8 +1692,8 @@ lv1_loop:
 			else if
 			((p[0]->code == I_TST_WR) &&
 			 (p[1]->code == I_CMP_WT ||
-			  p[1]->code == X_TST_WI ||
-			  p[1]->code == X_NOT_WI ||
+			  p[1]->code == X_EQU_WI ||
+			  p[1]->code == X_NEQ_WI ||
 			  p[1]->code == I_NOT_WR ||
 			  p[1]->code == I_TST_WR ||
 			  p[1]->code == I_LABEL)
@@ -1872,6 +2012,9 @@ lv1_loop:
 			 *  __decld.{w/b/u}ar	array	-->	__lddec.{w/b/u}ar array
 			 *  __add.wi  1
 			 *
+			 *  __decld.{b/u}ay	array	-->	__lddec.{b/u}ay array
+			 *  __add.wi  1
+			 *
 			 *  C post-decrement!
 			 */
 			else if
@@ -1886,7 +2029,9 @@ lv1_loop:
 			  p[1]->code == X_DECLD_US ||
 			  p[1]->code == X_DECLD_WAR ||
 			  p[1]->code == X_DECLD_BAR ||
-			  p[1]->code == X_DECLD_UAR)
+			  p[1]->code == X_DECLD_UAR ||
+			  p[1]->code == X_DECLD_BAY ||
+			  p[1]->code == X_DECLD_UAY)
 			) {
 				/* replace code */
 				switch (p[1]->code) {
@@ -1899,6 +2044,8 @@ lv1_loop:
 				case X_DECLD_WAR: p[1]->code = X_LDDEC_WAR; break;
 				case X_DECLD_BAR: p[1]->code = X_LDDEC_BAR; break;
 				case X_DECLD_UAR: p[1]->code = X_LDDEC_UAR; break;
+				case X_DECLD_BAY: p[1]->code = X_LDDEC_BAY; break;
+				case X_DECLD_UAY: p[1]->code = X_LDDEC_UAY; break;
 				default:	break;
 				}
 				nb = 1;
@@ -1912,6 +2059,9 @@ lv1_loop:
 			 *  __sub.wi  1
 			 *
 			 *  __incld.{w/b/u}ar	array	-->	__ldinc.{w/b/u}ar array
+			 *  __sub.wi  1
+			 *
+			 *  __incld.{w/b/u}ay	array	-->	__ldinc.{w/b/u}ay array
 			 *  __sub.wi  1
 			 *
 			 *  C post-increment!
@@ -1928,7 +2078,9 @@ lv1_loop:
 			  p[1]->code == X_INCLD_US ||
 			  p[1]->code == X_INCLD_WAR ||
 			  p[1]->code == X_INCLD_BAR ||
-			  p[1]->code == X_INCLD_UAR)
+			  p[1]->code == X_INCLD_UAR ||
+			  p[1]->code == X_INCLD_BAY ||
+			  p[1]->code == X_INCLD_UAY)
 			) {
 				/* replace code */
 				switch (p[1]->code) {
@@ -1941,8 +2093,203 @@ lv1_loop:
 				case X_INCLD_WAR: p[1]->code = X_LDINC_WAR; break;
 				case X_INCLD_BAR: p[1]->code = X_LDINC_BAR; break;
 				case X_INCLD_UAR: p[1]->code = X_LDINC_UAR; break;
+				case X_INCLD_BAY: p[1]->code = X_LDINC_BAY; break;
+				case X_INCLD_UAY: p[1]->code = X_LDINC_UAY; break;
 				default:	break;
 				}
+				nb = 1;
+			}
+
+			/*
+			 *  __asl.wi		i	-->	__asl.wi	(i+1)
+			 *  __asl.wr
+			 *
+			 *  __asl.wi		i	-->	__asl.wi	(i+j)
+			 *  __asl.wi		j
+			 *
+			 *  __asl.wr			-->	__asl.wi	(1+j)
+			 *  __asl.wi		j
+			 *
+			 *  __asl.wr			-->	__asl.wi	(1+1)
+			 *  __asl.wr
+			 *
+			 *  sometimes generated for the address within an array of structs
+			 */
+			else if
+			((p[0]->code == I_ASL_WR ||
+			  p[0]->code == I_ASL_WI) &&
+			 (p[1]->code == I_ASL_WR ||
+			  p[1]->code == I_ASL_WI)
+			) {
+				/* replace code */
+				intptr_t data = 0;
+				data += (p[0]->code == I_ASL_WR) ? 1 : p[0]->data;
+				data += (p[1]->code == I_ASL_WR) ? 1 : p[1]->data;
+				p[1]->code = I_ASL_WI;
+				p[1]->type = T_VALUE;
+				p[1]->data = data;
+				nb = 1;
+			}
+
+			/*
+			 *  __ld.{w/b/u}m	symbol	-->	__ld.{w/b/u}mq	symbol
+			 *  __index.wr		array		__index.wr	array
+			 *
+			 *  __ld.{w/b/u}m	symbol	-->	__ld.{w/b/u}mq	symbol
+			 *  __index.ur		array		__index.ur	array
+			 *
+			 *  __ld.{w/b/u}m	symbol	-->	__ld.{w/b/u}mq	symbol
+			 *  __ld.war		array		__ld.war	array
+			 *
+			 *
+			 *  __ld.{w/b/u}s	n	-->	__ld.{w/b/u}sq	n
+			 *  __index.wr		array		__index.wr	array
+			 *
+			 *  __ld.{w/b/u}s	n	-->	__ld.{w/b/u}sq	n
+			 *  __index.ur		array		__index.ur	array
+			 *
+			 *  __ld.{w/b/u}s	n	-->	__ld.{w/b/u}sq	n
+			 *  __ld.war		array		__ld.war	array
+			 *
+			 *  Index optimizations for base+offset array access.
+			 */
+			else if
+			((p[0]->code == X_INDEX_WR ||
+			  p[0]->code == X_INDEX_UR ||
+			  p[0]->code == X_LD_WAR) &&
+			 (p[1]->code == I_LD_WM ||
+			  p[1]->code == I_LD_BM ||
+			  p[1]->code == I_LD_UM ||
+			  p[1]->code == X_LD_WS ||
+			  p[1]->code == X_LD_BS ||
+			  p[1]->code == X_LD_US)
+			) {
+				/* replace code */
+				switch (p[1]->code) {
+				case I_LD_WM: p[1]->code = I_LD_WMQ; break;
+				case I_LD_BM: p[1]->code = I_LD_BMQ; break;
+				case I_LD_UM: p[1]->code = I_LD_UMQ; break;
+				case X_LD_WS: p[1]->code = X_LD_WSQ; break;
+				case X_LD_BS: p[1]->code = X_LD_BSQ; break;
+				case X_LD_US: p[1]->code = X_LD_USQ; break;
+				default:	break;
+				}
+				nb = 0;
+			}
+
+			/*
+			 *  __ld.{w/b/u}m	symbol	-->	__ldy.{w/b/u}mq
+			 *  __ld.{b/u}ar	array		__ld.{b/u}ay	array
+			 *
+			 *  __ld.{w/b/u}s	n	-->	__ldy.{w/b/u}sq	n
+			 *  __ld.{b/u}ar	array		__ld.{b/u}ay	array
+			 *
+			 *  Index optimizations for base+offset array access.
+			 */
+			else if
+			((p[0]->code == X_LD_BAR ||
+			  p[0]->code == X_LD_UAR) &&
+			 (p[1]->code == I_LD_WM ||
+			  p[1]->code == I_LD_BM ||
+			  p[1]->code == I_LD_UM ||
+			  p[1]->code == X_LD_WS ||
+			  p[1]->code == X_LD_BS ||
+			  p[1]->code == X_LD_US)
+			) {
+				/* replace code */
+				switch (p[1]->code) {
+				case I_LD_WM: p[1]->code = I_LDY_WMQ; break;
+				case I_LD_BM: p[1]->code = I_LDY_BMQ; break;
+				case I_LD_UM: p[1]->code = I_LDY_UMQ; break;
+				case X_LD_WS: p[1]->code = X_LDY_WSQ; break;
+				case X_LD_BS: p[1]->code = X_LDY_BSQ; break;
+				case X_LD_US: p[1]->code = X_LDY_USQ; break;
+				default:	break;
+				}
+				switch (p[0]->code) {
+				case X_LD_BAR: p[0]->code = X_LD_BAY; break;
+				case X_LD_UAR: p[0]->code = X_LD_UAY; break;
+				case X_LDP_BAR: p[0]->code = X_LDP_BAY; break;
+				case X_LDP_UAR: p[0]->code = X_LDP_UAY; break;
+				default:	break;
+				}
+				nb = 0;
+			}
+
+			/*
+			 *  __ld.{w/b/u}mq	symbol	-->	__ldy.{w/b/u}mq
+			 *  __ldp.{b/u}ar	array		__ldp.{b/u}ay	array
+			 *
+			 *  __ld.{w/b/u}sq	n	-->	__ldy.{w/b/u}sq	n
+			 *  __ldp.{b/u}ar	array		__ldp.{b/u}ay	array
+			 *
+			 *  Index optimizations for base+offset array access.
+			 *
+			 *  The X_INDEX_UR rule above already converted __ld.{w/b/u}m
+			 *  to __ld.{w/b/u}mq!
+			 */
+			else if
+			((p[0]->code == X_LDP_BAR ||
+			  p[0]->code == X_LDP_UAR) &&
+			 (p[1]->code == I_LD_WMQ ||
+			  p[1]->code == I_LD_BMQ ||
+			  p[1]->code == I_LD_UMQ ||
+			  p[1]->code == X_LD_WSQ ||
+			  p[1]->code == X_LD_BSQ ||
+			  p[1]->code == X_LD_USQ)
+			) {
+				/* replace code */
+				switch (p[1]->code) {
+				case I_LD_WMQ: p[1]->code = I_LDY_WMQ; break;
+				case I_LD_BMQ: p[1]->code = I_LDY_BMQ; break;
+				case I_LD_UMQ: p[1]->code = I_LDY_UMQ; break;
+				case X_LD_WSQ: p[1]->code = X_LDY_WSQ; break;
+				case X_LD_BSQ: p[1]->code = X_LDY_BSQ; break;
+				case X_LD_USQ: p[1]->code = X_LDY_USQ; break;
+				default:	break;
+				}
+				switch (p[0]->code) {
+				case X_LD_BAR: p[0]->code = X_LD_BAY; break;
+				case X_LD_UAR: p[0]->code = X_LD_UAY; break;
+				case X_LDP_BAR: p[0]->code = X_LDP_BAY; break;
+				case X_LDP_UAR: p[0]->code = X_LDP_UAY; break;
+				default:	break;
+				}
+				nb = 0;
+			}
+
+			/* flush queue */
+			if (nb) {
+				q_wr -= nb;
+				q_nb -= nb;
+				nb = 0;
+
+				if (q_wr < 0)
+					q_wr += Q_SIZE;
+
+				/* loop */
+				goto lv1_loop;
+			}
+		}
+
+		/* 1-instruction patterns */
+		if (q_nb >= 1) {
+			/*
+			 *  __add.wi		0	-->
+			 *
+			 *  arg_to_fptr() leaves a useless I_ADD_WI behind when
+			 *  generating an I_FARPTR_I for an "array+n" parameter
+			 *
+			 *  __sub.wi		0	-->
+			 *
+			 *  might as well check for this too, while we're here
+			 */
+			if
+			((p[0]->code == I_ADD_WI ||
+			  p[0]->code == I_SUB_WI) &&
+			 (p[0]->type == T_VALUE) &&
+			 (p[0]->data == 0)
+			) {
 				nb = 1;
 			}
 

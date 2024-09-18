@@ -837,7 +837,8 @@ int heir11 (LVALUE *lval, int comma)
 			}
 			if (k && direct == 0)
 				rvalue(lval);
-			out_ins(I_ADD_WI, T_VALUE, ptr->offset);	// move pointer from struct begin to struct member
+			if (ptr->offset)
+				out_ins(I_ADD_WI, T_VALUE, ptr->offset);	// move pointer from struct begin to struct member
 			lval->symbol = ptr;
 			lval->indirect = ptr->type;		// lval->indirect = lval->val_type = ptr->type
 			lval->ptr_type = 0;

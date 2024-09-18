@@ -871,6 +871,8 @@ void arg_flush (int arg, int adj)
 		ins = &ins_stack[idx];
 
 		if ((ins->type == T_STACK) && (ins->code == I_LD_WM)) {
+printf("Can this ever occur?\n");
+abort();
 			if (i < nb) {
 				ins = &ins_stack[idx + 1];
 				if ((ins->code == I_ADD_WI) && (ins->type == T_VALUE))
@@ -928,23 +930,25 @@ void arg_to_fptr (struct fastcall *fast, int i, int arg, int adj)
 		}
 	}
 	else if (nb > 1) {
-		/* complex expression */
+		/* search the complex expression for the base symbol */
 		for (idx = 0; idx < nb; ++idx, ++ins) {
 			if (ins->type == T_SYMBOL) {
-				/* allow either "function", "array", or "array+const" */
 				sym = (SYMBOL *)ins->data;
 				switch (sym->ident) {
+					/* for the first "array", or "array+const" */
 					case ARRAY:
 						if ((ins->code == I_LD_WI) ||
 							(ins->code == I_ADD_WI))
 							err = 0;
 						break;
+					/* or the first pointer */
 					case POINTER:
 						if (ins->code == I_LD_WM)
 							err = 0;
 						break;
 				}
 			}
+			/* break when a qualifying symbol is found */
 			if (err == 0) break;
 		}
 
@@ -981,10 +985,12 @@ void arg_to_fptr (struct fastcall *fast, int i, int arg, int adj)
 			tmp.data = ins->data;
 			tmp.arg[0] = fast->argname[i];
 			tmp.arg[1] = fast->argname[i + 1];
+			/* this nukes the symbol from the I_LD_WI or I_ADD_WI */
 			ins->type = T_VALUE;
 			ins->data = 0;
 		}
 		else {
+			/* a pointer or an array of pointers */
 			if (((sym->ident == ARRAY) ||
 			     (sym->ident == POINTER)) &&
 			    (sym->type == CINT || sym->type == CUINT)) {

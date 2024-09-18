@@ -319,8 +319,8 @@ __call		.macro
 ; **************
 
 __callp		.macro
-		sta.l	<__ptr
-		sty.h	<__ptr
+		sta.l	__ptr
+		sty.h	__ptr
 		jsr	call_indirect
 		.endm
 
@@ -553,7 +553,7 @@ __cmp.ut	.macro
 ; optimized boolean test
 ; this MUST set the Z flag for the susequent branches!
 
-__tst.wi	.macro
+__equ.wi	.macro
 		eor.l	#\1
 		bne	!false+
 		cpy.h	#\1
@@ -567,7 +567,7 @@ __tst.wi	.macro
 ; optimized boolean test
 ; this MUST set the Z flag for the susequent branches!
 
-__not.wi	.macro
+__neq.wi	.macro
 		eor.l	#\1
 		bne	!true+
 		cpy.h	#\1
@@ -580,7 +580,7 @@ __not.wi	.macro
 ; optimized boolean test
 ; this MUST set the Z flag for the susequent branches!
 
-__tst.ui	.macro
+__equ.ui	.macro
 		eor.l	#\1
 		beq	!true+
 !false:		lda	#-1
@@ -592,7 +592,7 @@ __tst.ui	.macro
 ; optimized boolean test
 ; this MUST set the Z flag for the susequent branches!
 
-__not.ui	.macro
+__neq.ui	.macro
 		eor.l	#\1
 		beq	!false+
 		lda	#1
@@ -604,8 +604,8 @@ __not.ui	.macro
 ; this MUST set the Z flag for the susequent branches!
 
 __not.wr	.macro
-		sty	<__temp
-		ora	<__temp
+		sty	__temp
+		ora	__temp
 		beq	!+
 		lda	#1
 !:		eor	#1
@@ -617,8 +617,8 @@ __not.wr	.macro
 ; this MUST set the Z flag for the susequent branches!
 
 __tst.wr	.macro
-		sty	<__temp
-		ora	<__temp
+		sty	__temp
+		ora	__temp
 		beq	!+
 		lda	#1
 !:		cly
@@ -642,32 +642,10 @@ __btrue		.macro
 ; optimized boolean test
 ; this MUST set the Z flag for the susequent branches!
 
-__not.um	.macro
-		lda	\1
-		beq	!+
-		lda	#-1
-!:		inc	a
-		cly
-		.endm
-
-; **************
-; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
-
-__not.up	.macro
-		lda	[\1]
-		beq	!+
-		lda	#-1
-!:		inc	a
-		cly
-		.endm
-
-; **************
-; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
-
-__not.us	.macro	; __STACK
-		lda.l	<__stack + \1, x
+__not.wp	.macro
+		ldy	#1
+		lda	[\1], y
+		ora	[\1]
 		beq	!+
 		lda	#-1
 !:		inc	a
@@ -691,20 +669,6 @@ __not.wm	.macro
 ; optimized boolean test
 ; this MUST set the Z flag for the susequent branches!
 
-__not.wp	.macro
-		ldy	#1
-		lda	[\1], y
-		ora	[\1]
-		beq	!+
-		lda	#-1
-!:		inc	a
-		cly
-		.endm
-
-; **************
-; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
-
 __not.ws	.macro	; __STACK
 		lda.l	<__stack + \1, x
 		ora.h	<__stack + \1, x
@@ -718,30 +682,86 @@ __not.ws	.macro	; __STACK
 ; optimized boolean test
 ; this MUST set the Z flag for the susequent branches!
 
-__tst.um	.macro
-		lda	\1
+__not.war	.macro
+		asl	a
+		tay
+		lda.l	\1, y
+		ora.h	\1, y
 		beq	!+
-		lda	#1
-!:		cly
+		lda	#-1
+!:		inc	a
+		cly
 		.endm
 
 ; **************
 ; optimized boolean test
 ; this MUST set the Z flag for the susequent branches!
 
-__tst.up	.macro
+__not.up	.macro
 		lda	[\1]
 		beq	!+
-		lda	#1
-!:		cly
+		lda	#-1
+!:		inc	a
+		cly
 		.endm
 
 ; **************
 ; optimized boolean test
 ; this MUST set the Z flag for the susequent branches!
 
-__tst.us	.macro	; __STACK
+__not.um	.macro
+		lda	\1
+		beq	!+
+		lda	#-1
+!:		inc	a
+		cly
+		.endm
+
+; **************
+; optimized boolean test
+; this MUST set the Z flag for the susequent branches!
+
+__not.us	.macro	; __STACK
 		lda.l	<__stack + \1, x
+		beq	!+
+		lda	#-1
+!:		inc	a
+		cly
+		.endm
+
+; **************
+; optimized boolean test
+; this MUST set the Z flag for the susequent branches!
+
+__not.uar	.macro
+		tay
+		lda	\1, y
+		beq	!+
+		lda	#-1
+!:		inc	a
+		cly
+		.endm
+
+; **************
+; optimized boolean test
+; this MUST set the Z flag for the susequent branches!
+
+__not.uay	.macro
+		lda	\1, y
+		beq	!+
+		lda	#-1
+!:		inc	a
+		cly
+		.endm
+
+; **************
+; optimized boolean test
+; this MUST set the Z flag for the susequent branches!
+
+__tst.wp	.macro
+		ldy	#1
+		lda	[\1], y
+		ora	[\1]
 		beq	!+
 		lda	#1
 !:		cly
@@ -763,10 +783,9 @@ __tst.wm		.macro
 ; optimized boolean test
 ; this MUST set the Z flag for the susequent branches!
 
-__tst.wp	.macro
-		ldy	#1
-		lda	[\1], y
-		ora	[\1]
+__tst.ws	.macro	; __STACK
+		lda.l	<__stack + \1, x
+		ora.h	<__stack + \1, x
 		beq	!+
 		lda	#1
 !:		cly
@@ -776,11 +795,122 @@ __tst.wp	.macro
 ; optimized boolean test
 ; this MUST set the Z flag for the susequent branches!
 
-__tst.ws	.macro	; __STACK
-		lda.l	<__stack + \1, x
-		ora.h	<__stack + \1, x
+__tst.war	.macro
+		asl	a
+		tay
+		lda.l	\1, y
+		ora.h	\1, y
 		beq	!+
 		lda	#1
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test
+; this MUST set the Z flag for the susequent branches!
+
+__tst.up	.macro
+		lda	[\1]
+		beq	!+
+		lda	#1
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test
+; this MUST set the Z flag for the susequent branches!
+
+__tst.um	.macro
+		lda	\1
+		beq	!+
+		lda	#1
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test
+; this MUST set the Z flag for the susequent branches!
+
+__tst.us	.macro	; __STACK
+		lda.l	<__stack + \1, x
+		beq	!+
+		lda	#1
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test
+; this MUST set the Z flag for the susequent branches!
+
+__tst.uar	.macro
+		tay
+		lda	\1, y
+		beq	!+
+		lda	#1
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test
+; this MUST set the Z flag for the susequent branches!
+
+__tst.uay	.macro
+		lda	\1, y
+		beq	!+
+		lda	#1
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test
+; this MUST set the Z flag for the susequent branches!
+
+__nand.wi	.macro
+	.if	((\1 & $FF00) == 0)
+		and	#\1
+	.else
+
+	.if	((\1 & $00FF) == 0)
+		tya
+		and.h	#\1
+	.else
+		and.l	#\1
+		bne	!false+
+		tya
+		and.h	#\1
+	.endif
+	.endif
+	.if	(\1 != 1)
+		beq	!+
+!false:		lda	#1
+	.endif
+!:		eor	#1
+		cly
+		.endm
+
+; **************
+; optimized boolean test
+; this MUST set the Z flag for the susequent branches!
+
+__tand.wi	.macro
+	.if	((\1 & $FF00) == 0)
+		and	#\1
+	.else
+
+	.if	((\1 & $00FF) == 0)
+		tya
+		and.h	#\1
+	.else
+		and.l	#\1
+		bne	!true+
+		tya
+		and.h	#\1
+	.endif
+	.endif
+	.if	(\1 != 1)
+		beq	!+
+!true:		lda	#1
+	.endif
 !:		cly
 		.endm
 
@@ -861,6 +991,42 @@ __ld.um		.macro
 
 ; **************
 
+__ld.wmq	.macro
+		lda.l	\1
+		.endm
+
+; **************
+
+__ld.bmq	.macro
+		lda	\1
+		.endm
+
+; **************
+
+__ld.umq	.macro
+		lda	\1
+		.endm
+
+; **************
+
+__ldy.wmq	.macro
+		ldy.l	\1
+		.endm
+
+; **************
+
+__ldy.bmq	.macro
+		ldy	\1
+		.endm
+
+; **************
+
+__ldy.umq	.macro
+		ldy	\1
+		.endm
+
+; **************
+
 __ld.wp		.macro
 		ldy	#1
 		lda	[\1], y
@@ -911,6 +1077,23 @@ __ld.bar	.macro
 
 __ld.uar	.macro
 		tay
+		lda	\1, y
+		cly
+		.endm
+
+; **************
+
+__ld.bay	.macro
+		lda	\1, y
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+
+__ld.uay	.macro
 		lda	\1, y
 		cly
 		.endm
@@ -989,6 +1172,31 @@ __ldp.uar	.macro
 		.endm
 
 ; **************
+; special load for when array writes are optimized
+; the cpu stack is balanced with an __st.uat
+
+__ldp.bay	.macro
+		phx
+		phy
+		lda	\1, y
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+; special load for when array writes are optimized
+; the cpu stack is balanced with an __st.uat
+
+__ldp.uay	.macro
+		phx
+		phy
+		lda	\1, y
+		cly
+		.endm
+
+; **************
 
 __ld.ws		.macro	; __STACK
 		lda.l	<__stack + \1, x
@@ -1011,6 +1219,44 @@ __ld.us		.macro	; __STACK
 		lda	<__stack + \1, x
 		cly
 		.endm
+
+; **************
+
+__ld.wsq	.macro	; __STACK
+		lda.l	<__stack + \1, x
+		.endm
+
+; **************
+
+__ld.bsq	.macro	; __STACK
+		lda	<__stack + \1, x
+		.endm
+
+; **************
+
+__ld.usq	.macro	; __STACK
+		lda	<__stack + \1, x
+		.endm
+
+; **************
+
+__ldy.wsq	.macro	; __STACK
+		ldy.l	<__stack + \1, x
+		.endm
+
+; **************
+
+__ldy.bsq	.macro	; __STACK
+		ldy	<__stack + \1, x
+		.endm
+
+; **************
+
+__ldy.usq	.macro	; __STACK
+		ldy	<__stack + \1, x
+		.endm
+
+	.if	0
 
 ; **************
 
@@ -1042,6 +1288,8 @@ __lduba_s	.macro	; __STACK
 		lda	\1, y
 		cly
 		.endm
+
+	.endif
 
 
 
@@ -1367,25 +1615,16 @@ __incld.war	.macro
 
 ; **************
 
-__incld.bar	.macro
-		tay
-		lda	\1, y
-		inc	a
-		sta	\1, y
-		cly
-		bpl	!+
-		dey
-!:
-		.endm
-
-; **************
-
-__incld.uar	.macro
-		tay
-		lda	\1, y
-		inc	a
-		sta	\1, y
-		cly
+__ldinc.war	.macro
+		phx
+		asl	a
+		tax
+		lda.l	\1, x
+		ldy.h	\1, x
+		inc.l	\1, x
+		bne	!+
+		inc.h	\1, x
+!:		plx
 		.endm
 
 ; **************
@@ -1405,10 +1644,24 @@ __decld.war	.macro
 
 ; **************
 
-__decld.bar	.macro
+__lddec.war	.macro
+		phx
+		asl	a
+		tax
+		ldy.h	\1, x
+		lda.l	\1, x
+		bne	!+
+		dec.h	\1, x
+!:		dec.l	\1, x
+		plx
+		.endm
+
+; **************
+
+__incld.bar	.macro
 		tay
 		lda	\1, y
-		dec	a
+		inc	a
 		sta	\1, y
 		cly
 		bpl	!+
@@ -1418,26 +1671,12 @@ __decld.bar	.macro
 
 ; **************
 
-__decld.uar	.macro
+__incld.uar	.macro
 		tay
 		lda	\1, y
-		dec	a
+		inc	a
 		sta	\1, y
 		cly
-		.endm
-
-; **************
-
-__ldinc.war	.macro
-		phx
-		asl	a
-		tax
-		lda.l	\1, x
-		ldy.h	\1, x
-		inc.l	\1, x
-		bne	!+
-		inc.h	\1, x
-!:		plx
 		.endm
 
 ; **************
@@ -1467,16 +1706,25 @@ __ldinc.uar	.macro
 
 ; **************
 
-__lddec.war	.macro
-		phx
-		asl	a
-		tax
-		ldy.h	\1, x
-		lda.l	\1, x
-		bne	!+
-		dec.h	\1, x
-!:		dec.l	\1, x
-		plx
+__decld.bar	.macro
+		tay
+		lda	\1, y
+		dec	a
+		sta	\1, y
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+
+__decld.uar	.macro
+		tay
+		lda	\1, y
+		dec	a
+		sta	\1, y
+		cly
 		.endm
 
 ; **************
@@ -1497,6 +1745,94 @@ __lddec.bar	.macro
 
 __lddec.uar	.macro
 		tay
+		lda.l	\1, y
+		dec	a
+		sta.l	\1, y
+		inc	a
+		cly
+		.endm
+
+; **************
+
+__incld.bay	.macro
+		lda	\1, y
+		inc	a
+		sta	\1, y
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+
+__incld.uay	.macro
+		lda	\1, y
+		inc	a
+		sta	\1, y
+		cly
+		.endm
+
+; **************
+
+__ldinc.bay	.macro
+		lda.l	\1, y
+		inc	a
+		sta.l	\1, y
+		dec	a
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+
+__ldinc.uay	.macro
+		lda.l	\1, y
+		inc	a
+		sta.l	\1, y
+		dec	a
+		cly
+		.endm
+
+; **************
+
+__decld.bay	.macro
+		lda	\1, y
+		dec	a
+		sta	\1, y
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+
+__decld.uay	.macro
+		lda	\1, y
+		dec	a
+		sta	\1, y
+		cly
+		.endm
+
+; **************
+
+__lddec.bay	.macro
+		lda.l	\1, y
+		dec	a
+		sta.l	\1, y
+		inc	a
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+
+__lddec.uay	.macro
 		lda.l	\1, y
 		dec	a
 		sta.l	\1, y
@@ -1528,6 +1864,15 @@ __inc.uarq	.macro
 ; **************
 ; optimized macro used when the value isn't needed in the primary register
 
+__inc.uayq	.macro
+		sxy
+		inc	\1, x
+		sxy
+		.endm
+
+; **************
+; optimized macro used when the value isn't needed in the primary register
+
 __dec.warq	.macro
 		asl	a
 		sax
@@ -1547,6 +1892,15 @@ __dec.uarq	.macro
 		tax
 		.endm
 
+; **************
+; optimized macro used when the value isn't needed in the primary register
+
+__dec.uayq	.macro
+		sxy
+		dec	\1, x
+		sxy
+		.endm
+
 
 
 ; ***************************************************************************
@@ -1554,19 +1908,6 @@ __dec.uarq	.macro
 ; i-codes for saving the primary register
 ; ***************************************************************************
 ; ***************************************************************************
-
-; **************
-
-__st.wmz	.macro
-		stz.l	\1
-		stz.h	\1
-		.endm
-
-; **************
-
-__st.umz	.macro
-		stz	\1
-		.endm
 
 ; **************
 
@@ -1606,8 +1947,8 @@ __st.umiq	.macro
 ; **************
 
 __st.wpi	.macro
-		sta.l	<__ptr
-		sty.h	<__ptr
+		sta.l	__ptr
+		sty.h	__ptr
 		ldy	#1
 		lda.h	#\1
 		sta	[__ptr], y
@@ -1619,8 +1960,8 @@ __st.wpi	.macro
 ; **************
 
 __st.upi	.macro
-		sta.l	<__ptr
-		sty.h	<__ptr
+		sta.l	__ptr
+		sty.h	__ptr
 		lda.l	#\1
 		ldy.h	#\1
 		sta	[__ptr]
@@ -1918,8 +2259,8 @@ __add.us	.macro	; __STACK
 ; **************
 
 __addbi_p	.macro
-		sta.l	<__ptr
-		sty.h	<__ptr
+		sta.l	__ptr
+		sty.h	__ptr
 		lda	[__ptr]
 		clc
 		adc	#\1
@@ -2163,9 +2504,25 @@ __asl.wi	.macro
 		rol	a
 		say
 	.else
-	.if (\1 < 8)
-		sty	<__temp
+	.if (\1 < 5)
+		sty	__temp
 		jsr	aslw\1
+	.else
+	.if (\1 < 7)
+		sta.h	__temp
+		tya
+		lsr	a
+		jsr	aslw\1
+		and.l	#$FF << \1
+	.else
+	.if (\1 = 7)
+		say
+		lsr	a
+		say
+		ror	a
+		say
+		ror	a
+		and	#$80
 	.else
 	.if (\1 = 8)
 		tay
@@ -2176,6 +2533,8 @@ __asl.wi	.macro
 	.else
 		cla
 		cly
+	.endif
+	.endif
 	.endif
 	.endif
 	.endif
@@ -2215,7 +2574,7 @@ __asr.wi	.macro
 		ror	a
 	.else
 	.if (\1 < 8)
-		sty	<__temp
+		sty	__temp
 		jsr	asrw\1
 	.else
 	.if (\1 = 8)
@@ -2271,7 +2630,7 @@ __lsr.wi	.macro
 		ror	a
 	.else
 	.if (\1 < 8)
-		sty	<__temp
+		sty	__temp
 		jsr	lsrw\1
 	.else
 	.if (\1 = 8)
@@ -2309,64 +2668,64 @@ __lsr.wi	.macro
 
 __mul.wi	.macro
 	.if (\1 = 2)
-		__asl.wr
+	__asl.wr
 	.else
 	.if (\1 = 3)
-			sta.l	<__temp
-			sty.h	<__temp
-		__asl.wr
-		__add.wm	<__temp
+		sta.l	__temp
+		sty.h	__temp
+	__asl.wr
+	__add.wm	__temp
 	.else
 	.if (\1 = 4)
-		__asl.wr
-		__asl.wr
+	__asl.wr
+	__asl.wr
 	.else
 	.if (\1 = 5)
-			sta.l	<__temp
-			sty.h	<__temp
-		__asl.wr
-		__asl.wr
-		__add.wm	<__temp
+		sta.l	__temp
+		sty.h	__temp
+	__asl.wr
+	__asl.wr
+	__add.wm	__temp
 	.else
 	.if (\1 = 6)
-		__asl.wr
-			sta.l	<__temp
-			sty.h	<__temp
-		__asl.wr
-		__add.wm	<__temp
+	__asl.wr
+		sta.l	__temp
+		sty.h	__temp
+	__asl.wr
+	__add.wm	__temp
 	.else
 	.if (\1 = 7)
-			sta.l	<__temp
-			sty.h	<__temp
-		__asl.wr
-		__asl.wr
-		__asl.wr
-		__sub.wm	<__temp
+		sta.l	__temp
+		sty.h	__temp
+	__asl.wr
+	__asl.wr
+	__asl.wr
+	__sub.wm	__temp
 	.else
 	.if (\1 = 8)
-		__asl.wr
-		__asl.wr
-		__asl.wr
+	__asl.wr
+	__asl.wr
+	__asl.wr
 	.else
 	.if (\1 = 9)
-			sta.l	<__temp
-			sty.h	<__temp
-		__asl.wr
-		__asl.wr
-		__asl.wr
-		__add.wm	<__temp
+		sta.l	__temp
+		sty.h	__temp
+	__asl.wr
+	__asl.wr
+	__asl.wr
+	__add.wm	__temp
 	.else
 	.if (\1 = 10)
-		__asl.wr
-			sta.l	<__temp
-			sty.h	<__temp
-		__asl.wr
-		__asl.wr
-		__add.wm	<__temp
+	__asl.wr
+		sta.l	__temp
+		sty.h	__temp
+	__asl.wr
+	__asl.wr
+	__add.wm	__temp
 	.else
-		__push.wr
-		__ld.wi		\1
-		  jsr		umul
+	__push.wr
+	__ld.wi		\1
+		jsr	umul
 	.endif
 	.endif
 	.endif
@@ -2690,12 +3049,23 @@ aslw8:		tay
 		cla
 		rts
 
+	.if	1
+aslw5:		ror	<__temp
+		ror	a
+aslw6:		ror	<__temp
+		ror	a
+aslw7:		ror	<__temp
+		ror	a
+		ldy	<__temp
+		rts
+	.else
 aslw7:		asl	a
 		rol	<__temp
 aslw6:		asl	a
 		rol	<__temp
 aslw5:		asl	a
 		rol	<__temp
+	.endif
 aslw4:		asl	a
 		rol	<__temp
 aslw3:		asl	a
