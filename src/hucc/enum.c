@@ -69,7 +69,8 @@ int define_enum (char *sname, int storage)
 			if (min < -32768 || max > 32767)
 				warning(W_GENERAL, "enum range too large");
 		}
-		et->base = CCHAR;
+		else
+			et->base = CCHAR;
 	}
 	else {
 		if (max > 65535)
