@@ -127,11 +127,11 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 	memset(fixup, 0, sizeof(fixup));
 	while (!match(")")) {
 		/* check if we have an ANSI argument */
-		struct type t;
+		struct type_type t;
 		if (match_type(&t, NO, NO)) {
 			int ptr_order;
 
-			if (t.type == CVOID) {
+			if (t.type_type == CVOID) {
 				if (match(")"))
 					break;
 			}
@@ -140,7 +140,7 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 				if (match("__far") || match("far"))
 					fc->argtype[fc_args] = TYPE_FARPTR;
 				else {
-					if (t.type == CINT || t.type == CUINT)
+					if (t.type_type == CINT || t.type_type == CUINT)
 						fc->argtype[fc_args] = TYPE_WORD;
 					else
 						fc->argtype[fc_args] = TYPE_BYTE;
@@ -149,7 +149,7 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 				}
 			}
 
-			ptr_order = getarg(t.type, ANSI, t.otag, is_fastcall);
+			ptr_order = getarg(t.type_type, ANSI, t.otag, is_fastcall);
 
 			if (is_fastcall) {
 				if (fc->argtype[fc_args] == TYPE_FARPTR) {
@@ -323,9 +323,9 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 			*fixup[argstk / INTSIZE] += argtop;
 		}
 		else {
-			struct type t;
+			struct type_type t;
 			if (match_type(&t, NO, NO)) {
-				getarg(t.type, KR, t.otag, is_fastcall);
+				getarg(t.type_type, KR, t.otag, is_fastcall);
 				ns();
 			}
 			else {
@@ -477,7 +477,7 @@ int getarg (int t, int syntax, int otag, int is_fastcall)
 			}
 			if ((argptr = findloc(n))) {
 				argptr->ident = j;
-				argptr->type = t;
+				argptr->sym_type = t;
 				address = argtop - glint(argptr) - 2;
 				if ((t == CCHAR || t == CUCHAR) && j == VARIABLE)
 					address = address + BYTEOFF;
@@ -806,7 +806,7 @@ void callfunction (char *ptr)
 
 	/* load acc.l if this a standard func returning a value */
 	if (!is_fc) {
-		if (func == NULL || func->type != CVOID || func->ptr_order != 0)
+		if (func == NULL || func->sym_type != CVOID || func->ptr_order != 0)
 			out_ins(I_GETACC, 0, 0);
 	}
 }
@@ -870,18 +870,18 @@ void arg_flush (int arg, int adj)
 		i++;
 		ins = &ins_stack[idx];
 
-		if ((ins->type == T_STACK) && (ins->code == I_LD_WM)) {
+		if ((ins->ins_type == T_STACK) && (ins->ins_code == I_LD_WM)) {
 printf("Can this ever occur?\n");
 abort();
 			if (i < nb) {
 				ins = &ins_stack[idx + 1];
-				if ((ins->code == I_ADD_WI) && (ins->type == T_VALUE))
-					ins->data -= adj;
+				if ((ins->ins_code == I_ADD_WI) && (ins->ins_type == T_VALUE))
+					ins->ins_data -= adj;
 			}
 		}
 		else {
-			if (icode_flags[ins->code] & IS_SPREL)
-				ins->data -= adj;
+			if (icode_flags[ins->ins_code] & IS_SPREL)
+				ins->ins_data -= adj;
 		}
 
 		/* flush */
@@ -913,17 +913,17 @@ void arg_to_fptr (struct fastcall *fast, int i, int arg, int adj)
 	/* this code can be fooled, but it should catch most common errors */
 	err = 1;
 	if (nb == 1) {
-		if (ins->type == T_SYMBOL) {
+		if (ins->ins_type == T_SYMBOL) {
 			/* allow either "function", "array", or "array+const" */
-			sym = (SYMBOL *)ins->data;
+			sym = (SYMBOL *)ins->ins_data;
 			switch (sym->ident) {
 				case FUNCTION:
 				case ARRAY:
-					if (ins->code == I_LD_WI)
+					if (ins->ins_code == I_LD_WI)
 						err = 0;
 					break;
 				case POINTER:
-					if (ins->code == I_LD_WM)
+					if (ins->ins_code == I_LD_WM)
 						err = 0;
 					break;
 			}
@@ -932,18 +932,18 @@ void arg_to_fptr (struct fastcall *fast, int i, int arg, int adj)
 	else if (nb > 1) {
 		/* search the complex expression for the base symbol */
 		for (idx = 0; idx < nb; ++idx, ++ins) {
-			if (ins->type == T_SYMBOL) {
-				sym = (SYMBOL *)ins->data;
+			if (ins->ins_type == T_SYMBOL) {
+				sym = (SYMBOL *)ins->ins_data;
 				switch (sym->ident) {
 					/* for the first "array", or "array+const" */
 					case ARRAY:
-						if ((ins->code == I_LD_WI) ||
-							(ins->code == I_ADD_WI))
+						if ((ins->ins_code == I_LD_WI) ||
+							(ins->ins_code == I_ADD_WI))
 							err = 0;
 						break;
 					/* or the first pointer */
 					case POINTER:
-						if (ins->code == I_LD_WM)
+						if (ins->ins_code == I_LD_WM)
 							err = 0;
 						break;
 				}
@@ -953,7 +953,7 @@ void arg_to_fptr (struct fastcall *fast, int i, int arg, int adj)
 		}
 
 		/* check if last instruction is a pointer dereference */
-		switch (ins_stack[ arg_list[arg][0] + nb - 1 ].code) {
+		switch (ins_stack[ arg_list[arg][0] + nb - 1 ].ins_code) {
 			case I_LD_UP:
 			case I_LD_WP:
 				err = 1;
@@ -970,33 +970,33 @@ void arg_to_fptr (struct fastcall *fast, int i, int arg, int adj)
 
 	/* ok */
 	if (nb == 1) {
-		ins->code = I_FARPTR;
+		ins->ins_code = I_FARPTR;
 		ins->arg[0] = fast->argname[i];
 		ins->arg[1] = fast->argname[i + 1];
 		gen_ins(ins);
 	}
 	else {
-		sym = (SYMBOL *)ins->data;
+		sym = (SYMBOL *)ins->ins_data;
 
 		/* check symbol type */
 		if (sym->far) {
-			tmp.code = I_FARPTR_I;
-			tmp.type = T_SYMBOL;
-			tmp.data = ins->data;
+			tmp.ins_code = I_FARPTR_I;
+			tmp.ins_type = T_SYMBOL;
+			tmp.ins_data = ins->ins_data;
 			tmp.arg[0] = fast->argname[i];
 			tmp.arg[1] = fast->argname[i + 1];
 			/* this nukes the symbol from the I_LD_WI or I_ADD_WI */
-			ins->type = T_VALUE;
-			ins->data = 0;
+			ins->ins_type = T_VALUE;
+			ins->ins_data = 0;
 		}
 		else {
 			/* a pointer or an array of pointers */
 			if (((sym->ident == ARRAY) ||
 			     (sym->ident == POINTER)) &&
-			    (sym->type == CINT || sym->type == CUINT)) {
-				tmp.code = I_FARPTR_GET;
-				tmp.type = 0;
-				tmp.data = 0;
+			    (sym->sym_type == CINT || sym->sym_type == CUINT)) {
+				tmp.ins_code = I_FARPTR_GET;
+				tmp.ins_type = 0;
+				tmp.ins_data = 0;
 				tmp.arg[0] = fast->argname[i];
 				tmp.arg[1] = fast->argname[i + 1];
 			}
@@ -1034,36 +1034,36 @@ void arg_to_dword (struct fastcall *fast, int i, int arg, int adj)
 	/* check arg */
 	if (nb == 1) {
 		/* immediate value */
-		if ((ins->code == I_LD_WI) && (ins->type == T_VALUE)) {
-			ins->code = X_LDD_I;
+		if ((ins->ins_code == I_LD_WI) && (ins->ins_type == T_VALUE)) {
+			ins->ins_code = X_LDD_I;
 			ins->arg[0] = fast->argname[i + 1];
 			ins->arg[1] = fast->argname[i + 2];
 			gen = 1;
 		}
 
 		/* var/ptr */
-		else if ((((ins->code == I_LD_WM) || (ins->code == I_LD_BM) || (ins->code == I_LD_UM))
-			  && (ins->type == T_SYMBOL)) || (ins->type == T_LABEL)) {
+		else if ((((ins->ins_code == I_LD_WM) || (ins->ins_code == I_LD_BM) || (ins->ins_code == I_LD_UM))
+			  && (ins->ins_type == T_SYMBOL)) || (ins->ins_type == T_LABEL)) {
 			/* check special cases */
-			if (ins->type == T_LABEL) {
+			if (ins->ins_type == T_LABEL) {
 				error("dword arg can't be a static var");
 				return;
 			}
 
 			/* get symbol */
-			sym = (SYMBOL *)ins->data;
+			sym = (SYMBOL *)ins->ins_data;
 
 			/* check type */
 			if (sym->ident == POINTER)
 				gen = 1;
 			else if (sym->ident == VARIABLE) {
-				if (ins->code == I_LD_WM)
-					ins->code = X_LDD_W;
+				if (ins->ins_code == I_LD_WM)
+					ins->ins_code = X_LDD_W;
 				else
-					ins->code = X_LDD_B;
+					ins->ins_code = X_LDD_B;
 
-				ins->type = T_SYMBOL;
-				ins->data = (intptr_t)sym;
+				ins->ins_type = T_SYMBOL;
+				ins->ins_data = (intptr_t)sym;
 				ins->arg[0] = fast->argname[i + 1];
 				ins->arg[1] = fast->argname[i + 2];
 				gen = 1;
@@ -1071,7 +1071,7 @@ void arg_to_dword (struct fastcall *fast, int i, int arg, int adj)
 		}
 
 		/* var/ptr */
-		else if ((ins->code == X_LD_WS) || (ins->code == X_LD_BS) || ins->code == X_LD_US) {
+		else if ((ins->ins_code == X_LD_WS) || (ins->ins_code == X_LD_BS) || ins->ins_code == X_LD_US) {
 			/* get symbol */
 			sym = ins->sym;
 
@@ -1080,12 +1080,12 @@ void arg_to_dword (struct fastcall *fast, int i, int arg, int adj)
 				if (sym->ident == POINTER)
 					gen = 1;
 				else if (sym->ident == VARIABLE) {
-					if (ins->code == X_LD_WS)
-						ins->code = X_LDD_S_W;
+					if (ins->ins_code == X_LD_WS)
+						ins->ins_code = X_LDD_S_W;
 					else
-						ins->code = X_LDD_S_B;
+						ins->ins_code = X_LDD_S_B;
 
-					ins->data -= adj;
+					ins->ins_data -= adj;
 					ins->arg[0] = fast->argname[i + 1];
 					ins->arg[1] = fast->argname[i + 2];
 					gen = 1;
@@ -1094,19 +1094,19 @@ void arg_to_dword (struct fastcall *fast, int i, int arg, int adj)
 		}
 
 		/* array */
-		else if (ins->code == I_LEA_S) {
+		else if (ins->ins_code == I_LEA_S) {
 			sym = ins->sym;
 
 			if (sym && (sym->ident == ARRAY)) {
-				ins->data -= adj;
+				ins->ins_data -= adj;
 				gen = 1;
 			}
 		}
 
 		/* array */
-		else if ((ins->code == I_LD_WI) && (ins->type == T_SYMBOL)) {
+		else if ((ins->ins_code == I_LD_WI) && (ins->ins_type == T_SYMBOL)) {
 			/* get symbol */
-			sym = (SYMBOL *)ins->data;
+			sym = (SYMBOL *)ins->ins_data;
 
 			/* check type */
 			if (sym->ident == ARRAY)
@@ -1115,16 +1115,16 @@ void arg_to_dword (struct fastcall *fast, int i, int arg, int adj)
 	}
 	else if (nb == 2) {
 		/* array */
-		if ((ins->code == I_LD_WI) && (ins->type == T_SYMBOL)) {
+		if ((ins->ins_code == I_LD_WI) && (ins->ins_type == T_SYMBOL)) {
 			/* get symbol */
-			sym = (SYMBOL *)ins->data;
+			sym = (SYMBOL *)ins->ins_data;
 
 			/* check type */
 			if (sym->ident == ARRAY) {
 				ptr = ins;
 				ins = &ins_stack[idx + 1];
 
-				if ((ins->code == I_ADD_WI) && (ins->type == T_VALUE)) {
+				if ((ins->ins_code == I_ADD_WI) && (ins->ins_type == T_VALUE)) {
 					gen_ins(ptr);
 					gen = 1;
 				}
@@ -1138,9 +1138,9 @@ void arg_to_dword (struct fastcall *fast, int i, int arg, int adj)
 		err = 0;
 
 		if (strcmp(fast->argname[i], "#acc") != 0) {
-			tmp.code = I_ST_WM;
-			tmp.type = T_SYMBOL;
-			tmp.data = (intptr_t)fast->argname[i];
+			tmp.ins_code = I_ST_WM;
+			tmp.ins_type = T_SYMBOL;
+			tmp.ins_data = (intptr_t)fast->argname[i];
 			gen_ins(&tmp);
 		}
 	}

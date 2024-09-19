@@ -49,15 +49,15 @@ int expression_ex (LVALUE *lval, int comma, int norval)
 
 static int is_unsigned (LVALUE *lval)
 {
-	if (lval->type && !(lval->type & CUNSIGNED))
+	if (lval->val_type && !(lval->val_type & CUNSIGNED))
 		return (0);
 
 	/* C only promotes operations with an unsigned int
 	   to unsigned, not unsigned char! */
-	if (lval->type == CUINT)
+	if (lval->val_type == CUINT)
 		return (1);
 
-	if (lval->symbol && lval->symbol->type == CUINT)
+	if (lval->symbol && lval->symbol->sym_type == CUINT)
 		return (1);
 
 	return (0);
@@ -73,7 +73,7 @@ static int is_ptrptr (LVALUE *lval)
 static int is_byte (LVALUE *lval)
 {
 	if (lval->symbol && !lval->ptr_type &&
-	    (lval->symbol->type == CCHAR || lval->symbol->type == CUCHAR))
+	    (lval->symbol->sym_type == CCHAR || lval->symbol->sym_type == CUCHAR))
 		return (1);
 
 	return (0);
@@ -645,7 +645,7 @@ int heir10 (LVALUE *lval, int comma)
 		}
 		if (lval->symbol) {
 			ptr = lval->symbol;
-			lval->ptr_type = ptr->type;
+			lval->ptr_type = ptr->sym_type;
 			lval->ptr_order = ptr->ptr_order;
 		}
 		lval->ptr_order++;
@@ -655,7 +655,7 @@ int heir10 (LVALUE *lval, int comma)
 		/* global and non-array */
 		ptr = lval->symbol;
 		immed(T_SYMBOL, (intptr_t)ptr);
-		lval->indirect = ptr->type;
+		lval->indirect = ptr->sym_type;
 		return (0);
 	}
 	else {
@@ -745,10 +745,10 @@ int heir11 (LVALUE *lval, int comma)
 				gpush();
 			expression(YES);
 			needbrack("]");
-			if (ptr->type == CINT || ptr->type == CUINT || lval->ptr_order > 1 ||
+			if (ptr->sym_type == CINT || ptr->sym_type == CUINT || lval->ptr_order > 1 ||
 			    (ptr->ident == ARRAY && lval->ptr_order > 0))
 				gaslint();
-			else if (ptr->type == CSTRUCT) {
+			else if (ptr->sym_type == CSTRUCT) {
 				int size = tag_table[ptr->tagidx].size;
 				if (size == 2)
 					gaslint();
@@ -765,7 +765,7 @@ int heir11 (LVALUE *lval, int comma)
 			if (lval->ptr_order > 1 || (ptr->ident == ARRAY && lval->ptr_order > 0))
 				lval->indirect = CUINT;
 			else
-				lval->indirect = ptr->type;
+				lval->indirect = ptr->sym_type;
 			if (lval->ptr_order > 1)
 				lval->ptr_order--;
 			else {
@@ -776,12 +776,12 @@ int heir11 (LVALUE *lval, int comma)
 					   nobody else takes care of
 					   actually loading the pointer.  */
 					rvalue(lval);
-					lval->indirect = ptr->type;
-					lval->ptr_type = ptr->type;
+					lval->indirect = ptr->sym_type;
+					lval->ptr_type = ptr->sym_type;
 					lval->ptr_order = 0;
 				}
 				else {
-					lval->type = lval->ptr_type;
+					lval->val_type = lval->ptr_type;
 					lval->ptr_type = 0;	// VARIABLE; /* David, bug patch ?? */
 					lval->ptr_order = 0;
 				}
@@ -813,12 +813,12 @@ int heir11 (LVALUE *lval, int comma)
 			SYMBOL *s = lval->symbol;
 			if (s) {
 				if (s->ptr_order >= 1) {
-					lval->ptr_type = s->type;
+					lval->ptr_type = s->sym_type;
 					lval->ptr_order = s->ptr_order;
 				}
-				if (s->type)
-					lval->type = s->type;
-				if (s->type == CSTRUCT)
+				if (s->sym_type)
+					lval->val_type = s->sym_type;
+				if (s->sym_type == CSTRUCT)
 					lval->tagsym = &tag_table[s->tagidx];
 				lval->symbol = 0;
 			}
@@ -840,22 +840,22 @@ int heir11 (LVALUE *lval, int comma)
 			if (ptr->offset)
 				out_ins(I_ADD_WI, T_VALUE, ptr->offset);	// move pointer from struct begin to struct member
 			lval->symbol = ptr;
-			lval->indirect = ptr->type;		// lval->indirect = lval->val_type = ptr->type
+			lval->indirect = ptr->sym_type;		// lval->indirect = lval->val_type = ptr->sym_type
 			lval->ptr_type = 0;
 			lval->ptr_order = 0;
 			lval->tagsym = NULL_TAG;
-			if (ptr->type == CSTRUCT)
+			if (ptr->sym_type == CSTRUCT)
 				lval->tagsym = &tag_table[ptr->tagidx];
 			if (ptr->ident == POINTER) {
 				lval->indirect = CINT;
-				lval->ptr_type = ptr->type;
+				lval->ptr_type = ptr->sym_type;
 				lval->ptr_order = ptr->ptr_order;
 				// lval->val_type = CINT;
 			}
 			if (ptr->ident == ARRAY ||
-			    (ptr->type == CSTRUCT && ptr->ident == VARIABLE)) {
+			    (ptr->sym_type == CSTRUCT && ptr->ident == VARIABLE)) {
 				// array or struct
-				lval->ptr_type = ptr->type;
+				lval->ptr_type = ptr->sym_type;
 				lval->ptr_order = ptr->ptr_order;
 				// lval->val_type = CINT;
 				k = 0;

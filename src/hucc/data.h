@@ -97,7 +97,7 @@ extern int locals_ptr;
 #endif
 extern char current_fn[];
 
-extern struct type *typedefs;
+extern struct type_type *typedefs;
 extern int typedef_ptr;
 
 extern struct clabel *clabels;

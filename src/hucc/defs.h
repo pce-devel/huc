@@ -376,7 +376,7 @@ enum ICODE {
 struct symbol {
 	char name[NAMEALLOC];
 	char ident;
-	char type;
+	char sym_type;
 	char storage;
 	char far;
 	short offset;
@@ -409,7 +409,7 @@ struct tag_symbol {
 #define POINTER 3
 #define FUNCTION        4
 
-/* possible entries for "type" */
+/* possible entries for "type" for sym_type, val_type, type_type, init_type */
 
 #define CCHAR   1
 #define CINT    2
@@ -518,9 +518,9 @@ struct macro {
 /* pseudo instruction structure */
 
 typedef struct {
-	enum ICODE code;
-	int type;
-	intptr_t data;
+	enum ICODE ins_code;
+	int ins_type;
+	intptr_t ins_data;
 	int imm_type;
 	intptr_t imm_data;
 	const char *arg[3];
@@ -558,13 +558,14 @@ struct fastcall {
 };
 
 // initialisation of global variables
+
 #define INIT_TYPE    NAMESIZE
 #define INIT_LENGTH  NAMESIZE + 1
 #define INITIALS_SIZE 5 * 1024
 
 struct initials_table {
 	char name[NAMESIZE];	// symbol name
-	int type;		// type
+	int init_type;		// type
 	int dim;		// length of data (possibly an array)
 	int data_len;		// index of tag or zero
 };
@@ -580,20 +581,23 @@ struct lvalue {
 	int value;
 	TAG_SYMBOL *tagsym;
 	int ptr_order;
-	int type;
+	int val_type;
 };
 #define LVALUE struct lvalue
 
 #define W_GENERAL 1
 
-struct type {
-	int type;
+/* typedef struct */
+
+struct type_type {
+	int type_type;
 	int ident;
 	int ptr_order;
 	int otag;
 	int flags;
 	char sname[NAMESIZE];
 };
+
 #define F_REGISTER 1
 #define F_CONST 2
 #define F_VOLATILE 4
@@ -609,6 +613,9 @@ struct enum_s {
 	char name[NAMESIZE];
 	int value;
 };
+
+/* enum struct */
+
 struct enum_type {
 	char name[NAMESIZE];
 	int start;

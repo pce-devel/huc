@@ -74,7 +74,7 @@ void add_member (char *sname, char identity, char type, int offset, int storage_
 	buffer_ptr = symbol->name;
 	while (alphanum(*buffer_ptr++ = *sname++)) ;
 	symbol->ident = identity;
-	symbol->type = type;
+	symbol->sym_type = type;
 	symbol->storage = storage_class;
 	symbol->offset = offset;
 	symbol->ptr_order = ptr_order;

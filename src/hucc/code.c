@@ -124,9 +124,9 @@ void out_ins (int code, int type, intptr_t data)
 
 	memset(&tmp, 0, sizeof(INS));
 
-	tmp.code = code;
-	tmp.type = type;
-	tmp.data = data;
+	tmp.ins_code = code;
+	tmp.ins_type = type;
+	tmp.ins_data = data;
 	gen_ins(&tmp);
 }
 
@@ -136,9 +136,9 @@ void out_ins_ex (int code, int type, intptr_t data, int imm_type, intptr_t imm_d
 
 	memset(&tmp, 0, sizeof(INS));
 
-	tmp.code = code;
-	tmp.type = type;
-	tmp.data = data;
+	tmp.ins_code = code;
+	tmp.ins_type = type;
+	tmp.ins_data = data;
 	tmp.imm_type = imm_type;
 	tmp.imm_data = imm_data;
 	gen_ins(&tmp);
@@ -150,9 +150,9 @@ void out_ins_sym (int code, int type, intptr_t data, SYMBOL *sym)
 
 	memset(&tmp, 0, sizeof(INS));
 
-	tmp.code = code;
-	tmp.type = type;
-	tmp.data = data;
+	tmp.ins_code = code;
+	tmp.ins_type = type;
+	tmp.ins_data = data;
 	tmp.sym = sym;
 	gen_ins(&tmp);
 }
@@ -252,9 +252,9 @@ void gen_code (INS *tmp)
 	int imm_type;
 	intptr_t imm_data;
 
-	code = tmp->code;
-	type = tmp->type;
-	data = tmp->data;
+	code = tmp->ins_code;
+	type = tmp->ins_type;
+	data = tmp->ins_data;
 	imm_type = tmp->imm_type;
 	imm_data = tmp->imm_data;
 
@@ -1658,16 +1658,16 @@ void gen_code (INS *tmp)
  */
 void gen_asm (INS *inst)
 {
-//	int type = inst->type;
-//	intptr_t data = inst->data;
+//	int type = inst->ins_type;
+//	intptr_t data = inst->ins_data;
 
 	/* i-codes for 32-bit longs */
 
-	switch (inst->code) {
+	switch (inst->ins_code) {
 
 	case X_LDD_I:
 		ot("__ldd_i\t\t");
-		outdec((int)inst->data);
+		outdec((int)inst->ins_data);
 		outstr(", ");
 		prefix();
 		outstr(inst->arg[0]);
@@ -1679,7 +1679,7 @@ void gen_asm (INS *inst)
 
 	case X_LDD_W:
 		ot("__ldd_w\t\t");
-		outsymbol((SYMBOL *)inst->data);
+		outsymbol((SYMBOL *)inst->ins_data);
 		outstr(", ");
 		prefix();
 		outstr(inst->arg[0]);
@@ -1691,7 +1691,7 @@ void gen_asm (INS *inst)
 
 	case X_LDD_B:
 		ot("__ldd_b\t\t");
-		outsymbol((SYMBOL *)inst->data);
+		outsymbol((SYMBOL *)inst->ins_data);
 		outstr(", ");
 		prefix();
 		outstr(inst->arg[0]);
@@ -1703,7 +1703,7 @@ void gen_asm (INS *inst)
 
 	case X_LDD_S_W:
 		ot("__ldd_s_w\t");
-		outdec((int)inst->data);
+		outdec((int)inst->ins_data);
 		outstr(", ");
 		prefix();
 		outstr(inst->arg[0]);
@@ -1715,7 +1715,7 @@ void gen_asm (INS *inst)
 
 	case X_LDD_S_B:
 		ot("__ldd_s_b\t");
-		outdec((int)inst->data);
+		outdec((int)inst->ins_data);
 		outstr(", ");
 		prefix();
 		outstr(inst->arg[0]);

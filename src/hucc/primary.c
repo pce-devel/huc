@@ -22,7 +22,7 @@
 
 extern char current_fn[];
 
-int match_type (struct type *t, int do_ptr, int allow_unk_compound)
+int match_type (struct type_type *t, int do_ptr, int allow_unk_compound)
 {
 	char n[NAMESIZE];
 	int have_sign = 0;
@@ -30,7 +30,7 @@ int match_type (struct type *t, int do_ptr, int allow_unk_compound)
 	int i;
 	static int anon_struct_cnt = 0;
 
-	t->type = 0;
+	t->type_type = 0;
 	t->flags = 0;
 	t->otag = -1;
 
@@ -57,7 +57,7 @@ int match_type (struct type *t, int do_ptr, int allow_unk_compound)
 				junk();
 				return (0);
 			}
-			t->type = CSTRUCT;
+			t->type_type = CSTRUCT;
 			if (sflag)
 				t->flags |= F_STRUCT;
 			strcpy(t->sname, n);
@@ -67,7 +67,7 @@ int match_type (struct type *t, int do_ptr, int allow_unk_compound)
 			if (ch() == '{') {
 				sprintf(t->sname, "__anon_struct%d", anon_struct_cnt++);
 				t->otag = define_struct(t->sname, DEFAUTO, sflag);
-				t->type = CSTRUCT;
+				t->type_type = CSTRUCT;
 				if (sflag)
 					t->flags |= F_STRUCT;
 			}
@@ -79,7 +79,7 @@ int match_type (struct type *t, int do_ptr, int allow_unk_compound)
 		}
 	}
 	else if (amatch("enum", 4)) {
-		t->type = CENUM;
+		t->type_type = CENUM;
 		if (symname(n)) {
 			/* This may or may not find an enum type, but if
 			   it doesn't it's not necessarily an error. */
@@ -103,31 +103,31 @@ int match_type (struct type *t, int do_ptr, int allow_unk_compound)
 	else {
 		/* scalar */
 		if (amatch("unsigned", 8)) {
-			t->type |= CUNSIGNED;
+			t->type_type |= CUNSIGNED;
 			have_sign = 1;
 		}
 		else if (amatch("signed", 6))
 			have_sign = 1;
 
 		if (amatch("char", 4)) {
-			t->type |= CCHAR;
+			t->type_type |= CCHAR;
 			if ((have_sign == 0) && (user_signed_char == 0))
-				t->type |= CUNSIGNED;
+				t->type_type |= CUNSIGNED;
 		}
 		else if (amatch("int", 3))
-			t->type |= CINT;
+			t->type_type |= CINT;
 		else if (amatch("short", 5)) {
 			amatch("int", 3);
-			t->type |= CINT;
+			t->type_type |= CINT;
 		}
 		else if (amatch("void", 4)) {
 			if (have_sign)
 				goto invalid_cast;
-			t->type |= CVOID;
+			t->type_type |= CVOID;
 		}
 		else {
 			if (have_sign)
-				t->type |= CINT;
+				t->type_type |= CINT;
 			else	/* not a cast */
 				return (0);
 		}
@@ -161,19 +161,19 @@ int primary (LVALUE *lval, int comma, bool *deferred)
 	lval->ptr_order = 0;
 	lval->symbol2 = 0;
 	if (match("(")) {
-		struct type t;
+		struct type_type t;
 		if (match_type(&t, YES, NO)) {
 			needbrack(")");
 			k = heir10(lval, comma);
 			if (k)
 				rvalue(lval);
 			if (t.ident != POINTER) {
-				gcast(t.type);
+				gcast(t.type_type);
 				lval->ptr_type = 0;
 			}
 			else
-				lval->ptr_type = t.type;
-			lval->type = t.type;
+				lval->ptr_type = t.type_type;
+			lval->val_type = t.type_type;
 			lval->ptr_order = t.ptr_order;
 			return (0);
 		}
@@ -188,17 +188,17 @@ int primary (LVALUE *lval, int comma, bool *deferred)
 	}
 	if (amatch("sizeof", 6)) {
 		int have_paren;
-		struct type t;
+		struct type_type t;
 		indflg = 0;
 		have_paren = match("(");
 		if (match_type(&t, YES, NO)) {
 			if (t.ident == POINTER)
 				immed(T_VALUE, INTSIZE);
-			else if (t.type == CSTRUCT)
+			else if (t.type_type == CSTRUCT)
 				immed(T_VALUE, tag_table[t.otag].size);
-			else if (t.type == CINT || t.type == CUINT)
+			else if (t.type_type == CINT || t.type_type == CUINT)
 				immed(T_VALUE, INTSIZE);
-			else if (t.type == CCHAR || t.type == CUCHAR)
+			else if (t.type_type == CCHAR || t.type_type == CUCHAR)
 				immed(T_VALUE, 1);
 			else {
 				error("internal error: sizeof type unknown");
@@ -274,9 +274,9 @@ int primary (LVALUE *lval, int comma, bool *deferred)
 			 *        local 'static' variables
 			 */
 			lval->symbol = ptr;
-			lval->indirect = ptr->type;
+			lval->indirect = ptr->sym_type;
 			lval->tagsym = 0;
-			if (ptr->type == CSTRUCT)
+			if (ptr->sym_type == CSTRUCT)
 				lval->tagsym = &tag_table[ptr->tagidx];
 			if (ptr->ident == POINTER) {
 				if ((ptr->storage & STORAGE) == LSTATIC)
@@ -285,17 +285,17 @@ int primary (LVALUE *lval, int comma, bool *deferred)
 					lval->indirect = CUINT;
 					getloc(ptr);
 				}
-				lval->ptr_type = ptr->type;
+				lval->ptr_type = ptr->sym_type;
 				lval->ptr_order = ptr->ptr_order;
 				return (1);
 			}
 			if (ptr->ident == ARRAY ||
-			    (ptr->ident == VARIABLE && ptr->type == CSTRUCT)) {
+			    (ptr->ident == VARIABLE && ptr->sym_type == CSTRUCT)) {
 				getloc(ptr);
-				lval->ptr_type = ptr->type;
+				lval->ptr_type = ptr->sym_type;
 				lval->ptr_order = ptr->ptr_order;
 //				lval->ptr_type = 0;
-				if (ptr->type == CSTRUCT && ptr->ident == VARIABLE)
+				if (ptr->sym_type == CSTRUCT && ptr->ident == VARIABLE)
 					return (1);
 				else
 					return (0);
@@ -312,12 +312,12 @@ int primary (LVALUE *lval, int comma, bool *deferred)
 				lval->symbol = ptr;
 				lval->indirect = 0;
 				lval->tagsym = 0;
-				if (ptr->type == CSTRUCT)
+				if (ptr->sym_type == CSTRUCT)
 					lval->tagsym = &tag_table[ptr->tagidx];
 				if (ptr->ident != ARRAY &&
-				    (ptr->ident != VARIABLE || ptr->type != CSTRUCT)) {
+				    (ptr->ident != VARIABLE || ptr->sym_type != CSTRUCT)) {
 					if (ptr->ident == POINTER) {
-						lval->ptr_type = ptr->type;
+						lval->ptr_type = ptr->sym_type;
 						lval->ptr_order = ptr->ptr_order;
 					}
 					return (1);
@@ -336,10 +336,10 @@ int primary (LVALUE *lval, int comma, bool *deferred)
 //						error ("can't access far array");
 					}
 				}
-				lval->indirect = lval->ptr_type = ptr->type;
+				lval->indirect = lval->ptr_type = ptr->sym_type;
 				lval->ptr_order = ptr->ptr_order;
 //				lval->ptr_type = 0;
-				if (ptr->ident == VARIABLE && ptr->type == CSTRUCT)
+				if (ptr->ident == VARIABLE && ptr->sym_type == CSTRUCT)
 					return (1);
 				else
 					return (0);
@@ -491,7 +491,7 @@ static int parse0 (int *num)
 static int parse3 (int *num)
 {
 	int num2;
-	struct type t;
+	struct type_type t;
 	char op;
 	char n[NAMESIZE];
 	int have_paren = 0;
@@ -535,7 +535,7 @@ static int parse3 (int *num)
 	else if (op == 'c') {
 		if (t.ident != POINTER) {
 			assert(sizeof(short) == 2);
-			switch (t.type) {
+			switch (t.type_type) {
 			case CCHAR:
 				*num = (char)num2;
 				break;

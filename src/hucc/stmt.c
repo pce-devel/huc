@@ -78,7 +78,7 @@ int stdecl (void)
 
 int doldcls (int stclass)
 {
-	struct type t;
+	struct type_type t;
 
 	blanks();
 	/* we don't do optimizations that would require "volatile" */
@@ -87,9 +87,9 @@ int doldcls (int stclass)
 		if (norecurse && stclass != LSTATIC)
 			stclass = LSTATIC | WASAUTO;
 #endif
-		if (t.type == CSTRUCT && t.otag == -1)
+		if (t.type_type == CSTRUCT && t.otag == -1)
 			t.otag = define_struct(t.sname, stclass, !!(t.flags & F_STRUCT));
-		if (t.type == CVOID) {
+		if (t.type_type == CVOID) {
 			blanks();
 			if (ch() != '*') {
 				error("illegal type \"void\"");
@@ -97,12 +97,12 @@ int doldcls (int stclass)
 				return (0);
 			}
 		}
-		if (t.type == CENUM) {
+		if (t.type_type == CENUM) {
 			if (t.otag == -1)
 				t.otag = define_enum(t.sname, stclass);
-			t.type = enum_types[t.otag].base;
+			t.type_type = enum_types[t.otag].base;
 		}
-		declloc(t.type, stclass, t.otag);
+		declloc(t.type_type, stclass, t.otag);
 	}
 	else
 		return (0);

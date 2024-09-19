@@ -571,19 +571,19 @@ void parse (void)
 int dodcls (int stclass, TAG_SYMBOL *mtag, int is_struct)
 {
 	int err;
-	struct type t;
+	struct type_type t;
 
 	blanks();
 
 	if (match_type(&t, NO, YES)) {
-		if (t.type == CSTRUCT && t.otag == -1)
+		if (t.type_type == CSTRUCT && t.otag == -1)
 			t.otag = define_struct(t.sname, stclass, !!(t.flags & F_STRUCT));
-		else if (t.type == CENUM) {
+		else if (t.type_type == CENUM) {
 			if (t.otag == -1)
 				t.otag = define_enum(t.sname, stclass);
-			t.type = enum_types[t.otag].base;
+			t.type_type = enum_types[t.otag].base;
 		}
-		err = declglb(t.type, stclass, mtag, t.otag, is_struct);
+		err = declglb(t.type_type, stclass, mtag, t.otag, is_struct);
 	}
 	else if (stclass == PUBLIC)
 		return (0);
@@ -603,30 +603,30 @@ int dodcls (int stclass, TAG_SYMBOL *mtag, int is_struct)
 
 void dotypedef (void)
 {
-	struct type t;
+	struct type_type t;
 
 	if (!match_type(&t, YES, NO)) {
 		error("unknown type");
 		kill();
 		return;
 	}
-	if (t.type == CENUM) {
+	if (t.type_type == CENUM) {
 		if (t.otag == -1) {
 			if (user_short_enums)
 				warning(W_GENERAL,
 					"typedef to undefined enum; "
 					"assuming base type int");
-			t.type = CINT;
+			t.type_type = CINT;
 		}
 		else
-			t.type = enum_types[t.otag].base;
+			t.type_type = enum_types[t.otag].base;
 	}
 	if (!symname(t.sname)) {
 		error("invalid type name");
 		kill();
 		return;
 	}
-	typedefs = realloc(typedefs, (typedef_ptr + 1) * sizeof(struct type));
+	typedefs = realloc(typedefs, (typedef_ptr + 1) * sizeof(struct type_type));
 	typedefs[typedef_ptr++] = t;
 	ns();
 }
@@ -677,7 +677,7 @@ int dump_struct (SYMBOL *symbol, int position)
 	number_of_members = tag_table[symbol->tagidx].number_of_members;
 	for (i = 0; i < number_of_members; i++) {
 		// i is the index of current member, get type
-		int member_type = member_table[tag_table[symbol->tagidx].member_idx + i].type;
+		int member_type = member_table[tag_table[symbol->tagidx].member_idx + i].sym_type;
 		if (member_type == CCHAR || member_type == CUCHAR) {
 			defbyte();
 			dumped_bytes += 1;
@@ -818,7 +818,7 @@ int dump_structBuffer (SYMBOL *symbol, int position)
 	number_of_members = tag_table[symbol->tagidx].number_of_members;
 	for (i = 0; i < number_of_members; i++) {
 		// i is the index of current member, get type
-		int member_type = member_table[tag_table[symbol->tagidx].member_idx + i].type;
+		int member_type = member_table[tag_table[symbol->tagidx].member_idx + i].sym_type;
 		if (member_type == CCHAR || member_type == CUCHAR) {
 			defbyteBuffer();
 			dumped_bytes += 1;
@@ -896,7 +896,7 @@ next:
 						list_size = 0;
 						line_count = 0;
 						list_size = get_size(cptr->name);
-						if (cptr->type == CSTRUCT)
+						if (cptr->sym_type == CSTRUCT)
 							list_size /= tag_table[cptr->tagidx].number_of_members;
 						if (dim == -1)
 							dim = list_size;
@@ -905,12 +905,12 @@ next:
 						   for compound types; dump_struct() wants an item number, so
 						   we have to count both to get the right members out. */
 						for (j = item = 0; j < dim; j++, item++) {
-							if (cptr->type == CSTRUCT)
+							if (cptr->sym_type == CSTRUCT)
 								j += dump_structBuffer(cptr, item) - 1;
 							else {
 								if (line_count % 10 == 0) {
 									nlBuffer();
-									if (cptr->type == CCHAR || cptr->type == CUCHAR)
+									if (cptr->sym_type == CCHAR || cptr->sym_type == CUCHAR)
 										defbyteBuffer();
 									else
 										defwordBuffer();

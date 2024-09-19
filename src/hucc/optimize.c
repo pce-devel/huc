@@ -35,7 +35,7 @@
 #endif
 
 #ifdef __GNUC__
- /* GCC doesn't like "strcmp((char *)p[0]->data,"! */
+ /* GCC doesn't like "strcmp((char *)p[0]->ins_data,"! */
  #pragma GCC diagnostic ignored "-Wstringop-overread"
 #endif
 
@@ -360,15 +360,15 @@ int cmp_operands (INS *p1, INS *p2)
 #ifdef DEBUG_OPTIMIZER
 	printf("cmp"); dump_ins(p1); dump_ins(p2);
 #endif
-	if (p1->type != p2->type)
+	if (p1->ins_type != p2->ins_type)
 		return (0);
 
-	if (p1->type == T_SYMBOL) {
-		if (strcmp(((SYMBOL *)p1->data)->name, ((SYMBOL *)p2->data)->name) != 0)
+	if (p1->ins_type == T_SYMBOL) {
+		if (strcmp(((SYMBOL *)p1->ins_data)->name, ((SYMBOL *)p2->ins_data)->name) != 0)
 			return (0);
 	}
 	else {
-		if (p1->data != p2->data)
+		if (p1->ins_data != p2->ins_data)
 			return (0);
 	}
 	return (1);
@@ -376,12 +376,12 @@ int cmp_operands (INS *p1, INS *p2)
 
 inline bool is_sprel (INS *i)
 {
-	return (icode_flags[i->code] & IS_SPREL);
+	return (icode_flags[i->ins_code] & IS_SPREL);
 }
 
 inline bool is_ubyte (INS *i)
 {
-	return (icode_flags[i->code] & IS_UBYTE);
+	return (icode_flags[i->ins_code] & IS_UBYTE);
 }
 
 inline bool is_small_array (SYMBOL *sym)
@@ -464,7 +464,7 @@ lv1_loop:
 		nb = 0;
 
 		/* first check for I_FENCE, and remove it ASAP */
-		if (q_nb >= 1 && p[0]->code == I_FENCE) {
+		if (q_nb >= 1 && p[0]->ins_code == I_FENCE) {
 			/* remove I_FENCE after it has been checked */
 			nb = 1;
 
@@ -479,21 +479,21 @@ lv1_loop:
 			 */
 			if
 			((q_nb >= 3) &&
-			 (p[1]->code == I_ST_WM ||
-			  p[1]->code == I_ST_UM ||
-			  p[1]->code == X_ST_WS ||
-			  p[1]->code == X_ST_US) &&
-			 (p[2]->code == I_LD_WI) &&
-			 (p[2]->type == T_VALUE)
+			 (p[1]->ins_code == I_ST_WM ||
+			  p[1]->ins_code == I_ST_UM ||
+			  p[1]->ins_code == X_ST_WS ||
+			  p[1]->ins_code == X_ST_US) &&
+			 (p[2]->ins_code == I_LD_WI) &&
+			 (p[2]->ins_type == T_VALUE)
 			) {
 				/* replace code */
-				intptr_t data = p[2]->data;
+				intptr_t data = p[2]->ins_data;
 				*p[2] = *p[1];
-				switch (p[1]->code) {
-				case I_ST_WM: p[2]->code = I_ST_WMIQ; break;
-				case I_ST_UM: p[2]->code = I_ST_UMIQ; break;
-				case X_ST_WS: p[2]->code = X_ST_WSIQ; break;
-				case X_ST_US: p[2]->code = X_ST_USIQ; break;
+				switch (p[1]->ins_code) {
+				case I_ST_WM: p[2]->ins_code = I_ST_WMIQ; break;
+				case I_ST_UM: p[2]->ins_code = I_ST_UMIQ; break;
+				case X_ST_WS: p[2]->ins_code = X_ST_WSIQ; break;
+				case X_ST_US: p[2]->ins_code = X_ST_USIQ; break;
 				default: abort();
 				}
 				p[2]->imm_type = T_VALUE;
@@ -510,9 +510,9 @@ lv1_loop:
 			 */
 			else if
 			((q_nb >= 2) &&
-			 (p[1]->code == I_ADD_WI ||
-			  p[1]->code == I_SUB_WI ||
-			  p[1]->code == I_GETACC)
+			 (p[1]->ins_code == I_ADD_WI ||
+			  p[1]->ins_code == I_SUB_WI ||
+			  p[1]->ins_code == I_GETACC)
 			) {
 				nb = 2;
 			}
@@ -529,97 +529,97 @@ lv1_loop:
 			 */
 			else if
 			((q_nb >= 2) &&
-			 (p[1]->code == X_INCLD_WM ||
-			  p[1]->code == X_INCLD_BM ||
-			  p[1]->code == X_INCLD_UM ||
-			  p[1]->code == X_LDINC_WM ||
-			  p[1]->code == X_LDINC_BM ||
-			  p[1]->code == X_LDINC_UM ||
-			  p[1]->code == X_DECLD_WM ||
-			  p[1]->code == X_DECLD_BM ||
-			  p[1]->code == X_DECLD_UM ||
-			  p[1]->code == X_LDDEC_WM ||
-			  p[1]->code == X_LDDEC_BM ||
-			  p[1]->code == X_LDDEC_UM ||
-			  p[1]->code == X_INCLD_WS ||
-			  p[1]->code == X_INCLD_BS ||
-			  p[1]->code == X_INCLD_US ||
-			  p[1]->code == X_LDINC_WS ||
-			  p[1]->code == X_LDINC_BS ||
-			  p[1]->code == X_LDINC_US ||
-			  p[1]->code == X_DECLD_WS ||
-			  p[1]->code == X_DECLD_BS ||
-			  p[1]->code == X_DECLD_US ||
-			  p[1]->code == X_LDDEC_WS ||
-			  p[1]->code == X_LDDEC_BS ||
-			  p[1]->code == X_LDDEC_US ||
-			  p[1]->code == X_INCLD_WAR ||
-			  p[1]->code == X_LDINC_WAR ||
-			  p[1]->code == X_DECLD_WAR ||
-			  p[1]->code == X_LDDEC_WAR ||
-			  p[1]->code == X_INCLD_BAR ||
-			  p[1]->code == X_INCLD_UAR ||
-			  p[1]->code == X_LDINC_BAR ||
-			  p[1]->code == X_LDINC_UAR ||
-			  p[1]->code == X_DECLD_BAR ||
-			  p[1]->code == X_DECLD_UAR ||
-			  p[1]->code == X_LDDEC_BAR ||
-			  p[1]->code == X_LDDEC_UAR ||
-			  p[1]->code == X_INCLD_BAY ||
-			  p[1]->code == X_INCLD_UAY ||
-			  p[1]->code == X_LDINC_BAY ||
-			  p[1]->code == X_LDINC_UAY ||
-			  p[1]->code == X_DECLD_BAY ||
-			  p[1]->code == X_DECLD_UAY ||
-			  p[1]->code == X_LDDEC_BAY ||
-			  p[1]->code == X_LDDEC_UAY)
+			 (p[1]->ins_code == X_INCLD_WM ||
+			  p[1]->ins_code == X_INCLD_BM ||
+			  p[1]->ins_code == X_INCLD_UM ||
+			  p[1]->ins_code == X_LDINC_WM ||
+			  p[1]->ins_code == X_LDINC_BM ||
+			  p[1]->ins_code == X_LDINC_UM ||
+			  p[1]->ins_code == X_DECLD_WM ||
+			  p[1]->ins_code == X_DECLD_BM ||
+			  p[1]->ins_code == X_DECLD_UM ||
+			  p[1]->ins_code == X_LDDEC_WM ||
+			  p[1]->ins_code == X_LDDEC_BM ||
+			  p[1]->ins_code == X_LDDEC_UM ||
+			  p[1]->ins_code == X_INCLD_WS ||
+			  p[1]->ins_code == X_INCLD_BS ||
+			  p[1]->ins_code == X_INCLD_US ||
+			  p[1]->ins_code == X_LDINC_WS ||
+			  p[1]->ins_code == X_LDINC_BS ||
+			  p[1]->ins_code == X_LDINC_US ||
+			  p[1]->ins_code == X_DECLD_WS ||
+			  p[1]->ins_code == X_DECLD_BS ||
+			  p[1]->ins_code == X_DECLD_US ||
+			  p[1]->ins_code == X_LDDEC_WS ||
+			  p[1]->ins_code == X_LDDEC_BS ||
+			  p[1]->ins_code == X_LDDEC_US ||
+			  p[1]->ins_code == X_INCLD_WAR ||
+			  p[1]->ins_code == X_LDINC_WAR ||
+			  p[1]->ins_code == X_DECLD_WAR ||
+			  p[1]->ins_code == X_LDDEC_WAR ||
+			  p[1]->ins_code == X_INCLD_BAR ||
+			  p[1]->ins_code == X_INCLD_UAR ||
+			  p[1]->ins_code == X_LDINC_BAR ||
+			  p[1]->ins_code == X_LDINC_UAR ||
+			  p[1]->ins_code == X_DECLD_BAR ||
+			  p[1]->ins_code == X_DECLD_UAR ||
+			  p[1]->ins_code == X_LDDEC_BAR ||
+			  p[1]->ins_code == X_LDDEC_UAR ||
+			  p[1]->ins_code == X_INCLD_BAY ||
+			  p[1]->ins_code == X_INCLD_UAY ||
+			  p[1]->ins_code == X_LDINC_BAY ||
+			  p[1]->ins_code == X_LDINC_UAY ||
+			  p[1]->ins_code == X_DECLD_BAY ||
+			  p[1]->ins_code == X_DECLD_UAY ||
+			  p[1]->ins_code == X_LDDEC_BAY ||
+			  p[1]->ins_code == X_LDDEC_UAY)
 			) {
 				/* replace code */
-				switch (p[1]->code) {
+				switch (p[1]->ins_code) {
 				case X_INCLD_WM:
-				case X_LDINC_WM: p[1]->code = X_INC_WMQ; break;
+				case X_LDINC_WM: p[1]->ins_code = X_INC_WMQ; break;
 				case X_INCLD_BM:
 				case X_INCLD_UM:
 				case X_LDINC_BM:
-				case X_LDINC_UM: p[1]->code = X_INC_UMQ; break;
+				case X_LDINC_UM: p[1]->ins_code = X_INC_UMQ; break;
 				case X_DECLD_WM:
-				case X_LDDEC_WM: p[1]->code = X_DEC_WMQ; break;
+				case X_LDDEC_WM: p[1]->ins_code = X_DEC_WMQ; break;
 				case X_DECLD_BM:
 				case X_DECLD_UM:
 				case X_LDDEC_BM:
-				case X_LDDEC_UM: p[1]->code = X_DEC_UMQ; break;
+				case X_LDDEC_UM: p[1]->ins_code = X_DEC_UMQ; break;
 				case X_INCLD_WS:
-				case X_LDINC_WS: p[1]->code = X_INC_WSQ; break;
+				case X_LDINC_WS: p[1]->ins_code = X_INC_WSQ; break;
 				case X_INCLD_BS:
 				case X_INCLD_US:
 				case X_LDINC_BS:
-				case X_LDINC_US: p[1]->code = X_INC_USQ; break;
+				case X_LDINC_US: p[1]->ins_code = X_INC_USQ; break;
 				case X_DECLD_WS:
-				case X_LDDEC_WS: p[1]->code = X_DEC_WSQ; break;
+				case X_LDDEC_WS: p[1]->ins_code = X_DEC_WSQ; break;
 				case X_DECLD_BS:
 				case X_DECLD_US:
 				case X_LDDEC_BS:
-				case X_LDDEC_US: p[1]->code = X_DEC_USQ; break;
+				case X_LDDEC_US: p[1]->ins_code = X_DEC_USQ; break;
 				case X_INCLD_WAR:
-				case X_LDINC_WAR: p[1]->code = X_INC_WARQ; break;
+				case X_LDINC_WAR: p[1]->ins_code = X_INC_WARQ; break;
 				case X_DECLD_WAR:
-				case X_LDDEC_WAR: p[1]->code = X_DEC_WARQ; break;
+				case X_LDDEC_WAR: p[1]->ins_code = X_DEC_WARQ; break;
 				case X_INCLD_BAR:
 				case X_INCLD_UAR:
 				case X_LDINC_BAR:
-				case X_LDINC_UAR: p[1]->code = X_INC_UARQ; break;
+				case X_LDINC_UAR: p[1]->ins_code = X_INC_UARQ; break;
 				case X_DECLD_BAR:
 				case X_DECLD_UAR:
 				case X_LDDEC_BAR:
-				case X_LDDEC_UAR: p[1]->code = X_DEC_UARQ; break;
+				case X_LDDEC_UAR: p[1]->ins_code = X_DEC_UARQ; break;
 				case X_INCLD_BAY:
 				case X_INCLD_UAY:
 				case X_LDINC_BAY:
-				case X_LDINC_UAY: p[1]->code = X_INC_UAYQ; break;
+				case X_LDINC_UAY: p[1]->ins_code = X_INC_UAYQ; break;
 				case X_DECLD_BAY:
 				case X_DECLD_UAY:
 				case X_LDDEC_BAY:
-				case X_LDDEC_UAY: p[1]->code = X_DEC_UAYQ; break;
+				case X_LDDEC_UAY: p[1]->ins_code = X_DEC_UAYQ; break;
 				default: abort();
 				}
 				nb = 1;
@@ -640,7 +640,7 @@ lv1_loop:
 		}
 
 		/* then check for I_SHORT, and remove it ASAP */
-		if (q_nb >= 1 && p[0]->code == I_SHORT) {
+		if (q_nb >= 1 && p[0]->ins_code == I_SHORT) {
 			/* remove I_SHORT after it has been checked */
 			nb = 1;
 
@@ -656,22 +656,22 @@ lv1_loop:
 			 */
 			if
 			((q_nb >= 2) &&
-			 (p[1]->code == I_LD_WI ||
-			  p[1]->code == I_LD_WM ||
-			  p[1]->code == I_LD_BM ||
-			  p[1]->code == I_LD_UM ||
-			  p[1]->code == X_LD_WS ||
-			  p[1]->code == X_LD_BS ||
-			  p[1]->code == X_LD_US)
+			 (p[1]->ins_code == I_LD_WI ||
+			  p[1]->ins_code == I_LD_WM ||
+			  p[1]->ins_code == I_LD_BM ||
+			  p[1]->ins_code == I_LD_UM ||
+			  p[1]->ins_code == X_LD_WS ||
+			  p[1]->ins_code == X_LD_BS ||
+			  p[1]->ins_code == X_LD_US)
 			) {
-				switch (p[1]->code) {
-				case I_LD_WI: p[1]->code = X_LD_UIQ; break;
-				case I_LD_WM: p[1]->code = I_LD_WMQ; break;
-				case I_LD_BM: p[1]->code = I_LD_BMQ; break;
-				case I_LD_UM: p[1]->code = I_LD_UMQ; break;
-				case X_LD_WS: p[1]->code = X_LD_WSQ; break;
-				case X_LD_BS: p[1]->code = X_LD_BSQ; break;
-				case X_LD_US: p[1]->code = X_LD_USQ; break;
+				switch (p[1]->ins_code) {
+				case I_LD_WI: p[1]->ins_code = X_LD_UIQ; break;
+				case I_LD_WM: p[1]->ins_code = I_LD_WMQ; break;
+				case I_LD_BM: p[1]->ins_code = I_LD_BMQ; break;
+				case I_LD_UM: p[1]->ins_code = I_LD_UMQ; break;
+				case X_LD_WS: p[1]->ins_code = X_LD_WSQ; break;
+				case X_LD_BS: p[1]->ins_code = X_LD_BSQ; break;
+				case X_LD_US: p[1]->ins_code = X_LD_USQ; break;
 				default: abort();
 				}
 				nb = 1;
@@ -704,20 +704,20 @@ lv1_loop:
 			 *  JCB: Isn't this already handled by other rules?
 			 */
 			if
-			((p[0]->code == I_ST_WPT) &&
-			 (p[1]->code == I_ADD_WI ||
-			  p[1]->code == I_SUB_WI) &&
-			 (p[2]->code == I_LD_WP) &&
-			 (p[2]->type == T_PTR) &&
-			 (p[3]->code == I_ST_WM) &&
-			 (p[3]->type == T_PTR) &&
-			 (p[4]->code == I_PUSH_WR) &&
-			 (p[5]->code == I_LD_WI)
+			((p[0]->ins_code == I_ST_WPT) &&
+			 (p[1]->ins_code == I_ADD_WI ||
+			  p[1]->ins_code == I_SUB_WI) &&
+			 (p[2]->ins_code == I_LD_WP) &&
+			 (p[2]->ins_type == T_PTR) &&
+			 (p[3]->ins_code == I_ST_WM) &&
+			 (p[3]->ins_type == T_PTR) &&
+			 (p[4]->ins_code == I_PUSH_WR) &&
+			 (p[5]->ins_code == I_LD_WI)
 			) {
 				*p[3] = *p[5];
-				p[3]->code = I_ST_WM;
+				p[3]->ins_code = I_ST_WM;
 				*p[4] = *p[1];
-				p[5]->code = I_LD_WM;
+				p[5]->ins_code = I_LD_WM;
 				nb = 3;
 			}
 
@@ -763,24 +763,24 @@ lv1_loop:
 			 *  later on.
 			 */
 			if
-			((p[0]->code == I_LD_WP ||
-			  p[0]->code == I_LD_BP ||
-			  p[0]->code == I_LD_UP) &&
-			 (p[0]->type == T_PTR) &&
-			 (p[1]->code == I_ST_WM) &&
-			 (p[1]->type == T_PTR) &&
-			 (p[2]->code == I_PUSH_WR) &&
-			 (p[3]->code == I_LD_WI)
+			((p[0]->ins_code == I_LD_WP ||
+			  p[0]->ins_code == I_LD_BP ||
+			  p[0]->ins_code == I_LD_UP) &&
+			 (p[0]->ins_type == T_PTR) &&
+			 (p[1]->ins_code == I_ST_WM) &&
+			 (p[1]->ins_type == T_PTR) &&
+			 (p[2]->ins_code == I_PUSH_WR) &&
+			 (p[3]->ins_code == I_LD_WI)
 			) {
 				/* replace code */
 				*p[1] = *p[3];
-				if (p[0]->code == I_LD_WP)
-					p[1]->code = I_LD_WM;
+				if (p[0]->ins_code == I_LD_WP)
+					p[1]->ins_code = I_LD_WM;
 				else
-				if (p[0]->code == I_LD_BP)
-					p[1]->code = I_LD_BM;
+				if (p[0]->ins_code == I_LD_BP)
+					p[1]->ins_code = I_LD_BM;
 				else
-					p[1]->code = I_LD_UM;
+					p[1]->ins_code = I_LD_UM;
 				nb = 1;
 			}
 
@@ -795,25 +795,25 @@ lv1_loop:
 			 *  later on.
 			 */
 			else if
-			((p[0]->code == I_LD_WP ||
-			  p[0]->code == I_LD_BP ||
-			  p[0]->code == I_LD_UP) &&
-			 (p[0]->type == T_PTR) &&
-			 (p[1]->code == I_ST_WM) &&
-			 (p[1]->type == T_PTR) &&
-			 (p[2]->code == I_PUSH_WR) &&
-			 (p[3]->code == I_LEA_S)
+			((p[0]->ins_code == I_LD_WP ||
+			  p[0]->ins_code == I_LD_BP ||
+			  p[0]->ins_code == I_LD_UP) &&
+			 (p[0]->ins_type == T_PTR) &&
+			 (p[1]->ins_code == I_ST_WM) &&
+			 (p[1]->ins_type == T_PTR) &&
+			 (p[2]->ins_code == I_PUSH_WR) &&
+			 (p[3]->ins_code == I_LEA_S)
 			) {
 				/* replace code */
 				*p[1] = *p[3];
-				if (p[0]->code == I_LD_WP)
-					p[1]->code = X_LD_WS;
+				if (p[0]->ins_code == I_LD_WP)
+					p[1]->ins_code = X_LD_WS;
 				else
-				if (p[0]->code == I_LD_BP)
-					p[1]->code = X_LD_BS;
+				if (p[0]->ins_code == I_LD_BP)
+					p[1]->ins_code = X_LD_BS;
 				else
-					p[1]->code = X_LD_US;
-				p[1]-> data += 2;
+					p[1]->ins_code = X_LD_US;
+				p[1]->ins_data += 2;
 				nb = 1;
 			}
 
@@ -827,15 +827,15 @@ lv1_loop:
 			 *  arrays and structs on the stack.
 			 */
 			else if
-			((p[0]->code == I_ADD_WT) &&
-			 (p[1]->code == I_LD_WI) &&
-			 (p[1]->type == T_VALUE) &&
-			 (p[2]->code == I_PUSH_WR) &&
-			 (p[3]->code == I_LEA_S)
+			((p[0]->ins_code == I_ADD_WT) &&
+			 (p[1]->ins_code == I_LD_WI) &&
+			 (p[1]->ins_type == T_VALUE) &&
+			 (p[2]->ins_code == I_PUSH_WR) &&
+			 (p[3]->ins_code == I_LEA_S)
 			) {
 				/* replace code */
-				p[3]->code = I_LEA_S;
-				p[3]->data += p[1]->data;
+				p[3]->ins_code = I_LEA_S;
+				p[3]->ins_data += p[1]->ins_data;
 				nb = 3;
 			}
 
@@ -846,16 +846,16 @@ lv1_loop:
 			 *    jsr		umul
 			 */
 			else if
-			((p[0]->code == I_JSR) &&
-			 (p[0]->type == T_LIB) &&
-			 (!strcmp((char *)p[0]->data, "umul")) &&
-			 (p[1]->code == I_LD_WI) &&
-			 (p[1]->type == T_VALUE) &&
-			 (p[2]->code == I_PUSH_WR) &&
-			 (p[3]->code == I_LD_WI) &&
-			 (p[3]->type == T_VALUE)
+			((p[0]->ins_code == I_JSR) &&
+			 (p[0]->ins_type == T_LIB) &&
+			 (!strcmp((char *)p[0]->ins_data, "umul")) &&
+			 (p[1]->ins_code == I_LD_WI) &&
+			 (p[1]->ins_type == T_VALUE) &&
+			 (p[2]->ins_code == I_PUSH_WR) &&
+			 (p[3]->ins_code == I_LD_WI) &&
+			 (p[3]->ins_type == T_VALUE)
 			) {
-				p[3]->data *= p[1]->data;
+				p[3]->ins_data *= p[1]->ins_data;
 				nb = 3;
 			}
 
@@ -878,13 +878,13 @@ lv1_loop:
 			 */
 
 			else if
-			((p[0]->code == I_ST_UPT) &&
-			 (p[1]->code == I_ADD_WI) &&
-			 (p[2]->code == X_LDB_P) &&
-			 (p[3]->code == I_PUSH_WR)
+			((p[0]->ins_code == I_ST_UPT) &&
+			 (p[1]->ins_code == I_ADD_WI) &&
+			 (p[2]->ins_code == X_LDB_P) &&
+			 (p[3]->ins_code == I_PUSH_WR)
 			) {
 				*p[3] = *p[1];
-				p[3]->code = I_ADDBI_P;
+				p[3]->ins_code = I_ADDBI_P;
 				nb = 3;
 			}
 #endif
@@ -901,19 +901,19 @@ lv1_loop:
 			 *  N.B. The byte-array peephole rule is further down in this file.
 			 */
 			else if
-			((p[0]->code == I_LD_WP) &&
-			 (p[0]->type == T_PTR) &&
-			 (p[1]->code == I_ST_WM) &&
-			 (p[1]->type == T_PTR) &&
-			 (p[2]->code == I_ADD_WI) &&
-			 (p[2]->type == T_SYMBOL) &&
-			 (is_small_array((SYMBOL *)p[2]->data)) &&
-			 (p[3]->code == I_ASL_WR)
+			((p[0]->ins_code == I_LD_WP) &&
+			 (p[0]->ins_type == T_PTR) &&
+			 (p[1]->ins_code == I_ST_WM) &&
+			 (p[1]->ins_type == T_PTR) &&
+			 (p[2]->ins_code == I_ADD_WI) &&
+			 (p[2]->ins_type == T_SYMBOL) &&
+			 (is_small_array((SYMBOL *)p[2]->ins_data)) &&
+			 (p[3]->ins_code == I_ASL_WR)
 			) {
 				/* replace code */
-				p[3]->code = X_LD_WAR;
-				p[3]->type = T_SYMBOL;
-				p[3]->data = p[2]->data;
+				p[3]->ins_code = X_LD_WAR;
+				p[3]->ins_type = T_SYMBOL;
+				p[3]->ins_data = p[2]->ins_data;
 				nb = 3;
 			}
 #endif
@@ -948,9 +948,9 @@ lv1_loop:
 			 *  just fall through to the next case.
 			 */
 			if
-			((p[0]->code == I_LABEL) &&
-			 (p[1]->code == I_ENDCASE) &&
-			 (p[2]->code == I_CASE)
+			((p[0]->ins_code == I_LABEL) &&
+			 (p[1]->ins_code == I_ENDCASE) &&
+			 (p[2]->ins_code == I_CASE)
 			) {
 				/* remove code */
 				*p[2] = *p[0];
@@ -964,22 +964,22 @@ lv1_loop:
 			 *  Load a global/static variable from memory
 			 */
 			else if
-			((p[0]->code == I_LD_WP ||
-			  p[0]->code == I_LD_BP ||
-			  p[0]->code == I_LD_UP) &&
-			 (p[0]->type == T_PTR) &&
-			 (p[1]->code == I_ST_WM) &&
-			 (p[1]->type == T_PTR) &&
-			 (p[2]->code == I_LD_WI)
+			((p[0]->ins_code == I_LD_WP ||
+			  p[0]->ins_code == I_LD_BP ||
+			  p[0]->ins_code == I_LD_UP) &&
+			 (p[0]->ins_type == T_PTR) &&
+			 (p[1]->ins_code == I_ST_WM) &&
+			 (p[1]->ins_type == T_PTR) &&
+			 (p[2]->ins_code == I_LD_WI)
 			) {
 				/* replace code */
-				if (p[0]->code == I_LD_WP)
-					p[2]->code = I_LD_WM;
+				if (p[0]->ins_code == I_LD_WP)
+					p[2]->ins_code = I_LD_WM;
 				else
-				if (p[0]->code == I_LD_BP)
-					p[2]->code = I_LD_BM;
+				if (p[0]->ins_code == I_LD_BP)
+					p[2]->ins_code = I_LD_BM;
 				else
-					p[2]->code = I_LD_UM;
+					p[2]->ins_code = I_LD_UM;
 				nb = 2;
 			}
 
@@ -991,22 +991,22 @@ lv1_loop:
 			 *  Load a local variable from memory
 			 */
 			else if
-			((p[0]->code == I_LD_WP ||
-			  p[0]->code == I_LD_BP ||
-			  p[0]->code == I_LD_UP) &&
-			 (p[0]->type == T_PTR) &&
-			 (p[1]->code == I_ST_WM) &&
-			 (p[1]->type == T_PTR) &&
-			 (p[2]->code == I_LEA_S)
+			((p[0]->ins_code == I_LD_WP ||
+			  p[0]->ins_code == I_LD_BP ||
+			  p[0]->ins_code == I_LD_UP) &&
+			 (p[0]->ins_type == T_PTR) &&
+			 (p[1]->ins_code == I_ST_WM) &&
+			 (p[1]->ins_type == T_PTR) &&
+			 (p[2]->ins_code == I_LEA_S)
 			) {
 				/* replace code */
-				if (p[0]->code == I_LD_WP)
-					p[2]->code = X_LD_WS;
+				if (p[0]->ins_code == I_LD_WP)
+					p[2]->ins_code = X_LD_WS;
 				else
-				if (p[0]->code == I_LD_BP)
-					p[2]->code = X_LD_BS;
+				if (p[0]->ins_code == I_LD_BP)
+					p[2]->ins_code = X_LD_BS;
 				else
-					p[2]->code = X_LD_US;
+					p[2]->ins_code = X_LD_US;
 				nb = 2;
 			}
 
@@ -1022,28 +1022,28 @@ lv1_loop:
 			 *  etc/etc
 			 */
 			else if
-			((p[0]->code == I_ADD_WT ||
-			  p[0]->code == I_SUB_WT ||
-			  p[0]->code == I_AND_WT ||
-			  p[0]->code == I_EOR_WT ||
-			  p[0]->code == I_OR_WT) &&
-			 (p[1]->code == I_LD_WI) &&
-			 (p[2]->code == I_PUSH_WR)
+			((p[0]->ins_code == I_ADD_WT ||
+			  p[0]->ins_code == I_SUB_WT ||
+			  p[0]->ins_code == I_AND_WT ||
+			  p[0]->ins_code == I_EOR_WT ||
+			  p[0]->ins_code == I_OR_WT) &&
+			 (p[1]->ins_code == I_LD_WI) &&
+			 (p[2]->ins_code == I_PUSH_WR)
 			) {
 				/* replace code */
 				*p[2] = *p[1];
-				switch (p[0]->code) {
-				case I_ADD_WT: p[2]->code = I_ADD_WI; break;
-				case I_SUB_WT: p[2]->code = I_SUB_WI; break;
-				case I_AND_WT: p[2]->code = I_AND_WI; break;
-				case I_EOR_WT: p[2]->code = I_EOR_WI; break;
-				case I_OR_WT: p[2]->code = I_OR_WI; break;
+				switch (p[0]->ins_code) {
+				case I_ADD_WT: p[2]->ins_code = I_ADD_WI; break;
+				case I_SUB_WT: p[2]->ins_code = I_SUB_WI; break;
+				case I_AND_WT: p[2]->ins_code = I_AND_WI; break;
+				case I_EOR_WT: p[2]->ins_code = I_EOR_WI; break;
+				case I_OR_WT: p[2]->ins_code = I_OR_WI; break;
 				default: abort();
 				}
 				nb = 2;
-				if (p[2]->type == T_VALUE && p[2]->data == 0) {
-					if (p[2]->code == I_AND_WI || p[2]->code == I_AND_UIQ)
-						p[2]->code = I_LD_WI;
+				if (p[2]->ins_type == T_VALUE && p[2]->ins_data == 0) {
+					if (p[2]->ins_code == I_AND_WI || p[2]->ins_code == I_AND_UIQ)
+						p[2]->ins_code = I_LD_WI;
 					else
 						nb = 3;
 				}
@@ -1061,22 +1061,22 @@ lv1_loop:
 			 *  etc/etc
 			 */
 			else if
-			((p[0]->code == I_ADD_WT ||
-			  p[0]->code == I_SUB_WT ||
-			  p[0]->code == I_AND_WT ||
-			  p[0]->code == I_EOR_WT ||
-			  p[0]->code == I_OR_WT) &&
-			 (p[1]->code == I_LD_WM) &&
-			 (p[2]->code == I_PUSH_WR)
+			((p[0]->ins_code == I_ADD_WT ||
+			  p[0]->ins_code == I_SUB_WT ||
+			  p[0]->ins_code == I_AND_WT ||
+			  p[0]->ins_code == I_EOR_WT ||
+			  p[0]->ins_code == I_OR_WT) &&
+			 (p[1]->ins_code == I_LD_WM) &&
+			 (p[2]->ins_code == I_PUSH_WR)
 			) {
 				/* replace code */
 				*p[2] = *p[1];
-				switch (p[0]->code) {
-				case I_ADD_WT: p[2]->code = I_ADD_WM; break;
-				case I_SUB_WT: p[2]->code = I_SUB_WM; break;
-				case I_AND_WT: p[2]->code = I_AND_WM; break;
-				case I_EOR_WT: p[2]->code = I_EOR_WM; break;
-				case I_OR_WT: p[2]->code = I_OR_WM; break;
+				switch (p[0]->ins_code) {
+				case I_ADD_WT: p[2]->ins_code = I_ADD_WM; break;
+				case I_SUB_WT: p[2]->ins_code = I_SUB_WM; break;
+				case I_AND_WT: p[2]->ins_code = I_AND_WM; break;
+				case I_EOR_WT: p[2]->ins_code = I_EOR_WM; break;
+				case I_OR_WT: p[2]->ins_code = I_OR_WM; break;
 				default: abort();
 				}
 				nb = 2;
@@ -1094,22 +1094,22 @@ lv1_loop:
 			 *  etc/etc
 			 */
 			else if
-			((p[0]->code == I_ADD_WT ||
-			  p[0]->code == I_SUB_WT ||
-			  p[0]->code == I_AND_WT ||
-			  p[0]->code == I_EOR_WT ||
-			  p[0]->code == I_OR_WT) &&
-			 (p[1]->code == I_LD_UM) &&
-			 (p[2]->code == I_PUSH_WR)
+			((p[0]->ins_code == I_ADD_WT ||
+			  p[0]->ins_code == I_SUB_WT ||
+			  p[0]->ins_code == I_AND_WT ||
+			  p[0]->ins_code == I_EOR_WT ||
+			  p[0]->ins_code == I_OR_WT) &&
+			 (p[1]->ins_code == I_LD_UM) &&
+			 (p[2]->ins_code == I_PUSH_WR)
 			) {
 				/* replace code */
 				*p[2] = *p[1];
-				switch (p[0]->code) {
-				case I_ADD_WT: p[2]->code = I_ADD_UM; break;
-				case I_SUB_WT: p[2]->code = I_SUB_UM; break;
-				case I_AND_WT: p[2]->code = I_AND_UM; break;
-				case I_EOR_WT: p[2]->code = I_EOR_UM; break;
-				case I_OR_WT: p[2]->code = I_OR_UM; break;
+				switch (p[0]->ins_code) {
+				case I_ADD_WT: p[2]->ins_code = I_ADD_UM; break;
+				case I_SUB_WT: p[2]->ins_code = I_SUB_UM; break;
+				case I_AND_WT: p[2]->ins_code = I_AND_UM; break;
+				case I_EOR_WT: p[2]->ins_code = I_EOR_UM; break;
+				case I_OR_WT: p[2]->ins_code = I_OR_UM; break;
 				default: abort();
 				}
 				nb = 2;
@@ -1121,19 +1121,19 @@ lv1_loop:
 			 *  __add.wt
 			 */
 			else if
-			((p[0]->code == I_ADD_WT) &&
-			 (p[1]->code == X_LD_WS ||
-			  p[1]->code == X_LD_US) &&
-			 (p[2]->code == I_PUSH_WR)
+			((p[0]->ins_code == I_ADD_WT) &&
+			 (p[1]->ins_code == X_LD_WS ||
+			  p[1]->ins_code == X_LD_US) &&
+			 (p[2]->ins_code == I_PUSH_WR)
 			) {
 				/* replace code */
 				*p[2] = *p[1];
-				switch (p[1]->code) {
-				case X_LD_WS: p[2]->code = X_ADD_WS; break;
-				case X_LD_US: p[2]->code = X_ADD_US; break;
+				switch (p[1]->ins_code) {
+				case X_LD_WS: p[2]->ins_code = X_ADD_WS; break;
+				case X_LD_US: p[2]->ins_code = X_ADD_US; break;
 				default: abort();
 				}
-				p[2]->data -= 2;
+				p[2]->ins_data -= 2;
 				nb = 2;
 			}
 
@@ -1143,25 +1143,25 @@ lv1_loop:
 			 *    jsr		asl/asr/lsr
 			 */
 			else if
-			((p[0]->code == I_JSR) &&
-			 (!strcmp((char *)p[0]->data, "aslw") ||
-			  !strcmp((char *)p[0]->data, "asrw") ||
-			  !strcmp((char *)p[0]->data, "lsrw")) &&
-			 (p[1]->code == I_LD_WI) &&
-			 (p[2]->code == I_PUSH_WR)
+			((p[0]->ins_code == I_JSR) &&
+			 (!strcmp((char *)p[0]->ins_data, "aslw") ||
+			  !strcmp((char *)p[0]->ins_data, "asrw") ||
+			  !strcmp((char *)p[0]->ins_data, "lsrw")) &&
+			 (p[1]->ins_code == I_LD_WI) &&
+			 (p[2]->ins_code == I_PUSH_WR)
 			) {
 				/* replace code */
-				if (!strcmp((char *)p[0]->data, "aslw"))
-					p[2]->code = I_ASL_WI;
+				if (!strcmp((char *)p[0]->ins_data, "aslw"))
+					p[2]->ins_code = I_ASL_WI;
 				else
-				if (!strcmp((char *)p[0]->data, "asrw"))
-					p[2]->code = I_ASR_WI;
+				if (!strcmp((char *)p[0]->ins_data, "asrw"))
+					p[2]->ins_code = I_ASR_WI;
 				else
-					p[2]->code = I_LSR_WI;
-				p[2]->type = p[1]->type;
-				p[2]->data = p[1]->data;
+					p[2]->ins_code = I_LSR_WI;
+				p[2]->ins_type = p[1]->ins_type;
+				p[2]->ins_data = p[1]->ins_data;
 				nb = 2;
-				if (p[2]->type == T_VALUE && p[2]->data == 0) {
+				if (p[2]->ins_type == T_VALUE && p[2]->ins_data == 0) {
 					nb = 3;
 				}
 			}
@@ -1172,23 +1172,23 @@ lv1_loop:
 			 *  jsr {u|s}mul
 			 */
 			else if
-			((p[0]->code == I_JSR) &&
-			 (!strcmp((char *)p[0]->data, "umul") ||
-			  !strcmp((char *)p[0]->data, "smul")) &&
-			 (p[1]->code == I_LD_WI) &&
-			 (p[1]->type == T_VALUE) &&
-			 (p[1]->data > 0) &&
-			 (p[1]->data < 0x8000) &&
-			 (p[2]->code == I_PUSH_WR)
+			((p[0]->ins_code == I_JSR) &&
+			 (!strcmp((char *)p[0]->ins_data, "umul") ||
+			  !strcmp((char *)p[0]->ins_data, "smul")) &&
+			 (p[1]->ins_code == I_LD_WI) &&
+			 (p[1]->ins_type == T_VALUE) &&
+			 (p[1]->ins_data > 0) &&
+			 (p[1]->ins_data < 0x8000) &&
+			 (p[2]->ins_code == I_PUSH_WR)
 			) {
-				p[2]->type = T_VALUE;
-				if (__builtin_popcount((unsigned int)p[1]->data) == 1) {
-					p[2]->code = I_ASL_WI;
-					p[2]->data = __builtin_ctz((unsigned int)p[1]->data);
+				p[2]->ins_type = T_VALUE;
+				if (__builtin_popcount((unsigned int)p[1]->ins_data) == 1) {
+					p[2]->ins_code = I_ASL_WI;
+					p[2]->ins_data = __builtin_ctz((unsigned int)p[1]->ins_data);
 				}
 				else {
-					p[2]->code = I_MUL_WI;
-					p[2]->data = p[1]->data;
+					p[2]->ins_code = I_MUL_WI;
+					p[2]->ins_data = p[1]->ins_data;
 				}
 				nb = 2;
 			}
@@ -1211,39 +1211,39 @@ lv1_loop:
 			 *  __cmp.wt		ne_w
 			 */
 			else if
-			((p[0]->code == I_CMP_WT) &&
-			 (p[1]->code == I_LD_WI) &&
-			 (p[2]->code == I_PUSH_WR) &&
+			((p[0]->ins_code == I_CMP_WT) &&
+			 (p[1]->ins_code == I_LD_WI) &&
+			 (p[2]->ins_code == I_PUSH_WR) &&
 
-			 (p[1]->type == T_VALUE || p[1]->type == T_SYMBOL) &&
-			 (strcmp((char *)p[0]->data, "eq_w") == 0 ||
-			  strcmp((char *)p[0]->data, "eq_b") == 0 ||
-			  strcmp((char *)p[0]->data, "ne_w") == 0 ||
-			  strcmp((char *)p[0]->data, "ne_b") == 0)
+			 (p[1]->ins_type == T_VALUE || p[1]->ins_type == T_SYMBOL) &&
+			 (strcmp((char *)p[0]->ins_data, "eq_w") == 0 ||
+			  strcmp((char *)p[0]->ins_data, "eq_b") == 0 ||
+			  strcmp((char *)p[0]->ins_data, "ne_w") == 0 ||
+			  strcmp((char *)p[0]->ins_data, "ne_b") == 0)
 			) {
 				/* replace code */
-				if (p[1]->data == 0) {
-					if (strcmp((char *)p[0]->data, "eq_w") == 0)
-						p[2]->code = I_NOT_WR;
-					else if (strcmp((char *)p[0]->data, "eq_b") == 0)
-						p[2]->code = I_NOT_WR;
-					else if (strcmp((char *)p[0]->data, "ne_w") == 0)
-						p[2]->code = I_TST_WR;
-					else if (strcmp((char *)p[0]->data, "ne_b") == 0)
-						p[2]->code = I_TST_WR;
-					p[2]->type = 0;
-					p[2]->data = 0;
+				if (p[1]->ins_data == 0) {
+					if (strcmp((char *)p[0]->ins_data, "eq_w") == 0)
+						p[2]->ins_code = I_NOT_WR;
+					else if (strcmp((char *)p[0]->ins_data, "eq_b") == 0)
+						p[2]->ins_code = I_NOT_WR;
+					else if (strcmp((char *)p[0]->ins_data, "ne_w") == 0)
+						p[2]->ins_code = I_TST_WR;
+					else if (strcmp((char *)p[0]->ins_data, "ne_b") == 0)
+						p[2]->ins_code = I_TST_WR;
+					p[2]->ins_type = 0;
+					p[2]->ins_data = 0;
 				} else {
-					if (strcmp((char *)p[0]->data, "eq_w") == 0)
-						p[2]->code = X_EQU_WI;
-					else if (strcmp((char *)p[0]->data, "eq_b") == 0)
-						p[2]->code = X_EQU_WI;
-					else if (strcmp((char *)p[0]->data, "ne_w") == 0)
-						p[2]->code = X_NEQ_WI;
-					else if (strcmp((char *)p[0]->data, "ne_b") == 0)
-						p[2]->code = X_NEQ_WI;
-					p[2]->type = p[1]->type;
-					p[2]->data = p[1]->data;
+					if (strcmp((char *)p[0]->ins_data, "eq_w") == 0)
+						p[2]->ins_code = X_EQU_WI;
+					else if (strcmp((char *)p[0]->ins_data, "eq_b") == 0)
+						p[2]->ins_code = X_EQU_WI;
+					else if (strcmp((char *)p[0]->ins_data, "ne_w") == 0)
+						p[2]->ins_code = X_NEQ_WI;
+					else if (strcmp((char *)p[0]->ins_data, "ne_b") == 0)
+						p[2]->ins_code = X_NEQ_WI;
+					p[2]->ins_type = p[1]->ins_type;
+					p[2]->ins_data = p[1]->ins_data;
 				}
 
 				nb = 2;
@@ -1262,24 +1262,24 @@ lv1_loop:
 			 *  pre-decrement, post-decrement!
 			 */
 			else if
-			((p[1]->code == I_ADD_WI ||
-			  p[1]->code == I_SUB_WI) &&
-			 (p[1]->type == T_VALUE) &&
-			 (p[1]->data == 1) &&
-			 (p[0]->code == I_ST_WM ||
-			  p[0]->code == I_ST_UM) &&
-			 (p[2]->code == I_LD_WM ||
-			  p[2]->code == I_LD_BM ||
-			  p[2]->code == I_LD_UM) &&
-			 (p[0]->type == p[2]->type) &&
-			 (p[0]->data == p[2]->data)
+			((p[1]->ins_code == I_ADD_WI ||
+			  p[1]->ins_code == I_SUB_WI) &&
+			 (p[1]->ins_type == T_VALUE) &&
+			 (p[1]->ins_data == 1) &&
+			 (p[0]->ins_code == I_ST_WM ||
+			  p[0]->ins_code == I_ST_UM) &&
+			 (p[2]->ins_code == I_LD_WM ||
+			  p[2]->ins_code == I_LD_BM ||
+			  p[2]->ins_code == I_LD_UM) &&
+			 (p[0]->ins_type == p[2]->ins_type) &&
+			 (p[0]->ins_data == p[2]->ins_data)
 //			 (cmp_operands(p[0], p[2]) == 1)
 			) {
 				/* replace code */
-				switch (p[2]->code) {
-				case I_LD_WM:	p[2]->code = (p[1]->code == I_ADD_WI) ? X_INCLD_WM : X_DECLD_WM; break;
-				case I_LD_BM:	p[2]->code = (p[1]->code == I_ADD_WI) ? X_INCLD_BM : X_DECLD_BM; break;
-				case I_LD_UM:	p[2]->code = (p[1]->code == I_ADD_WI) ? X_INCLD_UM : X_DECLD_UM; break;
+				switch (p[2]->ins_code) {
+				case I_LD_WM:	p[2]->ins_code = (p[1]->ins_code == I_ADD_WI) ? X_INCLD_WM : X_DECLD_WM; break;
+				case I_LD_BM:	p[2]->ins_code = (p[1]->ins_code == I_ADD_WI) ? X_INCLD_BM : X_DECLD_BM; break;
+				case I_LD_UM:	p[2]->ins_code = (p[1]->ins_code == I_ADD_WI) ? X_INCLD_UM : X_DECLD_UM; break;
 				default:	break;
 				}
 				nb = 2;
@@ -1298,23 +1298,23 @@ lv1_loop:
 			 *  C pre-decrement, post-decrement!
 			 */
 			else if
-			((p[1]->code == I_ADD_WI ||
-			  p[1]->code == I_SUB_WI) &&
-			 (p[1]->type == T_VALUE) &&
-			 (p[1]->data == 1) &&
-			 (p[0]->code == X_ST_WS ||
-			  p[0]->code == X_ST_US) &&
-			 (p[2]->code == X_LD_WS ||
-			  p[2]->code == X_LD_BS ||
-			  p[2]->code == X_LD_US) &&
-			 (p[0]->type == p[2]->type) &&
-			 (p[0]->data == p[2]->data)
+			((p[1]->ins_code == I_ADD_WI ||
+			  p[1]->ins_code == I_SUB_WI) &&
+			 (p[1]->ins_type == T_VALUE) &&
+			 (p[1]->ins_data == 1) &&
+			 (p[0]->ins_code == X_ST_WS ||
+			  p[0]->ins_code == X_ST_US) &&
+			 (p[2]->ins_code == X_LD_WS ||
+			  p[2]->ins_code == X_LD_BS ||
+			  p[2]->ins_code == X_LD_US) &&
+			 (p[0]->ins_type == p[2]->ins_type) &&
+			 (p[0]->ins_data == p[2]->ins_data)
 			) {
 				/* replace code */
-				switch (p[2]->code) {
-				case X_LD_WS:	p[2]->code = (p[1]->code == I_ADD_WI) ? X_INCLD_WS : X_DECLD_WS; break;
-				case X_LD_BS:	p[2]->code = (p[1]->code == I_ADD_WI) ? X_INCLD_BS : X_DECLD_BS; break;
-				case X_LD_US:	p[2]->code = (p[1]->code == I_ADD_WI) ? X_INCLD_US : X_DECLD_US; break;
+				switch (p[2]->ins_code) {
+				case X_LD_WS:	p[2]->ins_code = (p[1]->ins_code == I_ADD_WI) ? X_INCLD_WS : X_DECLD_WS; break;
+				case X_LD_BS:	p[2]->ins_code = (p[1]->ins_code == I_ADD_WI) ? X_INCLD_BS : X_DECLD_BS; break;
+				case X_LD_US:	p[2]->ins_code = (p[1]->ins_code == I_ADD_WI) ? X_INCLD_US : X_DECLD_US; break;
 				default:	break;
 				}
 				nb = 2;
@@ -1341,28 +1341,28 @@ lv1_loop:
 			 *  pre-decrement, post-decrement!
 			 */
 			else if
-			((p[1]->code == I_ADD_WI ||
-			  p[1]->code == I_SUB_WI) &&
-			 (p[1]->type == T_VALUE) &&
-			 (p[1]->data == 1) &&
-			 (p[0]->code == X_ST_WAT ||
-			  p[0]->code == X_ST_UAT) &&
-			 (p[2]->code == X_LDP_WAR ||
-			  p[2]->code == X_LDP_BAR ||
-			  p[2]->code == X_LDP_UAR ||
-			  p[2]->code == X_LDP_BAY ||
-			  p[2]->code == X_LDP_UAY) &&
-			 (p[0]->type == p[2]->type) &&
-			 (p[0]->data == p[2]->data)
+			((p[1]->ins_code == I_ADD_WI ||
+			  p[1]->ins_code == I_SUB_WI) &&
+			 (p[1]->ins_type == T_VALUE) &&
+			 (p[1]->ins_data == 1) &&
+			 (p[0]->ins_code == X_ST_WAT ||
+			  p[0]->ins_code == X_ST_UAT) &&
+			 (p[2]->ins_code == X_LDP_WAR ||
+			  p[2]->ins_code == X_LDP_BAR ||
+			  p[2]->ins_code == X_LDP_UAR ||
+			  p[2]->ins_code == X_LDP_BAY ||
+			  p[2]->ins_code == X_LDP_UAY) &&
+			 (p[0]->ins_type == p[2]->ins_type) &&
+			 (p[0]->ins_data == p[2]->ins_data)
 //			 (cmp_operands(p[0], p[2]) == 1)
 			) {
 				/* replace code */
-				switch (p[2]->code) {
-				case X_LDP_WAR:	p[2]->code = (p[1]->code == I_ADD_WI) ? X_INCLD_WAR : X_DECLD_WAR; break;
-				case X_LDP_BAR:	p[2]->code = (p[1]->code == I_ADD_WI) ? X_INCLD_BAR : X_DECLD_BAR; break;
-				case X_LDP_UAR:	p[2]->code = (p[1]->code == I_ADD_WI) ? X_INCLD_UAR : X_DECLD_UAR; break;
-				case X_LDP_BAY:	p[2]->code = (p[1]->code == I_ADD_WI) ? X_INCLD_BAY : X_DECLD_BAY; break;
-				case X_LDP_UAY:	p[2]->code = (p[1]->code == I_ADD_WI) ? X_INCLD_UAY : X_DECLD_UAY; break;
+				switch (p[2]->ins_code) {
+				case X_LDP_WAR:	p[2]->ins_code = (p[1]->ins_code == I_ADD_WI) ? X_INCLD_WAR : X_DECLD_WAR; break;
+				case X_LDP_BAR:	p[2]->ins_code = (p[1]->ins_code == I_ADD_WI) ? X_INCLD_BAR : X_DECLD_BAR; break;
+				case X_LDP_UAR:	p[2]->ins_code = (p[1]->ins_code == I_ADD_WI) ? X_INCLD_UAR : X_DECLD_UAR; break;
+				case X_LDP_BAY:	p[2]->ins_code = (p[1]->ins_code == I_ADD_WI) ? X_INCLD_BAY : X_DECLD_BAY; break;
+				case X_LDP_UAY:	p[2]->ins_code = (p[1]->ins_code == I_ADD_WI) ? X_INCLD_UAY : X_DECLD_UAY; break;
 				default:	break;
 				}
 				nb = 2;
@@ -1423,66 +1423,66 @@ lv1_loop:
 			 *  that the code-generator often emits.
 			 */
 			else if
-			((p[0]->code != I_TST_WR) &&
-			 (p[0]->code != I_NOT_WR) &&
-			 (p[1]->code == I_TST_WR ||
-			  p[1]->code == I_NOT_WR) &&
-			 (p[2]->code == I_LD_WP ||
-			  p[2]->code == I_LD_WM ||
-			  p[2]->code == X_LD_WS ||
-			  p[2]->code == X_LD_WAR ||
-			  p[2]->code == I_LD_BP ||
-			  p[2]->code == I_LD_BM ||
-			  p[2]->code == X_LD_BS ||
-			  p[2]->code == X_LD_BAR ||
-			  p[2]->code == X_LD_BAY ||
-			  p[2]->code == I_LD_UP ||
-			  p[2]->code == I_LD_UM ||
-			  p[2]->code == X_LD_US ||
-			  p[2]->code == X_LD_UAR ||
-			  p[2]->code == X_LD_UAY ||
-			  p[2]->code == I_AND_WI ||
-			  p[2]->code == I_AND_UIQ)
+			((p[0]->ins_code != I_TST_WR) &&
+			 (p[0]->ins_code != I_NOT_WR) &&
+			 (p[1]->ins_code == I_TST_WR ||
+			  p[1]->ins_code == I_NOT_WR) &&
+			 (p[2]->ins_code == I_LD_WP ||
+			  p[2]->ins_code == I_LD_WM ||
+			  p[2]->ins_code == X_LD_WS ||
+			  p[2]->ins_code == X_LD_WAR ||
+			  p[2]->ins_code == I_LD_BP ||
+			  p[2]->ins_code == I_LD_BM ||
+			  p[2]->ins_code == X_LD_BS ||
+			  p[2]->ins_code == X_LD_BAR ||
+			  p[2]->ins_code == X_LD_BAY ||
+			  p[2]->ins_code == I_LD_UP ||
+			  p[2]->ins_code == I_LD_UM ||
+			  p[2]->ins_code == X_LD_US ||
+			  p[2]->ins_code == X_LD_UAR ||
+			  p[2]->ins_code == X_LD_UAY ||
+			  p[2]->ins_code == I_AND_WI ||
+			  p[2]->ins_code == I_AND_UIQ)
 			) {
 				/* remove code */
-				if (p[1]->code == I_TST_WR) {
-					switch (p[2]->code) {
-					case I_LD_WP:  p[2]->code = X_TST_WP; break;
-					case I_LD_WM:  p[2]->code = X_TST_WM; break;
-					case X_LD_WS:  p[2]->code = X_TST_WS; break;
-					case X_LD_WAR: p[2]->code = X_TST_WAR; break;
+				if (p[1]->ins_code == I_TST_WR) {
+					switch (p[2]->ins_code) {
+					case I_LD_WP:  p[2]->ins_code = X_TST_WP; break;
+					case I_LD_WM:  p[2]->ins_code = X_TST_WM; break;
+					case X_LD_WS:  p[2]->ins_code = X_TST_WS; break;
+					case X_LD_WAR: p[2]->ins_code = X_TST_WAR; break;
 					case I_LD_BP:
-					case I_LD_UP:  p[2]->code = X_TST_UP; break;
+					case I_LD_UP:  p[2]->ins_code = X_TST_UP; break;
 					case I_LD_BM:
-					case I_LD_UM:  p[2]->code = X_TST_UM; break;
+					case I_LD_UM:  p[2]->ins_code = X_TST_UM; break;
 					case X_LD_BS:
-					case X_LD_US:  p[2]->code = X_TST_US; break;
+					case X_LD_US:  p[2]->ins_code = X_TST_US; break;
 					case X_LD_BAR:
-					case X_LD_UAR: p[2]->code = X_TST_UAR; break;
+					case X_LD_UAR: p[2]->ins_code = X_TST_UAR; break;
 					case X_LD_BAY:
-					case X_LD_UAY: p[2]->code = X_TST_UAY; break;
+					case X_LD_UAY: p[2]->ins_code = X_TST_UAY; break;
 					case I_AND_UIQ:
-					case I_AND_WI: p[2]->code = X_TAND_WI; break;
+					case I_AND_WI: p[2]->ins_code = X_TAND_WI; break;
 					default: abort();
 					}
 				} else {
-					switch (p[2]->code) {
-					case I_LD_WP:  p[2]->code = X_NOT_WP; break;
-					case I_LD_WM:  p[2]->code = X_NOT_WM; break;
-					case X_LD_WS:  p[2]->code = X_NOT_WS; break;
-					case X_LD_WAR: p[2]->code = X_NOT_WAR; break;
+					switch (p[2]->ins_code) {
+					case I_LD_WP:  p[2]->ins_code = X_NOT_WP; break;
+					case I_LD_WM:  p[2]->ins_code = X_NOT_WM; break;
+					case X_LD_WS:  p[2]->ins_code = X_NOT_WS; break;
+					case X_LD_WAR: p[2]->ins_code = X_NOT_WAR; break;
 					case I_LD_BP:
-					case I_LD_UP:  p[2]->code = X_NOT_UP; break;
+					case I_LD_UP:  p[2]->ins_code = X_NOT_UP; break;
 					case I_LD_BM:
-					case I_LD_UM:  p[2]->code = X_NOT_UM; break;
+					case I_LD_UM:  p[2]->ins_code = X_NOT_UM; break;
 					case X_LD_BS:
-					case X_LD_US:  p[2]->code = X_NOT_US; break;
+					case X_LD_US:  p[2]->ins_code = X_NOT_US; break;
 					case X_LD_BAR:
-					case X_LD_UAR: p[2]->code = X_NOT_UAR; break;
+					case X_LD_UAR: p[2]->ins_code = X_NOT_UAR; break;
 					case X_LD_BAY:
-					case X_LD_UAY: p[2]->code = X_NOT_UAY; break;
+					case X_LD_UAY: p[2]->ins_code = X_NOT_UAY; break;
 					case I_AND_UIQ:
-					case I_AND_WI: p[2]->code = X_NAND_WI; break;
+					case I_AND_WI: p[2]->ins_code = X_NAND_WI; break;
 					default: abort();
 					}
 				}
@@ -1501,17 +1501,17 @@ lv1_loop:
 			 *  N.B. The word-array peephole rule is further up in this file.
 			 */
 			else if
-			((p[0]->code == I_LD_BP ||
-			  p[0]->code == I_LD_UP) &&
-			 (p[0]->type == T_PTR) &&
-			 (p[1]->code == I_ST_WM) &&
-			 (p[1]->type == T_PTR) &&
-			 (p[2]->code == I_ADD_WI) &&
-			 (p[2]->type == T_SYMBOL) &&
-			 (is_small_array((SYMBOL *)p[2]->data))
+			((p[0]->ins_code == I_LD_BP ||
+			  p[0]->ins_code == I_LD_UP) &&
+			 (p[0]->ins_type == T_PTR) &&
+			 (p[1]->ins_code == I_ST_WM) &&
+			 (p[1]->ins_type == T_PTR) &&
+			 (p[2]->ins_code == I_ADD_WI) &&
+			 (p[2]->ins_type == T_SYMBOL) &&
+			 (is_small_array((SYMBOL *)p[2]->ins_data))
 			) {
 				/* replace code */
-				p[2]->code = (p[0]->code == I_LD_BP) ? X_LD_BAR : X_LD_UAR;
+				p[2]->ins_code = (p[0]->ins_code == I_LD_BP) ? X_LD_BAR : X_LD_UAR;
 				nb = 2;
 			}
 #endif
@@ -1529,20 +1529,20 @@ lv1_loop:
 			 *  the index is put into __ptr instead of an address!
 			 */
 			else if
-			((p[0]->code == I_LD_WP ||
-			  p[0]->code == I_LD_BP ||
-			  p[0]->code == I_LD_UP) &&
-			 (p[0]->type == T_PTR) &&
-			 (p[1]->code == I_ST_WM) &&
-			 (p[1]->type == T_PTR) &&
-			 (p[2]->code == X_INDEX_WR ||
-			  p[2]->code == X_INDEX_UR)
+			((p[0]->ins_code == I_LD_WP ||
+			  p[0]->ins_code == I_LD_BP ||
+			  p[0]->ins_code == I_LD_UP) &&
+			 (p[0]->ins_type == T_PTR) &&
+			 (p[1]->ins_code == I_ST_WM) &&
+			 (p[1]->ins_type == T_PTR) &&
+			 (p[2]->ins_code == X_INDEX_WR ||
+			  p[2]->ins_code == X_INDEX_UR)
 			) {
 				/* replace code */
-				if (p[0]->code == I_LD_WP)
-					p[2]->code = X_LDP_WAR;
+				if (p[0]->ins_code == I_LD_WP)
+					p[2]->ins_code = X_LDP_WAR;
 				else
-					p[2]->code = (p[0]->code == I_LD_BP) ? X_LDP_BAR : X_LDP_UAR;
+					p[2]->ins_code = (p[0]->ins_code == I_LD_BP) ? X_LDP_BAR : X_LDP_UAR;
 				nb = 2;
 			}
 #endif
@@ -1568,8 +1568,8 @@ lv1_loop:
 			 *  __bra LLbb
 			 */
 			if
-			((p[0]->code == I_BRA) &&
-			 (p[1]->code == I_BRA)
+			((p[0]->ins_code == I_BRA) &&
+			 (p[1]->ins_code == I_BRA)
 			) {
 				nb = 1;
 			}
@@ -1579,17 +1579,17 @@ lv1_loop:
 			 *  __bra LLbb			-->	__bra LLbb
 			 */
 			if
-			((p[0]->code == I_BRA) &&
-			 (p[1]->code == I_LABEL)
+			((p[0]->ins_code == I_BRA) &&
+			 (p[1]->ins_code == I_LABEL)
 			) {
 				int i = 1;
 				do	{
-					if (p[i]->data != p[0]->data) {
-						p[i]->code = I_ALIAS;
+					if (p[i]->ins_data != p[0]->ins_data) {
+						p[i]->ins_code = I_ALIAS;
 						p[i]->imm_type = T_VALUE;
-						p[i]->imm_data = p[0]->data;
+						p[i]->imm_data = p[0]->ins_data;
 					}
-				} while (++i < q_nb && i < 10 && p[i]->code == I_LABEL);
+				} while (++i < q_nb && i < 10 && p[i]->ins_code == I_LABEL);
 			}
 
 			/*
@@ -1597,10 +1597,10 @@ lv1_loop:
 			 *  LLaa:
 			 */
 			else if
-			((p[0]->code == I_LABEL) &&
-			 (p[1]->code == I_BRA) &&
-			 (p[1]->type == T_LABEL) &&
-			 (p[0]->data == p[1]->data)
+			((p[0]->ins_code == I_LABEL) &&
+			 (p[1]->ins_code == I_BRA) &&
+			 (p[1]->ins_type == T_LABEL) &&
+			 (p[0]->ins_data == p[1]->ins_data)
 			) {
 				*p[1] = *p[0];
 				nb = 1;
@@ -1620,18 +1620,18 @@ lv1_loop:
 			 *  __switch.wr				__switch.ur
 			 */
 			else if
-			((p[0]->code == I_SWITCH_WR) &&
-			 (p[1]->code == I_LD_BP ||
-			  p[1]->code == I_LD_UP ||
-			  p[1]->code == I_LD_BM ||
-			  p[1]->code == I_LD_UM ||
-			  p[1]->code == X_LD_BS ||
-			  p[1]->code == X_LD_US ||
-			  p[1]->code == X_LD_BAR ||
-			  p[1]->code == X_LD_UAR)
+			((p[0]->ins_code == I_SWITCH_WR) &&
+			 (p[1]->ins_code == I_LD_BP ||
+			  p[1]->ins_code == I_LD_UP ||
+			  p[1]->ins_code == I_LD_BM ||
+			  p[1]->ins_code == I_LD_UM ||
+			  p[1]->ins_code == X_LD_BS ||
+			  p[1]->ins_code == X_LD_US ||
+			  p[1]->ins_code == X_LD_BAR ||
+			  p[1]->ins_code == X_LD_UAR)
 			) {
 				/* optimize code */
-				p[0]->code = I_SWITCH_UR;
+				p[0]->ins_code = I_SWITCH_UR;
 				nb = 0;
 			}
 
@@ -1650,10 +1650,10 @@ lv1_loop:
 			 *  This removes obviously-redundant I_ENDCASE i-codes.
 			 */
 			else if
-			((p[0]->code == I_ENDCASE) &&
-			 (p[1]->code == I_SWITCH_WR ||
-			  p[1]->code == I_SWITCH_UR ||
-			  p[1]->code == I_BRA)
+			((p[0]->ins_code == I_ENDCASE) &&
+			 (p[1]->ins_code == I_SWITCH_WR ||
+			  p[1]->ins_code == I_SWITCH_UR ||
+			  p[1]->ins_code == I_BRA)
 			) {
 				/* remove code */
 				nb = 1;
@@ -1664,10 +1664,10 @@ lv1_loop:
 			 *  __not.wr
 			 */
 			else if
-			((p[0]->code == I_NOT_WR) &&
-			 (p[1]->code == I_TST_WR)
+			((p[0]->ins_code == I_NOT_WR) &&
+			 (p[1]->ins_code == I_TST_WR)
 			) {
-				p[1]->code = I_NOT_WR;
+				p[1]->ins_code = I_NOT_WR;
 				nb = 1;
 			}
 
@@ -1676,10 +1676,10 @@ lv1_loop:
 			 *  __not.wr
 			 */
 			else if
-			((p[0]->code == I_NOT_WR) &&
-			 (p[1]->code == I_NOT_WR)
+			((p[0]->ins_code == I_NOT_WR) &&
+			 (p[1]->ins_code == I_NOT_WR)
 			) {
-				p[1]->code = I_TST_WR;
+				p[1]->ins_code = I_TST_WR;
 				nb = 1;
 			}
 
@@ -1699,13 +1699,13 @@ lv1_loop:
 			 *  __tst.wr
 			 */
 			else if
-			((p[0]->code == I_TST_WR) &&
-			 (p[1]->code == I_CMP_WT ||
-			  p[1]->code == X_EQU_WI ||
-			  p[1]->code == X_NEQ_WI ||
-			  p[1]->code == I_NOT_WR ||
-			  p[1]->code == I_TST_WR ||
-			  p[1]->code == I_LABEL)
+			((p[0]->ins_code == I_TST_WR) &&
+			 (p[1]->ins_code == I_CMP_WT ||
+			  p[1]->ins_code == X_EQU_WI ||
+			  p[1]->ins_code == X_NEQ_WI ||
+			  p[1]->ins_code == I_NOT_WR ||
+			  p[1]->ins_code == I_TST_WR ||
+			  p[1]->ins_code == I_LABEL)
 			) {
 				nb = 1;
 			}
@@ -1715,14 +1715,14 @@ lv1_loop:
 			 *  __modsp		j
 			 */
 			else if
-			((p[0]->code == I_MODSP) &&
-			 (p[1]->code == I_MODSP) &&
+			((p[0]->ins_code == I_MODSP) &&
+			 (p[1]->ins_code == I_MODSP) &&
 
-			 (p[0]->type == T_STACK) &&
-			 (p[1]->type == T_STACK)
+			 (p[0]->ins_type == T_STACK) &&
+			 (p[1]->ins_type == T_STACK)
 			) {
 				/* replace code */
-				p[1]->data += p[0]->data;
+				p[1]->ins_data += p[0]->ins_data;
 				nb = 1;
 			}
 
@@ -1731,13 +1731,13 @@ lv1_loop:
 			 *  __add.wi		j
 			 */
 			else if
-			((p[0]->code == I_ADD_WI) &&
-			 (p[0]->type == T_VALUE) &&
-			 (p[1]->code == I_ADD_WI) &&
-			 (p[1]->type == T_VALUE)
+			((p[0]->ins_code == I_ADD_WI) &&
+			 (p[0]->ins_type == T_VALUE) &&
+			 (p[1]->ins_code == I_ADD_WI) &&
+			 (p[1]->ins_type == T_VALUE)
 			) {
 				/* replace code */
-				p[1]->data += p[0]->data;
+				p[1]->ins_data += p[0]->ins_data;
 				nb = 1;
 			}
 
@@ -1746,14 +1746,14 @@ lv1_loop:
 			 *  __add.wi		j
 			 */
 			else if
-			((p[0]->code == I_ADD_WI) &&
-			 (p[1]->code == I_LD_WI) &&
+			((p[0]->ins_code == I_ADD_WI) &&
+			 (p[1]->ins_code == I_LD_WI) &&
 
-			 (p[0]->type == T_VALUE) &&
-			 (p[1]->type == T_VALUE)
+			 (p[0]->ins_type == T_VALUE) &&
+			 (p[1]->ins_type == T_VALUE)
 			) {
 				/* replace code */
-				p[1]->data += p[0]->data;
+				p[1]->ins_data += p[0]->ins_data;
 				nb = 1;
 			}
 
@@ -1765,22 +1765,22 @@ lv1_loop:
 			 *  __add.wi		j
 			 */
 			else if
-			((p[0]->code == I_ADD_WI) &&
-			 (p[1]->code == I_LD_WI ||
-			  p[1]->code == I_ADD_WI) &&
+			((p[0]->ins_code == I_ADD_WI) &&
+			 (p[1]->ins_code == I_LD_WI ||
+			  p[1]->ins_code == I_ADD_WI) &&
 
-			 (p[0]->type == T_VALUE) &&
-			 (p[1]->type == T_SYMBOL)
+			 (p[0]->ins_type == T_VALUE) &&
+			 (p[1]->ins_type == T_SYMBOL)
 			) {
 				/* replace code */
-				if (p[0]->data != 0) {
-					SYMBOL * oldsym = (SYMBOL *)p[1]->data;
+				if (p[0]->ins_data != 0) {
+					SYMBOL * oldsym = (SYMBOL *)p[1]->ins_data;
 					SYMBOL * newsym = copysym(oldsym);
 					if (NAMEALLOC <=
-						snprintf(newsym->name, NAMEALLOC, "%s + %ld", oldsym->name, (long) p[0]->data))
+						snprintf(newsym->name, NAMEALLOC, "%s + %ld", oldsym->name, (long) p[0]->ins_data))
 						error("optimized symbol+offset name too long");
-					p[1]->type = T_SYMBOL;
-					p[1]->data = (intptr_t)newsym;
+					p[1]->ins_type = T_SYMBOL;
+					p[1]->ins_data = (intptr_t)newsym;
 				}
 				nb = 1;
 			}
@@ -1790,24 +1790,24 @@ lv1_loop:
 			 *  __add.wi		symbol
 			 */
 			else if
-			((p[0]->code == I_ADD_WI) &&
-			 (p[1]->code == I_LD_WI) &&
+			((p[0]->ins_code == I_ADD_WI) &&
+			 (p[1]->ins_code == I_LD_WI) &&
 
-			 (p[0]->type == T_SYMBOL) &&
-			 (p[1]->type == T_VALUE)
+			 (p[0]->ins_type == T_SYMBOL) &&
+			 (p[1]->ins_type == T_VALUE)
 			) {
 				/* replace code */
-				if (p[1]->data != 0) {
-					SYMBOL * oldsym = (SYMBOL *)p[0]->data;
+				if (p[1]->ins_data != 0) {
+					SYMBOL * oldsym = (SYMBOL *)p[0]->ins_data;
 					SYMBOL * newsym = copysym(oldsym);
 					if (NAMEALLOC <=
-						snprintf(newsym->name, NAMEALLOC, "%s + %ld", oldsym->name, (long) p[1]->data))
+						snprintf(newsym->name, NAMEALLOC, "%s + %ld", oldsym->name, (long) p[1]->ins_data))
 						error("optimized symbol+offset name too long");
-					p[1]->type = T_SYMBOL;
-					p[1]->data = (intptr_t)newsym;
+					p[1]->ins_type = T_SYMBOL;
+					p[1]->ins_data = (intptr_t)newsym;
 				} else {
 					*p[1] = *p[0];
-					p[1]->code = I_LD_WI;
+					p[1]->ins_code = I_LD_WI;
 				}
 				nb = 1;
 			}
@@ -1817,13 +1817,13 @@ lv1_loop:
 			 *  __sub.wi		j
 			 */
 			else if
-			((p[0]->code == I_SUB_WI) &&
-			 (p[1]->code == I_LD_WI) &&
+			((p[0]->ins_code == I_SUB_WI) &&
+			 (p[1]->ins_code == I_LD_WI) &&
 
-			 (p[1]->type == T_VALUE)
+			 (p[1]->ins_type == T_VALUE)
 			) {
 				/* replace code */
-				p[1]->data -= p[0]->data;
+				p[1]->ins_data -= p[0]->ins_data;
 				nb = 1;
 			}
 
@@ -1832,13 +1832,13 @@ lv1_loop:
 			 *  __and.wi		j
 			 */
 			else if
-			((p[0]->code == I_AND_WI) &&
-			 (p[1]->code == I_LD_WI) &&
+			((p[0]->ins_code == I_AND_WI) &&
+			 (p[1]->ins_code == I_LD_WI) &&
 
-			 (p[1]->type == T_VALUE)
+			 (p[1]->ins_type == T_VALUE)
 			) {
 				/* replace code */
-				p[1]->data &= p[0]->data;
+				p[1]->ins_data &= p[0]->ins_data;
 				nb = 1;
 			}
 
@@ -1847,13 +1847,13 @@ lv1_loop:
 			 *  __or.wi		j
 			 */
 			else if
-			((p[0]->code == I_OR_WI) &&
-			 (p[1]->code == I_LD_WI) &&
+			((p[0]->ins_code == I_OR_WI) &&
+			 (p[1]->ins_code == I_LD_WI) &&
 
-			 (p[1]->type == T_VALUE)
+			 (p[1]->ins_type == T_VALUE)
 			) {
 				/* replace code */
-				p[1]->data |= p[0]->data;
+				p[1]->ins_data |= p[0]->ins_data;
 				nb = 1;
 			}
 
@@ -1862,13 +1862,13 @@ lv1_loop:
 			 *  __mul.wi		j
 			 */
 			else if
-			((p[0]->code == I_MUL_WI) &&
-			 (p[1]->code == I_LD_WI) &&
+			((p[0]->ins_code == I_MUL_WI) &&
+			 (p[1]->ins_code == I_LD_WI) &&
 
-			 (p[1]->type == T_VALUE)
+			 (p[1]->ins_type == T_VALUE)
 			) {
 				/* replace code */
-				p[1]->data *= p[0]->data;
+				p[1]->ins_data *= p[0]->ins_data;
 				nb = 1;
 			}
 
@@ -1877,13 +1877,13 @@ lv1_loop:
 			 *  __asl.wr
 			 */
 			else if
-			((p[0]->code == I_ASL_WR) &&
-			 (p[1]->code == I_LD_WI) &&
+			((p[0]->ins_code == I_ASL_WR) &&
+			 (p[1]->ins_code == I_LD_WI) &&
 
-			 (p[1]->type == T_VALUE)
+			 (p[1]->ins_type == T_VALUE)
 			) {
 				/* replace code */
-				p[1]->data += p[1]->data;
+				p[1]->ins_data += p[1]->ins_data;
 				nb = 1;
 			}
 
@@ -1892,13 +1892,13 @@ lv1_loop:
 			 *  __com.wr
 			 */
 			else if
-			((p[0]->code == I_COM_WR) &&
-			 (p[1]->code == I_LD_WI) &&
+			((p[0]->ins_code == I_COM_WR) &&
+			 (p[1]->ins_code == I_LD_WI) &&
 
-			 (p[1]->type == T_VALUE)
+			 (p[1]->ins_type == T_VALUE)
 			) {
 				/* replace code */
-				p[1]->data = p[1]->data ^ 0xffff;
+				p[1]->ins_data = p[1]->ins_data ^ 0xffff;
 				nb = 1;
 			}
 
@@ -1907,13 +1907,13 @@ lv1_loop:
 			 *  __neg.wr
 			 */
 			else if
-			((p[0]->code == I_NEG_WR) &&
-			 (p[1]->code == I_LD_WI) &&
+			((p[0]->ins_code == I_NEG_WR) &&
+			 (p[1]->ins_code == I_LD_WI) &&
 
-			 (p[1]->type == T_VALUE)
+			 (p[1]->ins_type == T_VALUE)
 			) {
 				/* replace code */
-				p[1]->data = -p[1]->data;
+				p[1]->ins_data = -p[1]->ins_data;
 				nb = 1;
 			}
 
@@ -1922,17 +1922,17 @@ lv1_loop:
 			 *    jsr	{u|s}mul		  jsr		asl
 			 */
 			else if
-			((p[0]->code == I_JSR) &&
-			 (!strcmp((char *)p[0]->data, "umul") ||
-			  !strcmp((char *)p[0]->data, "smul")) &&
-			 (p[1]->code == I_LD_WI) &&
-			 (p[1]->type == T_VALUE) &&
-			 (__builtin_popcount((unsigned int)p[1]->data) == 1) &&
-			 (p[1]->data > 0) &&
-			 (p[1]->data < 0x8000)
+			((p[0]->ins_code == I_JSR) &&
+			 (!strcmp((char *)p[0]->ins_data, "umul") ||
+			  !strcmp((char *)p[0]->ins_data, "smul")) &&
+			 (p[1]->ins_code == I_LD_WI) &&
+			 (p[1]->ins_type == T_VALUE) &&
+			 (__builtin_popcount((unsigned int)p[1]->ins_data) == 1) &&
+			 (p[1]->ins_data > 0) &&
+			 (p[1]->ins_data < 0x8000)
 			) {
-				p[0]->data = (intptr_t)"asl";
-				p[1]->data = __builtin_ctz((unsigned int)p[1]->data);
+				p[0]->ins_data = (intptr_t)"asl";
+				p[1]->ins_data = __builtin_ctz((unsigned int)p[1]->ins_data);
 				nb = 0;
 			}
 
@@ -1941,8 +1941,8 @@ lv1_loop:
 			 *  __ld.wm		a
 			 */
 			else if
-			((p[0]->code == I_LD_WM) &&
-			 (p[1]->code == I_ST_WM) &&
+			((p[0]->ins_code == I_LD_WM) &&
+			 (p[1]->ins_code == I_ST_WM) &&
 			 (cmp_operands(p[0], p[1]) == 1)
 			) {
 				/* remove code */
@@ -1954,9 +1954,9 @@ lv1_loop:
 			 *  __ld.ws		i
 			 */
 			else if
-			((p[0]->code == X_LD_WS) &&
-			 (p[1]->code == X_ST_WS) &&
-			 (p[0]->data == p[1]->data)) {
+			((p[0]->ins_code == X_LD_WS) &&
+			 (p[1]->ins_code == X_ST_WS) &&
+			 (p[0]->ins_data == p[1]->ins_data)) {
 				/* remove code */
 				nb = 1;
 			}
@@ -1966,16 +1966,16 @@ lv1_loop:
 			 *  __ld.us		i
 			 */
 			else if
-			((p[0]->code == X_LD_BS ||
-			  p[0]->code == X_LD_US) &&
-			 (p[1]->code == X_ST_US) &&
-			 (p[0]->data == p[1]->data)
+			((p[0]->ins_code == X_LD_BS ||
+			  p[0]->ins_code == X_LD_US) &&
+			 (p[1]->ins_code == X_ST_US) &&
+			 (p[0]->ins_data == p[1]->ins_data)
 			) {
-				if (p[0]->code == X_LD_BS)
-					p[0]->code = I_EXT_BR;
+				if (p[0]->ins_code == X_LD_BS)
+					p[0]->ins_code = I_EXT_BR;
 				else
-					p[0]->code = I_EXT_UR;
-				p[0]->data = p[0]->type = 0;
+					p[0]->ins_code = I_EXT_UR;
+				p[0]->ins_data = p[0]->ins_type = 0;
 			}
 
 			/*
@@ -1985,26 +1985,26 @@ lv1_loop:
 			 *  JCB: Orphaned load, does this really happen?
 			 */
 			else if
-			((p[0]->code == I_LD_WM ||
-			  p[0]->code == I_LD_WI ||
-			  p[0]->code == X_LD_WS ||
-			  p[0]->code == I_LEA_S ||
-			  p[0]->code == I_LD_BM ||
-			  p[0]->code == I_LD_BP ||
-			  p[0]->code == X_LD_BS ||
-			  p[0]->code == I_LD_UM ||
-			  p[0]->code == I_LD_UP ||
-			  p[0]->code == X_LD_US) &&
-			 (p[1]->code == I_LD_WM ||
-			  p[1]->code == I_LD_WI ||
-			  p[1]->code == X_LD_WS ||
-			  p[1]->code == I_LEA_S ||
-			  p[1]->code == I_LD_BM ||
-			  p[1]->code == I_LD_BP ||
-			  p[1]->code == X_LD_BS ||
-			  p[1]->code == I_LD_UM ||
-			  p[1]->code == I_LD_UP ||
-			  p[1]->code == X_LD_US)
+			((p[0]->ins_code == I_LD_WM ||
+			  p[0]->ins_code == I_LD_WI ||
+			  p[0]->ins_code == X_LD_WS ||
+			  p[0]->ins_code == I_LEA_S ||
+			  p[0]->ins_code == I_LD_BM ||
+			  p[0]->ins_code == I_LD_BP ||
+			  p[0]->ins_code == X_LD_BS ||
+			  p[0]->ins_code == I_LD_UM ||
+			  p[0]->ins_code == I_LD_UP ||
+			  p[0]->ins_code == X_LD_US) &&
+			 (p[1]->ins_code == I_LD_WM ||
+			  p[1]->ins_code == I_LD_WI ||
+			  p[1]->ins_code == X_LD_WS ||
+			  p[1]->ins_code == I_LEA_S ||
+			  p[1]->ins_code == I_LD_BM ||
+			  p[1]->ins_code == I_LD_BP ||
+			  p[1]->ins_code == X_LD_BS ||
+			  p[1]->ins_code == I_LD_UM ||
+			  p[1]->ins_code == I_LD_UP ||
+			  p[1]->ins_code == X_LD_US)
 			) {
 				/* remove code */
 				*p[1] = *p[0];
@@ -2027,34 +2027,34 @@ lv1_loop:
 			 *  C post-decrement!
 			 */
 			else if
-			((p[0]->code == I_ADD_WI) &&
-			 (p[0]->type == T_VALUE) &&
-			 (p[0]->data == 1) &&
-			 (p[1]->code == X_DECLD_WM ||
-			  p[1]->code == X_DECLD_BM ||
-			  p[1]->code == X_DECLD_UM ||
-			  p[1]->code == X_DECLD_WS ||
-			  p[1]->code == X_DECLD_BS ||
-			  p[1]->code == X_DECLD_US ||
-			  p[1]->code == X_DECLD_WAR ||
-			  p[1]->code == X_DECLD_BAR ||
-			  p[1]->code == X_DECLD_UAR ||
-			  p[1]->code == X_DECLD_BAY ||
-			  p[1]->code == X_DECLD_UAY)
+			((p[0]->ins_code == I_ADD_WI) &&
+			 (p[0]->ins_type == T_VALUE) &&
+			 (p[0]->ins_data == 1) &&
+			 (p[1]->ins_code == X_DECLD_WM ||
+			  p[1]->ins_code == X_DECLD_BM ||
+			  p[1]->ins_code == X_DECLD_UM ||
+			  p[1]->ins_code == X_DECLD_WS ||
+			  p[1]->ins_code == X_DECLD_BS ||
+			  p[1]->ins_code == X_DECLD_US ||
+			  p[1]->ins_code == X_DECLD_WAR ||
+			  p[1]->ins_code == X_DECLD_BAR ||
+			  p[1]->ins_code == X_DECLD_UAR ||
+			  p[1]->ins_code == X_DECLD_BAY ||
+			  p[1]->ins_code == X_DECLD_UAY)
 			) {
 				/* replace code */
-				switch (p[1]->code) {
-				case X_DECLD_WM: p[1]->code = X_LDDEC_WM; break;
-				case X_DECLD_BM: p[1]->code = X_LDDEC_BM; break;
-				case X_DECLD_UM: p[1]->code = X_LDDEC_UM; break;
-				case X_DECLD_WS: p[1]->code = X_LDDEC_WS; break;
-				case X_DECLD_BS: p[1]->code = X_LDDEC_BS; break;
-				case X_DECLD_US: p[1]->code = X_LDDEC_US; break;
-				case X_DECLD_WAR: p[1]->code = X_LDDEC_WAR; break;
-				case X_DECLD_BAR: p[1]->code = X_LDDEC_BAR; break;
-				case X_DECLD_UAR: p[1]->code = X_LDDEC_UAR; break;
-				case X_DECLD_BAY: p[1]->code = X_LDDEC_BAY; break;
-				case X_DECLD_UAY: p[1]->code = X_LDDEC_UAY; break;
+				switch (p[1]->ins_code) {
+				case X_DECLD_WM: p[1]->ins_code = X_LDDEC_WM; break;
+				case X_DECLD_BM: p[1]->ins_code = X_LDDEC_BM; break;
+				case X_DECLD_UM: p[1]->ins_code = X_LDDEC_UM; break;
+				case X_DECLD_WS: p[1]->ins_code = X_LDDEC_WS; break;
+				case X_DECLD_BS: p[1]->ins_code = X_LDDEC_BS; break;
+				case X_DECLD_US: p[1]->ins_code = X_LDDEC_US; break;
+				case X_DECLD_WAR: p[1]->ins_code = X_LDDEC_WAR; break;
+				case X_DECLD_BAR: p[1]->ins_code = X_LDDEC_BAR; break;
+				case X_DECLD_UAR: p[1]->ins_code = X_LDDEC_UAR; break;
+				case X_DECLD_BAY: p[1]->ins_code = X_LDDEC_BAY; break;
+				case X_DECLD_UAY: p[1]->ins_code = X_LDDEC_UAY; break;
 				default:	break;
 				}
 				nb = 1;
@@ -2076,34 +2076,34 @@ lv1_loop:
 			 *  C post-increment!
 			 */
 			else if
-			((p[0]->code == I_SUB_WI) &&
-			 (p[0]->type == T_VALUE) &&
-			 (p[0]->data == 1) &&
-			 (p[1]->code == X_INCLD_WM ||
-			  p[1]->code == X_INCLD_BM ||
-			  p[1]->code == X_INCLD_UM ||
-			  p[1]->code == X_INCLD_WS ||
-			  p[1]->code == X_INCLD_BS ||
-			  p[1]->code == X_INCLD_US ||
-			  p[1]->code == X_INCLD_WAR ||
-			  p[1]->code == X_INCLD_BAR ||
-			  p[1]->code == X_INCLD_UAR ||
-			  p[1]->code == X_INCLD_BAY ||
-			  p[1]->code == X_INCLD_UAY)
+			((p[0]->ins_code == I_SUB_WI) &&
+			 (p[0]->ins_type == T_VALUE) &&
+			 (p[0]->ins_data == 1) &&
+			 (p[1]->ins_code == X_INCLD_WM ||
+			  p[1]->ins_code == X_INCLD_BM ||
+			  p[1]->ins_code == X_INCLD_UM ||
+			  p[1]->ins_code == X_INCLD_WS ||
+			  p[1]->ins_code == X_INCLD_BS ||
+			  p[1]->ins_code == X_INCLD_US ||
+			  p[1]->ins_code == X_INCLD_WAR ||
+			  p[1]->ins_code == X_INCLD_BAR ||
+			  p[1]->ins_code == X_INCLD_UAR ||
+			  p[1]->ins_code == X_INCLD_BAY ||
+			  p[1]->ins_code == X_INCLD_UAY)
 			) {
 				/* replace code */
-				switch (p[1]->code) {
-				case X_INCLD_WM: p[1]->code = X_LDINC_WM; break;
-				case X_INCLD_BM: p[1]->code = X_LDINC_BM; break;
-				case X_INCLD_UM: p[1]->code = X_LDINC_UM; break;
-				case X_INCLD_WS: p[1]->code = X_LDINC_WS; break;
-				case X_INCLD_BS: p[1]->code = X_LDINC_BS; break;
-				case X_INCLD_US: p[1]->code = X_LDINC_US; break;
-				case X_INCLD_WAR: p[1]->code = X_LDINC_WAR; break;
-				case X_INCLD_BAR: p[1]->code = X_LDINC_BAR; break;
-				case X_INCLD_UAR: p[1]->code = X_LDINC_UAR; break;
-				case X_INCLD_BAY: p[1]->code = X_LDINC_BAY; break;
-				case X_INCLD_UAY: p[1]->code = X_LDINC_UAY; break;
+				switch (p[1]->ins_code) {
+				case X_INCLD_WM: p[1]->ins_code = X_LDINC_WM; break;
+				case X_INCLD_BM: p[1]->ins_code = X_LDINC_BM; break;
+				case X_INCLD_UM: p[1]->ins_code = X_LDINC_UM; break;
+				case X_INCLD_WS: p[1]->ins_code = X_LDINC_WS; break;
+				case X_INCLD_BS: p[1]->ins_code = X_LDINC_BS; break;
+				case X_INCLD_US: p[1]->ins_code = X_LDINC_US; break;
+				case X_INCLD_WAR: p[1]->ins_code = X_LDINC_WAR; break;
+				case X_INCLD_BAR: p[1]->ins_code = X_LDINC_BAR; break;
+				case X_INCLD_UAR: p[1]->ins_code = X_LDINC_UAR; break;
+				case X_INCLD_BAY: p[1]->ins_code = X_LDINC_BAY; break;
+				case X_INCLD_UAY: p[1]->ins_code = X_LDINC_UAY; break;
 				default:	break;
 				}
 				nb = 1;
@@ -2125,18 +2125,18 @@ lv1_loop:
 			 *  sometimes generated for the address within an array of structs
 			 */
 			else if
-			((p[0]->code == I_ASL_WR ||
-			  p[0]->code == I_ASL_WI) &&
-			 (p[1]->code == I_ASL_WR ||
-			  p[1]->code == I_ASL_WI)
+			((p[0]->ins_code == I_ASL_WR ||
+			  p[0]->ins_code == I_ASL_WI) &&
+			 (p[1]->ins_code == I_ASL_WR ||
+			  p[1]->ins_code == I_ASL_WI)
 			) {
 				/* replace code */
 				intptr_t data = 0;
-				data += (p[0]->code == I_ASL_WR) ? 1 : p[0]->data;
-				data += (p[1]->code == I_ASL_WR) ? 1 : p[1]->data;
-				p[1]->code = I_ASL_WI;
-				p[1]->type = T_VALUE;
-				p[1]->data = data;
+				data += (p[0]->ins_code == I_ASL_WR) ? 1 : p[0]->ins_data;
+				data += (p[1]->ins_code == I_ASL_WR) ? 1 : p[1]->ins_data;
+				p[1]->ins_code = I_ASL_WI;
+				p[1]->ins_type = T_VALUE;
+				p[1]->ins_data = data;
 				nb = 1;
 			}
 
@@ -2163,24 +2163,24 @@ lv1_loop:
 			 *  Index optimizations for base+offset array access.
 			 */
 			else if
-			((p[0]->code == X_INDEX_WR ||
-			  p[0]->code == X_INDEX_UR ||
-			  p[0]->code == X_LD_WAR) &&
-			 (p[1]->code == I_LD_WM ||
-			  p[1]->code == I_LD_BM ||
-			  p[1]->code == I_LD_UM ||
-			  p[1]->code == X_LD_WS ||
-			  p[1]->code == X_LD_BS ||
-			  p[1]->code == X_LD_US)
+			((p[0]->ins_code == X_INDEX_WR ||
+			  p[0]->ins_code == X_INDEX_UR ||
+			  p[0]->ins_code == X_LD_WAR) &&
+			 (p[1]->ins_code == I_LD_WM ||
+			  p[1]->ins_code == I_LD_BM ||
+			  p[1]->ins_code == I_LD_UM ||
+			  p[1]->ins_code == X_LD_WS ||
+			  p[1]->ins_code == X_LD_BS ||
+			  p[1]->ins_code == X_LD_US)
 			) {
 				/* replace code */
-				switch (p[1]->code) {
-				case I_LD_WM: p[1]->code = I_LD_WMQ; break;
-				case I_LD_BM: p[1]->code = I_LD_BMQ; break;
-				case I_LD_UM: p[1]->code = I_LD_UMQ; break;
-				case X_LD_WS: p[1]->code = X_LD_WSQ; break;
-				case X_LD_BS: p[1]->code = X_LD_BSQ; break;
-				case X_LD_US: p[1]->code = X_LD_USQ; break;
+				switch (p[1]->ins_code) {
+				case I_LD_WM: p[1]->ins_code = I_LD_WMQ; break;
+				case I_LD_BM: p[1]->ins_code = I_LD_BMQ; break;
+				case I_LD_UM: p[1]->ins_code = I_LD_UMQ; break;
+				case X_LD_WS: p[1]->ins_code = X_LD_WSQ; break;
+				case X_LD_BS: p[1]->ins_code = X_LD_BSQ; break;
+				case X_LD_US: p[1]->ins_code = X_LD_USQ; break;
 				default:	break;
 				}
 				nb = 0;
@@ -2196,30 +2196,30 @@ lv1_loop:
 			 *  Index optimizations for base+offset array access.
 			 */
 			else if
-			((p[0]->code == X_LD_BAR ||
-			  p[0]->code == X_LD_UAR) &&
-			 (p[1]->code == I_LD_WM ||
-			  p[1]->code == I_LD_BM ||
-			  p[1]->code == I_LD_UM ||
-			  p[1]->code == X_LD_WS ||
-			  p[1]->code == X_LD_BS ||
-			  p[1]->code == X_LD_US)
+			((p[0]->ins_code == X_LD_BAR ||
+			  p[0]->ins_code == X_LD_UAR) &&
+			 (p[1]->ins_code == I_LD_WM ||
+			  p[1]->ins_code == I_LD_BM ||
+			  p[1]->ins_code == I_LD_UM ||
+			  p[1]->ins_code == X_LD_WS ||
+			  p[1]->ins_code == X_LD_BS ||
+			  p[1]->ins_code == X_LD_US)
 			) {
 				/* replace code */
-				switch (p[1]->code) {
-				case I_LD_WM: p[1]->code = I_LDY_WMQ; break;
-				case I_LD_BM: p[1]->code = I_LDY_BMQ; break;
-				case I_LD_UM: p[1]->code = I_LDY_UMQ; break;
-				case X_LD_WS: p[1]->code = X_LDY_WSQ; break;
-				case X_LD_BS: p[1]->code = X_LDY_BSQ; break;
-				case X_LD_US: p[1]->code = X_LDY_USQ; break;
+				switch (p[1]->ins_code) {
+				case I_LD_WM: p[1]->ins_code = I_LDY_WMQ; break;
+				case I_LD_BM: p[1]->ins_code = I_LDY_BMQ; break;
+				case I_LD_UM: p[1]->ins_code = I_LDY_UMQ; break;
+				case X_LD_WS: p[1]->ins_code = X_LDY_WSQ; break;
+				case X_LD_BS: p[1]->ins_code = X_LDY_BSQ; break;
+				case X_LD_US: p[1]->ins_code = X_LDY_USQ; break;
 				default:	break;
 				}
-				switch (p[0]->code) {
-				case X_LD_BAR: p[0]->code = X_LD_BAY; break;
-				case X_LD_UAR: p[0]->code = X_LD_UAY; break;
-				case X_LDP_BAR: p[0]->code = X_LDP_BAY; break;
-				case X_LDP_UAR: p[0]->code = X_LDP_UAY; break;
+				switch (p[0]->ins_code) {
+				case X_LD_BAR: p[0]->ins_code = X_LD_BAY; break;
+				case X_LD_UAR: p[0]->ins_code = X_LD_UAY; break;
+				case X_LDP_BAR: p[0]->ins_code = X_LDP_BAY; break;
+				case X_LDP_UAR: p[0]->ins_code = X_LDP_UAY; break;
 				default:	break;
 				}
 				nb = 0;
@@ -2238,30 +2238,30 @@ lv1_loop:
 			 *  to __ld.{w/b/u}mq!
 			 */
 			else if
-			((p[0]->code == X_LDP_BAR ||
-			  p[0]->code == X_LDP_UAR) &&
-			 (p[1]->code == I_LD_WMQ ||
-			  p[1]->code == I_LD_BMQ ||
-			  p[1]->code == I_LD_UMQ ||
-			  p[1]->code == X_LD_WSQ ||
-			  p[1]->code == X_LD_BSQ ||
-			  p[1]->code == X_LD_USQ)
+			((p[0]->ins_code == X_LDP_BAR ||
+			  p[0]->ins_code == X_LDP_UAR) &&
+			 (p[1]->ins_code == I_LD_WMQ ||
+			  p[1]->ins_code == I_LD_BMQ ||
+			  p[1]->ins_code == I_LD_UMQ ||
+			  p[1]->ins_code == X_LD_WSQ ||
+			  p[1]->ins_code == X_LD_BSQ ||
+			  p[1]->ins_code == X_LD_USQ)
 			) {
 				/* replace code */
-				switch (p[1]->code) {
-				case I_LD_WMQ: p[1]->code = I_LDY_WMQ; break;
-				case I_LD_BMQ: p[1]->code = I_LDY_BMQ; break;
-				case I_LD_UMQ: p[1]->code = I_LDY_UMQ; break;
-				case X_LD_WSQ: p[1]->code = X_LDY_WSQ; break;
-				case X_LD_BSQ: p[1]->code = X_LDY_BSQ; break;
-				case X_LD_USQ: p[1]->code = X_LDY_USQ; break;
+				switch (p[1]->ins_code) {
+				case I_LD_WMQ: p[1]->ins_code = I_LDY_WMQ; break;
+				case I_LD_BMQ: p[1]->ins_code = I_LDY_BMQ; break;
+				case I_LD_UMQ: p[1]->ins_code = I_LDY_UMQ; break;
+				case X_LD_WSQ: p[1]->ins_code = X_LDY_WSQ; break;
+				case X_LD_BSQ: p[1]->ins_code = X_LDY_BSQ; break;
+				case X_LD_USQ: p[1]->ins_code = X_LDY_USQ; break;
 				default:	break;
 				}
-				switch (p[0]->code) {
-				case X_LD_BAR: p[0]->code = X_LD_BAY; break;
-				case X_LD_UAR: p[0]->code = X_LD_UAY; break;
-				case X_LDP_BAR: p[0]->code = X_LDP_BAY; break;
-				case X_LDP_UAR: p[0]->code = X_LDP_UAY; break;
+				switch (p[0]->ins_code) {
+				case X_LD_BAR: p[0]->ins_code = X_LD_BAY; break;
+				case X_LD_UAR: p[0]->ins_code = X_LD_UAY; break;
+				case X_LDP_BAR: p[0]->ins_code = X_LDP_BAY; break;
+				case X_LDP_UAR: p[0]->ins_code = X_LDP_UAY; break;
 				default:	break;
 				}
 				nb = 0;
@@ -2275,18 +2275,18 @@ lv1_loop:
 			 *  must be done in the peephole, not the compiler.
 			 */
 			else if
-			((p[0]->code == I_ASR_WI) &&
-			 (p[0]->type == T_VALUE) &&
+			((p[0]->ins_code == I_ASR_WI) &&
+			 (p[0]->ins_type == T_VALUE) &&
 			 (is_ubyte(p[1]))
 			) {
 				/* replace code */
-				if (p[0]->data >= 8) {
-					p[1]->code = I_LD_WI;
-					p[1]->type = T_VALUE;
-					p[1]->data = 0;
+				if (p[0]->ins_data >= 8) {
+					p[1]->ins_code = I_LD_WI;
+					p[1]->ins_type = T_VALUE;
+					p[1]->ins_data = 0;
 					nb = 1;
 				} else {
-					p[0]->code = I_LSR_UIQ;
+					p[0]->ins_code = I_LSR_UIQ;
 					nb = 0;
 				}
 			}
@@ -2299,14 +2299,14 @@ lv1_loop:
 			 *  must be done in the peephole, not the compiler.
 			 */
 			else if
-			((p[0]->code == I_AND_WI) &&
-			 (p[0]->type == T_VALUE) &&
-			 (p[0]->data >= 0) &&
-			 (p[0]->data <= 255) &&
+			((p[0]->ins_code == I_AND_WI) &&
+			 (p[0]->ins_type == T_VALUE) &&
+			 (p[0]->ins_data >= 0) &&
+			 (p[0]->ins_data <= 255) &&
 			 (is_ubyte(p[1]))
 			) {
 				/* replace code */
-				p[0]->code = I_AND_UIQ;
+				p[0]->ins_code = I_AND_UIQ;
 				nb = 0;
 			}
 
@@ -2337,10 +2337,10 @@ lv1_loop:
 			 *  might as well check for this too, while we're here
 			 */
 			if
-			((p[0]->code == I_ADD_WI ||
-			  p[0]->code == I_SUB_WI) &&
-			 (p[0]->type == T_VALUE) &&
-			 (p[0]->data == 0)
+			((p[0]->ins_code == I_ADD_WI ||
+			  p[0]->ins_code == I_SUB_WI) &&
+			 (p[0]->ins_type == T_VALUE) &&
+			 (p[0]->ins_data == 0)
 			) {
 				nb = 1;
 			}
@@ -2425,13 +2425,13 @@ lv1_loop:
 
 		/* check last instruction */
 		if (q_nb > 1 &&
-		(q_ins[q_wr].code == I_ST_WPT ||
-		 q_ins[q_wr].code == I_ST_UPT ||
-		 q_ins[q_wr].code == I_ADD_WT ||
-		 q_ins[q_wr].code == I_SUB_WT ||
-		 q_ins[q_wr].code == I_AND_WT ||
-		 q_ins[q_wr].code == I_EOR_WT ||
-		 q_ins[q_wr].code == I_OR_WT)
+		(q_ins[q_wr].ins_code == I_ST_WPT ||
+		 q_ins[q_wr].ins_code == I_ST_UPT ||
+		 q_ins[q_wr].ins_code == I_ADD_WT ||
+		 q_ins[q_wr].ins_code == I_SUB_WT ||
+		 q_ins[q_wr].ins_code == I_AND_WT ||
+		 q_ins[q_wr].ins_code == I_EOR_WT ||
+		 q_ins[q_wr].ins_code == I_OR_WT)
 		) {
 			/* browse back the instruction list and
 			 * establish a stack history
@@ -2450,18 +2450,18 @@ lv1_loop:
 					prev += Q_SIZE;
 
 				/* check instruction */
-				switch (q_ins[scan].code) {
+				switch (q_ins[scan].ins_code) {
 				case I_JSR:
 				case I_CMP_WT:
 				case I_CMP_UT:
-					if (q_ins[scan].type == T_LIB)
+					if (q_ins[scan].ins_type == T_LIB)
 						offset += 2;
 					break;
 
 				case I_MODSP:
-					if ((q_ins[scan].type == T_STACK) ||
-					    (q_ins[scan].type == T_NOP))
-						offset += (int)q_ins[scan].data;
+					if ((q_ins[scan].ins_type == T_STACK) ||
+					    (q_ins[scan].ins_type == T_NOP))
+						offset += (int)q_ins[scan].ins_data;
 					break;
 
 				case I_POP_WR:
@@ -2508,64 +2508,64 @@ lv1_loop:
 						 * only handle sequences that start with an
 						 * I_PUSH_WR preceded by I_LEA_S/I_LD_WI/I_ADD_WI
 						 */
-						if (q_ins[scan].code != I_PUSH_WR)
+						if (q_ins[scan].ins_code != I_PUSH_WR)
 							break;
 
 #if OPT_ARRAY_WR
-						if (q_ins[prev].code != I_LD_WI &&
-						    q_ins[prev].code != I_LEA_S &&
-						    q_ins[prev].code != I_ADD_WI)
+						if (q_ins[prev].ins_code != I_LD_WI &&
+						    q_ins[prev].ins_code != I_LEA_S &&
+						    q_ins[prev].ins_code != I_ADD_WI)
 							break;
 #else
-						if (q_ins[prev].code != I_LD_WI &&
-						    q_ins[prev].code != I_LEA_S)
+						if (q_ins[prev].ins_code != I_LD_WI &&
+						    q_ins[prev].ins_code != I_LEA_S)
 							break;
 #endif
 
-						if (q_ins[prev].code != I_LD_WI &&
-						    q_ins[q_wr].code != I_ST_WPT &&
-						    q_ins[q_wr].code != I_ST_UPT)
+						if (q_ins[prev].ins_code != I_LD_WI &&
+						    q_ins[q_wr].ins_code != I_ST_WPT &&
+						    q_ins[q_wr].ins_code != I_ST_UPT)
 							break;
 
 						/* change __st.wpt into __st.w{m/s} */
-						if (q_ins[prev].code == I_LD_WI) {
-							switch (q_ins[q_wr].code) {
+						if (q_ins[prev].ins_code == I_LD_WI) {
+							switch (q_ins[q_wr].ins_code) {
 							case I_ST_WPT:
-								q_ins[q_wr].code = I_ST_WM;
+								q_ins[q_wr].ins_code = I_ST_WM;
 								break;
 							case I_ST_UPT:
-								q_ins[q_wr].code = I_ST_UM;
+								q_ins[q_wr].ins_code = I_ST_UM;
 								break;
 							case I_ADD_WT:
-								q_ins[q_wr].code = I_ADD_WI;
+								q_ins[q_wr].ins_code = I_ADD_WI;
 								break;
 							case I_SUB_WT:
-								q_ins[q_wr].code = I_ISUB_WI;
+								q_ins[q_wr].ins_code = I_ISUB_WI;
 								break;
 							case I_AND_WT:
-								q_ins[q_wr].code = I_AND_WI;
+								q_ins[q_wr].ins_code = I_AND_WI;
 								break;
 							case I_EOR_WT:
-								q_ins[q_wr].code = I_EOR_WI;
+								q_ins[q_wr].ins_code = I_EOR_WI;
 								break;
 							case I_OR_WT:
-								q_ins[q_wr].code = I_OR_WI;
+								q_ins[q_wr].ins_code = I_OR_WI;
 								break;
 							default:
 								abort();
 							}
 							/* use data from the preceding I_LD_WI */
-							q_ins[q_wr].type = q_ins[prev].type;
-							q_ins[q_wr].data = q_ins[prev].data;
+							q_ins[q_wr].ins_type = q_ins[prev].ins_type;
+							q_ins[q_wr].ins_data = q_ins[prev].ins_data;
 						} else
-						if (q_ins[prev].code == I_LEA_S) {
-							if (q_ins[q_wr].code == I_ST_WPT)
-								q_ins[q_wr].code = X_ST_WS;
+						if (q_ins[prev].ins_code == I_LEA_S) {
+							if (q_ins[q_wr].ins_code == I_ST_WPT)
+								q_ins[q_wr].ins_code = X_ST_WS;
 							else
-								q_ins[q_wr].code = X_ST_US;
+								q_ins[q_wr].ins_code = X_ST_US;
 							/* use data from the preceding I_LEA_S */
-							q_ins[q_wr].type = q_ins[prev].type;
-							q_ins[q_wr].data = q_ins[prev].data;
+							q_ins[q_wr].ins_type = q_ins[prev].ins_type;
+							q_ins[q_wr].ins_data = q_ins[prev].ins_data;
 							q_ins[q_wr].sym = q_ins[prev].sym;
 #if OPT_ARRAY_WR
 
@@ -2574,8 +2574,8 @@ lv1_loop:
 							int code = X_ST_UAT;
 
 							/* make sure that I_ADD_WI is really a short array */
-							if (q_ins[prev].type != T_SYMBOL ||
-							    !is_small_array((SYMBOL *)q_ins[prev].data))
+							if (q_ins[prev].ins_type != T_SYMBOL ||
+							    !is_small_array((SYMBOL *)q_ins[prev].ins_data))
 								break;
 
 							copy = copy + 1;
@@ -2583,11 +2583,11 @@ lv1_loop:
 							drop = 1;
 
 							/* make sure that an I_ST_WPT has an I_ASL_WR */
-							if (q_ins[q_wr].code == I_ST_WPT) {
+							if (q_ins[q_wr].ins_code == I_ST_WPT) {
 								int aslw = prev - 1;
 								if (aslw < 0)
 									aslw += Q_SIZE;
-								if (copy == q_nb || q_ins[aslw].code != I_ASL_WR)
+								if (copy == q_nb || q_ins[aslw].ins_code != I_ASL_WR)
 									break;
 								drop = 2;
 								push = X_INDEX_WR;
@@ -2595,14 +2595,14 @@ lv1_loop:
 							}
 
 							/* push the index from the preceding I_ADD_WI */
-							q_ins[scan].code = push;
-							q_ins[scan].type = T_SYMBOL;
-							q_ins[scan].data = q_ins[prev].data;
+							q_ins[scan].ins_code = push;
+							q_ins[scan].ins_type = T_SYMBOL;
+							q_ins[scan].ins_data = q_ins[prev].ins_data;
 
 							/* use data from the preceding I_ADD_WI */
-							q_ins[q_wr].code = code;
-							q_ins[q_wr].type = T_SYMBOL;
-							q_ins[q_wr].data = q_ins[prev].data;
+							q_ins[q_wr].ins_code = code;
+							q_ins[q_wr].ins_type = T_SYMBOL;
+							q_ins[q_wr].ins_data = q_ins[prev].ins_data;
 #endif
 						}
 					}
@@ -2619,7 +2619,7 @@ lv1_loop:
 						/* check instruction */
 						if (is_sprel(&q_ins[scan])) {
 							/* adjust stack offset */
-							q_ins[scan].data -= 2;
+							q_ins[scan].ins_data -= 2;
 						}
 					}
 
@@ -2679,15 +2679,15 @@ lv2_loop:
 			 *  JCB: This is optimizing writes though a pointer variable!
 			 */
 			if
-			((p[0]->code == I_ST_WPT ||
-			  p[0]->code == I_ST_UPT) &&
-			 (p[1]->code == I_LD_WI) &&
-			 (p[1]->type == T_VALUE) &&
-			 (p[2]->code == I_PUSH_WR)
+			((p[0]->ins_code == I_ST_WPT ||
+			  p[0]->ins_code == I_ST_UPT) &&
+			 (p[1]->ins_code == I_LD_WI) &&
+			 (p[1]->ins_type == T_VALUE) &&
+			 (p[2]->ins_code == I_PUSH_WR)
 			) {
 				/* replace code */
-				p[2]->code = p[0]->code == I_ST_WPT ? I_ST_WPI : I_ST_UPI;
-				p[2]->data = p[1]->data;
+				p[2]->ins_code = p[0]->ins_code == I_ST_WPT ? I_ST_WPI : I_ST_UPI;
+				p[2]->ins_data = p[1]->ins_data;
 				nb = 2;
 			}
 
@@ -2703,22 +2703,22 @@ lv2_loop:
 			 *  THIS IS VERY RARE, REMOVE IT FOR NOW AND RETHINK IT
 			 */
 			else if
-			((p[0]->code == I_ST_UPT ||
-			  p[0]->code == I_ST_WPT) &&
+			((p[0]->ins_code == I_ST_UPT ||
+			  p[0]->ins_code == I_ST_WPT) &&
 			 (is_load(p[1])) &&
-			 (p[2]->code == I_PUSH_WR)
+			 (p[2]->ins_code == I_PUSH_WR)
 			) {
-				p[2]->code = I_ST_WM;
-				p[2]->type = T_PTR;
+				p[2]->ins_code = I_ST_WM;
+				p[2]->ins_type = T_PTR;
 				/* We just removed a push, adjust SP-relative
 				   addresses. */
 				if (is_sprel(p[1]))
-					p[1]->data -= 2;
-				if (p[0]->code == I_ST_UPT)
-					p[0]->code = I_ST_UP;
+					p[1]->ins_data -= 2;
+				if (p[0]->ins_code == I_ST_UPT)
+					p[0]->ins_code = I_ST_UP;
 				else
-					p[0]->code = I_ST_WP;
-				q_ins[q_wr].type = T_PTR;
+					p[0]->ins_code = I_ST_WP;
+				q_ins[q_wr].ins_type = T_PTR;
 			}
 #endif
 
@@ -2750,8 +2750,8 @@ void flush_ins_label (int nextlabel)
 	while (q_nb) {
 		/* skip last op if it's a branch to nextlabel */
 		if (q_nb > 1 || nextlabel == -1 ||
-		    (q_ins[q_rd].code != I_BRA) ||
-		    q_ins[q_rd].data != nextlabel) {
+		    (q_ins[q_rd].ins_code != I_BRA) ||
+		    q_ins[q_rd].ins_data != nextlabel) {
 			/* gen code */
 			if (arg_stack_flag)
 				arg_push_ins(&q_ins[q_rd]);

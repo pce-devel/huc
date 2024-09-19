@@ -38,8 +38,8 @@ void getmem (SYMBOL *sym)
 {
 	char *data;
 
-	if ((sym->ident != POINTER) && (sym->type == CCHAR || sym->type == CUCHAR)) {
-		int op = (sym->type & CUNSIGNED) ? I_LD_UM : I_LD_BM;
+	if ((sym->ident != POINTER) && (sym->sym_type == CCHAR || sym->sym_type == CUCHAR)) {
+		int op = (sym->sym_type & CUNSIGNED) ? I_LD_UM : I_LD_BM;
 		if ((sym->storage & STORAGE) == LSTATIC)
 			out_ins(op, T_LABEL, glint(sym));
 		else
@@ -96,7 +96,7 @@ void putmem (SYMBOL *sym)
 	int code;
 
 	/* XXX: What about 1-byte structs? */
-	if ((sym->ident != POINTER) & (sym->type == CCHAR || sym->type == CUCHAR))
+	if ((sym->ident != POINTER) & (sym->sym_type == CCHAR || sym->sym_type == CUCHAR))
 		code = I_ST_UM;
 	else
 		code = I_ST_WM;
@@ -140,9 +140,9 @@ void indirect (char typeobj)
 
 void farpeek (SYMBOL *ptr)
 {
-	if (ptr->type == CCHAR)
+	if (ptr->sym_type == CCHAR)
 		out_ins(I_FGETB, T_SYMBOL, (intptr_t)ptr);
-	else if (ptr->type == CUCHAR)
+	else if (ptr->sym_type == CUCHAR)
 		out_ins(I_FGETUB, T_SYMBOL, (intptr_t)ptr);
 	else
 		out_ins(I_FGETW, T_SYMBOL, (intptr_t)ptr);

@@ -19,6 +19,6 @@ bool readqstr (void);
 bool readstr (void);
 char spechar (void);
 
-int match_type (struct type *, int do_ptr, int allow_unk_compound);
+int match_type (struct type_type *, int do_ptr, int allow_unk_compound);
 
 #endif

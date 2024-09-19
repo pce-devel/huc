@@ -86,7 +86,7 @@ void struct_init (TAG_SYMBOL *tag, char *symbol_name)
 
 	member_idx = tag->member_idx;
 	while (member_idx < tag->member_idx + tag->number_of_members) {
-		init(symbol_name, member_table[tag->member_idx + member_idx].type,
+		init(symbol_name, member_table[tag->member_idx + member_idx].sym_type,
 		     member_table[tag->member_idx + member_idx].ident, &dim, tag);
 		++member_idx;
 		if ((match(",") == 0) && (member_idx != (tag->member_idx + tag->number_of_members))) {
@@ -541,7 +541,7 @@ SYMBOL *addglb (char *sname, char id, char typ, int value, char stor, SYMBOL *re
 	ptr = cptr->name;
 	while (alphanum(*ptr++ = *sname++)) ;
 	cptr->ident = id;
-	cptr->type = typ;
+	cptr->sym_type = typ;
 	cptr->storage = stor;
 	cptr->offset = value;
 	cptr->size = value;
@@ -582,7 +582,7 @@ SYMBOL *addloc (char *sname, char id, char typ, int value, char stclass, int siz
 	ptr = locptr->name;
 	while (alphanum(*ptr++ = *sname++)) ;
 	cptr->ident = id;
-	cptr->type = typ;
+	cptr->sym_type = typ;
 	cptr->storage = stclass;
 	cptr->offset = value;
 	cptr->size = size;
