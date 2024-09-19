@@ -2373,6 +2373,12 @@ __and.wi	.macro
 
 ; **************
 
+__and.uiq	.macro
+		and	#\1
+		.endm
+
+; **************
+
 __and.wm	.macro
 		and.l	\1
 		say
@@ -2602,16 +2608,6 @@ __asr.wi	.macro
 
 ; **************
 
-__asr.wr	.macro
-		cpy	#$80
-		say
-		ror	a
-		say
-		ror	a
-		.endm
-
-; **************
-
 __lsr.wi	.macro
 	.if (\1 = 1)
 		say
@@ -2655,14 +2651,35 @@ __lsr.wi	.macro
 	.endif
 		.endm
 
-;	; **************
-;
-;	__lsrw		.macro
-;			say
-;			lsr	a
-;			say
-;			ror	a
-;			.endm
+; **************
+
+__lsr.uiq	.macro
+	.if (\1 < 8)
+	.if (\1 >= 1)
+		lsr	a
+	.endif
+	.if (\1 >= 2)
+		lsr	a
+	.endif
+	.if (\1 >= 3)
+		lsr	a
+	.endif
+	.if (\1 >= 4)
+		lsr	a
+	.endif
+	.if (\1 >= 5)
+		lsr	a
+	.endif
+	.if (\1 >= 6)
+		lsr	a
+	.endif
+	.if (\1 >= 7)
+		lsr	a
+	.endif
+	.else
+		cla
+	.endif
+		.endm
 
 ; **************
 

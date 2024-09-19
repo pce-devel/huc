@@ -8,6 +8,7 @@
 
 /* bit-flag definitions for the i-code instructions */
 #define IS_SPREL	1
+#define IS_UBYTE	2
 
 /* flag information for each of the i-code instructions */
 extern unsigned char icode_flags[];

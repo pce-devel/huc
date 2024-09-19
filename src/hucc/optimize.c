@@ -140,85 +140,85 @@ unsigned char icode_flags[] = {
 
 	/* I_LD_WM              */	0,
 	/* I_LD_BM              */	0,
-	/* I_LD_UM              */	0,
+	/* I_LD_UM              */	IS_UBYTE,
 
 	/* I_LD_WMQ             */	0,
 	/* I_LD_BMQ             */	0,
-	/* I_LD_UMQ             */	0,
+	/* I_LD_UMQ             */	IS_UBYTE,
 
 	/* I_LDY_WMQ            */	0,
 	/* I_LDY_BMQ            */	0,
-	/* I_LDY_UMQ            */	0,
+	/* I_LDY_UMQ            */	IS_UBYTE,
 
 	/* I_LD_WP              */	0,
 	/* I_LD_BP              */	0,
-	/* I_LD_UP              */	0,
+	/* I_LD_UP              */	IS_UBYTE,
 
 	/* X_LD_WAR             */	0,
 	/* X_LD_BAR             */	0,
-	/* X_LD_UAR             */	0,
+	/* X_LD_UAR             */	IS_UBYTE,
 
 	/* X_LD_BAY             */	0,
-	/* X_LD_UAY             */	0,
+	/* X_LD_UAY             */	IS_UBYTE,
 
 	/* X_LD_WS              */	IS_SPREL,
 	/* X_LD_BS              */	IS_SPREL,
-	/* X_LD_US              */	IS_SPREL,
+	/* X_LD_US              */	IS_SPREL + IS_UBYTE,
 
 	/* X_LD_WSQ             */	IS_SPREL,
 	/* X_LD_BSQ             */	IS_SPREL,
-	/* X_LD_USQ             */	IS_SPREL,
+	/* X_LD_USQ             */	IS_SPREL + IS_UBYTE,
 
 	/* X_LDY_WSQ            */	IS_SPREL,
 	/* X_LDY_BSQ            */	IS_SPREL,
-	/* X_LDY_USQ            */	IS_SPREL,
+	/* X_LDY_USQ            */	IS_SPREL + IS_UBYTE,
 
 	/* X_LDP_WAR            */	0,
 	/* X_LDP_BAR            */	0,
-	/* X_LDP_UAR            */	0,
+	/* X_LDP_UAR            */	IS_UBYTE,
 
 	/* X_LDP_BAY            */	0,
-	/* X_LDP_UAY            */	0,
+	/* X_LDP_UAY            */	IS_UBYTE,
 
 	// i-codes for pre- and post- increment and decrement
 
 	/* X_INCLD_WM           */	0,
 	/* X_INCLD_BM           */	0,
-	/* X_INCLD_UM           */	0,
+	/* X_INCLD_UM           */	IS_UBYTE,
 
 	/* X_DECLD_WM           */	0,
 	/* X_DECLD_BM           */	0,
-	/* X_DECLD_UM           */	0,
+	/* X_DECLD_UM           */	IS_UBYTE,
 
 	/* X_LDINC_WM           */	0,
 	/* X_LDINC_BM           */	0,
-	/* X_LDINC_UM           */	0,
+	/* X_LDINC_UM           */	IS_UBYTE,
 
 	/* X_LDDEC_WM           */	0,
 	/* X_LDDEC_BM           */	0,
-	/* X_LDDEC_UM           */	0,
+	/* X_LDDEC_UM           */	IS_UBYTE,
 
 	/* X_INC_WMQ            */	0,
 	/* X_INC_UMQ            */	0,
 
 	/* X_DEC_WMQ            */	0,
-	/* X_DEC_UMQ            */	0,
+	/* X_DEC_UMQ            */	IS_UBYTE,
 
 	/* X_INCLD_WS           */	IS_SPREL,
 	/* X_INCLD_BS           */	IS_SPREL,
-	/* X_INCLD_US           */	IS_SPREL,
+	/* X_INCLD_US           */	IS_SPREL + IS_UBYTE,
 
 	/* X_DECLD_WS           */	IS_SPREL,
 	/* X_DECLD_BS           */	IS_SPREL,
-	/* X_DECLD_US           */	IS_SPREL,
+	/* X_DECLD_US           */	IS_SPREL + IS_UBYTE,
 
 	/* X_LDINC_WS           */	IS_SPREL,
 	/* X_LDINC_BS           */	IS_SPREL,
-	/* X_LDINC_US           */	IS_SPREL,
+	/* X_LDINC_US           */	IS_SPREL + IS_UBYTE,
 
 	/* X_LDDEC_WS           */	IS_SPREL,
 	/* X_LDDEC_BS           */	IS_SPREL,
-	/* X_LDDEC_US           */	IS_SPREL,
+	/* X_LDDEC_US           */	IS_SPREL + IS_UBYTE,
 
 	/* X_INC_WSQ            */	IS_SPREL,
 	/* X_INC_USQ            */	IS_SPREL,
@@ -232,22 +232,22 @@ unsigned char icode_flags[] = {
 	/* X_LDDEC_WAR          */	0,
 
 	/* X_INCLD_BAR          */	0,
-	/* X_INCLD_UAR          */	0,
+	/* X_INCLD_UAR          */	IS_UBYTE,
 	/* X_LDINC_BAR          */	0,
-	/* X_LDINC_UAR          */	0,
+	/* X_LDINC_UAR          */	IS_UBYTE,
 	/* X_DECLD_BAR          */	0,
-	/* X_DECLD_UAR          */	0,
+	/* X_DECLD_UAR          */	IS_UBYTE,
 	/* X_LDDEC_BAR          */	0,
-	/* X_LDDEC_UAR          */	0,
+	/* X_LDDEC_UAR          */	IS_UBYTE,
 
 	/* X_INCLD_BAY          */	0,
-	/* X_INCLD_UAY          */	0,
+	/* X_INCLD_UAY          */	IS_UBYTE,
 	/* X_LDINC_BAY          */	0,
-	/* X_LDINC_UAY          */	0,
+	/* X_LDINC_UAY          */	IS_UBYTE,
 	/* X_DECLD_BAY          */	0,
-	/* X_DECLD_UAY          */	0,
+	/* X_DECLD_UAY          */	IS_UBYTE,
 	/* X_LDDEC_BAY          */	0,
-	/* X_LDDEC_UAY          */	0,
+	/* X_LDDEC_UAY          */	IS_UBYTE,
 
 	/* X_INC_WARQ           */	0,
 	/* X_INC_UARQ           */	0,
@@ -308,6 +308,7 @@ unsigned char icode_flags[] = {
 
 	/* I_AND_WT             */	0,
 	/* I_AND_WI             */	0,
+	/* I_AND_UIQ            */	IS_UBYTE,
 	/* I_AND_WM             */	0,
 	/* I_AND_UM             */	0,
 
@@ -326,9 +327,9 @@ unsigned char icode_flags[] = {
 	/* I_ASL_WR             */	0,
 
 	/* I_ASR_WI             */	0,
-	/* I_ASR_WR             */	0,
 
 	/* I_LSR_WI             */	0,
+	/* I_LSR_UIQ            */	IS_UBYTE,
 
 	/* I_MUL_WI             */	0,
 
@@ -376,6 +377,11 @@ int cmp_operands (INS *p1, INS *p2)
 inline bool is_sprel (INS *i)
 {
 	return (icode_flags[i->code] & IS_SPREL);
+}
+
+inline bool is_ubyte (INS *i)
+{
+	return (icode_flags[i->code] & IS_UBYTE);
 }
 
 inline bool is_small_array (SYMBOL *sym)
@@ -1036,7 +1042,7 @@ lv1_loop:
 				}
 				nb = 2;
 				if (p[2]->type == T_VALUE && p[2]->data == 0) {
-					if (p[2]->code == I_AND_WI)
+					if (p[2]->code == I_AND_WI || p[2]->code == I_AND_UIQ)
 						p[2]->code = I_LD_WI;
 					else
 						nb = 3;
@@ -1403,11 +1409,11 @@ lv1_loop:
 			 *  __not.wr				not(__tst.wr or __not.wr)
 			 *  not(__tst.wr or __not.wr)
 			 *
-			 *  __and.wi		n	-->	__tand.wi	n
+			 *  __and.{w/u}i	n	-->	__tand.wi	n
 			 *  __tst.wr				not(__tst.wr or __not.wr)
 			 *  not(__tst.wr or __not.wr)
 			 *
-			 *  __and.wi		n	-->	__nand.wi	n
+			 *  __and.{w/u}i	n	-->	__nand.wi	n
 			 *  __not.wr				not(__tst.wr or __not.wr)
 			 *  not(__tst.wr or __not.wr)
 			 *
@@ -1435,7 +1441,8 @@ lv1_loop:
 			  p[2]->code == X_LD_US ||
 			  p[2]->code == X_LD_UAR ||
 			  p[2]->code == X_LD_UAY ||
-			  p[2]->code == I_AND_WI)
+			  p[2]->code == I_AND_WI ||
+			  p[2]->code == I_AND_UIQ)
 			) {
 				/* remove code */
 				if (p[1]->code == I_TST_WR) {
@@ -1454,6 +1461,7 @@ lv1_loop:
 					case X_LD_UAR: p[2]->code = X_TST_UAR; break;
 					case X_LD_BAY:
 					case X_LD_UAY: p[2]->code = X_TST_UAY; break;
+					case I_AND_UIQ:
 					case I_AND_WI: p[2]->code = X_TAND_WI; break;
 					default: abort();
 					}
@@ -1473,6 +1481,7 @@ lv1_loop:
 					case X_LD_UAR: p[2]->code = X_NOT_UAR; break;
 					case X_LD_BAY:
 					case X_LD_UAY: p[2]->code = X_NOT_UAY; break;
+					case I_AND_UIQ:
 					case I_AND_WI: p[2]->code = X_NAND_WI; break;
 					default: abort();
 					}
@@ -2255,6 +2264,49 @@ lv1_loop:
 				case X_LDP_UAR: p[0]->code = X_LDP_UAY; break;
 				default:	break;
 				}
+				nb = 0;
+			}
+
+			/*
+			 *  __ld.u{p/m/s/ar/ay}	symbol	-->	__ld.u{p/m/s/ar/ay}  symbol
+			 *  __asr.wi		i		__lsr.uiq	i
+			 *
+			 *  C promotes an unsigned char to a signed int so this
+			 *  must be done in the peephole, not the compiler.
+			 */
+			else if
+			((p[0]->code == I_ASR_WI) &&
+			 (p[0]->type == T_VALUE) &&
+			 (is_ubyte(p[1]))
+			) {
+				/* replace code */
+				if (p[0]->data >= 8) {
+					p[1]->code = I_LD_WI;
+					p[1]->type = T_VALUE;
+					p[1]->data = 0;
+					nb = 1;
+				} else {
+					p[0]->code = I_LSR_UIQ;
+					nb = 0;
+				}
+			}
+
+			/*
+			 *  __ld.u{p/m/s/ar/ay}	symbol	-->	__ld.u{p/m/s/ar/ay}  symbol
+			 *  __and.wi		i		__and.uiq	i
+			 *
+			 *  C promotes an unsigned char to a signed int so this
+			 *  must be done in the peephole, not the compiler.
+			 */
+			else if
+			((p[0]->code == I_AND_WI) &&
+			 (p[0]->type == T_VALUE) &&
+			 (p[0]->data >= 0) &&
+			 (p[0]->data <= 255) &&
+			 (is_ubyte(p[1]))
+			) {
+				/* replace code */
+				p[0]->code = I_AND_UIQ;
 				nb = 0;
 			}
 

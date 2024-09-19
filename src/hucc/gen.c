@@ -260,7 +260,7 @@ void gaslint (void)
  */
 void gasrint (void)
 {
-	out_ins(I_ASR_WR, 0, 0);
+	out_ins(I_ASR_WI, T_VALUE, 1);
 }
 
 /*

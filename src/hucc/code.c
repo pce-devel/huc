@@ -1544,6 +1544,12 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case I_AND_UIQ:
+		ot("__and.uiq\t");
+		out_type(type, data);
+		nl();
+		break;
+
 	case I_AND_WM:
 		ot("__and.wm\t");
 		out_addr(type, data);
@@ -1620,12 +1626,14 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case I_ASR_WR:
-		ol("__asr.wr");
-		break;
-
 	case I_LSR_WI:
 		ot("__lsr.wi\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case I_LSR_UIQ:
+		ot("__lsr.uiq\t");
 		out_type(type, data);
 		nl();
 		break;

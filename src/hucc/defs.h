@@ -300,6 +300,7 @@ enum ICODE {
 
 	I_AND_WT,
 	I_AND_WI,
+	I_AND_UIQ,
 	I_AND_WM,
 	I_AND_UM,
 
@@ -318,9 +319,9 @@ enum ICODE {
 	I_ASL_WR,
 
 	I_ASR_WI,
-	I_ASR_WR,
 
 	I_LSR_WI,
+	I_LSR_UIQ,
 
 	I_MUL_WI,
 
