@@ -39,7 +39,7 @@ int define_enum (char *sname, int storage)
 		/* Remember minima and maxima to find the shortest type. */
 		if (count > max) max = count;
 		if (count < min) min = count;
-		enums[enum_ptr].value = count++;
+		enums[enum_ptr].enum_value = count++;
 		enum_ptr++;
 		if (match("}"))
 			break;
@@ -101,7 +101,7 @@ int find_enum (char *sname, int *val)
 
 	for (i = 0; i < enum_ptr; i++) {
 		if (!strcmp(sname, enums[i].name)) {
-			*val = enums[i].value;
+			*val = enums[i].enum_value;
 			return (1);
 		}
 	}

@@ -611,7 +611,7 @@ struct clabel {
 
 struct enum_s {
 	char name[NAMESIZE];
-	int value;
+	int enum_value;
 };
 
 /* enum struct */
