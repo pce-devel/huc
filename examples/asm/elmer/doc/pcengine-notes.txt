@@ -152,6 +152,9 @@
 ;     (88 to BYR & CR, 90 to BXR from HW IRQ1, including 8-cycle CPU response)
 ;   Safe to write BYR @  67 cpu cycles if width=264 hdw=$20
 ;
+; Flashing (i.e. unstable latching) at 5.36MHz (with MWR = $x0), width=256 ..
+;     (87 cycles to BYR & CR, 89 to BXR from HW IRQ1, including 8-cycle CPU response)
+;
 ;
 ;  7.16MHz (with MWR = $x0)
 ;
@@ -161,6 +164,9 @@
 ;   Safe to write BYR @  82 cpu cycles if width=344 hdw=$2A
 ;   Safe to write BYR @  74 cpu cycles if width=352 hdw=$2B
 ;     (83 to BYR, 84 to CR, 85 to BXR from HW IRQ1, including 8-cycle CPU response)
+;
+; Flashing (i.e. unstable latching) at 7.16MHz (with MWR = $x0), width=352 ..
+;     (82 cycles to BYR & CR, 84 to BXR from HW IRQ1, including 8-cycle CPU response)
 ;
 ;
 ; 10.74MHz (with MWR = $xA)
@@ -183,8 +189,7 @@
 ;       instruction, and not to the start of the instruction.
 ;
 ; Note: The VDC shadows/locks the BYR register a cycle before
-;       the BXR register, so write BYR first. After BXR, the
-;       CR register is shadowed/locked next.
+;       the BXR register, so write BYR first.
 ;
 
 

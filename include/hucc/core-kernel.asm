@@ -169,9 +169,25 @@ core_irq2:	bbs0	<irq_vec, .hook		; 8 cycles if using hook.
 ; Doing the IRQ1 handler processing in this hook means that things operate
 ; the same whether the System Card or an Overlay is paged into MPR7.
 
+	.ifndef	HUCC
+		; Traditional System Card IRQ servicing delay for code that
+		; was written to assume the *exact* same timing.
+
+jump_irq1:	jmp	[irq1_hook]		; 7 cycles.
+
 core_irq1:	;;;				; 8 (cycles for the INT)
-	.if	CDROM || !defined(NO_CORE_TIRQ_HOOK)
+		bbs1	<irq_vec, jump_irq1	; 8 cycles if using hook.
+
+	.else
+		; Faster IRQ servicing for HuCC and code that would like to
+		; avoid the 8 cycles used by the "bbs1" instruction that is
+		; taken when the System Card is mapped into MPR7.
+
+core_irq1:	;;;				; 8 (cycles for the INT)
+	.if	CDROM || !defined(NO_CORE_IRQ1_HOOK)
 		jmp	[irq1_hook]		; 7 cycles.
+
+	.endif
 	.endif
 
 irq1_handler:	pha				; 3 Save all registers.
@@ -224,10 +240,10 @@ irq1_handler:	pha				; 3 Save all registers.
 
 		; Handle the VDC's VBL interrupt.
 
-!:		bbr5	<vdc_sr, .exit_irq1	; Is this a VBLANK interrupt?
+!:		bbr5	<vdc_sr, .exit_irq1	; 6 Is this a VBLANK interrupt?
 
-	.ifdef	USING_RCR_MACROS
-	.if	CDROM
+	.ifdef	USING_RCR_MACROS		;   If we didn't do it earlier
+	.if	CDROM				;   then we need to do it now.
 	.if	USING_MPR7
 		tma7				; 4 Preserve MPR7.
 		pha				; 3
@@ -357,9 +373,24 @@ irq1_handler:	pha				; 3 Save all registers.
 ; Doing the TIRQ handler processing in this hook means that things operate
 ; the same whether the System Card or an Overlay is paged into MPR7.
 
+	.ifndef	HUCC
+		; Traditional System Card IRQ servicing delay for code that
+		; was written to assume the *exact* same timing.
+
+jump_timer:	jmp	[timer_hook]		; 7 cycles.
+
+core_timer:	;;;				; 8 (cycles for the INT)
+		bbs2	<irq_vec, jump_timer	; 8 cycles if using hook.
+
+	.else
+		; Faster IRQ servicing for HuCC and code that would like to
+		; avoid the 8 cycles used by the "bbs2" instruction that is
+		; taken when the System Card is mapped into MPR7.
+
 core_timer:	;;;				; 8 (cycles for the INT)
 	.if	CDROM || !defined(NO_CORE_TIRQ_HOOK)
 		jmp	[timer_hook]		; 7 cycles.
+	.endif
 	.endif
 
 tirq_handler:
