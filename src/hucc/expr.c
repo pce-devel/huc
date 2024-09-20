@@ -67,7 +67,7 @@ static int is_ptrptr (LVALUE *lval)
 {
 	SYMBOL *s = lval->symbol;
 
-	return (s && (s->ptr_order > 1 || (s->ident == ARRAY && s->ptr_order > 0)));
+	return (s && (s->ptr_order > 1 || (s->identity == ARRAY && s->ptr_order > 0)));
 }
 
 static int is_byte (LVALUE *lval)
@@ -735,9 +735,9 @@ int heir11 (LVALUE *lval, int comma)
 					return (0);
 				}
 			}
-			else if (ptr->ident == POINTER)
+			else if (ptr->identity == POINTER)
 				rvalue(lval);
-			else if (ptr->ident != ARRAY) {
+			else if (ptr->identity != ARRAY) {
 				error("can't subscript");
 				k = 0;
 			}
@@ -746,7 +746,7 @@ int heir11 (LVALUE *lval, int comma)
 			expression(YES);
 			needbrack("]");
 			if (ptr->sym_type == CINT || ptr->sym_type == CUINT || lval->ptr_order > 1 ||
-			    (ptr->ident == ARRAY && lval->ptr_order > 0))
+			    (ptr->identity == ARRAY && lval->ptr_order > 0))
 				gaslint();
 			else if (ptr->sym_type == CSTRUCT) {
 				int size = tag_table[ptr->tagidx].size;
@@ -762,7 +762,7 @@ int heir11 (LVALUE *lval, int comma)
 				deferred = false;
 			}
 			lval->symbol = 0;
-			if (lval->ptr_order > 1 || (ptr->ident == ARRAY && lval->ptr_order > 0))
+			if (lval->ptr_order > 1 || (ptr->identity == ARRAY && lval->ptr_order > 0))
 				lval->indirect = CUINT;
 			else
 				lval->indirect = ptr->sym_type;
@@ -770,7 +770,7 @@ int heir11 (LVALUE *lval, int comma)
 				lval->ptr_order--;
 			else {
 				blanks();
-				if (ptr->ident == ARRAY && ch() == '[') {
+				if (ptr->identity == ARRAY && ch() == '[') {
 					/* Back-to-back indexing: We loop
 					   right inside this function, so
 					   nobody else takes care of
@@ -794,7 +794,7 @@ int heir11 (LVALUE *lval, int comma)
 				error("invalid or unsupported function call");
 				callfunction(0);
 			}
-			else if (ptr->ident != FUNCTION) {
+			else if (ptr->identity != FUNCTION) {
 				if (strcmp(ptr->name, "vram") == 0)
 					callfunction(ptr->name);
 				else {
@@ -846,14 +846,14 @@ int heir11 (LVALUE *lval, int comma)
 			lval->tagsym = NULL_TAG;
 			if (ptr->sym_type == CSTRUCT)
 				lval->tagsym = &tag_table[ptr->tagidx];
-			if (ptr->ident == POINTER) {
+			if (ptr->identity == POINTER) {
 				lval->indirect = CINT;
 				lval->ptr_type = ptr->sym_type;
 				lval->ptr_order = ptr->ptr_order;
 				// lval->val_type = CINT;
 			}
-			if (ptr->ident == ARRAY ||
-			    (ptr->sym_type == CSTRUCT && ptr->ident == VARIABLE)) {
+			if (ptr->identity == ARRAY ||
+			    (ptr->sym_type == CSTRUCT && ptr->identity == VARIABLE)) {
 				// array or struct
 				lval->ptr_type = ptr->sym_type;
 				lval->ptr_order = ptr->ptr_order;
@@ -868,7 +868,7 @@ int heir11 (LVALUE *lval, int comma)
 	if (ptr == 0)
 		return (k);
 
-	if (ptr->ident == FUNCTION) {
+	if (ptr->identity == FUNCTION) {
 		immed(T_SYMBOL, (intptr_t)ptr);
 		return (0);
 	}
@@ -889,8 +889,10 @@ void store (LVALUE *lval)
 		else {
 			if (lval->symbol)
 				putmem(lval->symbol);
-			else
+			else {
+				/* write to a memory addresses given as an immediate value */
 				out_ins(I_ST_WM, T_VALUE, lval->value);
+			}
 		}
 	}
 }

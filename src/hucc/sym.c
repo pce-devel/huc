@@ -87,7 +87,7 @@ void struct_init (TAG_SYMBOL *tag, char *symbol_name)
 	member_idx = tag->member_idx;
 	while (member_idx < tag->member_idx + tag->number_of_members) {
 		init(symbol_name, member_table[tag->member_idx + member_idx].sym_type,
-		     member_table[tag->member_idx + member_idx].ident, &dim, tag);
+		     member_table[tag->member_idx + member_idx].identity, &dim, tag);
 		++member_idx;
 		if ((match(",") == 0) && (member_idx != (tag->member_idx + tag->number_of_members))) {
 			error("struct initialisaton out of data");
@@ -540,18 +540,18 @@ SYMBOL *addglb (char *sname, char id, char typ, int value, char stor, SYMBOL *re
 
 	ptr = cptr->name;
 	while (alphanum(*ptr++ = *sname++)) ;
-	cptr->ident = id;
+	cptr->identity = id;
 	cptr->sym_type = typ;
 	cptr->storage = stor;
 	cptr->offset = value;
-	cptr->size = value;
+	cptr->alloc_size = value;
 	cptr->far = 0;
 	if (id == FUNCTION)
-		cptr->size = 0;
+		cptr->alloc_size = 0;
 	else if (id == POINTER)
-		cptr->size = INTSIZE;
+		cptr->alloc_size = INTSIZE;
 	else if (typ == CINT || typ == CUINT)
-		cptr->size *= 2;
+		cptr->alloc_size *= 2;
 	return (cptr);
 }
 
@@ -581,11 +581,11 @@ SYMBOL *addloc (char *sname, char id, char typ, int value, char stclass, int siz
 	cptr = locptr;
 	ptr = locptr->name;
 	while (alphanum(*ptr++ = *sname++)) ;
-	cptr->ident = id;
+	cptr->identity = id;
 	cptr->sym_type = typ;
 	cptr->storage = stclass;
 	cptr->offset = value;
-	cptr->size = size;
+	cptr->alloc_size = size;
 	locptr++;
 	return (cptr);
 }

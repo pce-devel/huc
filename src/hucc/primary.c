@@ -133,13 +133,13 @@ int match_type (struct type_type *t, int do_ptr, int allow_unk_compound)
 		}
 	}
 
-	t->ident = VARIABLE;
+	t->type_ident = VARIABLE;
 	t->ptr_order = 0;
 
 ret_do_ptr:
 	if (do_ptr)
 		while (match("*")) {
-			t->ident = POINTER;
+			t->type_ident = POINTER;
 			t->ptr_order++;
 		}
 
@@ -167,7 +167,7 @@ int primary (LVALUE *lval, int comma, bool *deferred)
 			k = heir10(lval, comma);
 			if (k)
 				rvalue(lval);
-			if (t.ident != POINTER) {
+			if (t.type_ident != POINTER) {
 				gcast(t.type_type);
 				lval->ptr_type = 0;
 			}
@@ -192,7 +192,7 @@ int primary (LVALUE *lval, int comma, bool *deferred)
 		indflg = 0;
 		have_paren = match("(");
 		if (match_type(&t, YES, NO)) {
-			if (t.ident == POINTER)
+			if (t.type_ident == POINTER)
 				immed(T_VALUE, INTSIZE);
 			else if (t.type_type == CSTRUCT)
 				immed(T_VALUE, tag_table[t.otag].size);
@@ -213,7 +213,7 @@ int primary (LVALUE *lval, int comma, bool *deferred)
 				immed(T_VALUE, strlen(fname_copy) + 1);
 			else if ((ptr = findloc(sname)) ||
 				 (ptr = findglb(sname))) {
-				k = ptr->size;
+				k = ptr->alloc_size;
 				immed(T_VALUE, k);
 			}
 			else {
@@ -278,7 +278,7 @@ int primary (LVALUE *lval, int comma, bool *deferred)
 			lval->tagsym = 0;
 			if (ptr->sym_type == CSTRUCT)
 				lval->tagsym = &tag_table[ptr->tagidx];
-			if (ptr->ident == POINTER) {
+			if (ptr->identity == POINTER) {
 				if ((ptr->storage & STORAGE) == LSTATIC)
 					lval->indirect = 0;
 				else {
@@ -289,13 +289,13 @@ int primary (LVALUE *lval, int comma, bool *deferred)
 				lval->ptr_order = ptr->ptr_order;
 				return (1);
 			}
-			if (ptr->ident == ARRAY ||
-			    (ptr->ident == VARIABLE && ptr->sym_type == CSTRUCT)) {
+			if (ptr->identity == ARRAY ||
+			    (ptr->identity == VARIABLE && ptr->sym_type == CSTRUCT)) {
 				getloc(ptr);
 				lval->ptr_type = ptr->sym_type;
 				lval->ptr_order = ptr->ptr_order;
 //				lval->ptr_type = 0;
-				if (ptr->sym_type == CSTRUCT && ptr->ident == VARIABLE)
+				if (ptr->sym_type == CSTRUCT && ptr->identity == VARIABLE)
 					return (1);
 				else
 					return (0);
@@ -308,15 +308,15 @@ int primary (LVALUE *lval, int comma, bool *deferred)
 		}
 		ptr = findglb(sname);
 		if (ptr) {
-			if (ptr->ident != FUNCTION) {
+			if (ptr->identity != FUNCTION) {
 				lval->symbol = ptr;
 				lval->indirect = 0;
 				lval->tagsym = 0;
 				if (ptr->sym_type == CSTRUCT)
 					lval->tagsym = &tag_table[ptr->tagidx];
-				if (ptr->ident != ARRAY &&
-				    (ptr->ident != VARIABLE || ptr->sym_type != CSTRUCT)) {
-					if (ptr->ident == POINTER) {
+				if (ptr->identity != ARRAY &&
+				    (ptr->identity != VARIABLE || ptr->sym_type != CSTRUCT)) {
+					if (ptr->identity == POINTER) {
 						lval->ptr_type = ptr->sym_type;
 						lval->ptr_order = ptr->ptr_order;
 					}
@@ -339,14 +339,14 @@ int primary (LVALUE *lval, int comma, bool *deferred)
 				lval->indirect = lval->ptr_type = ptr->sym_type;
 				lval->ptr_order = ptr->ptr_order;
 //				lval->ptr_type = 0;
-				if (ptr->ident == VARIABLE && ptr->sym_type == CSTRUCT)
+				if (ptr->identity == VARIABLE && ptr->sym_type == CSTRUCT)
 					return (1);
 				else
 					return (0);
 			}
 		}
 		if (ch() != '(') {
-			if (ptr && (ptr->ident == FUNCTION)) {
+			if (ptr && (ptr->identity == FUNCTION)) {
 				lval->symbol = ptr;
 				lval->indirect = 0;
 				immed(T_SYMBOL, (intptr_t)ptr);
@@ -533,7 +533,7 @@ static int parse3 (int *num)
 	else if (op == '!')
 		*num = !num2;
 	else if (op == 'c') {
-		if (t.ident != POINTER) {
+		if (t.type_ident != POINTER) {
 			assert(sizeof(short) == 2);
 			switch (t.type_type) {
 			case CCHAR:

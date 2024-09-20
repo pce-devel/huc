@@ -1500,12 +1500,6 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case I_ADDBI_P:
-		ot("__addbi_p\t");
-		out_type(type, data);
-		nl();
-		break;
-
 	case I_SUB_WT:
 		ol("__sub.wt");
 		break;

@@ -862,7 +862,7 @@ void dumpglbs (void)
 next:
 		i = 1;
 		for (cptr = rglbptr; cptr < glbptr; cptr++) {
-			if (cptr->ident != FUNCTION) {
+			if (cptr->identity != FUNCTION) {
 //				ppubext(cptr);
 				if ((cptr->storage & WRITTEN) == 0 &&	/* Not yet written to file */
 				    (cptr->storage & STORAGE) != EXTERN) {
@@ -881,7 +881,7 @@ next:
 							outstrBuffer(cptr->name);
 							outstrBuffer(":\n");
 							defstorageBuffer();
-							outdecBuffer(cptr->size);
+							outdecBuffer(cptr->alloc_size);
 							nlBuffer();
 							cptr->storage |= WRITTEN;
 							data_offset = current_offset;
@@ -952,7 +952,7 @@ next:
 						outstr(cptr->name);
 						outstr(":\n");
 						defstorage();
-						outdec(cptr->size);
+						outdec(cptr->alloc_size);
 						nl();
 						cptr->storage |= WRITTEN;
 					}

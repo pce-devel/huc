@@ -297,8 +297,6 @@ unsigned char icode_flags[] = {
 	/* X_ADD_WS             */	IS_SPREL,
 	/* X_ADD_US             */	IS_SPREL,
 
-	/* I_ADDBI_P            */	0,
-
 	/* I_SUB_WT             */	0,
 	/* I_SUB_WI             */	0,
 	/* I_SUB_WM             */	0,
@@ -386,7 +384,7 @@ inline bool is_ubyte (INS *i)
 
 inline bool is_small_array (SYMBOL *sym)
 {
-	return (sym->ident == ARRAY && sym->size > 0 && sym->size <= 256);
+	return (sym->identity == ARRAY && sym->alloc_size > 0 && sym->alloc_size <= 256);
 }
 
 /* ----
@@ -838,56 +836,6 @@ lv1_loop:
 				p[3]->ins_data += p[1]->ins_data;
 				nb = 3;
 			}
-
-			/*
-			 *  __ld.wi		i	-->	__ld.wi		(i * j)
-			 *  __push.wr
-			 *  __ld.wi		j
-			 *    jsr		umul
-			 */
-			else if
-			((p[0]->ins_code == I_JSR) &&
-			 (p[0]->ins_type == T_LIB) &&
-			 (!strcmp((char *)p[0]->ins_data, "umul")) &&
-			 (p[1]->ins_code == I_LD_WI) &&
-			 (p[1]->ins_type == T_VALUE) &&
-			 (p[2]->ins_code == I_PUSH_WR) &&
-			 (p[3]->ins_code == I_LD_WI) &&
-			 (p[3]->ins_type == T_VALUE)
-			) {
-				p[3]->ins_data *= p[1]->ins_data;
-				nb = 3;
-			}
-
-#if 0
-			/*
-			 * __push.wr			-->	__addbi_p	i
-			 * __ld.bp
-			 * __add.wi		i
-			 * __st.upt
-			 *
-			 */
-
-			/*
-			 * __push.wr			-->	__addbi_p	i
-			 * __st.wm		__ptr
-			 * __ld.bp		__ptr
-			 * __add.wi i
-			 * __st.upt
-			 *
-			 */
-
-			else if
-			((p[0]->ins_code == I_ST_UPT) &&
-			 (p[1]->ins_code == I_ADD_WI) &&
-			 (p[2]->ins_code == X_LDB_P) &&
-			 (p[3]->ins_code == I_PUSH_WR)
-			) {
-				*p[3] = *p[1];
-				p[3]->ins_code = I_ADDBI_P;
-				nb = 3;
-			}
-#endif
 
 #if OPT_ARRAY_RD
 			/*
@@ -1915,25 +1863,6 @@ lv1_loop:
 				/* replace code */
 				p[1]->ins_data = -p[1]->ins_data;
 				nb = 1;
-			}
-
-			/*
-			 *  __ld.wi	<power of two>	-->	__ld.wi		<log2>
-			 *    jsr	{u|s}mul		  jsr		asl
-			 */
-			else if
-			((p[0]->ins_code == I_JSR) &&
-			 (!strcmp((char *)p[0]->ins_data, "umul") ||
-			  !strcmp((char *)p[0]->ins_data, "smul")) &&
-			 (p[1]->ins_code == I_LD_WI) &&
-			 (p[1]->ins_type == T_VALUE) &&
-			 (__builtin_popcount((unsigned int)p[1]->ins_data) == 1) &&
-			 (p[1]->ins_data > 0) &&
-			 (p[1]->ins_data < 0x8000)
-			) {
-				p[0]->ins_data = (intptr_t)"asl";
-				p[1]->ins_data = __builtin_ctz((unsigned int)p[1]->ins_data);
-				nb = 0;
 			}
 
 			/*

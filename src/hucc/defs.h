@@ -289,8 +289,6 @@ enum ICODE {
 	X_ADD_WS,
 	X_ADD_US,
 
-	I_ADDBI_P,
-
 	I_SUB_WT,
 	I_SUB_WI,
 	I_SUB_WM,
@@ -374,32 +372,35 @@ enum ICODE {
 #define NAMEALLOC	64
 
 struct symbol {
-	char name[NAMEALLOC];
-	char ident;
-	char sym_type;
-	char storage;
+	char name[NAMEALLOC];	/* symbol name */
+	char identity;		/* variable, array, pointer, function */
+	char sym_type;		/* char, int, uchar, unit */
+	char storage;		/* public, auto, extern, static, lstatic, defauto*/
 	char far;
-	short offset;
-	short tagidx;
-	int size;
+	short offset;		/* offset*/
+	short tagidx;		/* index of struct in tag table*/
 	int ptr_order;
+	int alloc_size;
 };
 
 typedef struct symbol SYMBOL;
 
+/* Define the structure tag table parameters */
+
 #define NUMTAG  64
 
 struct tag_symbol {
-	char name[NAMESIZE];	// structure tag name
-	int size;		// size of struct in bytes
-	int member_idx;		// index of first member
-	int number_of_members;	// number of tag members
+	char name[NAMESIZE];	/* structure tag name */
+	int size;		/* size of struct in bytes */
+	int member_idx;		/* index of first member */
+	int number_of_members;	/* number of tag members */
 };
 #define TAG_SYMBOL struct tag_symbol
 
 #define NULL_TAG 0
 
-// Define the structure member table parameters
+/* Define the structure member table parameters */
+
 #define NUMMEMB         256
 
 /* possible entries for "ident" */
@@ -564,22 +565,22 @@ struct fastcall {
 #define INITIALS_SIZE 5 * 1024
 
 struct initials_table {
-	char name[NAMESIZE];	// symbol name
-	int init_type;		// type
-	int dim;		// length of data (possibly an array)
-	int data_len;		// index of tag or zero
+	char name[NAMESIZE];	/* symbol name */
+	int init_type;		/* type */
+	int dim;		/* length of data (possibly an array) */
+	int data_len;		/* index of tag or zero */
 };
 #define INITIALS struct initials_table
 
 SYMBOL *find_member (TAG_SYMBOL *tag, char *sname);
 
 struct lvalue {
-	SYMBOL *symbol;
-	int indirect;
-	int ptr_type;
+	SYMBOL *symbol;		/* symbol table address, or 0 for constant */
+	int indirect;		/* type of indirect object, 0 for static object */
+	int ptr_type;		/* type of pointer or array, 0 for other idents */
+	TAG_SYMBOL *tagsym;	/* tag symbol address, 0 if not struct */
 	SYMBOL *symbol2;
 	int value;
-	TAG_SYMBOL *tagsym;
 	int ptr_order;
 	int val_type;
 };
@@ -590,12 +591,12 @@ struct lvalue {
 /* typedef struct */
 
 struct type_type {
-	int type_type;
-	int ident;
+	int type_type;		/* char, int, uchar, unit */
+	int type_ident;		/* variable, array, pointer */
 	int ptr_order;
 	int otag;
 	int flags;
-	char sname[NAMESIZE];
+	char sname[NAMESIZE];	/* type name */
 };
 
 #define F_REGISTER 1

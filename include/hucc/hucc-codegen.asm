@@ -869,7 +869,6 @@ __nand.wi	.macro
 	.if	((\1 & $FF00) == 0)
 		and	#\1
 	.else
-
 	.if	((\1 & $00FF) == 0)
 		tya
 		and.h	#\1
@@ -896,7 +895,6 @@ __tand.wi	.macro
 	.if	((\1 & $FF00) == 0)
 		and	#\1
 	.else
-
 	.if	((\1 & $00FF) == 0)
 		tya
 		and.h	#\1
@@ -2254,18 +2252,6 @@ __add.us	.macro	; __STACK
 		bcc	!+
 		iny
 !:
-		.endm
-
-; **************
-
-__addbi_p	.macro
-		sta.l	__ptr
-		sty.h	__ptr
-		lda	[__ptr]
-		clc
-		adc	#\1
-		sta	[__ptr]
-		cly
 		.endm
 
 ; **************

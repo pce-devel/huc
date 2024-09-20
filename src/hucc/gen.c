@@ -38,7 +38,7 @@ void getmem (SYMBOL *sym)
 {
 	char *data;
 
-	if ((sym->ident != POINTER) && (sym->sym_type == CCHAR || sym->sym_type == CUCHAR)) {
+	if ((sym->identity != POINTER) && (sym->sym_type == CCHAR || sym->sym_type == CUCHAR)) {
 		int op = (sym->sym_type & CUNSIGNED) ? I_LD_UM : I_LD_BM;
 		if ((sym->storage & STORAGE) == LSTATIC)
 			out_ins(op, T_LABEL, glint(sym));
@@ -96,7 +96,7 @@ void putmem (SYMBOL *sym)
 	int code;
 
 	/* XXX: What about 1-byte structs? */
-	if ((sym->ident != POINTER) & (sym->sym_type == CCHAR || sym->sym_type == CUCHAR))
+	if ((sym->identity != POINTER) & (sym->sym_type == CCHAR || sym->sym_type == CUCHAR))
 		code = I_ST_UM;
 	else
 		code = I_ST_WM;
@@ -464,7 +464,7 @@ void ginc (LVALUE *lval)
 	SYMBOL *sym = lval->symbol;
 
 	if (lval->ptr_type == CINT || lval->ptr_type == CUINT ||
-	    (sym && (sym->ptr_order > 1 || (sym->ident == ARRAY && sym->ptr_order > 0))))
+	    (sym && (sym->ptr_order > 1 || (sym->identity == ARRAY && sym->ptr_order > 0))))
 		out_ins(I_ADD_WI, T_VALUE, 2);
 	else if (lval->ptr_type == CSTRUCT)
 		out_ins(I_ADD_WI, T_VALUE, lval->tagsym->size);
@@ -480,7 +480,7 @@ void gdec (LVALUE *lval)
 	SYMBOL *sym = lval->symbol;
 
 	if (lval->ptr_type == CINT || lval->ptr_type == CUINT ||
-	    (sym && (sym->ptr_order > 1 || (sym->ident == ARRAY && sym->ptr_order > 0))))
+	    (sym && (sym->ptr_order > 1 || (sym->identity == ARRAY && sym->ptr_order > 0))))
 		out_ins(I_SUB_WI, T_VALUE, 2);
 	else if (lval->ptr_type == CSTRUCT)
 		out_ins(I_SUB_WI, T_VALUE, lval->tagsym->size);

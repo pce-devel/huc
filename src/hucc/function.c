@@ -338,7 +338,7 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 	fexitlab = getlabel();
 
 	if ((ptr = findglb(current_fn))) {
-		if (ptr->ident != FUNCTION)
+		if (ptr->identity != FUNCTION)
 			multidef(current_fn);
 		else if (ptr->offset == FUNCTION)
 			multidef(current_fn);
@@ -476,7 +476,7 @@ int getarg (int t, int syntax, int otag, int is_fastcall)
 				}
 			}
 			if ((argptr = findloc(n))) {
-				argptr->ident = j;
+				argptr->identity = j;
 				argptr->sym_type = t;
 				address = argtop - glint(argptr) - 2;
 				if ((t == CCHAR || t == CUCHAR) && j == VARIABLE)
@@ -916,7 +916,7 @@ void arg_to_fptr (struct fastcall *fast, int i, int arg, int adj)
 		if (ins->ins_type == T_SYMBOL) {
 			/* allow either "function", "array", or "array+const" */
 			sym = (SYMBOL *)ins->ins_data;
-			switch (sym->ident) {
+			switch (sym->identity) {
 				case FUNCTION:
 				case ARRAY:
 					if (ins->ins_code == I_LD_WI)
@@ -934,7 +934,7 @@ void arg_to_fptr (struct fastcall *fast, int i, int arg, int adj)
 		for (idx = 0; idx < nb; ++idx, ++ins) {
 			if (ins->ins_type == T_SYMBOL) {
 				sym = (SYMBOL *)ins->ins_data;
-				switch (sym->ident) {
+				switch (sym->identity) {
 					/* for the first "array", or "array+const" */
 					case ARRAY:
 						if ((ins->ins_code == I_LD_WI) ||
@@ -991,8 +991,8 @@ void arg_to_fptr (struct fastcall *fast, int i, int arg, int adj)
 		}
 		else {
 			/* a pointer or an array of pointers */
-			if (((sym->ident == ARRAY) ||
-			     (sym->ident == POINTER)) &&
+			if (((sym->identity == ARRAY) ||
+			     (sym->identity == POINTER)) &&
 			    (sym->sym_type == CINT || sym->sym_type == CUINT)) {
 				tmp.ins_code = I_FARPTR_GET;
 				tmp.ins_type = 0;
@@ -1054,9 +1054,9 @@ void arg_to_dword (struct fastcall *fast, int i, int arg, int adj)
 			sym = (SYMBOL *)ins->ins_data;
 
 			/* check type */
-			if (sym->ident == POINTER)
+			if (sym->identity == POINTER)
 				gen = 1;
-			else if (sym->ident == VARIABLE) {
+			else if (sym->identity == VARIABLE) {
 				if (ins->ins_code == I_LD_WM)
 					ins->ins_code = X_LDD_W;
 				else
@@ -1077,9 +1077,9 @@ void arg_to_dword (struct fastcall *fast, int i, int arg, int adj)
 
 			/* check type */
 			if (sym) {
-				if (sym->ident == POINTER)
+				if (sym->identity == POINTER)
 					gen = 1;
-				else if (sym->ident == VARIABLE) {
+				else if (sym->identity == VARIABLE) {
 					if (ins->ins_code == X_LD_WS)
 						ins->ins_code = X_LDD_S_W;
 					else
@@ -1097,7 +1097,7 @@ void arg_to_dword (struct fastcall *fast, int i, int arg, int adj)
 		else if (ins->ins_code == I_LEA_S) {
 			sym = ins->sym;
 
-			if (sym && (sym->ident == ARRAY)) {
+			if (sym && (sym->identity == ARRAY)) {
 				ins->ins_data -= adj;
 				gen = 1;
 			}
@@ -1109,7 +1109,7 @@ void arg_to_dword (struct fastcall *fast, int i, int arg, int adj)
 			sym = (SYMBOL *)ins->ins_data;
 
 			/* check type */
-			if (sym->ident == ARRAY)
+			if (sym->identity == ARRAY)
 				gen = 1;
 		}
 	}
@@ -1120,7 +1120,7 @@ void arg_to_dword (struct fastcall *fast, int i, int arg, int adj)
 			sym = (SYMBOL *)ins->ins_data;
 
 			/* check type */
-			if (sym->ident == ARRAY) {
+			if (sym->identity == ARRAY) {
 				ptr = ins;
 				ins = &ins_stack[idx + 1];
 
