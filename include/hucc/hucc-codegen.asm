@@ -2501,7 +2501,7 @@ __asl.wi	.macro
 		jsr	aslw\1
 	.else
 	.if (\1 < 7)
-		sta.h	__temp
+		sta	__temp
 		tya
 		lsr	a
 		jsr	aslw\1
