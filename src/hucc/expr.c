@@ -72,9 +72,11 @@ static int is_ptrptr (LVALUE *lval)
 
 static int is_byte (LVALUE *lval)
 {
+#if 0 // Byte comparisons are broken, disable them for now.
 	if (lval->symbol && !lval->ptr_type &&
 	    (lval->symbol->sym_type == CCHAR || lval->symbol->sym_type == CUCHAR))
 		return (1);
+#endif
 
 	return (0);
 }
