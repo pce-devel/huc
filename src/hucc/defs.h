@@ -95,24 +95,34 @@ enum ICODE {
 	I_DEF,
 	I_CMP_WT,
 	I_CMP_UT,
-	X_TST_WI,
-	X_NOT_WI,
+	X_EQU_WI,
+	X_NEQ_WI,
 	I_NOT_WR,
 	I_TST_WR,
 	I_BFALSE,
 	I_BTRUE,
-	X_NOT_UM,
-	X_NOT_UP,
-	X_NOT_US,
-	X_NOT_WM,
+
 	X_NOT_WP,
+	X_NOT_WM,
 	X_NOT_WS,
-	X_TST_UM,
-	X_TST_UP,
-	X_TST_US,
-	X_TST_WM,
+	X_NOT_WAR,
+	X_NOT_UP,
+	X_NOT_UM,
+	X_NOT_US,
+	X_NOT_UAR,
+	X_NOT_UAY,
 	X_TST_WP,
+	X_TST_WM,
 	X_TST_WS,
+	X_TST_WAR,
+	X_TST_UP,
+	X_TST_UM,
+	X_TST_US,
+	X_TST_UAR,
+	X_TST_UAY,
+
+	X_NAND_WI,
+	X_TAND_WI,
 
 	/* i-codes for loading the primary register */
 
@@ -124,6 +134,14 @@ enum ICODE {
 	I_LD_BM,
 	I_LD_UM,
 
+	I_LD_WMQ,
+	I_LD_BMQ,
+	I_LD_UMQ,
+
+	I_LDY_WMQ,
+	I_LDY_BMQ,
+	I_LDY_UMQ,
+
 	I_LD_WP,
 	I_LD_BP,
 	I_LD_UP,
@@ -132,13 +150,27 @@ enum ICODE {
 	X_LD_BAR,
 	X_LD_UAR,
 
+	X_LD_BAY,
+	X_LD_UAY,
+
 	X_LD_WS,
 	X_LD_BS,
 	X_LD_US,
 
+	X_LD_WSQ,
+	X_LD_BSQ,
+	X_LD_USQ,
+
+	X_LDY_WSQ,
+	X_LDY_BSQ,
+	X_LDY_USQ,
+
 	X_LDP_WAR,
 	X_LDP_BAR,
 	X_LDP_UAR,
+
+	X_LDP_BAY,
+	X_LDP_UAY,
 
 	/* i-codes for pre- and post- increment and decrement */
 
@@ -187,31 +219,38 @@ enum ICODE {
 	X_DEC_USQ,
 
 	X_INCLD_WAR,
+	X_LDINC_WAR,
+	X_DECLD_WAR,
+	X_LDDEC_WAR,
+
 	X_INCLD_BAR,
 	X_INCLD_UAR,
-
-	X_DECLD_WAR,
-	X_DECLD_BAR,
-	X_DECLD_UAR,
-
-	X_LDINC_WAR,
 	X_LDINC_BAR,
 	X_LDINC_UAR,
-
-	X_LDDEC_WAR,
+	X_DECLD_BAR,
+	X_DECLD_UAR,
 	X_LDDEC_BAR,
 	X_LDDEC_UAR,
 
+	X_INCLD_BAY,
+	X_INCLD_UAY,
+	X_LDINC_BAY,
+	X_LDINC_UAY,
+	X_DECLD_BAY,
+	X_DECLD_UAY,
+	X_LDDEC_BAY,
+	X_LDDEC_UAY,
+
 	X_INC_WARQ,
 	X_INC_UARQ,
+	X_INC_UAYQ,
 
 	X_DEC_WARQ,
 	X_DEC_UARQ,
+	X_DEC_UAYQ,
 
 	/* i-codes for saving the primary register */
 
-	I_ST_WMZ,
-	I_ST_UMZ,
 	I_ST_WMIQ,
 	I_ST_UMIQ,
 	I_ST_WPI,
@@ -229,6 +268,7 @@ enum ICODE {
 
 	X_INDEX_WR,
 	X_INDEX_UR,
+
 	X_ST_WAT,
 	X_ST_UAT,
 
@@ -249,8 +289,6 @@ enum ICODE {
 	X_ADD_WS,
 	X_ADD_US,
 
-	I_ADDBI_P,
-
 	I_SUB_WT,
 	I_SUB_WI,
 	I_SUB_WM,
@@ -260,6 +298,7 @@ enum ICODE {
 
 	I_AND_WT,
 	I_AND_WI,
+	I_AND_UIQ,
 	I_AND_WM,
 	I_AND_UM,
 
@@ -278,9 +317,9 @@ enum ICODE {
 	I_ASL_WR,
 
 	I_ASR_WI,
-	I_ASR_WR,
 
 	I_LSR_WI,
+	I_LSR_UIQ,
 
 	I_MUL_WI,
 
@@ -333,32 +372,35 @@ enum ICODE {
 #define NAMEALLOC	64
 
 struct symbol {
-	char name[NAMEALLOC];
-	char ident;
-	char type;
-	char storage;
+	char name[NAMEALLOC];	/* symbol name */
+	char identity;		/* variable, array, pointer, function */
+	char sym_type;		/* char, int, uchar, unit */
+	char storage;		/* public, auto, extern, static, lstatic, defauto*/
 	char far;
-	short offset;
-	short tagidx;
-	int size;
+	short offset;		/* offset*/
+	short tagidx;		/* index of struct in tag table*/
 	int ptr_order;
+	int alloc_size;
 };
 
 typedef struct symbol SYMBOL;
 
+/* Define the structure tag table parameters */
+
 #define NUMTAG  64
 
 struct tag_symbol {
-	char name[NAMESIZE];	// structure tag name
-	int size;		// size of struct in bytes
-	int member_idx;		// index of first member
-	int number_of_members;	// number of tag members
+	char name[NAMESIZE];	/* structure tag name */
+	int size;		/* size of struct in bytes */
+	int member_idx;		/* index of first member */
+	int number_of_members;	/* number of tag members */
 };
 #define TAG_SYMBOL struct tag_symbol
 
 #define NULL_TAG 0
 
-// Define the structure member table parameters
+/* Define the structure member table parameters */
+
 #define NUMMEMB         256
 
 /* possible entries for "ident" */
@@ -368,7 +410,7 @@ struct tag_symbol {
 #define POINTER 3
 #define FUNCTION        4
 
-/* possible entries for "type" */
+/* possible entries for "type" for sym_type, val_type, type_type, init_type */
 
 #define CCHAR   1
 #define CINT    2
@@ -477,9 +519,9 @@ struct macro {
 /* pseudo instruction structure */
 
 typedef struct {
-	enum ICODE code;
-	int type;
-	intptr_t data;
+	enum ICODE ins_code;
+	int ins_type;
+	intptr_t ins_data;
 	int imm_type;
 	intptr_t imm_data;
 	const char *arg[3];
@@ -517,42 +559,46 @@ struct fastcall {
 };
 
 // initialisation of global variables
+
 #define INIT_TYPE    NAMESIZE
 #define INIT_LENGTH  NAMESIZE + 1
 #define INITIALS_SIZE 5 * 1024
 
 struct initials_table {
-	char name[NAMESIZE];	// symbol name
-	int type;		// type
-	int dim;		// length of data (possibly an array)
-	int data_len;		// index of tag or zero
+	char name[NAMESIZE];	/* symbol name */
+	int init_type;		/* type */
+	int dim;		/* length of data (possibly an array) */
+	int data_len;		/* index of tag or zero */
 };
 #define INITIALS struct initials_table
 
 SYMBOL *find_member (TAG_SYMBOL *tag, char *sname);
 
 struct lvalue {
-	SYMBOL *symbol;
-	int indirect;
-	int ptr_type;
+	SYMBOL *symbol;		/* symbol table address, or 0 for constant */
+	int indirect;		/* type of indirect object, 0 for static object */
+	int ptr_type;		/* type of pointer or array, 0 for other idents */
+	TAG_SYMBOL *tagsym;	/* tag symbol address, 0 if not struct */
 	SYMBOL *symbol2;
 	int value;
-	TAG_SYMBOL *tagsym;
 	int ptr_order;
-	int type;
+	int val_type;
 };
 #define LVALUE struct lvalue
 
 #define W_GENERAL 1
 
-struct type {
-	int type;
-	int ident;
+/* typedef struct */
+
+struct type_type {
+	int type_type;		/* char, int, uchar, unit */
+	int type_ident;		/* variable, array, pointer */
 	int ptr_order;
 	int otag;
 	int flags;
-	char sname[NAMESIZE];
+	char sname[NAMESIZE];	/* type name */
 };
+
 #define F_REGISTER 1
 #define F_CONST 2
 #define F_VOLATILE 4
@@ -566,8 +612,11 @@ struct clabel {
 
 struct enum_s {
 	char name[NAMESIZE];
-	int value;
+	int enum_value;
 };
+
+/* enum struct */
+
 struct enum_type {
 	char name[NAMESIZE];
 	int start;

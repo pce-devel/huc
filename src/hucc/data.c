@@ -99,7 +99,7 @@ int norecurse = 0;
 int locals_ptr;
 #endif
 
-struct type *typedefs;
+struct type_type *typedefs;
 int typedef_ptr = 0;
 
 struct clabel *clabels;

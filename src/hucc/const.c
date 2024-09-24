@@ -327,7 +327,7 @@ int add_buffer (char *p, char c, int is_address)
 	}
 
 	/* tell the caller if there were any addresses involved */
-	return ((s && s->ident == POINTER) || is_address);
+	return ((s && s->identity == POINTER) || is_address);
 }
 
 char *get_const (SYMBOL *s)
@@ -377,9 +377,9 @@ void dump_const (void)
 			while (size) {
 				k = const_val[j++];
 
-				if ((cptr->type == CCHAR || cptr->type == CUCHAR) &&
-				    cptr->ident != POINTER &&
-				    !(cptr->ident == ARRAY && cptr->ptr_order > 0)) {
+				if ((cptr->sym_type == CCHAR || cptr->sym_type == CUCHAR) &&
+				    cptr->identity != POINTER &&
+				    !(cptr->identity == ARRAY && cptr->ptr_order > 0)) {
 					defbyte();
 					const_size += 1;
 				}
