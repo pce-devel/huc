@@ -504,7 +504,7 @@ void dolabel (char *name)
 			   stack pointer at the location of the label. */
 			clabels[i].stkp = stkp;
 			gnlabel(clabels[i].label);
-			printf("old label %s stkp %ld\n", clabels[i].name, (long) stkp);
+//			printf("old label %s stkp %ld\n", clabels[i].name, (long) stkp);
 			return;
 		}
 	}
@@ -514,7 +514,7 @@ void dolabel (char *name)
 	strcpy(clabels[clabel_ptr].name, name);
 	clabels[clabel_ptr].stkp = stkp;
 	clabels[clabel_ptr].label = getlabel();
-	printf("new label %s id %d stkp %ld\n", name, clabels[clabel_ptr].label, (long) stkp);
+//	printf("new label %s id %d stkp %ld\n", name, clabels[clabel_ptr].label, (long) stkp);
 	gnlabel(clabels[clabel_ptr].label);
 	clabel_ptr++;
 }

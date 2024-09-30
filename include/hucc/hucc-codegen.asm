@@ -2472,9 +2472,15 @@ __or.um		.macro
 ; **************
 ; N.B. Used when calculating a pointer into a word array.
 
-__asl.wt	.macro
+__double	.macro
 		asl.l	<__stack, x
 		rol.h	<__stack, x
+		.endm
+
+; **************
+
+__asl.wt	.macro
+		jsr	aslw
 		.endm
 
 ; **************
@@ -2545,6 +2551,12 @@ __asl.wr	.macro
 
 ; **************
 
+__asr.wt	.macro
+		jsr	asrw
+		.endm
+
+; **************
+
 __asr.wi	.macro
 	.if (\1 = 1)
 		cpy	#$80
@@ -2590,6 +2602,12 @@ __asr.wi	.macro
 	.endif
 	.endif
 	.endif
+		.endm
+
+; **************
+
+__lsr.wt	.macro
+		jsr	lsrw
 		.endm
 
 ; **************

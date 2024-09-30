@@ -302,7 +302,7 @@ void gadd (LVALUE *lval, LVALUE *lval2)
 	/* XXX: isn't this done in expr.c already? */
 	/* Nope, it is used when calculating a pointer variable address into a word array */
 	if (dbltest(lval2, lval))
-		out_ins(I_ASL_WT, 0, 0);
+		out_ins(I_DOUBLE, 0, 0);
 	out_ins(I_ADD_WT, 0, 0);
 	stkp = stkp + INTSIZE;
 }
@@ -411,9 +411,9 @@ void gand (void)
 void gasr (int is_unsigned)
 {
 	if (is_unsigned)
-		out_ins(I_JSR, T_LIB, (intptr_t)"lsrw");
+		out_ins(I_LSR_WT, 0, 0);
 	else
-		out_ins(I_JSR, T_LIB, (intptr_t)"asrw");
+		out_ins(I_ASR_WT, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
@@ -425,7 +425,7 @@ void gasr (int is_unsigned)
  */
 void gasl (void)
 {
-	out_ins(I_JSR, T_LIB, (intptr_t)"aslw");
+	out_ins(I_ASL_WT, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 

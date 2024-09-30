@@ -289,12 +289,16 @@ enum ICODE {
 	I_ASL_WI,
 	I_ASL_WR,
 
+	I_ASR_WT,
 	I_ASR_WI,
 
+	I_LSR_WT,
 	I_LSR_WI,
 	I_LSR_UIQ,
 
 	I_MUL_WI,
+
+	I_DOUBLE,
 
 	/* i-codes for 32-bit longs */
 

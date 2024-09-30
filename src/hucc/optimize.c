@@ -324,12 +324,16 @@ unsigned char icode_flags[] = {
 	/* I_ASL_WI             */	0,
 	/* I_ASL_WR             */	0,
 
+	/* I_ASR_WT             */	0,
 	/* I_ASR_WI             */	0,
 
+	/* I_LSR_WT             */	0,
 	/* I_LSR_WI             */	0,
 	/* I_LSR_UIQ            */	IS_UBYTE,
 
 	/* I_MUL_WI             */	0,
+
+	/* I_DOUBLE             */	0,
 
 	// i-codes for 32-bit longs
 
@@ -974,7 +978,10 @@ lv1_loop:
 			  p[0]->ins_code == I_SUB_WT ||
 			  p[0]->ins_code == I_AND_WT ||
 			  p[0]->ins_code == I_EOR_WT ||
-			  p[0]->ins_code == I_OR_WT) &&
+			  p[0]->ins_code == I_OR_WT ||
+			  p[0]->ins_code == I_ASL_WT ||
+			  p[0]->ins_code == I_ASR_WT ||
+			  p[0]->ins_code == I_LSR_WT) &&
 			 (p[1]->ins_code == I_LD_WI) &&
 			 (p[2]->ins_code == I_PUSH_WR)
 			) {
@@ -986,6 +993,9 @@ lv1_loop:
 				case I_AND_WT: p[2]->ins_code = I_AND_WI; break;
 				case I_EOR_WT: p[2]->ins_code = I_EOR_WI; break;
 				case I_OR_WT: p[2]->ins_code = I_OR_WI; break;
+				case I_ASL_WT: p[2]->ins_code = I_ASL_WI; break;
+				case I_ASR_WT: p[2]->ins_code = I_ASR_WI; break;
+				case I_LSR_WT: p[2]->ins_code = I_LSR_WI; break;
 				default: abort();
 				}
 				nb = 2;
@@ -1083,35 +1093,6 @@ lv1_loop:
 				}
 				p[2]->ins_data -= 2;
 				nb = 2;
-			}
-
-			/*
-			 *  __push.wr			-->	__as{l/r}.wi	i
-			 *  __ld.wi		i
-			 *    jsr		asl/asr/lsr
-			 */
-			else if
-			((p[0]->ins_code == I_JSR) &&
-			 (!strcmp((char *)p[0]->ins_data, "aslw") ||
-			  !strcmp((char *)p[0]->ins_data, "asrw") ||
-			  !strcmp((char *)p[0]->ins_data, "lsrw")) &&
-			 (p[1]->ins_code == I_LD_WI) &&
-			 (p[2]->ins_code == I_PUSH_WR)
-			) {
-				/* replace code */
-				if (!strcmp((char *)p[0]->ins_data, "aslw"))
-					p[2]->ins_code = I_ASL_WI;
-				else
-				if (!strcmp((char *)p[0]->ins_data, "asrw"))
-					p[2]->ins_code = I_ASR_WI;
-				else
-					p[2]->ins_code = I_LSR_WI;
-				p[2]->ins_type = p[1]->ins_type;
-				p[2]->ins_data = p[1]->ins_data;
-				nb = 2;
-				if (p[2]->ins_type == T_VALUE && p[2]->ins_data == 0) {
-					nb = 3;
-				}
 			}
 
 			/*
@@ -2401,6 +2382,9 @@ lv1_loop:
 				case I_AND_WT:
 				case I_EOR_WT:
 				case I_OR_WT:
+				case I_ASL_WT:
+				case I_ASR_WT:
+				case I_LSR_WT:
 					offset += 2;
 					break;
 

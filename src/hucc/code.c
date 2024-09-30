@@ -1614,10 +1614,18 @@ void gen_code (INS *tmp)
 		ol("__asl.wr");
 		break;
 
+	case I_ASR_WT:
+		ol("__asr.wt");
+		break;
+
 	case I_ASR_WI:
 		ot("__asr.wi\t");
 		out_type(type, data);
 		nl();
+		break;
+
+	case I_LSR_WT:
+		ol("__lsr.wt");
 		break;
 
 	case I_LSR_WI:
@@ -1636,6 +1644,10 @@ void gen_code (INS *tmp)
 		ot("__mul.wi\t");
 		outdec((int)data);
 		nl();
+		break;
+
+	case I_DOUBLE:
+		ol("__double");
 		break;
 
 	default:
