@@ -6,35 +6,8 @@
 #define ULI_NORECURSE 1
 
 /*
- *	INTSIZE is the size of an integer in the target machine
- *	BYTEOFF is the offset of an byte within an integer on the
- *		target machine. (ie: 8080,pdp11 = 0, 6809 = 1,
- *		360 = 3)
- *	This compiler assumes that an integer is the SAME length as
- *	a pointer - in fact, the compiler uses INTSIZE for both.
- */
-
-#define INTSIZE 2
-#define BYTEOFF 0
-
-/* pseudo instruction arg types */
-#define T_NOP           -1
-#define T_VALUE          1
-#define T_LABEL          2
-#define T_SYMBOL         3
-#define T_PTR            4
-#define T_STACK          5
-#define T_STRING         6
-#define T_LIB            7
-#define T_SIZE           8
-#define T_BANK           9
-#define T_VRAM          10
-#define T_PAL           11
-#define T_LITERAL       12
-
-
-/* i-code pseudo instructions */
-/*
+ * i-code pseudo instructions
+ *
  * N.B. this i-code enum list MUST be kept updated and in the same order
  * as the table of i-code flag information in optimize.c
  */
@@ -332,6 +305,33 @@ enum ICODE {
 	X_LDD_S_B
 };
 
+/*
+ *	INTSIZE is the size of an integer in the target machine
+ *	BYTEOFF is the offset of an byte within an integer on the
+ *		target machine. (ie: 8080,pdp11 = 0, 6809 = 1,
+ *		360 = 3)
+ *	This compiler assumes that an integer is the SAME length as
+ *	a pointer - in fact, the compiler uses INTSIZE for both.
+ */
+
+#define INTSIZE 2
+#define BYTEOFF 0
+
+/* pseudo instruction arg types */
+#define T_NOP           -1
+#define T_VALUE          1
+#define T_LABEL          2
+#define T_SYMBOL         3
+#define T_PTR            4
+#define T_STACK          5
+#define T_STRING         6
+#define T_LIB            7
+#define T_SIZE           8
+#define T_BANK           9
+#define T_VRAM          10
+#define T_PAL           11
+#define T_LITERAL       12
+
 #define FOREVER for (;;)
 #define FALSE   0
 #define TRUE    1
@@ -371,19 +371,18 @@ enum ICODE {
 #define NAMEMAX		47
 #define NAMEALLOC	64
 
-struct symbol {
+typedef struct symbol {
 	char name[NAMEALLOC];	/* symbol name */
+	struct symbol *linked;	/* HuC: linked local and global symbols */
 	char identity;		/* variable, array, pointer, function */
 	char sym_type;		/* char, int, uchar, unit */
 	char storage;		/* public, auto, extern, static, lstatic, defauto*/
-	char far;
+	char far;		/* HuC: 1 if array of data in far memory */
 	short offset;		/* offset*/
 	short tagidx;		/* index of struct in tag table*/
 	int ptr_order;
 	int alloc_size;
-};
-
-typedef struct symbol SYMBOL;
+} SYMBOL;
 
 /* Define the structure tag table parameters */
 
@@ -576,13 +575,12 @@ SYMBOL *find_member (TAG_SYMBOL *tag, char *sname);
 
 struct lvalue {
 	SYMBOL *symbol;		/* symbol table address, or 0 for constant */
-	int indirect;		/* type of indirect object, 0 for static object */
+	int indirect;		/* type of object pointed to by primary register, 0 for static object */
 	int ptr_type;		/* type of pointer or array, 0 for other idents */
 	TAG_SYMBOL *tagsym;	/* tag symbol address, 0 if not struct */
-	SYMBOL *symbol2;
-	int value;
-	int ptr_order;
-	int val_type;
+	SYMBOL *symbol2;	/* HuC: */
+	int ptr_order;		/* HuC: allows for more than 1 level of indirection */
+	int val_type;		/* HuC: type of current value, if known */
 };
 #define LVALUE struct lvalue
 

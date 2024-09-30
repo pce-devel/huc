@@ -22,7 +22,7 @@
 /*
  *	lval->symbol - symbol table address, else 0 for constant
  *	lval->indirect - type indirect object to fetch, else 0 for static object
- *	lval->ptr_type - type pointer or array, else 0
+ *	lval->ptr_type - type of pointer or array, else 0
  */
 void expression (int comma)
 {
@@ -44,19 +44,35 @@ int expression_ex (LVALUE *lval, int comma, int norval)
 		if (ch() == ',')
 			gfence();
 	} while (match(","));
+
 	return (k);
 }
 
+/*
+ * C11 section 6.3.1.8 "Usual arithmetic conversions"
+ *
+ * .....   sbyte   sword   ubyte   uword
+ * ----------------------------------------
+ * sbyte | sbyte   sword   sword   uword
+ * sword | sword   sword   sword   uword
+ * ubyte | sword   sword   ubyte   uword
+ * uword | uword   uword   uword   uword
+ */
+
 static int is_unsigned (LVALUE *lval)
 {
-	if (lval->val_type && !(lval->val_type & CUNSIGNED))
-		return (0);
+	/* C promotes operations on an unsigned char
+	   to a signed int, not an unsigned int! */
 
-	/* C only promotes operations with an unsigned int
-	   to unsigned, not unsigned char! */
-	if (lval->val_type == CUINT)
+	/* if using a pointer, then the pointer itself is CUINT */
+	if (lval->ptr_type)
 		return (1);
 
+	/* handle result type or typecast (which overrides symbol) */
+	if (lval->val_type)
+		return (lval->val_type == CUINT);
+
+	/* handle a symbol reference */
 	if (lval->symbol && lval->symbol->sym_type == CUINT)
 		return (1);
 
@@ -77,7 +93,6 @@ static int is_byte (LVALUE *lval)
 	    (lval->symbol->sym_type == CCHAR || lval->symbol->sym_type == CUCHAR))
 		return (1);
 #endif
-
 	return (0);
 }
 
@@ -96,6 +111,11 @@ static void gen_scale_right (LVALUE *lval, LVALUE *lval2)
 	}
 }
 
+/*
+ * assignment operators
+ * @param lval
+ * @return
+ */
 int heir1 (LVALUE *lval, int comma)
 {
 	int k;
@@ -167,6 +187,11 @@ int heir1 (LVALUE *lval, int comma)
 	}
 }
 
+/*
+ * processes ? : expression
+ * @param lval
+ * @return 0 or 1, fetch or no fetch
+ */
 int heir1a (LVALUE *lval, int comma)
 {
 	int k, lab1, lab2;
@@ -199,6 +224,11 @@ int heir1a (LVALUE *lval, int comma)
 		return (0);
 }
 
+/*
+ * processes logical or ||
+ * @param lval
+ * @return 0 or 1, fetch or no fetch
+ */
 int heir1b (LVALUE *lval, int comma)
 {
 	int k, lab;
@@ -223,6 +253,11 @@ int heir1b (LVALUE *lval, int comma)
 		return (0);
 }
 
+/*
+ * processes logical and &&
+ * @param lval
+ * @return 0 or 1, fetch or no fetch
+ */
 int heir1c (LVALUE *lval, int comma)
 {
 	int k, lab;
@@ -247,6 +282,11 @@ int heir1c (LVALUE *lval, int comma)
 		return (0);
 }
 
+/*
+ * processes bitwise or |
+ * @param lval
+ * @return 0 or 1, fetch or no fetch
+ */
 int heir2 (LVALUE *lval, int comma)
 {
 	int k;
@@ -273,6 +313,11 @@ int heir2 (LVALUE *lval, int comma)
 	}
 }
 
+/*
+ * processes bitwise exclusive or
+ * @param lval
+ * @return 0 or 1, fetch or no fetch
+ */
 int heir3 (LVALUE *lval, int comma)
 {
 	int k;
@@ -299,6 +344,11 @@ int heir3 (LVALUE *lval, int comma)
 	}
 }
 
+/*
+ * processes bitwise and &
+ * @param lval
+ * @return 0 or 1, fetch or no fetch
+ */
 int heir4 (LVALUE *lval, int comma)
 {
 	int k;
@@ -325,6 +375,11 @@ int heir4 (LVALUE *lval, int comma)
 	}
 }
 
+/*
+ * processes equal and not equal operators
+ * @param lval
+ * @return 0 or 1, fetch or no fetch
+ */
 int heir5 (LVALUE *lval, int comma)
 {
 	int k;
@@ -356,6 +411,11 @@ int heir5 (LVALUE *lval, int comma)
 	}
 }
 
+/*
+ * comparison operators
+ * @param lval
+ * @return 0 or 1, fetch or no fetch
+ */
 int heir6 (LVALUE *lval, int comma)
 {
 	int k;
@@ -438,6 +498,11 @@ int heir6 (LVALUE *lval, int comma)
 	}
 }
 
+/*
+ * bitwise left, right shift
+ * @param lval
+ * @return 0 or 1, fetch or no fetch
+ */
 int heir7 (LVALUE *lval, int comma)
 {
 	int k;
@@ -473,6 +538,11 @@ int heir7 (LVALUE *lval, int comma)
 	}
 }
 
+/*
+ * addition, subtraction
+ * @param lval
+ * @return 0 or 1, fetch or no fetch
+ */
 int heir8 (LVALUE *lval, int comma)
 {
 	int k;
@@ -524,6 +594,11 @@ int heir8 (LVALUE *lval, int comma)
 	}
 }
 
+/*
+ * multiplication, division, modulus
+ * @param lval
+ * @return 0 or 1, fetch or no fetch
+ */
 int heir9 (LVALUE *lval, int comma)
 {
 	int k;
@@ -561,6 +636,11 @@ int heir9 (LVALUE *lval, int comma)
 	}
 }
 
+/*
+ * increment, decrement, negation operators
+ * @param lval
+ * @return 0 or 1, fetch or no fetch
+ */
 int heir10 (LVALUE *lval, int comma)
 {
 	int k;
@@ -694,6 +774,11 @@ int heir10 (LVALUE *lval, int comma)
 	}
 }
 
+/*
+ * array subscripting
+ * @param lval
+ * @return 0 or 1, fetch or no fetch
+ */
 int heir11 (LVALUE *lval, int comma)
 {
 	int direct, k;
@@ -760,7 +845,22 @@ int heir11 (LVALUE *lval, int comma)
 			if (!deferred && !ptr->far)
 				gadd(NULL, NULL);
 			if (deferred) {
-				out_ins(I_ADD_WI, T_SYMBOL, (intptr_t)ptr);
+#if ULI_NORECURSE
+				if ((ptr->storage & STORAGE) == AUTO && norecurse && glint(ptr) < 0) {
+					/* XXX: bit of a memory leak, but whatever... */
+					SYMBOL * locsym = copysym(ptr);
+					if (NAMEALLOC <=
+						sprintf(locsym->name, "_%s_end - %d", current_fn, -glint(ptr)))
+						error("norecurse local name too long");
+					locsym->linked = ptr;
+					out_ins(I_ADD_WI, T_SYMBOL, (intptr_t)locsym);
+				}
+				else
+#endif
+				if ((ptr->storage & STORAGE) == LSTATIC)
+					out_ins(I_ADD_WI, T_SYMBOL, (intptr_t)(ptr->linked));
+				else
+					out_ins(I_ADD_WI, T_SYMBOL, (intptr_t)ptr);
 				deferred = false;
 			}
 			lval->symbol = 0;
@@ -783,7 +883,7 @@ int heir11 (LVALUE *lval, int comma)
 					lval->ptr_order = 0;
 				}
 				else {
-					lval->val_type = lval->ptr_type;
+//					lval->val_type = lval->ptr_type;
 					lval->ptr_type = 0;	// VARIABLE; /* David, bug patch ?? */
 					lval->ptr_order = 0;
 				}
@@ -797,16 +897,8 @@ int heir11 (LVALUE *lval, int comma)
 				callfunction(0);
 			}
 			else if (ptr->identity != FUNCTION) {
-				if (strcmp(ptr->name, "vram") == 0)
-					callfunction(ptr->name);
-				else {
-					if (ptr->far) {
-						lval->symbol2 = ptr;
-						immed(T_VALUE, 0);
-					}
-					rvalue(lval);
-					callfunction(0);
-				}
+				rvalue(lval);
+				callfunction(0);
 			}
 			else
 				callfunction(ptr->name);
@@ -814,12 +906,14 @@ int heir11 (LVALUE *lval, int comma)
 			/* Encode return type in lval. */
 			SYMBOL *s = lval->symbol;
 			if (s) {
+				if (s->sym_type == 0)
+					error("function return type is unknown");
 				if (s->ptr_order >= 1) {
 					lval->ptr_type = s->sym_type;
 					lval->ptr_order = s->ptr_order;
-				}
-				if (s->sym_type)
+				} else {
 					lval->val_type = s->sym_type;
+				}
 				if (s->sym_type == CSTRUCT)
 					lval->tagsym = &tag_table[s->tagidx];
 				lval->symbol = 0;
@@ -849,7 +943,7 @@ int heir11 (LVALUE *lval, int comma)
 			if (ptr->sym_type == CSTRUCT)
 				lval->tagsym = &tag_table[ptr->tagidx];
 			if (ptr->identity == POINTER) {
-				lval->indirect = CINT;
+				lval->indirect = CUINT;
 				lval->ptr_type = ptr->sym_type;
 				lval->ptr_order = ptr->ptr_order;
 				// lval->val_type = CINT;
@@ -892,8 +986,9 @@ void store (LVALUE *lval)
 			if (lval->symbol)
 				putmem(lval->symbol);
 			else {
-				/* write to a memory addresses given as an immediate value */
-				out_ins(I_ST_WM, T_VALUE, lval->value);
+//				/* write to a memory addresses given as an immediate value */
+//				out_ins(I_ST_WM, T_VALUE, lval->value);
+				error("cannot write to a string constant or literal value");
 			}
 		}
 	}

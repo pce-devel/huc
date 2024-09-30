@@ -292,7 +292,7 @@ void declloc (char typ, char stclass, int otag)
 	int totalk = 0;
 
 	for (;;) {
-		SYMBOL * ssym = NULL;
+		SYMBOL * sym = NULL;
 		for (;;) {
 			int ptr_order = 0;
 			if (endst()) {
@@ -354,9 +354,10 @@ void declloc (char typ, char stclass, int otag)
 				   addloc(), OTOH, wants the identifier so
 				   it can be found when referenced further
 				   down in the source text.  */
+				SYMBOL *loc;
 				char lsname[NAMESIZE];
 				int label = getlabel();
-				sprintf(lsname, "LL%d", label);
+				sprintf(lsname, "SL%d", label);
 
 				/* do static initialization unless from norecurse */
 				if ((stclass & WASAUTO) == 0)
@@ -366,32 +367,35 @@ void declloc (char typ, char stclass, int otag)
 				   elements, not a byte size.  Unless, of
 				   course, we have a CSTRUCT. *sigh* */
 				if (typ == CSTRUCT)
-					ssym = addglb(lsname, j, typ, k, stclass, 0);
+					sym = addglb(lsname, j, typ, k, stclass, 0);
 				else
-					ssym = addglb(lsname, j, typ, elements, stclass, 0);
+					sym = addglb(lsname, j, typ, elements, stclass, 0);
 
-				ssym = addloc(sname, j, typ, label, stclass, k);
+				loc = addloc(sname, j, typ, label, stclass, k);
 				if (typ == CSTRUCT)
-					ssym->tagidx = otag;
-				ssym->ptr_order = ptr_order;
+					loc->tagidx = otag;
+				loc->ptr_order = ptr_order;
+
+				/* link the local and global symbols together */
+				sym->linked = loc;
+				loc->linked = sym;
 			}
 			else {
-				SYMBOL *c;
 //				k = galign(k);
 				totalk += k;
 				// stkp = modstk (stkp - k);
 				// addloc (sname, j, typ, stkp, AUTO);
 #if ULI_NORECURSE
 				if (!norecurse)
-					c = addloc(sname, j, typ, stkp - totalk, AUTO, k);
+					sym = addloc(sname, j, typ, stkp - totalk, AUTO, k);
 				else
-					c = addloc(sname, j, typ, locals_ptr - totalk, AUTO, k);
+					sym = addloc(sname, j, typ, local_offset - totalk, AUTO, k);
 #else
-				c = addloc(sname, j, typ, stkp - totalk, AUTO, k);
+				sym = addloc(sname, j, typ, stkp - totalk, AUTO, k);
 #endif
 				if (typ == CSTRUCT)
-					c->tagidx = otag;
-				c->ptr_order = ptr_order;
+					sym->tagidx = otag;
+				sym->ptr_order = ptr_order;
 			}
 			break;
 		}
@@ -406,7 +410,7 @@ void declloc (char typ, char stclass, int otag)
 			if (!norecurse)
 				stkp = modstk(stkp - totalk);
 			else
-				locals_ptr -= totalk;
+				local_offset -= totalk;
 			totalk -= k;
 #else
 			if (!norecurse) {
@@ -416,15 +420,14 @@ void declloc (char typ, char stclass, int otag)
 #endif
 
 			if (const_expr(&num, ",", ";")) {
-#if ULI_NORECURSE
-				/* XXX: minor memory leak */
-				char *locsym = calloc(1,sizeof(SYMBOL));
-#endif
 				gtext();
 				if (k == 1) {
 #if ULI_NORECURSE
 					if (norecurse) {
-						sprintf(locsym, "_%s_lend - %d", current_fn, (int) -locals_ptr);
+						/* XXX: bit of a memory leak, but whatever... */
+						SYMBOL * locsym = copysym(sym);
+						sprintf(locsym->name, "_%s_end - %d", current_fn, -local_offset);
+						locsym->linked = sym;
 						out_ins_ex(I_ST_UMIQ, T_SYMBOL, (intptr_t)locsym, T_VALUE, num);
 					}
 					else
@@ -439,7 +442,10 @@ void declloc (char typ, char stclass, int otag)
 				else if (k == 2) {
 #if ULI_NORECURSE
 					if (norecurse) {
-						sprintf(locsym, "_%s_lend - %d", current_fn, (int) -locals_ptr);
+						/* XXX: bit of a memory leak, but whatever... */
+						SYMBOL * locsym = copysym(sym);
+						sprintf(locsym->name, "_%s_end - %d", current_fn, -local_offset);
+						locsym->linked = sym;
 						out_ins_ex(I_ST_WMIQ, T_SYMBOL, (intptr_t)locsym, T_VALUE, num);
 					}
 					else
@@ -462,7 +468,7 @@ void declloc (char typ, char stclass, int otag)
 				stkp = modstk(stkp - totalk);
 #if ULI_NORECURSE
 			else
-				locals_ptr -= totalk;
+				local_offset -= totalk;
 #endif
 			return;
 		}
@@ -546,6 +552,7 @@ SYMBOL *addglb (char *sname, char id, char typ, int value, char stor, SYMBOL *re
 	cptr->offset = value;
 	cptr->alloc_size = value;
 	cptr->far = 0;
+	cptr->linked = NULL;
 	if (id == FUNCTION)
 		cptr->alloc_size = 0;
 	else if (id == POINTER)
@@ -586,6 +593,7 @@ SYMBOL *addloc (char *sname, char id, char typ, int value, char stclass, int siz
 	cptr->storage = stclass;
 	cptr->offset = value;
 	cptr->alloc_size = size;
+	cptr->linked = NULL;
 	locptr++;
 	return (cptr);
 }

@@ -41,13 +41,13 @@ void getmem (SYMBOL *sym)
 	if ((sym->identity != POINTER) && (sym->sym_type == CCHAR || sym->sym_type == CUCHAR)) {
 		int op = (sym->sym_type & CUNSIGNED) ? I_LD_UM : I_LD_BM;
 		if ((sym->storage & STORAGE) == LSTATIC)
-			out_ins(op, T_LABEL, glint(sym));
+			out_ins(op, T_SYMBOL, (intptr_t)(sym->linked));
 		else
 			out_ins(op, T_SYMBOL, (intptr_t)sym);
 	}
 	else {
 		if ((sym->storage & STORAGE) == LSTATIC)
-			out_ins(I_LD_WM, T_LABEL, glint(sym));
+			out_ins(I_LD_WM, T_SYMBOL, (intptr_t)(sym->linked));
 		else if ((sym->storage & STORAGE) == CONST && (data = get_const(sym)))
 			out_ins(I_LD_WI, T_LITERAL, (intptr_t)data);
 		else
@@ -64,7 +64,7 @@ void getloc (SYMBOL *sym)
 	int value;
 
 	if ((sym->storage & STORAGE) == LSTATIC)
-		out_ins(I_LD_WI, T_LABEL, glint(sym));
+		out_ins(I_LD_WI, T_SYMBOL, (intptr_t)(sym->linked));
 	else {
 #if ULI_NORECURSE
 		value = glint(sym);
@@ -72,8 +72,9 @@ void getloc (SYMBOL *sym)
 			/* XXX: bit of a memory leak, but whatever... */
 			SYMBOL * locsym = copysym(sym);
 			if (NAMEALLOC <=
-				sprintf(locsym->name, "_%s_lend - %ld", current_fn, (long) -value))
+				sprintf(locsym->name, "_%s_end - %d", current_fn, -value))
 				error("norecurse local name too long");
+			locsym->linked = sym;
 			out_ins(I_LD_WI, T_SYMBOL, (intptr_t)locsym);
 		}
 		else {
@@ -102,7 +103,7 @@ void putmem (SYMBOL *sym)
 		code = I_ST_WM;
 
 	if ((sym->storage & STORAGE) == LSTATIC)
-		out_ins(code, T_LABEL, glint(sym));
+		out_ins(code, T_SYMBOL, (intptr_t)(sym->linked));
 	else
 		out_ins(code, T_SYMBOL, (intptr_t)sym);
 }
@@ -157,7 +158,15 @@ void immed (int type, intptr_t data)
 {
 	if (type == T_VALUE && (data < -32768 || data > 65535))
 		warning(W_GENERAL, "large integer truncated");
-	out_ins(I_LD_WI, type, data);
+	if (type == T_SYMBOL) {
+		SYMBOL *sym = (SYMBOL *)data;
+		if ((sym->storage & STORAGE) == LSTATIC)
+			out_ins(I_LD_WI, T_SYMBOL, (intptr_t)(sym->linked));
+		else
+			out_ins(I_LD_WI, T_SYMBOL, data);
+	} else {
+		out_ins(I_LD_WI, type, data);
+	}
 }
 
 /*
