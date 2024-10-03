@@ -268,6 +268,19 @@ macro_getargs(int ip)
 			f = 0;
 			level = 0;
 			while (c) {
+				if (c == '/' && prlnbuf[ip] == '*') {
+					++ip;
+					do {
+						c = prlnbuf[ip++];
+						if (c == '\0') {
+							error("Macro argument comment cannot span multiple lines!");
+							return (0);
+						}
+					} while (c != '*' && prlnbuf[ip] != '/');
+					++ip;
+					c = prlnbuf[ip++];
+					continue;
+				}
 				if (c == ',') {
 					if (level == 0)
 						break;
@@ -296,8 +309,8 @@ macro_getargs(int ip)
 				else {
 					ptr[i++] = c;
 				}
-				if (i == 80) {
-					error("Macro argument string too long, max. 80 characters!");
+				if (i == 255) {
+					error("Macro argument string too long, max. 255 characters!");
 					return (0);
 				}
 				j++;

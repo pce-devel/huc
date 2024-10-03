@@ -196,3 +196,7 @@ lblo		.macro
 lbhs		.macro
 		bcs	\1
 		.endm
+
+__ldwi		.macro
+	__ld.wi		\1
+		.endm
