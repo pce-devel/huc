@@ -51,6 +51,8 @@
 
 #asmdef	HUCC_USES_STRING 1
 
+#if 1
+
 extern void __fastcall __xsafe strcpy( char *destination<_di>, char *source<_bp> );
 extern void __fastcall __xsafe strcat( char *destination<_di>, char *source<_bp> );
 
@@ -68,8 +70,9 @@ extern int __fastcall strcmp( char *destination<_di>, char *source<_bp> );
 extern int __fastcall strncmp( char *destination<_di>, char *source<_bp>, unsigned int count<_ax> );
 extern int __fastcall memcmp( unsigned char *destination<_di>, unsigned char *source<_bp>, unsigned int count<acc> );
 
-/*
-NOT WORKING YET (needs compiler changes) ...
+#else
+
+/* NOT WORKING YET (needs compiler changes) ... */
 
 extern void __fastcall __xsafe strcpy( char *destination<_di>, char __far *source<_bp_bank:_bp> );
 extern void __fastcall __xsafe strcat( char *destination<_di>, char __far *source<_bp_bank:_bp> );
@@ -79,10 +82,16 @@ extern unsigned int __fastcall __xsafe strlen( char __far *source<_bp_bank:_bp> 
 extern unsigned int __fastcall __xsafe strlcpy( char *destination<_di>, char __far *source<_bp_bank:_bp>, unsigned char size<acc> );
 extern unsigned int __fastcall __xsafe strlcat( char *destination<_di>, char __far *source<_bp_bank:_bp>, unsigned char size<acc> );
 
+extern void __fastcall __xsafe memcpy( unsigned char *destination<ram_tii_dst>, unsigned char __far *source<_bp_bank:ram_tii_src>, unsigned int count<acc> );
+extern unsigned char * __fastcall __xsafe mempcpy( unsigned char *destination<ram_tii_dst>, unsigned char __far *source<_bp_bank:ram_tii_src>, unsigned int count<acc> );
+
+extern void __fastcall __xsafe memset( unsigned char *destination<ram_tii_src>, unsigned char value<_al>, unsigned int count<acc> );
+
 extern int __fastcall strcmp( char *destination<_di>, char __far *source<_bp_bank:_bp> );
 extern int __fastcall strncmp( char *destination<_di>, char __far *source<_bp_bank:_bp>, unsigned int count<_ax> );
 extern int __fastcall memcmp( unsigned char *destination<_di>, unsigned char __far *source<_bp_bank:_bp>, unsigned int count<_ax> );
-*/
+
+#endif
 
 #endif // __HUCC__
 

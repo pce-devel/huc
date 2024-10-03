@@ -96,7 +96,7 @@ int errs;
 
 int norecurse = 0;
 #if ULI_NORECURSE
-int locals_ptr;
+int local_offset;
 #endif
 
 struct type_type *typedefs;

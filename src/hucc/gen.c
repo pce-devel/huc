@@ -41,13 +41,13 @@ void getmem (SYMBOL *sym)
 	if ((sym->identity != POINTER) && (sym->sym_type == CCHAR || sym->sym_type == CUCHAR)) {
 		int op = (sym->sym_type & CUNSIGNED) ? I_LD_UM : I_LD_BM;
 		if ((sym->storage & STORAGE) == LSTATIC)
-			out_ins(op, T_LABEL, glint(sym));
+			out_ins(op, T_SYMBOL, (intptr_t)(sym->linked));
 		else
 			out_ins(op, T_SYMBOL, (intptr_t)sym);
 	}
 	else {
 		if ((sym->storage & STORAGE) == LSTATIC)
-			out_ins(I_LD_WM, T_LABEL, glint(sym));
+			out_ins(I_LD_WM, T_SYMBOL, (intptr_t)(sym->linked));
 		else if ((sym->storage & STORAGE) == CONST && (data = get_const(sym)))
 			out_ins(I_LD_WI, T_LITERAL, (intptr_t)data);
 		else
@@ -64,7 +64,7 @@ void getloc (SYMBOL *sym)
 	int value;
 
 	if ((sym->storage & STORAGE) == LSTATIC)
-		out_ins(I_LD_WI, T_LABEL, glint(sym));
+		out_ins(I_LD_WI, T_SYMBOL, (intptr_t)(sym->linked));
 	else {
 #if ULI_NORECURSE
 		value = glint(sym);
@@ -72,8 +72,9 @@ void getloc (SYMBOL *sym)
 			/* XXX: bit of a memory leak, but whatever... */
 			SYMBOL * locsym = copysym(sym);
 			if (NAMEALLOC <=
-				sprintf(locsym->name, "_%s_lend - %ld", current_fn, (long) -value))
+				sprintf(locsym->name, "_%s_end - %d", current_fn, -value))
 				error("norecurse local name too long");
+			locsym->linked = sym;
 			out_ins(I_LD_WI, T_SYMBOL, (intptr_t)locsym);
 		}
 		else {
@@ -102,7 +103,7 @@ void putmem (SYMBOL *sym)
 		code = I_ST_WM;
 
 	if ((sym->storage & STORAGE) == LSTATIC)
-		out_ins(code, T_LABEL, glint(sym));
+		out_ins(code, T_SYMBOL, (intptr_t)(sym->linked));
 	else
 		out_ins(code, T_SYMBOL, (intptr_t)sym);
 }
@@ -157,7 +158,15 @@ void immed (int type, intptr_t data)
 {
 	if (type == T_VALUE && (data < -32768 || data > 65535))
 		warning(W_GENERAL, "large integer truncated");
-	out_ins(I_LD_WI, type, data);
+	if (type == T_SYMBOL) {
+		SYMBOL *sym = (SYMBOL *)data;
+		if ((sym->storage & STORAGE) == LSTATIC)
+			out_ins(I_LD_WI, T_SYMBOL, (intptr_t)(sym->linked));
+		else
+			out_ins(I_LD_WI, T_SYMBOL, data);
+	} else {
+		out_ins(I_LD_WI, type, data);
+	}
 }
 
 /*
@@ -293,7 +302,7 @@ void gadd (LVALUE *lval, LVALUE *lval2)
 	/* XXX: isn't this done in expr.c already? */
 	/* Nope, it is used when calculating a pointer variable address into a word array */
 	if (dbltest(lval2, lval))
-		out_ins(I_ASL_WT, 0, 0);
+		out_ins(I_DOUBLE, 0, 0);
 	out_ins(I_ADD_WT, 0, 0);
 	stkp = stkp + INTSIZE;
 }
@@ -315,10 +324,11 @@ void gsub (void)
  */
 void gmult (int is_unsigned)
 {
+	/* the bottom 16-bits of a signed and unsigned 16-bit multiply are identical! */
 	if (is_unsigned)
-		out_ins(I_JSR, T_LIB, (intptr_t)"umul");
+		out_ins(I_MUL_WT, 0, 0);
 	else
-		out_ins(I_JSR, T_LIB, (intptr_t)"smul");
+		out_ins(I_MUL_WT, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
@@ -335,9 +345,9 @@ void gmult_imm (int value)
 void gdiv (int is_unsigned)
 {
 	if (is_unsigned)
-		out_ins(I_JSR, T_LIB, (intptr_t)"udiv");
+		out_ins(I_UDIV_WT, 0, 0);
 	else
-		out_ins(I_JSR, T_LIB, (intptr_t)"sdiv");
+		out_ins(I_SDIV_WT, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
@@ -357,9 +367,9 @@ void gdiv_imm (int value)
 void gmod (int is_unsigned)
 {
 	if (is_unsigned)
-		out_ins(I_JSR, T_LIB, (intptr_t)"umod");
+		out_ins(I_UMOD_WT, 0, 0);
 	else
-		out_ins(I_JSR, T_LIB, (intptr_t)"smod");
+		out_ins(I_SMOD_WT, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
@@ -402,9 +412,9 @@ void gand (void)
 void gasr (int is_unsigned)
 {
 	if (is_unsigned)
-		out_ins(I_JSR, T_LIB, (intptr_t)"lsrw");
+		out_ins(I_LSR_WT, 0, 0);
 	else
-		out_ins(I_JSR, T_LIB, (intptr_t)"asrw");
+		out_ins(I_ASR_WT, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
@@ -416,7 +426,7 @@ void gasr (int is_unsigned)
  */
 void gasl (void)
 {
-	out_ins(I_JSR, T_LIB, (intptr_t)"aslw");
+	out_ins(I_ASL_WT, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 

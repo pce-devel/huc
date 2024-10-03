@@ -460,10 +460,14 @@ void nl (void)
 void outsymbol (SYMBOL *ptr)
 {
 	if ((ptr->storage & STORAGE) == LSTATIC) {
-		outlabel(glint(ptr));
+		outstr(ptr->name);
 	} else {
 		prefix();
 		outstr(ptr->name);
+	}
+	if (ptr->linked) {
+		outstr(" ; ");
+		outstr(ptr->linked->name);
 	}
 }
 

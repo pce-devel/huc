@@ -93,7 +93,7 @@ extern int errs;
 extern int top_level_stkp;
 extern int norecurse;
 #if ULI_NORECURSE
-extern int locals_ptr;
+extern int local_offset;
 #endif
 extern char current_fn[];
 

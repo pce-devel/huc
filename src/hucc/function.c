@@ -362,14 +362,14 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 	nl();
 
 	/* generate the function prolog */
-	out_ins(I_ENTER, T_STRING, (intptr_t)ptr->name);
+	out_ins(I_ENTER, T_SYMBOL, (intptr_t)ptr);
 
 #if ULI_NORECURSE
-	/* When using fixed-address locals, locals_ptr is used to
+	/* When using fixed-address locals, local_offset is used to
 	   keep track of their memory offset instead of stkp, so
 	   we have to reset it before producing code. */
 	if (norecurse)
-		locals_ptr = 0;
+		local_offset = 0;
 #endif
 
 	/* generate all the code for the function */
@@ -386,19 +386,19 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 
 #if ULI_NORECURSE
 	/* Add space for fixed-address locals to .bss section. */
-	if (norecurse && locals_ptr < 0) {
+	if (norecurse && local_offset < 0) {
 		if (is_leaf_function) {
 			leaf_functions = realloc(leaf_functions, (leaf_cnt + 1) * sizeof(*leaf_functions));
 			leaf_functions[leaf_cnt++] = strdup(current_fn);
-			if (-locals_ptr > leaf_size)
-				leaf_size = -locals_ptr;
+			if (-local_offset > leaf_size)
+				leaf_size = -local_offset;
 		}
 		else {
 			ot(".data"); nl();
 			ot(".bss"); nl();
 			outstr("__"); outstr(current_fn); outstr("_loc:\n\t.ds\t\t");
-			outdec(-locals_ptr); nl();
-			outstr("__"); outstr(current_fn); outstr("_lend:"); nl();
+			outdec(-local_offset); nl();
+			outstr("__"); outstr(current_fn); outstr("_end:"); nl();
 			ot(".code"); nl();
 		}
 	}

@@ -159,21 +159,24 @@ int primary (LVALUE *lval, int comma, bool *deferred)
 
 	lval->ptr_type = 0;	/* clear pointer/array type */
 	lval->ptr_order = 0;
+	lval->val_type = 0;
 	lval->symbol2 = 0;
 	if (match("(")) {
+		/* typecast */
 		struct type_type t;
 		if (match_type(&t, YES, NO)) {
 			needbrack(")");
 			k = heir10(lval, comma);
 			if (k)
 				rvalue(lval);
-			if (t.type_ident != POINTER) {
+			if (t.type_ident == POINTER) {
+				lval->ptr_type = t.type_type;
+				lval->val_type = 0;
+			} else {
 				gcast(t.type_type);
 				lval->ptr_type = 0;
+				lval->val_type = t.type_type;
 			}
-			else
-				lval->ptr_type = t.type_type;
-			lval->val_type = t.type_type;
 			lval->ptr_order = t.ptr_order;
 			return (0);
 		}
@@ -235,18 +238,20 @@ int primary (LVALUE *lval, int comma, bool *deferred)
 		const_str(&num, current_fn);
 		immed(T_STRING, num);
 		indflg = 0;
-		lval->value = num;
 		lval->symbol = 0;
 		lval->indirect = 0;
+		lval->ptr_type = CCHAR;
+		lval->ptr_order = 1;
 		return (0);
 	}
 	else if (amatch("__FILE__", 8)) {
 		const_str(&num, fname_copy);
 		immed(T_STRING, num);
 		indflg = 0;
-		lval->value = num;
 		lval->symbol = 0;
 		lval->indirect = 0;
+		lval->ptr_type = CCHAR;
+		lval->ptr_order = 1;
 		return (0);
 	}
 	else if (amatch("__sei", 5) && match("(") && match(")")) {
@@ -261,17 +266,16 @@ int primary (LVALUE *lval, int comma, bool *deferred)
 	if (symname(sname)) {
 		blanks();
 		if (find_enum(sname, &num)) {
+			immed(T_VALUE, num);
 			indflg = 0;
-			lval->value = num;
 			lval->symbol = 0;
 			lval->indirect = 0;
-			immed(T_VALUE, num);
 			return (0);
 		}
 		ptr = findloc(sname);
 		if (ptr) {
-			/* David, patched to support
-			 *        local 'static' variables
+			/*
+			 * David, patched to support local 'static' variables
 			 */
 			lval->symbol = ptr;
 			lval->indirect = ptr->sym_type;
@@ -291,7 +295,16 @@ int primary (LVALUE *lval, int comma, bool *deferred)
 			}
 			if (ptr->identity == ARRAY ||
 			    (ptr->identity == VARIABLE && ptr->sym_type == CSTRUCT)) {
-				getloc(ptr);
+				/* add array base address after index calculation */
+#if ULI_NORECURSE
+				if (/* ptr->identity == ARRAY && */ ch() == '[' && (ptr->storage & STORAGE) == AUTO && norecurse && glint(ptr) < 0)
+					*deferred = true;
+				else
+#endif
+				if (/* ptr->identity == ARRAY && */ ch() == '[' && (ptr->storage & STORAGE) == LSTATIC)
+					*deferred = true;
+				else
+					getloc(ptr);
 				lval->ptr_type = ptr->sym_type;
 				lval->ptr_order = ptr->ptr_order;
 //				lval->ptr_type = 0;
@@ -324,7 +337,7 @@ int primary (LVALUE *lval, int comma, bool *deferred)
 				}
 				if (!ptr->far) {
 					/* add array base address after index calculation */
-					if (ch() == '[')
+					if (/* ptr->identity == ARRAY && */ ch() == '[')
 						*deferred = true;
 					else
 						immed(T_SYMBOL, (intptr_t)ptr);
@@ -362,12 +375,29 @@ int primary (LVALUE *lval, int comma, bool *deferred)
 	}
 	if ((k = constant(&num))) {
 		indflg = 0;
-		lval->value = num;
 		lval->symbol = 0;
 		lval->indirect = 0;
 		if (k == 2) {
+			/* a string constant */
 			lval->ptr_type = CCHAR;
 			lval->ptr_order = 1;
+#if 1
+		} else {
+			/* this works together with the integer promotion rules
+			 * to make sure that values >= 0 and < 128 are compared
+			 * as bytes, with word compares being used if > 128
+			 */
+			if (num < -128)
+				lval->val_type = CINT;
+			else
+			if (num < 128)
+				lval->val_type = CCHAR;
+			else
+			if (num < 32768)
+				lval->val_type = CINT;
+			else
+				lval->val_type = CUINT;
+#endif
 		}
 		return (0);
 	}

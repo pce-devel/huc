@@ -983,7 +983,7 @@ static void dumpfinal (void)
 		for (i = 0; i < leaf_cnt; i++) {
 			outstr("__");
 			outstr(leaf_functions[i]);
-			outstr("_lend:\n");
+			outstr("_end:\n");
 		}
 	}
 	if (rodata_offset == 0) {

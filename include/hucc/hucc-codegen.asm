@@ -2199,7 +2199,13 @@ __add.wt	.macro	; __STACK
 ; **************
 
 __add.wi	.macro
-	.if	((\?1 == ARG_ABS) && (\1 >= 0) && (\1 < 256))
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		inc	a
+		bne	!+
+		iny
+!:
+	.else
+	.if	((\?1 == ARG_ABS) && ((\1) >= 0) && ((\1) < 256))
 		clc
 		adc.l	#\1
 		bcc	!+
@@ -2211,6 +2217,7 @@ __add.wi	.macro
 		say
 		adc.h	#\1
 		say
+	.endif
 	.endif
 		.endm
 
@@ -2472,9 +2479,15 @@ __or.um		.macro
 ; **************
 ; N.B. Used when calculating a pointer into a word array.
 
-__asl.wt	.macro
+__double	.macro
 		asl.l	<__stack, x
 		rol.h	<__stack, x
+		.endm
+
+; **************
+
+__asl.wt	.macro
+		jsr	aslw
 		.endm
 
 ; **************
@@ -2545,6 +2558,12 @@ __asl.wr	.macro
 
 ; **************
 
+__asr.wt	.macro
+		jsr	asrw
+		.endm
+
+; **************
+
 __asr.wi	.macro
 	.if (\1 = 1)
 		cpy	#$80
@@ -2590,6 +2609,12 @@ __asr.wi	.macro
 	.endif
 	.endif
 	.endif
+		.endm
+
+; **************
+
+__lsr.wt	.macro
+		jsr	lsrw
 		.endm
 
 ; **************
@@ -2669,6 +2694,12 @@ __lsr.uiq	.macro
 
 ; **************
 
+__mul.wt	.macro
+		jsr	mulw
+		.endm
+
+; **************
+
 __mul.wi	.macro
 	.if (\1 = 2)
 	__asl.wr
@@ -2728,7 +2759,7 @@ __mul.wi	.macro
 	.else
 	__push.wr
 	__ld.wi		\1
-		jsr	umul
+		jsr	mulw
 	.endif
 	.endif
 	.endif
@@ -2738,6 +2769,96 @@ __mul.wi	.macro
 	.endif
 	.endif
 	.endif
+		.endm
+
+; **************
+
+__sdiv.wt	.macro
+		jsr	sdivw
+		.endm
+
+; **************
+
+__sdiv.wi	.macro
+		phx
+		ldx.l	#\1
+		stx.l	<divisor
+		ldx.h	#\1
+		stx.h	<divisor
+		jsr	__divsint
+		plx
+		.endm
+
+; **************
+
+__udiv.wt	.macro
+		jsr	udivw
+		.endm
+
+; **************
+
+__udiv.wi	.macro
+		phx
+		ldx.l	#\1
+		stx.l	<divisor
+		ldx.h	#\1
+		stx.h	<divisor
+		jsr	__divuint
+		plx
+		.endm
+
+; **************
+
+__udiv.ui	.macro
+		phx
+		ldy	#\1
+		jsr	__divuchar
+		plx
+		.endm
+
+; **************
+
+__smod.wt	.macro
+		jsr	smodw
+		.endm
+
+; **************
+
+__smod.wi	.macro
+		phx
+		ldx.l	#\1
+		stx.l	<divisor
+		ldx.h	#\1
+		stx.h	<divisor
+		jsr	__modsint
+		plx
+		.endm
+
+; **************
+
+__umod.wt	.macro
+		jsr	umodw
+		.endm
+
+; **************
+
+__umod.wi	.macro
+		phx
+		ldx.l	#\1
+		stx.l	<divisor
+		ldx.h	#\1
+		stx.h	<divisor
+		jsr	__moduint
+		plx
+		.endm
+
+; **************
+
+__umod.ui	.macro
+		phx
+		ldy	#\1
+		jsr	__moduchar
+		plx
 		.endm
 
 
@@ -3251,8 +3372,7 @@ asrw_positive:	sta	<__temp
 ;
 ; N.B. signed and unsigned multiply only differ in the top 16 of the 32bits!
 
-umul:
-smul:		sta.l	<multiplier
+mulw:		sta.l	<multiplier
 		sty.h	<multiplier
 		__pop.wr
 		phx				; Preserve X (aka __sp).
@@ -3263,7 +3383,7 @@ smul:		sta.l	<multiplier
 ; **************
 ; Y:A = stacked-value / Y:A
 
-udiv:		sta.l	<divisor
+udivw:		sta.l	<divisor
 		sty.h	<divisor
 		__pop.wr
 		phx				; Preserve X (aka __sp).
@@ -3274,7 +3394,7 @@ udiv:		sta.l	<divisor
 ; **************
 ; Y:A = stacked-value / Y:A
 
-sdiv:		sta.l	<divisor
+sdivw:		sta.l	<divisor
 		sty.h	<divisor
 		__pop.wr
 		phx				; Preserve X (aka __sp).
@@ -3285,7 +3405,7 @@ sdiv:		sta.l	<divisor
 ; **************
 ; Y:A = stacked-value % Y:A
 
-umod:		sta.l	<divisor
+umodw:		sta.l	<divisor
 		sty.h	<divisor
 		__pop.wr
 		phx				; Preserve X (aka __sp).
@@ -3296,7 +3416,7 @@ umod:		sta.l	<divisor
 ; **************
 ; Y:A = stacked-value % Y:A
 
-smod:		sta.l	<divisor
+smodw:		sta.l	<divisor
 		sty.h	<divisor
 		__pop.wr
 		phx				; Preserve X (aka __sp).

@@ -92,7 +92,7 @@ extern void __fastcall __xsafe sgx_load_tile( unsigned int vram<_di> );
 extern void __fastcall __xsafe load_bat( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned char tiles_w<_al>, unsigned char tiles_h<_ah> );
 extern void __fastcall __xsafe sgx_load_bat( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned char tiles_w<_al>, unsigned char tiles_h<_ah> );
 
-extern void __fastcall __xsafe load_palette( unsigned char palette<_al>, unsigned char __far *data<_bp_bank:_bp>, unsigned int num_palettes<_ah> );
+extern void __fastcall __xsafe load_palette( unsigned char palette<_al>, unsigned char __far *data<_bp_bank:_bp>, unsigned char num_palettes<_ah> );
 
 extern void __fastcall __xsafe set_font_addr( unsigned int vram<acc> );
 extern void __fastcall __xsafe set_font_pal( unsigned char palette<acc> );

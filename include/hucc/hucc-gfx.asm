@@ -983,7 +983,7 @@ load_bat_group	.procgroup			; These routines share code!
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe load_palette( unsigned char palette<_al>, unsigned char __far *data<_bp_bank:_bp>, unsigned int num_palettes<_ah> );
+; void __fastcall __xsafe load_palette( unsigned char palette<_al>, unsigned char __far *data<_bp_bank:_bp>, unsigned char num_palettes<_ah> );
 
 		.proc	_load_palette.3
 
