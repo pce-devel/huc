@@ -324,10 +324,11 @@ void gsub (void)
  */
 void gmult (int is_unsigned)
 {
+	/* the bottom 16-bits of a signed and unsigned 16-bit multiply are identical! */
 	if (is_unsigned)
-		out_ins(I_JSR, T_LIB, (intptr_t)"umul");
+		out_ins(I_MUL_WT, 0, 0);
 	else
-		out_ins(I_JSR, T_LIB, (intptr_t)"smul");
+		out_ins(I_MUL_WT, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
@@ -344,9 +345,9 @@ void gmult_imm (int value)
 void gdiv (int is_unsigned)
 {
 	if (is_unsigned)
-		out_ins(I_JSR, T_LIB, (intptr_t)"udiv");
+		out_ins(I_UDIV_WT, 0, 0);
 	else
-		out_ins(I_JSR, T_LIB, (intptr_t)"sdiv");
+		out_ins(I_SDIV_WT, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
@@ -366,9 +367,9 @@ void gdiv_imm (int value)
 void gmod (int is_unsigned)
 {
 	if (is_unsigned)
-		out_ins(I_JSR, T_LIB, (intptr_t)"umod");
+		out_ins(I_UMOD_WT, 0, 0);
 	else
-		out_ins(I_JSR, T_LIB, (intptr_t)"smod");
+		out_ins(I_SMOD_WT, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 

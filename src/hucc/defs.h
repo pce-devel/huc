@@ -39,7 +39,6 @@ enum ICODE {
 	I_MACRO,
 	I_CALL,
 	I_CALLP,
-	I_JSR,
 
 	/* i-codes for C functions and the C parameter stack */
 
@@ -296,7 +295,22 @@ enum ICODE {
 	I_LSR_WI,
 	I_LSR_UIQ,
 
+	I_MUL_WT,
 	I_MUL_WI,
+
+	I_SDIV_WT,
+	I_SDIV_WI,
+
+	I_UDIV_WT,
+	I_UDIV_WI,
+	I_UDIV_UI,
+
+	I_SMOD_WT,
+	I_SMOD_WI,
+
+	I_UMOD_WT,
+	I_UMOD_WI,
+	I_UMOD_UI,
 
 	I_DOUBLE,
 

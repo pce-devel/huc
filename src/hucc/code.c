@@ -391,20 +391,6 @@ void gen_code (INS *tmp)
 		ol("__callp");
 		break;
 
-	case I_JSR:
-		ot("  jsr\t\t");
-
-		switch (type) {
-		case T_SYMBOL:
-			outsymbol((SYMBOL *)data);
-			break;
-		case T_LIB:
-			outstr((const char *)data);
-			break;
-		}
-		nl();
-		break;
-
 	/* i-codes for C functions and the C parameter stack */
 
 	case I_ENTER:
@@ -1640,9 +1626,65 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case I_MUL_WT:
+		ol("__mul.wt");
+		break;
+
 	case I_MUL_WI:
 		ot("__mul.wi\t");
-		outdec((int)data);
+		out_type(type, data);
+		nl();
+		break;
+
+	case I_SDIV_WT:
+		ol("__sdiv.wt");
+		break;
+
+	case I_SDIV_WI:
+		ot("__sdiv.wi\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case I_UDIV_WT:
+		ol("__udiv.wt");
+		break;
+
+	case I_UDIV_WI:
+		ot("__udiv.wi\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case I_UDIV_UI:
+		ot("__udiv.ui\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case I_SMOD_WT:
+		ol("__smod.wt");
+		break;
+
+	case I_SMOD_WI:
+		ot("__smod.wi\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case I_UMOD_WT:
+		ol("__umod.wt");
+		break;
+
+	case I_UMOD_WI:
+		ot("__umod.wi\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case I_UMOD_UI:
+		ot("__umod.ui\t");
+		out_type(type, data);
 		nl();
 		break;
 
