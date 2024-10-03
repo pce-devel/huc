@@ -2020,6 +2020,10 @@ do_kickc(int *ip)
 	/* enable forward-references when building KickC code */
 	asm_opt[OPT_FORWARD] |= kickc_mode;
 
+	/* disable C comments in HuCC code, it breaks HuCC's macro comments */
+	if (hucc_mode)
+		asm_opt[OPT_CCOMMENT] = 0;
+
 	/* output line */
 	if (pass == LAST_PASS)
 		println();

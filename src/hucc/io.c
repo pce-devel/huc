@@ -466,8 +466,9 @@ void outsymbol (SYMBOL *ptr)
 		outstr(ptr->name);
 	}
 	if (ptr->linked) {
-		outstr(" ; ");
+		outstr(" /* ");
 		outstr(ptr->linked->name);
+		outstr(" */");
 	}
 }
 
