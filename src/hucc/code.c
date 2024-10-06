@@ -687,6 +687,10 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case I_BOOLEAN:
+		ol("__bool");
+		break;
+
 	/* i-codes for loading the primary register */
 
 	case I_LD_WI:

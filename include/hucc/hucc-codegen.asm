@@ -535,7 +535,7 @@ __bra		.macro
 
 ; **************
 ; boolean test, always followed by a __tst.wr or __not.wr
-; this MUST set the Z flag for the susequent branches!
+; this MUST set the Z flag for the subsequent branches!
 
 __cmp.wt	.macro
 		jsr	\1
@@ -543,7 +543,7 @@ __cmp.wt	.macro
 
 ; **************
 ; boolean test, always followed by a __tst.wr or __not.wr
-; this MUST set the Z flag for the susequent branches!
+; this MUST set the Z flag for the subsequent branches!
 
 __cmp.ut	.macro
 		jsr	\1
@@ -551,7 +551,7 @@ __cmp.ut	.macro
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; this MUST set the Z flag for the subsequent branches!
 
 __equ.wi	.macro
 		eor.l	#\1
@@ -560,12 +560,11 @@ __equ.wi	.macro
 		beq	!true+
 !false:		lda	#-1
 !true:		inc	a
-		cly
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; this MUST set the Z flag for the subsequent branches!
 
 __neq.wi	.macro
 		eor.l	#\1
@@ -573,35 +572,34 @@ __neq.wi	.macro
 		cpy.h	#\1
 		beq	!false+
 !true:		lda	#1
-!false:		cly
+!false:
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; this MUST set the Z flag for the subsequent branches!
 
 __equ.ui	.macro
 		eor.l	#\1
 		beq	!true+
 !false:		lda	#-1
 !true:		inc	a
-		cly
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; this MUST set the Z flag for the subsequent branches!
 
 __neq.ui	.macro
 		eor.l	#\1
 		beq	!false+
 		lda	#1
-!false:		cly
+!false:
 		.endm
 
 ; **************
 ; boolean test, optimized into __not.wr if used before a __tst.wr
-; this MUST set the Z flag for the susequent branches!
+; this MUST set the Z flag for the subsequent branches!
 
 __not.wr	.macro
 		sty	__temp
@@ -609,19 +607,18 @@ __not.wr	.macro
 		beq	!+
 		lda	#1
 !:		eor	#1
-		cly
 		.endm
 
 ; **************
 ; boolean test, always output immediately before a __bfalse or __btrue
-; this MUST set the Z flag for the susequent branches!
+; this MUST set the Z flag for the subsequent branches!
 
 __tst.wr	.macro
 		sty	__temp
 		ora	__temp
 		beq	!+
 		lda	#1
-!:		cly
+!:
 		.endm
 
 ; **************
@@ -640,7 +637,7 @@ __btrue		.macro
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; this MUST set the Z flag for the subsequent branches!
 
 __not.wp	.macro
 		ldy	#1
@@ -649,12 +646,11 @@ __not.wp	.macro
 		beq	!+
 		lda	#-1
 !:		inc	a
-		cly
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; this MUST set the Z flag for the subsequent branches!
 
 __not.wm	.macro
 		lda.l	\1
@@ -662,12 +658,11 @@ __not.wm	.macro
 		beq	!+
 		lda	#-1
 !:		inc	a
-		cly
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; this MUST set the Z flag for the subsequent branches!
 
 __not.ws	.macro	; __STACK
 		lda.l	<__stack + \1, x
@@ -675,12 +670,11 @@ __not.ws	.macro	; __STACK
 		beq	!+
 		lda	#-1
 !:		inc	a
-		cly
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; this MUST set the Z flag for the subsequent branches!
 
 __not.war	.macro
 		asl	a
@@ -690,48 +684,44 @@ __not.war	.macro
 		beq	!+
 		lda	#-1
 !:		inc	a
-		cly
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; this MUST set the Z flag for the subsequent branches!
 
 __not.up	.macro
 		lda	[\1]
 		beq	!+
 		lda	#-1
 !:		inc	a
-		cly
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; this MUST set the Z flag for the subsequent branches!
 
 __not.um	.macro
 		lda	\1
 		beq	!+
 		lda	#-1
 !:		inc	a
-		cly
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; this MUST set the Z flag for the subsequent branches!
 
 __not.us	.macro	; __STACK
 		lda.l	<__stack + \1, x
 		beq	!+
 		lda	#-1
 !:		inc	a
-		cly
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; this MUST set the Z flag for the subsequent branches!
 
 __not.uar	.macro
 		tay
@@ -739,24 +729,22 @@ __not.uar	.macro
 		beq	!+
 		lda	#-1
 !:		inc	a
-		cly
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; this MUST set the Z flag for the subsequent branches!
 
 __not.uay	.macro
 		lda	\1, y
 		beq	!+
 		lda	#-1
 !:		inc	a
-		cly
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; this MUST set the Z flag for the subsequent branches!
 
 __tst.wp	.macro
 		ldy	#1
@@ -764,36 +752,36 @@ __tst.wp	.macro
 		ora	[\1]
 		beq	!+
 		lda	#1
-!:		cly
+!:
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; this MUST set the Z flag for the subsequent branches!
 
 __tst.wm		.macro
 		lda.l	\1
 		ora.h	\1
 		beq	!+
 		lda	#1
-!:		cly
+!:
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; this MUST set the Z flag for the subsequent branches!
 
 __tst.ws	.macro	; __STACK
 		lda.l	<__stack + \1, x
 		ora.h	<__stack + \1, x
 		beq	!+
 		lda	#1
-!:		cly
+!:
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; this MUST set the Z flag for the subsequent branches!
 
 __tst.war	.macro
 		asl	a
@@ -802,68 +790,68 @@ __tst.war	.macro
 		ora.h	\1, y
 		beq	!+
 		lda	#1
-!:		cly
+!:
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; this MUST set the Z flag for the subsequent branches!
 
 __tst.up	.macro
 		lda	[\1]
 		beq	!+
 		lda	#1
-!:		cly
+!:
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; this MUST set the Z flag for the subsequent branches!
 
 __tst.um	.macro
 		lda	\1
 		beq	!+
 		lda	#1
-!:		cly
+!:
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; this MUST set the Z flag for the subsequent branches!
 
 __tst.us	.macro	; __STACK
 		lda.l	<__stack + \1, x
 		beq	!+
 		lda	#1
-!:		cly
+!:
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; this MUST set the Z flag for the subsequent branches!
 
 __tst.uar	.macro
 		tay
 		lda	\1, y
 		beq	!+
 		lda	#1
-!:		cly
+!:
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; this MUST set the Z flag for the subsequent branches!
 
 __tst.uay	.macro
 		lda	\1, y
 		beq	!+
 		lda	#1
-!:		cly
+!:
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; this MUST set the Z flag for the subsequent branches!
 
 __nand.wi	.macro
 	.if	((\1 & $FF00) == 0)
@@ -884,12 +872,11 @@ __nand.wi	.macro
 !false:		lda	#1
 	.endif
 !:		eor	#1
-		cly
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; this MUST set the Z flag for the subsequent branches!
 
 __tand.wi	.macro
 	.if	((\1 & $FF00) == 0)
@@ -909,7 +896,14 @@ __tand.wi	.macro
 		beq	!+
 !true:		lda	#1
 	.endif
-!:		cly
+!:
+		.endm
+
+; **************
+; convert boolean test result into a 16-bit integer
+
+__bool		.macro
+		cly
 		.endm
 
 
@@ -3042,20 +3036,18 @@ gt_uw:		cmp.l	<__stack, x	; Subtract memory from Y:A.
 		bra	return_false
 
 ; **************
-; boolean result, this MUST set the Z flag for the susequent branches!
+; boolean result, this MUST set the Z flag for the subsequent branches!
 
 return_true:	inx
 		inx			; don't push Y:A, they are thrown away
-		cly
 		lda	#1		; Also set valid Z flag.
 		rts
 
 ; **************
-; boolean result, this MUST set the Z flag for the susequent branches!
+; boolean result, this MUST set the Z flag for the subsequent branches!
 
 return_false:	inx
 		inx			; don't push Y:A, they are thrown away
-		cly
 		lda	#0		; Also set valid Z flag.
 		rts
 

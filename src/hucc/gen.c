@@ -233,6 +233,7 @@ void jump (int label)
 void testjump (int label, int ft)
 {
 	out_ins(I_TST_WR, 0, 0);
+	out_ins(I_BOOLEAN, 0, 0);
 	if (ft)
 		out_ins(I_BTRUE, T_LABEL, label);
 	else
@@ -455,15 +456,17 @@ void gcom (void)
 void gbool (void)
 {
 	out_ins(I_TST_WR, 0, 0);
+	out_ins(I_BOOLEAN, 0, 0);
 }
 
 /*
- *	logical complement of primary register
+ *	boolean logical complement of primary register
  *
  */
 void glneg (void)
 {
 	out_ins(I_NOT_WR, 0, 0);
+	out_ins(I_BOOLEAN, 0, 0);
 }
 
 /*
@@ -516,6 +519,7 @@ void geq (int is_byte)
 		out_ins(I_CMP_WT, T_LIB, (intptr_t)"eq_b");
 	else
 		out_ins(I_CMP_WT, T_LIB, (intptr_t)"eq_w");
+	out_ins(I_BOOLEAN, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
@@ -529,6 +533,7 @@ void gne (int is_byte)
 		out_ins(I_CMP_WT, T_LIB, (intptr_t)"ne_b");
 	else
 		out_ins(I_CMP_WT, T_LIB, (intptr_t)"ne_w");
+	out_ins(I_BOOLEAN, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
@@ -542,6 +547,7 @@ void glt (int is_byte)
 		out_ins(I_CMP_WT, T_LIB, (intptr_t)"lt_sb");
 	else
 		out_ins(I_CMP_WT, T_LIB, (intptr_t)"lt_sw");
+	out_ins(I_BOOLEAN, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
@@ -555,6 +561,7 @@ void gle (int is_byte)
 		out_ins(I_CMP_WT, T_LIB, (intptr_t)"le_sb");
 	else
 		out_ins(I_CMP_WT, T_LIB, (intptr_t)"le_sw");
+	out_ins(I_BOOLEAN, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
@@ -568,6 +575,7 @@ void ggt (int is_byte)
 		out_ins(I_CMP_WT, T_LIB, (intptr_t)"gt_sb");
 	else
 		out_ins(I_CMP_WT, T_LIB, (intptr_t)"gt_sw");
+	out_ins(I_BOOLEAN, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
@@ -581,6 +589,7 @@ void gge (int is_byte)
 		out_ins(I_CMP_WT, T_LIB, (intptr_t)"ge_sb");
 	else
 		out_ins(I_CMP_WT, T_LIB, (intptr_t)"ge_sw");
+	out_ins(I_BOOLEAN, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
@@ -594,6 +603,7 @@ void gult (int is_byte)
 		out_ins(I_CMP_WT, T_LIB, (intptr_t)"lt_ub");
 	else
 		out_ins(I_CMP_WT, T_LIB, (intptr_t)"lt_uw");
+	out_ins(I_BOOLEAN, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
@@ -607,6 +617,7 @@ void gule (int is_byte)
 		out_ins(I_CMP_WT, T_LIB, (intptr_t)"le_ub");
 	else
 		out_ins(I_CMP_WT, T_LIB, (intptr_t)"le_uw");
+	out_ins(I_BOOLEAN, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
@@ -620,6 +631,7 @@ void gugt (int is_byte)
 		out_ins(I_CMP_WT, T_LIB, (intptr_t)"gt_ub");
 	else
 		out_ins(I_CMP_WT, T_LIB, (intptr_t)"gt_uw");
+	out_ins(I_BOOLEAN, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
@@ -633,6 +645,7 @@ void guge (int is_byte)
 		out_ins(I_CMP_WT, T_LIB, (intptr_t)"ge_ub");
 	else
 		out_ins(I_CMP_WT, T_LIB, (intptr_t)"ge_uw");
+	out_ins(I_BOOLEAN, 0, 0);
 	stkp = stkp + INTSIZE;
 }
 
