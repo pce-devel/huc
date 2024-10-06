@@ -466,7 +466,7 @@ void outsymbol (SYMBOL *ptr)
 		outstr(ptr->name);
 	}
 	if (ptr->linked) {
-		outstr(" /* ");
+		outstr("  /* ");
 		outstr(ptr->linked->name);
 		outstr(" */");
 	}
@@ -641,7 +641,8 @@ void outstr (const char *ptr)
 void outlocal (SYMBOL *ptr)
 {
 	if (ptr) {
-		outstr(" ; ");
+		outstr("  /* ");
 		outstr(ptr->name);
+		outstr(" */");
 	}
 }
