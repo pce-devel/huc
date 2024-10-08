@@ -120,13 +120,39 @@ SUPPORT_TED2	=	0	; (0 or 1)
 	.endif
 
 ;
-; Support development for the SuperGrafx?
+; Support development for the SuperGRAFX?
 ;
-; This enables SuperGrafx support in certain library functions.
+; This enables SuperGRAFX support in certain library functions.
 ;
 
 	.ifndef	SUPPORT_SGX
 SUPPORT_SGX	=	0	; (0 or 1)
+	.endif
+
+;
+; Choose SuperGRAFX VPC initialization mode.
+;
+; SGX_PARALLAX=0 (useful when VDC #1 is a fullscreen HUD)
+;
+;  FRONT
+;   SP1 = VDC #1 (pce) sprite pixels
+;   BG1 = VDC #1 (pce) background pixels
+;   SP2 = VDC #2 (sgx) sprite pixels
+;   BG2 = VDC #2 (sgx) background pixels
+;  BACK
+;
+; SGX_PARALLAX=1
+;
+;  FRONT
+;   SP1 = VDC #1 (pce) sprite pixels
+;   SP2 = VDC #2 (sgx) sprite pixels
+;   BG1 = VDC #1 (pce) background pixels
+;   BG2 = VDC #2 (sgx) background pixels
+;  BACK
+;
+
+	.ifndef	SGX_PARALLAX
+SGX_PARALLAX	=	1	; The most common default.
 	.endif
 
 ;
