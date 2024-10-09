@@ -542,17 +542,9 @@ __cmp.wt	.macro
 		.endm
 
 ; **************
-; boolean test, always followed by a __tst.wr or __not.wr
-; this MUST set the Z flag for the subsequent branches!
-
-__cmp.ut	.macro
-		jsr	\1
-		.endm
-
-; **************
 ; optimized boolean test
-; this MUST set the Z flag for the subsequent branches!
 ; A is true (1) if Y:A == integer-value, else false (0)
+; this MUST set the Z flag for the subsequent branches!
 
 __equ_w.wi	.macro
 		eor.l	#\1
@@ -565,8 +557,8 @@ __equ_w.wi	.macro
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the subsequent branches!
 ; A is true (1) if Y:A != integer-value, else false (0)
+; this MUST set the Z flag for the subsequent branches!
 
 __neq_w.wi	.macro
 		eor.l	#\1
@@ -579,8 +571,8 @@ __neq_w.wi	.macro
 
 ; **************
 ; optimized boolean test (signed word)
-; this MUST set the Z flag for the susequent branches!
 ; A is true (1) if Y:A < integer-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
 
 __slt_w.wi	.macro
 		cmp.l	#\1		; Subtract integer from Y:A.
@@ -595,8 +587,8 @@ __slt_w.wi	.macro
 
 ; **************
 ; optimized boolean test (signed word)
-; this MUST set the Z flag for the susequent branches!
 ; A is true (1) if Y:A <= integer-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
 
 __sle_w.wi	.macro
 		clc			; Subtract integer+1 from Y:A.
@@ -612,8 +604,8 @@ __sle_w.wi	.macro
 
 ; **************
 ; optimized boolean test (signed word)
-; this MUST set the Z flag for the susequent branches!
 ; A is true (1) if Y:A > integer-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
 
 __sgt_w.wi	.macro
 		clc			; Subtract integer+1 from Y:A.
@@ -630,8 +622,8 @@ __sgt_w.wi	.macro
 
 ; **************
 ; optimized boolean test (signed word)
-; this MUST set the Z flag for the susequent branches!
 ; A is true (1) if Y:A >= integer-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
 
 __sge_w.wi	.macro
 		cmp.l	#\1		; Subtract integer from Y:A.
@@ -647,8 +639,8 @@ __sge_w.wi	.macro
 
 ; **************
 ; optimized boolean test (unsigned word)
-; this MUST set the Z flag for the susequent branches!
 ; A is true (1) if Y:A < integer-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
 
 __ult_w.wi	.macro
 		cmp.l	#\1		; Subtract integer from Y:A.
@@ -661,8 +653,8 @@ __ult_w.wi	.macro
 
 ; **************
 ; optimized boolean test (unsigned word)
-; this MUST set the Z flag for the susequent branches!
 ; A is true (1) if Y:A <= integer-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
 
 __ule_w.wi	.macro
 		clc			; Subtract integer+1 from Y:A.
@@ -676,8 +668,8 @@ __ule_w.wi	.macro
 
 ; **************
 ; optimized boolean test (unsigned word)
-; this MUST set the Z flag for the susequent branches!
 ; A is true (1) if Y:A > integer-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
 
 __ugt_w.wi	.macro
 		clc			; Subtract integer+1 from Y:A.
@@ -690,8 +682,8 @@ __ugt_w.wi	.macro
 
 ; **************
 ; optimized boolean test (unsigned word)
-; this MUST set the Z flag for the susequent branches!
 ; A is true (1) if Y:A >= integer-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
 
 __uge_w.wi	.macro
 		cmp.l	#\1		; Subtract integer from Y:A.
@@ -703,8 +695,8 @@ __uge_w.wi	.macro
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the subsequent branches!
 ; A is true (1) if A == integer-value, else false (0)
+; this MUST set the Z flag for the subsequent branches!
 
 __equ_b.uiq	.macro
 		eor	#\1
@@ -715,8 +707,8 @@ __equ_b.uiq	.macro
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the subsequent branches!
 ; A is true (1) if A != integer-value, else false (0)
+; this MUST set the Z flag for the subsequent branches!
 
 __neq_b.uiq	.macro
 		eor	#\1
@@ -727,8 +719,8 @@ __neq_b.uiq	.macro
 
 ; **************
 ; optimized boolean test (signed word)
-; this MUST set the Z flag for the susequent branches!
 ; A is true (1) if A < integer-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
 
 __slt_b.biq	.macro
 		sec			; Subtract integer from A.
@@ -742,8 +734,8 @@ __slt_b.biq	.macro
 
 ; **************
 ; optimized boolean test (signed word)
-; this MUST set the Z flag for the susequent branches!
 ; A is true (1) if A <= integer-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
 
 __sle_b.biq	.macro
 		clc			; Subtract integer+1 from A.
@@ -757,8 +749,8 @@ __sle_b.biq	.macro
 
 ; **************
 ; optimized boolean test (signed word)
-; this MUST set the Z flag for the susequent branches!
 ; A is true (1) if A > integer-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
 
 __sgt_b.biq	.macro
 		clc			; Subtract integer+1 from A.
@@ -773,8 +765,8 @@ __sgt_b.biq	.macro
 
 ; **************
 ; optimized boolean test (signed word)
-; this MUST set the Z flag for the susequent branches!
 ; A is true (1) if A >= integer-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
 
 __sge_b.biq	.macro
 		sec			; Subtract integer from A.
@@ -789,8 +781,8 @@ __sge_b.biq	.macro
 
 ; **************
 ; optimized boolean test (unsigned word)
-; this MUST set the Z flag for the susequent branches!
 ; A is true (1) if A < integer-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
 
 __ult_b.uiq	.macro
 		cmp	#\1		; Subtract integer from A.
@@ -801,8 +793,8 @@ __ult_b.uiq	.macro
 
 ; **************
 ; optimized boolean test (unsigned word)
-; this MUST set the Z flag for the susequent branches!
 ; A is true (1) if A <= integer-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
 
 __ule_b.uiq	.macro
 		clc			; Subtract integer+1 from A.
@@ -814,8 +806,8 @@ __ule_b.uiq	.macro
 
 ; **************
 ; optimized boolean test (unsigned word)
-; this MUST set the Z flag for the susequent branches!
 ; A is true (1) if A > integer-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
 
 __ugt_b.uiq	.macro
 		clc			; Subtract integer+1 from A.
@@ -826,8 +818,8 @@ __ugt_b.uiq	.macro
 
 ; **************
 ; optimized boolean test (unsigned word)
-; this MUST set the Z flag for the susequent branches!
 ; A is true (1) if A >= integer-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
 
 __uge_b.uiq	.macro
 		cmp	#\1		; Subtract integer from A.
@@ -837,6 +829,7 @@ __uge_b.uiq	.macro
 
 ; **************
 ; boolean test, optimized into __not.wr if used before a __tst.wr
+; A is true (1) if Y:A == 0, else false (0)
 ; this MUST set the Z flag for the subsequent branches!
 
 __not.wr	.macro
@@ -849,6 +842,7 @@ __not.wr	.macro
 
 ; **************
 ; boolean test, always output immediately before a __bfalse or __btrue
+; A is true (1) if Y:A != 0, else false (0)
 ; this MUST set the Z flag for the subsequent branches!
 
 __tst.wr	.macro
@@ -875,6 +869,7 @@ __btrue		.macro
 
 ; **************
 ; optimized boolean test
+; A is true (1) if memory-value == 0, else false (0)
 ; this MUST set the Z flag for the subsequent branches!
 
 __not.wp	.macro
@@ -888,6 +883,7 @@ __not.wp	.macro
 
 ; **************
 ; optimized boolean test
+; A is true (1) if memory-value == 0, else false (0)
 ; this MUST set the Z flag for the subsequent branches!
 
 __not.wm	.macro
@@ -900,6 +896,7 @@ __not.wm	.macro
 
 ; **************
 ; optimized boolean test
+; A is true (1) if memory-value == 0, else false (0)
 ; this MUST set the Z flag for the subsequent branches!
 
 __not.ws	.macro	; __STACK
@@ -912,6 +909,7 @@ __not.ws	.macro	; __STACK
 
 ; **************
 ; optimized boolean test
+; A is true (1) if memory-value == 0, else false (0)
 ; this MUST set the Z flag for the subsequent branches!
 
 __not.war	.macro
@@ -926,6 +924,7 @@ __not.war	.macro
 
 ; **************
 ; optimized boolean test
+; A is true (1) if memory-value == 0, else false (0)
 ; this MUST set the Z flag for the subsequent branches!
 
 __not.up	.macro
@@ -937,6 +936,7 @@ __not.up	.macro
 
 ; **************
 ; optimized boolean test
+; A is true (1) if memory-value == 0, else false (0)
 ; this MUST set the Z flag for the subsequent branches!
 
 __not.um	.macro
@@ -948,6 +948,7 @@ __not.um	.macro
 
 ; **************
 ; optimized boolean test
+; A is true (1) if memory-value == 0, else false (0)
 ; this MUST set the Z flag for the subsequent branches!
 
 __not.us	.macro	; __STACK
@@ -959,6 +960,7 @@ __not.us	.macro	; __STACK
 
 ; **************
 ; optimized boolean test
+; A is true (1) if memory-value == 0, else false (0)
 ; this MUST set the Z flag for the subsequent branches!
 
 __not.uar	.macro
@@ -971,6 +973,7 @@ __not.uar	.macro
 
 ; **************
 ; optimized boolean test
+; A is true (1) if memory-value == 0, else false (0)
 ; this MUST set the Z flag for the subsequent branches!
 
 __not.uay	.macro
@@ -982,6 +985,7 @@ __not.uay	.macro
 
 ; **************
 ; optimized boolean test
+; A is true (1) if memory-value != 0, else false (0)
 ; this MUST set the Z flag for the subsequent branches!
 
 __tst.wp	.macro
@@ -995,6 +999,7 @@ __tst.wp	.macro
 
 ; **************
 ; optimized boolean test
+; A is true (1) if memory-value != 0, else false (0)
 ; this MUST set the Z flag for the subsequent branches!
 
 __tst.wm		.macro
@@ -1007,6 +1012,7 @@ __tst.wm		.macro
 
 ; **************
 ; optimized boolean test
+; A is true (1) if memory-value != 0, else false (0)
 ; this MUST set the Z flag for the subsequent branches!
 
 __tst.ws	.macro	; __STACK
@@ -1019,6 +1025,7 @@ __tst.ws	.macro	; __STACK
 
 ; **************
 ; optimized boolean test
+; A is true (1) if memory-value != 0, else false (0)
 ; this MUST set the Z flag for the subsequent branches!
 
 __tst.war	.macro
@@ -1033,6 +1040,7 @@ __tst.war	.macro
 
 ; **************
 ; optimized boolean test
+; A is true (1) if memory-value != 0, else false (0)
 ; this MUST set the Z flag for the subsequent branches!
 
 __tst.up	.macro
@@ -1044,6 +1052,7 @@ __tst.up	.macro
 
 ; **************
 ; optimized boolean test
+; A is true (1) if memory-value != 0, else false (0)
 ; this MUST set the Z flag for the subsequent branches!
 
 __tst.um	.macro
@@ -1055,6 +1064,7 @@ __tst.um	.macro
 
 ; **************
 ; optimized boolean test
+; A is true (1) if memory-value != 0, else false (0)
 ; this MUST set the Z flag for the subsequent branches!
 
 __tst.us	.macro	; __STACK
@@ -1066,6 +1076,7 @@ __tst.us	.macro	; __STACK
 
 ; **************
 ; optimized boolean test
+; A is true (1) if memory-value != 0, else false (0)
 ; this MUST set the Z flag for the subsequent branches!
 
 __tst.uar	.macro
@@ -1078,6 +1089,7 @@ __tst.uar	.macro
 
 ; **************
 ; optimized boolean test
+; A is true (1) if memory-value != 0, else false (0)
 ; this MUST set the Z flag for the subsequent branches!
 
 __tst.uay	.macro
@@ -1089,6 +1101,7 @@ __tst.uay	.macro
 
 ; **************
 ; optimized boolean test
+; A is true (1) if (Y:A & integer) == 0, else false (0)
 ; this MUST set the Z flag for the subsequent branches!
 
 __nand.wi	.macro
@@ -1114,6 +1127,7 @@ __nand.wi	.macro
 
 ; **************
 ; optimized boolean test
+; A is true (1) if (Y:A & integer) != 0, else false (0)
 ; this MUST set the Z flag for the subsequent branches!
 
 __tand.wi	.macro
