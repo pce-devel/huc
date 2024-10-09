@@ -24,6 +24,20 @@ int segment;
 /* externs */
 extern int arg_stack_flag;
 
+/* convert comparison operation to a string */
+const char * compare2str [] = {
+	"equ",	// CMP_EQU
+	"neq",	// CMP_NEQ
+	"slt",	// CMP_SLT
+	"sle",	// CMP_SLE
+	"sgt",	// CMP_SGT
+	"sge",	// CMP_SGE
+	"ult",	// CMP_ULT
+	"ule",	// CMP_ULE
+	"ugt",	// CMP_UGT
+	"uge"	// CMP_UGE
+};
+
 /*
  *	print all assembler info before any code is generated
  *
@@ -154,6 +168,17 @@ void out_ins_sym (int code, int type, intptr_t data, SYMBOL *sym)
 	tmp.ins_type = type;
 	tmp.ins_data = data;
 	tmp.sym = sym;
+	gen_ins(&tmp);
+}
+
+void out_ins_cmp (int code, int type)
+{
+	INS tmp;
+
+	memset(&tmp, 0, sizeof(INS));
+
+	tmp.ins_code = code;
+	tmp.cmp_type = type;
 	gen_ins(&tmp);
 }
 
@@ -507,40 +532,23 @@ void gen_code (INS *tmp)
 
 	case I_CMP_WT:
 		ot("__cmp.wt\t");
-
-		switch (type) {
-		case T_SYMBOL:
-			outsymbol((SYMBOL *)data);
-			break;
-		case T_LIB:
-			outstr((const char *)data);
-			break;
-		}
+		outstr(compare2str[tmp->cmp_type]);
+		outstr("_w");
 		nl();
 		break;
 
-	case I_CMP_UT:
-		ot("__cmp.ut\t");
-
-		switch (type) {
-		case T_SYMBOL:
-			outsymbol((SYMBOL *)data);
-			break;
-		case T_LIB:
-			outstr((const char *)data);
-			break;
-		}
-		nl();
-		break;
-
-	case X_EQU_WI:
-		ot("__equ.wi\t");
+	case X_CMP_WI:
+		ot("__");
+		outstr(compare2str[tmp->cmp_type]);
+		outstr("_w.wi\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case X_NEQ_WI:
-		ot("__neq.wi\t");
+	case X_CMP_UIQ:
+		ot("__");
+		outstr(compare2str[tmp->cmp_type]);
+		outstr("_b.uiq\t");
 		out_type(type, data);
 		nl();
 		break;

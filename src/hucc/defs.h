@@ -66,9 +66,8 @@ enum ICODE {
 	I_BRA,
 	I_DEF,
 	I_CMP_WT,
-	I_CMP_UT,
-	X_EQU_WI,
-	X_NEQ_WI,
+	X_CMP_WI,
+	X_CMP_UIQ,
 	I_NOT_WR,
 	I_TST_WR,
 	I_BFALSE,
@@ -326,6 +325,22 @@ enum ICODE {
 };
 
 /*
+ * boolean comparison operations
+ */
+enum ICOMPARE {
+	CMP_EQU,
+	CMP_NEQ,
+	CMP_SLT,
+	CMP_SLE,
+	CMP_SGT,
+	CMP_SGE,
+	CMP_ULT,
+	CMP_ULE,
+	CMP_UGT,
+	CMP_UGE
+};
+
+/*
  *	INTSIZE is the size of an integer in the target machine
  *	BYTEOFF is the offset of an byte within an integer on the
  *		target machine. (ie: 8080,pdp11 = 0, 6809 = 1,
@@ -345,12 +360,11 @@ enum ICODE {
 #define T_PTR            4
 #define T_STACK          5
 #define T_STRING         6
-#define T_LIB            7
-#define T_SIZE           8
-#define T_BANK           9
-#define T_VRAM          10
-#define T_PAL           11
-#define T_LITERAL       12
+#define T_SIZE           7
+#define T_BANK           8
+#define T_VRAM           9
+#define T_PAL           10
+#define T_LITERAL       11
 
 #define FOREVER for (;;)
 #define FALSE   0
@@ -539,6 +553,7 @@ struct macro {
 
 typedef struct {
 	enum ICODE ins_code;
+	enum ICOMPARE cmp_type;
 	int ins_type;
 	intptr_t ins_data;
 	int imm_type;

@@ -513,12 +513,10 @@ void gdec (LVALUE *lval)
  *	equal
  *
  */
-void geq (int is_byte)
+
+void geq (void)
 {
-	if (is_byte)
-		out_ins(I_CMP_WT, T_LIB, (intptr_t)"eq_b");
-	else
-		out_ins(I_CMP_WT, T_LIB, (intptr_t)"eq_w");
+	out_ins_cmp(I_CMP_WT, CMP_EQU);
 	out_ins(I_BOOLEAN, 0, 0);
 	stkp = stkp + INTSIZE;
 }
@@ -527,12 +525,9 @@ void geq (int is_byte)
  *	not equal
  *
  */
-void gne (int is_byte)
+void gne (void)
 {
-	if (is_byte)
-		out_ins(I_CMP_WT, T_LIB, (intptr_t)"ne_b");
-	else
-		out_ins(I_CMP_WT, T_LIB, (intptr_t)"ne_w");
+	out_ins_cmp(I_CMP_WT, CMP_NEQ);
 	out_ins(I_BOOLEAN, 0, 0);
 	stkp = stkp + INTSIZE;
 }
@@ -541,12 +536,9 @@ void gne (int is_byte)
  *	less than (signed)
  *
  */
-void glt (int is_byte)
+void glt (void)
 {
-	if (is_byte)
-		out_ins(I_CMP_WT, T_LIB, (intptr_t)"lt_sb");
-	else
-		out_ins(I_CMP_WT, T_LIB, (intptr_t)"lt_sw");
+	out_ins_cmp(I_CMP_WT, CMP_SLT);
 	out_ins(I_BOOLEAN, 0, 0);
 	stkp = stkp + INTSIZE;
 }
@@ -555,12 +547,9 @@ void glt (int is_byte)
  *	less than or equal (signed)
  *
  */
-void gle (int is_byte)
+void gle (void)
 {
-	if (is_byte)
-		out_ins(I_CMP_WT, T_LIB, (intptr_t)"le_sb");
-	else
-		out_ins(I_CMP_WT, T_LIB, (intptr_t)"le_sw");
+	out_ins_cmp(I_CMP_WT, CMP_SLE);
 	out_ins(I_BOOLEAN, 0, 0);
 	stkp = stkp + INTSIZE;
 }
@@ -569,12 +558,9 @@ void gle (int is_byte)
  *	greater than (signed)
  *
  */
-void ggt (int is_byte)
+void ggt (void)
 {
-	if (is_byte)
-		out_ins(I_CMP_WT, T_LIB, (intptr_t)"gt_sb");
-	else
-		out_ins(I_CMP_WT, T_LIB, (intptr_t)"gt_sw");
+	out_ins_cmp(I_CMP_WT, CMP_SGT);
 	out_ins(I_BOOLEAN, 0, 0);
 	stkp = stkp + INTSIZE;
 }
@@ -583,12 +569,9 @@ void ggt (int is_byte)
  *	greater than or equal (signed)
  *
  */
-void gge (int is_byte)
+void gge (void)
 {
-	if (is_byte)
-		out_ins(I_CMP_WT, T_LIB, (intptr_t)"ge_sb");
-	else
-		out_ins(I_CMP_WT, T_LIB, (intptr_t)"ge_sw");
+	out_ins_cmp(I_CMP_WT, CMP_SGE);
 	out_ins(I_BOOLEAN, 0, 0);
 	stkp = stkp + INTSIZE;
 }
@@ -597,12 +580,9 @@ void gge (int is_byte)
  *	less than (unsigned)
  *
  */
-void gult (int is_byte)
+void gult (void)
 {
-	if (is_byte)
-		out_ins(I_CMP_WT, T_LIB, (intptr_t)"lt_ub");
-	else
-		out_ins(I_CMP_WT, T_LIB, (intptr_t)"lt_uw");
+	out_ins_cmp(I_CMP_WT, CMP_ULT);
 	out_ins(I_BOOLEAN, 0, 0);
 	stkp = stkp + INTSIZE;
 }
@@ -611,12 +591,9 @@ void gult (int is_byte)
  *	less than or equal (unsigned)
  *
  */
-void gule (int is_byte)
+void gule (void)
 {
-	if (is_byte)
-		out_ins(I_CMP_WT, T_LIB, (intptr_t)"le_ub");
-	else
-		out_ins(I_CMP_WT, T_LIB, (intptr_t)"le_uw");
+	out_ins_cmp(I_CMP_WT, CMP_ULE);
 	out_ins(I_BOOLEAN, 0, 0);
 	stkp = stkp + INTSIZE;
 }
@@ -625,12 +602,9 @@ void gule (int is_byte)
  *	greater than (unsigned)
  *
  */
-void gugt (int is_byte)
+void gugt (void)
 {
-	if (is_byte)
-		out_ins(I_CMP_WT, T_LIB, (intptr_t)"gt_ub");
-	else
-		out_ins(I_CMP_WT, T_LIB, (intptr_t)"gt_uw");
+	out_ins_cmp(I_CMP_WT, CMP_UGT);
 	out_ins(I_BOOLEAN, 0, 0);
 	stkp = stkp + INTSIZE;
 }
@@ -639,12 +613,9 @@ void gugt (int is_byte)
  *	greater than or equal (unsigned)
  *
  */
-void guge (int is_byte)
+void guge (void)
 {
-	if (is_byte)
-		out_ins(I_CMP_WT, T_LIB, (intptr_t)"ge_ub");
-	else
-		out_ins(I_CMP_WT, T_LIB, (intptr_t)"ge_uw");
+	out_ins_cmp(I_CMP_WT, CMP_UGE);
 	out_ins(I_BOOLEAN, 0, 0);
 	stkp = stkp + INTSIZE;
 }

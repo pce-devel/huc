@@ -101,9 +101,8 @@ unsigned char icode_flags[] = {
 	/* I_BRA                */	0,
 	/* I_DEF                */	0,
 	/* I_CMP_WT             */	0,
-	/* I_CMP_UT             */	0,
-	/* X_EQU_WI             */	0,
-	/* X_NEQ_WI             */	0,
+	/* X_CMP_WI             */	0,
+	/* X_CMP_UIQ            */	0,
 	/* I_NOT_WR             */	0,
 	/* I_TST_WR             */	0,
 	/* I_BFALSE             */	0,
@@ -358,6 +357,35 @@ unsigned char icode_flags[] = {
 	/* X_LDD_B              */	0,
 	/* X_LDD_S_W            */	IS_SPREL,
 	/* X_LDD_S_B            */	IS_SPREL
+};
+
+/* invert comparison operation */
+int compare2not [] = {
+	CMP_NEQ,	// CMP_EQU
+	CMP_EQU,	// CMP_NEQ
+	CMP_SGE,	// CMP_SLT
+	CMP_SGT,	// CMP_SLE
+	CMP_SLE,	// CMP_SGT
+	CMP_SLT,	// CMP_SGE
+	CMP_UGE,	// CMP_ULT
+	CMP_UGT,	// CMP_ULE
+	CMP_ULE,	// CMP_UGT
+	CMP_ULT		// CMP_UGE
+};
+
+/* optimize comparison between unsigned chars */
+/* C promotes an unsigned char to a signed int for comparison */
+int compare2uchar [] = {
+	CMP_EQU,	// CMP_EQU
+	CMP_NEQ,	// CMP_NEQ
+	CMP_ULT,	// CMP_SLT
+	CMP_ULE,	// CMP_SLE
+	CMP_UGT,	// CMP_SGT
+	CMP_UGE,	// CMP_SGE
+	CMP_ULT,	// CMP_ULT
+	CMP_ULE,	// CMP_ULE
+	CMP_UGT,	// CMP_UGT
+	CMP_UGE		// CMP_UGE
 };
 
 /* defines */
@@ -1309,11 +1337,11 @@ lv1_loop:
 			 *  __bool
 			 *  __tst.wr
 			 *
-			 *  __equ.wi			-->	__equ.wi
+			 *  __cmp.wi			-->	__cmp.wi
 			 *  __bool
 			 *  __tst.wr
 			 *
-			 *  __neq.wi			-->	__neq.wi
+			 *  __cmp.uiq			-->	__cmp.uiq
 			 *  __bool
 			 *  __tst.wr
 			 *
@@ -1329,8 +1357,8 @@ lv1_loop:
 			((p[0]->ins_code == I_TST_WR) &&
 			 (p[1]->ins_code == I_BOOLEAN) &&
 			 (p[2]->ins_code == I_CMP_WT ||
-			  p[2]->ins_code == X_EQU_WI ||
-			  p[2]->ins_code == X_NEQ_WI ||
+			  p[2]->ins_code == X_CMP_WI ||
+			  p[2]->ins_code == X_CMP_UIQ ||
 			  p[2]->ins_code == I_NOT_WR ||
 			  p[2]->ins_code == I_TST_WR)
 			) {
@@ -1338,21 +1366,23 @@ lv1_loop:
 			}
 
 			/*
-			 *  __equ.wi			-->	__neq.wi
+			 *  __cmp.wi			-->	__cmp.wi
 			 *  __bool
 			 *  __not.wr
 			 *
-			 *  __neq.wi			-->	__equ.wi
+			 *  __cmp.uiq			-->	__cmp.uiq
 			 *  __bool
 			 *  __not.wr
+			 *
+			 *  N.B. This inverts the test condition of the __cmp.wi!
 			 */
 			else if
 			((p[0]->ins_code == I_NOT_WR) &&
 			 (p[1]->ins_code == I_BOOLEAN) &&
-			 (p[2]->ins_code == X_EQU_WI ||
-			  p[2]->ins_code == X_NEQ_WI)
+			 (p[2]->ins_code == X_CMP_WI ||
+			  p[2]->ins_code == X_CMP_UIQ)
 			) {
-				p[2]->ins_code = (p[2]->ins_code == X_EQU_WI) ? X_NEQ_WI : X_EQU_WI;
+				p[2]->cmp_type = compare2not[p[2]->cmp_type];
 				nb = 2;
 			}
 
@@ -1831,58 +1861,46 @@ lv1_loop:
 			}
 
 			/*
-			 *  __push.wr			-->	__equ.wi	i
-			 *  __ld.wi		i
-			 *  __cmp.wt		eq_w
-			 *
-			 *  __push.wr			-->	__neq.wi	i
-			 *  __ld.wi		i
-			 *  __cmp.wt		ne_w
-			 *
 			 *  __push.wr			-->	__not.wr
 			 *  __ld.wi		0
-			 *  __cmp.wt		eq_w
+			 *  __cmp.wt		equ_w
 			 *
 			 *  __push.wr			-->	__tst.wr
 			 *  __ld.wi		0
-			 *  __cmp.wt		ne_w
+			 *  __cmp.wt		neq_w
+			 */
+			else if
+			((p[0]->ins_code == I_CMP_WT) &&
+			 (p[0]->cmp_type == CMP_EQU ||
+			  p[0]->cmp_type == CMP_NEQ) &&
+			 (p[1]->ins_code == I_LD_WI) &&
+			 (p[1]->ins_type == T_VALUE) &&
+			 (p[1]->ins_data == 0) &&
+			 (p[2]->ins_code == I_PUSH_WR)
+			) {
+				/* replace code */
+				p[2]->ins_code = (p[0]->cmp_type == CMP_EQU) ? I_NOT_WR : I_TST_WR;
+				p[2]->ins_type = 0;
+				p[2]->ins_data = 0;
+				nb = 2;
+			}
+
+			/*
+			 *  __push.wr			-->	__cmp.wi	type, i
+			 *  __ld.wi		i
+			 *  __cmp.wt		type
 			 */
 			else if
 			((p[0]->ins_code == I_CMP_WT) &&
 			 (p[1]->ins_code == I_LD_WI) &&
-			 (p[2]->ins_code == I_PUSH_WR) &&
-
-			 (p[1]->ins_type == T_VALUE || p[1]->ins_type == T_SYMBOL) &&
-			 (strcmp((char *)p[0]->ins_data, "eq_w") == 0 ||
-			  strcmp((char *)p[0]->ins_data, "eq_b") == 0 ||
-			  strcmp((char *)p[0]->ins_data, "ne_w") == 0 ||
-			  strcmp((char *)p[0]->ins_data, "ne_b") == 0)
+//			 (p[1]->ins_type == T_VALUE ||
+//			  p[1]->ins_type == T_SYMBOL) &&
+			 (p[2]->ins_code == I_PUSH_WR)
 			) {
 				/* replace code */
-				if (p[1]->ins_data == 0) {
-					if (strcmp((char *)p[0]->ins_data, "eq_w") == 0)
-						p[2]->ins_code = I_NOT_WR;
-					else if (strcmp((char *)p[0]->ins_data, "eq_b") == 0)
-						p[2]->ins_code = I_NOT_WR;
-					else if (strcmp((char *)p[0]->ins_data, "ne_w") == 0)
-						p[2]->ins_code = I_TST_WR;
-					else if (strcmp((char *)p[0]->ins_data, "ne_b") == 0)
-						p[2]->ins_code = I_TST_WR;
-					p[2]->ins_type = 0;
-					p[2]->ins_data = 0;
-				} else {
-					if (strcmp((char *)p[0]->ins_data, "eq_w") == 0)
-						p[2]->ins_code = X_EQU_WI;
-					else if (strcmp((char *)p[0]->ins_data, "eq_b") == 0)
-						p[2]->ins_code = X_EQU_WI;
-					else if (strcmp((char *)p[0]->ins_data, "ne_w") == 0)
-						p[2]->ins_code = X_NEQ_WI;
-					else if (strcmp((char *)p[0]->ins_data, "ne_b") == 0)
-						p[2]->ins_code = X_NEQ_WI;
-					p[2]->ins_type = p[1]->ins_type;
-					p[2]->ins_data = p[1]->ins_data;
-				}
-
+				*p[2] = *p[1];
+				p[2]->ins_code = X_CMP_WI;
+				p[2]->cmp_type = p[0]->cmp_type;
 				nb = 2;
 			}
 
@@ -2764,6 +2782,30 @@ lv1_loop:
 				goto lv1_loop;
 			}
 
+			/*
+			 *  __ld.u{p/m/s/ar/ay}	symbol	-->	__ld.u{p/m/s/ar/ay}  symbol
+			 *  __cmp_w.wi		j		__cmp_b.uiq	j
+			 *
+			 *  __and.uiq		i	-->	__and.uiq	i
+			 *  __cmp_w.wi		j		__cmp_b.uiq	j
+			 *
+			 *  C promotes an unsigned char to a signed int so this
+			 *  must be done in the peephole, not the compiler.
+			 */
+			else if
+			((p[0]->ins_code == X_CMP_WI) &&
+			 (p[0]->ins_type == T_VALUE) &&
+			 (p[0]->ins_data >= 0) &&
+			 (p[0]->ins_data <= 255) &&
+			 (is_ubyte(p[1]))
+			) {
+				/* replace code */
+				p[0]->ins_code = X_CMP_UIQ;
+				p[0]->cmp_type = compare2uchar[p[0]->cmp_type];
+				/* no instructions removed, just loop */
+				goto lv1_loop;
+			}
+
 			/* flush queue */
 			if (nb) {
 				q_wr -= nb;
@@ -2914,7 +2956,6 @@ lv1_loop:
 
 				case I_POP_WR:
 				case I_CMP_WT:
-				case I_CMP_UT:
 				case I_ST_WPT:
 				case I_ST_UPT:
 				case I_ADD_WT:
