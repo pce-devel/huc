@@ -534,6 +534,20 @@ __bra		.macro
 		.endm
 
 ; **************
+; always preceeded by a __tst.wr before peephole optimization
+
+__bfalse	.macro
+		beq	\1
+		.endm
+
+; **************
+; always preceeded by a __tst.wr before peephole optimization
+
+__btrue		.macro
+		bne	\1
+		.endm
+
+; **************
 ; boolean test, always followed by a __tst.wr or __not.wr
 ; this MUST set the Z flag for the subsequent branches!
 
@@ -580,8 +594,8 @@ __slt_w.wi	.macro
 		sbc.h	#\1
 		bvc	!+
 		eor	#$80
-!:		asl	a		; -ve if Y:A  < integer (signed).
-		cla			; +ve if Y:A >= integer (signed).
+!:		asl	a		; -ve if Y:A < integer (signed).
+		cla
 		rol	a
 		.endm
 
@@ -598,7 +612,7 @@ __sle_w.wi	.macro
 		bvc	!+
 		eor	#$80
 !:		asl	a		; -ve if Y:A <= integer (signed).
-		cla			; +ve if Y:A  > integer (signed).
+		cla
 		rol	a
 		.endm
 
@@ -614,8 +628,8 @@ __sgt_w.wi	.macro
 		sbc.h	#\1
 		bvc	!+
 		eor	#$80
-!:		asl	a		; +ve if Y:A  > integer (signed).
-		cla			; -ve if Y:A <= integer (signed).
+!:		asl	a		; +ve if Y:A > integer (signed).
+		cla
 		rol	a
 		eor	#1
 		.endm
@@ -632,7 +646,7 @@ __sge_w.wi	.macro
 		bvc	!+
 		eor	#$80
 !:		asl	a		; +ve if Y:A >= integer (signed).
-		cla			; -ve if Y:A  < integer (signed).
+		cla
 		rol	a
 		eor	#1
 		.endm
@@ -828,6 +842,580 @@ __uge_b.uiq	.macro
 		.endm
 
 ; **************
+; optimized boolean test
+; A is true (1) if Y:A == memory-value, else false (0)
+; this MUST set the Z flag for the subsequent branches!
+
+__equ_w.wm	.macro
+		eor.l	\1
+		bne	!false+
+		cpy.h	\1
+		beq	!true+
+!false:		lda	#-1
+!true:		inc	a
+		.endm
+
+; **************
+; optimized boolean test
+; A is true (1) if Y:A != memory-value, else false (0)
+; this MUST set the Z flag for the subsequent branches!
+
+__neq_w.wm	.macro
+		eor.l	\1
+		bne	!true+
+		cpy.h	\1
+		beq	!false+
+!true:		lda	#1
+!false:
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; A is true (1) if Y:A < memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__slt_w.wm	.macro
+		cmp.l	\1		; Subtract memory from Y:A.
+		tya
+		sbc.h	\1
+		bvc	!+
+		eor	#$80
+!:		asl	a		; -ve if Y:A < memory (signed).
+		cla
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; A is true (1) if Y:A <= memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__sle_w.wm	.macro
+		clc			; Subtract memory+1 from Y:A.
+		sbc.l	\1
+		tya
+		sbc.h	\1
+		bvc	!+
+		eor	#$80
+!:		asl	a		; -ve if Y:A <= memory (signed).
+		cla
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; A is true (1) if Y:A > memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__sgt_w.wm	.macro
+		clc			; Subtract memory+1 from Y:A.
+		sbc.l	\1
+		tya
+		sbc.h	\1
+		bvc	!+
+		eor	#$80
+!:		asl	a		; +ve if Y:A > memory (signed).
+		cla
+		rol	a
+		eor	#1
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; A is true (1) if Y:A >= memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__sge_w.wm	.macro
+		cmp.l	\1		; Subtract memory from Y:A.
+		tya
+		sbc.h	\1
+		bvc	!+
+		eor	#$80
+!:		asl	a		; +ve if Y:A >= memory (signed).
+		cla
+		rol	a
+		eor	#1
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; A is true (1) if Y:A < memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__ult_w.wm	.macro
+		cmp.l	\1		; Subtract memory from Y:A.
+		tya
+		sbc.h	\1
+		cla			; CC if Y:A < memory.
+		rol	a
+		eor	#1
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; A is true (1) if Y:A <= memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__ule_w.wm	.macro
+		clc			; Subtract memory+1 from Y:A.
+		sbc.l	\1
+		tya
+		sbc.h	\1
+		cla			; CC if Y:A <= memory.
+		rol	a
+		eor	#1
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; A is true (1) if Y:A > memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__ugt_w.wm	.macro
+		clc			; Subtract memory+1 from Y:A.
+		sbc.l	\1
+		tya
+		sbc.h	\1
+		cla			; CS if Y:A > memory.
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; A is true (1) if Y:A >= memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__uge_w.wm	.macro
+		cmp.l	\1		; Subtract memory from Y:A.
+		tya
+		sbc.h	\1
+		cla			; CS if Y:A >= memory.
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test
+; A is true (1) if A == memory-value, else false (0)
+; this MUST set the Z flag for the subsequent branches!
+
+__equ_b.umq	.macro
+		eor	\1
+		beq	!true+
+!false:		lda	#-1
+!true:		inc	a
+		.endm
+
+; **************
+; optimized boolean test
+; A is true (1) if A != memory-value, else false (0)
+; this MUST set the Z flag for the subsequent branches!
+
+__neq_b.umq	.macro
+		eor	\1
+		beq	!false+
+		lda	#1
+!false:
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; A is true (1) if A < memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__slt_b.bmq	.macro
+		sec			; Subtract memory from A.
+		sbc	\1
+		bvc	!+
+		eor	#$80
+!:		asl	a		; -ve if A < memory (signed).
+		cla
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; A is true (1) if A <= memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__sle_b.bmq	.macro
+		clc			; Subtract memory+1 from A.
+		sbc	\1
+		bvc	!+
+		eor	#$80
+!:		asl	a		; -ve if A <= memory (signed).
+		cla
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; A is true (1) if A > memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__sgt_b.bmq	.macro
+		clc			; Subtract memory+1 from A.
+		sbc.l	\1
+		bvc	!+
+		eor	#$80
+!:		asl	a		; +ve if A > memory (signed).
+		cla
+		rol	a
+		eor	#1
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; A is true (1) if A >= memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__sge_b.bmq	.macro
+		sec			; Subtract memory from A.
+		sbc	\1
+		bvc	!+
+		eor	#$80
+!:		asl	a		; +ve if A >= memory (signed).
+		cla
+		rol	a
+		eor	#1
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; A is true (1) if A < memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__ult_b.umq	.macro
+		cmp	\1		; Subtract memory from A.
+		cla			; CC if A < memory.
+		rol	a
+		eor	#1
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; A is true (1) if A <= memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__ule_b.umq	.macro
+		clc			; Subtract memory+1 from A.
+		sbc	\1
+		cla			; CC if A <= memory.
+		rol	a
+		eor	#1
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; A is true (1) if A > memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__ugt_b.umq	.macro
+		clc			; Subtract memory+1 from A.
+		sbc	\1
+		cla			; CS if A > memory.
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; A is true (1) if A >= memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__uge_b.umq	.macro
+		cmp	\1		; Subtract memory from A.
+		cla			; CS if A >= memory.
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test
+; A is true (1) if Y:A == memory-value, else false (0)
+; this MUST set the Z flag for the subsequent branches!
+
+__equ_w.ws	.macro	; __STACK
+		eor.l	<__stack + \1, x
+		bne	!false+
+		tya
+		eor.h	<__stack + \1, x
+		beq	!true+
+!false:		lda	#-1
+!true:		inc	a
+		.endm
+
+; **************
+; optimized boolean test
+; A is true (1) if Y:A != memory-value, else false (0)
+; this MUST set the Z flag for the subsequent branches!
+
+__neq_w.ws	.macro	; __STACK
+		eor.l	<__stack + \1, x
+		bne	!true+
+		tya
+		eor.h	<__stack + \1, x
+		beq	!false+
+!true:		lda	#1
+!false:
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; A is true (1) if Y:A < memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__slt_w.ws	.macro	; __STACK
+		cmp.l	<__stack + \1, x; Subtract memory from Y:A.
+		tya
+		sbc.h	<__stack + \1, x
+		bvc	!+
+		eor	#$80
+!:		asl	a		; -ve if Y:A < memory (signed).
+		cla
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; A is true (1) if Y:A <= memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__sle_w.ws	.macro	; __STACK
+		clc			; Subtract memory+1 from Y:A.
+		sbc.l	<__stack + \1, x
+		tya
+		sbc.h	<__stack + \1, x
+		bvc	!+
+		eor	#$80
+!:		asl	a		; -ve if Y:A <= memory (signed).
+		cla
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; A is true (1) if Y:A > memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__sgt_w.ws	.macro	; __STACK
+		clc			; Subtract memory+1 from Y:A.
+		sbc.l	<__stack + \1, x
+		tya
+		sbc.h	<__stack + \1, x
+		bvc	!+
+		eor	#$80
+!:		asl	a		; +ve if Y:A > memory (signed).
+		cla
+		rol	a
+		eor	#1
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; A is true (1) if Y:A >= memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__sge_w.ws	.macro	; __STACK
+		cmp.l	<__stack + \1, x; Subtract memory from Y:A.
+		tya
+		sbc.h	<__stack + \1, x
+		bvc	!+
+		eor	#$80
+!:		asl	a		; +ve if Y:A >= memory (signed).
+		cla
+		rol	a
+		eor	#1
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; A is true (1) if Y:A < memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__ult_w.ws	.macro	; __STACK
+		cmp.l	<__stack + \1, x; Subtract memory from Y:A.
+		tya
+		sbc.h	<__stack + \1, x
+		cla			; CC if Y:A < memory.
+		rol	a
+		eor	#1
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; A is true (1) if Y:A <= memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__ule_w.ws	.macro	; __STACK
+		clc			; Subtract memory+1 from Y:A.
+		sbc.l	<__stack + \1, x
+		tya
+		sbc.h	<__stack + \1, x
+		cla			; CC if Y:A <= memory.
+		rol	a
+		eor	#1
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; A is true (1) if Y:A > memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__ugt_w.ws	.macro	; __STACK
+		clc			; Subtract memory+1 from Y:A.
+		sbc.l	<__stack + \1, x
+		tya
+		sbc.h	<__stack + \1, x
+		cla			; CS if Y:A > memory.
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; A is true (1) if Y:A >= memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__uge_w.ws	.macro	; __STACK
+		cmp.l	<__stack + \1, x; Subtract memory from Y:A.
+		tya
+		sbc.h	<__stack + \1, x
+		cla			; CS if Y:A >= memory.
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test
+; A is true (1) if A == memory-value, else false (0)
+; this MUST set the Z flag for the subsequent branches!
+
+__equ_b.usq	.macro	; __STACK
+		eor	<__stack + \1, x
+		beq	!true+
+!false:		lda	#-1
+!true:		inc	a
+		.endm
+
+; **************
+; optimized boolean test
+; A is true (1) if A != memory-value, else false (0)
+; this MUST set the Z flag for the subsequent branches!
+
+__neq_b.usq	.macro	; __STACK
+		eor	<__stack + \1, x
+		beq	!false+
+		lda	#1
+!false:
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; A is true (1) if A < memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__slt_b.bsq	.macro	; __STACK
+		sec			; Subtract memory from A.
+		sbc	<__stack + \1, x
+		bvc	!+
+		eor	#$80
+!:		asl	a		; -ve if A < memory (signed).
+		cla
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; A is true (1) if A <= memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__sle_b.bsq	.macro	; __STACK
+		clc			; Subtract memory+1 from A.
+		sbc	<__stack + \1, x
+		bvc	!+
+		eor	#$80
+!:		asl	a		; -ve if A <= memory (signed).
+		cla
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; A is true (1) if A > memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__sgt_b.bsq	.macro	; __STACK
+		clc			; Subtract memory+1 from A.
+		sbc.l	<__stack + \1, x
+		bvc	!+
+		eor	#$80
+!:		asl	a		; +ve if A > memory (signed).
+		cla
+		rol	a
+		eor	#1
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; A is true (1) if A >= memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__sge_b.bsq	.macro	; __STACK
+		sec			; Subtract memory from A.
+		sbc	<__stack + \1, x
+		bvc	!+
+		eor	#$80
+!:		asl	a		; +ve if A >= memory (signed).
+		cla
+		rol	a
+		eor	#1
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; A is true (1) if A < memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__ult_b.usq	.macro	; __STACK
+		cmp	<__stack + \1, x; Subtract memory from A.
+		cla			; CC if A < memory.
+		rol	a
+		eor	#1
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; A is true (1) if A <= memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__ule_b.usq	.macro	; __STACK
+		clc			; Subtract memory+1 from A.
+		sbc	<__stack + \1, x
+		cla			; CC if A <= memory.
+		rol	a
+		eor	#1
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; A is true (1) if A > memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__ugt_b.usq	.macro	; __STACK
+		clc			; Subtract memory+1 from A.
+		sbc	<__stack + \1, x
+		cla			; CS if A > memory.
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; A is true (1) if A >= memory-value, else false (0)
+; this MUST set the Z flag for the susequent branches!
+
+__uge_b.usq	.macro	; __STACK
+		cmp	<__stack + \1, x; Subtract memory from A.
+		cla			; CS if A >= memory.
+		rol	a
+		.endm
+
+; **************
 ; boolean test, optimized into __not.wr if used before a __tst.wr
 ; A is true (1) if Y:A == 0, else false (0)
 ; this MUST set the Z flag for the subsequent branches!
@@ -838,33 +1426,6 @@ __not.wr	.macro
 		beq	!+
 		lda	#1
 !:		eor	#1
-		.endm
-
-; **************
-; boolean test, always output immediately before a __bfalse or __btrue
-; A is true (1) if Y:A != 0, else false (0)
-; this MUST set the Z flag for the subsequent branches!
-
-__tst.wr	.macro
-		sty	__temp
-		ora	__temp
-		beq	!+
-		lda	#1
-!:
-		.endm
-
-; **************
-; always preceeded by a __tst.wr before peephole optimization
-
-__bfalse	.macro
-		beq	\1
-		.endm
-
-; **************
-; always preceeded by a __tst.wr before peephole optimization
-
-__btrue		.macro
-		bne	\1
 		.endm
 
 ; **************
@@ -981,6 +1542,19 @@ __not.uay	.macro
 		beq	!+
 		lda	#-1
 !:		inc	a
+		.endm
+
+; **************
+; boolean test, always output immediately before a __bfalse or __btrue
+; A is true (1) if Y:A != 0, else false (0)
+; this MUST set the Z flag for the subsequent branches!
+
+__tst.wr	.macro
+		sty	__temp
+		ora	__temp
+		beq	!+
+		lda	#1
+!:
 		.endm
 
 ; **************

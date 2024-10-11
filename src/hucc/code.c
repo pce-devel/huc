@@ -523,6 +523,20 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case I_BFALSE:
+		ot("__bfalse\t");
+		outlabel((int)data);
+		nl();
+		nl();
+		break;
+
+	case I_BTRUE:
+		ot("__btrue\t\t");
+		outlabel((int)data);
+		nl();
+		nl();
+		break;
+
 	case I_DEF:
 		outstr((const char *)data);
 		outstr(" .equ ");
@@ -545,6 +559,23 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_CMP_WM:
+		ot("__");
+		outstr(compare2str[tmp->cmp_type]);
+		outstr("_w.wm\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_CMP_WS:
+		ot("__");
+		outstr(compare2str[tmp->cmp_type]);
+		outstr("_w.ws\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
 	case X_CMP_UIQ:
 		ot("__");
 		outstr(compare2str[tmp->cmp_type]);
@@ -553,26 +584,25 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case I_TST_WR:
-		ol("__tst.wr");
+	case X_CMP_UMQ:
+		ot("__");
+		outstr(compare2str[tmp->cmp_type]);
+		outstr("_b.umq\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_CMP_USQ:
+		ot("__");
+		outstr(compare2str[tmp->cmp_type]);
+		outstr("_b.usq\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
 		break;
 
 	case I_NOT_WR:
 		ol("__not.wr");
-		break;
-
-	case I_BFALSE:
-		ot("__bfalse\t");
-		outlabel((int)data);
-		nl();
-		nl();
-		break;
-
-	case I_BTRUE:
-		ot("__btrue\t\t");
-		outlabel((int)data);
-		nl();
-		nl();
 		break;
 
 	case X_NOT_WP:
@@ -614,6 +644,7 @@ void gen_code (INS *tmp)
 	case X_NOT_US:
 		ot("__not.us\t");
 		outdec((int)data);
+		outlocal(tmp->sym);
 		nl();
 		break;
 
@@ -627,6 +658,10 @@ void gen_code (INS *tmp)
 		ot("__not.uay\t");
 		out_addr(type, data);
 		nl();
+		break;
+
+	case I_TST_WR:
+		ol("__tst.wr");
 		break;
 
 	case X_TST_WP:
@@ -644,6 +679,7 @@ void gen_code (INS *tmp)
 	case X_TST_WS:
 		ot("__tst.ws\t");
 		outdec((int)data);
+		outlocal(tmp->sym);
 		nl();
 		break;
 
@@ -668,6 +704,7 @@ void gen_code (INS *tmp)
 	case X_TST_US:
 		ot("__tst.us\t");
 		outdec((int)data);
+		outlocal(tmp->sym);
 		nl();
 		break;
 

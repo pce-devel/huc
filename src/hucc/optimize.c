@@ -99,15 +99,20 @@ unsigned char icode_flags[] = {
 	/* I_LABEL              */	0,
 	/* I_ALIAS              */	0,
 	/* I_BRA                */	0,
-	/* I_DEF                */	0,
-	/* I_CMP_WT             */	0,
-	/* X_CMP_WI             */	0,
-	/* X_CMP_UIQ            */	0,
-	/* I_NOT_WR             */	0,
-	/* I_TST_WR             */	0,
 	/* I_BFALSE             */	0,
 	/* I_BTRUE              */	0,
+	/* I_DEF                */	0,
 
+	/* I_CMP_WT             */	0,
+	/* X_CMP_WI             */	0,
+	/* X_CMP_WM             */	0,
+	/* X_CMP_WS             */	IS_SPREL,
+
+	/* X_CMP_UIQ            */	IS_UBYTE,
+	/* X_CMP_UMQ            */	IS_UBYTE,
+	/* X_CMP_USQ            */	IS_SPREL + IS_UBYTE,
+
+	/* I_NOT_WR             */	0,
 	/* X_NOT_WP             */	0,
 	/* X_NOT_WM             */	0,
 	/* X_NOT_WS             */	IS_SPREL,
@@ -117,6 +122,8 @@ unsigned char icode_flags[] = {
 	/* X_NOT_US             */	IS_SPREL,
 	/* X_NOT_UAR            */	0,
 	/* X_NOT_UAY            */	0,
+
+	/* I_TST_WR             */	0,
 	/* X_TST_WP             */	0,
 	/* X_TST_WM             */	0,
 	/* X_TST_WS             */	IS_SPREL,
@@ -1341,7 +1348,23 @@ lv1_loop:
 			 *  __bool
 			 *  __tst.wr
 			 *
+			 *  __cmp.wm			-->	__cmp.wm
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __cmp.ws			-->	__cmp.ws
+			 *  __bool
+			 *  __tst.wr
+			 *
 			 *  __cmp.uiq			-->	__cmp.uiq
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __cmp.umq			-->	__cmp.umq
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __cmp.usq			-->	__cmp.usq
 			 *  __bool
 			 *  __tst.wr
 			 *
@@ -1358,7 +1381,11 @@ lv1_loop:
 			 (p[1]->ins_code == I_BOOLEAN) &&
 			 (p[2]->ins_code == I_CMP_WT ||
 			  p[2]->ins_code == X_CMP_WI ||
+			  p[2]->ins_code == X_CMP_WM ||
+			  p[2]->ins_code == X_CMP_WS ||
 			  p[2]->ins_code == X_CMP_UIQ ||
+			  p[2]->ins_code == X_CMP_UMQ ||
+			  p[2]->ins_code == X_CMP_USQ ||
 			  p[2]->ins_code == I_NOT_WR ||
 			  p[2]->ins_code == I_TST_WR)
 			) {
@@ -1370,7 +1397,23 @@ lv1_loop:
 			 *  __bool
 			 *  __not.wr
 			 *
+			 *  __cmp.wm			-->	__cmp.wm
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __cmp.ws			-->	__cmp.ws
+			 *  __bool
+			 *  __not.wr
+			 *
 			 *  __cmp.uiq			-->	__cmp.uiq
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __cmp.umq			-->	__cmp.umq
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __cmp.usq			-->	__cmp.usq
 			 *  __bool
 			 *  __not.wr
 			 *
@@ -1380,7 +1423,11 @@ lv1_loop:
 			((p[0]->ins_code == I_NOT_WR) &&
 			 (p[1]->ins_code == I_BOOLEAN) &&
 			 (p[2]->ins_code == X_CMP_WI ||
-			  p[2]->ins_code == X_CMP_UIQ)
+			  p[2]->ins_code == X_CMP_WM ||
+			  p[2]->ins_code == X_CMP_WS ||
+			  p[2]->ins_code == X_CMP_UIQ ||
+			  p[2]->ins_code == X_CMP_UMQ ||
+			  p[2]->ins_code == X_CMP_USQ)
 			) {
 				p[2]->cmp_type = compare2not[p[2]->cmp_type];
 				nb = 2;
@@ -1680,6 +1727,35 @@ lv1_loop:
 			}
 #endif
 
+			/*
+			 *  is_ubyte()			-->	is_ubyte()
+			 *  __push.wr				__cmp.umq	type, symbol
+			 *  __ld.um		symbol
+			 *  __cmp.wt		type
+			 *
+			 *  is_ubyte()			-->	is_ubyte()
+			 *  __push.wr				__cmp.usq	type, (n - 2)
+			 *  __ld.us		n
+			 *  __cmp.wt		type
+			 */
+			else if
+			((p[0]->ins_code == I_CMP_WT) &&
+			 (p[1]->ins_code == I_LD_UM ||
+			  p[1]->ins_code == X_LD_US) &&
+			 (p[2]->ins_code == I_PUSH_WR) &&
+			 (is_ubyte(p[3]))
+			) {
+				/* replace code */
+				*p[2] = *p[1];
+				switch (p[1]->ins_code) {
+				case I_LD_UM: p[2]->ins_code = X_CMP_UMQ; break;
+				case X_LD_US: p[2]->ins_code = X_CMP_USQ; p[2]->ins_data -= 2; break;
+				default:	break;
+				}
+				p[2]->cmp_type = compare2uchar[p[0]->cmp_type];
+				nb = 2;
+			}
+
 			/* flush queue */
 			if (nb) {
 				q_wr -= nb;
@@ -1868,6 +1944,8 @@ lv1_loop:
 			 *  __push.wr			-->	__tst.wr
 			 *  __ld.wi		0
 			 *  __cmp.wt		neq_w
+			 *
+			 *  Check for this before converting to X_CMP_WI!
 			 */
 			else if
 			((p[0]->ins_code == I_CMP_WT) &&
@@ -1889,17 +1967,30 @@ lv1_loop:
 			 *  __push.wr			-->	__cmp.wi	type, i
 			 *  __ld.wi		i
 			 *  __cmp.wt		type
+			 *
+			 *  __push.wr			-->	__cmp.wm	type, symbol
+			 *  __ld.wm		symbol
+			 *  __cmp.wt		type
+			 *
+			 *  __push.wr			-->	__cmp.ws	type, (n - 2)
+			 *  __ld.ws		n
+			 *  __cmp.wt		type
 			 */
 			else if
 			((p[0]->ins_code == I_CMP_WT) &&
-			 (p[1]->ins_code == I_LD_WI) &&
-//			 (p[1]->ins_type == T_VALUE ||
-//			  p[1]->ins_type == T_SYMBOL) &&
+			 (p[1]->ins_code == I_LD_WI ||
+			  p[1]->ins_code == I_LD_WM ||
+			  p[1]->ins_code == X_LD_WS) &&
 			 (p[2]->ins_code == I_PUSH_WR)
 			) {
 				/* replace code */
 				*p[2] = *p[1];
-				p[2]->ins_code = X_CMP_WI;
+				switch (p[1]->ins_code) {
+				case I_LD_WI: p[2]->ins_code = X_CMP_WI; break;
+				case I_LD_WM: p[2]->ins_code = X_CMP_WM; break;
+				case X_LD_WS: p[2]->ins_code = X_CMP_WS; p[2]->ins_data -= 2; break;
+				default:	break;
+				}
 				p[2]->cmp_type = p[0]->cmp_type;
 				nb = 2;
 			}
