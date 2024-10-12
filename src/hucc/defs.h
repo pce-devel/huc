@@ -64,16 +64,20 @@ enum ICODE {
 	I_LABEL,
 	I_ALIAS,
 	I_BRA,
-	I_DEF,
-	I_CMP_WT,
-	I_CMP_UT,
-	X_EQU_WI,
-	X_NEQ_WI,
-	I_NOT_WR,
-	I_TST_WR,
 	I_BFALSE,
 	I_BTRUE,
+	I_DEF,
 
+	I_CMP_WT,
+	X_CMP_WI,
+	X_CMP_WM,
+	X_CMP_WS,
+
+	X_CMP_UIQ,
+	X_CMP_UMQ,
+	X_CMP_USQ,
+
+	I_NOT_WR,
 	X_NOT_WP,
 	X_NOT_WM,
 	X_NOT_WS,
@@ -83,6 +87,8 @@ enum ICODE {
 	X_NOT_US,
 	X_NOT_UAR,
 	X_NOT_UAY,
+
+	I_TST_WR,
 	X_TST_WP,
 	X_TST_WM,
 	X_TST_WS,
@@ -95,6 +101,8 @@ enum ICODE {
 
 	X_NAND_WI,
 	X_TAND_WI,
+
+	I_BOOLEAN,
 
 	/* i-codes for loading the primary register */
 
@@ -324,6 +332,22 @@ enum ICODE {
 };
 
 /*
+ * boolean comparison operations
+ */
+enum ICOMPARE {
+	CMP_EQU,
+	CMP_NEQ,
+	CMP_SLT,
+	CMP_SLE,
+	CMP_SGT,
+	CMP_SGE,
+	CMP_ULT,
+	CMP_ULE,
+	CMP_UGT,
+	CMP_UGE
+};
+
+/*
  *	INTSIZE is the size of an integer in the target machine
  *	BYTEOFF is the offset of an byte within an integer on the
  *		target machine. (ie: 8080,pdp11 = 0, 6809 = 1,
@@ -343,12 +367,11 @@ enum ICODE {
 #define T_PTR            4
 #define T_STACK          5
 #define T_STRING         6
-#define T_LIB            7
-#define T_SIZE           8
-#define T_BANK           9
-#define T_VRAM          10
-#define T_PAL           11
-#define T_LITERAL       12
+#define T_SIZE           7
+#define T_BANK           8
+#define T_VRAM           9
+#define T_PAL           10
+#define T_LITERAL       11
 
 #define FOREVER for (;;)
 #define FALSE   0
@@ -537,6 +560,7 @@ struct macro {
 
 typedef struct {
 	enum ICODE ins_code;
+	enum ICOMPARE cmp_type;
 	int ins_type;
 	intptr_t ins_data;
 	int imm_type;

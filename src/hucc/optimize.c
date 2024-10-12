@@ -99,16 +99,20 @@ unsigned char icode_flags[] = {
 	/* I_LABEL              */	0,
 	/* I_ALIAS              */	0,
 	/* I_BRA                */	0,
-	/* I_DEF                */	0,
-	/* I_CMP_WT             */	0,
-	/* I_CMP_UT             */	0,
-	/* X_EQU_WI             */	0,
-	/* X_NEQ_WI             */	0,
-	/* I_NOT_WR             */	0,
-	/* I_TST_WR             */	0,
 	/* I_BFALSE             */	0,
 	/* I_BTRUE              */	0,
+	/* I_DEF                */	0,
 
+	/* I_CMP_WT             */	0,
+	/* X_CMP_WI             */	0,
+	/* X_CMP_WM             */	0,
+	/* X_CMP_WS             */	IS_SPREL,
+
+	/* X_CMP_UIQ            */	IS_UBYTE,
+	/* X_CMP_UMQ            */	IS_UBYTE,
+	/* X_CMP_USQ            */	IS_SPREL + IS_UBYTE,
+
+	/* I_NOT_WR             */	0,
 	/* X_NOT_WP             */	0,
 	/* X_NOT_WM             */	0,
 	/* X_NOT_WS             */	IS_SPREL,
@@ -118,6 +122,8 @@ unsigned char icode_flags[] = {
 	/* X_NOT_US             */	IS_SPREL,
 	/* X_NOT_UAR            */	0,
 	/* X_NOT_UAY            */	0,
+
+	/* I_TST_WR             */	0,
 	/* X_TST_WP             */	0,
 	/* X_TST_WM             */	0,
 	/* X_TST_WS             */	IS_SPREL,
@@ -130,6 +136,8 @@ unsigned char icode_flags[] = {
 
 	/* X_NAND_WI            */	0,
 	/* X_TAND_WI            */	0,
+
+	/* I_BOOLEAN            */	0,
 
 	// i-codes for loading the primary register
 
@@ -356,6 +364,35 @@ unsigned char icode_flags[] = {
 	/* X_LDD_B              */	0,
 	/* X_LDD_S_W            */	IS_SPREL,
 	/* X_LDD_S_B            */	IS_SPREL
+};
+
+/* invert comparison operation */
+int compare2not [] = {
+	CMP_NEQ,	// CMP_EQU
+	CMP_EQU,	// CMP_NEQ
+	CMP_SGE,	// CMP_SLT
+	CMP_SGT,	// CMP_SLE
+	CMP_SLE,	// CMP_SGT
+	CMP_SLT,	// CMP_SGE
+	CMP_UGE,	// CMP_ULT
+	CMP_UGT,	// CMP_ULE
+	CMP_ULE,	// CMP_UGT
+	CMP_ULT		// CMP_UGE
+};
+
+/* optimize comparison between unsigned chars */
+/* C promotes an unsigned char to a signed int for comparison */
+int compare2uchar [] = {
+	CMP_EQU,	// CMP_EQU
+	CMP_NEQ,	// CMP_NEQ
+	CMP_ULT,	// CMP_SLT
+	CMP_ULE,	// CMP_SLE
+	CMP_UGT,	// CMP_SGT
+	CMP_UGE,	// CMP_SGE
+	CMP_ULT,	// CMP_ULT
+	CMP_ULE,	// CMP_ULE
+	CMP_UGT,	// CMP_UGT
+	CMP_UGE		// CMP_UGE
 };
 
 /* defines */
@@ -1198,6 +1235,321 @@ lv1_loop:
 			}
 		}
 
+		/* then optimize conditional tests, part 1 */
+		if (q_nb >= 5) {
+			/*
+			 *  LLnn:			-->	LLnn:
+			 *  __bool				__bfalse
+			 *  __tst.wr
+			 *  __bool
+			 *  __bfalse
+			 *
+			 *  LLnn:			-->	LLnn:
+			 *  __bool				__btrue
+			 *  __tst.wr
+			 *  __bool
+			 *  __btrue
+			 *
+			 *  Remove redundant __tst.wr in compound conditionals
+			 *  that the compiler generates.
+			 *
+			 *  Done before removing the 2nd __bool in a later rule
+			 *  so that the redundancy is easier to understand.
+			 */
+			if
+			((p[0]->ins_code == I_BFALSE ||
+			  p[0]->ins_code == I_BTRUE) &&
+			 (p[1]->ins_code == I_BOOLEAN) &&
+			 (p[2]->ins_code == I_TST_WR) &&
+			 (p[3]->ins_code == I_BOOLEAN) &&
+			 (p[4]->ins_code == I_LABEL)
+			) {
+				*p[3] = *p[0];
+				nb = 3;
+			}
+
+			/*
+			 *  LLnn:			-->	LLnn:
+			 *  __bool				LLqq:
+			 *  __tst.wr				__bool
+			 *  __bool
+			 *  LLqq:
+			 *
+			 *  Remove redundant __tst.wr in compound conditionals
+			 *  that the compiler generates.
+			 *
+			 *  Done before reordering the 2nd __bool in a later rule
+			 *  so that the redundancy is easier to understand.
+			 */
+			else if
+			((p[0]->ins_code == I_BFALSE ||
+			  p[0]->ins_code == I_BTRUE ||
+			  p[0]->ins_code == I_LABEL) &&
+			 (p[1]->ins_code == I_BOOLEAN) &&
+			 (p[2]->ins_code == I_TST_WR) &&
+			 (p[3]->ins_code == I_BOOLEAN) &&
+			 (p[4]->ins_code == I_LABEL)
+			) {
+				*p[3] = *p[0];
+				*p[2] = *p[1];
+				nb = 2;
+			}
+
+			/* flush queue */
+			if (nb) {
+				q_wr -= nb;
+				q_nb -= nb;
+				nb = 0;
+
+				if (q_wr < 0)
+					q_wr += Q_SIZE;
+
+				/* loop */
+				goto lv1_loop;
+			}
+		}
+
+		/* then optimize conditional tests, part 2 */
+		if (q_nb >= 3) {
+			/*
+			 *  __tst.wr			-->	__not.wr
+			 *  __bool
+			 *  __not.wr
+			 */
+			if
+			((p[0]->ins_code == I_NOT_WR) &&
+			 (p[1]->ins_code == I_BOOLEAN) &&
+			 (p[2]->ins_code == I_TST_WR)
+			) {
+				p[2]->ins_code = I_NOT_WR;
+				nb = 2;
+			}
+
+			/*
+			 *  __not.wr			-->	__tst.wr
+			 *  __bool
+			 *  __not.wr
+			 */
+			else if
+			((p[0]->ins_code == I_NOT_WR) &&
+			 (p[1]->ins_code == I_BOOLEAN) &&
+			 (p[2]->ins_code == I_NOT_WR)
+			) {
+				p[2]->ins_code = I_TST_WR;
+				nb = 2;
+			}
+
+			/*
+			 *  __cmp.wt			-->	__cmp.wt
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __cmp.wi			-->	__cmp.wi
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __cmp.wm			-->	__cmp.wm
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __cmp.ws			-->	__cmp.ws
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __cmp.uiq			-->	__cmp.uiq
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __cmp.umq			-->	__cmp.umq
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __cmp.usq			-->	__cmp.usq
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __not.wr			-->	__not.wr
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __tst.wr			-->	__tst.wr
+			 *  __bool
+			 *  __tst.wr
+			 */
+			else if
+			((p[0]->ins_code == I_TST_WR) &&
+			 (p[1]->ins_code == I_BOOLEAN) &&
+			 (p[2]->ins_code == I_CMP_WT ||
+			  p[2]->ins_code == X_CMP_WI ||
+			  p[2]->ins_code == X_CMP_WM ||
+			  p[2]->ins_code == X_CMP_WS ||
+			  p[2]->ins_code == X_CMP_UIQ ||
+			  p[2]->ins_code == X_CMP_UMQ ||
+			  p[2]->ins_code == X_CMP_USQ ||
+			  p[2]->ins_code == I_NOT_WR ||
+			  p[2]->ins_code == I_TST_WR)
+			) {
+				nb = 2;
+			}
+
+			/*
+			 *  __cmp.wi			-->	__cmp.wi
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __cmp.wm			-->	__cmp.wm
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __cmp.ws			-->	__cmp.ws
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __cmp.uiq			-->	__cmp.uiq
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __cmp.umq			-->	__cmp.umq
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __cmp.usq			-->	__cmp.usq
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  N.B. This inverts the test condition of the __cmp.wi!
+			 */
+			else if
+			((p[0]->ins_code == I_NOT_WR) &&
+			 (p[1]->ins_code == I_BOOLEAN) &&
+			 (p[2]->ins_code == X_CMP_WI ||
+			  p[2]->ins_code == X_CMP_WM ||
+			  p[2]->ins_code == X_CMP_WS ||
+			  p[2]->ins_code == X_CMP_UIQ ||
+			  p[2]->ins_code == X_CMP_UMQ ||
+			  p[2]->ins_code == X_CMP_USQ)
+			) {
+				p[2]->cmp_type = compare2not[p[2]->cmp_type];
+				nb = 2;
+			}
+
+			/* flush queue */
+			if (nb) {
+				q_wr -= nb;
+				q_nb -= nb;
+				nb = 0;
+
+				if (q_wr < 0)
+					q_wr += Q_SIZE;
+
+				/* loop */
+				goto lv1_loop;
+			}
+		}
+
+		/* then optimize conditional tests, part 3 */
+		if (q_nb >= 2) {
+			/*
+			 *  __bool			-->	LLnn:
+			 *  LLnn:				__bool
+			 *
+			 *  Delay boolean conversion until the end of a list of labels.
+			 *
+			 *  N.B. This optimization should be done before the X_TST_WM optimization!
+			 */
+			if
+			((p[0]->ins_code == I_LABEL) &&
+			 (p[1]->ins_code == I_BOOLEAN)
+			) {
+				*p[1] = *p[0];
+				p[0]->ins_code = I_BOOLEAN;
+				p[0]->ins_type = 0;
+				p[0]->ins_data = 0;
+				/* no instructions removed, just loop */
+				goto lv1_loop;
+			}
+
+			/*
+			 *  __bool			-->	__bfalse
+			 *  __bfalse
+			 *
+			 *  __bool			-->	__btrue
+			 *  __btrue
+			 *
+			 *  __bool			-->	__bool
+			 *  __bool
+			 *
+			 *  These remove redundant conversions of a flag into a boolean.
+			 *
+			 *  N.B. This optimization should be done before the X_TST_WM optimization!
+			 */
+			else if
+			((p[1]->ins_code == I_BOOLEAN) &&
+			 (p[0]->ins_code == I_BFALSE ||
+			  p[0]->ins_code == I_BTRUE ||
+			  p[0]->ins_code == I_BOOLEAN)
+			) {
+				*p[1] = *p[0];
+				nb = 1;
+			}
+
+			/*
+			 *  __bra LLaa			-->	__bra LLaa
+			 *  __bra LLbb
+			 */
+			else if
+			((p[0]->ins_code == I_BRA) &&
+			 (p[1]->ins_code == I_BRA)
+			) {
+				nb = 1;
+			}
+
+			/*
+			 *  LLaa:				LLaa .alias LLbb
+			 *  __bra LLbb			-->	__bra LLbb
+			 */
+			else if
+			((p[0]->ins_code == I_BRA) &&
+			 (p[1]->ins_code == I_LABEL)
+			) {
+				int i = 1;
+				do	{
+					if (p[i]->ins_data != p[0]->ins_data) {
+						p[i]->ins_code = I_ALIAS;
+						p[i]->imm_type = T_VALUE;
+						p[i]->imm_data = p[0]->ins_data;
+					}
+				} while (++i < q_nb && i < 10 && p[i]->ins_code == I_LABEL);
+			}
+
+			/*
+			 *  __bra LLaa			-->	LLaa:
+			 *  LLaa:
+			 */
+			else if
+			((p[0]->ins_code == I_LABEL) &&
+			 (p[1]->ins_code == I_BRA) &&
+			 (p[1]->ins_type == T_LABEL) &&
+			 (p[0]->ins_data == p[1]->ins_data)
+			) {
+				*p[1] = *p[0];
+				nb = 1;
+			}
+
+			/* flush queue */
+			if (nb) {
+				q_wr -= nb;
+				q_nb -= nb;
+				nb = 0;
+
+				if (q_wr < 0)
+					q_wr += Q_SIZE;
+
+				/* loop */
+				goto lv1_loop;
+			}
+		}
+
 		/* 6-instruction patterns */
 		if (q_nb >= 6) {
 			/*
@@ -1374,6 +1726,35 @@ lv1_loop:
 				nb = 3;
 			}
 #endif
+
+			/*
+			 *  is_ubyte()			-->	is_ubyte()
+			 *  __push.wr				__cmp.umq	type, symbol
+			 *  __ld.um		symbol
+			 *  __cmp.wt		type
+			 *
+			 *  is_ubyte()			-->	is_ubyte()
+			 *  __push.wr				__cmp.usq	type, (n - 2)
+			 *  __ld.us		n
+			 *  __cmp.wt		type
+			 */
+			else if
+			((p[0]->ins_code == I_CMP_WT) &&
+			 (p[1]->ins_code == I_LD_UM ||
+			  p[1]->ins_code == X_LD_US) &&
+			 (p[2]->ins_code == I_PUSH_WR) &&
+			 (is_ubyte(p[3]))
+			) {
+				/* replace code */
+				*p[2] = *p[1];
+				switch (p[1]->ins_code) {
+				case I_LD_UM: p[2]->ins_code = X_CMP_UMQ; break;
+				case X_LD_US: p[2]->ins_code = X_CMP_USQ; p[2]->ins_data -= 2; break;
+				default:	break;
+				}
+				p[2]->cmp_type = compare2uchar[p[0]->cmp_type];
+				nb = 2;
+			}
 
 			/* flush queue */
 			if (nb) {
@@ -1556,58 +1937,61 @@ lv1_loop:
 			}
 
 			/*
-			 *  __push.wr			-->	__equ.wi	i
-			 *  __ld.wi		i
-			 *  __cmp.wt		eq_w
-			 *
-			 *  __push.wr			-->	__neq.wi	i
-			 *  __ld.wi		i
-			 *  __cmp.wt		ne_w
-			 *
 			 *  __push.wr			-->	__not.wr
 			 *  __ld.wi		0
-			 *  __cmp.wt		eq_w
+			 *  __cmp.wt		equ_w
 			 *
 			 *  __push.wr			-->	__tst.wr
 			 *  __ld.wi		0
-			 *  __cmp.wt		ne_w
+			 *  __cmp.wt		neq_w
+			 *
+			 *  Check for this before converting to X_CMP_WI!
 			 */
 			else if
 			((p[0]->ins_code == I_CMP_WT) &&
+			 (p[0]->cmp_type == CMP_EQU ||
+			  p[0]->cmp_type == CMP_NEQ) &&
 			 (p[1]->ins_code == I_LD_WI) &&
-			 (p[2]->ins_code == I_PUSH_WR) &&
-
-			 (p[1]->ins_type == T_VALUE || p[1]->ins_type == T_SYMBOL) &&
-			 (strcmp((char *)p[0]->ins_data, "eq_w") == 0 ||
-			  strcmp((char *)p[0]->ins_data, "eq_b") == 0 ||
-			  strcmp((char *)p[0]->ins_data, "ne_w") == 0 ||
-			  strcmp((char *)p[0]->ins_data, "ne_b") == 0)
+			 (p[1]->ins_type == T_VALUE) &&
+			 (p[1]->ins_data == 0) &&
+			 (p[2]->ins_code == I_PUSH_WR)
 			) {
 				/* replace code */
-				if (p[1]->ins_data == 0) {
-					if (strcmp((char *)p[0]->ins_data, "eq_w") == 0)
-						p[2]->ins_code = I_NOT_WR;
-					else if (strcmp((char *)p[0]->ins_data, "eq_b") == 0)
-						p[2]->ins_code = I_NOT_WR;
-					else if (strcmp((char *)p[0]->ins_data, "ne_w") == 0)
-						p[2]->ins_code = I_TST_WR;
-					else if (strcmp((char *)p[0]->ins_data, "ne_b") == 0)
-						p[2]->ins_code = I_TST_WR;
-					p[2]->ins_type = 0;
-					p[2]->ins_data = 0;
-				} else {
-					if (strcmp((char *)p[0]->ins_data, "eq_w") == 0)
-						p[2]->ins_code = X_EQU_WI;
-					else if (strcmp((char *)p[0]->ins_data, "eq_b") == 0)
-						p[2]->ins_code = X_EQU_WI;
-					else if (strcmp((char *)p[0]->ins_data, "ne_w") == 0)
-						p[2]->ins_code = X_NEQ_WI;
-					else if (strcmp((char *)p[0]->ins_data, "ne_b") == 0)
-						p[2]->ins_code = X_NEQ_WI;
-					p[2]->ins_type = p[1]->ins_type;
-					p[2]->ins_data = p[1]->ins_data;
-				}
+				p[2]->ins_code = (p[0]->cmp_type == CMP_EQU) ? I_NOT_WR : I_TST_WR;
+				p[2]->ins_type = 0;
+				p[2]->ins_data = 0;
+				nb = 2;
+			}
 
+			/*
+			 *  __push.wr			-->	__cmp.wi	type, i
+			 *  __ld.wi		i
+			 *  __cmp.wt		type
+			 *
+			 *  __push.wr			-->	__cmp.wm	type, symbol
+			 *  __ld.wm		symbol
+			 *  __cmp.wt		type
+			 *
+			 *  __push.wr			-->	__cmp.ws	type, (n - 2)
+			 *  __ld.ws		n
+			 *  __cmp.wt		type
+			 */
+			else if
+			((p[0]->ins_code == I_CMP_WT) &&
+			 (p[1]->ins_code == I_LD_WI ||
+			  p[1]->ins_code == I_LD_WM ||
+			  p[1]->ins_code == X_LD_WS) &&
+			 (p[2]->ins_code == I_PUSH_WR)
+			) {
+				/* replace code */
+				*p[2] = *p[1];
+				switch (p[1]->ins_code) {
+				case I_LD_WI: p[2]->ins_code = X_CMP_WI; break;
+				case I_LD_WM: p[2]->ins_code = X_CMP_WM; break;
+				case X_LD_WS: p[2]->ins_code = X_CMP_WS; p[2]->ins_data -= 2; break;
+				default:	break;
+				}
+				p[2]->cmp_type = p[0]->cmp_type;
 				nb = 2;
 			}
 
@@ -1733,59 +2117,60 @@ lv1_loop:
 			/*
 			 *  __ld.{w/b/u}p	symbol	-->	__not.{w/u}p	symbol
 			 *  __tst.wr				not(__tst.wr or __not.wr)
-			 *  not(__tst.wr or __not.wr)
+			 *  not(__bool or __tst.wr or __not.wr)
 			 *
 			 *  __ld.{w/b/u}p	symbol	-->	__tst.{w/u}p	symbol
 			 *  __not.wr				not(__tst.wr or __not.wr)
-			 *  not(__tst.wr or __not.wr)
+			 *  not(__bool or __tst.wr or __not.wr)
 			 *
 			 *  __ld.{w/b/u}m	symbol	-->	__not.{w/u}m	symbol
 			 *  __tst.wr				not(__tst.wr or __not.wr)
-			 *  not(__tst.wr or __not.wr)
+			 *  not(__bool or __tst.wr or __not.wr)
 			 *
 			 *  __ld.{w/b/u}m	symbol	-->	__tst.{w/u}m	symbol
 			 *  __not.wr				not(__tst.wr or __not.wr)
-			 *  not(__tst.wr or __not.wr)
+			 *  not(__bool or __tst.wr or __not.wr)
 			 *
 			 *  __ld.{w/b/u}s	symbol	-->	__not.{w/u}s	symbol
 			 *  __tst.wr				not(__tst.wr or __not.wr)
-			 *  not(__tst.wr or __not.wr)
+			 *  not(__bool or __tst.wr or __not.wr)
 			 *
 			 *  __ld.{w/b/u}s	symbol	-->	__tst.{w/u}s	symbol
 			 *  __not.wr				not(__tst.wr or __not.wr)
-			 *  not(__tst.wr or __not.wr)
+			 *  not(__bool or __tst.wr or __not.wr)
 			 *
 			 *  __ld.{w/b/u}ar	symbol	-->	__not.{w/u}ar	symbol
 			 *  __tst.wr				not(__tst.wr or __not.wr)
-			 *  not(__tst.wr or __not.wr)
+			 *  not(__bool or __tst.wr or __not.wr)
 			 *
 			 *  __ld.{w/b/u}ar	symbol	-->	__tst.{w/u}ar	symbol
 			 *  __not.wr				not(__tst.wr or __not.wr)
-			 *  not(__tst.wr or __not.wr)
+			 *  not(__bool or __tst.wr or __not.wr)
 			 *
 			 *  __ld.{b/u}ay	symbol	-->	__not.uay	symbol
 			 *  __tst.wr				not(__tst.wr or __not.wr)
-			 *  not(__tst.wr or __not.wr)
+			 *  not(__bool or __tst.wr or __not.wr)
 			 *
 			 *  __ld.{b/u}ay	symbol	-->	__tst.uay	symbol
 			 *  __not.wr				not(__tst.wr or __not.wr)
-			 *  not(__tst.wr or __not.wr)
+			 *  not(__bool or __tst.wr or __not.wr)
 			 *
 			 *  __and.{w/u}i	n	-->	__tand.wi	n
 			 *  __tst.wr				not(__tst.wr or __not.wr)
-			 *  not(__tst.wr or __not.wr)
+			 *  not(__bool or __tst.wr or __not.wr)
 			 *
 			 *  __and.{w/u}i	n	-->	__nand.wi	n
 			 *  __not.wr				not(__tst.wr or __not.wr)
-			 *  not(__tst.wr or __not.wr)
+			 *  not(__bool or __tst.wr or __not.wr)
 			 *
 			 *  N.B. This deliberately tests for the i-code after
 			 *  the target I_TST_WR or I_NOT_WR in order to delay
-			 *  the match until after merging the dupliated tests
+			 *  the match until after merging the duplicate tests
 			 *  that the code-generator often emits.
 			 */
 			else if
-			((p[0]->ins_code != I_TST_WR) &&
+			((p[0]->ins_code != I_BOOLEAN) &&
+			 (p[0]->ins_code != I_TST_WR) &&
 			 (p[0]->ins_code != I_NOT_WR) &&
 			 (p[1]->ins_code == I_TST_WR ||
 			  p[1]->ins_code == I_NOT_WR) &&
@@ -1926,49 +2311,6 @@ lv1_loop:
 		/* 2-instruction patterns */
 		if (q_nb >= 2) {
 			/*
-			 *  __bra LLaa			-->	__bra LLaa
-			 *  __bra LLbb
-			 */
-			if
-			((p[0]->ins_code == I_BRA) &&
-			 (p[1]->ins_code == I_BRA)
-			) {
-				nb = 1;
-			}
-
-			/*
-			 *  LLaa:				LLaa .alias LLbb
-			 *  __bra LLbb			-->	__bra LLbb
-			 */
-			if
-			((p[0]->ins_code == I_BRA) &&
-			 (p[1]->ins_code == I_LABEL)
-			) {
-				int i = 1;
-				do	{
-					if (p[i]->ins_data != p[0]->ins_data) {
-						p[i]->ins_code = I_ALIAS;
-						p[i]->imm_type = T_VALUE;
-						p[i]->imm_data = p[0]->ins_data;
-					}
-				} while (++i < q_nb && i < 10 && p[i]->ins_code == I_LABEL);
-			}
-
-			/*
-			 *  __bra LLaa			-->	LLaa:
-			 *  LLaa:
-			 */
-			else if
-			((p[0]->ins_code == I_LABEL) &&
-			 (p[1]->ins_code == I_BRA) &&
-			 (p[1]->ins_type == T_LABEL) &&
-			 (p[0]->ins_data == p[1]->ins_data)
-			) {
-				*p[1] = *p[0];
-				nb = 1;
-			}
-
-			/*
 			 *  __ld.{b/u}p		__ptr	-->	__ld.{b/u}p	__ptr
 			 *  __switch.wr				__switch.ur
 			 *
@@ -1981,7 +2323,7 @@ lv1_loop:
 			 *  __ld.{b/u}ar	array	-->	__ld.{b/u}ar	array
 			 *  __switch.wr				__switch.ur
 			 */
-			else if
+			if
 			((p[0]->ins_code == I_SWITCH_WR) &&
 			 (p[1]->ins_code == I_LD_BP ||
 			  p[1]->ins_code == I_LD_UP ||
@@ -2018,57 +2360,6 @@ lv1_loop:
 			  p[1]->ins_code == I_BRA)
 			) {
 				/* remove code */
-				nb = 1;
-			}
-
-			/*
-			 *  __tst.wr			-->	__not.wr
-			 *  __not.wr
-			 */
-			else if
-			((p[0]->ins_code == I_NOT_WR) &&
-			 (p[1]->ins_code == I_TST_WR)
-			) {
-				p[1]->ins_code = I_NOT_WR;
-				nb = 1;
-			}
-
-			/*
-			 *  __not.wr			-->	__tst.wr
-			 *  __not.wr
-			 */
-			else if
-			((p[0]->ins_code == I_NOT_WR) &&
-			 (p[1]->ins_code == I_NOT_WR)
-			) {
-				p[1]->ins_code = I_TST_WR;
-				nb = 1;
-			}
-
-			/*
-			 *  __cmp.wt			-->	__cmp.wt
-			 *  __tst.wr
-			 *
-			 *  __not.wr			-->	__not.wr
-			 *  __tst.wr
-			 *
-			 *  __tst.wr			-->	__tst.wr
-			 *  __tst.wr
-			 *
-			 *  This removes redundant tests in compound conditionals ...
-			 *
-			 *  LLnn:			-->	LLnn:
-			 *  __tst.wr
-			 */
-			else if
-			((p[0]->ins_code == I_TST_WR) &&
-			 (p[1]->ins_code == I_CMP_WT ||
-			  p[1]->ins_code == X_EQU_WI ||
-			  p[1]->ins_code == X_NEQ_WI ||
-			  p[1]->ins_code == I_NOT_WR ||
-			  p[1]->ins_code == I_TST_WR ||
-			  p[1]->ins_code == I_LABEL)
-			) {
 				nb = 1;
 			}
 
@@ -2582,6 +2873,30 @@ lv1_loop:
 				goto lv1_loop;
 			}
 
+			/*
+			 *  __ld.u{p/m/s/ar/ay}	symbol	-->	__ld.u{p/m/s/ar/ay}  symbol
+			 *  __cmp_w.wi		j		__cmp_b.uiq	j
+			 *
+			 *  __and.uiq		i	-->	__and.uiq	i
+			 *  __cmp_w.wi		j		__cmp_b.uiq	j
+			 *
+			 *  C promotes an unsigned char to a signed int so this
+			 *  must be done in the peephole, not the compiler.
+			 */
+			else if
+			((p[0]->ins_code == X_CMP_WI) &&
+			 (p[0]->ins_type == T_VALUE) &&
+			 (p[0]->ins_data >= 0) &&
+			 (p[0]->ins_data <= 255) &&
+			 (is_ubyte(p[1]))
+			) {
+				/* replace code */
+				p[0]->ins_code = X_CMP_UIQ;
+				p[0]->cmp_type = compare2uchar[p[0]->cmp_type];
+				/* no instructions removed, just loop */
+				goto lv1_loop;
+			}
+
 			/* flush queue */
 			if (nb) {
 				q_wr -= nb;
@@ -2732,7 +3047,6 @@ lv1_loop:
 
 				case I_POP_WR:
 				case I_CMP_WT:
-				case I_CMP_UT:
 				case I_ST_WPT:
 				case I_ST_UPT:
 				case I_ADD_WT:

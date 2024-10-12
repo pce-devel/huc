@@ -24,6 +24,20 @@ int segment;
 /* externs */
 extern int arg_stack_flag;
 
+/* convert comparison operation to a string */
+const char * compare2str [] = {
+	"equ",	// CMP_EQU
+	"neq",	// CMP_NEQ
+	"slt",	// CMP_SLT
+	"sle",	// CMP_SLE
+	"sgt",	// CMP_SGT
+	"sge",	// CMP_SGE
+	"ult",	// CMP_ULT
+	"ule",	// CMP_ULE
+	"ugt",	// CMP_UGT
+	"uge"	// CMP_UGE
+};
+
 /*
  *	print all assembler info before any code is generated
  *
@@ -154,6 +168,17 @@ void out_ins_sym (int code, int type, intptr_t data, SYMBOL *sym)
 	tmp.ins_type = type;
 	tmp.ins_data = data;
 	tmp.sym = sym;
+	gen_ins(&tmp);
+}
+
+void out_ins_cmp (int code, int type)
+{
+	INS tmp;
+
+	memset(&tmp, 0, sizeof(INS));
+
+	tmp.ins_code = code;
+	tmp.cmp_type = type;
 	gen_ins(&tmp);
 }
 
@@ -498,61 +523,6 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case I_DEF:
-		outstr((const char *)data);
-		outstr(" .equ ");
-		outdec((int)imm_data);
-		nl();
-		break;
-
-	case I_CMP_WT:
-		ot("__cmp.wt\t");
-
-		switch (type) {
-		case T_SYMBOL:
-			outsymbol((SYMBOL *)data);
-			break;
-		case T_LIB:
-			outstr((const char *)data);
-			break;
-		}
-		nl();
-		break;
-
-	case I_CMP_UT:
-		ot("__cmp.ut\t");
-
-		switch (type) {
-		case T_SYMBOL:
-			outsymbol((SYMBOL *)data);
-			break;
-		case T_LIB:
-			outstr((const char *)data);
-			break;
-		}
-		nl();
-		break;
-
-	case X_EQU_WI:
-		ot("__equ.wi\t");
-		out_type(type, data);
-		nl();
-		break;
-
-	case X_NEQ_WI:
-		ot("__neq.wi\t");
-		out_type(type, data);
-		nl();
-		break;
-
-	case I_TST_WR:
-		ol("__tst.wr");
-		break;
-
-	case I_NOT_WR:
-		ol("__not.wr");
-		break;
-
 	case I_BFALSE:
 		ot("__bfalse\t");
 		outlabel((int)data);
@@ -565,6 +535,74 @@ void gen_code (INS *tmp)
 		outlabel((int)data);
 		nl();
 		nl();
+		break;
+
+	case I_DEF:
+		outstr((const char *)data);
+		outstr(" .equ ");
+		outdec((int)imm_data);
+		nl();
+		break;
+
+	case I_CMP_WT:
+		ot("__cmp.wt\t");
+		outstr(compare2str[tmp->cmp_type]);
+		outstr("_w");
+		nl();
+		break;
+
+	case X_CMP_WI:
+		ot("__");
+		outstr(compare2str[tmp->cmp_type]);
+		outstr("_w.wi\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_CMP_WM:
+		ot("__");
+		outstr(compare2str[tmp->cmp_type]);
+		outstr("_w.wm\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_CMP_WS:
+		ot("__");
+		outstr(compare2str[tmp->cmp_type]);
+		outstr("_w.ws\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_CMP_UIQ:
+		ot("__");
+		outstr(compare2str[tmp->cmp_type]);
+		outstr("_b.uiq\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_CMP_UMQ:
+		ot("__");
+		outstr(compare2str[tmp->cmp_type]);
+		outstr("_b.umq\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_CMP_USQ:
+		ot("__");
+		outstr(compare2str[tmp->cmp_type]);
+		outstr("_b.usq\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case I_NOT_WR:
+		ol("__not.wr");
 		break;
 
 	case X_NOT_WP:
@@ -606,6 +644,7 @@ void gen_code (INS *tmp)
 	case X_NOT_US:
 		ot("__not.us\t");
 		outdec((int)data);
+		outlocal(tmp->sym);
 		nl();
 		break;
 
@@ -619,6 +658,10 @@ void gen_code (INS *tmp)
 		ot("__not.uay\t");
 		out_addr(type, data);
 		nl();
+		break;
+
+	case I_TST_WR:
+		ol("__tst.wr");
 		break;
 
 	case X_TST_WP:
@@ -636,6 +679,7 @@ void gen_code (INS *tmp)
 	case X_TST_WS:
 		ot("__tst.ws\t");
 		outdec((int)data);
+		outlocal(tmp->sym);
 		nl();
 		break;
 
@@ -660,6 +704,7 @@ void gen_code (INS *tmp)
 	case X_TST_US:
 		ot("__tst.us\t");
 		outdec((int)data);
+		outlocal(tmp->sym);
 		nl();
 		break;
 
@@ -685,6 +730,10 @@ void gen_code (INS *tmp)
 		ot("__tand.wi\t");
 		out_type(type, data);
 		nl();
+		break;
+
+	case I_BOOLEAN:
+		ol("__bool");
 		break;
 
 	/* i-codes for loading the primary register */

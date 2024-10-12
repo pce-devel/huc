@@ -86,16 +86,6 @@ static int is_ptrptr (LVALUE *lval)
 	return (s && (s->ptr_order > 1 || (s->identity == ARRAY && s->ptr_order > 0)));
 }
 
-static int is_byte (LVALUE *lval)
-{
-#if 0 // Byte comparisons are broken, disable them for now.
-	if (lval->symbol && !lval->ptr_type &&
-	    (lval->symbol->sym_type == CCHAR || lval->symbol->sym_type == CUCHAR))
-		return (1);
-#endif
-	return (0);
-}
-
 static void gen_scale_right (LVALUE *lval, LVALUE *lval2)
 {
 	if (dbltest(lval, lval2)) {
@@ -398,13 +388,13 @@ int heir5 (LVALUE *lval, int comma)
 			gpush();
 			if (heir6(lval2, comma))
 				rvalue(lval2);
-			geq(is_byte(lval) && is_byte(lval2));
+			geq();
 		}
 		else if (match("!=")) {
 			gpush();
 			if (heir6(lval2, comma))
 				rvalue(lval2);
-			gne(is_byte(lval) && is_byte(lval2));
+			gne();
 		}
 		else
 			return (0);
@@ -443,10 +433,10 @@ int heir6 (LVALUE *lval, int comma)
 			    is_unsigned(lval) ||
 			    is_unsigned(lval2)
 			    ) {
-				gule(is_byte(lval) && is_byte(lval2));
+				gule();
 				continue;
 			}
-			gle(is_byte(lval) && is_byte(lval2));
+			gle();
 		}
 		else if (match(">=")) {
 			gpush();
@@ -456,10 +446,10 @@ int heir6 (LVALUE *lval, int comma)
 			    is_unsigned(lval) ||
 			    is_unsigned(lval2)
 			    ) {
-				guge(is_byte(lval) && is_byte(lval2));
+				guge();
 				continue;
 			}
-			gge(is_byte(lval) && is_byte(lval2));
+			gge();
 		}
 		else if ((sstreq("<")) &&
 			 !sstreq("<<")) {
@@ -471,10 +461,10 @@ int heir6 (LVALUE *lval, int comma)
 			    is_unsigned(lval) ||
 			    is_unsigned(lval2)
 			    ) {
-				gult(is_byte(lval) && is_byte(lval2));
+				gult();
 				continue;
 			}
-			glt(is_byte(lval) && is_byte(lval2));
+			glt();
 		}
 		else if ((sstreq(">")) &&
 			 !sstreq(">>")) {
@@ -486,10 +476,10 @@ int heir6 (LVALUE *lval, int comma)
 			    is_unsigned(lval) ||
 			    is_unsigned(lval2)
 			    ) {
-				gugt(is_byte(lval) && is_byte(lval2));
+				gugt();
 				continue;
 			}
-			ggt(is_byte(lval) && is_byte(lval2));
+			ggt();
 		}
 		else
 			return (0);

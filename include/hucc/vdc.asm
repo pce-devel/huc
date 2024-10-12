@@ -337,6 +337,11 @@ set_mode_vdc	.proc
 ;
 ; HuC6202 VIDEO PRIORITY CONTROLLER (huge thanks to Charles MacDonald!)
 ;
+; The VPC has no access to sprite priority data, it can only sort pixels
+; based upon which VDC and whether they are "sprite" or "background".
+;
+; This can sometimes lead to unexpected results with low-priority sprites.
+;
 ; VPC registers $0008 and $0009 make up four 4-bit values that define the
 ; enabled layers and priority setting for the four possible window areas.
 ;
@@ -355,34 +360,28 @@ set_mode_vdc	.proc
 ;   Priority Setting 0b00xx: (useful when VDC #1 is a fullscreen HUD)
 ;
 ;    FRONT
-;     SP1'= VDC #1 high priority sprites
-;     BG1 = VDC #1 background
-;     SP1 = VDC #1 low priority sprites
-;     SP2'= VDC #2 high priority sprites
-;     BG2 = VDC #2 background
-;     SP2 = VDC #2 low priority sprites
+;     SP1 = VDC #1 (pce) sprite pixels
+;     BG1 = VDC #1 (pce) background pixels
+;     SP2 = VDC #2 (sgx) sprite pixels
+;     BG2 = VDC #2 (sgx) background pixels
 ;    BACK
 ;
 ;   Priority Setting 0b01xx: (useful for parallax backgrounds)
 ;
 ;    FRONT
-;     SP1'= VDC #1 high priority sprites
-;     SP2'= VDC #2 high priority sprites
-;     BG1 = VDC #1 background
-;     SP1 = VDC #1 low priority sprites
-;     BG2 = VDC #2 background
-;     SP2 = VDC #2 low priority sprites
+;     SP1 = VDC #1 (pce) sprite pixels
+;     SP2 = VDC #2 (sgx) sprite pixels
+;     BG1 = VDC #1 (pce) background pixels
+;     BG2 = VDC #2 (sgx) background pixels
 ;    BACK
 ;
 ;   Priority Setting 0b10xx: (only useful for special effects)
 ;
 ;    FRONT
-;     BG1 = VDC #1 background (with holes for sprites)
-;     SP2'= VDC #2 high priority sprites
-;     BG2 = VDC #2 background
-;     SP2 = VDC #2 low priority sprites
-;     SP1'= VDC #1 high priority sprites
-;     SP1 = VDC #1 low priority sprites
+;     BG1 = VDC #1 (pce) background pixels (transparent where sprites)
+;     BG2 = VDC #2 (sgx) background pixels
+;     SP1 = VDC #1 (pce) sprite pixels
+;     SP2 = VDC #2 (sgx) sprite pixels
 ;    BACK
 
 	.if	SUPPORT_SGX

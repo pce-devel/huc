@@ -534,338 +534,1111 @@ __bra		.macro
 		.endm
 
 ; **************
-; boolean test, always followed by a __tst.wr or __not.wr
-; this MUST set the Z flag for the susequent branches!
-
-__cmp.wt	.macro
-		jsr	\1
-		.endm
-
-; **************
-; boolean test, always followed by a __tst.wr or __not.wr
-; this MUST set the Z flag for the susequent branches!
-
-__cmp.ut	.macro
-		jsr	\1
-		.endm
-
-; **************
-; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
-
-__equ.wi	.macro
-		eor.l	#\1
-		bne	!false+
-		cpy.h	#\1
-		beq	!true+
-!false:		lda	#-1
-!true:		inc	a
-		cly
-		.endm
-
-; **************
-; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
-
-__neq.wi	.macro
-		eor.l	#\1
-		bne	!true+
-		cpy.h	#\1
-		beq	!false+
-!true:		lda	#1
-!false:		cly
-		.endm
-
-; **************
-; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
-
-__equ.ui	.macro
-		eor.l	#\1
-		beq	!true+
-!false:		lda	#-1
-!true:		inc	a
-		cly
-		.endm
-
-; **************
-; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
-
-__neq.ui	.macro
-		eor.l	#\1
-		beq	!false+
-		lda	#1
-!false:		cly
-		.endm
-
-; **************
-; boolean test, optimized into __not.wr if used before a __tst.wr
-; this MUST set the Z flag for the susequent branches!
-
-__not.wr	.macro
-		sty	__temp
-		ora	__temp
-		beq	!+
-		lda	#1
-!:		eor	#1
-		cly
-		.endm
-
-; **************
-; boolean test, always output immediately before a __bfalse or __btrue
-; this MUST set the Z flag for the susequent branches!
-
-__tst.wr	.macro
-		sty	__temp
-		ora	__temp
-		beq	!+
-		lda	#1
-!:		cly
-		.endm
-
-; **************
 ; always preceeded by a __tst.wr before peephole optimization
 
 __bfalse	.macro
-		beq	\1
+		bcc	\1
 		.endm
 
 ; **************
 ; always preceeded by a __tst.wr before peephole optimization
 
 __btrue		.macro
-		bne	\1
+		bcs	\1
+		.endm
+
+; **************
+; boolean test, always followed by a __tst.wr or __not.wr before peephole optimization
+; this MUST set the Z flag for the subsequent branches!
+
+__cmp.wt	.macro
+		jsr	\1
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; C is true (1) if Y:A == integer-value, else false (0)
+; this MUST set the C flag for the subsequent branches!
+
+__equ_w.wi	.macro
+		cmp.l	#\1
+		bne	!false+
+		cpy.h	#\1
+		beq	!+
+!false:		clc
+!:
+		.endm
+
+; **************
+; optimized boolean test
+; C is true (1) if Y:A != integer-value, else false (0)
+; this MUST set the C flag for the subsequent branches!
+
+__neq_w.wi	.macro
+		sec
+		eor.l	#\1
+		bne	!+
+		tya
+		eor.h	#\1
+		bne	!+
+		clc
+!:
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; C is true (1) if Y:A < integer-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__slt_w.wi	.macro
+		cmp.l	#\1		; Subtract integer from Y:A.
+		tya
+		sbc.h	#\1
+		bvc	!+
+		eor	#$80		; -ve if Y:A < integer (signed).
+!:		asl	a
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; C is true (1) if Y:A <= integer-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__sle_w.wi	.macro
+		clc			; Subtract integer+1 from Y:A.
+		sbc.l	#\1
+		tya
+		sbc.h	#\1
+		bvc	!+
+		eor	#$80		; -ve if Y:A <= integer (signed).
+!:		asl	a
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; C is true (1) if Y:A > integer-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__sgt_w.wi	.macro
+		clc			; Subtract integer+1 from Y:A.
+		sbc.l	#\1
+		tya
+		sbc.h	#\1
+		bvc	!+
+		eor	#$80		; +ve if Y:A > integer (signed).
+!:		eor	#$80
+		asl	a
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; C is true (1) if Y:A >= integer-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__sge_w.wi	.macro
+		cmp.l	#\1		; Subtract integer from Y:A.
+		tya
+		sbc.h	#\1
+		bvc	!+
+		eor	#$80		; +ve if Y:A >= integer (signed).
+!:		eor	#$80
+		asl	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; C is true (1) if Y:A < integer-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__ult_w.wi	.macro
+		cmp.l	#\1		; Subtract integer from Y:A.
+		tya
+		sbc.h	#\1		; CC if Y:A < integer.
+		ror	a
+		eor	#$80
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; C is true (1) if Y:A <= integer-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__ule_w.wi	.macro
+		clc			; Subtract integer+1 from Y:A.
+		sbc.l	#\1
+		tya
+		sbc.h	#\1		; CC if Y:A <= integer.
+		ror	a
+		eor	#$80
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; C is true (1) if Y:A > integer-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__ugt_w.wi	.macro
+		clc			; Subtract integer+1 from Y:A.
+		sbc.l	#\1
+		tya
+		sbc.h	#\1		; CS if Y:A > integer.
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; C is true (1) if Y:A >= integer-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__uge_w.wi	.macro
+		cmp.l	#\1		; Subtract integer from Y:A.
+		tya
+		sbc.h	#\1		; CS if Y:A >= integer.
+		.endm
+
+; **************
+; optimized boolean test
+; C is true (1) if A == integer-value, else false (0)
+; this MUST set the C flag for the subsequent branches!
+
+__equ_b.uiq	.macro
+		cmp	#\1
+		beq	!+
+		clc
+!:
+		.endm
+
+; **************
+; optimized boolean test
+; C is true (1) if A != integer-value, else false (0)
+; this MUST set the C flag for the subsequent branches!
+
+__neq_b.uiq	.macro
+		sec
+		eor	#\1
+		bne	!+
+		clc
+!:
+		.endm
+
+; **************
+; optimized boolean test (signed byte)
+; C is true (1) if A < integer-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__slt_b.biq	.macro
+		sec			; Subtract integer from A.
+		sbc	#\1
+		bvc	!+
+		eor	#$80		; -ve if A < integer (signed).
+!:		asl	a
+		.endm
+
+; **************
+; optimized boolean test (signed byte)
+; C is true (1) if A <= integer-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__sle_b.biq	.macro
+		clc			; Subtract integer+1 from A.
+		sbc	#\1
+		bvc	!+
+		eor	#$80		; -ve if A <= integer (signed).
+!:		asl	a
+		.endm
+
+; **************
+; optimized boolean test (signed byte)
+; C is true (1) if A > integer-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__sgt_b.biq	.macro
+		clc			; Subtract integer+1 from A.
+		sbc.l	#\1
+		bvc	!+
+		eor	#$80		; +ve if A > integer (signed).
+!:		eor	#$80
+		asl	a
+		.endm
+
+; **************
+; optimized boolean test (signed byte)
+; C is true (1) if A >= integer-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__sge_b.biq	.macro
+		sec			; Subtract integer from A.
+		sbc	#\1
+		bvc	!+
+		eor	#$80		; +ve if A >= integer (signed).
+!:		eor	#$80
+		asl	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned byte)
+; C is true (1) if A < integer-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__ult_b.uiq	.macro
+		cmp	#\1		; Subtract integer from A.
+		ror	a		; CC if A < integer.
+		eor	#$80
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned byte)
+; C is true (1) if A <= integer-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__ule_b.uiq	.macro
+		clc			; Subtract integer+1 from A.
+		sbc	#\1
+		ror	a		; CC if A <= integer.
+		eor	#$80
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned byte)
+; C is true (1) if A > integer-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__ugt_b.uiq	.macro
+		clc			; Subtract integer+1 from A.
+		sbc	#\1		; CS if A > integer.
+		.endm
+
+; **************
+; optimized boolean test (unsigned byte)
+; C is true (1) if A >= integer-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__uge_b.uiq	.macro
+		cmp	#\1		; Subtract integer from A.
+					; CS if A >= integer.
+		.endm
+
+; **************
+; optimized boolean test
+; C is true (1) if Y:A == memory-value, else false (0)
+; this MUST set the C flag for the subsequent branches!
+
+__equ_w.wm	.macro
+		cmp.l	\1
+		bne	!false+
+		cpy.h	\1
+		beq	!+
+!false:		clc
+!:
+		.endm
+
+; **************
+; optimized boolean test
+; C is true (1) if Y:A != memory-value, else false (0)
+; this MUST set the C flag for the subsequent branches!
+
+__neq_w.wm	.macro
+		sec
+		eor.l	\1
+		bne	!+
+		tya
+		eor.h	\1
+		bne	!+
+		clc
+!:
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; C is true (1) if Y:A < memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__slt_w.wm	.macro
+		cmp.l	\1		; Subtract memory from Y:A.
+		tya
+		sbc.h	\1
+		bvc	!+
+		eor	#$80		; -ve if Y:A < memory (signed).
+!:		asl	a
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; C is true (1) if Y:A <= memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__sle_w.wm	.macro
+		clc			; Subtract memory+1 from Y:A.
+		sbc.l	\1
+		tya
+		sbc.h	\1
+		bvc	!+
+		eor	#$80		; -ve if Y:A <= memory (signed).
+!:		asl	a
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; C is true (1) if Y:A > memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__sgt_w.wm	.macro
+		clc			; Subtract memory+1 from Y:A.
+		sbc.l	\1
+		tya
+		sbc.h	\1
+		bvc	!+
+		eor	#$80		; +ve if Y:A > memory (signed).
+!:		eor	#$80
+		asl	a
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; C is true (1) if Y:A >= memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__sge_w.wm	.macro
+		cmp.l	\1		; Subtract memory from Y:A.
+		tya
+		sbc.h	\1
+		bvc	!+
+		eor	#$80		; +ve if Y:A >= memory (signed).
+!:		eor	#$80
+		asl	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; C is true (1) if Y:A < memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__ult_w.wm	.macro
+		cmp.l	\1		; Subtract memory from Y:A.
+		tya
+		sbc.h	\1		; CC if Y:A < memory.
+		ror	a
+		eor	#$80
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; C is true (1) if Y:A <= memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__ule_w.wm	.macro
+		clc			; Subtract memory+1 from Y:A.
+		sbc.l	\1
+		tya
+		sbc.h	\1		; CC if Y:A <= memory.
+		ror	a
+		eor	#$80
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; C is true (1) if Y:A > memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__ugt_w.wm	.macro
+		clc			; Subtract memory+1 from Y:A.
+		sbc.l	\1
+		tya
+		sbc.h	\1		; CS if Y:A > memory.
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; C is true (1) if Y:A >= memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__uge_w.wm	.macro
+		cmp.l	\1		; Subtract memory from Y:A.
+		tya
+		sbc.h	\1		; CS if Y:A >= memory.
+		.endm
+
+; **************
+; optimized boolean test
+; C is true (1) if A == memory-value, else false (0)
+; this MUST set the C flag for the subsequent branches!
+
+__equ_b.umq	.macro
+		cmp	\1
+		beq	!+
+		clc
+!:
+		.endm
+
+; **************
+; optimized boolean test
+; C is true (1) if A != memory-value, else false (0)
+; this MUST set the C flag for the subsequent branches!
+
+__neq_b.umq	.macro
+		sec
+		eor	\1
+		bne	!+
+		clc
+!:
+		.endm
+
+; **************
+; optimized boolean test (signed byte)
+; C is true (1) if A < memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__slt_b.bmq	.macro
+		sec			; Subtract memory from A.
+		sbc	\1
+		bvc	!+
+		eor	#$80		; -ve if A < memory (signed).
+!:		asl	a
+		.endm
+
+; **************
+; optimized boolean test (signed byte)
+; C is true (1) if A <= memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__sle_b.bmq	.macro
+		clc			; Subtract memory+1 from A.
+		sbc	\1
+		bvc	!+
+		eor	#$80		; -ve if A <= memory (signed).
+!:		asl	a
+		.endm
+
+; **************
+; optimized boolean test (signed byte)
+; C is true (1) if A > memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__sgt_b.bmq	.macro
+		clc			; Subtract memory+1 from A.
+		sbc.l	\1
+		bvc	!+
+		eor	#$80		; +ve if A > memory (signed).
+!:		eor	#$80
+		asl	a
+		.endm
+
+; **************
+; optimized boolean test (signed byte)
+; C is true (1) if A >= memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__sge_b.bmq	.macro
+		sec			; Subtract memory from A.
+		sbc	\1
+		bvc	!+
+		eor	#$80		; +ve if A >= memory (signed).
+!:		eor	#$80
+		asl	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned byte)
+; C is true (1) if A < memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__ult_b.umq	.macro
+		cmp	\1		; Subtract memory from A.
+		ror	a		; CC if A < memory.
+		eor	#$80
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned byte)
+; C is true (1) if A <= memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__ule_b.umq	.macro
+		clc			; Subtract memory+1 from A.
+		sbc	\1
+		ror	a		; CC if A <= memory.
+		eor	#$80
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned byte)
+; C is true (1) if A > memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__ugt_b.umq	.macro
+		clc			; Subtract memory+1 from A.
+		sbc	\1		; CS if A > memory.
+		.endm
+
+; **************
+; optimized boolean test (unsigned byte)
+; C is true (1) if A >= memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__uge_b.umq	.macro
+		cmp	\1		; Subtract memory from A.
+					; CS if A >= memory.
+		.endm
+
+; **************
+; optimized boolean test
+; C is true (1) if Y:A == memory-value, else false (0)
+; this MUST set the C flag for the subsequent branches!
+
+__equ_w.ws	.macro
+		cmp.l	<__stack + \1, x
+		bne	!false+
+		tya
+		cmp.h	<__stack + \1, x
+		beq	!+
+!false:		clc
+!:
+		.endm
+
+; **************
+; optimized boolean test
+; C is true (1) if Y:A != memory-value, else false (0)
+; this MUST set the C flag for the subsequent branches!
+
+__neq_w.ws	.macro
+		sec
+		eor.l	<__stack + \1, x
+		bne	!+
+		tya
+		eor.h	<__stack + \1, x
+		bne	!+
+		clc
+!:
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; C is true (1) if Y:A < memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__slt_w.ws	.macro
+		cmp.l	<__stack + \1, x; Subtract memory from Y:A.
+		tya
+		sbc.h	<__stack + \1, x
+		bvc	!+
+		eor	#$80		; -ve if Y:A < memory (signed).
+!:		asl	a
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; C is true (1) if Y:A <= memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__sle_w.ws	.macro
+		clc			; Subtract memory+1 from Y:A.
+		sbc.l	<__stack + \1, x
+		tya
+		sbc.h	<__stack + \1, x
+		bvc	!+
+		eor	#$80		; -ve if Y:A <= memory (signed).
+!:		asl	a
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; C is true (1) if Y:A > memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__sgt_w.ws	.macro
+		clc			; Subtract memory+1 from Y:A.
+		sbc.l	<__stack + \1, x
+		tya
+		sbc.h	<__stack + \1, x
+		bvc	!+
+		eor	#$80		; +ve if Y:A > memory (signed).
+!:		eor	#$80
+		asl	a
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; C is true (1) if Y:A >= memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__sge_w.ws	.macro
+		cmp.l	<__stack + \1, x; Subtract memory from Y:A.
+		tya
+		sbc.h	<__stack + \1, x
+		bvc	!+
+		eor	#$80		; +ve if Y:A >= memory (signed).
+!:		eor	#$80
+		asl	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; C is true (1) if Y:A < memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__ult_w.ws	.macro
+		cmp.l	<__stack + \1, x; Subtract memory from Y:A.
+		tya
+		sbc.h	<__stack + \1, x; CC if Y:A < memory.
+		ror	a
+		eor	#$80
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; C is true (1) if Y:A <= memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__ule_w.ws	.macro
+		clc			; Subtract memory+1 from Y:A.
+		sbc.l	<__stack + \1, x
+		tya
+		sbc.h	<__stack + \1, x; CC if Y:A <= memory.
+		ror	a
+		eor	#$80
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; C is true (1) if Y:A > memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__ugt_w.ws	.macro
+		clc			; Subtract memory+1 from Y:A.
+		sbc.l	<__stack + \1, x
+		tya
+		sbc.h	<__stack + \1, x; CS if Y:A > memory.
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; C is true (1) if Y:A >= memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__uge_w.ws	.macro
+		cmp.l	<__stack + \1, x; Subtract memory from Y:A.
+		tya
+		sbc.h	<__stack + \1, x; CS if Y:A >= memory.
+		.endm
+
+; **************
+; optimized boolean test
+; C is true (1) if A == memory-value, else false (0)
+; this MUST set the C flag for the subsequent branches!
+
+__equ_b.usq	.macro
+		cmp	<__stack + \1, x
+		beq	!+
+		clc
+!:
+		.endm
+
+; **************
+; optimized boolean test
+; C is true (1) if A != memory-value, else false (0)
+; this MUST set the C flag for the subsequent branches!
+
+__neq_b.usq	.macro
+		sec
+		eor	<__stack + \1, x
+		bne	!+
+		clc
+!:
+		.endm
+
+; **************
+; optimized boolean test (signed byte)
+; C is true (1) if A < memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__slt_b.bsq	.macro
+		sec			; Subtract memory from A.
+		sbc	<__stack + \1, x
+		bvc	!+
+		eor	#$80		; -ve if A < memory (signed).
+!:		asl	a
+		.endm
+
+; **************
+; optimized boolean test (signed byte)
+; C is true (1) if A <= memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__sle_b.bsq	.macro
+		clc			; Subtract memory+1 from A.
+		sbc	<__stack + \1, x
+		bvc	!+
+		eor	#$80		; -ve if A <= memory (signed).
+!:		asl	a
+		.endm
+
+; **************
+; optimized boolean test (signed byte)
+; C is true (1) if A > memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__sgt_b.bsq	.macro
+		clc			; Subtract memory+1 from A.
+		sbc.l	<__stack + \1, x
+		bvc	!+
+		eor	#$80		; +ve if A > memory (signed).
+!:		eor	#$80
+		asl	a
+		.endm
+
+; **************
+; optimized boolean test (signed byte)
+; C is true (1) if A >= memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__sge_b.bsq	.macro
+		sec			; Subtract memory from A.
+		sbc	<__stack + \1, x
+		bvc	!+
+		eor	#$80		; +ve if A >= memory (signed).
+!:		eor	#$80
+		asl	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned byte)
+; C is true (1) if A < memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__ult_b.usq	.macro
+		cmp	<__stack + \1, x; Subtract memory from A.
+		ror	a		; CC if A < memory.
+		eor	#$80
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned byte)
+; C is true (1) if A <= memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__ule_b.usq	.macro
+		clc			; Subtract memory+1 from A.
+		sbc	<__stack + \1, x
+		ror	a		; CC if A <= memory.
+		eor	#$80
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned byte)
+; C is true (1) if A > memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__ugt_b.usq	.macro
+		clc			; Subtract memory+1 from A.
+		sbc	<__stack + \1, x; CS if A > memory.
+		.endm
+
+; **************
+; optimized boolean test (unsigned byte)
+; C is true (1) if A >= memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__uge_b.usq	.macro
+		cmp	<__stack + \1, x; Subtract memory from A.
+					; CS if A >= memory.
+		.endm
+
+; **************
+; boolean test, optimized into __not.wr if used before a __tst.wr
+; C is true (1) if Y:A == 0, else false (0)
+; this MUST set the C flag for the subsequent branches!
+
+__not.wr	.macro
+		sty	__temp
+		ora	__temp
+		sec
+		beq	!+
+		clc
+!:
+		.endm
+
+; **************
+; optimized boolean test
+; C is true (1) if memory-value == 0, else false (0)
+; this MUST set the C flag for the subsequent branches!
 
 __not.wp	.macro
 		ldy	#1
 		lda	[\1], y
 		ora	[\1]
+		sec
 		beq	!+
-		lda	#-1
-!:		inc	a
-		cly
+		clc
+!:
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; C is true (1) if memory-value == 0, else false (0)
+; this MUST set the C flag for the subsequent branches!
 
 __not.wm	.macro
 		lda.l	\1
 		ora.h	\1
+		sec
 		beq	!+
-		lda	#-1
-!:		inc	a
-		cly
+		clc
+!:
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; C is true (1) if memory-value == 0, else false (0)
+; this MUST set the C flag for the subsequent branches!
 
 __not.ws	.macro	; __STACK
 		lda.l	<__stack + \1, x
 		ora.h	<__stack + \1, x
+		sec
 		beq	!+
-		lda	#-1
-!:		inc	a
-		cly
+		clc
+!:
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; C is true (1) if memory-value == 0, else false (0)
+; this MUST set the C flag for the subsequent branches!
 
 __not.war	.macro
 		asl	a
 		tay
 		lda.l	\1, y
 		ora.h	\1, y
+		sec
 		beq	!+
-		lda	#-1
-!:		inc	a
-		cly
+		clc
+!:
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; C is true (1) if memory-value == 0, else false (0)
+; this MUST set the C flag for the subsequent branches!
 
 __not.up	.macro
 		lda	[\1]
+		sec
 		beq	!+
-		lda	#-1
-!:		inc	a
-		cly
+		clc
+!:
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; C is true (1) if memory-value == 0, else false (0)
+; this MUST set the C flag for the subsequent branches!
 
 __not.um	.macro
 		lda	\1
+		sec
 		beq	!+
-		lda	#-1
-!:		inc	a
-		cly
+		clc
+!:
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; C is true (1) if memory-value == 0, else false (0)
+; this MUST set the C flag for the subsequent branches!
 
 __not.us	.macro	; __STACK
 		lda.l	<__stack + \1, x
+		sec
 		beq	!+
-		lda	#-1
-!:		inc	a
-		cly
+		clc
+!:
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; C is true (1) if memory-value == 0, else false (0)
+; this MUST set the C flag for the subsequent branches!
 
 __not.uar	.macro
 		tay
 		lda	\1, y
+		sec
 		beq	!+
-		lda	#-1
-!:		inc	a
-		cly
+		clc
+!:
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; C is true (1) if memory-value == 0, else false (0)
+; this MUST set the C flag for the subsequent branches!
 
 __not.uay	.macro
 		lda	\1, y
+		sec
 		beq	!+
-		lda	#-1
-!:		inc	a
-		cly
+		clc
+!:
+		.endm
+
+; **************
+; boolean test, always output immediately before a __bfalse or __btrue
+; C is true (1) if Y:A != 0, else false (0)
+; this MUST set the C flag for the subsequent branches!
+
+__tst.wr	.macro
+		sty	__temp
+		ora	__temp
+		sec
+		bne	!+
+		clc
+!:
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; C is true (1) if memory-value != 0, else false (0)
+; this MUST set the C flag for the subsequent branches!
 
 __tst.wp	.macro
 		ldy	#1
 		lda	[\1], y
 		ora	[\1]
-		beq	!+
-		lda	#1
-!:		cly
+		sec
+		bne	!+
+		clc
+!:
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; C is true (1) if memory-value != 0, else false (0)
+; this MUST set the C flag for the subsequent branches!
 
 __tst.wm		.macro
 		lda.l	\1
 		ora.h	\1
-		beq	!+
-		lda	#1
-!:		cly
+		sec
+		bne	!+
+		clc
+!:
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; C is true (1) if memory-value != 0, else false (0)
+; this MUST set the C flag for the subsequent branches!
 
 __tst.ws	.macro	; __STACK
 		lda.l	<__stack + \1, x
 		ora.h	<__stack + \1, x
-		beq	!+
-		lda	#1
-!:		cly
+		sec
+		bne	!+
+		clc
+!:
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; C is true (1) if memory-value != 0, else false (0)
+; this MUST set the C flag for the subsequent branches!
 
 __tst.war	.macro
 		asl	a
 		tay
 		lda.l	\1, y
 		ora.h	\1, y
-		beq	!+
-		lda	#1
-!:		cly
+		sec
+		bne	!+
+		clc
+!:
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; C is true (1) if memory-value != 0, else false (0)
+; this MUST set the C flag for the subsequent branches!
 
 __tst.up	.macro
 		lda	[\1]
-		beq	!+
-		lda	#1
-!:		cly
+		sec
+		bne	!+
+		clc
+!:
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; C is true (1) if memory-value != 0, else false (0)
+; this MUST set the C flag for the subsequent branches!
 
 __tst.um	.macro
 		lda	\1
-		beq	!+
-		lda	#1
-!:		cly
+		sec
+		bne	!+
+		clc
+!:
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; C is true (1) if memory-value != 0, else false (0)
+; this MUST set the C flag for the subsequent branches!
 
 __tst.us	.macro	; __STACK
 		lda.l	<__stack + \1, x
-		beq	!+
-		lda	#1
-!:		cly
+		sec
+		bne	!+
+		clc
+!:
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; C is true (1) if memory-value != 0, else false (0)
+; this MUST set the C flag for the subsequent branches!
 
 __tst.uar	.macro
 		tay
 		lda	\1, y
-		beq	!+
-		lda	#1
-!:		cly
+		sec
+		bne	!+
+		clc
+!:
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; C is true (1) if memory-value != 0, else false (0)
+; this MUST set the C flag for the subsequent branches!
 
 __tst.uay	.macro
 		lda	\1, y
-		beq	!+
-		lda	#1
-!:		cly
+		sec
+		bne	!+
+		clc
+!:
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; C is true (1) if (Y:A & integer) == 0, else false (0)
+; this MUST set the C flag for the subsequent branches!
 
 __nand.wi	.macro
+		clc
 	.if	((\1 & $FF00) == 0)
 		and	#\1
 	.else
@@ -874,24 +1647,23 @@ __nand.wi	.macro
 		and.h	#\1
 	.else
 		and.l	#\1
-		bne	!false+
+		bne	!+
 		tya
 		and.h	#\1
 	.endif
 	.endif
-	.if	(\1 != 1)
-		beq	!+
-!false:		lda	#1
-	.endif
-!:		eor	#1
-		cly
+		bne	!+
+		sec
+!:
 		.endm
 
 ; **************
 ; optimized boolean test
-; this MUST set the Z flag for the susequent branches!
+; C is true (1) if (Y:A & integer) != 0, else false (0)
+; this MUST set the C flag for the subsequent branches!
 
 __tand.wi	.macro
+		sec
 	.if	((\1 & $FF00) == 0)
 		and	#\1
 	.else
@@ -900,16 +1672,24 @@ __tand.wi	.macro
 		and.h	#\1
 	.else
 		and.l	#\1
-		bne	!true+
+		bne	!+
 		tya
 		and.h	#\1
 	.endif
 	.endif
-	.if	(\1 != 1)
-		beq	!+
-!true:		lda	#1
-	.endif
-!:		cly
+		bne	!+
+		clc
+!:
+		.endm
+
+; **************
+; convert boolean test result C flag into a 16-bit Y:A integer
+
+__bool		.macro
+		cla
+		rol	a
+		cly
+		cmp	#1		; Only needed for unoptimized code.
 		.endm
 
 
@@ -2278,7 +3058,7 @@ __sub.wt	.macro	; __STACK
 ; **************
 
 __sub.wi	.macro
-	.if	((\?1 == ARG_ABS) && (\1 >= 0) && (\1 < 256))
+	.if	((\?1 == ARG_ABS) && ((\1) >= 0) && ((\1) < 256))
 		sec
 		sbc.l	#\1
 		bcs	!+
@@ -2936,31 +3716,45 @@ __ldd_s_b	.macro	; __STACK
 ; ***************************************************************************
 
 ; **************
-; Y:A is true if stacked-value == Y:A, else false
+; C is true (1) if stacked-value == Y:A, else false (0)
 
-eq_w:		cmp.l	<__stack, x
+equ_w:		cmp.l	<__stack, x
 		bne	return_false
-		say
+		tya
 		cmp.h	<__stack, x
-		say
 		bne	return_false
-		bra	return_true
+;		bra	return_true
 
 ; **************
-; Y:A is true if stacked-value != Y:A, else false
+; boolean result, this MUST set the C flag for the subsequent branches!
 
-ne_w:		cmp.l	<__stack, x
-		bne	return_true
-		say
-		cmp.h	<__stack, x
-		say
-		bne	return_true
-		bra	return_false
+return_true:	inx
+		inx
+		sec
+		rts
 
 ; **************
-; Y:A is true if stacked-value < Y:A, else false
+; C is true (1) if stacked-value != Y:A, else false (0)
 
-lt_sw:		clc			; Subtract memory+1 from Y:A.
+neq_w:		cmp.l	<__stack, x
+		bne	return_true
+		tya
+		cmp.h	<__stack, x
+		bne	return_true
+;		bra	return_false
+
+; **************
+; boolean result, this MUST set the C flagy for the subsequent branches!
+
+return_false:	inx
+		inx
+		clc
+		rts
+
+; **************
+; C is true (1) if stacked-value < Y:A, else false (0)
+
+slt_w:		clc			; Subtract memory+1 from Y:A.
 		sbc.l	<__stack, x
 		tya
 		sbc.h	<__stack, x
@@ -2970,9 +3764,31 @@ lt_sw:		clc			; Subtract memory+1 from Y:A.
 		bra	return_false	; -ve if Y:A <= memory (signed).
 
 ; **************
-; Y:A is true if stacked-value >= Y:A, else false
+; C is true (1) if stacked-value <= Y:A, else false (0)
 
-ge_sw:		clc			; Subtract memory+1 from Y:A.
+sle_w:		cmp.l	<__stack, x	; Subtract memory from Y:A.
+		tya
+		sbc.h	<__stack, x
+		bvc	!+
+		eor	#$80
+!:		bpl	return_true	; +ve if Y:A >= memory (signed).
+		bra	return_false	; -ve if Y:A  < memory (signed).
+
+; **************
+; C is true (1) if stacked-value > Y:A, else false (0)
+
+sgt_w:		cmp.l	<__stack, x	; Subtract memory from Y:A.
+		tya
+		sbc.h	<__stack, x
+		bvc	!+
+		eor	#$80
+!:		bmi	return_true	; -ve if Y:A  < memory (signed).
+		bra	return_false	; +ve if Y:A >= memory (signed).
+
+; **************
+; C is true (1) if stacked-value >= Y:A, else false (0)
+
+sge_w:		clc			; Subtract memory+1 from Y:A.
 		sbc.l	<__stack, x
 		tya
 		sbc.h	<__stack, x
@@ -2982,31 +3798,9 @@ ge_sw:		clc			; Subtract memory+1 from Y:A.
 		bra	return_false	; +ve if Y:A  > memory (signed).
 
 ; **************
-; Y:A is true if stacked-value <= Y:A, else false
+; C is true (1) if stacked-value < Y:A, else false (0)
 
-le_sw:		cmp.l	<__stack, x	; Subtract memory from Y:A.
-		tya
-		sbc.h	<__stack, x
-		bvc	!+
-		eor	#$80
-!:		bpl	return_true	; +ve if Y:A >= memory (signed).
-		bra	return_false	; -ve if Y:A  < memory (signed).
-
-; **************
-; Y:A is true if stacked-value > Y:A, else false
-
-gt_sw:		cmp.l	<__stack, x	; Subtract memory from Y:A.
-		tya
-		sbc.h	<__stack, x
-		bvc	!+
-		eor	#$80
-!:		bmi	return_true	; -ve if Y:A  < memory (signed).
-		bra	return_false	; +ve if Y:A >= memory (signed).
-
-; **************
-; Y:A is true if stacked-value < Y:A, else false
-
-lt_uw:		clc			; Subtract memory+1 from Y:A.
+ult_w:		clc			; Subtract memory+1 from Y:A.
 		sbc.l	<__stack, x
 		tya
 		sbc.h	<__stack, x
@@ -3014,141 +3808,31 @@ lt_uw:		clc			; Subtract memory+1 from Y:A.
 		bra	return_false
 
 ; **************
-; Y:A is true if stacked-value >= Y:A, else false
+; C is true (1) if stacked-value <= Y:A, else false (0)
 
-ge_uw:		clc			; Subtract memory+1 from Y:A.
-		sbc.l	<__stack, x
-		tya
-		sbc.h	<__stack, x
-		bcc	return_true	; CC if Y:A <= memory.
-		bra	return_false
-
-; **************
-; Y:A is true if stacked-value <= Y:A, else false
-
-le_uw:		cmp.l	<__stack, x	; Subtract memory from Y:A.
+ule_w:		cmp.l	<__stack, x	; Subtract memory from Y:A.
 		tya
 		sbc.h	<__stack, x
 		bcs	return_true	; CS if Y:A >= memory.
 		bra	return_false
 
 ; **************
-; Y:A is true if stacked-value > Y:A, else false
+; C is true (1) if stacked-value > Y:A, else false (0)
 
-gt_uw:		cmp.l	<__stack, x	; Subtract memory from Y:A.
+ugt_w:		cmp.l	<__stack, x	; Subtract memory from Y:A.
 		tya
 		sbc.h	<__stack, x
 		bcc	return_true	; CC if Y:A  < memory.
 		bra	return_false
 
 ; **************
-; boolean result, this MUST set the Z flag for the susequent branches!
+; C is true (1) if stacked-value >= Y:A, else false (0)
 
-return_true:	inx
-		inx			; don't push Y:A, they are thrown away
-		cly
-		lda	#1		; Also set valid Z flag.
-		rts
-
-; **************
-; boolean result, this MUST set the Z flag for the susequent branches!
-
-return_false:	inx
-		inx			; don't push Y:A, they are thrown away
-		cly
-		lda	#0		; Also set valid Z flag.
-		rts
-
-
-
-; ***************************************************************************
-; ***************************************************************************
-; subroutines for comparison tests with signed and unsigned bytes
-; ***************************************************************************
-; ***************************************************************************
-
-; **************
-; Y:A is true if stacked-value == Y:A, else false
-
-eq_b:		cmp	<__stack, x
-		bne	return_false
-		bra	return_true
-
-; **************
-; Y:A is true if stacked-value != Y:A, else false
-
-ne_b:		cmp	<__stack, x
-		bne	return_true
-		bra	return_false
-
-; **************
-; Y:A is true if stacked-value < Y:A, else false
-
-lt_sb:		clc			; Subtract memory+1 from A.
+uge_w:		clc			; Subtract memory+1 from Y:A.
 		sbc.l	<__stack, x
-		bvc	!+
-		eor	#$80
-!:		bpl	return_true	; +ve if A  > memory (signed).
-		bra	return_false	; -ve if A <= memory (signed).
-
-; **************
-; Y:A is true if stacked-value >= Y:A, else false
-
-ge_sb:		clc			; Subtract memory+1 from A.
-		sbc.l	<__stack, x
-		bvc	!+
-		eor	#$80
-!:		bmi	return_true	; -ve if A <= memory (signed).
-		bra	return_false	; +ve if A  > memory (signed).
-
-; **************
-; Y:A is true if stacked-value <= Y:A, else false
-
-le_sb:		sec			; Subtract memory from A.
-		sbc.l	<__stack, x	; Cannot use a "cmp" as it
-		bvc	!+		; does not set the V flag!
-		eor	#$80
-!:		bpl	return_true	; +ve if A >= memory (signed).
-		bra	return_false	; -ve if A  < memory (signed).
-
-; **************
-; Y:A is true if stacked-value > Y:A, else false
-
-gt_sb:		sec			; Subtract memory from A.
-		sbc.l	<__stack, x	; Cannot use a "cmp" as it
-		bvc	!+		; does not set the V flag!
-		eor	#$80
-!:		bmi	return_true	; -ve if A  < memory (signed).
-		bra	return_false	; +ve if A >= memory (signed).
-
-; **************
-; Y:A is true if stacked-value < Y:A, else false
-
-lt_ub:		clc			; Subtract memory+1 from A.
-		sbc.l	<__stack, x
-		bcs	return_true	; CS if A  > memory.
-		bra	return_false
-
-; **************
-; Y:A is true if stacked-value >= Y:A, else false
-
-ge_ub:		clc			; Subtract memory+1 from A.
-		sbc.l	<__stack, x
-		bcc	return_true	; CC if A <= memory.
-		bra	return_false
-
-; **************
-; Y:A is true if stacked-value <= Y:A, else false
-
-le_ub:		cmp.l	<__stack, x	; Subtract memory from A.
-		bcs	return_true	; CS if Y:A >= memory.
-		bra	return_false
-
-; **************
-; Y:A is true if stacked-value > Y:A, else false
-
-gt_ub:		cmp.l	<__stack, x	; Subtract memory from A.
-		bcc	return_true	; CC if A  < memory.
+		tya
+		sbc.h	<__stack, x
+		bcc	return_true	; CC if Y:A <= memory.
 		bra	return_false
 
 
