@@ -107,7 +107,7 @@ int doldcls (int stclass)
 	else
 		return (0);
 
-	ns();
+	needsemicolon();
 	return (1);
 }
 
@@ -131,7 +131,7 @@ void stst (void)
 	}
 	else if (amatch("do", 2)) {
 		dodo();
-		ns();
+		needsemicolon();
 		lastst = STDO;
 	}
 	else if (amatch("for", 3)) {
@@ -140,22 +140,22 @@ void stst (void)
 	}
 	else if (amatch("return", 6)) {
 		doreturn();
-		ns();
+		needsemicolon();
 		lastst = STRETURN;
 	}
 	else if (amatch("break", 5)) {
 		dobreak();
-		ns();
+		needsemicolon();
 		lastst = STBREAK;
 	}
 	else if (amatch("continue", 8)) {
 		docont();
-		ns();
+		needsemicolon();
 		lastst = STCONT;
 	}
 	else if (amatch("goto", 4)) {
 		dogoto();
-		ns();
+		needsemicolon();
 		lastst = STGOTO;
 	}
 	else if (match(";"))
@@ -185,7 +185,7 @@ void stst (void)
 		else {
 			lptr = slptr;
 			expression(YES);
-			ns();
+			needsemicolon();
 			lastst = STEXP;
 		}
 	}
@@ -236,15 +236,15 @@ void compound (int func)
 void doif (void)
 {
 	int fstkp, flab1, flab2;
-	SYMBOL *flev;
+	int flev;
 
-	flev = locptr;
+	flev = locsym_index;
 	fstkp = stkp;
 	flab1 = getlabel();
 	test(flab1, FALSE);
 	statement(NO);
 	stkp = modstk(fstkp);
-	locptr = flev;
+	locsym_index = flev;
 	if (!amatch("else", 4)) {
 		gnlabel(flab1);
 		return;
@@ -253,7 +253,7 @@ void doif (void)
 	gnlabel(flab1);
 	statement(NO);
 	stkp = modstk(fstkp);
-	locptr = flev;
+	locsym_index = flev;
 	gnlabel(flab2);
 }
 
@@ -262,21 +262,21 @@ void doif (void)
  */
 void dowhile (void)
 {
-	intptr_t ws[WSSIZ];
+	int ws[WS_COUNT];
 
-	ws[WSSYM] = (intptr_t)locptr;
-	ws[WSSP] = stkp;
-	ws[WSTYP] = WSWHILE;
-	ws[WSTEST] = getlabel();
-	ws[WSEXIT] = getlabel();
+	ws[WS_LOCSYM_INDEX] = locsym_index;
+	ws[WS_STACK_OFFSET] = stkp;
+	ws[WS_TYPE] = WS_WHILE;
+	ws[WS_TEST_LABEL] = getlabel();
+	ws[WS_EXIT_LABEL] = getlabel();
 	addwhile(ws);
-	gnlabel((int)ws[WSTEST]);
-	test((int)ws[WSEXIT], FALSE);
+	gnlabel(ws[WS_TEST_LABEL]);
+	test(ws[WS_EXIT_LABEL], FALSE);
 	statement(NO);
-	jump((int)ws[WSTEST]);
-	gnlabel((int)ws[WSEXIT]);
-	locptr = (SYMBOL *)ws[WSSYM];
-	stkp = modstk((int)ws[WSSP]);
+	jump(ws[WS_TEST_LABEL]);
+	gnlabel(ws[WS_EXIT_LABEL]);
+	locsym_index = ws[WS_LOCSYM_INDEX];
+	stkp = modstk(ws[WS_STACK_OFFSET]);
 	delwhile();
 }
 
@@ -285,26 +285,26 @@ void dowhile (void)
  */
 void dodo (void)
 {
-	intptr_t ws[WSSIZ];
+	int ws[WS_COUNT];
 
-	ws[WSSYM] = (intptr_t)locptr;
-	ws[WSSP] = stkp;
-	ws[WSTYP] = WSDO;
-	ws[WSBODY] = getlabel();
-	ws[WSTEST] = getlabel();
-	ws[WSEXIT] = getlabel();
+	ws[WS_LOCSYM_INDEX] = locsym_index;
+	ws[WS_STACK_OFFSET] = stkp;
+	ws[WS_TYPE] = WS_DO;
+	ws[WS_BODY_LABEL] = getlabel();
+	ws[WS_TEST_LABEL] = getlabel();
+	ws[WS_EXIT_LABEL] = getlabel();
 	addwhile(ws);
-	gnlabel((int)ws[WSBODY]);
+	gnlabel(ws[WS_BODY_LABEL]);
 	statement(NO);
 	if (!match("while")) {
 		error("missing while");
 		return;
 	}
-	gnlabel((int)ws[WSTEST]);
-	test((int)ws[WSBODY], TRUE);
-	gnlabel((int)ws[WSEXIT]);
-	locptr = (SYMBOL *)ws[WSSYM];
-	stkp = modstk((int)ws[WSSP]);
+	gnlabel(ws[WS_TEST_LABEL]);
+	test(ws[WS_BODY_LABEL], TRUE);
+	gnlabel(ws[WS_EXIT_LABEL]);
+	locsym_index = ws[WS_LOCSYM_INDEX];
+	stkp = modstk(ws[WS_STACK_OFFSET]);
 	delwhile();
 }
 
@@ -313,47 +313,47 @@ void dodo (void)
  */
 void dofor (void)
 {
-	intptr_t ws[WSSIZ], *pws;
+	int ws[WS_COUNT], *pws;
 
-	ws[WSSYM] = (intptr_t)locptr;
-	ws[WSSP] = stkp;
-	ws[WSTYP] = WSFOR;
-	ws[WSTEST] = getlabel();
-	ws[WSINCR] = getlabel();
-	ws[WSBODY] = getlabel();
-	ws[WSEXIT] = getlabel();
+	ws[WS_LOCSYM_INDEX] = locsym_index;
+	ws[WS_STACK_OFFSET] = stkp;
+	ws[WS_TYPE] = WS_FOR;
+	ws[WS_TEST_LABEL] = getlabel();
+	ws[WS_INCR_LABEL] = getlabel();
+	ws[WS_BODY_LABEL] = getlabel();
+	ws[WS_EXIT_LABEL] = getlabel();
 	addwhile(ws);
 	pws = readwhile();
-	needbrack("(");
+	needbracket("(");
 	if (!match(";")) {
 		expression(YES);
-		ns();
+		needsemicolon();
 		gfence();
 	}
-	gnlabel((int)pws[WSTEST]);
+	gnlabel((int)pws[WS_TEST_LABEL]);
 	if (!match(";")) {
 		expression(YES);
-		testjump((int)pws[WSBODY], TRUE);
-		jump((int)pws[WSEXIT]);
-		ns();
+		testjump(pws[WS_BODY_LABEL], TRUE);
+		jump(pws[WS_EXIT_LABEL]);
+		needsemicolon();
 	}
 	else
-		pws[WSTEST] = pws[WSBODY];
-	gnlabel((int)pws[WSINCR]);
+		pws[WS_TEST_LABEL] = pws[WS_BODY_LABEL];
+	gnlabel(pws[WS_INCR_LABEL]);
 	if (!match(")")) {
 		expression(YES);
-		needbrack(")");
+		needbracket(")");
 		gfence();
-		jump((int)pws[WSTEST]);
+		jump(pws[WS_TEST_LABEL]);
 	}
 	else
-		pws[WSINCR] = pws[WSTEST];
-	gnlabel((int)pws[WSBODY]);
+		pws[WS_INCR_LABEL] = pws[WS_TEST_LABEL];
+	gnlabel(pws[WS_BODY_LABEL]);
 	statement(NO);
-	stkp = modstk((int)pws[WSSP]);
-	jump((int)pws[WSINCR]);
-	gnlabel((int)pws[WSEXIT]);
-	locptr = (SYMBOL *)pws[WSSYM];
+	stkp = modstk(pws[WS_STACK_OFFSET]);
+	jump(pws[WS_INCR_LABEL]);
+	gnlabel(pws[WS_EXIT_LABEL]);
+	locsym_index = pws[WS_LOCSYM_INDEX];
 	delwhile();
 }
 
@@ -362,37 +362,40 @@ void dofor (void)
  */
 void doswitch (void)
 {
-	intptr_t ws[WSSIZ];
-	intptr_t *ptr;
+	int ws[WS_COUNT];
+	int *ptr;
 	bool auto_default = false;
 
-	ws[WSSYM] = (intptr_t)locptr;
-	ws[WSSP] = stkp;
-	ws[WSTYP] = WSSWITCH;
-	ws[WSCASEP] = swstp;
-	ws[WSTAB] = getlabel();
-	ws[WSDEF] = ws[WSEXIT] = getlabel();
+	ws[WS_LOCSYM_INDEX] = locsym_index;
+	ws[WS_STACK_OFFSET] = stkp;
+	ws[WS_TYPE] = WS_SWITCH;
+	ws[WS_CASE_INDEX] = swstp;
+	ws[WS_TABLE_LABEL] = getlabel();
+	ws[WS_DEFAULT_LABEL] = ws[WS_EXIT_LABEL] = getlabel();
 	addwhile(ws);
-	needbrack("(");
+	needbracket("(");
 	expression(YES);
-	needbrack(")");
-	gswitch((int)ws[WSTAB]);
+	needbracket(")");
+	gswitch(ws[WS_TABLE_LABEL]);
 	statement(NO);
+
 	ptr = readswitch();
-	jump((int)ptr[WSEXIT]);
-	if (ptr[WSDEF] == ptr[WSEXIT]) {
-		ptr[WSDEF] = getlabel();
+	jump(ptr[WS_EXIT_LABEL]);
+
+	if (ptr[WS_DEFAULT_LABEL] == ptr[WS_EXIT_LABEL]) {
+		ptr[WS_DEFAULT_LABEL] = getlabel();
 		auto_default = true;
 	}
-	dumpsw(ptr);
+	dumpswitch(ptr);
 	if (auto_default) {
-		gnlabel((int)ptr[WSDEF]);
+		gnlabel((int)ptr[WS_DEFAULT_LABEL]);
 		out_ins(I_CASE, 0, 0);
 	}
-	gnlabel((int)ptr[WSEXIT]);
-	locptr = (SYMBOL *)ptr[WSSYM];
-	stkp = modstk((int)ptr[WSSP]);
-	swstp = (int)ptr[WSCASEP];
+
+	gnlabel(ptr[WS_EXIT_LABEL]);
+	locsym_index = ptr[WS_LOCSYM_INDEX];
+	stkp = modstk(ptr[WS_STACK_OFFSET]);
+	swstp = ptr[WS_CASE_INDEX];
 	delwhile();
 }
 
@@ -423,12 +426,12 @@ void docase (void)
  */
 void dodefault (void)
 {
-	intptr_t* ptr;
+	int *ptr;
 	int lab;
 
 	ptr = readswitch();
 	if (ptr) {
-		ptr[WSDEF] = lab = getlabel();
+		ptr[WS_DEFAULT_LABEL] = lab = getlabel();
 		gcase(lab, INT_MAX);
 		if (!match(":"))
 			error("missing colon");
@@ -460,13 +463,13 @@ void doreturn (void)
  */
 void dobreak (void)
 {
-	intptr_t *ptr;
+	int *ptr;
 
 	if ((ptr = readwhile()) == 0)
 		return;
 
-	modstk((int)ptr[WSSP]);
-	jump((int)ptr[WSEXIT]);
+	modstk(ptr[WS_STACK_OFFSET]);
+	jump(ptr[WS_EXIT_LABEL]);
 }
 
 /*
@@ -474,16 +477,16 @@ void dobreak (void)
  */
 void docont (void)
 {
-	intptr_t *ptr;
+	int *ptr;
 
 	if ((ptr = findwhile()) == 0)
 		return;
 
-	modstk((int)ptr[WSSP]);
-	if (ptr[WSTYP] == WSFOR)
-		jump((int)ptr[WSINCR]);
+	modstk(ptr[WS_STACK_OFFSET]);
+	if (ptr[WS_TYPE] == WS_FOR)
+		jump(ptr[WS_INCR_LABEL]);
 	else
-		jump((int)ptr[WSTEST]);
+		jump(ptr[WS_TEST_LABEL]);
 }
 
 void dolabel (char *name)
@@ -570,14 +573,14 @@ void dogoto (void)
  *	+ BC		dw	jmp2
  *	+ DE		dw	jmp3
  */
-void dumpsw (intptr_t *ws)
+void dumpswitch (int *ws)
 {
 	int i, j, column;
 
-	gnlabel((int)ws[WSTAB]);
+	gnlabel(ws[WS_TABLE_LABEL]);
 	flush_ins();
 
-	i = (int)ws[WSCASEP];
+	i = ws[WS_CASE_INDEX];
 
 	if ((swstp - i) > 63) {
 		error("too many case statements in switch(), there must be less than 64");
@@ -607,7 +610,7 @@ void dumpsw (intptr_t *ws)
 	}
 
 	defword();
-	outlabel((int)ws[WSDEF]);
+	outlabel(ws[WS_DEFAULT_LABEL]);
 	nl();
 
 	j = swstp;
@@ -615,7 +618,7 @@ void dumpsw (intptr_t *ws)
 		defword();
 		column = 8;
 		while (column--) {
-			outlabel(swstlab[--j]);
+			outlabel(swstlabel[--j]);
 			if ((column == 0) | (j == i)) {
 				nl();
 				break;
@@ -628,8 +631,8 @@ void dumpsw (intptr_t *ws)
 
 void test (int label, int ft)
 {
-	needbrack("(");
+	needbracket("(");
 	expression(YES);
-	needbrack(")");
+	needbracket(")");
 	testjump(label, ft);
 }

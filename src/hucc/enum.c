@@ -20,7 +20,7 @@ int define_enum (char *sname, int storage)
 	int start = enum_ptr;
 
 //	printf("defenum %s\n", sname);
-	needbrack("{");
+	needbracket("{");
 	count = min = max = 0;
 	for (;;) {
 		if (!symname(n)) {

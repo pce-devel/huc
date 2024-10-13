@@ -125,10 +125,10 @@ int initials (char *symbol_name, int type, int identity, int dim, int otag)
 				while ((dim > 0) || dim_unknown) {
 					if (identity == ARRAY && type == CSTRUCT) {
 						// array of struct
-						needbrack("{");
+						needbracket("{");
 						struct_init(&tag_table[otag], symbol_name);
 						--dim;
-						needbrack("}");
+						needbracket("}");
 					}
 					else {
 						if (init(symbol_name, type, identity, &dim, 0))
@@ -138,7 +138,7 @@ int initials (char *symbol_name, int type, int identity, int dim, int otag)
 						break;
 				}
 			}
-			needbrack("}");
+			needbracket("}");
 			// single constant
 		}
 		else
@@ -502,8 +502,8 @@ SYMBOL *findglb (char *sname)
 {
 	SYMBOL *ptr;
 
-	ptr = STARTGLB;
-	while (ptr != glbptr) {
+	ptr = symtab + STARTGLB;
+	while (ptr != (symtab + glbsym_index)) {
 		if (astreq(sname, ptr->name, NAMEMAX))
 			return (ptr);
 
@@ -516,8 +516,8 @@ SYMBOL *findloc (char *sname)
 {
 	SYMBOL *ptr;
 
-	ptr = locptr;
-	while (ptr != STARTLOC) {
+	ptr = symtab + locsym_index;
+	while (ptr != (symtab + STARTLOC)) {
 		ptr--;
 		if (astreq(sname, ptr->name, NAMEMAX))
 			return (ptr);
@@ -534,12 +534,12 @@ SYMBOL *addglb (char *sname, char id, char typ, int value, char stor, SYMBOL *re
 		if (cptr)
 			return (cptr);
 
-		if (glbptr >= ENDGLB) {
+		if (glbsym_index >= ENDGLB) {
 			error("global symbol table overflow");
 			return (NULL);
 		}
-		cptr = glbptr;
-		glbptr++;
+		cptr = symtab + glbsym_index;
+		glbsym_index++;
 	}
 	else
 		cptr = replace;
@@ -581,12 +581,12 @@ SYMBOL *addloc (char *sname, char id, char typ, int value, char stclass, int siz
 	if (cptr)
 		return (cptr);
 
-	if (locptr >= ENDLOC) {
+	if (locsym_index >= ENDLOC) {
 		error("local symbol table overflow");
 		return (NULL);
 	}
-	cptr = locptr;
-	ptr = locptr->name;
+	cptr = symtab + locsym_index;
+	ptr = symtab[locsym_index].name;
 	while (alphanum(*ptr++ = *sname++)) ;
 	cptr->identity = id;
 	cptr->sym_type = typ;
@@ -594,7 +594,7 @@ SYMBOL *addloc (char *sname, char id, char typ, int value, char stclass, int siz
 	cptr->offset = value;
 	cptr->alloc_size = size;
 	cptr->linked = NULL;
-	locptr++;
+	locsym_index++;
 	return (cptr);
 }
 

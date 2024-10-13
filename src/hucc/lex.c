@@ -19,7 +19,7 @@
  *	called whenever syntax requires a semicolon
  *
  */
-void ns (void)
+void needsemicolon (void)
 {
 	if (!match(";"))
 		error("missing semicolon");
@@ -45,7 +45,7 @@ int endst (void)
 	return ((streq(line + lptr, ";") | (ch() == 0)));
 }
 
-void needbrack (const char *str)
+void needbracket (const char *str)
 {
 	if (!match(str)) {
 		error("missing bracket");

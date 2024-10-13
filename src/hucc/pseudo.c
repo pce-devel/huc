@@ -822,7 +822,7 @@ void do_asm_func (int type)
 	}
 
 	/* close function */
-	needbrack(")");
+	needbracket(")");
 
 	/* duplicate identifier */
 	ptr = new_string(1, n);
