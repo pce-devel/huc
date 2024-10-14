@@ -48,6 +48,14 @@
 #define JOY_TYPE6	0x8000
 
 // *************
+// SuperGRAFX VPC settings for set_vpc_ctl() ...
+// *************
+
+#define VPC_SPR1_BKG1_SPR2_BKG2	0x3000 // same as SGX_PARALLAX=0
+#define VPC_SPR1_SPR2_BKG1_BKG2	0x7000 // same as SGX_PARALLAX=1
+#define VPC_BKG1_BKG2_SPR1_SPR2	0xB000
+
+// *************
 // System Card variables ...
 // *************
 
@@ -79,6 +87,10 @@ extern unsigned char dh;
 
 extern unsigned char __fastcall __xsafe __macro sgx_detect( void );
 extern unsigned char __fastcall __xsafe __macro ac_exists( void );
+
+extern void __fastcall __xsafe __nop vpc_set_ctl( unsigned int bits<VPC_CR> );
+extern void __fastcall __xsafe __nop vpc_set_win1( unsigned int width<VPC_WINDOW1> );
+extern void __fastcall __xsafe __nop vpc_set_win2( unsigned int width<VPC_WINDOW2> );
 
 extern unsigned int __fastcall __xsafe __macro peek( unsigned int addr<__ptr> );
 extern unsigned int __fastcall __xsafe __macro peekw( unsigned int addr<__ptr> );

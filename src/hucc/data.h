@@ -22,11 +22,11 @@ extern int const_nb;
 /* storage words */
 
 extern SYMBOL symtab[];
-extern SYMBOL *glbptr, *rglbptr, *locptr;
-extern intptr_t ws[];
-extern intptr_t *wsptr;
+extern int glbsym_index, rglbsym_index, locsym_index;
+extern int ws[];
+extern int *wsptr;
 extern int swstcase[];
-extern int swstlab[];
+extern int swstlabel[];
 extern int swstp;
 extern char litq[];
 extern char litq2[];

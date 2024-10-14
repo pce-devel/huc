@@ -13,55 +13,55 @@
 #include "io.h"
 #include "while.h"
 
-void addwhile (intptr_t *ptr)
+void addwhile (int *ptr)
 {
 	int k;
 
-	if (wsptr == WSMAX) {
+	if (wsptr == WS_LIMIT) {
 		error("too many active whiles");
 		return;
 	}
 	k = 0;
-	while (k < WSSIZ)
+	while (k < WS_COUNT)
 		*wsptr++ = ptr[k++];
 }
 
 void delwhile (void)
 {
 	if (readwhile())
-		wsptr = wsptr - WSSIZ;
+		wsptr = wsptr - WS_COUNT;
 }
 
-intptr_t *readwhile (void)
+int *readwhile (void)
 {
 	if (wsptr == ws) {
 		error("no active do/for/while/switch");
 		return (0);
 	}
 	else
-		return (wsptr - WSSIZ);
+		return (wsptr - WS_COUNT);
 }
 
-intptr_t *findwhile (void)
+int *findwhile (void)
 {
-	intptr_t *ptr;
+	int *ptr;
 
 	for (ptr = wsptr; ptr != ws;) {
-		ptr = ptr - WSSIZ;
-		if (ptr[WSTYP] != WSSWITCH)
+		ptr = ptr - WS_COUNT;
+		if (ptr[WS_TYPE] != WS_SWITCH)
 			return (ptr);
 	}
 	error("no active do/for/while");
 	return (NULL);
 }
 
-intptr_t *readswitch (void)
+int *readswitch (void)
 {
-	intptr_t *ptr;
+	int *ptr;
 
 	ptr = readwhile();
 	if (ptr)
-		if (ptr[WSTYP] == WSSWITCH)
+		if (ptr[WS_TYPE] == WS_SWITCH)
 			return (ptr);
 
 	return (0);
@@ -71,11 +71,11 @@ void addcase (int val)
 {
 	int lab;
 
-	if (swstp == SWSTSZ)
+	if (swstp == SWST_COUNT)
 		error("too many case labels");
 	else {
 		swstcase[swstp] = val;
-		swstlab[swstp++] = lab = getlabel();
+		swstlabel[swstp++] = lab = getlabel();
 		gcase(lab, val);
 	}
 }

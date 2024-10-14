@@ -390,20 +390,14 @@ enum ICOMPARE {
 
 #define FILENAMESIZE    256
 
-/* symbol table parameters */
-
-/* old values, too restrictive
- * #define	SYMSIZ	14
- * #define	SYMTBSZ	32768
- * #define	NUMGLBS	1500
- */
+/* symbol table parameters (locals are reset for every function) */
 #define SYMTBSZ 4096
-#define NUMGLBS 2048
+#define NUMGLBS (SYMTBSZ - 512)
 
-#define STARTGLB        symtab
-#define ENDGLB  (STARTGLB + NUMGLBS)
-#define STARTLOC        (ENDGLB + 1)
-#define ENDLOC  (symtab + SYMTBSZ - 1)
+#define STARTGLB 0
+#define ENDGLB   (NUMGLBS - 1)
+#define STARTLOC (NUMGLBS)
+#define ENDLOC   (SYMTBSZ - 1)
 
 /* symbol table entry format */
 /* N.B. nasty hack to allow space beyond NAMEMAX (see "copysym") */
@@ -445,10 +439,10 @@ struct tag_symbol {
 
 /* possible entries for "ident" */
 
-#define VARIABLE        1
-#define ARRAY   2
-#define POINTER 3
-#define FUNCTION        4
+#define VARIABLE 1
+#define ARRAY    2
+#define POINTER  3
+#define FUNCTION 4
 
 /* possible entries for "type" for sym_type, val_type, type_type, init_type */
 
@@ -479,33 +473,33 @@ struct tag_symbol {
 
 /* "do"/"for"/"while"/"switch" statement stack */
 
-#define WSSIZ   7
-#define WSTABSZ (WSSIZ * 16)
-#define WSMAX   ws + WSTABSZ - WSSIZ
+#define WS_COUNT 7 /* number of ints per "while" entry */
+#define WS_TOTAL (20 * WS_COUNT)
+#define WS_LIMIT (ws + WS_TOTAL - WS_COUNT)
 
 /* entry offsets in "do"/"for"/"while"/"switch" stack */
 
-#define WSSYM   0
-#define WSSP    1
-#define WSTYP   2
-#define WSCASEP 3
-#define WSTEST  3
-#define WSINCR  4
-#define WSDEF   4
-#define WSBODY  5
-#define WSTAB   5
-#define WSEXIT  6
+#define WS_LOCSYM_INDEX   0	/* locsym_index to restore at the end of the compound statement */
+#define WS_STACK_OFFSET   1	/* stack offset to restore at the end of the compound statement */
+#define WS_TYPE           2
+#define WS_CASE_INDEX     3	/* switch label stack index of first "case" */
+#define WS_TEST_LABEL     3
+#define WS_INCR_LABEL     4
+#define WS_DEFAULT_LABEL  4
+#define WS_BODY_LABEL     5
+#define WS_TABLE_LABEL    5	/* label for dumpswitch() data table */
+#define WS_EXIT_LABEL     6
 
-/* possible entries for "wstyp" */
+/* possible entries for "WS_TYPE" */
 
-#define WSWHILE 0
-#define WSFOR   1
-#define WSDO    2
-#define WSSWITCH        3
+#define WS_WHILE  0
+#define WS_FOR    1
+#define WS_DO     2
+#define WS_SWITCH 3
 
-/* "switch" label stack */
+/* "switch" label stack size */
 
-#define SWSTSZ  256
+#define SWST_COUNT  256
 
 /* literal pool */
 

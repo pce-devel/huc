@@ -102,7 +102,7 @@ int define_struct (char *sname, int storage, int is_struct)
 	symbol->size = 0;
 	symbol->member_idx = member_table_index;
 
-	needbrack("{");
+	needbracket("{");
 	while (!match("}")) {
 		if (!dodcls(storage, &tag_table[tti], is_struct))
 			break;

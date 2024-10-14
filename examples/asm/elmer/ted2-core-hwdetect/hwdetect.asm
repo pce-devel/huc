@@ -243,7 +243,7 @@ core_main:	; Turn the display off and initialize the screen mode.
 
 		PRINTF	"SuperGRAFX \eP2..............\eX25"
 		lda	sgx_detected		; Is this a SuperGrafx?
-		eor	#$7F
+		eor	#1
 		jsr	print_result
 
 		PRINTF	"CD Interface \eP2............\eX25"

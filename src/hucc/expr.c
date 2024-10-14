@@ -791,7 +791,7 @@ int heir11 (LVALUE *lval, int comma)
 					/* Primary contains literal pointer, add subscript. */
 					gpush();
 					expression(YES);
-					needbrack("]");
+					needbracket("]");
 					gadd(NULL, NULL);
 					/* Dereference final pointer. */
 					lval->symbol = lval->symbol2 = 0;
@@ -808,7 +808,7 @@ int heir11 (LVALUE *lval, int comma)
 				else {
 					error("can't subscript");
 					junk();
-					needbrack("]");
+					needbracket("]");
 					return (0);
 				}
 			}
@@ -821,7 +821,7 @@ int heir11 (LVALUE *lval, int comma)
 			if (!deferred && !ptr->far)
 				gpush();
 			expression(YES);
-			needbrack("]");
+			needbracket("]");
 			if (ptr->sym_type == CINT || ptr->sym_type == CUINT || lval->ptr_order > 1 ||
 			    (ptr->identity == ARRAY && lval->ptr_order > 0))
 				gaslint();

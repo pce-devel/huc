@@ -1,13 +1,13 @@
 #ifndef _INCLUDE_LEX_H
 #define _INCLUDE_LEX_H
 
-void ns (void);
+void needsemicolon (void);
 
 void junk (void);
 
 int endst (void);
 
-void needbrack (const char *str);
+void needbracket (const char *str);
 
 int alpha (char c);
 

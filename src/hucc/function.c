@@ -120,7 +120,7 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 			strcpy(fc->fname, n);
 	}
 
-	locptr = STARTLOC;
+	locsym_index = STARTLOC;
 	argstk = 0;
 	argtop = 0;
 	nbarg = 0;
@@ -326,7 +326,7 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 			struct type_type t;
 			if (match_type(&t, NO, NO)) {
 				getarg(t.type_type, KR, t.otag, is_fastcall);
-				ns();
+				needsemicolon();
 			}
 			else {
 				error("wrong number args");
@@ -410,7 +410,7 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 	ol(".pceas");
 	nl();
 	stkp = 0;
-	locptr = STARTLOC;
+	locsym_index = STARTLOC;
 	norecurse = save_norecurse;
 }
 
@@ -731,7 +731,7 @@ void callfunction (char *ptr)
 		func_call_stack = 0;
 
 	/* close */
-	needbrack(")");
+	needbracket(")");
 
 	/* call function */
 	/* Reload fastcall arguments spilled to the hardware-stack. */

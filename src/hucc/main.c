@@ -341,8 +341,8 @@ unknown_option:
 		   defines end. */
 		asmdefs_global_end[0] = 0;
 		if (extension(p) == 'c' || extension(p) == 'C') {
-			glbptr = STARTGLB;
-			locptr = STARTLOC;
+			glbsym_index = STARTGLB;
+			locsym_index = STARTLOC;
 			wsptr = ws;
 			inclsp =
 			iflevel =
@@ -378,7 +378,7 @@ unknown_option:
 			defmac("__end\t__memory");
 			addglb("__memory", ARRAY, CCHAR, 0, EXTERN, 0);
 			addglb("stack", ARRAY, CCHAR, 0, EXTERN, 0);
-			rglbptr = glbptr;
+			rglbsym_index = glbsym_index;
 			addglb("etext", ARRAY, CCHAR, 0, EXTERN, 0);
 			addglb("edata", ARRAY, CCHAR, 0, EXTERN, 0);
 			/* PCE specific externs */
@@ -597,7 +597,7 @@ int dodcls (int stclass, TAG_SYMBOL *mtag, int is_struct)
 		return (0);
 	}
 	else
-		ns();
+		needsemicolon();
 	return (1);
 }
 
@@ -628,7 +628,7 @@ void dotypedef (void)
 	}
 	typedefs = realloc(typedefs, (typedef_ptr + 1) * sizeof(struct type_type));
 	typedefs[typedef_ptr++] = t;
-	ns();
+	needsemicolon();
 }
 
 /*
@@ -861,7 +861,7 @@ void dumpglbs (void)
 		int pass = 0;
 next:
 		i = 1;
-		for (cptr = rglbptr; cptr < glbptr; cptr++) {
+		for (cptr = (symtab + rglbsym_index); cptr < (symtab + glbsym_index); cptr++) {
 			if (cptr->identity != FUNCTION) {
 //				ppubext(cptr);
 				if ((cptr->storage & WRITTEN) == 0 &&	/* Not yet written to file */
@@ -1040,7 +1040,7 @@ void errorsummary (void)
 	nl();
 	comment();
 	ot("global pool:");
-	outdec((int)(glbptr - rglbptr));
+	outdec(glbsym_index - rglbsym_index);
 	nl();
 	comment();
 	ot("Macro pool:");

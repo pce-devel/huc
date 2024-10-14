@@ -24,7 +24,7 @@ void dobreak (void);
 void docont (void);
 void dolabel (char *name);
 void dogoto (void);
-void dumpsw (intptr_t *ws);
+void dumpswitch (int *ws);
 void test (int label, int ft);
 
 #endif

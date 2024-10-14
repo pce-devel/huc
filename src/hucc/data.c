@@ -24,11 +24,13 @@ int const_nb;
 /* storage words */
 
 SYMBOL symtab[SYMTBSZ];
-SYMBOL *glbptr, *rglbptr, *locptr;
-intptr_t ws[WSTABSZ];
-intptr_t *wsptr;
-int swstcase[SWSTSZ];
-int swstlab[SWSTSZ];
+int glbsym_index, rglbsym_index, locsym_index;
+
+int ws[WS_TOTAL];
+int *wsptr;
+
+int swstcase[SWST_COUNT];
+int swstlabel[SWST_COUNT];
 int swstp;
 char litq[LITABSZ];
 char litq2[LITABSZ];
@@ -79,7 +81,7 @@ int inclsp;
 char fname[FILENAMESIZE];
 
 char quote[2];
-char *cptr;
+SYMBOL *cptr;
 int *iptr;
 int fexitlab;
 int iflevel, skiplevel;

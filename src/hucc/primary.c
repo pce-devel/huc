@@ -165,7 +165,7 @@ int primary (LVALUE *lval, int comma, bool *deferred)
 		/* typecast */
 		struct type_type t;
 		if (match_type(&t, YES, NO)) {
-			needbrack(")");
+			needbracket(")");
 			k = heir10(lval, comma);
 			if (k)
 				rvalue(lval);
@@ -185,7 +185,7 @@ int primary (LVALUE *lval, int comma, bool *deferred)
 			/* need to use expression_ex() (not heir1()), otherwise
 			   the comma operator is not handled */
 			k = expression_ex(lval, comma, YES);
-			needbrack(")");
+			needbracket(")");
 			return (k);
 		}
 	}
@@ -229,7 +229,7 @@ int primary (LVALUE *lval, int comma, bool *deferred)
 		else
 			error("sizeof only on type or variable");
 		if (have_paren)
-			needbrack(")");
+			needbracket(")");
 		lval->symbol = 0;
 		lval->indirect = 0;
 		return (0);
