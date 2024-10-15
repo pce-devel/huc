@@ -103,6 +103,7 @@ enum ICODE {
 	X_TAND_WI,
 
 	I_BOOLEAN,
+	X_NOT_CF,
 
 	/* i-codes for loading the primary register */
 

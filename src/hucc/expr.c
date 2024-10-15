@@ -236,8 +236,9 @@ int heir1b (LVALUE *lval, int comma)
 		testjump(lab = getlabel(), TRUE);
 		if (heir1c(lval2, comma))
 			rvalue(lval2);
-		gbool();
+		gtest();
 		gnlabel(lab);
+		gbool();
 	}
 	else
 		return (0);
@@ -265,8 +266,9 @@ int heir1c (LVALUE *lval, int comma)
 		testjump(lab = getlabel(), FALSE);
 		if (heir2(lval2, comma))
 			rvalue(lval2);
-		gbool();
+		gtest();
 		gnlabel(lab);
+		gbool();
 	}
 	else
 		return (0);
@@ -683,7 +685,7 @@ int heir10 (LVALUE *lval, int comma)
 		k = heir10(lval, comma);
 		if (k)
 			rvalue(lval);
-		glneg();
+		gnot();
 		return (0);
 	}
 	else if (ch() == '*' && nch() != '=') {

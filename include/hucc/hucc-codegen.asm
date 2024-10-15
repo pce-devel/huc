@@ -1656,7 +1656,16 @@ __bool		.macro
 		cla
 		rol	a
 		cly
-		cmp	#1		; Only needed for unoptimized code.
+		.endm
+
+; **************
+; optimized boolean test
+; invert C flag
+
+__not.cf	.macro
+		ror	a
+		eor	#$80
+		rol	a
 		.endm
 
 

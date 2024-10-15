@@ -138,6 +138,7 @@ unsigned char icode_flags[] = {
 	/* X_TAND_WI            */	0,
 
 	/* I_BOOLEAN            */	0,
+	/* X_NOT_CF             */	0,
 
 	// i-codes for loading the primary register
 
@@ -516,6 +517,9 @@ lv1_loop:
 		/* LEVEL 1 - FUN STUFF STARTS HERE */
 		nb = 0;
 
+		/* ********************************************************* */
+		/* ********************************************************* */
+
 		/* first check for I_FENCE, and remove it ASAP */
 		if (q_nb >= 1 && p[0]->ins_code == I_FENCE) {
 			/* remove I_FENCE after it has been checked */
@@ -692,6 +696,9 @@ lv1_loop:
 			}
 		}
 
+		/* ********************************************************* */
+		/* ********************************************************* */
+
 		/* then check for I_SHORT, and remove it ASAP */
 		if (q_nb >= 1 && p[0]->ins_code == I_SHORT) {
 			/* remove I_SHORT after it has been checked */
@@ -744,7 +751,10 @@ lv1_loop:
 			}
 		}
 
-		/* then evaluate constant expressions, part 1 */
+		/* ********************************************************* */
+		/* then evaluate constant expressions */
+		/* ********************************************************* */
+
 		if (q_nb >= 3) {
 			/*
 			 *  __push.wr			-->	__add.wi	i
@@ -861,7 +871,6 @@ lv1_loop:
 			}
 		}
 
-		/* then evaluate constant expressions, part 2 */
 		if (q_nb >= 2) {
 			/*
 			 *  __ld.wi		i	-->	__ld.wi		(~i)
@@ -1115,7 +1124,10 @@ lv1_loop:
 			}
 		}
 
+		/* ********************************************************* */
 		/* then transform muliplication and division by a power of 2 */
+		/* ********************************************************* */
+
 		if (q_nb >= 1) {
 			/*
 			 *  __mul.wi		i	-->	__asl.wi	log2(i)
@@ -1235,64 +1247,120 @@ lv1_loop:
 			}
 		}
 
-		/* then optimize conditional tests, part 1 */
-		if (q_nb >= 5) {
+		/* ********************************************************* */
+		/* then optimize conditional tests */
+		/* ********************************************************* */
+
+		if (q_nb >= 4) {
 			/*
-			 *  LLnn:			-->	LLnn:
-			 *  __bool				__bfalse
-			 *  __tst.wr
+			 *  __not.wr			-->	__tst.wr
+			 *  __bool				__bool
+			 *  __not.wr
 			 *  __bool
-			 *  __bfalse
 			 *
-			 *  LLnn:			-->	LLnn:
-			 *  __bool				__btrue
-			 *  __tst.wr
-			 *  __bool
-			 *  __btrue
-			 *
-			 *  Remove redundant __tst.wr in compound conditionals
-			 *  that the compiler generates.
-			 *
-			 *  Done before removing the 2nd __bool in a later rule
-			 *  so that the redundancy is easier to understand.
+			 *  Merge two consecutive I_NOT_WR into an I_TST_WR
+			 *  with a boolean result.
 			 */
 			if
-			((p[0]->ins_code == I_BFALSE ||
-			  p[0]->ins_code == I_BTRUE) &&
-			 (p[1]->ins_code == I_BOOLEAN) &&
-			 (p[2]->ins_code == I_TST_WR) &&
-			 (p[3]->ins_code == I_BOOLEAN) &&
-			 (p[4]->ins_code == I_LABEL)
+			((p[0]->ins_code == I_BOOLEAN) &&
+			 (p[1]->ins_code == I_NOT_WR) &&
+			 (p[2]->ins_code == I_BOOLEAN) &&
+			 (p[3]->ins_code == I_NOT_WR)
 			) {
-				*p[3] = *p[0];
-				nb = 3;
+				p[3]->ins_code = I_TST_WR;
+				nb = 2;
+			}
+
+			/*
+			 *  __tst.wr			-->	__not.wr
+			 *  __bool				__bool
+			 *  __not.wr
+			 *  __bool
+			 *
+			 *  Unlikely, but possible if someone is writing a crazy
+			 *  string of "!" commands.
+			 */
+			else if
+			((p[0]->ins_code == I_BOOLEAN) &&
+			 (p[1]->ins_code == I_NOT_WR) &&
+			 (p[2]->ins_code == I_BOOLEAN) &&
+			 (p[3]->ins_code == I_TST_WR)
+			) {
+				p[3]->ins_code = I_NOT_WR;
+				nb = 2;
 			}
 
 			/*
 			 *  LLnn:			-->	LLnn:
 			 *  __bool				LLqq:
 			 *  __tst.wr				__bool
-			 *  __bool
 			 *  LLqq:
 			 *
-			 *  Remove redundant __tst.wr in compound conditionals
+			 *  Remove redundant __tst.wr from compound conditionals
 			 *  that the compiler generates.
+			 */
+			else if
+			((p[0]->ins_code == I_LABEL) &&
+			 (p[1]->ins_code == I_TST_WR) &&
+			 (p[2]->ins_code == I_BOOLEAN) &&
+			 (p[3]->ins_code == I_LABEL)
+			) {
+				*p[1] = *p[2];
+				*p[2] = *p[0];
+				nb = 1;
+			}
+
+			/*
+			 *  LLnn:			-->	LLnn:
+			 *  __bool				__bfalse
+			 *  __tst.wr
+			 *  __bfalse
 			 *
-			 *  Done before reordering the 2nd __bool in a later rule
-			 *  so that the redundancy is easier to understand.
+			 *  LLnn:			-->	LLnn:
+			 *  __bool				__btrue
+			 *  __tst.wr
+			 *  __btrue
+			 *
+			 *  Remove redundant __tst.wr from compound conditionals
+			 *  that the compiler generates.
 			 */
 			else if
 			((p[0]->ins_code == I_BFALSE ||
-			  p[0]->ins_code == I_BTRUE ||
-			  p[0]->ins_code == I_LABEL) &&
-			 (p[1]->ins_code == I_BOOLEAN) &&
-			 (p[2]->ins_code == I_TST_WR) &&
-			 (p[3]->ins_code == I_BOOLEAN) &&
-			 (p[4]->ins_code == I_LABEL)
+			  p[0]->ins_code == I_BTRUE) &&
+			 (p[1]->ins_code == I_TST_WR) &&
+			 (p[2]->ins_code == I_BOOLEAN) &&
+			 (p[3]->ins_code == I_LABEL)
 			) {
-				*p[3] = *p[0];
-				*p[2] = *p[1];
+				*p[2] = *p[0];
 				nb = 2;
+			}
+
+			/*
+			 *  LLnn:			-->	LLnn:
+			 *  __bool				__not.cf
+			 *  __not.wr				__bfalse
+			 *  __bfalse
+			 *
+			 *  LLnn:			-->	LLnn:
+			 *  __bool				__not.cf
+			 *  __not.wr				__btrue
+			 *  __btrue
+			 *
+			 *  Happens when a "!" follows a condition in brackets.
+			 *
+			 *  It is so tempting to just invert the branch, but
+			 *  that would break subsequent branches!
+			 */
+			else if
+			((p[0]->ins_code == I_BFALSE ||
+			  p[0]->ins_code == I_BTRUE) &&
+			 (p[1]->ins_code == I_NOT_WR) &&
+			 (p[2]->ins_code == I_BOOLEAN) &&
+			 (p[3]->ins_code == I_LABEL)
+			) {
+				*p[1] = *p[0];
+				p[2]->ins_code = X_NOT_CF;
+				nb = 1;
 			}
 
 			/* flush queue */
@@ -1309,36 +1377,7 @@ lv1_loop:
 			}
 		}
 
-		/* then optimize conditional tests, part 2 */
 		if (q_nb >= 3) {
-			/*
-			 *  __tst.wr			-->	__not.wr
-			 *  __bool
-			 *  __not.wr
-			 */
-			if
-			((p[0]->ins_code == I_NOT_WR) &&
-			 (p[1]->ins_code == I_BOOLEAN) &&
-			 (p[2]->ins_code == I_TST_WR)
-			) {
-				p[2]->ins_code = I_NOT_WR;
-				nb = 2;
-			}
-
-			/*
-			 *  __not.wr			-->	__tst.wr
-			 *  __bool
-			 *  __not.wr
-			 */
-			else if
-			((p[0]->ins_code == I_NOT_WR) &&
-			 (p[1]->ins_code == I_BOOLEAN) &&
-			 (p[2]->ins_code == I_NOT_WR)
-			) {
-				p[2]->ins_code = I_TST_WR;
-				nb = 2;
-			}
-
 			/*
 			 *  __cmp.wt			-->	__cmp.wt
 			 *  __bool
@@ -1372,11 +1411,16 @@ lv1_loop:
 			 *  __bool
 			 *  __tst.wr
 			 *
+			 *  Remove redundant __tst.wr in compound conditionals
+			 *  that the compiler generates.
+			 *
 			 *  __tst.wr			-->	__tst.wr
 			 *  __bool
 			 *  __tst.wr
+			 *
+			 *  This can happen when two I_NOT_WR are merged.
 			 */
-			else if
+			if
 			((p[0]->ins_code == I_TST_WR) &&
 			 (p[1]->ins_code == I_BOOLEAN) &&
 			 (p[2]->ins_code == I_CMP_WT ||
@@ -1447,13 +1491,13 @@ lv1_loop:
 			}
 		}
 
-		/* then optimize conditional tests, part 3 */
 		if (q_nb >= 2) {
 			/*
 			 *  __bool			-->	LLnn:
 			 *  LLnn:				__bool
 			 *
-			 *  Delay boolean conversion until the end of a list of labels.
+			 *  Delay boolean conversion until the end of the list of labels
+			 *  that are generated when using multiple "&&" and "||".
 			 *
 			 *  N.B. This optimization should be done before the X_TST_WM optimization!
 			 */
@@ -1470,24 +1514,17 @@ lv1_loop:
 			}
 
 			/*
-			 *  __bool			-->	__bfalse
-			 *  __bfalse
-			 *
-			 *  __bool			-->	__btrue
-			 *  __btrue
-			 *
 			 *  __bool			-->	__bool
 			 *  __bool
 			 *
-			 *  These remove redundant conversions of a flag into a boolean.
+			 *  Remove redundant conversions of a flag into a boolean
+			 *  that are generated when using multiple "&&" and "||".
 			 *
 			 *  N.B. This optimization should be done before the X_TST_WM optimization!
 			 */
 			else if
 			((p[1]->ins_code == I_BOOLEAN) &&
-			 (p[0]->ins_code == I_BFALSE ||
-			  p[0]->ins_code == I_BTRUE ||
-			  p[0]->ins_code == I_BOOLEAN)
+			 (p[0]->ins_code == I_BOOLEAN)
 			) {
 				*p[1] = *p[0];
 				nb = 1;
@@ -1550,7 +1587,10 @@ lv1_loop:
 			}
 		}
 
+		/* ********************************************************* */
 		/* 6-instruction patterns */
+		/* ********************************************************* */
+
 		if (q_nb >= 6) {
 			/*
 			 *  __ld.wi		p	-->	__ld.wm		p
@@ -1594,7 +1634,10 @@ lv1_loop:
 			}
 		}
 
+		/* ********************************************************* */
 		/* 5-instruction patterns */
+		/* ********************************************************* */
+
 		if (q_nb >= 5) {
 			/* flush queue */
 			if (nb) {
@@ -1610,7 +1653,10 @@ lv1_loop:
 			}
 		}
 
+		/* ********************************************************* */
 		/* 4-instruction patterns */
+		/* ********************************************************* */
+
 		if (q_nb >= 4) {
 			/*  __ld.wi		i	-->	__ld.wi		i
 			 *  __push.wr				__push.wr
@@ -1770,7 +1816,10 @@ lv1_loop:
 			}
 		}
 
+		/* ********************************************************* */
 		/* 3-instruction patterns */
+		/* ********************************************************* */
+
 		if (q_nb >= 3) {
 			/*
 			 *  __case			-->	LLnn:
@@ -2308,7 +2357,10 @@ lv1_loop:
 			}
 		}
 
+		/* ********************************************************* */
 		/* 2-instruction patterns */
+		/* ********************************************************* */
+
 		if (q_nb >= 2) {
 			/*
 			 *  __ld.{b/u}p		__ptr	-->	__ld.{b/u}p	__ptr
@@ -2911,7 +2963,10 @@ lv1_loop:
 			}
 		}
 
+		/* ********************************************************* */
 		/* 1-instruction patterns */
+		/* ********************************************************* */
+
 		if (q_nb >= 1) {
 			/*
 			 *  __add.wi		0	-->
@@ -2948,7 +3003,9 @@ lv1_loop:
 	}
 
 	/*
+	 * ********************************************************************
 	 * optimization level 2 - instruction re-scheduler,
+	 * ********************************************************************
 	 *
 	 * change the instruction order to allow for direct assignments rather
 	 * than the stack-based assignments that are generated by complex math

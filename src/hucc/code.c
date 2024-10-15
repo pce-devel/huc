@@ -736,6 +736,10 @@ void gen_code (INS *tmp)
 		ol("__bool");
 		break;
 
+	case X_NOT_CF:
+		ol("__not.cf");
+		break;
+
 	/* i-codes for loading the primary register */
 
 	case I_LD_WI:
