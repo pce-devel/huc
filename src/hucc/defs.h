@@ -102,8 +102,19 @@ enum ICODE {
 	X_NAND_WI,
 	X_TAND_WI,
 
-	I_BOOLEAN,
 	X_NOT_CF,
+
+	I_BOOLEAN,
+	X_BOOLNOT_WR,
+	X_BOOLNOT_WP,
+	X_BOOLNOT_WM,
+	X_BOOLNOT_WS,
+	X_BOOLNOT_WAR,
+	X_BOOLNOT_UP,
+	X_BOOLNOT_UM,
+	X_BOOLNOT_US,
+	X_BOOLNOT_UAR,
+	X_BOOLNOT_UAY,
 
 	/* i-codes for loading the primary register */
 

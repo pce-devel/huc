@@ -83,17 +83,17 @@ unsigned char icode_flags[] = {
 	/* I_SAVESP             */	0,
 	/* I_LOADSP             */	0,
 	/* I_MODSP              */	0,
-	/* I_PUSH_WR            */	0,
+	/* I_PUSH_WR            */	IS_USEPR,
 	/* I_POP_WR             */	0,
-	/* I_SPUSH_WR           */	0,
-	/* I_SPUSH_UR           */	0,
+	/* I_SPUSH_WR           */	IS_USEPR,
+	/* I_SPUSH_UR           */	IS_USEPR,
 	/* I_SPOP_WR            */	0,
 	/* I_SPOP_UR            */	0,
 
 	// i-codes for handling boolean tests and branching
 
-	/* I_SWITCH_WR          */	0,
-	/* I_SWITCH_UR          */	0,
+	/* I_SWITCH_WR          */	IS_USEPR,
+	/* I_SWITCH_UR          */	IS_USEPR,
 	/* I_CASE               */	0,
 	/* I_ENDCASE            */	0,
 	/* I_LABEL              */	0,
@@ -103,16 +103,16 @@ unsigned char icode_flags[] = {
 	/* I_BTRUE              */	0,
 	/* I_DEF                */	0,
 
-	/* I_CMP_WT             */	0,
-	/* X_CMP_WI             */	0,
-	/* X_CMP_WM             */	0,
-	/* X_CMP_WS             */	IS_SPREL,
+	/* I_CMP_WT             */	IS_USEPR,
+	/* X_CMP_WI             */	IS_USEPR,
+	/* X_CMP_WM             */	IS_USEPR,
+	/* X_CMP_WS             */	IS_USEPR + IS_SPREL,
 
-	/* X_CMP_UIQ            */	IS_UBYTE,
-	/* X_CMP_UMQ            */	IS_UBYTE,
-	/* X_CMP_USQ            */	IS_SPREL + IS_UBYTE,
+	/* X_CMP_UIQ            */	IS_USEPR + IS_UBYTE,
+	/* X_CMP_UMQ            */	IS_USEPR + IS_UBYTE,
+	/* X_CMP_USQ            */	IS_USEPR + IS_SPREL + IS_UBYTE,
 
-	/* I_NOT_WR             */	0,
+	/* I_NOT_WR             */	IS_USEPR,
 	/* X_NOT_WP             */	0,
 	/* X_NOT_WM             */	0,
 	/* X_NOT_WS             */	IS_SPREL,
@@ -123,7 +123,7 @@ unsigned char icode_flags[] = {
 	/* X_NOT_UAR            */	0,
 	/* X_NOT_UAY            */	0,
 
-	/* I_TST_WR             */	0,
+	/* I_TST_WR             */	IS_USEPR,
 	/* X_TST_WP             */	0,
 	/* X_TST_WM             */	0,
 	/* X_TST_WS             */	IS_SPREL,
@@ -134,99 +134,110 @@ unsigned char icode_flags[] = {
 	/* X_TST_UAR            */	0,
 	/* X_TST_UAY            */	0,
 
-	/* X_NAND_WI            */	0,
-	/* X_TAND_WI            */	0,
+	/* X_NAND_WI            */	IS_USEPR,
+	/* X_TAND_WI            */	IS_USEPR,
+
+	/* X_NOT_CF             */	0,
 
 	/* I_BOOLEAN            */	0,
-	/* X_NOT_CF             */	0,
+	/* X_BOOLNOT_WR         */	IS_USEPR,
+	/* X_BOOLNOT_WP         */	0,
+	/* X_BOOLNOT_WM         */	0,
+	/* X_BOOLNOT_WS         */	IS_SPREL,
+	/* X_BOOLNOT_WAR        */	0,
+	/* X_BOOLNOT_UP         */	0,
+	/* X_BOOLNOT_UM         */	0,
+	/* X_BOOLNOT_US         */	IS_SPREL,
+	/* X_BOOLNOT_UAR        */	0,
+	/* X_BOOLNOT_UAY        */	0,
 
 	// i-codes for loading the primary register
 
 	/* I_LD_WI              */	0,
-	/* X_LD_UIQ             */	0,
+	/* X_LD_UIQ             */	IS_SHORT,
 	/* I_LEA_S              */	IS_SPREL,
 
 	/* I_LD_WM              */	0,
-	/* I_LD_BM              */	0,
+	/* I_LD_BM              */	IS_SBYTE,
 	/* I_LD_UM              */	IS_UBYTE,
 
 	/* I_LD_WMQ             */	0,
-	/* I_LD_BMQ             */	0,
+	/* I_LD_BMQ             */	IS_SBYTE,
 	/* I_LD_UMQ             */	IS_UBYTE,
 
 	/* I_LDY_WMQ            */	0,
-	/* I_LDY_BMQ            */	0,
+	/* I_LDY_BMQ            */	IS_SBYTE,
 	/* I_LDY_UMQ            */	IS_UBYTE,
 
 	/* I_LD_WP              */	0,
-	/* I_LD_BP              */	0,
+	/* I_LD_BP              */	IS_SBYTE,
 	/* I_LD_UP              */	IS_UBYTE,
 
 	/* X_LD_WAR             */	0,
-	/* X_LD_BAR             */	0,
+	/* X_LD_BAR             */	IS_SBYTE,
 	/* X_LD_UAR             */	IS_UBYTE,
 
-	/* X_LD_BAY             */	0,
+	/* X_LD_BAY             */	IS_SBYTE,
 	/* X_LD_UAY             */	IS_UBYTE,
 
 	/* X_LD_WS              */	IS_SPREL,
-	/* X_LD_BS              */	IS_SPREL,
-	/* X_LD_US              */	IS_SPREL + IS_UBYTE,
+	/* X_LD_BS              */	IS_SBYTE + IS_SPREL,
+	/* X_LD_US              */	IS_UBYTE + IS_SPREL,
 
 	/* X_LD_WSQ             */	IS_SPREL,
-	/* X_LD_BSQ             */	IS_SPREL,
-	/* X_LD_USQ             */	IS_SPREL + IS_UBYTE,
+	/* X_LD_BSQ             */	IS_SBYTE + IS_SPREL,
+	/* X_LD_USQ             */	IS_UBYTE + IS_SPREL,
 
 	/* X_LDY_WSQ            */	IS_SPREL,
-	/* X_LDY_BSQ            */	IS_SPREL,
-	/* X_LDY_USQ            */	IS_SPREL + IS_UBYTE,
+	/* X_LDY_BSQ            */	IS_SBYTE + IS_SPREL,
+	/* X_LDY_USQ            */	IS_UBYTE + IS_SPREL,
 
 	/* X_LDP_WAR            */	0,
-	/* X_LDP_BAR            */	0,
+	/* X_LDP_BAR            */	IS_SBYTE,
 	/* X_LDP_UAR            */	IS_UBYTE,
 
-	/* X_LDP_BAY            */	0,
+	/* X_LDP_BAY            */	IS_SBYTE,
 	/* X_LDP_UAY            */	IS_UBYTE,
 
 	// i-codes for pre- and post- increment and decrement
 
 	/* X_INCLD_WM           */	0,
-	/* X_INCLD_BM           */	0,
+	/* X_INCLD_BM           */	IS_SBYTE,
 	/* X_INCLD_UM           */	IS_UBYTE,
 
 	/* X_DECLD_WM           */	0,
-	/* X_DECLD_BM           */	0,
+	/* X_DECLD_BM           */	IS_SBYTE,
 	/* X_DECLD_UM           */	IS_UBYTE,
 
 	/* X_LDINC_WM           */	0,
-	/* X_LDINC_BM           */	0,
+	/* X_LDINC_BM           */	IS_SBYTE,
 	/* X_LDINC_UM           */	IS_UBYTE,
 
 	/* X_LDDEC_WM           */	0,
-	/* X_LDDEC_BM           */	0,
+	/* X_LDDEC_BM           */	IS_SBYTE,
 	/* X_LDDEC_UM           */	IS_UBYTE,
 
 	/* X_INC_WMQ            */	0,
 	/* X_INC_UMQ            */	0,
 
 	/* X_DEC_WMQ            */	0,
-	/* X_DEC_UMQ            */	IS_UBYTE,
+	/* X_DEC_UMQ            */	0,
 
 	/* X_INCLD_WS           */	IS_SPREL,
-	/* X_INCLD_BS           */	IS_SPREL,
-	/* X_INCLD_US           */	IS_SPREL + IS_UBYTE,
+	/* X_INCLD_BS           */	IS_SBYTE + IS_SPREL,
+	/* X_INCLD_US           */	IS_UBYTE + IS_SPREL,
 
 	/* X_DECLD_WS           */	IS_SPREL,
-	/* X_DECLD_BS           */	IS_SPREL,
-	/* X_DECLD_US           */	IS_SPREL + IS_UBYTE,
+	/* X_DECLD_BS           */	IS_SBYTE + IS_SPREL,
+	/* X_DECLD_US           */	IS_UBYTE + IS_SPREL,
 
 	/* X_LDINC_WS           */	IS_SPREL,
-	/* X_LDINC_BS           */	IS_SPREL,
-	/* X_LDINC_US           */	IS_SPREL + IS_UBYTE,
+	/* X_LDINC_BS           */	IS_SBYTE + IS_SPREL,
+	/* X_LDINC_US           */	IS_UBYTE + IS_SPREL,
 
 	/* X_LDDEC_WS           */	IS_SPREL,
-	/* X_LDDEC_BS           */	IS_SPREL,
-	/* X_LDDEC_US           */	IS_SPREL + IS_UBYTE,
+	/* X_LDDEC_BS           */	IS_SBYTE + IS_SPREL,
+	/* X_LDDEC_US           */	IS_UBYTE + IS_SPREL,
 
 	/* X_INC_WSQ            */	IS_SPREL,
 	/* X_INC_USQ            */	IS_SPREL,
@@ -239,22 +250,22 @@ unsigned char icode_flags[] = {
 	/* X_DECLD_WAR          */	0,
 	/* X_LDDEC_WAR          */	0,
 
-	/* X_INCLD_BAR          */	0,
+	/* X_INCLD_BAR          */	IS_SBYTE,
 	/* X_INCLD_UAR          */	IS_UBYTE,
-	/* X_LDINC_BAR          */	0,
+	/* X_LDINC_BAR          */	IS_SBYTE,
 	/* X_LDINC_UAR          */	IS_UBYTE,
-	/* X_DECLD_BAR          */	0,
+	/* X_DECLD_BAR          */	IS_SBYTE,
 	/* X_DECLD_UAR          */	IS_UBYTE,
-	/* X_LDDEC_BAR          */	0,
+	/* X_LDDEC_BAR          */	IS_SBYTE,
 	/* X_LDDEC_UAR          */	IS_UBYTE,
 
-	/* X_INCLD_BAY          */	0,
+	/* X_INCLD_BAY          */	IS_SBYTE,
 	/* X_INCLD_UAY          */	IS_UBYTE,
-	/* X_LDINC_BAY          */	0,
+	/* X_LDINC_BAY          */	IS_SBYTE,
 	/* X_LDINC_UAY          */	IS_UBYTE,
-	/* X_DECLD_BAY          */	0,
+	/* X_DECLD_BAY          */	IS_SBYTE,
 	/* X_DECLD_UAY          */	IS_UBYTE,
-	/* X_LDDEC_BAY          */	0,
+	/* X_LDDEC_BAY          */	IS_SBYTE,
 	/* X_LDDEC_UAY          */	IS_UBYTE,
 
 	/* X_INC_WARQ           */	0,
@@ -267,94 +278,94 @@ unsigned char icode_flags[] = {
 
 	// i-codes for saving the primary register
 
-	/* I_ST_WMIQ            */	0,
-	/* I_ST_UMIQ            */	0,
-	/* I_ST_WPI             */	0,
-	/* I_ST_UPI             */	0,
-	/* I_ST_WM              */	0,
-	/* I_ST_UM              */	0,
-	/* I_ST_WP              */	0,
-	/* I_ST_UP              */	0,
-	/* I_ST_WPT             */	0,
-	/* I_ST_UPT             */	0,
-	/* X_ST_WSIQ            */	IS_SPREL,
-	/* X_ST_USIQ            */	IS_SPREL,
-	/* X_ST_WS              */	IS_SPREL,
-	/* X_ST_US              */	IS_SPREL,
+	/* I_ST_WMIQ            */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* I_ST_UMIQ            */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* I_ST_WPI             */	IS_USEPR + IS_STORE,
+	/* I_ST_UPI             */	IS_USEPR + IS_STORE,
+	/* I_ST_WM              */	IS_USEPR + IS_STORE,
+	/* I_ST_UM              */	IS_USEPR + IS_STORE,
+	/* I_ST_WP              */	IS_USEPR + IS_STORE,
+	/* I_ST_UP              */	IS_USEPR + IS_STORE,
+	/* I_ST_WPT             */	IS_USEPR + IS_STORE,
+	/* I_ST_UPT             */	IS_USEPR + IS_STORE,
+	/* X_ST_WSIQ            */	IS_USEPR + IS_STORE + IS_SHORT + IS_SPREL,
+	/* X_ST_USIQ            */	IS_USEPR + IS_STORE + IS_SHORT + IS_SPREL,
+	/* X_ST_WS              */	IS_USEPR + IS_STORE + IS_SPREL,
+	/* X_ST_US              */	IS_USEPR + IS_STORE + IS_SPREL,
 
-	/* X_INDEX_WR           */	0,
-	/* X_INDEX_UR           */	0,
+	/* X_INDEX_WR           */	IS_USEPR,
+	/* X_INDEX_UR           */	IS_USEPR,
 
-	/* X_ST_WAT             */	0,
-	/* X_ST_UAT             */	0,
+	/* X_ST_WAT             */	IS_USEPR + IS_STORE,
+	/* X_ST_UAT             */	IS_USEPR + IS_STORE,
 
 	// i-codes for extending the primary register
 
-	/* I_EXT_BR             */	0,
-	/* I_EXT_UR             */	0,
+	/* I_EXT_BR             */	IS_USEPR,
+	/* I_EXT_UR             */	IS_USEPR,
 
 	// i-codes for math with the primary register
 
-	/* I_COM_WR             */	0,
-	/* I_NEG_WR             */	0,
+	/* I_COM_WR             */	IS_USEPR,
+	/* I_NEG_WR             */	IS_USEPR,
 
-	/* I_ADD_WT             */	0,
-	/* I_ADD_WI             */	0,
-	/* I_ADD_WM             */	0,
-	/* I_ADD_UM             */	0,
-	/* X_ADD_WS             */	IS_SPREL,
-	/* X_ADD_US             */	IS_SPREL,
+	/* I_ADD_WT             */	IS_USEPR,
+	/* I_ADD_WI             */	IS_USEPR,
+	/* I_ADD_WM             */	IS_USEPR,
+	/* I_ADD_UM             */	IS_USEPR,
+	/* X_ADD_WS             */	IS_USEPR + IS_SPREL,
+	/* X_ADD_US             */	IS_USEPR + IS_SPREL,
 
-	/* I_SUB_WT             */	0,
-	/* I_SUB_WI             */	0,
-	/* I_SUB_WM             */	0,
-	/* I_SUB_UM             */	0,
+	/* I_SUB_WT             */	IS_USEPR,
+	/* I_SUB_WI             */	IS_USEPR,
+	/* I_SUB_WM             */	IS_USEPR,
+	/* I_SUB_UM             */	IS_USEPR,
 
-	/* I_ISUB_WI            */	0,
+	/* I_ISUB_WI            */	IS_USEPR,
 
-	/* I_AND_WT             */	0,
-	/* I_AND_WI             */	0,
-	/* I_AND_UIQ            */	IS_UBYTE,
-	/* I_AND_WM             */	0,
-	/* I_AND_UM             */	0,
+	/* I_AND_WT             */	IS_USEPR,
+	/* I_AND_WI             */	IS_USEPR,
+	/* I_AND_UIQ            */	IS_USEPR + IS_UBYTE,
+	/* I_AND_WM             */	IS_USEPR,
+	/* I_AND_UM             */	IS_USEPR,
 
-	/* I_EOR_WT             */	0,
-	/* I_EOR_WI             */	0,
-	/* I_EOR_WM             */	0,
-	/* I_EOR_UM             */	0,
+	/* I_EOR_WT             */	IS_USEPR,
+	/* I_EOR_WI             */	IS_USEPR,
+	/* I_EOR_WM             */	IS_USEPR,
+	/* I_EOR_UM             */	IS_USEPR,
 
-	/* I_OR_WT              */	0,
-	/* I_OR_WI              */	0,
-	/* I_OR_WM              */	0,
-	/* I_OR_UM              */	0,
+	/* I_OR_WT              */	IS_USEPR,
+	/* I_OR_WI              */	IS_USEPR,
+	/* I_OR_WM              */	IS_USEPR,
+	/* I_OR_UM              */	IS_USEPR,
 
-	/* I_ASL_WT             */	0,
-	/* I_ASL_WI             */	0,
-	/* I_ASL_WR             */	0,
+	/* I_ASL_WT             */	IS_USEPR,
+	/* I_ASL_WI             */	IS_USEPR,
+	/* I_ASL_WR             */	IS_USEPR,
 
-	/* I_ASR_WT             */	0,
-	/* I_ASR_WI             */	0,
+	/* I_ASR_WT             */	IS_USEPR,
+	/* I_ASR_WI             */	IS_USEPR,
 
-	/* I_LSR_WT             */	0,
-	/* I_LSR_WI             */	0,
-	/* I_LSR_UIQ            */	IS_UBYTE,
+	/* I_LSR_WT             */	IS_USEPR,
+	/* I_LSR_WI             */	IS_USEPR,
+	/* I_LSR_UIQ            */	IS_USEPR + IS_UBYTE + IS_SHORT,
 
-	/* I_MUL_WT             */	0,
-	/* I_MUL_WI             */	0,
+	/* I_MUL_WT             */	IS_USEPR,
+	/* I_MUL_WI             */	IS_USEPR,
 
-	/* I_SDIV_WT            */	0,
-	/* I_SDIV_WI            */	0,
+	/* I_SDIV_WT            */	IS_USEPR,
+	/* I_SDIV_WI            */	IS_USEPR,
 
-	/* I_UDIV_WT            */	0,
-	/* I_UDIV_WI            */	0,
-	/* I_UDIV_UI            */	IS_UBYTE,
+	/* I_UDIV_WT            */	IS_USEPR,
+	/* I_UDIV_WI            */	IS_USEPR,
+	/* I_UDIV_UI            */	IS_USEPR + IS_UBYTE,
 
-	/* I_SMOD_WT            */	0,
-	/* I_SMOD_WI            */	0,
+	/* I_SMOD_WT            */	IS_USEPR,
+	/* I_SMOD_WI            */	IS_USEPR,
 
-	/* I_UMOD_WT            */	0,
-	/* I_UMOD_WI            */	0,
-	/* I_UMOD_UI            */	IS_UBYTE,
+	/* I_UMOD_WT            */	IS_USEPR,
+	/* I_UMOD_WI            */	IS_USEPR,
+	/* I_UMOD_UI            */	IS_USEPR + IS_UBYTE,
 
 	/* I_DOUBLE             */	0,
 
@@ -436,6 +447,16 @@ inline bool is_sprel (INS *i)
 inline bool is_ubyte (INS *i)
 {
 	return (icode_flags[i->ins_code] & IS_UBYTE);
+}
+
+inline bool is_sbyte (INS *i)
+{
+	return (icode_flags[i->ins_code] & IS_SBYTE);
+}
+
+inline bool is_usepr (INS *i)
+{
+	return (icode_flags[i->ins_code] & IS_USEPR);
 }
 
 inline bool is_small_array (SYMBOL *sym)
@@ -1253,40 +1274,31 @@ lv1_loop:
 
 		if (q_nb >= 4) {
 			/*
-			 *  __not.wr			-->	__tst.wr
-			 *  __bool				__bool
-			 *  __not.wr
-			 *  __bool
+			 *  is_ubyte()			-->	is_ubyte()
+			 *  __push.wr				__cmp.umq	type, symbol
+			 *  __ld.um		symbol
+			 *  __cmp.wt		type
 			 *
-			 *  Merge two consecutive I_NOT_WR into an I_TST_WR
-			 *  with a boolean result.
+			 *  is_ubyte()			-->	is_ubyte()
+			 *  __push.wr				__cmp.usq	type, (n - 2)
+			 *  __ld.us		n
+			 *  __cmp.wt		type
 			 */
 			if
-			((p[0]->ins_code == I_BOOLEAN) &&
-			 (p[1]->ins_code == I_NOT_WR) &&
-			 (p[2]->ins_code == I_BOOLEAN) &&
-			 (p[3]->ins_code == I_NOT_WR)
+			((p[0]->ins_code == I_CMP_WT) &&
+			 (p[1]->ins_code == I_LD_UM ||
+			  p[1]->ins_code == X_LD_US) &&
+			 (p[2]->ins_code == I_PUSH_WR) &&
+			 (is_ubyte(p[3]))
 			) {
-				p[3]->ins_code = I_TST_WR;
-				nb = 2;
-			}
-
-			/*
-			 *  __tst.wr			-->	__not.wr
-			 *  __bool				__bool
-			 *  __not.wr
-			 *  __bool
-			 *
-			 *  Unlikely, but possible if someone is writing a crazy
-			 *  string of "!" commands.
-			 */
-			else if
-			((p[0]->ins_code == I_BOOLEAN) &&
-			 (p[1]->ins_code == I_NOT_WR) &&
-			 (p[2]->ins_code == I_BOOLEAN) &&
-			 (p[3]->ins_code == I_TST_WR)
-			) {
-				p[3]->ins_code = I_NOT_WR;
+				/* replace code */
+				*p[2] = *p[1];
+				switch (p[1]->ins_code) {
+				case I_LD_UM: p[2]->ins_code = X_CMP_UMQ; break;
+				case X_LD_US: p[2]->ins_code = X_CMP_USQ; p[2]->ins_data -= 2; break;
+				default:	break;
+				}
+				p[2]->cmp_type = compare2uchar[p[0]->cmp_type];
 				nb = 2;
 			}
 
@@ -1322,7 +1334,8 @@ lv1_loop:
 			 *  __btrue
 			 *
 			 *  Remove redundant __tst.wr from compound conditionals
-			 *  that the compiler generates.
+			 *  that the compiler always generates with back-to-back
+			 *  "&&" or "||" sub-expressions.
 			 */
 			else if
 			((p[0]->ins_code == I_BFALSE ||
@@ -1379,6 +1392,225 @@ lv1_loop:
 
 		if (q_nb >= 3) {
 			/*
+			 *  __push.wr			-->	__not.wr
+			 *  __ld.wi		0
+			 *  __cmp.wt		equ_w
+			 *
+			 *  __push.wr			-->	__tst.wr
+			 *  __ld.wi		0
+			 *  __cmp.wt		neq_w
+			 *
+			 *  Check for this before converting to __cmp.wi!
+			 */
+			if
+			((p[0]->ins_code == I_CMP_WT) &&
+			 (p[0]->cmp_type == CMP_EQU ||
+			  p[0]->cmp_type == CMP_NEQ) &&
+			 (p[1]->ins_code == I_LD_WI) &&
+			 (p[1]->ins_type == T_VALUE) &&
+			 (p[1]->ins_data == 0) &&
+			 (p[2]->ins_code == I_PUSH_WR)
+			) {
+				/* replace code */
+				p[2]->ins_code = (p[0]->cmp_type == CMP_EQU) ? I_NOT_WR : I_TST_WR;
+				p[2]->ins_type = 0;
+				p[2]->ins_data = 0;
+				nb = 2;
+			}
+
+			/*
+			 *  __push.wr			-->	__cmp.wi	type, i
+			 *  __ld.wi		i
+			 *  __cmp.wt		type
+			 *
+			 *  __push.wr			-->	__cmp.wm	type, symbol
+			 *  __ld.wm		symbol
+			 *  __cmp.wt		type
+			 *
+			 *  __push.wr			-->	__cmp.ws	type, (n - 2)
+			 *  __ld.ws		n
+			 *  __cmp.wt		type
+			 */
+			else if
+			((p[0]->ins_code == I_CMP_WT) &&
+			 (p[1]->ins_code == I_LD_WI ||
+			  p[1]->ins_code == I_LD_WM ||
+			  p[1]->ins_code == X_LD_WS) &&
+			 (p[2]->ins_code == I_PUSH_WR)
+			) {
+				/* replace code */
+				*p[2] = *p[1];
+				switch (p[1]->ins_code) {
+				case I_LD_WI: p[2]->ins_code = X_CMP_WI; break;
+				case I_LD_WM: p[2]->ins_code = X_CMP_WM; break;
+				case X_LD_WS: p[2]->ins_code = X_CMP_WS; p[2]->ins_data -= 2; break;
+				default:	break;
+				}
+				p[2]->cmp_type = p[0]->cmp_type;
+				nb = 2;
+			}
+
+			/*
+			 *  __cmp.wt			-->	__cmp.wt
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __cmp.wi			-->	__cmp.wi
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __cmp.wm			-->	__cmp.wm
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __cmp.ws			-->	__cmp.ws
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __cmp.uiq			-->	__cmp.uiq
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __cmp.umq			-->	__cmp.umq
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __cmp.usq			-->	__cmp.usq
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  N.B. This inverts the test condition of the __cmp.wt!
+			 */
+			else if
+			(
+			 (p[0]->ins_code == I_NOT_WR) &&
+			 (p[1]->ins_code == I_BOOLEAN) &&
+			 (p[2]->ins_code == I_CMP_WT ||
+			  p[2]->ins_code == X_CMP_WI ||
+			  p[2]->ins_code == X_CMP_WM ||
+			  p[2]->ins_code == X_CMP_WS ||
+			  p[2]->ins_code == X_CMP_UIQ ||
+			  p[2]->ins_code == X_CMP_UMQ ||
+			  p[2]->ins_code == X_CMP_USQ)
+			) {
+				p[2]->cmp_type = compare2not[p[2]->cmp_type];
+				nb = 2;
+			}
+
+			/*
+			 *  __not.wr			-->	__tst.wr
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __not.{w/u}p		-->	__tst.{w/u}p
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __not.{w/u}m	symbol	-->	__tst.{w/u}m	symbol
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __not.{w/u}s	n	-->	__tst.{w/u}s	n
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __not.{w/u}ar	symbol	-->	__tst.{w/u}ar	symbol
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __not.uay		symbol	-->	__tst.uay	symbol
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __nand.wi		i	-->	__tand.wi	i
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __tst.wr			-->	__not.wr
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __tst.{w/u}p		-->	__not.{w/u}p
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __tst.{w/u}m	symbol	-->	__not.{w/u}m	symbol
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __tst.{w/u}s	n	-->	__not.{w/u}s	n
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __tst.{w/u}ar	symbol	-->	__not.{w/u}ar	symbol
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __tst.uay		symbol	-->	__not.uay	symbol
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __tand.wi		i	-->	__nand.wi	i
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  N.B. This inverts the test condition of the __tst.* or __not.*
+			 */
+			else if
+			((p[0]->ins_code == I_NOT_WR) &&
+			 (p[1]->ins_code == I_BOOLEAN) &&
+			 (p[2]->ins_code == I_NOT_WR ||
+			  p[2]->ins_code == X_NOT_WP ||
+			  p[2]->ins_code == X_NOT_WM ||
+			  p[2]->ins_code == X_NOT_WS ||
+			  p[2]->ins_code == X_NOT_WAR ||
+			  p[2]->ins_code == X_NOT_UP ||
+			  p[2]->ins_code == X_NOT_UM ||
+			  p[2]->ins_code == X_NOT_US ||
+			  p[2]->ins_code == X_NOT_UAR ||
+			  p[2]->ins_code == X_NOT_UAY ||
+			  p[2]->ins_code == X_NAND_WI ||
+			  p[2]->ins_code == I_TST_WR ||
+			  p[2]->ins_code == X_TST_WP ||
+			  p[2]->ins_code == X_TST_WM ||
+			  p[2]->ins_code == X_TST_WS ||
+			  p[2]->ins_code == X_TST_WAR ||
+			  p[2]->ins_code == X_TST_UP ||
+			  p[2]->ins_code == X_TST_UM ||
+			  p[2]->ins_code == X_TST_US ||
+			  p[2]->ins_code == X_TST_UAR ||
+			  p[2]->ins_code == X_TST_UAY ||
+			  p[2]->ins_code == X_TAND_WI)
+			) {
+				switch (p[2]->ins_code) {
+				case I_NOT_WR:   p[2]->ins_code = I_TST_WR; break;
+				case X_NOT_WP:   p[2]->ins_code = X_TST_WP; break;
+				case X_NOT_WM:   p[2]->ins_code = X_TST_WM; break;
+				case X_NOT_WS:   p[2]->ins_code = X_TST_WS; break;
+				case X_NOT_WAR:  p[2]->ins_code = X_TST_WAR; break;
+				case X_NOT_UP:   p[2]->ins_code = X_TST_UP; break;
+				case X_NOT_UM:   p[2]->ins_code = X_TST_UM; break;
+				case X_NOT_US:   p[2]->ins_code = X_TST_US; break;
+				case X_NOT_UAR:  p[2]->ins_code = X_TST_UAR; break;
+				case X_NOT_UAY:  p[2]->ins_code = X_TST_UAY; break;
+				case X_NAND_WI:  p[2]->ins_code = X_TAND_WI; break;
+				case I_TST_WR:   p[2]->ins_code = I_NOT_WR; break;
+				case X_TST_WP:   p[2]->ins_code = X_NOT_WP; break;
+				case X_TST_WM:   p[2]->ins_code = X_NOT_WM; break;
+				case X_TST_WS:   p[2]->ins_code = X_NOT_WS; break;
+				case X_TST_WAR:  p[2]->ins_code = X_NOT_WAR; break;
+				case X_TST_UP:   p[2]->ins_code = X_NOT_UP; break;
+				case X_TST_UM:   p[2]->ins_code = X_NOT_UM; break;
+				case X_TST_US:   p[2]->ins_code = X_NOT_US; break;
+				case X_TST_UAR:  p[2]->ins_code = X_NOT_UAR; break;
+				case X_TST_UAY:  p[2]->ins_code = X_NOT_UAY; break;
+				case X_TAND_WI:  p[2]->ins_code = X_NAND_WI; break;
+				default: abort();
+				}
+				nb = 2;
+			}
+
+			/*
 			 *  __cmp.wt			-->	__cmp.wt
 			 *  __bool
 			 *  __tst.wr
@@ -1411,16 +1643,63 @@ lv1_loop:
 			 *  __bool
 			 *  __tst.wr
 			 *
-			 *  Remove redundant __tst.wr in compound conditionals
-			 *  that the compiler generates.
+			 *  __not.{w/u}p		-->	__not.{w/u}p
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __not.{w/u}m	symbol	-->	__not.{w/u}m	symbol
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __not.{w/u}s	n	-->	__not.{w/u}s	n
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __not.{w/u}ar	symbol	-->	__not.{w/u}ar	symbol
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __not.uay		symbol	-->	__not.uay	symbol
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __nand.wi		i	-->	__nand.wi	i
+			 *  __bool
+			 *  __tst.wr
 			 *
 			 *  __tst.wr			-->	__tst.wr
 			 *  __bool
 			 *  __tst.wr
 			 *
-			 *  This can happen when two I_NOT_WR are merged.
+			 *  __tst.{w/u}p		-->	__tst.{w/u}p
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __tst.{w/u}m	symbol	-->	__tst.{w/u}m	symbol
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __tst.{w/u}s	n	-->	__tst.{w/u}s	n
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __tst.{w/u}ar	symbol	-->	__tst.{w/u}ar	symbol
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __tst.uay		symbol	-->	__tst.uay	symbol
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __tand.wi		i	-->	__tand.wi	i
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  Remove redundant __tst.wr in compound conditionals
+			 *  that the compiler often generates in testjump() or
+			 *  at the end of an "&&" or "||".
 			 */
-			if
+			else if
 			((p[0]->ins_code == I_TST_WR) &&
 			 (p[1]->ins_code == I_BOOLEAN) &&
 			 (p[2]->ins_code == I_CMP_WT ||
@@ -1431,49 +1710,28 @@ lv1_loop:
 			  p[2]->ins_code == X_CMP_UMQ ||
 			  p[2]->ins_code == X_CMP_USQ ||
 			  p[2]->ins_code == I_NOT_WR ||
-			  p[2]->ins_code == I_TST_WR)
+			  p[2]->ins_code == X_NOT_WP ||
+			  p[2]->ins_code == X_NOT_WM ||
+			  p[2]->ins_code == X_NOT_WS ||
+			  p[2]->ins_code == X_NOT_WAR ||
+			  p[2]->ins_code == X_NOT_UP ||
+			  p[2]->ins_code == X_NOT_UM ||
+			  p[2]->ins_code == X_NOT_US ||
+			  p[2]->ins_code == X_NOT_UAR ||
+			  p[2]->ins_code == X_NOT_UAY ||
+			  p[2]->ins_code == X_NAND_WI ||
+			  p[2]->ins_code == I_TST_WR ||
+			  p[2]->ins_code == X_TST_WP ||
+			  p[2]->ins_code == X_TST_WM ||
+			  p[2]->ins_code == X_TST_WS ||
+			  p[2]->ins_code == X_TST_WAR ||
+			  p[2]->ins_code == X_TST_UP ||
+			  p[2]->ins_code == X_TST_UM ||
+			  p[2]->ins_code == X_TST_US ||
+			  p[2]->ins_code == X_TST_UAR ||
+			  p[2]->ins_code == X_TST_UAY ||
+			  p[2]->ins_code == X_TAND_WI)
 			) {
-				nb = 2;
-			}
-
-			/*
-			 *  __cmp.wi			-->	__cmp.wi
-			 *  __bool
-			 *  __not.wr
-			 *
-			 *  __cmp.wm			-->	__cmp.wm
-			 *  __bool
-			 *  __not.wr
-			 *
-			 *  __cmp.ws			-->	__cmp.ws
-			 *  __bool
-			 *  __not.wr
-			 *
-			 *  __cmp.uiq			-->	__cmp.uiq
-			 *  __bool
-			 *  __not.wr
-			 *
-			 *  __cmp.umq			-->	__cmp.umq
-			 *  __bool
-			 *  __not.wr
-			 *
-			 *  __cmp.usq			-->	__cmp.usq
-			 *  __bool
-			 *  __not.wr
-			 *
-			 *  N.B. This inverts the test condition of the __cmp.wi!
-			 */
-			else if
-			((p[0]->ins_code == I_NOT_WR) &&
-			 (p[1]->ins_code == I_BOOLEAN) &&
-			 (p[2]->ins_code == X_CMP_WI ||
-			  p[2]->ins_code == X_CMP_WM ||
-			  p[2]->ins_code == X_CMP_WS ||
-			  p[2]->ins_code == X_CMP_UIQ ||
-			  p[2]->ins_code == X_CMP_UMQ ||
-			  p[2]->ins_code == X_CMP_USQ)
-			) {
-				p[2]->cmp_type = compare2not[p[2]->cmp_type];
 				nb = 2;
 			}
 
@@ -1493,6 +1751,133 @@ lv1_loop:
 
 		if (q_nb >= 2) {
 			/*
+			 *  __ld.{w/b/u}p		-->	__tst.{w/u}p
+			 *  __tst.wr
+			 *
+			 *  __ld.{w/b/u}m	symbol	-->	__tst.{w/u}m	symbol
+			 *  __tst.wr
+			 *
+			 *  __ld.{w/b/u}s	n	-->	__tst.{w/u}s	n
+			 *  __tst.wr
+			 *
+			 *  __ld.{w/b/u}ar	symbol	-->	__tst.{w/u}ar	symbol
+			 *  __tst.wr
+			 *
+			 *  __ld.{b/u}ay	symbol	-->	__tst.uay	symbol
+			 *  __tst.wr
+			 *
+			 *  __and.{w/u}i	i	-->	__tand.wi	i
+			 *  __tst.wr
+			 *
+			 *  __ld.{w/b/u}p		-->	__not.{w/u}p
+			 *  __not.wr
+			 *
+			 *  __ld.{w/b/u}m	symbol	-->	__not.{w/u}m	symbol
+			 *  __not.wr
+			 *
+			 *  __ld.{w/b/u}s	n	-->	__not.{w/u}s	n
+			 *  __not.wr
+			 *
+			 *  __ld.{w/b/u}ar	symbol	-->	__not.{w/u}ar	symbol
+			 *  __not.wr
+			 *
+			 *  __ld.{b/u}ay	symbol	-->	__not.uay	symbol
+			 *  __not.wr
+			 *
+			 *  __and.{w/u}i	i	-->	__nand.wi	i
+			 *  __not.wr
+			 */
+			if
+			(
+			 (p[0]->ins_code == I_TST_WR ||
+			  p[0]->ins_code == I_NOT_WR) &&
+			 (p[1]->ins_code == I_LD_WP ||
+			  p[1]->ins_code == I_LD_WM ||
+			  p[1]->ins_code == X_LD_WS ||
+			  p[1]->ins_code == X_LD_WAR ||
+			  p[1]->ins_code == I_LD_BP ||
+			  p[1]->ins_code == I_LD_BM ||
+			  p[1]->ins_code == X_LD_BS ||
+			  p[1]->ins_code == X_LD_BAR ||
+			  p[1]->ins_code == X_LD_BAY ||
+			  p[1]->ins_code == I_LD_UP ||
+			  p[1]->ins_code == I_LD_UM ||
+			  p[1]->ins_code == X_LD_US ||
+			  p[1]->ins_code == X_LD_UAR ||
+			  p[1]->ins_code == X_LD_UAY ||
+			  p[1]->ins_code == I_AND_WI ||
+			  p[1]->ins_code == I_AND_UIQ)
+			) {
+				/* remove code */
+				if (p[0]->ins_code == I_TST_WR) {
+					switch (p[1]->ins_code) {
+					case I_LD_WP:  p[1]->ins_code = X_TST_WP; break;
+					case I_LD_WM:  p[1]->ins_code = X_TST_WM; break;
+					case X_LD_WS:  p[1]->ins_code = X_TST_WS; break;
+					case X_LD_WAR: p[1]->ins_code = X_TST_WAR; break;
+					case I_LD_BP:
+					case I_LD_UP:  p[1]->ins_code = X_TST_UP; break;
+					case I_LD_BM:
+					case I_LD_UM:  p[1]->ins_code = X_TST_UM; break;
+					case X_LD_BS:
+					case X_LD_US:  p[1]->ins_code = X_TST_US; break;
+					case X_LD_BAR:
+					case X_LD_UAR: p[1]->ins_code = X_TST_UAR; break;
+					case X_LD_BAY:
+					case X_LD_UAY: p[1]->ins_code = X_TST_UAY; break;
+					case I_AND_UIQ:
+					case I_AND_WI: p[1]->ins_code = X_TAND_WI; break;
+					default: abort();
+					}
+				} else {
+					switch (p[1]->ins_code) {
+					case I_LD_WP:  p[1]->ins_code = X_NOT_WP; break;
+					case I_LD_WM:  p[1]->ins_code = X_NOT_WM; break;
+					case X_LD_WS:  p[1]->ins_code = X_NOT_WS; break;
+					case X_LD_WAR: p[1]->ins_code = X_NOT_WAR; break;
+					case I_LD_BP:
+					case I_LD_UP:  p[1]->ins_code = X_NOT_UP; break;
+					case I_LD_BM:
+					case I_LD_UM:  p[1]->ins_code = X_NOT_UM; break;
+					case X_LD_BS:
+					case X_LD_US:  p[1]->ins_code = X_NOT_US; break;
+					case X_LD_BAR:
+					case X_LD_UAR: p[1]->ins_code = X_NOT_UAR; break;
+					case X_LD_BAY:
+					case X_LD_UAY: p[1]->ins_code = X_NOT_UAY; break;
+					case I_AND_UIQ:
+					case I_AND_WI: p[1]->ins_code = X_NAND_WI; break;
+					default: abort();
+					}
+				}
+				nb = 1;
+			}
+
+			/*
+			 *  __ld.u{p/m/s/ar/ay}	symbol	-->	__ld.u{p/m/s/ar/ay}  symbol
+			 *  __cmp_w.wi		j		__cmp_b.uiq	j
+			 *
+			 *  __and.uiq		i	-->	__and.uiq	i
+			 *  __cmp_w.wi		j		__cmp_b.uiq	j
+			 *
+			 *  C promotes an unsigned char to a signed int so this
+			 *  must be done in the peephole, not the compiler.
+			 */
+			else if
+			((p[0]->ins_code == X_CMP_WI) &&
+			 (p[0]->ins_type == T_VALUE) &&
+			 (p[0]->ins_data >= 0) &&
+			 (p[0]->ins_data <= 255) &&
+			 (is_ubyte(p[1]))
+			) {
+				/* replace code */
+				p[0]->ins_code = X_CMP_UIQ;
+				p[0]->cmp_type = compare2uchar[p[0]->cmp_type];
+				/* no instructions removed, just loop */
+				goto lv1_loop;
+			}
+
+			/*
 			 *  __bool			-->	LLnn:
 			 *  LLnn:				__bool
 			 *
@@ -1501,7 +1886,7 @@ lv1_loop:
 			 *
 			 *  N.B. This optimization should be done before the X_TST_WM optimization!
 			 */
-			if
+			else if
 			((p[0]->ins_code == I_LABEL) &&
 			 (p[1]->ins_code == I_BOOLEAN)
 			) {
@@ -1573,72 +1958,6 @@ lv1_loop:
 				nb = 1;
 			}
 
-			/* flush queue */
-			if (nb) {
-				q_wr -= nb;
-				q_nb -= nb;
-				nb = 0;
-
-				if (q_wr < 0)
-					q_wr += Q_SIZE;
-
-				/* loop */
-				goto lv1_loop;
-			}
-		}
-
-		/* ********************************************************* */
-		/* 6-instruction patterns */
-		/* ********************************************************* */
-
-		if (q_nb >= 6) {
-			/*
-			 *  __ld.wi		p	-->	__ld.wm		p
-			 *  __push.wr				__add.wi	i
-			 *  __st.wm		__ptr		__st.wm		p
-			 *  __ld.wp		__ptr
-			 *  __add.wi		i
-			 *  __st.wpt
-			 *
-			 *  JCB: Isn't this already handled by other rules?
-			 */
-			if
-			((p[0]->ins_code == I_ST_WPT) &&
-			 (p[1]->ins_code == I_ADD_WI ||
-			  p[1]->ins_code == I_SUB_WI) &&
-			 (p[2]->ins_code == I_LD_WP) &&
-			 (p[2]->ins_type == T_PTR) &&
-			 (p[3]->ins_code == I_ST_WM) &&
-			 (p[3]->ins_type == T_PTR) &&
-			 (p[4]->ins_code == I_PUSH_WR) &&
-			 (p[5]->ins_code == I_LD_WI)
-			) {
-				*p[3] = *p[5];
-				p[3]->ins_code = I_ST_WM;
-				*p[4] = *p[1];
-				p[5]->ins_code = I_LD_WM;
-				nb = 3;
-			}
-
-			/* flush queue */
-			if (nb) {
-				q_wr -= nb;
-				q_nb -= nb;
-				nb = 0;
-
-				if (q_wr < 0)
-					q_wr += Q_SIZE;
-
-				/* loop */
-				goto lv1_loop;
-			}
-		}
-
-		/* ********************************************************* */
-		/* 5-instruction patterns */
-		/* ********************************************************* */
-
-		if (q_nb >= 5) {
 			/* flush queue */
 			if (nb) {
 				q_wr -= nb;
@@ -1772,35 +2091,6 @@ lv1_loop:
 				nb = 3;
 			}
 #endif
-
-			/*
-			 *  is_ubyte()			-->	is_ubyte()
-			 *  __push.wr				__cmp.umq	type, symbol
-			 *  __ld.um		symbol
-			 *  __cmp.wt		type
-			 *
-			 *  is_ubyte()			-->	is_ubyte()
-			 *  __push.wr				__cmp.usq	type, (n - 2)
-			 *  __ld.us		n
-			 *  __cmp.wt		type
-			 */
-			else if
-			((p[0]->ins_code == I_CMP_WT) &&
-			 (p[1]->ins_code == I_LD_UM ||
-			  p[1]->ins_code == X_LD_US) &&
-			 (p[2]->ins_code == I_PUSH_WR) &&
-			 (is_ubyte(p[3]))
-			) {
-				/* replace code */
-				*p[2] = *p[1];
-				switch (p[1]->ins_code) {
-				case I_LD_UM: p[2]->ins_code = X_CMP_UMQ; break;
-				case X_LD_US: p[2]->ins_code = X_CMP_USQ; p[2]->ins_data -= 2; break;
-				default:	break;
-				}
-				p[2]->cmp_type = compare2uchar[p[0]->cmp_type];
-				nb = 2;
-			}
 
 			/* flush queue */
 			if (nb) {
@@ -1986,65 +2276,6 @@ lv1_loop:
 			}
 
 			/*
-			 *  __push.wr			-->	__not.wr
-			 *  __ld.wi		0
-			 *  __cmp.wt		equ_w
-			 *
-			 *  __push.wr			-->	__tst.wr
-			 *  __ld.wi		0
-			 *  __cmp.wt		neq_w
-			 *
-			 *  Check for this before converting to X_CMP_WI!
-			 */
-			else if
-			((p[0]->ins_code == I_CMP_WT) &&
-			 (p[0]->cmp_type == CMP_EQU ||
-			  p[0]->cmp_type == CMP_NEQ) &&
-			 (p[1]->ins_code == I_LD_WI) &&
-			 (p[1]->ins_type == T_VALUE) &&
-			 (p[1]->ins_data == 0) &&
-			 (p[2]->ins_code == I_PUSH_WR)
-			) {
-				/* replace code */
-				p[2]->ins_code = (p[0]->cmp_type == CMP_EQU) ? I_NOT_WR : I_TST_WR;
-				p[2]->ins_type = 0;
-				p[2]->ins_data = 0;
-				nb = 2;
-			}
-
-			/*
-			 *  __push.wr			-->	__cmp.wi	type, i
-			 *  __ld.wi		i
-			 *  __cmp.wt		type
-			 *
-			 *  __push.wr			-->	__cmp.wm	type, symbol
-			 *  __ld.wm		symbol
-			 *  __cmp.wt		type
-			 *
-			 *  __push.wr			-->	__cmp.ws	type, (n - 2)
-			 *  __ld.ws		n
-			 *  __cmp.wt		type
-			 */
-			else if
-			((p[0]->ins_code == I_CMP_WT) &&
-			 (p[1]->ins_code == I_LD_WI ||
-			  p[1]->ins_code == I_LD_WM ||
-			  p[1]->ins_code == X_LD_WS) &&
-			 (p[2]->ins_code == I_PUSH_WR)
-			) {
-				/* replace code */
-				*p[2] = *p[1];
-				switch (p[1]->ins_code) {
-				case I_LD_WI: p[2]->ins_code = X_CMP_WI; break;
-				case I_LD_WM: p[2]->ins_code = X_CMP_WM; break;
-				case X_LD_WS: p[2]->ins_code = X_CMP_WS; p[2]->ins_data -= 2; break;
-				default:	break;
-				}
-				p[2]->cmp_type = p[0]->cmp_type;
-				nb = 2;
-			}
-
-			/*
 			 *  __ld{w/b/u}m	symbol	-->	__incld.{w/b/u}m  symbol
 			 *  __add.wi		1
 			 *  __st.{w/u}m		symbol
@@ -2163,129 +2394,6 @@ lv1_loop:
 				nb = 2;
 			}
 
-			/*
-			 *  __ld.{w/b/u}p	symbol	-->	__not.{w/u}p	symbol
-			 *  __tst.wr				not(__tst.wr or __not.wr)
-			 *  not(__bool or __tst.wr or __not.wr)
-			 *
-			 *  __ld.{w/b/u}p	symbol	-->	__tst.{w/u}p	symbol
-			 *  __not.wr				not(__tst.wr or __not.wr)
-			 *  not(__bool or __tst.wr or __not.wr)
-			 *
-			 *  __ld.{w/b/u}m	symbol	-->	__not.{w/u}m	symbol
-			 *  __tst.wr				not(__tst.wr or __not.wr)
-			 *  not(__bool or __tst.wr or __not.wr)
-			 *
-			 *  __ld.{w/b/u}m	symbol	-->	__tst.{w/u}m	symbol
-			 *  __not.wr				not(__tst.wr or __not.wr)
-			 *  not(__bool or __tst.wr or __not.wr)
-			 *
-			 *  __ld.{w/b/u}s	symbol	-->	__not.{w/u}s	symbol
-			 *  __tst.wr				not(__tst.wr or __not.wr)
-			 *  not(__bool or __tst.wr or __not.wr)
-			 *
-			 *  __ld.{w/b/u}s	symbol	-->	__tst.{w/u}s	symbol
-			 *  __not.wr				not(__tst.wr or __not.wr)
-			 *  not(__bool or __tst.wr or __not.wr)
-			 *
-			 *  __ld.{w/b/u}ar	symbol	-->	__not.{w/u}ar	symbol
-			 *  __tst.wr				not(__tst.wr or __not.wr)
-			 *  not(__bool or __tst.wr or __not.wr)
-			 *
-			 *  __ld.{w/b/u}ar	symbol	-->	__tst.{w/u}ar	symbol
-			 *  __not.wr				not(__tst.wr or __not.wr)
-			 *  not(__bool or __tst.wr or __not.wr)
-			 *
-			 *  __ld.{b/u}ay	symbol	-->	__not.uay	symbol
-			 *  __tst.wr				not(__tst.wr or __not.wr)
-			 *  not(__bool or __tst.wr or __not.wr)
-			 *
-			 *  __ld.{b/u}ay	symbol	-->	__tst.uay	symbol
-			 *  __not.wr				not(__tst.wr or __not.wr)
-			 *  not(__bool or __tst.wr or __not.wr)
-			 *
-			 *  __and.{w/u}i	n	-->	__tand.wi	n
-			 *  __tst.wr				not(__tst.wr or __not.wr)
-			 *  not(__bool or __tst.wr or __not.wr)
-			 *
-			 *  __and.{w/u}i	n	-->	__nand.wi	n
-			 *  __not.wr				not(__tst.wr or __not.wr)
-			 *  not(__bool or __tst.wr or __not.wr)
-			 *
-			 *  N.B. This deliberately tests for the i-code after
-			 *  the target I_TST_WR or I_NOT_WR in order to delay
-			 *  the match until after merging the duplicate tests
-			 *  that the code-generator often emits.
-			 */
-			else if
-			((p[0]->ins_code != I_BOOLEAN) &&
-			 (p[0]->ins_code != I_TST_WR) &&
-			 (p[0]->ins_code != I_NOT_WR) &&
-			 (p[1]->ins_code == I_TST_WR ||
-			  p[1]->ins_code == I_NOT_WR) &&
-			 (p[2]->ins_code == I_LD_WP ||
-			  p[2]->ins_code == I_LD_WM ||
-			  p[2]->ins_code == X_LD_WS ||
-			  p[2]->ins_code == X_LD_WAR ||
-			  p[2]->ins_code == I_LD_BP ||
-			  p[2]->ins_code == I_LD_BM ||
-			  p[2]->ins_code == X_LD_BS ||
-			  p[2]->ins_code == X_LD_BAR ||
-			  p[2]->ins_code == X_LD_BAY ||
-			  p[2]->ins_code == I_LD_UP ||
-			  p[2]->ins_code == I_LD_UM ||
-			  p[2]->ins_code == X_LD_US ||
-			  p[2]->ins_code == X_LD_UAR ||
-			  p[2]->ins_code == X_LD_UAY ||
-			  p[2]->ins_code == I_AND_WI ||
-			  p[2]->ins_code == I_AND_UIQ)
-			) {
-				/* remove code */
-				if (p[1]->ins_code == I_TST_WR) {
-					switch (p[2]->ins_code) {
-					case I_LD_WP:  p[2]->ins_code = X_TST_WP; break;
-					case I_LD_WM:  p[2]->ins_code = X_TST_WM; break;
-					case X_LD_WS:  p[2]->ins_code = X_TST_WS; break;
-					case X_LD_WAR: p[2]->ins_code = X_TST_WAR; break;
-					case I_LD_BP:
-					case I_LD_UP:  p[2]->ins_code = X_TST_UP; break;
-					case I_LD_BM:
-					case I_LD_UM:  p[2]->ins_code = X_TST_UM; break;
-					case X_LD_BS:
-					case X_LD_US:  p[2]->ins_code = X_TST_US; break;
-					case X_LD_BAR:
-					case X_LD_UAR: p[2]->ins_code = X_TST_UAR; break;
-					case X_LD_BAY:
-					case X_LD_UAY: p[2]->ins_code = X_TST_UAY; break;
-					case I_AND_UIQ:
-					case I_AND_WI: p[2]->ins_code = X_TAND_WI; break;
-					default: abort();
-					}
-				} else {
-					switch (p[2]->ins_code) {
-					case I_LD_WP:  p[2]->ins_code = X_NOT_WP; break;
-					case I_LD_WM:  p[2]->ins_code = X_NOT_WM; break;
-					case X_LD_WS:  p[2]->ins_code = X_NOT_WS; break;
-					case X_LD_WAR: p[2]->ins_code = X_NOT_WAR; break;
-					case I_LD_BP:
-					case I_LD_UP:  p[2]->ins_code = X_NOT_UP; break;
-					case I_LD_BM:
-					case I_LD_UM:  p[2]->ins_code = X_NOT_UM; break;
-					case X_LD_BS:
-					case X_LD_US:  p[2]->ins_code = X_NOT_US; break;
-					case X_LD_BAR:
-					case X_LD_UAR: p[2]->ins_code = X_NOT_UAR; break;
-					case X_LD_BAY:
-					case X_LD_UAY: p[2]->ins_code = X_NOT_UAY; break;
-					case I_AND_UIQ:
-					case I_AND_WI: p[2]->ins_code = X_NAND_WI; break;
-					default: abort();
-					}
-				}
-				*p[1] = *p[0];
-				nb = 1;
-			}
-
 #if OPT_ARRAY_RD
 			/*
 			 *  __add.wi		array	-->	__ld.{b/u}ar	array
@@ -2342,6 +2450,68 @@ lv1_loop:
 				nb = 2;
 			}
 #endif
+
+			/*
+			 *  __not.wr			-->	__boolnot.wr
+			 *  __bool				is_usepr()
+			 *  is_usepr()
+			 *
+			 *  __not.{w/u}p		-->	__boolnot.{w/u}p
+			 *  __bool				is_usepr()
+			 *  is_usepr()
+			 *
+			 *  __not.{w/u}m	symbol	-->	__boolnot.{w/u}m	symbol
+			 *  __bool				is_usepr()
+			 *  is_usepr()
+			 *
+			 *  __not.{w/u}s	n	-->	__boolnot.{w/u}s	n
+			 *  __bool				is_usepr()
+			 *  is_usepr()
+			 *
+			 *  __not.{w/u}ar	symbol	-->	__boolnot.{w/u}ar	symbol
+			 *  __bool				is_usepr()
+			 *  is_usepr()
+			 *
+			 *  __not.uay		symbol	-->	__boolnot.uay	symbol
+			 *  __bool				is_usepr()
+			 *  is_usepr()
+			 *
+			 *  Optimize "var = !var" which doesn't need to set the flags.
+			 *
+			 *  N.B. This MUST be done after the rule for merging two "!" because
+			 *  I_NOT_WR is included in the is_usepr() test!
+			 */
+			else if
+			((is_usepr(p[0])) &&
+			 (p[1]->ins_code == I_BOOLEAN) &&
+			 (p[2]->ins_code == I_NOT_WR ||
+			  p[2]->ins_code == X_NOT_WP ||
+			  p[2]->ins_code == X_NOT_WM ||
+			  p[2]->ins_code == X_NOT_WS ||
+			  p[2]->ins_code == X_NOT_WAR ||
+			  p[2]->ins_code == X_NOT_UP ||
+			  p[2]->ins_code == X_NOT_UM ||
+			  p[2]->ins_code == X_NOT_US ||
+			  p[2]->ins_code == X_NOT_UAR ||
+			  p[2]->ins_code == X_NOT_UAY)
+			) {
+				/* replace code */
+				*p[1] = *p[0];
+				switch (p[2]->ins_code) {
+				case I_NOT_WR:   p[2]->ins_code = X_BOOLNOT_WR; break;
+				case X_NOT_WP:   p[2]->ins_code = X_BOOLNOT_WP; break;
+				case X_NOT_WM:   p[2]->ins_code = X_BOOLNOT_WM; break;
+				case X_NOT_WS:   p[2]->ins_code = X_BOOLNOT_WS; break;
+				case X_NOT_WAR:  p[2]->ins_code = X_BOOLNOT_WAR; break;
+				case X_NOT_UP:   p[2]->ins_code = X_BOOLNOT_UP; break;
+				case X_NOT_UM:   p[2]->ins_code = X_BOOLNOT_UM; break;
+				case X_NOT_US:   p[2]->ins_code = X_BOOLNOT_US; break;
+				case X_NOT_UAR:  p[2]->ins_code = X_BOOLNOT_UAR; break;
+				case X_NOT_UAY:  p[2]->ins_code = X_BOOLNOT_UAY; break;
+				default: abort();
+				}
+				nb = 1;
+			}
 
 			/* flush queue */
 			if (nb) {
@@ -2921,30 +3091,6 @@ lv1_loop:
 			) {
 				/* replace code */
 				p[0]->ins_code = I_AND_UIQ;
-				/* no instructions removed, just loop */
-				goto lv1_loop;
-			}
-
-			/*
-			 *  __ld.u{p/m/s/ar/ay}	symbol	-->	__ld.u{p/m/s/ar/ay}  symbol
-			 *  __cmp_w.wi		j		__cmp_b.uiq	j
-			 *
-			 *  __and.uiq		i	-->	__and.uiq	i
-			 *  __cmp_w.wi		j		__cmp_b.uiq	j
-			 *
-			 *  C promotes an unsigned char to a signed int so this
-			 *  must be done in the peephole, not the compiler.
-			 */
-			else if
-			((p[0]->ins_code == X_CMP_WI) &&
-			 (p[0]->ins_type == T_VALUE) &&
-			 (p[0]->ins_data >= 0) &&
-			 (p[0]->ins_data <= 255) &&
-			 (is_ubyte(p[1]))
-			) {
-				/* replace code */
-				p[0]->ins_code = X_CMP_UIQ;
-				p[0]->cmp_type = compare2uchar[p[0]->cmp_type];
 				/* no instructions removed, just loop */
 				goto lv1_loop;
 			}

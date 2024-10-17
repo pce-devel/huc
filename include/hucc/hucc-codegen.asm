@@ -1650,7 +1650,17 @@ __tand.wi	.macro
 		.endm
 
 ; **************
-; convert boolean test result C flag into a 16-bit Y:A integer
+; optimized boolean test
+; invert C flag
+
+__not.cf	.macro
+		ror	a
+		eor	#$80
+		rol	a
+		.endm
+
+; **************
+; convert comparison result C flag into a 16-bit Y:A boolean integer
 
 __bool		.macro
 		cla
@@ -1659,13 +1669,132 @@ __bool		.macro
 		.endm
 
 ; **************
-; optimized boolean test
-; invert C flag
+; optimized boolean test used before a store, not a branch
+; Y:A is true (1) if Y:A == 0, else false (0)
 
-__not.cf	.macro
-		ror	a
-		eor	#$80
-		rol	a
+__boolnot.wr	.macro
+		sty	__temp
+		ora	__temp
+		cla
+		bne	!+
+		inc	a
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test used before a store, not a branch
+; Y:A is true (1) if memory-value == 0, else false (0)
+
+__boolnot.wp	.macro
+		ldy	#1
+		lda	[\1], y
+		ora	[\1]
+		cla
+		bne	!+
+		inc	a
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test used before a store, not a branch
+; Y:A is true (1) if memory-value == 0, else false (0)
+
+__boolnot.wm	.macro
+		lda.l	\1
+		ora.h	\1
+		cla
+		bne	!+
+		inc	a
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test used before a store, not a branch
+; Y:A is true (1) if memory-value == 0, else false (0)
+
+__boolnot.ws	.macro	; __STACK
+		lda.l	<__stack + \1, x
+		ora.h	<__stack + \1, x
+		cla
+		bne	!+
+		inc	a
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test used before a store, not a branch
+; Y:A is true (1) if memory-value == 0, else false (0)
+
+__boolnot.war	.macro
+		asl	a
+		tay
+		lda.l	\1, y
+		ora.h	\1, y
+		cla
+		bne	!+
+		inc	a
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test used before a store, not a branch
+; Y:A is true (1) if memory-value == 0, else false (0)
+
+__boolnot.up	.macro
+		lda	[\1]
+		cla
+		bne	!+
+		inc	a
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test used before a store, not a branch
+; Y:A is true (1) if memory-value == 0, else false (0)
+
+__boolnot.um	.macro
+		lda	\1
+		cla
+		bne	!+
+		inc	a
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test used before a store, not a branch
+; Y:A is true (1) if memory-value == 0, else false (0)
+
+__boolnot.us	.macro	; __STACK
+		lda.l	<__stack + \1, x
+		cla
+		bne	!+
+		inc	a
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test used before a store, not a branch
+; Y:A is true (1) if memory-value == 0, else false (0)
+
+__boolnot.uar	.macro
+		tay
+		lda	\1, y
+		cla
+		bne	!+
+		inc	a
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test used before a store, not a branch
+; Y:A is true (1) if memory-value == 0, else false (0)
+
+__boolnot.uay	.macro
+		lda	\1, y
+		cla
+		bne	!+
+		inc	a
+!:		cly
 		.endm
 
 
