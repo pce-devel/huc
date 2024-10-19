@@ -12,8 +12,13 @@ char buf[50];
 static void foo (void)
 {
   int l;
-  // N.B. HuC has a non-standard return value.
+#ifdef __HUCC__
+  // HuCC has a standard return value from mempcpy().
+  if (mempcpy (buf, "abc", 4) != buf + 4) abort ();
+#else
+  // HuC has a non-standard return value from memcpy().
   if (memcpy (buf, "abc", 4) != buf + 4) abort (); /* standard wants : buf */
+#endif
   if (strcmp (buf, "abc")) abort ();
   l = strlen("abcdefgh") + 1;
   memcpy (buf, "abcdefgh", /* strlen ("abcdefgh") + 1 */ l);

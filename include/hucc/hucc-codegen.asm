@@ -1362,9 +1362,9 @@ __uge_b.usq	.macro
 __not.wr	.macro
 		sty	__temp
 		ora	__temp
-		sec
-		beq	!+
 		clc
+		bne	!+
+		sec
 !:
 		.endm
 
@@ -1377,9 +1377,9 @@ __not.wp	.macro
 		ldy	#1
 		lda	[\1], y
 		ora	[\1]
-		sec
-		beq	!+
 		clc
+		bne	!+
+		sec
 !:
 		.endm
 
@@ -1391,9 +1391,9 @@ __not.wp	.macro
 __not.wm	.macro
 		lda.l	\1
 		ora.h	\1
-		sec
-		beq	!+
 		clc
+		bne	!+
+		sec
 !:
 		.endm
 
@@ -1405,9 +1405,9 @@ __not.wm	.macro
 __not.ws	.macro	; __STACK
 		lda.l	<__stack + \1, x
 		ora.h	<__stack + \1, x
-		sec
-		beq	!+
 		clc
+		bne	!+
+		sec
 !:
 		.endm
 
@@ -1421,9 +1421,9 @@ __not.war	.macro
 		tay
 		lda.l	\1, y
 		ora.h	\1, y
-		sec
-		beq	!+
 		clc
+		bne	!+
+		sec
 !:
 		.endm
 
@@ -1434,9 +1434,9 @@ __not.war	.macro
 
 __not.up	.macro
 		lda	[\1]
-		sec
-		beq	!+
 		clc
+		bne	!+
+		sec
 !:
 		.endm
 
@@ -1447,9 +1447,9 @@ __not.up	.macro
 
 __not.um	.macro
 		lda	\1
-		sec
-		beq	!+
 		clc
+		bne	!+
+		sec
 !:
 		.endm
 
@@ -1460,9 +1460,9 @@ __not.um	.macro
 
 __not.us	.macro	; __STACK
 		lda.l	<__stack + \1, x
-		sec
-		beq	!+
 		clc
+		bne	!+
+		sec
 !:
 		.endm
 
@@ -1474,9 +1474,9 @@ __not.us	.macro	; __STACK
 __not.uar	.macro
 		tay
 		lda	\1, y
-		sec
-		beq	!+
 		clc
+		bne	!+
+		sec
 !:
 		.endm
 
@@ -1487,9 +1487,9 @@ __not.uar	.macro
 
 __not.uay	.macro
 		lda	\1, y
-		sec
-		beq	!+
 		clc
+		bne	!+
+		sec
 !:
 		.endm
 
@@ -1501,10 +1501,7 @@ __not.uay	.macro
 __tst.wr	.macro
 		sty	__temp
 		ora	__temp
-		sec
-		bne	!+
-		clc
-!:
+		cmp	#1
 		.endm
 
 ; **************
@@ -1516,10 +1513,7 @@ __tst.wp	.macro
 		ldy	#1
 		lda	[\1], y
 		ora	[\1]
-		sec
-		bne	!+
-		clc
-!:
+		cmp	#1
 		.endm
 
 ; **************
@@ -1530,10 +1524,7 @@ __tst.wp	.macro
 __tst.wm		.macro
 		lda.l	\1
 		ora.h	\1
-		sec
-		bne	!+
-		clc
-!:
+		cmp	#1
 		.endm
 
 ; **************
@@ -1544,10 +1535,7 @@ __tst.wm		.macro
 __tst.ws	.macro	; __STACK
 		lda.l	<__stack + \1, x
 		ora.h	<__stack + \1, x
-		sec
-		bne	!+
-		clc
-!:
+		cmp	#1
 		.endm
 
 ; **************
@@ -1560,10 +1548,7 @@ __tst.war	.macro
 		tay
 		lda.l	\1, y
 		ora.h	\1, y
-		sec
-		bne	!+
-		clc
-!:
+		cmp	#1
 		.endm
 
 ; **************
@@ -1573,10 +1558,7 @@ __tst.war	.macro
 
 __tst.up	.macro
 		lda	[\1]
-		sec
-		bne	!+
-		clc
-!:
+		cmp	#1
 		.endm
 
 ; **************
@@ -1586,10 +1568,7 @@ __tst.up	.macro
 
 __tst.um	.macro
 		lda	\1
-		sec
-		bne	!+
-		clc
-!:
+		cmp	#1
 		.endm
 
 ; **************
@@ -1599,10 +1578,7 @@ __tst.um	.macro
 
 __tst.us	.macro	; __STACK
 		lda.l	<__stack + \1, x
-		sec
-		bne	!+
-		clc
-!:
+		cmp	#1
 		.endm
 
 ; **************
@@ -1613,10 +1589,7 @@ __tst.us	.macro	; __STACK
 __tst.uar	.macro
 		tay
 		lda	\1, y
-		sec
-		bne	!+
-		clc
-!:
+		cmp	#1
 		.endm
 
 ; **************
@@ -1626,10 +1599,7 @@ __tst.uar	.macro
 
 __tst.uay	.macro
 		lda	\1, y
-		sec
-		bne	!+
-		clc
-!:
+		cmp	#1
 		.endm
 
 ; **************
@@ -1663,7 +1633,6 @@ __nand.wi	.macro
 ; this MUST set the C flag for the subsequent branches!
 
 __tand.wi	.macro
-		sec
 	.if	((\1 & $FF00) == 0)
 		and	#\1
 	.else
@@ -1677,19 +1646,155 @@ __tand.wi	.macro
 		and.h	#\1
 	.endif
 	.endif
-		bne	!+
-		clc
-!:
+!:		cmp	#1
 		.endm
 
 ; **************
-; convert boolean test result C flag into a 16-bit Y:A integer
+; optimized boolean test
+; invert C flag
+
+__not.cf	.macro
+		ror	a
+		eor	#$80
+		rol	a
+		.endm
+
+; **************
+; convert comparison result C flag into a 16-bit Y:A boolean integer
 
 __bool		.macro
 		cla
 		rol	a
 		cly
-		cmp	#1		; Only needed for unoptimized code.
+		.endm
+
+; **************
+; optimized boolean test used before a store, not a branch
+; Y:A is true (1) if Y:A == 0, else false (0)
+
+__boolnot.wr	.macro
+		sty	__temp
+		ora	__temp
+		cla
+		bne	!+
+		inc	a
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test used before a store, not a branch
+; Y:A is true (1) if memory-value == 0, else false (0)
+
+__boolnot.wp	.macro
+		ldy	#1
+		lda	[\1], y
+		ora	[\1]
+		cla
+		bne	!+
+		inc	a
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test used before a store, not a branch
+; Y:A is true (1) if memory-value == 0, else false (0)
+
+__boolnot.wm	.macro
+		lda.l	\1
+		ora.h	\1
+		cla
+		bne	!+
+		inc	a
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test used before a store, not a branch
+; Y:A is true (1) if memory-value == 0, else false (0)
+
+__boolnot.ws	.macro	; __STACK
+		lda.l	<__stack + \1, x
+		ora.h	<__stack + \1, x
+		cla
+		bne	!+
+		inc	a
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test used before a store, not a branch
+; Y:A is true (1) if memory-value == 0, else false (0)
+
+__boolnot.war	.macro
+		asl	a
+		tay
+		lda.l	\1, y
+		ora.h	\1, y
+		cla
+		bne	!+
+		inc	a
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test used before a store, not a branch
+; Y:A is true (1) if memory-value == 0, else false (0)
+
+__boolnot.up	.macro
+		lda	[\1]
+		cla
+		bne	!+
+		inc	a
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test used before a store, not a branch
+; Y:A is true (1) if memory-value == 0, else false (0)
+
+__boolnot.um	.macro
+		lda	\1
+		cla
+		bne	!+
+		inc	a
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test used before a store, not a branch
+; Y:A is true (1) if memory-value == 0, else false (0)
+
+__boolnot.us	.macro	; __STACK
+		lda.l	<__stack + \1, x
+		cla
+		bne	!+
+		inc	a
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test used before a store, not a branch
+; Y:A is true (1) if memory-value == 0, else false (0)
+
+__boolnot.uar	.macro
+		tay
+		lda	\1, y
+		cla
+		bne	!+
+		inc	a
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test used before a store, not a branch
+; Y:A is true (1) if memory-value == 0, else false (0)
+
+__boolnot.uay	.macro
+		lda	\1, y
+		cla
+		bne	!+
+		inc	a
+!:		cly
 		.endm
 
 

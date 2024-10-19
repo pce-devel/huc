@@ -102,12 +102,12 @@ extern unsigned int __fastcall __xsafe __farpeekw( void __far *addr<__fbank:__fp
 extern void __fastcall __xsafe __macro vsync( void );
 extern void __fastcall __xsafe __macro vsync( unsigned char count<acc> );
 
-extern void __fastcall __xsafe __macro joy( unsigned char which<acc> );
-extern void __fastcall __xsafe __macro joytrg( unsigned char which<acc> );
+extern unsigned int __fastcall __xsafe __macro joy( unsigned char which<acc> );
+extern unsigned int __fastcall __xsafe __macro joytrg( unsigned char which<acc> );
 
 extern void __fastcall __xsafe __nop set_color( unsigned int index<VCE_CTA>, unsigned int value<VCE_CTW> );
 extern void __fastcall __xsafe set_color_rgb( unsigned int index<VCE_CTA>, unsigned char r<_al>, unsigned char g<_ah>, unsigned char b<acc> );
-extern void __fastcall __xsafe __macro get_color( unsigned int index<VCE_CTA> );
+extern unsigned int __fastcall __xsafe __macro get_color( unsigned int index<VCE_CTA> );
 
 extern unsigned char __fastcall __xsafe __macro clock_hh( void );
 extern unsigned char __fastcall __xsafe __macro clock_mm( void );

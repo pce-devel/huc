@@ -233,7 +233,6 @@ void jump (int label)
 void testjump (int label, int ft)
 {
 	out_ins(I_TST_WR, 0, 0);
-	out_ins(I_BOOLEAN, 0, 0);
 	if (ft)
 		out_ins(I_BTRUE, T_LABEL, label);
 	else
@@ -455,15 +454,23 @@ void gcom (void)
  */
 void gbool (void)
 {
-	out_ins(I_TST_WR, 0, 0);
 	out_ins(I_BOOLEAN, 0, 0);
+}
+
+/*
+ *	boolean logical test of primary register
+ *
+ */
+void gtest (void)
+{
+	out_ins(I_TST_WR, 0, 0);
 }
 
 /*
  *	boolean logical complement of primary register
  *
  */
-void glneg (void)
+void gnot (void)
 {
 	out_ins(I_NOT_WR, 0, 0);
 	out_ins(I_BOOLEAN, 0, 0);

@@ -70,7 +70,7 @@ try_early( void )
     abort();
   if (count != 1)
     abort();
-  if (increment() || abort())
+  if (increment() || (count = 0))
     count++;
   if (count != 3)
     abort();

@@ -732,8 +732,71 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_NOT_CF:
+		ol("__not.cf");
+		break;
+
 	case I_BOOLEAN:
 		ol("__bool");
+		break;
+
+	case X_BOOLNOT_WR:
+		ol("__boolnot.wr");
+		break;
+
+	case X_BOOLNOT_WP:
+		ot("__boolnot.wp\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_BOOLNOT_WM:
+		ot("__boolnot.wm\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_BOOLNOT_WS:
+		ot("__boolnot.ws\t");
+		outdec((int)data);
+		nl();
+		break;
+
+	case X_BOOLNOT_WAR:
+		ot("__boolnot.war\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_BOOLNOT_UP:
+		ot("__boolnot.up\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_BOOLNOT_UM:
+		ot("__boolnot.um\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_BOOLNOT_US:
+		ot("__boolnot.us\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_BOOLNOT_UAR:
+		ot("__boolnot.uar\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_BOOLNOT_UAY:
+		ot("__boolnot.uay\t");
+		out_addr(type, data);
+		nl();
 		break;
 
 	/* i-codes for loading the primary register */
