@@ -101,6 +101,13 @@ static void gen_scale_right (LVALUE *lval, LVALUE *lval2)
 	}
 }
 
+static void void_value_error (LVALUE *lval)
+{
+	error("function is declared VOID and does not return a value");
+	/* suppress further error messages about this return value */
+	lval->val_type = 0;
+}
+
 /*
  * assignment operators
  * @param lval
@@ -122,6 +129,8 @@ int heir1 (LVALUE *lval, int comma)
 			gpush();
 		if (heir1(lval2, comma))
 			rvalue(lval2);
+		if (lval2->val_type == CVOID)
+			void_value_error(lval2);
 		store(lval);
 		return (0);
 	}
@@ -147,6 +156,8 @@ int heir1 (LVALUE *lval, int comma)
 			gpush();
 			if (heir1(lval2, comma))
 				rvalue(lval2);
+			if (lval2->val_type == CVOID)
+				void_value_error(lval2);
 			switch (fc) {
 			case '-':       {
 				gen_scale_right(lval, lval2);
@@ -194,11 +205,15 @@ int heir1a (LVALUE *lval, int comma)
 
 	if (k)
 		rvalue(lval);
+	if (lval->val_type == CVOID)
+		void_value_error(lval);
 	FOREVER
 	if (match("?")) {
 		testjump(lab1 = getlabel(), FALSE);
 		if (heir1b(lval2, comma))
 			rvalue(lval2);
+		if (lval2->val_type == CVOID)
+			void_value_error(lval2);
 		jump(lab2 = getlabel());
 		gnlabel(lab1);
 		blanks();
@@ -208,6 +223,8 @@ int heir1a (LVALUE *lval, int comma)
 		}
 		if (heir1b(lval2, comma))
 			rvalue(lval2);
+		if (lval2->val_type == CVOID)
+			void_value_error(lval2);
 		gnlabel(lab2);
 	}
 	else
@@ -231,11 +248,15 @@ int heir1b (LVALUE *lval, int comma)
 
 	if (k)
 		rvalue(lval);
+	if (lval->val_type == CVOID)
+		void_value_error(lval);
 	FOREVER
 	if (match("||")) {
 		testjump(lab = getlabel(), TRUE);
 		if (heir1c(lval2, comma))
 			rvalue(lval2);
+		if (lval2->val_type == CVOID)
+			void_value_error(lval2);
 		gtest();
 		gnlabel(lab);
 		gbool();
@@ -261,11 +282,15 @@ int heir1c (LVALUE *lval, int comma)
 
 	if (k)
 		rvalue(lval);
+	if (lval->val_type == CVOID)
+		void_value_error(lval);
 	FOREVER
 	if (match("&&")) {
 		testjump(lab = getlabel(), FALSE);
 		if (heir2(lval2, comma))
 			rvalue(lval2);
+		if (lval2->val_type == CVOID)
+			void_value_error(lval2);
 		gtest();
 		gnlabel(lab);
 		gbool();
@@ -291,12 +316,16 @@ int heir2 (LVALUE *lval, int comma)
 
 	if (k)
 		rvalue(lval);
+	if (lval->val_type == CVOID)
+		void_value_error(lval);
 	FOREVER {
 		if ((ch() == '|') && (nch() != '|') && (nch() != '=')) {
 			inbyte();
 			gpush();
 			if (heir3(lval2, comma))
 				rvalue(lval2);
+			if (lval2->val_type == CVOID)
+				void_value_error(lval2);
 			gor();
 			blanks();
 		}
@@ -322,12 +351,16 @@ int heir3 (LVALUE *lval, int comma)
 
 	if (k)
 		rvalue(lval);
+	if (lval->val_type == CVOID)
+		void_value_error(lval);
 	FOREVER {
 		if ((ch() == '^') && (nch() != '=')) {
 			inbyte();
 			gpush();
 			if (heir4(lval2, comma))
 				rvalue(lval2);
+			if (lval2->val_type == CVOID)
+				void_value_error(lval2);
 			gxor();
 			blanks();
 		}
@@ -353,12 +386,16 @@ int heir4 (LVALUE *lval, int comma)
 
 	if (k)
 		rvalue(lval);
+	if (lval->val_type == CVOID)
+		void_value_error(lval);
 	FOREVER {
 		if ((ch() == '&') && (nch() != '&') && (nch() != '=')) {
 			inbyte();
 			gpush();
 			if (heir5(lval2, comma))
 				rvalue(lval2);
+			if (lval2->val_type == CVOID)
+				void_value_error(lval2);
 			gand();
 			blanks();
 		}
@@ -385,17 +422,23 @@ int heir5 (LVALUE *lval, int comma)
 
 	if (k)
 		rvalue(lval);
+	if (lval->val_type == CVOID)
+		void_value_error(lval);
 	FOREVER {
 		if (match("==")) {
 			gpush();
 			if (heir6(lval2, comma))
 				rvalue(lval2);
+			if (lval2->val_type == CVOID)
+				void_value_error(lval2);
 			geq();
 		}
 		else if (match("!=")) {
 			gpush();
 			if (heir6(lval2, comma))
 				rvalue(lval2);
+			if (lval2->val_type == CVOID)
+				void_value_error(lval2);
 			gne();
 		}
 		else
@@ -426,11 +469,15 @@ int heir6 (LVALUE *lval, int comma)
 
 	if (k)
 		rvalue(lval);
+	if (lval->val_type == CVOID)
+		void_value_error(lval);
 	FOREVER {
 		if (match("<=")) {
 			gpush();
 			if (heir7(lval2, comma))
 				rvalue(lval2);
+			if (lval2->val_type == CVOID)
+				void_value_error(lval2);
 			if (lval->ptr_type || lval2->ptr_type ||
 			    is_unsigned(lval) ||
 			    is_unsigned(lval2)
@@ -444,6 +491,8 @@ int heir6 (LVALUE *lval, int comma)
 			gpush();
 			if (heir7(lval2, comma))
 				rvalue(lval2);
+			if (lval2->val_type == CVOID)
+				void_value_error(lval2);
 			if (lval->ptr_type || lval2->ptr_type ||
 			    is_unsigned(lval) ||
 			    is_unsigned(lval2)
@@ -459,6 +508,8 @@ int heir6 (LVALUE *lval, int comma)
 			gpush();
 			if (heir7(lval2, comma))
 				rvalue(lval2);
+			if (lval2->val_type == CVOID)
+				void_value_error(lval2);
 			if (lval->ptr_type || lval2->ptr_type ||
 			    is_unsigned(lval) ||
 			    is_unsigned(lval2)
@@ -474,6 +525,8 @@ int heir6 (LVALUE *lval, int comma)
 			gpush();
 			if (heir7(lval2, comma))
 				rvalue(lval2);
+			if (lval2->val_type == CVOID)
+				void_value_error(lval2);
 			if (lval->ptr_type || lval2->ptr_type ||
 			    is_unsigned(lval) ||
 			    is_unsigned(lval2)
@@ -508,12 +561,16 @@ int heir7 (LVALUE *lval, int comma)
 
 	if (k)
 		rvalue(lval);
+	if (lval->val_type == CVOID)
+		void_value_error(lval);
 	FOREVER {
 		if (sstreq(">>") && !sstreq(">>=")) {
 			inbyte(); inbyte();
 			gpush();
 			if (heir8(lval2, comma))
 				rvalue(lval2);
+			if (lval2->val_type == CVOID)
+				void_value_error(lval2);
 			gasr(is_unsigned(lval));
 		}
 		else if (sstreq("<<") && !sstreq("<<=")) {
@@ -521,6 +578,8 @@ int heir7 (LVALUE *lval, int comma)
 			gpush();
 			if (heir8(lval2, comma))
 				rvalue(lval2);
+			if (lval2->val_type == CVOID)
+				void_value_error(lval2);
 			gasl();
 		}
 		else
@@ -547,11 +606,15 @@ int heir8 (LVALUE *lval, int comma)
 
 	if (k)
 		rvalue(lval);
+	if (lval->val_type == CVOID)
+		void_value_error(lval);
 	FOREVER {
 		if (match("+")) {
 			gpush();
 			if (heir9(lval2, comma))
 				rvalue(lval2);
+			if (lval2->val_type == CVOID)
+				void_value_error(lval2);
 			/* if left is pointer and right is int, scale right */
 			gen_scale_right(lval, lval2);
 			/* will scale left if right int pointer and left int */
@@ -562,6 +625,8 @@ int heir8 (LVALUE *lval, int comma)
 			gpush();
 			if (heir9(lval2, comma))
 				rvalue(lval2);
+			if (lval2->val_type == CVOID)
+				void_value_error(lval2);
 			/* if dbl, can only be: pointer - int, or
 			                        pointer - pointer, thus,
 			        in first case, int is scaled up,
@@ -604,23 +669,31 @@ int heir9 (LVALUE *lval, int comma)
 
 	if (k)
 		rvalue(lval);
+	if (lval->val_type == CVOID)
+		void_value_error(lval);
 	FOREVER {
 		if (match("*")) {
 			gpush();
 			if (heir10(lval2, comma))
 				rvalue(lval2);
+			if (lval2->val_type == CVOID)
+				void_value_error(lval2);
 			gmult(is_unsigned(lval) || is_unsigned(lval2));
 		}
 		else if (match("/")) {
 			gpush();
 			if (heir10(lval2, comma))
 				rvalue(lval2);
+			if (lval2->val_type == CVOID)
+				void_value_error(lval2);
 			gdiv(is_unsigned(lval) || is_unsigned(lval2));
 		}
 		else if (match("%")) {
 			gpush();
 			if (heir10(lval2, comma))
 				rvalue(lval2);
+			if (lval2->val_type == CVOID)
+				void_value_error(lval2);
 			gmod(is_unsigned(lval) || is_unsigned(lval2));
 		}
 		else
@@ -629,7 +702,7 @@ int heir9 (LVALUE *lval, int comma)
 }
 
 /*
- * increment, decrement, negation operators
+ * increment, decrement, unary operators and pointer dereferencing
  * @param lval
  * @return 0 or 1, fetch or no fetch
  */
@@ -641,7 +714,10 @@ int heir10 (LVALUE *lval, int comma)
 	if (match("++")) {
 		indflg = 0;
 		if ((k = heir10(lval, comma)) == 0) {
-			needlval();
+			if (lval->val_type == CVOID)
+				void_value_error(lval);
+			else
+				needlval();
 			return (0);
 		}
 		if (lval->indirect)
@@ -654,7 +730,10 @@ int heir10 (LVALUE *lval, int comma)
 	else if (match("--")) {
 		indflg = 0;
 		if ((k = heir10(lval, comma)) == 0) {
-			needlval();
+			if (lval->val_type == CVOID)
+				void_value_error(lval);
+			else
+				needlval();
 			return (0);
 		}
 		if (lval->indirect)
@@ -669,6 +748,8 @@ int heir10 (LVALUE *lval, int comma)
 		k = heir10(lval, comma);
 		if (k)
 			rvalue(lval);
+		if (lval->val_type == CVOID)
+			void_value_error(lval);
 		gneg();
 		return (0);
 	}
@@ -677,6 +758,8 @@ int heir10 (LVALUE *lval, int comma)
 		k = heir10(lval, comma);
 		if (k)
 			rvalue(lval);
+		if (lval->val_type == CVOID)
+			void_value_error(lval);
 		gcom();
 		return (0);
 	}
@@ -685,6 +768,8 @@ int heir10 (LVALUE *lval, int comma)
 		k = heir10(lval, comma);
 		if (k)
 			rvalue(lval);
+		if (lval->val_type == CVOID)
+			void_value_error(lval);
 		gnot();
 		return (0);
 	}
@@ -696,6 +781,8 @@ int heir10 (LVALUE *lval, int comma)
 		ptr = lval->symbol;
 		if (k)
 			rvalue(lval);
+		if (lval->val_type == CVOID)
+			void_value_error(lval);
 		if (lval->ptr_order < 2)
 			lval->indirect = lval->ptr_type;
 		else
@@ -713,6 +800,10 @@ int heir10 (LVALUE *lval, int comma)
 		indflg = 0;
 		inbyte();
 		k = heir10(lval, comma);
+		if (lval->val_type == CVOID) {
+			void_value_error(lval);
+			return (0);
+		}
 		if (k == 0) {
 			error("illegal address");
 			return (0);
@@ -737,7 +828,10 @@ int heir10 (LVALUE *lval, int comma)
 		ptr = lval->symbol;
 		if (match("++")) {
 			if (k == 0) {
-				needlval();
+				if (lval->val_type == CVOID)
+					void_value_error(lval);
+				else
+					needlval();
 				return (0);
 			}
 			if (lval->indirect)
@@ -750,7 +844,10 @@ int heir10 (LVALUE *lval, int comma)
 		}
 		else if (match("--")) {
 			if (k == 0) {
-				needlval();
+				if (lval->val_type == CVOID)
+					void_value_error(lval);
+				else
+					needlval();
 				return (0);
 			}
 			if (lval->indirect)
@@ -768,6 +865,8 @@ int heir10 (LVALUE *lval, int comma)
 
 /*
  * array subscripting
+ * function calls
+ * structure members
  * @param lval
  * @return 0 or 1, fetch or no fetch
  */
@@ -783,6 +882,8 @@ int heir11 (LVALUE *lval, int comma)
 	blanks();
 	for (;;) {
 		if (match("[")) {
+			if (lval->val_type == CVOID)
+				void_value_error(lval);
 			if (ptr == 0) {
 				if (lval->ptr_type) {
 					/* subscription of anonymous array
@@ -884,6 +985,8 @@ int heir11 (LVALUE *lval, int comma)
 			k = 1;
 		}
 		else if (match("(")) {
+			if (lval->val_type == CVOID)
+				void_value_error(lval);
 			if (ptr == 0) {
 				error("invalid or unsupported function call");
 				callfunction(0);
@@ -912,6 +1015,8 @@ int heir11 (LVALUE *lval, int comma)
 			}
 		}
 		else if ((direct = match(".")) || match("->")) {
+			if (lval->val_type == CVOID)
+				void_value_error(lval);
 			if (lval->tagsym == 0) {
 				error("can't take member");
 				junk();
@@ -972,11 +1077,15 @@ void store (LVALUE *lval)
 	}
 	else {
 		/* other */
-		if (lval->indirect != 0)
+		if (lval->indirect != 0) {
+			if (lval->indirect == CVOID)
+				error("cannot dereference a VOID pointer");
 			putstk(lval->indirect);
+		}
 		else {
-			if (lval->symbol)
+			if (lval->symbol) {
 				putmem(lval->symbol);
+			}
 			else {
 //				/* write to a memory addresses given as an immediate value */
 //				out_ins(I_ST_WM, T_VALUE, lval->value);
@@ -992,8 +1101,11 @@ void rvalue (LVALUE *lval)
 		getmem(lval->symbol);
 	}
 	else {
-		if (lval->symbol2 == 0)
+		if (lval->symbol2 == 0) {
+			if (lval->indirect == CVOID)
+				error("cannot dereference a VOID pointer");
 			indirect(lval->indirect);
+		}
 		else {
 			/* far arrays */
 			farpeek(lval->symbol2);
