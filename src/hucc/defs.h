@@ -427,7 +427,8 @@ typedef struct symbol {
 	char far;		/* HuC: 1 if array of data in far memory */
 	short offset;		/* offset*/
 	short tagidx;		/* index of struct in tag table*/
-	int ptr_order;
+	short ptr_order;
+	short arg_count;
 	int alloc_size;
 } SYMBOL;
 

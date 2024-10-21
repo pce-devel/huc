@@ -260,9 +260,28 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 		break;
 	}
 
+	/* is this a declaration instead of a definition */
 	if (match(";")) {
-		/* function prototype */
-		ptr = addglb(current_fn, FUNCTION, ret_type, 0, EXTERN, 0);
+		/* check if it was already registered by a declaration or previous usage */
+		ptr = findglb(current_fn);
+
+		/* check the argument count if it isn't a __fastcall which can have varying arguments */
+		if (ptr && !is_fastcall) {
+			/* confirm arg_count, but do NOT check ret_type! */
+			if (ptr->identity != FUNCTION) {
+				multidef(current_fn);
+				return;
+			}
+			else
+			if (ptr->arg_count >= 0 && ptr->arg_count != nbarg) {
+				error("function already declared with a different parameter count");
+				return;
+			}
+		}
+
+		/* overwrite the previous declaration, if there was one */
+		ptr = addglb(current_fn, FUNCTION, ret_type, 0, EXTERN, ptr);
+		ptr->arg_count = nbarg;
 		norecurse = save_norecurse;
 
 		if (is_fastcall) {
@@ -306,7 +325,7 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 	}
 
 	if (fastcall_look(n, nbarg, NULL)) {
-		error("implementation of fastcall functions in C not supported yet");
+		error("functions declared as __fastcall cannot be implemented in C code");
 		return;
 	}
 
@@ -323,13 +342,14 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 			*fixup[argstk / INTSIZE] += argtop;
 		}
 		else {
+			/* expect K&R style argument definition */
 			struct type_type t;
 			if (match_type(&t, NO, NO)) {
 				getarg(t.type_type, KR, t.otag, is_fastcall);
 				needsemicolon();
 			}
 			else {
-				error("wrong number args");
+				error("K&R argument definition missing");
 				break;
 			}
 		}
@@ -337,18 +357,24 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 
 	fexitlab = getlabel();
 
+	/* check if it was already registered by a declaration or previous usage */
 	if ((ptr = findglb(current_fn))) {
 		if (ptr->identity != FUNCTION)
 			multidef(current_fn);
 		else if (ptr->offset == FUNCTION)
 			multidef(current_fn);
 		else
-			/* XXX: sanity check? */
+			/* signal that the function has been defined and not just declared */
 			ptr->offset = FUNCTION;
+
+		if (ptr->arg_count >= 0 && ptr->arg_count != nbarg)
+			error("function already declared with a different parameter count");
 	} else {
 		ptr = addglb(current_fn, FUNCTION, ret_type, FUNCTION, PUBLIC, 0);
 	}
+	ptr->arg_count = nbarg;
 	ptr->ptr_order = ret_ptr_order;
+	ptr->sym_type = ret_type;
 	ptr->tagidx = ret_otag;
 
 	flush_ins();	/* David, .proc directive support */
@@ -723,6 +749,19 @@ void callfunction (char *ptr)
 				gpusharg(0);
 				gfence();
 			}
+			error("__fastcall function was declared with a different parameter count");
+		}
+	}
+
+	/* check for function usage with differing numbers of parameters */
+	if (func) {
+		if (func->arg_count < 0) {
+			/* function was automatically declared in primary() */
+			func->arg_count = argcnt;
+		}
+		else
+		if (func->arg_count != argcnt) {
+			error("function was declared with a different parameter count");
 		}
 	}
 

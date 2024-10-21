@@ -535,8 +535,11 @@ SYMBOL *addglb (char *sname, char id, char typ, int value, char stor, SYMBOL *re
 			return (cptr);
 
 		if (glbsym_index >= ENDGLB) {
-			error("global symbol table overflow");
-			return (NULL);
+			/* the compiler can't recover from this */
+			/* and will write to NULL* if we return */
+			errcnt = 0;
+			error("too many global symbols, aborting");
+			exit(1);
 		}
 		cptr = symtab + glbsym_index;
 		glbsym_index++;
@@ -553,6 +556,7 @@ SYMBOL *addglb (char *sname, char id, char typ, int value, char stor, SYMBOL *re
 	cptr->alloc_size = value;
 	cptr->far = 0;
 	cptr->linked = NULL;
+	cptr->arg_count = -1;
 	if (id == FUNCTION)
 		cptr->alloc_size = 0;
 	else if (id == POINTER)
