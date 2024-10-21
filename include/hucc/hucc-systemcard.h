@@ -95,7 +95,7 @@ extern unsigned char __fastcall cd_playmsf( unsigned char start_minute<_al>,  un
 extern unsigned char __fastcall cd_loadvram( unsigned char ovl_index<_cl>, unsigned int sect_offset<_si>, unsigned int vramaddr<_bx>, unsigned int bytes<_ax> );
 extern unsigned char __fastcall cd_loaddata( unsigned char ovl_index<_cl>, unsigned int sect_offset<_si>, unsigned char __far *buffer<_bp_bank:_bp>, unsigned int bytes<__ptr> );
 extern unsigned char __fastcall cd_loadbank( unsigned char ovl_index<_cl>, unsigned int sect_offset<_si>, unsigned char bank<_bl>, unsigned int sectors<_al> );
-extern void __fastcall __xsafe __macro cd_status( unsigned char mode<acc> );
+extern unsigned char __fastcall __xsafe __macro cd_status( unsigned char mode<acc> );
 
 extern void __fastcall __xsafe __macro ad_reset( void );
 extern unsigned char __fastcall __xsafe __macro ad_trans( unsigned char ovl_index<_cl>, unsigned int sect_offset<_si>, unsigned char nb_sectors<_dh>, unsigned int ad_addr<_bx> );

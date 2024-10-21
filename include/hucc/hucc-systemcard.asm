@@ -440,7 +440,7 @@ _cd_loadbank.4	.macro
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe __macro cd_status( unsigned char mode<acc> );
+; unsigned char __fastcall __xsafe __macro cd_status( unsigned char mode<acc> );
 
 _cd_status.1	.macro
 		phx				; Preserve X (aka __sp).
