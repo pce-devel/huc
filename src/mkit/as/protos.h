@@ -150,6 +150,7 @@ int  png_load(char *name);
 int  bmp_load(char *name);
 
 /* PROC.C */
+void add_thunk(struct t_proc *proc);
 void do_call(int *ip);
 void do_leave(int *ip);
 void do_proc(int *ip);
