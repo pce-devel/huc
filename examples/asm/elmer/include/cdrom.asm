@@ -1454,7 +1454,7 @@ cdr_cplay_next	.proc
 
 		; Timeout, retry.
 
-		bra	cdr_cplay_next
+		jmp	cdr_cplay_next		; Not a BRA because a .proc!
 
 		; Process SCSI phases.
 

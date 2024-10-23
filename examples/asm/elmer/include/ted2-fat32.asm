@@ -1391,7 +1391,7 @@ f32_seek_cur	.proc
 		sta	<_ax + 0
 
 		bsr	f32_next_frag		; Move forward to next fragment.
-		bra	f32_seek_cur		; Try again.
+		jmp	f32_seek_cur		; Try again.
 
 		; frag_len >  seek_len
 
