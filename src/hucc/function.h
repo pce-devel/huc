@@ -8,7 +8,7 @@
 
 void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, int is_fastcall);
 int getarg (int t, int syntax, int otag, int is_fastcall);
-void callfunction (char *ptr);
+void callfunction (SYMBOL *ptr);
 void arg_stack (int arg);
 void arg_push_ins (INS *ptr);
 void arg_flush (int arg, int adj);

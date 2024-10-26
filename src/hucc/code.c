@@ -412,6 +412,10 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case I_FUNCP_WR:
+		ol("__funcp.wr");
+		break;
+
 	case I_CALLP:
 		ol("__callp");
 		break;

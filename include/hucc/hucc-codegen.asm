@@ -318,13 +318,18 @@ __call		.macro
 
 ; **************
 
+__funcp.wr	.macro
+		sta.l	__func
+		sty.h	__func
+		.endm
+
+; **************
+
 __callp		.macro
-		sta.l	__ptr
-		sty.h	__ptr
 		jsr	call_indirect
 		.endm
 
-call_indirect:	jmp	[__ptr]
+call_indirect:	jmp	[__func]
 
 
 

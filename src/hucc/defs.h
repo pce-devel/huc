@@ -38,6 +38,7 @@ enum ICODE {
 
 	I_MACRO,
 	I_CALL,
+	I_FUNCP_WR,
 	I_CALLP,
 
 	/* i-codes for C functions and the C parameter stack */
@@ -421,15 +422,17 @@ enum ICOMPARE {
 typedef struct symbol {
 	char name[NAMEALLOC];	/* symbol name */
 	struct symbol *linked;	/* HuC: linked local and global symbols */
+	int alloc_size;
 	char identity;		/* variable, array, pointer, function */
 	char sym_type;		/* char, int, uchar, unit */
 	char storage;		/* public, auto, extern, static, lstatic, defauto*/
 	char far;		/* HuC: 1 if array of data in far memory */
+	char ptr_order;		/* HuC: 1 if array of data in far memory */
+	char funcptr_type;	/* HuC: return type if function pointer */
+	char funcptr_order;	/* HuC: return order if function pointer */
+	char arg_count;		/* HuC: #arguments for function or function pointer */
 	short offset;		/* offset*/
 	short tagidx;		/* index of struct in tag table*/
-	short ptr_order;
-	short arg_count;
-	int alloc_size;
 } SYMBOL;
 
 /* Define the structure tag table parameters */

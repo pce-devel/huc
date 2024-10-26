@@ -481,6 +481,8 @@ void usage (char *exename)
 	fprintf(stderr, "-O[val]           invoke optimization (level <value>)\n");
 	fprintf(stderr, "-fno-recursive    optimize assuming non-recursive code\n");
 	fprintf(stderr, "-fno-short-enums  always use signed int for enums\n");
+	fprintf(stderr, "-funsigned-char   make \"char\" unsigned (the default)\n");
+	fprintf(stderr, "-fsigned-char     make \"char\" signed\n");
 	fprintf(stderr, "\nOutput options:\n");
 	fprintf(stderr, "-s/-S             create asm output only (do not invoke assembler)\n");
 	fprintf(stderr, "\nLinker options:\n");

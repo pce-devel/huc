@@ -59,14 +59,10 @@ void add_const (char typ)
  *	array initializer
  *
  */
-int array_initializer (char typ, char id, char stor)
+int array_initializer (char typ, char id, char stor, int k)
 {
-	int nb;
-	int k;
+	int nb = 0;
 	int i;
-
-	nb = 0;
-	k = needsub();
 
 	if (stor == CONST)
 		new_const();

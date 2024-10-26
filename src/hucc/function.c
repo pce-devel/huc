@@ -558,11 +558,9 @@ int getarg (int t, int syntax, int otag, int is_fastcall)
 		out_ins(I_SPUSH_WR, 0, 0); \
 }
 
-void callfunction (char *ptr)
+void callfunction (SYMBOL *ptr)
 {
-	extern char *new_string (int, char *);
 	struct fastcall *fast = NULL;
-	SYMBOL *func = NULL;
 	int is_fc = 0;
 	int argcnt = 0;
 	int argsiz = 0;
@@ -587,30 +585,28 @@ void callfunction (char *ptr)
 	/* check if it's a special function,
 	 * if yes handle it externaly
 	 */
-	if (ptr) {
-		if (!strcmp(ptr, "bank")) {
-			do_asm_func(T_BANK); return;
-		}
-		else if (!strcmp(ptr, "vram")) {
-			do_asm_func(T_VRAM); return;
-		}
-		else if (!strcmp(ptr, "pal")) {
-			do_asm_func(T_PAL);  return;
-		}
+	if (!strcmp(ptr->name, "bank")) {
+		do_asm_func(T_BANK); return;
+	}
+	else
+	if (!strcmp(ptr->name, "vram")) {
+		do_asm_func(T_VRAM); return;
+	}
+	else
+	if (!strcmp(ptr->name, "pal")) {
+		do_asm_func(T_PAL);  return;
 	}
 
 //	flush_ins();
 //	ot("__calling\n");
 
-	if (ptr == NULL) {
-		/* save indirect call function-ptr on the hardware-stack */
-		out_ins(I_SPUSH_WR, 0, 0);
-	} else {
+	if (ptr->identity == FUNCTION) {
 		/* fastcall check, but don't know how many parameters */
-		if ((is_fc = fastcall_look(ptr, -1, NULL)) == 0) {
-			/* N.B. functions are not required to be pre-declared! */
-			func = findglb(ptr);
-		}
+		is_fc = fastcall_look(ptr->name, -1, NULL);
+	} else {
+//		/* save indirect call function-ptr on the hardware-stack */
+//		out_ins(I_SPUSH_WR, 0, 0);
+		out_ins(I_FUNCP_WR, 0, 0);
 	}
 
 	/* calling regular functions in fastcall arguments is OK */
@@ -667,7 +663,7 @@ void callfunction (char *ptr)
 
 	/* fastcall func */
 	if (is_fc) {
-		is_fc = fastcall_look(ptr, argcnt, &fast);
+		is_fc = fastcall_look(ptr->name, argcnt, &fast);
 
 		/* flush arg instruction stacks */
 		if (is_fc) {
@@ -752,16 +748,19 @@ void callfunction (char *ptr)
 			error("__fastcall function was declared with a different parameter count");
 		}
 	}
-
-	/* check for function usage with differing numbers of parameters */
-	if (func) {
-		if (func->arg_count < 0) {
+	else
+	if (ptr->identity == FUNCTION || ptr->funcptr_type) {
+		/* check for function usage with differing numbers of parameters */
+		if (ptr->arg_count < 0) {
 			/* function was automatically declared in primary() */
-			func->arg_count = argcnt;
+			ptr->arg_count = argcnt;
 		}
 		else
-		if (func->arg_count != argcnt) {
-			error("function was declared with a different parameter count");
+		if (ptr->arg_count != argcnt) {
+			if (ptr->identity == FUNCTION)
+				error("function was declared with a different parameter count");
+			else
+				error("function pointer was declared with a different parameter count");
 		}
 	}
 
@@ -803,11 +802,7 @@ void callfunction (char *ptr)
 			out_ins(I_LD_WM, T_LITERAL, (intptr_t)"__temp");
 	}
 
-	if (ptr == NULL) {
-		/* restore indirect call function-ptr from the hardware-stack */
-		out_ins(I_SPOP_WR, 0, 0);
-		out_ins(I_CALLP, 0, 0);
-	} else {
+	if (ptr->identity == FUNCTION) {
 		if (fast && !(fast->flags & FASTCALL_XSAFE))
 			out_ins(I_SAVESP, 0, 0);
 		if (fast && (fast->flags & (FASTCALL_NOP | FASTCALL_MACRO))) {
@@ -815,18 +810,22 @@ void callfunction (char *ptr)
 			// Only macro fastcalls get a name generated
 			if (fast->flags & FASTCALL_MACRO) {
 				if (is_fc)
-					gmacro(ptr, argcnt);
+					gmacro(ptr->name, argcnt);
 				else
-					gmacro(ptr, 0);
+					gmacro(ptr->name, 0);
 			}
 		}
 		// Else not a NOP or MACRO fastcall
 		else if (is_fc)
-			gcall(ptr, argcnt);
+			gcall(ptr->name, argcnt);
 		else
-			gcall(ptr, 0);
+			gcall(ptr->name, 0);
 		if (fast && !(fast->flags & FASTCALL_XSAFE))
 			out_ins(I_LOADSP, 0, 0);
+	} else {
+//		/* restore indirect call function-ptr from the hardware-stack */
+//		out_ins(I_SPOP_WR, 0, 0);
+		out_ins(I_CALLP, 0, 0);
 	}
 
 //	flush_ins();
@@ -845,8 +844,14 @@ void callfunction (char *ptr)
 
 	/* load acc.l if this a standard func returning a value */
 	if (!is_fc) {
-		if (func == NULL || func->sym_type != CVOID || func->ptr_order != 0)
+		if (ptr->identity == FUNCTION) {
+			if (ptr->sym_type != CVOID || ptr->ptr_order != 0)
 			out_ins(I_GETACC, 0, 0);
+		}
+		else {
+			if (ptr->funcptr_type != CVOID || ptr->funcptr_order != 0)
+			out_ins(I_GETACC, 0, 0);
+		}
 	}
 }
 

@@ -307,8 +307,7 @@ int primary (LVALUE *lval, int comma, bool *deferred)
 					getloc(ptr);
 				lval->ptr_type = ptr->sym_type;
 				lval->ptr_order = ptr->ptr_order;
-//				lval->ptr_type = 0;
-				if (ptr->sym_type == CSTRUCT && ptr->identity == VARIABLE)
+				if (ptr->identity == VARIABLE && ptr->sym_type == CSTRUCT)
 					return (1);
 				else
 					return (0);
@@ -349,9 +348,9 @@ int primary (LVALUE *lval, int comma, bool *deferred)
 //						error ("can't access far array");
 					}
 				}
-				lval->indirect = lval->ptr_type = ptr->sym_type;
+				lval->indirect =
+				lval->ptr_type = ptr->sym_type;
 				lval->ptr_order = ptr->ptr_order;
-//				lval->ptr_type = 0;
 				if (ptr->identity == VARIABLE && ptr->sym_type == CSTRUCT)
 					return (1);
 				else
@@ -379,7 +378,7 @@ int primary (LVALUE *lval, int comma, bool *deferred)
 		lval->indirect = 0;
 		if (k == 2) {
 			/* a string constant */
-			lval->ptr_type = CCHAR;
+			lval->ptr_type = (user_signed_char) ? CCHAR : CUCHAR;
 			lval->ptr_order = 1;
 #if 1
 		} else {
