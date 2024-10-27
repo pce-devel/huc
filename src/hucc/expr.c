@@ -196,7 +196,6 @@ int heir1 (LVALUE *lval, int comma)
 int heir1a (LVALUE *lval, int comma)
 {
 	int k, lab1, lab2;
-	LVALUE lval2[1] = {{0}};
 
 	k = heir1b(lval, comma);
 	blanks();
@@ -210,10 +209,10 @@ int heir1a (LVALUE *lval, int comma)
 	FOREVER
 	if (match("?")) {
 		testjump(lab1 = getlabel(), FALSE);
-		if (heir1b(lval2, comma))
-			rvalue(lval2);
-		if (lval2->val_type == CVOID)
-			void_value_error(lval2);
+		if (heir1b(lval, comma))
+			rvalue(lval);
+		if (lval->val_type == CVOID)
+			void_value_error(lval);
 		jump(lab2 = getlabel());
 		gnlabel(lab1);
 		blanks();
@@ -221,10 +220,10 @@ int heir1a (LVALUE *lval, int comma)
 			error("missing colon");
 			return (0);
 		}
-		if (heir1b(lval2, comma))
-			rvalue(lval2);
-		if (lval2->val_type == CVOID)
-			void_value_error(lval2);
+		if (heir1b(lval, comma))
+			rvalue(lval);
+		if (lval->val_type == CVOID)
+			void_value_error(lval);
 		gnlabel(lab2);
 	}
 	else
@@ -780,7 +779,7 @@ int heir10 (LVALUE *lval, int comma)
 		indflg = 0;
 		ptr = lval->symbol;
 		if (ptr && ptr->funcptr_type && lval->ptr_order == 0) {
-			/* ignore final function pointer dereference */
+			/* ignore optional dereference of a function pointer */
 			return (k);
 		}
 		if (k)
@@ -791,8 +790,10 @@ int heir10 (LVALUE *lval, int comma)
 			lval->indirect = CUINT;
 			lval->ptr_order--;
 		} else {
+			if (lval->ptr_type == 0)
+				error("not a pointer");
 			lval->indirect = lval->ptr_type;
-			lval->ptr_type = 0;	/* flag as not pointer or array */
+			lval->ptr_type = 0; /* flag as not pointer or array */
 			lval->ptr_order = 0;
 		}
 		return (1);
