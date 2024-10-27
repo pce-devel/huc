@@ -412,6 +412,10 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case I_FUNCP_WR:
+		ol("__funcp.wr");
+		break;
+
 	case I_CALLP:
 		ol("__callp");
 		break;
@@ -424,8 +428,8 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case I_LEAVE:
-		ot("__leave\t\t");
+	case I_RETURN:
+		ot("__return\t\t");
 		outdec((int)data);
 		nl();
 		break;

@@ -196,7 +196,6 @@ int heir1 (LVALUE *lval, int comma)
 int heir1a (LVALUE *lval, int comma)
 {
 	int k, lab1, lab2;
-	LVALUE lval2[1] = {{0}};
 
 	k = heir1b(lval, comma);
 	blanks();
@@ -210,10 +209,10 @@ int heir1a (LVALUE *lval, int comma)
 	FOREVER
 	if (match("?")) {
 		testjump(lab1 = getlabel(), FALSE);
-		if (heir1b(lval2, comma))
-			rvalue(lval2);
-		if (lval2->val_type == CVOID)
-			void_value_error(lval2);
+		if (heir1b(lval, comma))
+			rvalue(lval);
+		if (lval->val_type == CVOID)
+			void_value_error(lval);
 		jump(lab2 = getlabel());
 		gnlabel(lab1);
 		blanks();
@@ -221,10 +220,10 @@ int heir1a (LVALUE *lval, int comma)
 			error("missing colon");
 			return (0);
 		}
-		if (heir1b(lval2, comma))
-			rvalue(lval2);
-		if (lval2->val_type == CVOID)
-			void_value_error(lval2);
+		if (heir1b(lval, comma))
+			rvalue(lval);
+		if (lval->val_type == CVOID)
+			void_value_error(lval);
 		gnlabel(lab2);
 	}
 	else
@@ -779,19 +778,22 @@ int heir10 (LVALUE *lval, int comma)
 		k = heir10(lval, comma);
 		indflg = 0;
 		ptr = lval->symbol;
+		if (ptr && ptr->funcptr_type && lval->ptr_order == 0) {
+			/* ignore optional dereference of a function pointer */
+			return (k);
+		}
 		if (k)
 			rvalue(lval);
 		if (lval->val_type == CVOID)
 			void_value_error(lval);
-		if (lval->ptr_order < 2)
-			lval->indirect = lval->ptr_type;
-		else
+		if (lval->ptr_order > 1) {
 			lval->indirect = CUINT;
-		/* XXX: what about multiple indirection? */
-		if (lval->ptr_order > 1)
 			lval->ptr_order--;
-		else {
-			lval->ptr_type = 0;	/* flag as not pointer or array */
+		} else {
+			if (lval->ptr_type == 0)
+				error("not a pointer");
+			lval->indirect = lval->ptr_type;
+			lval->ptr_type = 0; /* flag as not pointer or array */
 			lval->ptr_order = 0;
 		}
 		return (1);
@@ -805,7 +807,9 @@ int heir10 (LVALUE *lval, int comma)
 			return (0);
 		}
 		if (k == 0) {
-			error("illegal address");
+			/* allow "&function" in function pointer assignment */
+			if (lval->symbol == NULL || lval->symbol->identity != FUNCTION)
+				error("illegal address");
 			return (0);
 		}
 		if (lval->symbol) {
@@ -885,11 +889,11 @@ int heir11 (LVALUE *lval, int comma)
 			if (lval->val_type == CVOID)
 				void_value_error(lval);
 			if (ptr == 0) {
-				if (lval->ptr_type) {
-					/* subscription of anonymous array
-					   ATM this can only happen for a
-					   string literal. */
-					if (lval->ptr_type != CCHAR)
+				if (lval->ptr_type && lval->ptr_order == 1) {
+					/* subscription of anonymous array which is currently
+					   only supported for a string literal, primarily for
+					   the testsuite, such as "921218-1.c". */
+					if (lval->ptr_type != ((user_signed_char) ? CCHAR : CUCHAR))
 						error("internal error: cannot subscript non-character literals");
 					/* Primary contains literal pointer, add subscript. */
 					gpush();
@@ -915,18 +919,18 @@ int heir11 (LVALUE *lval, int comma)
 					return (0);
 				}
 			}
-			else if (ptr->identity == POINTER)
-				rvalue(lval);
-			else if (ptr->identity != ARRAY) {
+			else if (ptr->identity != POINTER && ptr->identity != ARRAY) {
 				error("can't subscript");
 				k = 0;
 			}
+			if (k)
+				rvalue(lval);
 			if (!deferred && !ptr->far)
 				gpush();
 			expression(YES);
 			needbracket("]");
-			if (ptr->sym_type == CINT || ptr->sym_type == CUINT || lval->ptr_order > 1 ||
-			    (ptr->identity == ARRAY && lval->ptr_order > 0))
+			if (ptr->sym_type == CINT || ptr->sym_type == CUINT ||
+			    lval->ptr_order > ((ptr->identity == ARRAY) ? 0 : 1))
 				gaslint();
 			else if (ptr->sym_type == CSTRUCT) {
 				int size = tag_table[ptr->tagidx].size;
@@ -935,8 +939,6 @@ int heir11 (LVALUE *lval, int comma)
 				else if (size > 1)
 					gmult_imm(size);
 			}
-			if (!deferred && !ptr->far)
-				gadd(NULL, NULL);
 			if (deferred) {
 #if ULI_NORECURSE
 				if ((ptr->storage & STORAGE) == AUTO && norecurse && glint(ptr) < 0) {
@@ -956,29 +958,21 @@ int heir11 (LVALUE *lval, int comma)
 					out_ins(I_ADD_WI, T_SYMBOL, (intptr_t)ptr);
 				deferred = false;
 			}
-			lval->symbol = 0;
-			if (lval->ptr_order > 1 || (ptr->identity == ARRAY && lval->ptr_order > 0))
-				lval->indirect = CUINT;
 			else
-				lval->indirect = ptr->sym_type;
-			if (lval->ptr_order > 1)
+			if (!ptr->far)
+				gadd(NULL, NULL);
+			if (lval->ptr_order > ((ptr->identity == ARRAY) ? 0 : 1)) {
+				lval->indirect = CUINT;
 				lval->ptr_order--;
+			}
 			else {
+				lval->indirect = lval->ptr_type;
+				lval->ptr_type = 0;
+				lval->ptr_order = 0;
 				blanks();
-				if (ptr->identity == ARRAY && ch() == '[') {
-					/* Back-to-back indexing: We loop
-					   right inside this function, so
-					   nobody else takes care of
-					   actually loading the pointer.  */
-					rvalue(lval);
-					lval->indirect = ptr->sym_type;
-					lval->ptr_type = ptr->sym_type;
-					lval->ptr_order = 0;
-				}
-				else {
-//					lval->val_type = lval->ptr_type;
-					lval->ptr_type = 0;	// VARIABLE; /* David, bug patch ?? */
-					lval->ptr_order = 0;
+				if (ch() == '[') {
+					/* force an error in the next subscript attempt */
+					lval->symbol = NULL;
 				}
 			}
 			lval->symbol2 = ptr->far ? ptr : NULL;
@@ -989,30 +983,44 @@ int heir11 (LVALUE *lval, int comma)
 				void_value_error(lval);
 			if (ptr == 0) {
 				error("invalid or unsupported function call");
-				callfunction(0);
-			}
-			else if (ptr->identity != FUNCTION) {
-				rvalue(lval);
-				callfunction(0);
+				junk();
+				return (0);
 			}
 			else
-				callfunction(ptr->name);
-			k = 0;
-			/* Encode return type in lval. */
-			SYMBOL *s = lval->symbol;
-			if (s) {
-				if (s->sym_type == 0)
-					error("function return type is unknown");
-				if (s->ptr_order >= 1) {
-					lval->ptr_type = s->sym_type;
-					lval->ptr_order = s->ptr_order;
+			if (ptr->identity == FUNCTION) {
+				callfunction(ptr);
+				if (ptr->ptr_order) {
+					lval->val_type = 0;
+					lval->ptr_type = ptr->sym_type;
+					lval->ptr_order = ptr->ptr_order;
 				} else {
-					lval->val_type = s->sym_type;
+					lval->val_type = ptr->sym_type;
+					lval->ptr_type = 0;
+					lval->ptr_order = 0;
 				}
-				if (s->sym_type == CSTRUCT)
-					lval->tagsym = &tag_table[s->tagidx];
-				lval->symbol = 0;
+				if (ptr->sym_type == CSTRUCT)
+					lval->tagsym = &tag_table[ptr->tagidx];
 			}
+			else {
+				if (ptr->funcptr_type == 0 || lval->ptr_order != 0)
+					error("not a function pointer");
+				if (k)
+					rvalue(lval);
+				callfunction(ptr);
+				if (ptr->funcptr_order) {
+					lval->val_type = 0;
+					lval->ptr_type = ptr->funcptr_type;
+					lval->ptr_order = ptr->funcptr_order;
+				} else {
+					lval->val_type = ptr->funcptr_type;
+					lval->ptr_type = 0;
+					lval->ptr_order = 0;
+				}
+				if (ptr->funcptr_type == CSTRUCT)
+					lval->tagsym = &tag_table[ptr->tagidx];
+			}
+			k = 0;
+			lval->symbol = 0;
 		}
 		else if ((direct = match(".")) || match("->")) {
 			if (lval->val_type == CVOID)

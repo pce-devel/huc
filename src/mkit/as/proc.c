@@ -41,6 +41,83 @@ void           proc_sortlist(void);
 
 
 /* ----
+ * add_thunk()
+ * ----
+ * add a procedure thunk
+ */
+
+void
+add_thunk(struct t_proc *proc)
+{
+	if (!proc->call) {
+		/* init */
+		if (call_bank > max_bank) {
+			/* don't increase ROM size until we need a thunk */
+			if (call_bank > bank_limit) {
+				fatal_error("There is no target memory left to allocate a bank for .PROC thunks!");
+				if (asm_opt[OPT_OPTIMIZE] == 0) {
+					fprintf(ERROUT, "Optimized procedure packing is currently disabled, use \"-O\" to enable.\n\n");
+				}
+				return;
+			}
+			max_bank = call_bank;
+		}
+
+		/* new call */
+		if (newproc_opt == 0) {
+			/* check that the new thunk won't overrun the bank */
+			if (((call_ptr + 17) & 0xE000) != (call_1st & 0xE000)) {
+				error("The .PROC thunk bank is full, there are too many procedures!");
+				return;
+			}
+
+			/* install HuC thunks at start of MPR4, map code into MPR5 */
+			proc->call = call_ptr;
+
+			poke(call_ptr++, 0xA8);			// tay
+			poke(call_ptr++, 0x43);			// tma #5
+			poke(call_ptr++, 0x20);
+			poke(call_ptr++, 0x48);			// pha
+			poke(call_ptr++, 0xA9);			// lda #...
+			poke(call_ptr++, proc->label->mprbank);
+			poke(call_ptr++, 0x53);			// tam #5
+			poke(call_ptr++, 0x20);
+			poke(call_ptr++, 0x98);			// tya
+			poke(call_ptr++, 0x20);			// jsr ...
+			poke(call_ptr++, (proc->org + 0xA000) & 255);
+			poke(call_ptr++, (proc->org + 0xA000) >> 8);
+			poke(call_ptr++, 0xA8);			// tay
+			poke(call_ptr++, 0x68);			// pla
+			poke(call_ptr++, 0x53);			// tam #5
+			poke(call_ptr++, 0x20);
+			poke(call_ptr++, 0x98);			// tya
+			poke(call_ptr++, 0x60);			// rts
+		} else {
+			/* check that the new thunk won't overrun the bank */
+			if (((call_ptr - 9) & 0xE000) != (call_1st & 0xE000)) {
+				error("The .PROC thunk bank is full, there are too many procedures!");
+				return;
+			}
+
+			/* install new thunks at end of MPR7, map code into MPR6 */
+			poke(call_ptr--, (proc->org + 0xC000) >> 8);
+			poke(call_ptr--, (proc->org + 0xC000) & 255);
+			poke(call_ptr--, 0x4C);			// jmp ...
+			poke(call_ptr--, 0x40);
+			poke(call_ptr--, 0x53);			// tam #6
+			poke(call_ptr--, proc->label->mprbank);
+			poke(call_ptr--, 0xA9);			// lda #...
+			poke(call_ptr--, 0x48);			// pha
+			poke(call_ptr--, 0x40);
+			poke(call_ptr--, 0x43);			// tma #6
+
+			proc->call = call_ptr + 1;
+		}
+	}
+}
+
+
+/* ----
  * do_call()
  * ----
  * call pseudo - this handles both jsr and jmp!
@@ -75,75 +152,9 @@ do_call(int *ip)
 				value = proc->org + 0xA000;
 			} else {
 				/* different bank */
-				if (proc->call) {
-					value = proc->call;
-				} else {
-					/* init */
-					if (call_bank > max_bank) {
-						/* don't increase ROM size until we need a thunk */
-						if (call_bank > bank_limit) {
-							fatal_error("There is no target memory left to allocate a bank for .PROC thunks!");
-							if (asm_opt[OPT_OPTIMIZE] == 0) {
-								fprintf(ERROUT, "Optimized procedure packing is currently disabled, use \"-O\" to enable.\n\n");
-							}
-							return;
-						}
-						max_bank = call_bank;
-					}
-
-					/* new call */
-					if (newproc_opt == 0) {
-						/* check that the new thunk won't overrun the bank */
-						if (((call_ptr + 17) & 0xE000) != (call_1st & 0xE000)) {
-							error("The .PROC thunk bank is full, there are too many procedures!");
-							return;
-						}
-
-						/* install HuC thunks at start of MPR4, map code into MPR5 */
-						value = call_ptr;
-
-						poke(call_ptr++, 0xA8);			// tay
-						poke(call_ptr++, 0x43);			// tma #5
-						poke(call_ptr++, 0x20);
-						poke(call_ptr++, 0x48);			// pha
-						poke(call_ptr++, 0xA9);			// lda #...
-						poke(call_ptr++, proc->label->mprbank);
-						poke(call_ptr++, 0x53);			// tam #5
-						poke(call_ptr++, 0x20);
-						poke(call_ptr++, 0x98);			// tya
-						poke(call_ptr++, 0x20);			// jsr ...
-						poke(call_ptr++, (proc->org + 0xA000) & 255);
-						poke(call_ptr++, (proc->org + 0xA000) >> 8);
-						poke(call_ptr++, 0xA8);			// tay
-						poke(call_ptr++, 0x68);			// pla
-						poke(call_ptr++, 0x53);			// tam #5
-						poke(call_ptr++, 0x20);
-						poke(call_ptr++, 0x98);			// tya
-						poke(call_ptr++, 0x60);			// rts
-					} else {
-						/* check that the new thunk won't overrun the bank */
-						if (((call_ptr - 9) & 0xE000) != (call_1st & 0xE000)) {
-							error("The .PROC thunk bank is full, there are too many procedures!");
-							return;
-						}
-
-						/* install new thunks at end of MPR7, map code into MPR6 */
-						poke(call_ptr--, (proc->org + 0xC000) >> 8);
-						poke(call_ptr--, (proc->org + 0xC000) & 255);
-						poke(call_ptr--, 0x4C);			// jmp ...
-						poke(call_ptr--, 0x40);
-						poke(call_ptr--, 0x53);			// tam #6
-						poke(call_ptr--, proc->label->mprbank);
-						poke(call_ptr--, 0xA9);			// lda #...
-						poke(call_ptr--, 0x48);			// pha
-						poke(call_ptr--, 0x40);
-						poke(call_ptr--, 0x43);			// tma #6
-
-						value = call_ptr + 1;
-					}
-
-					proc->call = value;
-				}
+				if (!proc->call)
+					add_thunk(proc);
+				value = proc->call;
 
 				/* special handling for a jmp between procedures */
 				if ((newproc_opt != 0) && (optype == 1)) {

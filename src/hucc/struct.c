@@ -61,7 +61,7 @@ SYMBOL *find_member (TAG_SYMBOL *tag, char *sname)
  * @param storage
  * @return
  */
-void add_member (char *sname, char identity, char type, int offset, int storage_class, int otag, int ptr_order)
+void add_member (char *sname, char identity, char type, int offset, int storage_class, int otag, int ptr_order, int funcptr_type, int funcptr_order, int arg_count)
 {
 	char *buffer_ptr;
 	SYMBOL *symbol;
@@ -78,6 +78,10 @@ void add_member (char *sname, char identity, char type, int offset, int storage_
 	symbol->storage = storage_class;
 	symbol->offset = offset;
 	symbol->ptr_order = ptr_order;
+	symbol->funcptr_type = funcptr_type;
+	symbol->funcptr_order = funcptr_order;
+	symbol->arg_count = arg_count;
+
 	if (type == CSTRUCT)
 		symbol->tagidx = otag;
 

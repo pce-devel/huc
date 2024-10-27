@@ -716,9 +716,22 @@ push_val(int type)
 				undef++;
 			}
 		else {
-			expr_overlay = expr_lablptr->overlay;
-			expr_mprbank = expr_lablptr->mprbank;
-			val = expr_lablptr->value;
+			/* resolve newproc procedure labels to their thunk location in the last pass */
+			struct t_proc *proc;
+
+			if ((pass == LAST_PASS) && (newproc_opt != 0) &&
+			    ((proc = expr_lablptr->proc) != NULL) && (proc->label == expr_lablptr)) {
+				if (!proc->call)
+					add_thunk(proc);
+				expr_overlay = 0;
+				expr_mprbank = bank2mprbank(call_bank, S_CODE);
+				val = proc->call;
+			} else {
+				expr_overlay = expr_lablptr->overlay;
+				expr_mprbank = expr_lablptr->mprbank;
+				val = expr_lablptr->value;
+			}
+
 			if (expr_lablptr->defthispass == 0) {
 				notyetdef++;
 			}

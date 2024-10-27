@@ -8,7 +8,7 @@
 
 void new_const (void);
 void add_const (char typ);
-int array_initializer (char typ, char id, char stor);
+int array_initializer (char typ, char id, char stor, int k);
 int scalar_initializer (char typ, char id, char stor);
 int get_string_ptr (char typ);
 int get_raw_value (char sep);

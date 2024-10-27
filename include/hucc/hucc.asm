@@ -130,6 +130,10 @@ __ptr		.ds	2
 
 __poke		=	__si
 
+		; Used for indirect calls because __ptr could be overwritten.
+
+__func		=	__si
+
 		; Data pointer used by SDCC for indirect indexed memory access.
 
 DPTR		=	__ptr

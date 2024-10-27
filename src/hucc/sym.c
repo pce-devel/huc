@@ -158,12 +158,20 @@ int declglb (char typ, char stor, TAG_SYMBOL *mtag, int otag, int is_struct)
 {
 	int k, id;
 	char sname[NAMESIZE];
+	char typ_now;
 	int ptr_order;
+	int funcptr_type;
+	int funcptr_order;
+	int arg_count;
 	SYMBOL *s;
 
 	for (;;) {
 		for (;;) {
+			typ_now = typ;
 			ptr_order = 0;
+			funcptr_type = 0;
+			funcptr_order = 0;
+			arg_count = -1;
 			if (endst())
 				return (0);
 
@@ -177,9 +185,38 @@ int declglb (char typ, char stor, TAG_SYMBOL *mtag, int otag, int is_struct)
 				newfunc(NULL, ptr_order, typ, otag, 1);
 				return (2);
 			}
+			if (match("(")) {
+				if (typ == 0) {
+					error("syntax error, a function pointer must declare its return type");
+					typ_now = CINT;
+				}
+				funcptr_type = typ_now;
+				funcptr_order = ptr_order;
+				typ_now = CUINT;
+				ptr_order = 0;
+				while (match("*")) {
+					id = POINTER;
+					ptr_order++;
+				}
+				if (ptr_order == 0) {
+					error("syntax error, expected function pointer declaration");
+					return (1);
+				}
+				id = (--ptr_order) ? POINTER : VARIABLE;
+
+//				if (ptr_order >= 2) {
+//					error("syntax error, no pointer to a function pointer in HuCC");
+//					return (1);
+//				}
+			}
+
 			if (!symname(sname))
 				illname();
 			if (match("(")) {
+				if (funcptr_type) {
+					error("syntax error, expected function pointer declaration");
+					return (1);
+				}
 				newfunc(sname, ptr_order, typ, otag, 0);
 				return (2);
 			}
@@ -189,17 +226,26 @@ int declglb (char typ, char stor, TAG_SYMBOL *mtag, int otag, int is_struct)
 			}
 			if (mtag && find_member(mtag, sname))
 				multidef(sname);
+
 			if (match("[")) {
+				k = needsub();
+
+				if (funcptr_type) {
+					arg_count = needarguments();
+					if (arg_count < 0) {
+						error("syntax error, expected function pointer declaration");
+						junk();
+						return (1);
+					}
+				}
 				if (stor == CONST)
-					k = array_initializer(typ, id, stor);
-				else
-					k = needsub();
+					k = array_initializer(typ_now, id, stor, k);
 				if (k == -1)
 					return (1);
 
-				/* XXX: This doesn't really beint here, but I
+				/* XXX: This doesn't really belong here, but I
 				   can't think of a better place right now. */
-				if (id == POINTER && (typ == CCHAR || typ == CUCHAR || typ == CVOID))
+				if (id == POINTER && (typ_now == CCHAR || typ_now == CUCHAR || typ_now == CVOID))
 					k *= INTSIZE;
 				if (k || (stor == EXTERN))
 					id = ARRAY;
@@ -217,13 +263,22 @@ int declglb (char typ, char stor, TAG_SYMBOL *mtag, int otag, int is_struct)
 				}
 			}
 			else {
+				if (funcptr_type) {
+					arg_count = needarguments();
+					if (arg_count < 0) {
+						error("syntax error, expected function pointer declaration");
+						junk();
+						return (1);
+					}
+				}
 				if (stor == CONST) {
 					/* stor  = PUBLIC; XXX: What is this for? */
-					scalar_initializer(typ, id, stor);
+					scalar_initializer(typ_now, id, stor);
 				}
 			}
+
 			if (mtag == 0) {
-				if (typ == CSTRUCT) {
+				if (typ_now == CSTRUCT) {
 					if (id == VARIABLE)
 						k = tag_table[otag].size;
 					else if (id == POINTER)
@@ -232,34 +287,40 @@ int declglb (char typ, char stor, TAG_SYMBOL *mtag, int otag, int is_struct)
 						k *= tag_table[otag].size;
 				}
 				if (stor != CONST) {
-					id = initials(sname, typ, id, k, otag);
-					SYMBOL *c = addglb(sname, id, typ, k, stor, s);
-					if (typ == CSTRUCT)
+					id = initials(sname, typ_now, id, k, otag);
+					SYMBOL *c = addglb(sname, id, typ_now, k, stor, s);
+					if (typ_now == CSTRUCT)
 						c->tagidx = otag;
 					c->ptr_order = ptr_order;
+					c->funcptr_type = funcptr_type;
+					c->funcptr_order = funcptr_order;
+					c->arg_count = arg_count;
 				}
 				else {
-					SYMBOL *c = addglb(sname, id, typ, k, CONST, s);
+					SYMBOL *c = addglb(sname, id, typ_now, k, CONST, s);
 					if (c) {
-						add_const(typ);
-						if (typ == CSTRUCT)
+						add_const(typ_now);
+						if (typ_now == CSTRUCT)
 							c->tagidx = otag;
 					}
 					c->ptr_order = ptr_order;
+					c->funcptr_type = funcptr_type;
+					c->funcptr_order = funcptr_order;
+					c->arg_count = arg_count;
 				}
 			}
 			else if (is_struct) {
-				add_member(sname, id, typ, mtag->size, stor, otag, ptr_order);
+				add_member(sname, id, typ_now, mtag->size, stor, otag, ptr_order, funcptr_type, funcptr_order, arg_count);
 				if (id == POINTER)
-					typ = CUINT;
-				scale_const(typ, otag, &k);
+					typ_now = CUINT;
+				scale_const(typ_now, otag, &k);
 				mtag->size += k;
 			}
 			else {
-				add_member(sname, id, typ, 0, stor, otag, ptr_order);
+				add_member(sname, id, typ_now, 0, stor, otag, ptr_order, funcptr_type, funcptr_order, arg_count);
 				if (id == POINTER)
-					typ = CUINT;
-				scale_const(typ, otag, &k);
+					typ_now = CUINT;
+				scale_const(typ_now, otag, &k);
 				if (mtag->size < k)
 					mtag->size = k;
 			}
@@ -498,6 +559,38 @@ int needsub (void)
 	return (num[0]);
 }
 
+/*
+ *	get definition of function pointer arguments
+ */
+int needarguments (void)
+{
+	struct type_type t;
+	int arg_count = 0;
+
+	if (!match(")"))
+		return (-1);
+	if (!match("("))
+		return (-1);
+	if (match(")"))
+		return (0);
+
+	do {
+		if (!match_type(&t, YES, NO))
+			return (-1);
+		if (t.type_type == CVOID && t.ptr_order == 0) {
+			if (arg_count > 0)
+				return (-1);
+			break;
+		}
+		++arg_count;
+	} while (match(","));
+
+	if (!match(")"))
+		return (-1);
+
+	return arg_count;
+}
+
 SYMBOL *findglb (char *sname)
 {
 	SYMBOL *ptr;
@@ -538,7 +631,8 @@ SYMBOL *addglb (char *sname, char id, char typ, int value, char stor, SYMBOL *re
 			/* the compiler can't recover from this */
 			/* and will write to NULL* if we return */
 			errcnt = 0;
-			error("too many global symbols, aborting");
+			error("too many global C symbols, aborting");
+			error("fix SYMTBSZ and NUMGLBS then rebuild the compiler");
 			exit(1);
 		}
 		cptr = symtab + glbsym_index;
@@ -546,9 +640,11 @@ SYMBOL *addglb (char *sname, char id, char typ, int value, char stor, SYMBOL *re
 	}
 	else
 		cptr = replace;
+	memset(cptr, 0, sizeof(SYMBOL));
 
 	ptr = cptr->name;
 	while (alphanum(*ptr++ = *sname++)) ;
+
 	cptr->identity = id;
 	cptr->sym_type = typ;
 	cptr->storage = stor;
@@ -557,6 +653,9 @@ SYMBOL *addglb (char *sname, char id, char typ, int value, char stor, SYMBOL *re
 	cptr->far = 0;
 	cptr->linked = NULL;
 	cptr->arg_count = -1;
+	cptr->ptr_order = 0;
+	cptr->funcptr_order = 0;
+
 	if (id == FUNCTION)
 		cptr->alloc_size = 0;
 	else if (id == POINTER)
@@ -586,18 +685,26 @@ SYMBOL *addloc (char *sname, char id, char typ, int value, char stclass, int siz
 		return (cptr);
 
 	if (locsym_index >= ENDLOC) {
-		error("local symbol table overflow");
-		return (NULL);
+		/* the compiler can't recover from this */
+		/* and will write to NULL* if we return */
+		errcnt = 0;
+		error("too many local C symbols, aborting");
+		error("fix SYMTBSZ and NUMGLBS then rebuild the compiler");
+		exit(1);
 	}
 	cptr = symtab + locsym_index;
+	memset(cptr, 0, sizeof(SYMBOL));
+
 	ptr = symtab[locsym_index].name;
 	while (alphanum(*ptr++ = *sname++)) ;
+
 	cptr->identity = id;
 	cptr->sym_type = typ;
 	cptr->storage = stclass;
 	cptr->offset = value;
 	cptr->alloc_size = size;
 	cptr->linked = NULL;
+	cptr->arg_count = -1;
 	locsym_index++;
 	return (cptr);
 }

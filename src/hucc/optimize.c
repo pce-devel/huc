@@ -73,12 +73,13 @@ unsigned char icode_flags[] = {
 
 	/* I_MACRO              */	0,
 	/* I_CALL               */	0,
+	/* I_FUNCP_WR           */	0,
 	/* I_CALLP              */	0,
 
 	// i-codes for C functions and the C parameter stack
 
 	/* I_ENTER              */	0,
-	/* I_LEAVE              */	0,
+	/* I_RETURN              */	0,
 	/* I_GETACC             */	0,
 	/* I_SAVESP             */	0,
 	/* I_LOADSP             */	0,
