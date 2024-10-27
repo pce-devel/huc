@@ -405,7 +405,14 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 	gtext();
 	gnlabel(fexitlab);
 	modstk(nbarg * INTSIZE);
-	out_ins(I_LEAVE, T_VALUE, ret_type != CVOID || ret_ptr_order != 0); /* generate the return statement */
+	if (ret_ptr_order == 0) {
+		if (ret_type == CCHAR)
+			out_ins(I_EXT_BR, 0, 0);
+		else
+		if (ret_type == CUCHAR)
+			out_ins(I_EXT_UR, 0, 0);
+	}
+	out_ins(I_RETURN, T_VALUE, ret_type != CVOID || ret_ptr_order != 0); /* generate the return statement */
 	flush_ins();		/* David, optimize.c related */
 
 	ol(".endp");	/* David, .endp directive support */

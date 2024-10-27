@@ -44,7 +44,7 @@ enum ICODE {
 	/* i-codes for C functions and the C parameter stack */
 
 	I_ENTER,
-	I_LEAVE,
+	I_RETURN,
 	I_GETACC,
 	I_SAVESP,
 	I_LOADSP,

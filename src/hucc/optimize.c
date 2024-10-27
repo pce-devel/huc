@@ -79,7 +79,7 @@ unsigned char icode_flags[] = {
 	// i-codes for C functions and the C parameter stack
 
 	/* I_ENTER              */	0,
-	/* I_LEAVE              */	0,
+	/* I_RETURN              */	0,
 	/* I_GETACC             */	0,
 	/* I_SAVESP             */	0,
 	/* I_LOADSP             */	0,

@@ -52,7 +52,7 @@ int main()
 	if (k(3,4) != 7)
 		abort();
 
-	if (p(3,4) != -1)
+	if (p(4,3) != 1)
 		abort();
 	if ((*p)(4,3) != 1)
 		abort();

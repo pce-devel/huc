@@ -347,8 +347,9 @@ __enter		.macro
 
 ; **************
 ; function epilog
+; \1 == 0 if no return value
 
-__leave		.macro
+__return		.macro
 	.if	(\1 != 0)
 		sta	<__hucc_ret
 	.endif
