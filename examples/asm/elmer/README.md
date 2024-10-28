@@ -14,11 +14,17 @@ This directory contains a number of example programs and utilities for developin
 * ted2-bios-usbcd
   - A modified System Card 3.0 HuCARD that runs a CD-ROM overlay uploaded through USB, rather than loading it from CD-ROM.
 
+* rom-bare-buftest
+  - A HuCARD ROM to compare a PC Engine emulator's buffered VDC reading with real PC Engine console hardware.
+
+* rom-bare-mwrtest
+  - A HuCARD ROM to compare a PC Engine emulator's VDC VRAM read/write timings with real PC Engine console hardware.
+
+* rom-bare-rcrtest
+  - A HuCARD ROM to compare a PC Engine emulator's RCR interrupt handling with real PC Engine console hardware.
+
 * rom-bare-tiatest
   - A HuCARD ROM to compare a PC Engine emulator's TIA-to-VDC cycle timing with real PC Engine console hardware.
-
-* rom-bare-vdctest
-  - A HuCARD ROM to compare a PC Engine emulator's VDC RCR interrupt handling with real PC Engine console hardware.
 
 * rom-core-okitest
   - A HuCARD ROM to compare a PC Engine emulator's ADPCM playback flags and ADPCM write speed with real PC Engine console hardware.
@@ -41,11 +47,17 @@ The "CORE(not TM)" PC Engine library is a small and configurable set of library 
 * rom-core-hello
   - A simple example of creating a HuCARD ROM.
 
+* rom-core-hugerom
+  - A simple example of creating a HuCARD ROM for the Street Fighter II mapper.
+
 * cd-core-1stage
   - A simple example of creating an ISO for a CD-ROM, and loading the "CORE(not TM)" kernel code from the overlay program.
 
 * cd-core-2stage
   - A simple example of creating an ISO for a CD-ROM, and loading the "CORE(not TM)" kernel code in a startup overlay.
+
+* cd-core-scsitest
+  - A CD-ROM and a HuCARD for testing some low-level details of the PC Engine's SCSI CD-ROM behavior.
 
 * scd-core-1stage
   - A simple example of creating an ISO for a Super CD-ROM, and loading the "CORE(not TM)" kernel code from the overlay program.

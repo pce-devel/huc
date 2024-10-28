@@ -7,8 +7,11 @@
 #define PCE_ASM_VERSION ("PC Engine Assembler (" GIT_VERSION ", " GIT_DATE ")")
 #define FUJI_ASM_VERSION ("Fuji Assembler for Atari (" GIT_VERSION ", " GIT_DATE ")")
 
+/* send errors and warnings to either stdout or stderr */
+#define ERROUT stdout
+
 /* path separator */
-#if defined(WIN32)
+#if defined(_WIN32)
 #define PATH_SEPARATOR		'\\'
 #define PATH_SEPARATOR_STRING	"\\"
 #else
@@ -21,20 +24,38 @@
 #define MACHINE_NES	1
 #define MACHINE_FUJI	2
 
+/* maximum user rom size */
+#define ROM_BANKS	1024
+
 /* reserved bank index */
-#define RESERVED_BANK	0xF0
-#define PROC_BANK	0xF1
-#define GROUP_BANK	0xF2
-#define STRIPPED_BANK	0xF3
+#define UNDEFINED_BANK	(ROM_BANKS + 0)
+#define PROC_BANK	(ROM_BANKS + 1)
+#define GROUP_BANK	(ROM_BANKS + 2)
+#define STRIPPED_BANK	(ROM_BANKS + 3)
+
+/* number of reserved banks used beyond ROM_BANKS */
+#define RESERVED_BANKS	4
+
+/* total number of banks to allocate for workspace */
+#define MAX_BANKS	(ROM_BANKS + RESERVED_BANKS)
 
 /* tile format for encoder */
 #define CHUNKY_TILE	1
 #define PACKED_TILE	2
 
+/* max nesting of include files */
+#define MAX_NESTING	31
+
 /* line buffer length */
-#define LAST_CH_POS	512
-#define SFIELD		29
-#define SBOLSZ		64
+#define LAST_CH_POS	(32768 - 4)
+#define SFIELD		30
+
+/* symbol name size, including length byte and '\0' */
+/* must be <= 129 if "char" is signed */
+#define SBOLSZ		128
+
+/* file name size, including the '\0' */
+#define PATHSZ		260
 
 /* macro argument types */
 #define NO_ARG		0
@@ -46,11 +67,29 @@
 #define ARG_LABEL	6
 
 /* section types */
-#define S_ZP	0
-#define S_BSS	1
-#define S_CODE	2
-#define S_DATA	3
-#define S_PROC	4	/* trampolines for .proc */
+/* update pseudo_allowed when adding or changing! */
+/* update section_name  when adding or changing! */
+/* update section_flags when adding or changing! */
+/* update section_limit when adding or changing! */
+#define S_NONE		0 /* SDCC: sections that should always be empty! */
+#define S_ZP		1
+#define S_BSS		2
+#define S_CODE		3
+#define S_DATA		4
+#define S_HOME		5 /* SDCC: permanently-mapped code */
+#define S_XDATA		6 /* SDCC: BSS copy of initialized variables */
+#define S_XINIT		7 /* SDCC: ROM copy of initialized variables */
+#define S_CONST		8 /* SDCC: permanent const data */
+#define S_OSEG		9 /* SDCC: overlayed variables in ZP */
+#define MAX_S		10 /* selectable section types */
+#define S_PROC		10 /* info only, thunks for .proc */
+
+/* section flag mask */
+#define S_IS_RAM	1
+#define S_IS_ROM	2
+#define S_IS_SF2	4
+#define S_IS_CODE	8
+#define S_NO_DATA       16
 
 /* assembler options */
 #define OPT_LIST	0
@@ -62,8 +101,11 @@
 #define OPT_ZPDETECT	6
 #define OPT_LBRANCH	7
 #define OPT_DATAPAGE	8
+#define OPT_FORWARD	9
+#define MAX_OPTS	10
 
 /* assembler directives */
+/* update pseudo_allowed when adding or changing! */
 #define P_DB		0	// .db
 #define P_DW		1	// .dw
 #define P_DD		2	// .dd
@@ -122,13 +164,17 @@
 #define P_INCTILEPAL	55	// .inctilepal
 #define P_CARTRIDGE	56	// .cartridge
 #define P_ALIGN		57	// .align
-#define P_KICKC		58	// .kickc
-#define P_CPU		59	// .cpu
-#define P_SEGMENT	60	// .segment
-#define P_LABEL		61	// .label or .const
+#define P_KICKC		58	// .kickc .r6502 .r65c02
+#define P_IGNORE	59	// .cpu .optsdcc .globl
+#define P_SEGMENT	60	// .segment .area
+#define P_LABEL		61	// .label .const
 #define P_ENCODING	62	// .encoding
 #define P_STRUCT	63	// .struct
 #define P_ENDS		64	// .ends
+#define P_3PASS		65	// .3pass
+#define P_ALIAS		66	// .alias
+#define P_REF		67	// .ref
+#define P_PHASE		68	// .phase
 
 /* symbol flags */
 #define UNDEF	1	/* undefined - may be zero page */
@@ -137,6 +183,7 @@
 #define DEFABS	4	/* defined - two byte address */
 #define MACRO	5	/* used for a macro name */
 #define FUNC	6	/* used for a function */
+#define ALIAS	7	/* used for an alias */
 
 /* symbol lookup flags */
 #define SYM_CHK	0	/* does it exist? */
@@ -144,8 +191,9 @@
 #define SYM_REF	2	/* symbol reference */
 
 /* symbol definition source */
-#define CONSTANT 0	/* constant value */
-#define LOCATION 1	/* location (current PC) */
+#define LOCATION 0	/* location (current PC) */
+#define CONSTANT 1	/* constant value */
+#define VARIABLE 2	/* variable value */
 
 /* operation code flags */
 #define PSEUDO		0x0008000
@@ -172,10 +220,16 @@
 #define ABS_IND		0x0000800
 #define ABS_IND_X	0x0001000
 
-/* pass flags */
+/* pass type flags */
 #define FIRST_PASS	0
-#define BRANCH_PASS	1
+#define EXTRA_PASS	1
 #define LAST_PASS	2
+
+/* size of various hashing tables */
+#define HASH_COUNT	256
+
+/* size of remembered filename strings */
+#define STR_POOL_SIZE 65536
 
 /* structs */
 typedef struct t_opcode {
@@ -187,12 +241,25 @@ typedef struct t_opcode {
 	int type_idx;
 } t_opcode;
 
-typedef struct t_input_info {
+typedef struct t_str_pool {
+	struct t_str_pool *next;
+	int remain;
+	char buffer [STR_POOL_SIZE];
+} t_str_pool;
+
+typedef struct t_file {
+	struct t_file *next;
+	int number;
+	int included;
+	const char *name;
+} t_file;
+
+typedef struct t_input {
+	struct t_file *file;
 	FILE *fp;
 	int lnum;
 	int if_level;
-	char name[116];
-} t_input_info;
+} t_input;
 
 typedef struct t_proc {
 	struct t_proc *next;
@@ -211,29 +278,38 @@ typedef struct t_proc {
 	int type;
 	int kickc;
 	int defined;
-	char name[SBOLSZ];
+	int is_skippable;
 } t_proc;
 
+/* update pc_symbol when adding or changing! */
 typedef struct t_symbol {
 	struct t_symbol *next;
 	struct t_symbol *local;
 	struct t_symbol *scope;
 	struct t_proc *proc;
+	const char *name;
+	struct t_file *fileinfo;
+	int fileline;
+	int reason;
 	int type;
 	int value;
+	int phase;
 	int section;
-	int bank;
+	int overlay;
+	int mprbank;
+	int rombank;
 	int page;
 	int nb;
 	int size;
 	int vram;
 	int pal;
-	int defcnt;
-	int refcnt;
 	int reserved;
 	int data_type;
 	int data_size;
-	char name[SBOLSZ];
+	int deflastpass;
+	int reflastpass;
+	int defthispass;
+	int refthispass;
 } t_symbol;
 
 typedef struct t_branch {
@@ -246,19 +322,19 @@ typedef struct t_branch {
 
 typedef struct t_line {
 	struct t_line *next;
-	char *data;
+	const char *line;
 } t_line;
 
 typedef struct t_macro {
 	struct t_macro *next;
+	struct t_symbol *label;
 	struct t_line *line;
-	char name[SBOLSZ];
 } t_macro;
 
 typedef struct t_func {
 	struct t_func *next;
-	char line[128];
-	char name[SBOLSZ];
+	struct t_symbol *label;
+	char *line;
 } t_func;
 
 typedef struct t_tile {
@@ -287,6 +363,6 @@ typedef struct t_machine {
 	int (*pack_16x16_tile)(unsigned char *, void *, int, int);
 	int (*pack_16x16_sprite)(unsigned char *, void *, int, int);
 	void (*write_header)(FILE *, int);
-} MACHINE;
+} t_machine;
 
 #endif // DEFS_H

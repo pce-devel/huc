@@ -30,7 +30,7 @@ pce_load_map(char *fname, int mode)
 
 	/* open the file */
 	if ((fp = open_file(fname, "rb")) == NULL) {
-		fatal_error("Can not open file!");
+		fatal_error("Unable to open file!");
 		return (1);
 	}
 
@@ -44,13 +44,13 @@ pce_load_map(char *fname, int mode)
 	if (memcmp(header, "FORM", 4) || memcmp(&header[8], "FMAP", 4)) {
 		/* incorrect header - load it as pure binary data */
 		if (mode)
-			fatal_error("Invalid FMP format!");
+			fatal_error("Invalid .FMP file format!");
 		fclose(fp);
 		return (mode);
 	}
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -77,7 +77,7 @@ pce_load_map(char *fname, int mode)
 					/* read a block */
 					nb = (size > sizeof(buffer)) ? sizeof(buffer) : size;
 					if (fread(buffer, 1, nb, fp) != nb) {
-						error("FMP map data missing, file is too short!");
+						error(".FMP file map data missing, file is too short!");
 						fclose(fp);
 						return (0);
 					}
@@ -154,7 +154,7 @@ pce_load_stm(char *fname, int mode)
 
 	/* open the file */
 	if ((fp = open_file(fname, "rb")) == NULL) {
-		fatal_error("Can not open file!");
+		fatal_error("Unable to open file!");
 		return (1);
 	}
 
@@ -163,13 +163,13 @@ pce_load_stm(char *fname, int mode)
 	if (memcmp(header, "STMP", 4)) {
 		/* incorrect header - load it as pure binary data */
 		if (mode)
-			fatal_error("Invalid STM format!");
+			fatal_error("Invalid .STM file format!");
 		fclose(fp);
 		return (mode);
 	}
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -179,7 +179,7 @@ pce_load_stm(char *fname, int mode)
 	w = (header[5] << 8) + header[4];
 	h = (header[7] << 8) + header[6];
 	if ((w > 256) || (h > 256)) {
-		error("STM map size too big, max. 256x256!");
+		error(".STM file map size too big, max. 256x256!");
 		fclose(fp);
 		return (0);
 	}
@@ -193,7 +193,7 @@ pce_load_stm(char *fname, int mode)
 			/* read a block */
 			nb = (size > sizeof(buffer)) ? sizeof(buffer) : size;
 			if (fread(buffer, 1, nb, fp) != nb) {
-				error("STM map data missing, file is too short!");
+				error(".STM file map data missing, file is too short!");
 				fclose(fp);
 				return (0);
 			}

@@ -12,7 +12,9 @@ BINDIR := ../../../../bin
 # endif
 # endif
 
-CC     = $(BINDIR)/huc
+export PATH := $(PWD)/../../../../bin:$(PATH)
+
+CC     = $(BINDIR)/sdcc
 AS     = $(BINDIR)/pceas
 IL     = $(BINDIR)/isolink
 S2I    = $(BINDIR)/sym2inc
@@ -36,7 +38,7 @@ endif
 
 # GNU Make wants UNIX path separators in the makefile.
 
-VPATH = ../include:../font:../data
+VPATH = ../include:../font:../data:../../../../include/hucc
 
 # PCE_INCLUDE needs platform-specific path separators.
 

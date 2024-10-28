@@ -4,6 +4,11 @@ name: build
 # upvote here https://github.com/github/feedback/discussions/4501
 #
 # See https://github.com/marketplace/actions/setup-xcode-version
+#
+# Just for reference ...
+#
+# sudo xcode-select -s "/Applications/Xcode_13.4.1.app"
+
 on: 
   push:
   pull_request:
@@ -20,11 +25,11 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-20.04, macos-11, macos-12, windows-2022]
+        os: [ubuntu-22.04, macos-13, macos-14, windows-2022]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Check out code from the repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Build on Linux
@@ -38,14 +43,18 @@ jobs:
           ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -c "pacman -S binutils make mingw-w64-x86_64-gcc git --noconfirm"
           ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -where %CD% -c "make"
           echo Build Complete
-      - name: Build on Mac
-        if: startsWith(matrix.os, 'macos')
+      - name: Build on MacOs-13
+        if: startsWith(matrix.os, 'macos-13')
         run: |
-          sudo xcode-select -s "/Applications/Xcode_13.2.1.app"
+          make
+          echo Build Complete
+      - name: Build on MacOs-14
+        if: startsWith(matrix.os, 'macos-14')
+        run: |
           make
           echo Build Complete
       - name: Archive toolchain
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: toolchain-${{ matrix.os }}
           path: |
@@ -58,14 +67,14 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [ubuntu-20.04, macos-11, macos-12, windows-2022]
+        os: [ubuntu-22.04, macos-13, macos-14, windows-2022]
     runs-on: ${{ matrix.os }}
     needs: build
     steps:
       - name: Check out code from the repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Get previoulsy built artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: toolchain-${{ matrix.os }}
       - name: Restore Execute Flags
@@ -103,14 +112,14 @@ jobs:
   package:
     strategy:
       matrix:
-        os: [ubuntu-20.04, macos-12, windows-2022]
+        os: [ubuntu-22.04, macos-13, windows-2022]
     runs-on: ${{ matrix.os }}
     needs: build
     steps:
       - name: Check out code from the repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Get previously built artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: toolchain-${{ matrix.os }}
       - name: Package ${{ matrix.os }}
@@ -130,7 +139,7 @@ jobs:
           make package
           echo Package Complete
       - name: Archive package
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: package-${{ matrix.os }}
           path: |
@@ -143,22 +152,23 @@ jobs:
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
     steps:
       - name: Check out code from the repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Get previoulsy built artifacts win64
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: package-windows-2022
       - name: Get previously built artifacts macos
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: package-macos-12
+          name: package-macos-13
       - name: Get previously built artifacts linux
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: package-ubuntu-20.04
+          name: package-ubuntu-22.04
         # https://github.com/pyTooling/Actions/tree/main/releaser
         # need to use composite on windows, since docker isn't available
-      - name: publish package
+      - name: publish release package
+        if: ${{ github.event_name == 'release' }}
         uses: pyTooling/Actions/releaser@r0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -166,4 +176,12 @@ jobs:
           rm: true # do not keep old latest artifacts
           files: |
             *.zip
-
+      - name: publish current package
+        if: ${{ github.event_name != 'release' }}
+        uses: pyTooling/Actions/releaser@r0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: "current"
+          rm: true # do not keep old latest artifacts
+          files: |
+            *.zip

@@ -1,11 +1,11 @@
 /*inline*/
 f (int x)
 {
-  int *p[25];
-  int m[25*7];
+  int *p[13];
+  int m[13*3];
   int i;
 
-  for (i = 0; i < 25; i++)
+  for (i = 0; i < 13; i++)
     p[i] = m + x*i;
 
   p[1][0] = 0;
@@ -13,6 +13,6 @@ f (int x)
 
 main ()
 {
-  f (7);
+  f (3);
   exit (0);
 }

@@ -13,10 +13,10 @@ char marg[8][10][256];
 int midx;
 int mcounter, mcntmax;
 int mcntstack[8];
-struct t_line *mstack[8];
-struct t_line *mlptr;
-struct t_macro *macro_tbl[256];
-struct t_macro *mptr;
+t_line *mstack[8];
+t_line *mlptr;
+t_macro *macro_tbl[HASH_COUNT];
+t_macro *mptr;
 
 /* .macro pseudo */
 
@@ -33,7 +33,7 @@ do_macro(int *ip)
 			return;
 		}
 		if (expand_macro) {
-			error("Can not nest macro definitions!");
+			error("Cannot nest macro definitions!");
 			return;
 		}
 		if (lablptr == NULL) {
@@ -59,8 +59,12 @@ do_macro(int *ip)
 			fatal_error("Macro name cannot be a multi-label!");
 			return;
 		}
-		if (lablptr->defcnt || lablptr->refcnt) {
+		if (lablptr->defthispass || lablptr->refthispass) {
 			switch (lablptr->type) {
+			case ALIAS:
+				fatal_error("Symbol already used by an alias!");
+				return;
+
 			case MACRO:
 				fatal_error("Macro already defined!");
 				return;
@@ -90,7 +94,7 @@ do_macro(int *ip)
 void
 do_endm(int *ip)
 {
-	error("Unexpected ENDM!");
+	error("Unexpected .ENDM!");
 	return;
 }
 
@@ -100,7 +104,7 @@ struct t_macro *
 macro_look(int *ip)
 {
 	struct t_macro *ptr;
-	char name[32];
+	char name[SBOLSZ];
 	char c;
 	int hash;
 	int l;
@@ -118,7 +122,7 @@ macro_look(int *ip)
 			if (isdigit(c))
 				return (NULL);
 		}
-		if (l == 31)
+		if (l == (SBOLSZ-2))
 			return (NULL);
 		name[l++] = c;
 		hash += c;
@@ -130,7 +134,7 @@ macro_look(int *ip)
 	/* browse the hash table */
 	ptr = macro_tbl[hash];
 	while (ptr) {
-		if (!strcmp(name, ptr->name))
+		if (!strcmp(name, ptr->label->name + 1))
 			break;
 		ptr = ptr->next;
 	}
@@ -149,7 +153,7 @@ macro_getargs(int ip)
 	int i, j, f, arg;
 	int level;
 
-	/* can not nest too much macros */
+	/* Cannot nest too much macros */
 	if (midx == 7) {
 		error("Too many nested macro calls!");
 		return (0);
@@ -264,6 +268,19 @@ macro_getargs(int ip)
 			f = 0;
 			level = 0;
 			while (c) {
+				if (c == '/' && prlnbuf[ip] == '*') {
+					++ip;
+					do {
+						c = prlnbuf[ip++];
+						if (c == '\0') {
+							error("Macro argument comment cannot span multiple lines!");
+							return (0);
+						}
+					} while (c != '*' && prlnbuf[ip] != '/');
+					++ip;
+					c = prlnbuf[ip++];
+					continue;
+				}
 				if (c == ',') {
 					if (level == 0)
 						break;
@@ -292,8 +309,8 @@ macro_getargs(int ip)
 				else {
 					ptr[i++] = c;
 				}
-				if (i == 80) {
-					error("Macro argument string too long, max. 80 characters!");
+				if (i == 255) {
+					error("Macro argument string too long, max. 255 characters!");
 					return (0);
 				}
 				j++;
@@ -344,7 +361,11 @@ macro_install(void)
 
 	/* mark the macro name as reserved */
 	lablptr->type = MACRO;
-	lablptr->defcnt = 1;
+	lablptr->defthispass = 1;
+
+	/* remember where this was defined */
+	lablptr->fileinfo = input_file[infile_num].file;
+	lablptr->fileline = slnum;
 
 	/* check macro name syntax */
 	/*
@@ -369,7 +390,7 @@ macro_install(void)
 	}
 
 	/* initialize it */
-	strcpy(mptr->name, &symbol[1]);
+	mptr->label = lablptr;
 	mptr->line = NULL;
 	mptr->next = macro_tbl[hash];
 	macro_tbl[hash] = mptr;
@@ -440,7 +461,7 @@ macro_getargtype(char *arg)
 				else {
 					if ((sym->type == UNDEF) || (sym->type == IFUNDEF))
 						return (ARG_LABEL);
-					if (sym->bank == RESERVED_BANK)
+					if (sym->mprbank == UNDEFINED_BANK)
 						return (ARG_ABS);
 					else
 						return (ARG_LABEL);

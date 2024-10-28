@@ -1,3 +1,23 @@
+  All HuC project tools ...
+  -------------------------
+- Add new "hulz" tool to compress/decompress Hudson's common LZSS data formats.
+- Change "sym2inc" tool to include bank information in the output equates.
+
+  PCEAS changes ...
+  -----------------
+
+- Add support for generating HuCARD ROMs up to 8MByte using the StreetFighterII
+  mapper. Use "-sf2" on the command line to select this.
+- Add the "overlay(label_name)" operator to get the StreetFighterII mapper addr
+  register to write to select the correct set of 64 banks to map into $40..$7F.
+  For example, "stz $FFF0 + overlay( my_data )" if HuCARD bank $00 is in MPR7.
+- Allow .EQU and .RSSET values to use "$x:xx:xxxx" to specify the overlay, bank
+  and addr.
+- Allow C-style "&&" and "||" in expressions.
+- Change .BANK to give an error if undefined symbols are used.
+- Allow .BANK/.PAGE/.ORG within a .PROC if not in a .CODE section.
+
+
 New in version 4.00:
 --------------------
 
@@ -34,7 +54,7 @@ New in version 4.00:
   ISOlink changes ...
   -------------------
 - Add "-sgx" CLI parameter to put a SuperGRAFX string into CD-ROM projects.
-- Slight changes to the CLI format to allow HuC uses to name CD projects.
+- Slight changes to the CLI format to allow HuC users to name CD projects.
 - Change sector location and format of the directory information.
 - Change HuC location for patching directory info into HuC projects.
 - Change default startup location for HuC projects.
@@ -49,7 +69,7 @@ New in version 4.00:
 - Allow KickC to run multiple passes to resolve forward-referenced symbols.
 - Fix some data directives not expanding the ROM size during early passes.
 - Enable JMP from one procedure to another to allow tail-call optimization.
-- Enable expression evalution to be used in CALL pseudo-op.
+- Enable expression evaluation to be used in CALL pseudo-op.
 - Change default procedure packing to match PCEAS v3.21, use "-O" for enable
   the newer optimized procedure packing.
 - Fix procedure relocation from breaking some code declared after procedures.
@@ -59,7 +79,8 @@ New in version 4.00:
 - Allow .EQU and .RSSET values to use "$xx:xxxx" to specify bank and addr.
 - Fix zero-byte procedure relocation when at the end of a bank.
 - Fix operator precedence of unary "<" and ">".
-
+- Add "linear(label_name)" operator to get the label's 32-bit address-offset
+  from the start of the ROM/SCD/CD memory.
 
 
 New in version 3.99:
@@ -194,6 +215,7 @@ New in version 3.99:
 - Add "-pad" to PCEAS to pad out HuCard ROM images to next power-of-2 size.
 - Change HuC to use "-raw" and "-pad" options to avoid 384KB HuCard problem.
 - Add warning whenever a 384KB HuCard image is created to highlight problem.
+- Allow unary <,>,^ in PCEAS as synonyms for low(),high(),bank().
 
 
 New in version 3.21:

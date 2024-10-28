@@ -40,7 +40,7 @@ symhash(void)
 int
 addscope(struct t_symbol * curscope, int i)
 {
-	char * string;
+	const char * string;
 
 	/* stop at the end of scope chain */
 	if (curscope == NULL) {
@@ -80,13 +80,27 @@ colsym(int *ip, int flag)
 	int j;
 	char c;
 
+	/* convert an SDCC local-symbol into a PCEAS local-symbol */
+	if (sdcc_mode && (prlnbuf[(*ip)+5] == '$') &&
+		isdigit((symbol[2] = prlnbuf[(*ip)+0])) &&
+		isdigit((symbol[3] = prlnbuf[(*ip)+1])) &&
+		isdigit((symbol[4] = prlnbuf[(*ip)+2])) &&
+		isdigit((symbol[5] = prlnbuf[(*ip)+3])) &&
+		isdigit((symbol[6] = prlnbuf[(*ip)+4]))) {
+		symbol[0] = 6;
+		symbol[1] = '@';
+		symbol[7] = '\0';
+		(*ip) += 6;
+		return (6);
+	}
+
 	/* prepend the current scope? */
 	c = prlnbuf[*ip];
 	if ((flag != 0) && (scopeptr != NULL) && (c != '.') && (c != '@') && (c != '!')) {
 		i = addscope(scopeptr, i);
 	}
 
-	/* remember where the symbol itself starts */
+	/* remember where the symbol itself starts after the scope */
 	j = i;
 
 	/* get the symbol */
@@ -105,14 +119,18 @@ colsym(int *ip, int flag)
 	if (i == j) { i = 0; }
 
 	symbol[0] = i;
-	symbol[i + 1] = '\0';
 
-	if (i >= SBOLSZ - 1) {
-		char errorstr[512];
-		snprintf(errorstr, 512, "Symbol name too long ('%s' is %d chars long, max is %d)", symbol + 1, i, SBOLSZ - 2);
-		fatal_error(errorstr);
+	if (i == SBOLSZ - 1) {
+		symbol[SBOLSZ - 1] = '\0';
+		fatal_error("Symbol name too long, maximum is %d characters.", SBOLSZ - 2);
 		return (0);
 	}
+
+	symbol[i + 1] = '\0';
+
+	/* skip passed the first ':' if there are two in SDCC code */
+	if (sdcc_mode && (prlnbuf[*ip] == ':') && (prlnbuf[(*ip)+1] == ':'))
+		(*ip)++;
 
 	/* check if it's a reserved symbol */
 	if (i == 1) {
@@ -124,14 +142,12 @@ colsym(int *ip, int flag)
 			break;
 		}
 	}
-	if (check_keyword())
+	if (check_keyword(symbol))
 		err = 1;
 
 	/* error */
 	if (err) {
 		fatal_error("Reserved symbol!");
-//		symbol[0] = 0;
-//		symbol[1] = '\0';
 		return (0);
 	}
 
@@ -195,9 +211,15 @@ stlook(int type)
 		}
 	}
 
+	/* resolve symbol alias */
+	unaliased = sym;
+	while ((sym != NULL) && (sym->type == ALIAS)) {
+		sym = sym->local;
+	}
+
 	/* increment symbol reference counter */
-	if ((sym != NULL) && (type == SYM_REF)) {
-		sym->refcnt++;
+	if ((sym != NULL) && (type == SYM_REF) && (if_expr == 0)) {
+		sym->refthispass++;
 	}
 
 	/* ok */
@@ -223,24 +245,30 @@ stinstall(int hash, int type)
 	}
 
 	/* init the symbol struct */
-	sym->type = if_expr ? IFUNDEF : UNDEF;
-	sym->value = 0;
 	sym->local = NULL;
 	sym->scope = NULL;
 	sym->proc = NULL;
-	sym->section = -1;
-	sym->bank = RESERVED_BANK;
+	sym->reason = -1;
+	sym->type = if_expr ? IFUNDEF : UNDEF;
+	sym->value = 0;
+	sym->phase = 0;
+	sym->section = S_NONE;
+	sym->overlay = 0;
+	sym->mprbank = UNDEFINED_BANK;
+	sym->rombank = UNDEFINED_BANK;
+	sym->page = -1;
 	sym->nb = 0;
 	sym->size = 0;
-	sym->page = -1;
 	sym->vram = -1;
 	sym->pal = -1;
-	sym->defcnt = 0;
-	sym->refcnt = 0;
 	sym->reserved = 0;
 	sym->data_type = -1;
 	sym->data_size = 0;
-	strcpy(sym->name, symbol);
+	sym->deflastpass = 0;
+	sym->reflastpass = 1; /* so that .ifref triggers in 1st pass */
+	sym->defthispass = 0;
+	sym->refthispass = 0;
+	sym->name = remember_string(symbol, (size_t)symbol[0] + 2);
 
 	/* add the symbol to the hash table */
 	if (type) {
@@ -267,16 +295,41 @@ stinstall(int hash, int type)
  */
 
 int
-labldef(int lval, int lbnk, int lsrc)
+labldef(int reason)
 {
 	char c;
+	int labl_value, labl_rombank, labl_mprbank, labl_overlay, labl_section;
 
 	/* check for NULL ptr */
 	if (lablptr == NULL)
 		return (0);
 
-	/* adjust symbol address */
-	if (lsrc == LOCATION) {
+	/* is the symbol already used for somthing else */
+	if (lablptr->type == ALIAS) {
+		error("Symbol already used by an alias!");
+		return (-1);
+	}
+	if (lablptr->type == MACRO) {
+		error("Symbol already used by a macro!");
+		return (-1);
+	}
+	if (lablptr->type == FUNC) {
+		error("Symbol already used by a function!");
+		return (-1);
+	}
+
+	if (lablptr->reserved) {
+		fatal_error("Reserved symbol!");
+		return (-1);
+	}
+
+	/* remember where this was defined */
+	lablptr->fileinfo = input_file[infile_num].file;
+	lablptr->fileline = slnum;
+
+	if (reason == LOCATION) {
+		/* label is set from the current LOCATION */
+
 		/* is this a multi-label? */
 		if (lablptr->name[1] == '!') {
 			char tail [10];
@@ -289,9 +342,9 @@ labldef(int lval, int lbnk, int lsrc)
 
 			/* define the next multi-label instance */
 			strcpy(symbol, lablptr->name);
-			sprintf(tail, "!%d", 0x7FFFF & ++(lablptr->defcnt));
+			sprintf(tail, "!%d", 0x7FFFF & ++(lablptr->defthispass));
 			strncat(symbol, tail, SBOLSZ - 1 - strlen(symbol));
-			symbol[0] = strlen(&symbol[1]);
+			symbol[0] = (char)strlen(&symbol[1]);
 			if ((lablptr = stlook(SYM_DEF)) == NULL) {
 				fatal_error("Out of memory!");
 				return (-1);
@@ -306,101 +359,84 @@ labldef(int lval, int lbnk, int lsrc)
 				page = (page + 1) & 7;
 		}
 
-		lval = loccnt + (page << 13);
-
-		if (bank >= RESERVED_BANK)
-			lbnk = bank;
-		else
-			lbnk = bank_base + bank;
-
-		/* KickC can't call bank(), so put it in the label */
-		if (kickc_mode)
-			lval += lbnk << 23;
+		labl_value = (loccnt + (page << 13) + phase_offset) & 0xFFFF;
+		labl_rombank = bank;
+		labl_mprbank = bank2mprbank(bank, section);
+		labl_overlay = bank2overlay(bank, section);
+		labl_section = section;
 	} else {
+		/* label is a CONSTANT or VARIABLE set from the current expression */
+
 		/* is this a multi-label? */
 		if (lablptr->name[1] == '!') {
 			/* sanity check */
 			fatal_error("A multi-label can only be a location!");
 			return (-1);
 		}
+
+		labl_value = value;
+		labl_mprbank = expr_mprbank;
+		labl_overlay = expr_overlay;
+		labl_rombank = mprbank2bank(expr_mprbank, expr_overlay);
+		labl_section = (labl_rombank < UNDEFINED_BANK) ? S_DATA : S_NONE;
+	}
+
+//	/* needed for forward-references (in KickC and elsewhere) */
+//	if ((pass != FIRST_PASS) && (lablptr->type == UNDEF)) {
+//		if (pass_count < 3)
+//			need_another_pass = 1;
+//	}
+
+	/* allow ".set" to change a label's value at any time */
+	if ((reason == VARIABLE) && (lablptr->reason == VARIABLE))
+		lablptr->type = UNDEF;
+
+	/* is the symbol currently undefined? */
+	if ((lablptr->type == UNDEF) || (lablptr->type == IFUNDEF)) {
+		/* allow the definition */
+	}
+	/* don't allow the reason, or the value, to change during a single pass */
+	else if ((lablptr->reason != reason) ||
+		 (lablptr->defthispass && lablptr->value != labl_value)) {
+		/* normal label */
+		lablptr->type = MDEF;
+		lablptr->value = 0;
+		error("Label was already defined differently!");
+		return (-1);
+	}
+	/* make sure that nothing changes at all in the last pass */
+	else if (pass == LAST_PASS) {
+		if ((lablptr->value != labl_value) || (lablptr->overlay != labl_overlay) ||
+		    ((reason == LOCATION) && (labl_mprbank < UNDEFINED_BANK) && (lablptr->mprbank != labl_mprbank))) {
+			error("Symbol's bank or address changed in final pass!");
+			#if 0
+			fprintf(ERROUT, "lablptr->value = $%04x, labl_value = $%04x\n", lablptr->value, labl_value);
+			fprintf(ERROUT, "lablptr->mprbank = $%02x, labl_mprbank = $%02x\n", lablptr->mprbank, labl_mprbank);
+			fprintf(ERROUT, "lablptr->rombank = $%02x, labl_rombank = $%02x\n", lablptr->rombank, labl_rombank);
+			#endif
+			return (-1);
+		}
 	}
 
 	/* record definition */
-	lablptr->defcnt = 1;
-
-	/* first pass or still undefined */
-	if ((pass == FIRST_PASS) || (lablptr->type == UNDEF)) {
-		if (pass != FIRST_PASS) {
-			/* needed for KickC forward-references */
-			need_another_pass = 1;
-		}
-
-		switch (lablptr->type) {
-		/* undefined */
-		case UNDEF:
-		case IFUNDEF:
-			lablptr->type = DEFABS;
-			lablptr->bank = lbnk;
-			lablptr->value = lval;
-			break;
-
-		/* already defined - error */
-		case MACRO:
-			error("Symbol already used by a macro!");
-			return (-1);
-
-		case FUNC:
-			error("Symbol already used by a function!");
-			return (-1);
-
-		default:
-			/* reserved label */
-			if (lablptr->reserved) {
-				fatal_error("Reserved symbol!");
-				return (-1);
-			}
-
-			/* compare the values */
-			if (lablptr->value == lval)
-				break;
-
-			/* normal label */
-			lablptr->type = MDEF;
-			lablptr->value = 0;
-			error("Label multiply defined!");
-			return (-1);
-		}
-	}
-
-	/* branch pass */
-	else if (pass != LAST_PASS) {
-		if (lablptr->type == DEFABS) {
-			if ((lablptr->value != lval) ||
-			    ((lsrc == LOCATION) && (bank < bank_limit) && (lablptr->bank != bank_base + bank))) {
-				/* needed for KickC forward-references */
-				need_another_pass = 1;
-			}
-			lablptr->bank = lbnk;
-			lablptr->value = lval;
-		}
-	}
-
-	/* last pass */
-	else {
-		if ((lablptr->value != lval) ||
-		    ((lsrc == LOCATION) && (bank < bank_limit) && (lablptr->bank != bank_base + bank))) {
-			fatal_error("Symbol's bank or address changed in final pass!");
-			return (-1);
-		}
-	}
+	lablptr->defthispass = 1;
 
 	/* update symbol data */
-	if (lsrc == LOCATION) {
-		lablptr->section = section;
+	lablptr->reason  = reason;
+	lablptr->type    = DEFABS;
+	lablptr->value   = labl_value;
+//	if (labl_rombank < UNDEFINED_BANK) /* Don't overwrite with undefined */
+		lablptr->rombank = labl_rombank;
+//	if (labl_mprbank < UNDEFINED_BANK) /* Don't overwrite with undefined */
+		lablptr->mprbank = labl_mprbank;
+	lablptr->overlay = labl_overlay;
+	lablptr->section = labl_section;
 
-		if (section == S_CODE)
+	if (reason == LOCATION) {
+		if (section_flags[section] & S_IS_CODE)
 			lablptr->proc = proc_ptr;
 
+		lablptr->phase = phase_offset;
 		lablptr->page = page;
 
 		/* check if it's a local or global symbol */
@@ -432,7 +468,7 @@ lablset(char *name, int val)
 {
 	int len;
 
-	len = strlen(name);
+	len = (int)strlen(name);
 	lablptr = NULL;
 
 	if (len) {
@@ -443,7 +479,7 @@ lablset(char *name, int val)
 		if (lablptr) {
 			lablptr->type = DEFABS;
 			lablptr->value = val;
-			lablptr->defcnt = 1;
+			lablptr->defthispass = 1;
 			lablptr->reserved = 1;
 		}
 	}
@@ -464,7 +500,7 @@ lablexists(char *name)
 {
 	int len;
 
-	len = strlen(name);
+	len = (int)strlen(name);
 	lablptr = NULL;
 
 	if (len) {
@@ -495,7 +531,7 @@ lablremap(void)
 	int i;
 
 	/* browse the symbol table */
-	for (i = 0; i < 256; i++) {
+	for (i = 0; i < HASH_COUNT; i++) {
 		sym = hash_tbl[i];
 		while (sym) {
 			/* remap the bank */
@@ -540,15 +576,24 @@ labldump(FILE *fp)
 	fprintf(fp, "----\t----\t-----\n");
 
 	/* browse the symbol table */
-	for (i = 0; i < 256; i++) {
+	for (i = 0; i < HASH_COUNT; i++) {
 		for (sym = hash_tbl[i]; sym != NULL; sym = sym->next) {
 			/* skip undefined symbols and stripped symbols */
-			if ((sym->type != DEFABS) || (sym->bank == STRIPPED_BANK) || (sym->name[1] == '!'))
+			if ((sym->type != DEFABS) || (sym->mprbank == STRIPPED_BANK) || (sym->name[1] == '!'))
 				continue;
 
 			/* dump the label */
-			fprintf(fp, "%2.2x\t%4.4x\t", sym->bank, sym->value & 0xFFFF);
+			if (sym->mprbank >= UNDEFINED_BANK)
+				fprintf(fp, "   -");
+			else if (sym->overlay == 0)
+				fprintf(fp, "  %2.2x", sym->mprbank);
+			else
+				fprintf(fp, "%1.1x:%2.2x", sym->overlay, sym->mprbank);
+
+			fprintf(fp, "\t%4.4x\t", sym->value & 0xFFFF);
+
 			fprintf(fp, "%s\t", &(sym->name[1]));
+
 			if (strlen(&(sym->name[1])) < 8)
 				fprintf(fp, "\t");
 			if (strlen(&(sym->name[1])) < 16)
@@ -562,8 +607,16 @@ labldump(FILE *fp)
 				local = sym->local;
 
 				while (local) {
-					fprintf(fp, "%2.2x\t%4.4x\t", local->bank, local->value & 0xFFFF);
+					if (local->mprbank >= UNDEFINED_BANK)
+						fprintf(fp, "   -");
+					else if (sym->overlay == 0)
+						fprintf(fp, "  %2.2x", local->mprbank);
+					else
+						fprintf(fp, "%1.1x:%2.2x", local->overlay, local->mprbank);
+
+					fprintf(fp, "\t%4.4x\t", local->value & 0xFFFF);
 					fprintf(fp, "\t%s\t", &(local->name[1]));
+
 					if (strlen(&(local->name[1])) < 8)
 						fprintf(fp, "\t");
 					if (strlen(&(local->name[1])) < 16)
@@ -580,29 +633,35 @@ labldump(FILE *fp)
 
 
 /* ----
- * lablresetdefcnt
+ * lablstartpass
  * ----
- * clear the defcnt on all the multi-labels
+ * reset symbol definition and reference tracking
  */
 
 void
-lablresetdefcnt(void)
+lablstartpass(void)
 {
 	struct t_symbol *sym;
 	int i;
 
 	/* browse the symbol table */
-	for (i = 0; i < 256; i++) {
+	for (i = 0; i < HASH_COUNT; i++) {
 		sym = hash_tbl[i];
 		while (sym) {
-			sym->defcnt = 0;
+			sym->deflastpass = sym->defthispass;
+			sym->defthispass = 0;
+			sym->reflastpass = sym->refthispass;
+			sym->refthispass = 0;
 
 			/* local symbols */
 			if (sym->local) {
 				struct t_symbol * local = sym->local;
 
 				while (local) {
-					local->defcnt = 0;
+					local->deflastpass = local->defthispass;
+					local->defthispass = 0;
+					local->reflastpass = local->refthispass;
+					local->refthispass = 0;
 
 					/* next */
 					local = local->next;
@@ -613,4 +672,67 @@ lablresetdefcnt(void)
 			sym = sym->next;
 		}
 	}
+}
+
+
+/* ----
+ * bank2mprbank
+ * ----
+ * convert a bank number into a value to put into an MPR register
+ */
+
+int bank2mprbank (int what_bank, int what_section)
+{
+	if ((section_flags[what_section] & S_IS_ROM) && (what_bank < UNDEFINED_BANK)) {
+		if ((section_flags[what_section] & S_IS_SF2) && (what_bank > 0x7F)) {
+			/* for StreetFighterII banks in ROM */
+			what_bank = 0x40 + (what_bank & 0x3F);
+		} else {
+			/* for all non-SF2, CD, SCD code and data banks */
+			what_bank = what_bank + bank_base;
+		}
+	}
+	return (what_bank);
+}
+
+
+/* ----
+ * bank2overlay
+ * ----
+ * convert a bank number into an overlay number
+ */
+
+int bank2overlay (int what_bank, int what_section)
+{
+	if ((section_flags[what_section] & S_IS_ROM) && (what_bank < UNDEFINED_BANK)) {
+		if ((section_flags[what_section] & S_IS_SF2) && (what_bank > 0x7F)) {
+			/* for StreetFighterII banks in ROM */
+			return (what_bank / 0x40) - 1;
+		}
+	}
+	return (0);
+}
+
+
+/* ----
+ * mprbank2bank
+ * ----
+ * convert an overlay and MPR register value into a bank number
+ */
+
+int mprbank2bank (int what_bank, int what_overlay)
+{
+	if (what_overlay != 0) {
+		if ((section_flags[S_DATA] & S_IS_SF2) == 0) {
+			error("You can only use overlays with the StreetFighterII mapper!");
+			return (UNDEFINED_BANK);
+		}
+		if ((what_bank < 0x40) || (what_bank > 0x7F)) {
+			error("Invalid bank and overlay for the StreetFighterII mapper!");
+			return (UNDEFINED_BANK);
+		}
+		return (what_bank + what_overlay * 0x40);
+	}
+	what_bank = what_bank - bank_base;
+	return (what_bank <= bank_limit) ? what_bank : UNDEFINED_BANK;
 }

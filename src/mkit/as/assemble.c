@@ -26,8 +26,6 @@ int continued_line;	/* set when a line is the continuation of another line */
 void
 assemble(int do_label)
 {
-	struct t_line *ptr;
-	char *buf;
 	char c;
 	int flag;
 	int ip, i, j;			/* prlnbuf pointer */
@@ -52,7 +50,7 @@ assemble(int do_label)
 		if (oplook(&i) >= 0) {
 			if (opflg == PSEUDO) {
 				if (opval == P_MACRO) {
-					error("Can not nest macro definitions!");
+					error("Cannot nest macro definitions!");
 					return;
 				}
 				if (opval == P_ENDM) {
@@ -64,24 +62,47 @@ assemble(int do_label)
 			}
 		}
 		if (pass == FIRST_PASS) {
+			struct t_line *ptr;
+			const char *buf;
 			if (preproc_modidx != 0) {
 				/* Remove C-style comments within a macro */
 				prlnbuf[preproc_modidx] = '\0';
 			}
 			ptr = (void *)malloc(sizeof(struct t_line));
-			buf = (void *)malloc(strlen(&prlnbuf[preproc_sfield]) + 1);
+			buf = (void *)remember_string(&prlnbuf[preproc_sfield], strlen(&prlnbuf[preproc_sfield]) + 1);
 			if ((ptr == NULL) || (buf == NULL)) {
 				error("Out of memory!");
 				return;
 			}
-			strcpy(buf, &prlnbuf[preproc_sfield]);
 			ptr->next = NULL;
-			ptr->data = buf;
+			ptr->line = buf;
 			if (mlptr)
 				mlptr->next = ptr;
 			else
 				mptr->line = ptr;
 			mlptr = ptr;
+		}
+		return;
+	}
+
+	/* unused PROC/PROCGROUP that has been stripped out;
+	 * check for a '.endp' or '.endprocgroup'
+	 * to toggle state
+	 */
+	if (skipping_stripped) {
+		i = preproc_sfield;
+		while (isspace(prlnbuf[i])) { i++; }
+		if ((oplook(&i) >= 0) && (opflg == PSEUDO)) {
+			switch (opval) {
+
+			case P_ENDP:		// .endp
+			case P_ENDPG:		// .endprocgroup
+				if (optype != skipping_stripped)
+					break;
+				skipping_stripped = 0;
+				if (pass == LAST_PASS)
+					println();
+			}
 		}
 		return;
 	}
@@ -113,15 +134,13 @@ assemble(int do_label)
 						/* check that expression matches if_level */
 						save_if_expr(&i);
 						if (strcmp(if_txt[if_level], if_txt[if_level-1]) != 0) {
-							char message [128];
-							sprintf(message, "Condition does not match \".if %s\" at line %d!", if_txt[if_level-1], if_line[if_level-1]);
-							fatal_error(message);
+							fatal_error("Condition does not match \".IF %s\" at line %d!", if_txt[if_level-1], if_line[if_level-1]);
 							return;
 						}
 					}
 					if (if_state[if_level]) {
 						skip_lines = !if_flag[if_level];
-						if (pass == LAST_PASS)
+						if (pass == LAST_PASS && !expand_macro)
 							println();
 					}
 					return;
@@ -132,13 +151,11 @@ assemble(int do_label)
 						/* check that expression matches if_level */
 						save_if_expr(&i);
 						if (strcmp(if_txt[if_level], if_txt[if_level-1]) != 0) {
-							char message [128];
-							sprintf(message, "Condition does not match \".if %s\" at line %d!", if_txt[if_level-1], if_line[if_level-1]);
-							fatal_error(message);
+							fatal_error("Condition does not match \".IF %s\" at line %d!", if_txt[if_level-1], if_line[if_level-1]);
 							return;
 						}
 					}
-					if (if_state[if_level] && (pass == LAST_PASS))
+					if (if_state[if_level] && (pass == LAST_PASS) && !expand_macro)
 						println();
 					skip_lines = !if_state[if_level];
 					if_level--;
@@ -155,7 +172,6 @@ assemble(int do_label)
 
 	/* comment line */
 	c = prlnbuf[preproc_sfield];
-//	if (c == ';' || c == '*' || c == '\0') { /* Let's see if anyone really uses '*' for a comment line! */
 	if (c == ';' || c == '\0') {
 		lastlabl = NULL;
 		if (pass == LAST_PASS)
@@ -168,15 +184,19 @@ assemble(int do_label)
 	j = 0;
 	while (isspace(prlnbuf[i]))
 		i++;
-	for (;;) {
-		c = prlnbuf[i + j];
-		if ((j == 0) && isdigit(c))
-			break;
-		if (isalnum(c) || (c == '_') || (c == '.') || (j == 0 && (c == '@' || c == '!'))) {
-			++j;
-		} else {
-			break;
+
+	c = prlnbuf[i];
+
+	if (isdigit(c)) {
+		/* check for an SDCC local-symbol */
+		if (sdcc_mode && (prlnbuf[i+5] == '$') && (prlnbuf[i+6] == ':')
+			&& isdigit(prlnbuf[i+1]) && isdigit(prlnbuf[i+2])
+			&& isdigit(prlnbuf[i+3]) && isdigit(prlnbuf[i+4])) {
+			j = 6; c = ':';
 		}
+	} else
+	while (isalnum(c) || (c == '_') || (c == '.') || (j == 0 && (c == '@' || c == '!'))) {
+		c = prlnbuf[i + (++j)];
 	}
 
 	if ((j == 0) || ((i != preproc_sfield) && (c != ':'))) {
@@ -222,12 +242,12 @@ assemble(int do_label)
 	mptr = macro_look(&ip);
 	if (mptr) {
 		/* define label */
-		labldef(0, 0, LOCATION);
+		labldef(LOCATION);
 
 		/* output location counter */
 		if (pass == LAST_PASS) {
 			if (!asm_opt[OPT_MACRO])
-				loadlc((page << 13) + loccnt, 0);
+				loadlc(loccnt + (page << 13), 0);
 		}
 
 		/* get macro args */
@@ -256,7 +276,7 @@ assemble(int do_label)
 			return;
 		}
 
-		labldef(0, 0, LOCATION);
+		labldef(LOCATION);
 		if (flag == -1)
 			error("Unknown instruction!");
 		if ((flag == -2) && (pass == LAST_PASS)) {
@@ -271,15 +291,15 @@ assemble(int do_label)
 	/* generate code */
 	if (opflg == PSEUDO)
 		do_pseudo(&ip);
-	else if (labldef(0, 0, LOCATION) == -1)
+	else if (labldef(LOCATION) == -1)
 		return;
 	else {
 		/* output infos */
 		data_loccnt = loccnt;
 
 		/* check if we are in the CODE section */
-		if (section != S_CODE)
-			fatal_error("Instructions not allowed in this section!");
+		if ((section_flags[section] & S_IS_CODE) == 0)
+			fatal_error("Instructions are not allowed in this section!");
 
 		/* generate code */
 		opproc(&ip);
@@ -414,7 +434,7 @@ addinst(struct t_opcode *optbl)
 	while (optbl->name) {
 		/* calculate instruction hash value */
 		hash = 0;
-		len = strlen(optbl->name);
+		len = (int)strlen(optbl->name);
 		ptr = optbl->name;
 
 		for (i = 0; i < len; i++) {
@@ -484,7 +504,7 @@ save_if_expr(int *ip)
 void
 do_if(int *ip)
 {
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* save condition text */
 	save_if_expr(ip);
@@ -499,7 +519,7 @@ do_if(int *ip)
 
 	/* check for '.if' stack overflow */
 	if (if_level == 255) {
-		fatal_error("Too many nested IF/ENDIF!");
+		fatal_error("Too many nested .IF/.ENDIF!");
 		return;
 	}
 	in_if = 1;
@@ -508,7 +528,7 @@ do_if(int *ip)
 	if (!skip_lines)
 		skip_lines = if_flag[if_level] = value ? 0 : 1;
 
-	if (pass == LAST_PASS) {
+	if (pass == LAST_PASS && !expand_macro) {
 		loadlc(value, 1);
 		println();
 	}
@@ -520,7 +540,7 @@ void
 do_else(int *ip)
 {
 	if (!in_if)
-		fatal_error("Unexpected ELSE!");
+		fatal_error("Unexpected .ELSE!");
 }
 
 /* .endif pseudo */
@@ -529,7 +549,7 @@ void
 do_endif(int *ip)
 {
 	if (!in_if)
-		fatal_error("Unexpected ENDIF!");
+		fatal_error("Unexpected .ENDIF!");
 }
 
 /* .ifdef/.ifndef pseudo */
@@ -537,7 +557,7 @@ do_endif(int *ip)
 void
 do_ifdef(int *ip)
 {
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* skip spaces */
 	while (isspace(prlnbuf[*ip]))
@@ -553,11 +573,17 @@ do_ifdef(int *ip)
 	}
 	if (!check_eol(ip))
 		return;
+
+	/* this check does not count as a refererence! */
 	lablptr = stlook(SYM_CHK);
+
+	/* is it undefined */
+	if ((lablptr != NULL) && ((lablptr->type == IFUNDEF) || (lablptr->type == UNDEF)))
+		lablptr = NULL;
 
 	/* check for '.if' stack overflow */
 	if (if_level == 255) {
-		fatal_error("Too many nested IF/ENDIF!");
+		fatal_error("Too many nested .IF/.ENDIF!");
 		return;
 	}
 	in_if = 1;
@@ -574,7 +600,7 @@ do_ifdef(int *ip)
 		}
 	}
 
-	if (pass == LAST_PASS) {
+	if (pass == LAST_PASS && !expand_macro) {
 		loadlc(!skip_lines, 1);
 		println();
 	}

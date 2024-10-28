@@ -162,7 +162,7 @@ pce_pack_8x8_tile(unsigned char *buffer, void *data, int line_offset, int format
 
 	default:
 		/* other formats not supported */
-		error("Internal error: unsupported format passed to 'pack_8x8_tile'!");
+		error("Unsupported format passed to 'pack_8x8_tile'!");
 		break;
 	}
 
@@ -223,7 +223,7 @@ pce_pack_16x16_tile(unsigned char *buffer, void *data, int line_offset, int form
 
 	default:
 		/* other formats not supported */
-		error("Internal error: unsupported format passed to 'pack_16x16_tile'!");
+		error("Unsupported format passed to 'pack_16x16_tile'!");
 		break;
 	}
 
@@ -321,7 +321,7 @@ pce_pack_16x16_sprite(unsigned char *buffer, void *data, int line_offset, int fo
 
 	default:
 		/* other formats not supported */
-		error("Internal error: unsupported format passed to 'pack_16x16_sprite'!");
+		error("Unsupported format passed to 'pack_16x16_sprite'!");
 		break;
 	}
 
@@ -340,7 +340,7 @@ void
 pce_vram(int *ip)
 {
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* check if there's a label */
 	if (lastlabl == NULL) {
@@ -375,7 +375,7 @@ void
 pce_pal(int *ip)
 {
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* check if there's a label */
 	if (lastlabl == NULL) {
@@ -420,7 +420,7 @@ pce_defchr(int *ip)
 	/* check if there's a label */
 	if (lablptr) {
 		/* define label */
-		labldef(0, 0, LOCATION);
+		labldef(LOCATION);
 
 		/* get the VRAM address */
 		if (!evaluate(ip, ',', 0))
@@ -477,7 +477,7 @@ pce_defpal(int *ip)
 	char c;
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output infos */
 	data_loccnt = loccnt;
@@ -542,7 +542,7 @@ pce_defspr(int *ip)
 	/* check if there's a label */
 	if (lablptr) {
 		/* define label */
-		labldef(0, 0, LOCATION);
+		labldef(LOCATION);
 
 		/* get the VRAM address */
 		if (!evaluate(ip, ',', 0))
@@ -600,7 +600,7 @@ pce_incbat(int *ip)
 	unsigned int temp;
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -668,7 +668,7 @@ pce_incpal(int *ip)
 	int r, g, b;
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -727,13 +727,13 @@ pce_incpal(int *ip)
 void
 pce_incspr(int *ip)
 {
-	unsigned int i, j;
+	int i, j;
 	int x, y, w, h;
-	unsigned int sx, sy;
+	int sx, sy;
 	int nb_sprite = 0;
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -805,13 +805,13 @@ pce_incspr(int *ip)
 void
 pce_inctile(int *ip)
 {
-	unsigned int i, j;
+	int i, j;
 	int x, y, w, h;
-	unsigned int tx, ty;
+	int tx, ty;
 	int nb_tile = 0;
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -888,13 +888,13 @@ pce_inctile(int *ip)
 void
 pce_incchrpal(int *ip)
 {
-	unsigned int i, j;
+	int i, j;
 	int x, y, w, h;
-	unsigned int tx, ty;
+	int tx, ty;
 	int nb_chr = 0;
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -903,7 +903,7 @@ pce_incchrpal(int *ip)
 	/* get args */
 	if (!pcx_get_args(ip))
 		return;
-	if (!pcx_parse_args(0, pcx_nb_args, &x, &y, &w, &h, 16))
+	if (!pcx_parse_args(0, pcx_nb_args, &x, &y, &w, &h, 8))
 		return;
 
 	/* scan tiles */
@@ -915,7 +915,6 @@ pce_incchrpal(int *ip)
 
 			/* get chr palette */
 			buffer[0] = pce_scan_8x8_tile(tx, ty) << 4;
-
 			/* store palette number */
 			putbuffer(buffer, 1);
 			nb_chr++;
@@ -958,13 +957,13 @@ pce_incchrpal(int *ip)
 void
 pce_incsprpal(int *ip)
 {
-	unsigned int i, j;
+	int i, j;
 	int x, y, w, h;
-	unsigned int tx, ty;
+	int tx, ty;
 	int nb_sprite = 0;
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -1028,13 +1027,13 @@ pce_incsprpal(int *ip)
 void
 pce_inctilepal(int *ip)
 {
-	unsigned int i, j;
+	int i, j;
 	int x, y, w, h;
-	unsigned int tx, ty;
+	int tx, ty;
 	int nb_tile = 0;
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -1117,14 +1116,14 @@ pce_inctilepal(int *ip)
 void
 pce_incmap(int *ip)
 {
-	unsigned int i, j;
+	int i, j;
 	int x, y, w, h;
-	unsigned int tx, ty;
+	int tx, ty;
 	int tile;
 	int err = 0;
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -1184,11 +1183,11 @@ void
 pce_mml(int *ip)
 {
 	int offset, bufsize, size;
-	char mml[128];
+	char mml[PATHSZ];
 	char c;
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -1202,7 +1201,7 @@ pce_mml(int *ip)
 	/* extract and parse mml string(s) */
 	for (;;) {
 		/* get string */
-		if (!getstring(ip, mml, 127))
+		if (!getstring(ip, mml, PATHSZ - 1))
 			return;
 
 		/* parse string */

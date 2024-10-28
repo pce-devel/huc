@@ -37,9 +37,10 @@ void dump_screen(void)
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 , 0x00, 0x00,
     };
 
-    char *scrname = strdup(rom_name);
-    *strrchr(scrname, '.') = 0;
-    strcat(scrname, ".bmp");
+    char *scrname = strcpy( malloc( strlen(rom_name)+10), rom_name);
+    char *nameext = strrchr(scrname, '.');
+    if (nameext) *nameext = '\0';
+    strcat(scrname, rom[0x1FF5] == 0xFF ? "-huc.bmp" : "-hucc.bmp");
 
 #ifndef LSB_FIRST
     /* XXX: Is this guaranteed to work? man page doesn't say anything about
@@ -76,7 +77,7 @@ void dump_screen(void)
     /* Lines in BMP file are reversed. */
     for (i = 0; i < SCR_H; i++) {
         if (memcmp(pixels + i * SCR_W * 2, refpixels + (SCR_H - i - 1) * SCR_W * 2, SCR_W * 2)) {
-            fprintf(stderr, "screen differs from reference\n");
+            fprintf(stderr, "screen differs from reference screen \"%s\"\n", scrname);
             exit(1);
         }
     }

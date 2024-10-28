@@ -67,7 +67,6 @@
 ; the next line's sprites during the blank time after it is done displaying
 ; the current line's pixel data.
 ;
-;
 ; VDC @  5.36MHz -> width = total # chr on line = 42 chr
 ; VDC @  7.16MHz -> width = total # chr on line = 56 chr
 ; VDC @ 10.74MHz -> width = total # chr on line = 85 chr
@@ -75,46 +74,67 @@
 ; Sprites-per-line shown (@ 1-clk-per-access) = (width - 2 - (hdw + 1)) * 2
 ; Sprites-per-line shown (@ 2-clk-per-access) = (width - 2 - (hdw + 1))
 ;
+; The hdw value also limits the number of sprite SAT entries that the VDC is
+; able to scan to find the sprites that are on the next line.
+;
 ;
 ; VDC @  5.36MHz, MWR=$x0 (1-clk-per-access)
 ;
-;   hds $02 hdw $1F -> 32 chr = 256 pxl -> 16 sprites
-;   hds $02 hdw $20 -> 33 chr = 264 pxl -> 14 sprites
-;   hds $02 hdw $21 -> 34 chr = 272 pxl -> 12 sprites
+;   hds $02 hdw $1C -> 29 chr = 232 pxl -> 59 SAT searched, 16 sprites shown
+;   hds $02 hdw $1D -> 30 chr = 240 pxl -> 61 SAT searched, 16 sprites shown
+;   hds $02 hdw $1E -> 31 chr = 248 pxl -> 63 SAT searched, 16 sprites shown
+;   hds $02 hdw $1F -> 32 chr = 256 pxl -> 64 SAT searched, 16 sprites shown
+;   hds $02 hdw $20 -> 33 chr = 264 pxl -> 64 SAT searched, 14 sprites shown
+;   hds $02 hdw $21 -> 34 chr = 272 pxl -> 64 SAT searched, 12 sprites shown
 ;
 ;
 ; VDC @  7.16MHz, MWR=$x0 (1-clk-per-access)
 ;
-;   hds $06 hdw $25 -> 38 chr = 304 pxl -> 16 sprites
+;   hds $07 hdw $1C -> 29 chr = 232 pxl -> 59 SAT searched, 16 sprites shown
+;   hds $07 hdw $1D -> 30 chr = 240 pxl -> 61 SAT searched, 16 sprites shown
+;   hds $07 hdw $1E -> 31 chr = 248 pxl -> 63 SAT searched, 16 sprites shown
+;   hds $07 hdw $1F -> 32 chr = 256 pxl -> 64 SAT searched, 16 sprites shown
 ;   ...
-;   hds $03 hdw $2B -> 44 chr = 352 pxl -> 16 sprites
-;   hds $03 hdw $2C -> 45 chr = 360 pxl -> 16 sprites
-;   hds $03 hdw $2D -> 46 chr = 368 pxl -> 16 sprites
-;   hds $03 hdw $2E -> 47 chr = 376 pxl -> 14 sprites
-;   hds $03 hdw $2F -> 48 chr = 384 pxl -> 12 sprites
+;   hds $06 hdw $25 -> 38 chr = 304 pxl -> 64 SAT searched, 16 sprites shown
+;   ...
+;   hds $03 hdw $2B -> 44 chr = 352 pxl -> 64 SAT searched, 16 sprites shown
+;   hds $03 hdw $2C -> 45 chr = 360 pxl -> 64 SAT searched, 16 sprites shown
+;   hds $03 hdw $2D -> 46 chr = 368 pxl -> 64 SAT searched, 16 sprites shown
+;   hds $03 hdw $2E -> 47 chr = 376 pxl -> 64 SAT searched, 14 sprites shown
+;   hds $03 hdw $2F -> 48 chr = 384 pxl -> 64 SAT searched, 12 sprites shown
 ;
 ;
 ; VDC @  7.16MHz, MWR=$xA (2-clk-per-access)
 ;
-;   hds $06 hdw $25 -> 38 chr = 304 pxl -> 16 sprites
-;   hds $05 hdw $26 -> 39 chr = 312 pxl -> 15 sprites
-;   hds $05 hdw $27 -> 40 chr = 320 pxl -> 14 sprites
-;   hds $04 hdw $28 -> 41 chr = 328 pxl -> 13 sprites
-;   hds $04 hdw $29 -> 42 chr = 336 pxl -> 12 sprites
-;   hds $03 hdw $2A -> 43 chr = 344 pxl -> 11 sprites
-;   hds $03 hdw $2B -> 44 chr = 352 pxl -> 10 sprites
+;   hds $07 hdw $1C -> 29 chr = 232 pxl -> 58 SAT searched, 16 sprites shown
+;   hds $07 hdw $1D -> 30 chr = 240 pxl -> 60 SAT searched, 16 sprites shown
+;   hds $07 hdw $1E -> 31 chr = 248 pxl -> 62 SAT searched, 16 sprites shown
+;   hds $07 hdw $1F -> 32 chr = 256 pxl -> 64 SAT searched, 16 sprites shown
+;   ...
+;   hds $06 hdw $25 -> 38 chr = 304 pxl -> 64 SAT searched, 16 sprites shown
+;   hds $05 hdw $26 -> 39 chr = 312 pxl -> 64 SAT searched, 15 sprites shown
+;   hds $05 hdw $27 -> 40 chr = 320 pxl -> 64 SAT searched, 14 sprites shown
+;   hds $04 hdw $28 -> 41 chr = 328 pxl -> 64 SAT searched, 13 sprites shown
+;   hds $04 hdw $29 -> 42 chr = 336 pxl -> 64 SAT searched, 12 sprites shown
+;   hds $03 hdw $2A -> 43 chr = 344 pxl -> 64 SAT searched, 11 sprites shown
+;   hds $03 hdw $2B -> 44 chr = 352 pxl -> 64 SAT searched, 10 sprites shown
 ;
 ;
 ; VDC @ 10.74MHz, MWR=$xA (2-clk-per-access)
 ;
-;   hds $0B hdw $3B -> 60 chr = 480 pxl -> 16 sprites
+;   hds $17 hdw $1C -> 29 chr = 232 pxl -> 58 SAT searched, 16 sprites shown
+;   hds $17 hdw $1D -> 30 chr = 240 pxl -> 60 SAT searched, 16 sprites shown
+;   hds $17 hdw $1E -> 31 chr = 248 pxl -> 62 SAT searched, 16 sprites shown
+;   hds $17 hdw $1F -> 32 chr = 256 pxl -> 64 SAT searched, 16 sprites shown
 ;   ...
-;   hds $0B hdw $3F -> 64 chr = 512 pxl -> 16 sprites
-;   hds $0B hdw $40 -> 65 chr = 520 pxl -> 16 sprites
-;   hds $0B hdw $41 -> 66 chr = 528 pxl -> 16 sprites
-;   hds $0B hdw $42 -> 67 chr = 536 pxl -> 16 sprites
-;   hds $0B hdw $43 -> 68 chr = 544 pxl -> 15 sprites
-;   hds $0B hdw $44 -> 69 chr = 552 pxl -> 14 sprites
+;   hds $0B hdw $3B -> 60 chr = 480 pxl -> 64 SAT searched, 16 sprites shown
+;   ...
+;   hds $0B hdw $3F -> 64 chr = 512 pxl -> 64 SAT searched, 16 sprites shown
+;   hds $0B hdw $40 -> 65 chr = 520 pxl -> 64 SAT searched, 16 sprites shown
+;   hds $0B hdw $41 -> 66 chr = 528 pxl -> 64 SAT searched, 16 sprites shown
+;   hds $0B hdw $42 -> 67 chr = 536 pxl -> 64 SAT searched, 16 sprites shown
+;   hds $0B hdw $43 -> 68 chr = 544 pxl -> 64 SAT searched, 15 sprites shown
+;   hds $0B hdw $44 -> 69 chr = 552 pxl -> 64 SAT searched, 14 sprites shown
 ;
 
 
@@ -132,6 +152,9 @@
 ;     (88 to BYR & CR, 90 to BXR from HW IRQ1, including 8-cycle CPU response)
 ;   Safe to write BYR @  67 cpu cycles if width=264 hdw=$20
 ;
+; Flashing (i.e. unstable latching) at 5.36MHz (with MWR = $x0), width=256 ..
+;     (87 cycles to BYR & CR, 89 to BXR from HW IRQ1, including 8-cycle CPU response)
+;
 ;
 ;  7.16MHz (with MWR = $x0)
 ;
@@ -141,6 +164,9 @@
 ;   Safe to write BYR @  82 cpu cycles if width=344 hdw=$2A
 ;   Safe to write BYR @  74 cpu cycles if width=352 hdw=$2B
 ;     (83 to BYR, 84 to CR, 85 to BXR from HW IRQ1, including 8-cycle CPU response)
+;
+; Flashing (i.e. unstable latching) at 7.16MHz (with MWR = $x0), width=352 ..
+;     (82 cycles to BYR & CR, 84 to BXR from HW IRQ1, including 8-cycle CPU response)
 ;
 ;
 ; 10.74MHz (with MWR = $xA)
@@ -163,8 +189,7 @@
 ;       instruction, and not to the start of the instruction.
 ;
 ; Note: The VDC shadows/locks the BYR register a cycle before
-;       the BXR register, so write BYR first. After BXR, the
-;       CR register is shadowed/locked next.
+;       the BXR register, so write BYR first.
 ;
 
 
@@ -179,3 +204,21 @@ fedcba98765zzzzz = 32-word granularity = 64-byte granularity, designed for 16x16
 -------YY--zzzzz = for 64-high
 
 fedcba9yyx0----- = 512-word granularity = 1KB-byte granularity, designed for 32x64-4bpp
+
+
+
+; ***************************************************************************
+; PC ENGINE VDC BURST MODE
+; ***************************************************************************
+
+When is Burst Mode triggered (i.e. locked in for the next frame) so that any
+changes to the VDC's R05 BG and SPR bits will be ignored for the next frame?
+
+For a centered 208 high screen, Burst Mode is triggered between lines 229/230.
+For a centered 224 high screen, Burst Mode is triggered between lines 237/238.
+For a centered 240 high screen, Burst Mode is triggered between lines 245/246.
+
+These basically correspond to VCE line 260, which is the start of the VSYNC
+pulse.
+
+(N.B. Add +64 for the RCR line.)

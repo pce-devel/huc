@@ -5,7 +5,7 @@
 ;
 ; TIA tester HuCARD example of using the basic HuCARD startup library code.
 ;
-; Copyright John Brandwood 2022.
+; Copyright John Brandwood 2022-2023.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -89,6 +89,7 @@ WAIT_LINES	=	22			; #lines to wait for TIA.
 screen_rez	ds	1			; 0=256, 1=352, 2=512.
 want_delay	ds	2			; Minimum  0, Maximum 500.
 delay_count	ds	2			; Minimum  8, Maximum 510.
+num_sprites	ds	1			; Minimum  1, Maximum 16.
 
 move_spr	ds	1			;
 
@@ -100,7 +101,7 @@ tia_delay	ds	2 * 2
 delay_code	ds	256			; Modified delay before TIA.
 
 ram_tia		ds	6144			; TIA + lots of delay after.
-ram_sat		ds	128
+ram_sat		ds	18*8			; SAT for 18 sprites.
 
 
 
@@ -219,13 +220,18 @@ bare_main:	jsr	bare_clr_hooks
 		lda	#$60			; RTS
 		sta	ram_tia + 6143
 
-		tii	hex_sat, ram_sat, 16 * 8
+		tii	hex_sat, ram_sat, 18 * 8
 
 		stz	<move_spr
 
 		jsr	init_delay
 		bit	VDC_SR
 		plp
+
+		; Initialize the number of sprites on the line.
+
+		lda	#16
+		sta	<num_sprites
 
 		; Enable the IRQ test processing.
 
@@ -242,7 +248,7 @@ bare_main:	jsr	bare_clr_hooks
 
 		; Loop around updating the display each frame.
 
-		PRINTF	"\e<\eX1\eY1\eP0***PC ENGINE TIA SPEED TEST***\eP1\eX2\eY3\x1E\x1F\eP0:Delay\eP1 \x1C\x1D\eP0:Bytes\eP1 SEL\eP0:Screen\eP0"
+		PRINTF	"\e<\eX1\eY1\eP0***PC ENGINE TIA SPEED TEST***\eP1\eX1\eY3\x1E\x1F\eP0:Del\eP1 \x1C\x1D\eP0:Siz\eP1 SEL\eP0:Mode\eP1 RUN\eP0:Spr\eP0"
 
 		lda	#1			; Delay first VBLANK cycles
 		sta	irq_cnt			; update.
@@ -255,7 +261,7 @@ bare_main:	jsr	bare_clr_hooks
 		bit	#$1F
 		bne	.skip_update
 
-		PRINTF	"TIA cycles (16 sprites): %5u\n", tia_delay + 0
+		PRINTF	"TIA cycles (%2hu sprites): %5u\n", num_sprites, tia_delay + 0
 		PRINTF	"TIA cycles (no sprites): %5u\n", tia_delay + 2
 
 .skip_update:	lda	irq_cnt			; Wait for vsync.
@@ -280,6 +286,8 @@ bare_main:	jsr	bare_clr_hooks
 		bne	.size_down
 		bit	#JOY_SEL
 		bne	.chg_rez
+		bit	#JOY_RUN
+		bne	.dec_sprites
 
 		jmp	.next_frame		; Wait for user to reboot.
 
@@ -351,6 +359,15 @@ bare_main:	jsr	bare_clr_hooks
 		dec.h	ram_tia + 5
 
 .sd_done:	jmp	.next_frame
+
+; Change # sprites.
+
+.dec_sprites:	lda	num_sprites		; Change # of sprites shown.
+		dec	a
+		bne	!+
+		lda	#18
+!:		sta	num_sprites
+		jmp	.next_frame
 
 ; Change resolution.
 
@@ -549,6 +566,27 @@ vsync_proc:	stz	<which_rcr		; Prepare first RCR.
 
 		jsr	xfer_palettes		; Transfer queue to VCE now.
 
+		; Change # sprites shown by moving others down 256 lines.
+
+		ldy	<num_sprites
+		clc
+		cla
+		clx
+!:		stz.h	ram_sat, x
+		adc	#8
+		tax
+		dey
+		bne	!-
+		bra	.check
+
+!:		lda	#1
+		sta.h	ram_sat, x
+		txa
+		adc	#8
+		tax
+.check:		cpx	#8 * 18
+		bne	!-
+
 		; Wibble the sprites.
 
 !:		lda	irq_cnt			; Move every 8th 1/60th.
@@ -567,7 +605,7 @@ vsync_proc:	stz	<which_rcr		; Prepare first RCR.
 		sta.h	<_di
 		jsr	vdc_di_to_mawr
 
-		tia	ram_sat, VDC_DL, 16 * 8
+		tia	ram_sat, VDC_DL, 18 * 8
 
 !:		rts
 
@@ -580,6 +618,7 @@ vsync_proc:	stz	<which_rcr		; Prepare first RCR.
 		inc	ram_sat + $50, x
 		inc	ram_sat + $60, x
 		inc	ram_sat + $70, x
+		inc	ram_sat + $80, x
 		rts
 
 .dec_spr:	tax				; Move alternate the sprites.
@@ -591,6 +630,7 @@ vsync_proc:	stz	<which_rcr		; Prepare first RCR.
 		dec	ram_sat + $50, x
 		dec	ram_sat + $60, x
 		dec	ram_sat + $70, x
+		dec	ram_sat + $80, x
 		rts
 
 
@@ -934,4 +974,14 @@ hex_sat:	dw	64 + 80 - 4		; '0' sprite.
 		dw	64 + 80 + 4		; 'F' sprite.
 		dw	32 + $B8
 		dw	$1E40 >> 5
+		dw	%0011000010000001	; CGY=3, CGX=0 (16x64).
+
+		dw	64 + 80 - 4		; '0' sprite.
+		dw	32 + $C0
+		dw	$1000 >> 5
+		dw	%0011000010000000	; CGY=3, CGX=0 (16x64).
+
+		dw	64 + 80 + 4		; '1' sprite.
+		dw	32 + $C8
+		dw	$1040 >> 5
 		dw	%0011000010000001	; CGY=3, CGX=0 (16x64).

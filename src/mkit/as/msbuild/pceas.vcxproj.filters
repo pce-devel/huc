@@ -1,0 +1,139 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\assemble.c" />
+    <ClCompile Include="..\atari.c" />
+    <ClCompile Include="..\code.c" />
+    <ClCompile Include="..\command.c" />
+    <ClCompile Include="..\crc.c" />
+    <ClCompile Include="..\expr.c" />
+    <ClCompile Include="..\func.c" />
+    <ClCompile Include="..\input.c" />
+    <ClCompile Include="..\macro.c" />
+    <ClCompile Include="..\main.c " />
+    <ClCompile Include="..\map.c" />
+    <ClCompile Include="..\mml.c" />
+    <ClCompile Include="..\nes.c" />
+    <ClCompile Include="..\output.c" />
+    <ClCompile Include="..\pce.c" />
+    <ClCompile Include="..\pcx.c" />
+    <ClCompile Include="..\proc.c" />
+    <ClCompile Include="..\symbol.c" />
+    <ClCompile Include="..\xgetopt.c" />
+    <ClCompile Include="..\pngread\adler32.c">
+      <Filter>pngread</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngread\crc32.c">
+      <Filter>pngread</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngread\inffast.c">
+      <Filter>pngread</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngread\inflate.c">
+      <Filter>pngread</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngread\inftrees.c">
+      <Filter>pngread</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngread\png.c">
+      <Filter>pngread</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngread\pngerror.c">
+      <Filter>pngread</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngread\pngget.c">
+      <Filter>pngread</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngread\pngmem.c">
+      <Filter>pngread</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngread\pngread.c">
+      <Filter>pngread</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngread\pngrio.c">
+      <Filter>pngread</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngread\pngrtran.c">
+      <Filter>pngread</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngread\pngrutil.c">
+      <Filter>pngread</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngread\pngset.c">
+      <Filter>pngread</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngread\pngtrans.c">
+      <Filter>pngread</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngread\zutil.c">
+      <Filter>pngread</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\atari.h" />
+    <ClInclude Include="..\defs.h" />
+    <ClInclude Include="..\expr.h" />
+    <ClInclude Include="..\externs.h" />
+    <ClInclude Include="..\inst.h" />
+    <ClInclude Include="..\nes.h" />
+    <ClInclude Include="..\overlay.h" />
+    <ClInclude Include="..\pce.h" />
+    <ClInclude Include="..\protos.h" />
+    <ClInclude Include="..\vars.h" />
+    <ClInclude Include="..\version.h" />
+    <ClInclude Include="..\xgetopt.h" />
+    <ClInclude Include="..\pngread\crc32.h">
+      <Filter>pngread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngread\inffast.h">
+      <Filter>pngread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngread\inffixed.h">
+      <Filter>pngread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngread\inflate.h">
+      <Filter>pngread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngread\inftrees.h">
+      <Filter>pngread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngread\png.h">
+      <Filter>pngread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngread\pngconf.h">
+      <Filter>pngread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngread\pngdebug.h">
+      <Filter>pngread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngread\pnginfo.h">
+      <Filter>pngread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngread\pnglibconf.h">
+      <Filter>pngread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngread\pngpriv.h">
+      <Filter>pngread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngread\pngstruct.h">
+      <Filter>pngread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngread\pngusr.h">
+      <Filter>pngread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngread\zconf.h">
+      <Filter>pngread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngread\zlib.h">
+      <Filter>pngread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngread\zutil.h">
+      <Filter>pngread</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="pngread">
+      <UniqueIdentifier>{f724e509-7f12-4614-beaf-eca641c264e0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

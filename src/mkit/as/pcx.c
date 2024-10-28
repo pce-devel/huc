@@ -155,7 +155,13 @@ pcx_set_tile(struct t_symbol *ref, unsigned int offset)
 	/* get infos */
 	nb = ref->nb - (start / ref->size);
 	size = ref->size;
-	data = &rom[ref->bank - bank_base][ref->value & 0x1FFF] + start;
+
+	if (((section_flags[ref->section] & S_IS_ROM) == 0) || (ref->rombank > bank_limit)) {
+//	if (((section_flags[ref->section] & S_IS_ROM) == 0) || (ref->mprbank >= UNDEFINED_BANK)) {
+		goto err;
+	}
+
+	data = &rom[ref->rombank][ref->value & 0x1FFF] + start;
 
 	/* 256 tiles max */
 	if (nb > 256)
@@ -239,11 +245,11 @@ pcx_search_tile(unsigned char *data, int size)
 int
 pcx_get_args(int *ip)
 {
-	char name[128];
+	char name[PATHSZ];
 	char c;
 
 	/* get pcx file name */
-	if (!getstring(ip, name, 127))
+	if (!getstring(ip, name, PATHSZ - 1))
 		return (0);
 
 	/* reset args counter */
@@ -390,7 +396,7 @@ pcx_load(char *name)
 
 	/* open the file */
 	if ((f = open_file(name, "rb")) == NULL) {
-		error("Can not open file!");
+		fatal_error("Unable to open file!");
 		return (0);
 	}
 
@@ -416,7 +422,7 @@ pcx_load(char *name)
 	/* malloc a buffer */
 	pcx_buf = malloc((size_t)pcx_w * pcx_h);
 	if (pcx_buf == NULL) {
-		error("Can not load file, not enough memory!");
+		error("Cannot load file, not enough memory!");
 		return (0);
 	}
 
@@ -426,7 +432,7 @@ pcx_load(char *name)
 	else if ((pcx.bpp == 1) && (pcx.np <= 4))
 		decode_16(f, pcx_w, pcx_h);
 	else {
-		error("Unsupported or invalid PCX format!");
+		error("Unsupported or invalid .PCX file format!");
 		return (0);
 	}
 
@@ -445,7 +451,7 @@ pcx_load(char *name)
 void
 decode_256(FILE *f, int w, int h)
 {
-	unsigned int i, c, x, y;
+	int i, c, x, y;
 	unsigned char *ptr;
 
 	ptr = pcx_buf;
@@ -484,7 +490,7 @@ decode_256(FILE *f, int w, int h)
 		break;
 
 	default:
-		error("Unsupported PCX encoding scheme!");
+		error("Unsupported .PCX file encoding scheme!");
 		return;
 	}
 
@@ -524,7 +530,7 @@ decode_16(FILE *f, int w, int h)
 	switch (pcx.encoding) {
 	case 0:
 		/* raw */
-		error("Unsupported PCX encoding scheme!");
+		error("Unsupported .PCX file encoding scheme!");
 		break;
 
 	case 1:
@@ -592,7 +598,7 @@ decode_16(FILE *f, int w, int h)
 		break;
 
 	default:
-		error("Unsupported PCX encoding scheme!");
+		error("Unsupported .PCX file encoding scheme!");
 		return;
 	}
 
@@ -629,7 +635,7 @@ int
 bmp_load(char *name)
 {
 	BMPHeader_t header;
-	int i;
+	unsigned int i;
 	FILE *      pFile      = NULL;
 	/* no it's a new file - ok let's prepare loading */
 	if (pcx_buf)
@@ -639,7 +645,7 @@ bmp_load(char *name)
 
 	/* open the file */
 	if ((pFile = open_file(name, "rb")) == NULL) {
-		error("Can not open file!");
+		fatal_error("Unable to open file!");
 		goto errorCleanup;
 	}
 
@@ -662,7 +668,7 @@ bmp_load(char *name)
 	/* malloc a buffer */
 	pcx_buf = malloc((size_t)pcx_w * pcx_h);
 	if (pcx_buf == NULL) {
-		error("Can not load file, not enough memory!");
+		error("Cannot load file, not enough memory!");
 		goto errorCleanup;
 	}
 	for (i=0;i<header.colors;i++)
@@ -681,9 +687,9 @@ bmp_load(char *name)
 
 	if (header.bitsPerPixel==4)
 	{
-		for (uint32_t y=0;y<pcx_h;y++)
+		for (int y=0;y<pcx_h;y++)
 		{
-			for (uint32_t x=0;x<pcx_w;x+=2)
+			for (int x=0;x<pcx_w;x+=2)
 			{
 				uint8_t byte;
 				fread(&byte,1,1,pFile);
@@ -696,10 +702,10 @@ bmp_load(char *name)
 	{
 //					uint8_t *src = &buffer[bmp_header->bitmapDataOffset];
 		fseek(pFile,header.bitmapDataOffset,SEEK_SET);
-		for (uint32_t y=0;y<pcx_h;y++)
+		for (int y=0;y<pcx_h;y++)
 		{
 
-			for (uint32_t x=0;x<pcx_w;x++)
+			for (int x=0;x<pcx_w;x++)
 			{
 				uint8_t byte;
 				fread(&byte,1,1,pFile);
@@ -711,7 +717,7 @@ bmp_load(char *name)
 /*
 	aImageRows = (png_byte **) malloc(uHeight * sizeof(png_byte *));
 	if (aImageRows == NULL) {
-		error("Can not load file, not enough memory!");
+		error("Cannot load file, not enough memory!");
 		goto errorCleanup;
 	}
 	for (i = 0; i < uHeight; i++)
@@ -773,25 +779,25 @@ png_load(char *name)
 
 	/* open the file */
 	if ((pFile = open_file(name, "rb")) == NULL) {
-		error("Can not open file!");
+		fatal_error("Unable to open file!");
 		goto errorCleanup;
 	}
 
 	/* initialize libpng for reading the file */
 	pPngStruct = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 	if (!pPngStruct) {
-		error("Can not load file, not enough memory!");
+		error("Cannot load file, not enough memory!");
 		goto errorCleanup;
 	}
 
 	pPngInfo = png_create_info_struct(pPngStruct);
 	if (!pPngInfo) {
-		error("Can not load file, not enough memory!");
+		error("Cannot load file, not enough memory!");
 		goto errorCleanup;
 	}
 
 	if (setjmp(png_jmpbuf(pPngStruct))) {
-		error("Unsupported or invalid PNG file!");
+		error("Unsupported or invalid .PNG file!");
 		goto errorCleanup;
 	}
 
@@ -802,7 +808,7 @@ png_load(char *name)
 	png_get_IHDR(pPngStruct, pPngInfo, &uWidth, &uHeight, &iBitDepth, &iColorType, NULL, NULL, NULL);
 
 	if (iColorType != PNG_COLOR_TYPE_PALETTE) {
-		error("Unsupported or invalid PNG picture format!");
+		error("Unsupported or invalid .PNG picture format!");
 		goto errorCleanup;
 	}
 
@@ -828,7 +834,7 @@ png_load(char *name)
 	/* malloc a buffer */
 	pcx_buf = malloc((size_t)pcx_w * pcx_h);
 	if (pcx_buf == NULL) {
-		error("Can not load file, not enough memory!");
+		error("Cannot load file, not enough memory!");
 		goto errorCleanup;
 	}
 
@@ -854,7 +860,7 @@ png_load(char *name)
 	/* create a list of each row's starting point in memory */
 	aImageRows = (png_byte **) malloc(uHeight * sizeof(png_byte *));
 	if (aImageRows == NULL) {
-		error("Can not load file, not enough memory!");
+		error("Cannot load file, not enough memory!");
 		goto errorCleanup;
 	}
 

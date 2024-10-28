@@ -7,19 +7,25 @@
 #include "externs.h"
 #include "protos.h"
 
-#define INITIAL_PATH_SIZE 64
-#define INCREMENT_BASE 16
-#define INCREMENT_BASE_MASK 15
+int file_count;
+t_str_pool * str_pool;
+t_file * file_hash[HASH_COUNT];
 
-int    infile_error;
-int    infile_num;
-struct t_input_info input_file[8];
-static char    *incpath			= NULL;
-static int	   *str_offset		= NULL;
-static int	   remaining		= 0;
-static int     incpathSize		= 0;
-static int     str_offsetCount	= 0;
-static int     incpathCount		= 0;
+#define INCREMENT_BASE 256
+#define INCREMENT_BASE_MASK 255
+
+char full_path[PATHSZ * 2];
+int infile_error;
+int infile_num;
+t_file *extra_file;
+t_input input_file[MAX_NESTING + 1];
+
+static char *incpath = NULL;
+static int *incpath_offset = NULL;
+static int incpath_remaining = 0;
+static int incpath_size = 0;
+static int incpath_offset_count = 0;
+static int incpath_count = 0;
 
 /* ----
  * void cleanup_path()
@@ -29,58 +35,66 @@ static int     incpathCount		= 0;
 void
 cleanup_path(void)
 {
-	if(incpath)
+	if (incpath)
 		free(incpath);
-		
-	if(str_offset)
-		free(str_offset);
-} 
+
+	if (incpath_offset)
+		free(incpath_offset);
+}
 
 /* ----
  * int add_path(char*, int)
  * ----
- * add a path to includes
+ * add a path to includes (newpath_size includes the trailing '\0')
  */
 int
-add_path(char* path, int l)
+add_path(char* newpath, int newpath_size)
 {
-	/* Expand str_offset array if needed */
-	if(incpathCount >= str_offsetCount)
+	/* sanity check */
+	if (newpath_size < 2)
+		return 0;
+
+	/* remove trailing PATH_SEPARATOR characters */
+	while (newpath[newpath_size - 2] == PATH_SEPARATOR)
+		--newpath_size;
+
+	/* Expand incpath_offset array if needed */
+	if (incpath_count >= incpath_offset_count)
 	{
-		str_offsetCount += INCREMENT_BASE;
-		str_offset = (int*)realloc(str_offset, str_offsetCount * sizeof(int));
-		if(str_offset == NULL)
+		incpath_offset_count += 8;
+		incpath_offset = (int*)realloc(incpath_offset, incpath_offset_count * sizeof(int));
+		if (incpath_offset == NULL)
 			return 0;
 	}
 
 	/* Initialize string offset */
-	str_offset[incpathCount] = incpathSize - remaining;
+	incpath_offset[incpath_count] = incpath_size - incpath_remaining;
 
 	/* Realloc string buffer if needed */
-	if(remaining < l)
+	if (incpath_remaining < newpath_size)
 	{
-		remaining  = incpathSize;
-		/* evil trick, get the greater multiple of INCREMENT_BASE closer 
-		   to (size + l). Note : this only works for INCREMENT_BASE = 2^n*/
-		incpathSize = ((incpathSize + l) + INCREMENT_BASE) & ~INCREMENT_BASE_MASK;
-		remaining  = incpathSize - remaining;
-		incpath = (char*)realloc(incpath, incpathSize);
-		if(incpath == NULL)
+		incpath_remaining = incpath_size;
+		/* evil trick, get the greater multiple of INCREMENT_BASE closer
+		   to (size + path_len). Note : this only works for INCREMENT_BASE = 2^n*/
+		incpath_size = ((incpath_size + newpath_size) + INCREMENT_BASE) & ~INCREMENT_BASE_MASK;
+		incpath_remaining = incpath_size - incpath_remaining;
+		incpath = (char*)realloc(incpath, incpath_size);
+		if (incpath == NULL)
 			return 0;
 	}
-		
-	remaining -= l;
+
+	incpath_remaining -= newpath_size;
 
 	/* Copy path */
-	strncpy(incpath + str_offset[incpathCount], path, l);
-	incpath[str_offset[incpathCount] + l - 1] = '\0';
-	
-	++incpathCount;
-	
+	strncpy(incpath + incpath_offset[incpath_count], newpath, newpath_size);
+	incpath[incpath_offset[incpath_count] + newpath_size - 1] = '\0';
+
+	++incpath_count;
+
 	return 1;
 }
 
-#ifdef WIN32
+#ifdef _WIN32
 #define ENV_PATH_SEPARATOR ';'
 #else
 #define ENV_PATH_SEPARATOR ':'
@@ -109,18 +123,18 @@ init_path(void)
 	pl = p;
 	while(pl != NULL)
 	{
-		
+
 		/* Jump to next separator */
 		pl = strchr(p, ENV_PATH_SEPARATOR);
 
 		/* Compute new substring size */
-		if(pl == NULL)
-			l = strlen(p) + 1;
+		if (pl == NULL)
+			l = (int)strlen(p) + 1;
 		else
-			l = pl - p + 1;
-			
+			l = (int)(pl - p + 1);
+
 		/* Might be empty, jump to next char */
-		if(l <= 1)
+		if (l <= 1)
 		{
 			++p;
 			continue;
@@ -128,15 +142,15 @@ init_path(void)
 
 		/* Add path */
 		ret = add_path(p, l);
-		if(!ret)
+		if (!ret)
 			return 0;
 
 		/* Eat remaining separators */
 		while (*p == ENV_PATH_SEPARATOR) ++p;
-		
+
 		p += l;
 	}
-	
+
 	return 1;
 }
 
@@ -150,7 +164,8 @@ init_path(void)
 int
 readline(void)
 {
-	char *ptr, *arg, num[8];
+	char *arg, num[8];
+	const char *ptr;
 	int j, n;
 	int i;		/* pointer into prlnbuf */
 	int c;		/* current character		*/
@@ -178,7 +193,7 @@ start:
 		/* expand line */
 		if (mlptr) {
 			i = SFIELD;
-			ptr = mlptr->data;
+			ptr = mlptr->line;
 			for (;;) {
 				c = *ptr++;
 				if (c == '\0')
@@ -223,7 +238,7 @@ start:
 					/* \1 - \9 */
 					else if (c >= '1' && c <= '9') {
 						j = c - '1';
-						n = strlen(marg[midx][j]);
+						n = (int)strlen(marg[midx][j]);
 						arg = marg[midx][j];
 					}
 
@@ -267,14 +282,26 @@ start:
 	c = getc(in_fp);
 	if (c == EOF) {
 		if (close_input()) {
-			if (stop_pass != 0 || kickc_incl == 0) {
+			if (stop_pass != 0 || ((extra_file == NULL) && (hucc_final == 0) && (kickc_final == 0))) {
 				return (-1);
 			} else {
-				kickc_incl = 0;
-				if (open_input("kickc-final.asm") == -1) {
-					fatal_error("Cannot open \"kickc-final.asm\" file!");
+				const char * name;
+				if (extra_file != NULL) {
+					/* include the next file from the command-line */
+					name = extra_file->name;
+					extra_file = extra_file->next;
+				} else {
+					/* auto-include a final source file */
+					name = (hucc_final) ? "hucc-final.asm" : "kickc-final.asm";
+					hucc_final = kickc_final = 0;
+					in_final = 1;
+				}
+				if (open_input(name) == -1) {
+					fatal_error("Cannot open \"%s\" file!", name);
 					return (-1);
 				}
+				/* switch to the CODE section */
+				set_section(S_CODE);
 			}
 		}
 		goto start;
@@ -367,23 +394,99 @@ start:
 	return (0);
 }
 
+
+/* ----
+ * remember_string()
+ * ----
+ * remember all source file names
+ */
+
+const char *
+remember_string(const char * string, size_t size)
+{
+	const char * output;
+
+	if ((str_pool == NULL) || (str_pool->remain < size)) {
+		t_str_pool *temp = malloc(sizeof(t_str_pool));
+		if (temp == NULL)
+			return (NULL);
+		temp->remain = STR_POOL_SIZE;
+		temp->next = str_pool;
+		str_pool = temp;
+	}
+
+	output = memcpy(str_pool->buffer + STR_POOL_SIZE - str_pool->remain, string, size);
+	str_pool->remain -= (int)size;
+
+	return (output);
+}
+
+
+/* ----
+ * remember_file()
+ * ----
+ * remember all source file names
+ */
+
+t_file *
+remember_file(int hash)
+{
+	t_file * file = malloc(sizeof(t_file));
+
+	if (file == NULL)
+		return (NULL);
+
+	file->name = remember_string(full_path, strlen(full_path) + 1);
+	file->number = ++file_count;
+	file->included = 0;
+
+	file->next = file_hash[hash];
+	file_hash[hash] = file;
+
+	return (file);
+}
+
+
+/* ----
+ * clear_included()
+ * ----
+ * remember all source file names
+ */
+
+void
+clear_included(void)
+{
+	t_file *file;
+	int i;
+
+	for (i = 0; i < HASH_COUNT; i++) {
+		file = file_hash[i];
+		while (file) {
+			file->included = 0;
+			file = file->next;
+		}
+	}
+}
+
+
 /* ----
  * open_input()
  * ----
- * open input files - up to 7 levels.
+ * open input files - up to MAX_NESTING levels.
  */
 
 int
-open_input(char *name)
+open_input(const char *name)
 {
 	FILE *fp;
 	char *p;
-	char temp[128];
-	int i;
+	t_file * file;
+	char temp[PATHSZ + 4];
+	int hash;
 
-	/* only 7 nested input files */
-	if (infile_num == 7) {
-		error("Too many include levels, max. 7!");
+	/* only MAX_NESTING nested input files */
+	if (infile_num == MAX_NESTING) {
+		error("Too many include levels, maximum 31!");
 		return (1);
 	}
 
@@ -393,31 +496,48 @@ open_input(char *name)
 		input_file[infile_num].fp = in_fp;
 	}
 
-	/* get a copy of the file name */
-	strcpy(temp, name);
-
 	/* auto add the .asm file extension */
-	if ((p = strrchr(temp, '.')) != NULL) {
-		if (strchr(p, PATH_SEPARATOR))
-			strcat(temp, ".asm");
-	}
-	else {
+	if (((p = strrchr(name, '.')) == NULL) ||
+	    (strchr(p, PATH_SEPARATOR) != NULL)) {
+		strcpy(temp, name);
 		strcat(temp, ".asm");
-	}
-
-	/* check if this file is already opened */
-	if (infile_num) {
-		for (i = 1; i < infile_num; i++) {
-			if (!strcmp(input_file[i].name, temp)) {
-				error("Repeated include file!");
-				return (1);
-			}
-		}
+		name = temp;
 	}
 
 	/* open the file */
-	if ((fp = open_file(temp, "r")) == NULL)
+	if ((fp = open_file(name, "r")) == NULL)
 		return (-1);
+
+	/* remember all filenames */
+	hash = filename_crc(full_path) & (HASH_COUNT - 1);
+	file = file_hash[hash];
+	while (file) {
+#if defined(_WIN32) || defined(__APPLE__)
+		if (strcasecmp(file->name, full_path) == 0)
+			break;
+#else
+		if (strcmp(file->name, full_path) == 0)
+			break;
+#endif
+		file = file->next;
+	}
+	if (file == NULL) {
+		file = remember_file(hash);
+		if (file == NULL) {
+			fclose(fp);
+			fatal_error("No memory left to remember filename!");
+			return (-1);
+		}
+	}
+
+	/* do not include the same file twice in a pass */
+	if (file->included) {
+		fclose(fp);
+		return (0);
+	}
+
+	/* remember that this file has been included */
+	file->included = 1;
 
 	/* update input file infos */
 	in_fp = fp;
@@ -425,9 +545,9 @@ open_input(char *name)
 	infile_num++;
 	input_file[infile_num].fp = fp;
 	input_file[infile_num].if_level = if_level;
-	strcpy(input_file[infile_num].name, temp);
+	input_file[infile_num].file = file;
 	if ((pass == LAST_PASS) && (xlist) && (list_level))
-		fprintf(lst_fp, "#[%i]   %s\n", infile_num, input_file[infile_num].name);
+		fprintf(lst_fp, "#[%i]   \"%s\"\n", infile_num, input_file[infile_num].file->name);
 
 	/* ok */
 	return (0);
@@ -444,21 +564,19 @@ int
 close_input(void)
 {
 	if (proc_ptr) {
-		fatal_error("Incomplete .proc/.procgroup!");
+		fatal_error("Incomplete .PROC/.PROCGROUP!");
 		return (-1);
 	}
 	if (scopeptr) {
-		fatal_error("Incomplete .struct!");
+		fatal_error("Incomplete .STRUCT!");
 		return (-1);
 	}
 	if (in_macro) {
-		fatal_error("Incomplete MACRO definition!");
+		fatal_error("Incomplete .MACRO definition!");
 		return (-1);
 	}
 	if (input_file[infile_num].if_level != if_level) {
-		char message[128];
-		sprintf(message, "Incomplete IF/ENDIF statement, beginning at line %d!", if_line[if_level-1]);
-		fatal_error(message);
+		fatal_error("Incomplete .IF/.ENDIF statement, beginning at line %d!", if_line[if_level-1]);
 		return (-1);
 	}
 	if (infile_num <= 1)
@@ -470,7 +588,7 @@ close_input(void)
 	slnum = input_file[infile_num].lnum;
 	in_fp = input_file[infile_num].fp;
 	if ((pass == LAST_PASS) && (xlist) && (list_level))
-		fprintf(lst_fp, "#[%i]   %s\n", infile_num, input_file[infile_num].name);
+		fprintf(lst_fp, "#[%i]   \"%s\"\n", infile_num, input_file[infile_num].file->name);
 
 	/* ok */
 	return (0);
@@ -484,26 +602,37 @@ close_input(void)
  */
 
 FILE *
-open_file(char *name, char *mode)
+open_file(const char *name, const char *mode)
 {
 	FILE 	*fileptr;
-	char	testname[256];
 	int	i;
 
 	fileptr = fopen(name, mode);
-	if (fileptr != NULL) return(fileptr);
+	if (fileptr != NULL) {
+		strcpy(full_path, name);
+		return(fileptr);
+	}
 
-	for (i = 0; i < incpathCount; ++i) {
-		if (strlen(incpath+str_offset[i])) {
-			strcpy(testname, incpath+str_offset[i]);
-			strcat(testname, PATH_SEPARATOR_STRING);
-			strcat(testname, name);
-		
-			fileptr = fopen(testname, mode);
-			if (fileptr != NULL) break;
+	for (i = 0; i < incpath_count; ++i) {
+#ifdef _WIN32
+		strcpy(full_path, incpath + incpath_offset[i]);
+		strcat(full_path, PATH_SEPARATOR_STRING);
+		strcat(full_path, name);
+#else
+		char *p;
+		p = stpcpy(full_path, incpath + incpath_offset[i]);
+		p = stpcpy(p, PATH_SEPARATOR_STRING);
+		stpcpy(p, name);
+#endif
+
+		if (strlen(full_path) > (PATHSZ - 1)) {
+			error("The include-path + filename string is too long!");
+			return (NULL);
 		}
+
+		fileptr = fopen(full_path, mode);
+		if (fileptr != NULL) break;
 	}
 
 	return (fileptr);
 }
-

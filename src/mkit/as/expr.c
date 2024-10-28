@@ -15,40 +15,47 @@ static char allow_numeric_bank = 0;
  */
 
 t_symbol pc_symbol = {
-	NULL, /* next */
-	NULL, /* local */
-	NULL, /* scope */
-	NULL, /* proc */
-	DEFABS, /* type */
-	0, /* value */
-	0, /* section */
-	0, /* bank */
-	0, /* page */
-	0, /* nb */
-	0, /* size */
-	0, /* vram */
-	0, /* pal */
-	1, /* defcnt */
-	1, /* refcnt */
-	1, /* reserved */
-	0, /* data_type */
-	0, /* data_size */
-	"*" /* name */
+	NULL,           /* next */
+	NULL,           /* local */
+	NULL,           /* scope */
+	NULL,           /* proc */
+	"\1*",          /* name */
+	NULL,           /* fileinfo */
+	0,              /* fileline */
+	CONSTANT,       /* reason */
+	DEFABS,         /* type */
+	0,              /* value */
+	0,              /* phase */
+	S_NONE,         /* section */
+	0,              /* overlay */
+	0,              /* mprbank */
+	UNDEFINED_BANK, /* bank */
+	0,              /* page */
+	0,              /* nb */
+	0,              /* size */
+	0,              /* vram */
+	0,              /* pal */
+	1,              /* reserved */
+	0,              /* data_type */
+	0,              /* data_size */
+	1,              /* deflastpass */
+	1,              /* reflastpass */
+	1,              /* defthispass */
+	1               /* refthispass */
 };
 
 
 /* ----
- * is_expr_symbol()
+ * is_nameless_ref()
  * ----
- * is the next string a symbol?
+ * is the next string a reference to a "multi-label" symbol?
  * this is complicated because a "multi-label" looks like a "not" or a "not-equal".
  */
 
-inline int is_expr_symbol (char * pstr)
+static inline int is_multi_label_ref (const char * pstr)
 {
 	unsigned char c = *pstr++;
-	if (isalpha(c) || c == '_' || c == '.' || c == '@')
-		return 1;
+
 	if (c != '!')
 		return 0;
 	for (;;) {
@@ -76,7 +83,7 @@ evaluate(int *ip, char last_char, char allow_bank)
 	int end, level;
 	int op, type;
 	int arg;
-	int i;
+	int skip;
 	unsigned char c;
 
 	end = 0;
@@ -91,7 +98,8 @@ evaluate(int *ip, char last_char, char allow_bank)
 	expr_toplabl = NULL;
 	expr_lablptr = NULL;
 	expr_lablcnt = 0;
-	expr_valbank = RESERVED_BANK;
+	expr_mprbank = UNDEFINED_BANK;
+	expr_overlay = 0;
 	complex_expr = 0;
 	op = OP_START;
 	func_idx = 0;
@@ -109,7 +117,7 @@ cont:
 	/* search for a continuation char */
 	if (*expr == '\\') {
 		/* skip spaces */
-		i = 1;
+		int i = 1;
 		while (isspace(expr[i]))
 			i++;
 
@@ -145,14 +153,21 @@ cont:
 		if (isdigit(c)) {
 			if (need_operator)
 				goto error;
-			if (!push_val(T_DECIMAL))
-				return (0);
+
+			/* is this an SDCC local-symbol rather than a number? */
+			if (sdcc_mode && (expr[5] == '$') && isdigit(expr[4]) &&
+				isdigit(expr[3]) && isdigit(expr[2]) && isdigit(expr[1])) {
+				if (!push_val(T_SYMBOL))
+					return (0);
+			} else {
+				if (!push_val(T_DECIMAL))
+					return (0);
+			}
 		}
 
 		/* symbol */
 		else
-//		if (isalpha(c) || c == '_' || c == '.' || c == '@') {
-		if (is_expr_symbol(expr)) {
+		if (isalpha(c) || c == '_' || c == '.' || c == '@' || is_multi_label_ref(expr)) {
 			if (need_operator)
 				goto error;
 			if (!push_val(T_SYMBOL))
@@ -245,7 +260,7 @@ cont:
 					break;
 				default:
 					if (!need_operator)
-						op = OP_dotLO;
+						op = OP_LOW_SYMBOL;
 					else
 						op = OP_LOWER;
 					expr++;
@@ -272,7 +287,7 @@ cont:
 					break;
 				default:
 					if (!need_operator)
-						op = OP_dotHI;
+						op = OP_HIGH_SYMBOL;
 					else
 						op = OP_HIGHER;
 					expr++;
@@ -352,24 +367,37 @@ cont:
 					break;
 				}
 
-			/* modulo, mul, add, div, and, xor, or */
+			/* modulo, mul, add, div, and, or */
 			case '+':
 			case '/':
 			case '&':
 			case '|':
 				if (!need_operator)
 					goto error;
+				skip = 1;
 				switch (c) {
 				case '%': op = OP_MOD; break;
 				case '*': op = OP_MUL; break;
 				case '+': op = OP_ADD; break;
 				case '/': op = OP_DIV; break;
-				case '&': op = OP_AND; break;
-				case '|': op = OP_OR;  break;
+				case '&':
+					op = OP_AND;
+					if (expr[1] == '&') {
+						op = OP_LOGICAL_AND;
+						skip = 2;
+					}
+					break;
+				case '|':
+					op = OP_OR;
+					if (expr[1] == '|') {
+						op = OP_LOGICAL_OR;
+						skip = 2;
+					}
+					break;
 				}
 				if (!push_op(op))
 					return (0);
-				expr++;
+				expr += skip;
 				break;
 
 			/* skip immediate operand prefix if in macro */
@@ -441,7 +469,7 @@ cont:
 	}
 
 	/* convert back the pointer to an array index */
-	*ip = expr - prlnbuf;
+	*ip = (int)(expr - prlnbuf);
 
 	/* ok */
 	return (1);
@@ -462,9 +490,9 @@ error:
 int
 push_val(int type)
 {
-	unsigned int mul, val;
+	unsigned int val;
 	int op;
-	char c;
+	char c, mul;
 	char *symexpr;
 
 	val = 0;
@@ -581,32 +609,26 @@ push_val(int type)
 			symbol[2] = '\0';
 			expr++;
 
+			pc_symbol.fileinfo = input_file[infile_num].file;
+			pc_symbol.fileline = slnum;
+
 			/* complicated because loccnt & data_loccnt can be >= $2000 */
 			if (data_loccnt == -1)
 				pc_symbol.value = loccnt;
 			else
 				pc_symbol.value = data_loccnt;
 
+			pc_symbol.rombank = bank + (pc_symbol.value >> 13);
+			pc_symbol.mprbank = bank2mprbank(pc_symbol.rombank, section);
+			pc_symbol.overlay = bank2overlay(pc_symbol.rombank, section);
+			pc_symbol.section = section;
+
 			pc_symbol.page = page;
 
-			if (bank >= RESERVED_BANK)
-				pc_symbol.bank = bank;
-			else
-				pc_symbol.bank = bank + bank_base;
+			pc_symbol.value = (pc_symbol.value + (page << 13) + phase_offset) & 0xFFFF;
 
-			if (pc_symbol.value >= 0x2000) {
-				pc_symbol.bank = (pc_symbol.bank + 1);
-				pc_symbol.page = (pc_symbol.page + 1) & 7;
-			}
-
-			pc_symbol.value += (page << 13);
-
-			/* KickC can't call bank(), so put it in the label */
-			if (kickc_mode) {
-				pc_symbol.value += pc_symbol.bank << 23;
-			}
-
-			expr_valbank = pc_symbol.bank;
+			expr_mprbank = pc_symbol.mprbank;
+			expr_overlay = pc_symbol.overlay;
 
 			expr_toplabl =
 			expr_lablptr = &pc_symbol;
@@ -630,7 +652,7 @@ push_val(int type)
 			}
 
 			/* a predefined function? */
-			op = check_keyword();
+			op = check_keyword(symbol);
 			if (op) {
 				if (!push_op(op))
 					return (0);
@@ -638,7 +660,18 @@ push_val(int type)
 					return (1);
 			}
 
-			c = *symexpr;
+			/* a predefined function as a prefix? */
+			if (sdcc_mode || kickc_mode)
+			{
+				op = check_prefix(symbol);
+				if (op) {
+					if (!push_op(op))
+						return (0);
+					// process the symbol
+				}
+			}
+
+			c = symbol[1];
 			if ((scopeptr != NULL) && (c != '.') && (c != '@') && (c != '!')) {
 				struct t_symbol * curscope = scopeptr;
 				for (;;) {
@@ -677,15 +710,29 @@ push_val(int type)
 			undef++;
 		else if (expr_lablptr->type == IFUNDEF)
 			undef++;
-		else if ((expr_lablptr->bank == STRIPPED_BANK) &&
+		else if ((expr_lablptr->mprbank == STRIPPED_BANK) &&
 			((proc_ptr == NULL) || (proc_ptr->bank != STRIPPED_BANK))) {
 				error("Symbol from an unused procedure that was stripped out!");
 				undef++;
 			}
 		else {
-			expr_valbank = expr_lablptr->bank;
-			val = expr_lablptr->value;
-			if (expr_lablptr->defcnt == 0) {
+			/* resolve newproc procedure labels to their thunk location in the last pass */
+			struct t_proc *proc;
+
+			if ((pass == LAST_PASS) && (newproc_opt != 0) &&
+			    ((proc = expr_lablptr->proc) != NULL) && (proc->label == expr_lablptr)) {
+				if (!proc->call)
+					add_thunk(proc);
+				expr_overlay = 0;
+				expr_mprbank = bank2mprbank(call_bank, S_CODE);
+				val = proc->call;
+			} else {
+				expr_overlay = expr_lablptr->overlay;
+				expr_mprbank = expr_lablptr->mprbank;
+				val = expr_lablptr->value;
+			}
+
+			if (expr_lablptr->defthispass == 0) {
 				notyetdef++;
 			}
 		}
@@ -740,7 +787,31 @@ extract:
 			val = (val * mul) + c;
 		}
 		if (c == ':' && mul == 16 && allow_numeric_bank) {
-			expr_valbank = val;
+			if (expr_mprbank != UNDEFINED_BANK) {
+				if (expr_overlay != 0) {
+					error("Overlay number already set in this expression!");
+					return (0);
+				}
+				if ((expr_mprbank < 1) || (expr_mprbank > 15)) {
+					error("Overlay number must be in the range $1..$F!");
+					return (0);
+				}
+				if ((val < 0x40) || (val > 0x7F)) {
+					error("Overlay bank number must be in the range $40..$7F!");
+					return (0);
+				}
+				expr_overlay = expr_mprbank;
+				expr_mprbank = UNDEFINED_BANK;
+			}
+			if (expr_mprbank != UNDEFINED_BANK) {
+				error("Bank number already set in this expression!");
+				return (0);
+			}
+			if ((val < 0x00) || (val > 0xFF)) {
+				error("Bank number must be in the range $00..$FF!");
+				return (0);
+			}
+			expr_mprbank = val;
 			return push_val(T_HEXA);
 		}
 		break;
@@ -775,10 +846,20 @@ getsym(struct t_symbol * curscope)
 {
 	int i = 0;
 	int j;
-	char c;
+	char c = *expr;
+
+	/* convert an SDCC local-symbol into a PCEAS local-symbol */
+	if (sdcc_mode && isdigit(c)) {
+		/* this was already parsed and verified in evaluate() */
+		symbol[0] = 6;
+		symbol[1] = '@';
+		memcpy(&symbol[2], expr, 5);
+		symbol[7] = '\0';
+		expr += 6;
+		return (6);
+	}
 
 	/* prepend the current scope? */
-	c = *expr;
 	if ((curscope != NULL) && (c != '.') && (c != '@') && (c != '!')) {
 		i = addscope(curscope, i);
 	}
@@ -846,7 +927,7 @@ getsym(struct t_symbol * curscope)
 		if (whichlabl < 0) { ++whichlabl; }
 
 		/* add the current multi-label instance */
-		whichlabl += baselabl->defcnt;
+		whichlabl += baselabl->defthispass;
 		if ((whichlabl < 0) || (whichlabl > 0x7FFFF)) {
 			/* illegal value */
 			whichlabl = 0;
@@ -855,13 +936,11 @@ getsym(struct t_symbol * curscope)
 		/* create the target multi-label name */
 		sprintf(tail, "!%d", 0x7FFFF & whichlabl);
 		strncat(symbol, tail, SBOLSZ - 1 - strlen(symbol));
-		i = symbol[0] = strlen(&symbol[1]);
+		i = symbol[0] = (char)strlen(&symbol[1]);
 	}
 
 	if (i >= SBOLSZ - 1) {
-		char errorstr[512];
-		snprintf(errorstr, 512, "Symbol name too long ('%s' is %d chars long, max is %d)", symbol + 1, i, SBOLSZ - 2);
-		fatal_error(errorstr);
+		fatal_error("Symbol name too long ('%s' is %d chars long, max is %d)", symbol + 1, i, SBOLSZ - 2);
 		return (0);
 	}
 
@@ -876,31 +955,33 @@ getsym(struct t_symbol * curscope)
  */
 
 int
-check_keyword(void)
+check_keyword(char * name)
 {
 	int op = 0;
 
 	/* check if its an assembler function */
-	if (symbol[0] == keyword[0][0] && !strcasecmp(symbol, keyword[0]))
+	if (name[0] == keyword[0][0] && !strcasecmp(name, keyword[0]))
 		op = OP_DEFINED;
-	else if (symbol[0] == keyword[1][0] && !strcasecmp(symbol, keyword[1]))
-		op = OP_HIGH;
-	else if (symbol[0] == keyword[2][0] && !strcasecmp(symbol, keyword[2]))
-		op = OP_LOW;
-	else if (symbol[0] == keyword[3][0] && !strcasecmp(symbol, keyword[3]))
+	else if (name[0] == keyword[1][0] && !strcasecmp(name, keyword[1]))
+		op = OP_HIGH_KEYWORD;
+	else if (name[0] == keyword[2][0] && !strcasecmp(name, keyword[2]))
+		op = OP_LOW_KEYWORD;
+	else if (name[0] == keyword[3][0] && !strcasecmp(name, keyword[3]))
 		op = OP_PAGE;
-	else if (symbol[0] == keyword[4][0] && !strcasecmp(symbol, keyword[4]))
+	else if (name[0] == keyword[4][0] && !strcasecmp(name, keyword[4]))
 		op = OP_BANK;
-	else if (symbol[0] == keyword[7][0] && !strcasecmp(symbol, keyword[7]))
+	else if (name[0] == keyword[7][0] && !strcasecmp(name, keyword[7]))
 		op = OP_SIZEOF;
-	else if (symbol[0] == keyword[8][0] && !strcasecmp(symbol, keyword[8]))
+	else if (name[0] == keyword[8][0] && !strcasecmp(name, keyword[8]))
 		op = OP_LINEAR;
+	else if (name[0] == keyword[9][0] && !strcasecmp(name, keyword[9]))
+		op = OP_OVERLAY;
 	else {
 		if (machine->type == MACHINE_PCE) {
 			/* PCE specific functions */
-			if (symbol[0] == keyword[5][0] && !strcasecmp(symbol, keyword[5]))
+			if (name[0] == keyword[5][0] && !strcasecmp(name, keyword[5]))
 				op = OP_VRAM;
-			else if (symbol[0] == keyword[6][0] && !strcasecmp(symbol, keyword[6]))
+			else if (name[0] == keyword[6][0] && !strcasecmp(name, keyword[6]))
 				op = OP_PAL;
 		}
 	}
@@ -908,20 +989,72 @@ check_keyword(void)
 	/* extra setup for functions that send back symbol infos */
 	switch (op) {
 	case OP_DEFINED:
-	case OP_HIGH:
-	case OP_LOW:
+	case OP_HIGH_KEYWORD:
+	case OP_LOW_KEYWORD:
 	case OP_PAGE:
 	case OP_BANK:
-	case OP_VRAM:
-	case OP_PAL:
 	case OP_SIZEOF:
 	case OP_LINEAR:
+	case OP_OVERLAY:
+	case OP_VRAM:
+	case OP_PAL:
 		expr_lablptr = NULL;
 		expr_lablcnt = 0;
 		break;
 	}
 
 	/* ok */
+	return (op);
+}
+
+
+/* ----
+ * check_prefix()
+ * ----
+ * verify if the current symbol has a reserved function name as a prefix
+ * like "___bank_" or "___page_", which is a hack that C code can employ
+ * to access the functions.
+ */
+
+int
+check_prefix(char * name)
+{
+	char prefix[SBOLSZ];
+	char c;
+	int op;
+	int prefix_end;
+
+	/* is this a compiler-reserved C symbol ? */
+	if ((name[0] < 4) || (name[3] != '_') || (name[1] != '_') || (name[2] != '_'))
+		return 0;
+
+	/* find the next '_' after the prefix keyword */
+	/* offset: 0123456789AB */
+	/* symbol: A___bank_xx0 */
+	/* prefix: 4bank0       */
+	prefix_end = 3;
+	do {
+		++prefix_end;
+		c = prefix[prefix_end-3] = name[prefix_end];
+	} while ((c != '_') && (c != '\0'));
+
+	/* return if no prefix keyword, or if there is no symbol afterwards */
+	if (prefix_end >= name[0])
+		return 0;
+
+	/* set up the prefix for checking */
+	prefix[0] = prefix_end - 4;
+	prefix[prefix_end - 3] = '\0';
+
+	op = check_keyword(prefix);
+
+	/* if it was a keyword, then remove the prefix from the symbol */
+	if (op != 0) {
+		int i = 0;
+		while ((name[++i] = name[++prefix_end]) != '\0');
+		name[0] = i - 1;
+	}
+
 	return (op);
 }
 
@@ -983,33 +1116,39 @@ do_op(void)
 	case OP_LINEAR:
 		if (!check_func_args("LINEAR"))
 			return (0);
-		if (pass == LAST_PASS) {
-			if (expr_lablptr->bank >= RESERVED_BANK) {
-				error("No LINEAR index for this symbol!");
-				val[0] = 0;
-				break;
-			}
+		if (((expr_lablptr->mprbank  < UNDEFINED_BANK) && ((section_flags[expr_lablptr->section] & S_IS_ROM) == 0)) ||
+		    ((expr_lablptr->mprbank == UNDEFINED_BANK) && (pass == LAST_PASS))) {
+			error("No LINEAR() index for this symbol!");
+			val[0] = 0;
+			break;
 		}
+		exbank = 0;
 		/* complicated math to deal with LINEAR(label+value) */
-		exbank = (expr_lablptr->bank + (val[0] / 8192) - (expr_lablptr->value / 8192));
-		if (expr_lablptr->bank < RESERVED_BANK)
-			exbank -= bank_base;
+		if (expr_lablptr->mprbank < UNDEFINED_BANK) {
+			exbank = (expr_lablptr->rombank + (val[0] / 8192) - (expr_lablptr->value / 8192));
+		}
 		val[0] = (exbank << 13) + (val[0] & 0x1FFF);
+		break;
+
+	/* OVERLAY */
+	case OP_OVERLAY:
+		if (!check_func_args("OVERLAY"))
+			return (0);
+		val[0] = expr_lablptr->overlay;
 		break;
 
 	/* BANK */
 	case OP_BANK:
 		if (!check_func_args("BANK"))
 			return (0);
-		if (pass == LAST_PASS) {
-			if (expr_lablptr->bank == RESERVED_BANK) {
-				error("No BANK index for this symbol!");
-				val[0] = 0;
-				break;
-			}
+		if (expr_lablptr->mprbank >= UNDEFINED_BANK) {
+			if ((pass == LAST_PASS) && (expr_lablptr->mprbank == UNDEFINED_BANK))
+				error("No BANK() number for this symbol!");
+			val[0] = 0;
+			break;
 		}
 		/* complicated math to deal with BANK(label+value) */
-		val[0] = (expr_lablptr->bank + (val[0] / 8192) - (expr_lablptr->value / 8192));
+		val[0] = (expr_lablptr->mprbank + (val[0] / 8192) - (expr_lablptr->value / 8192));
 		break;
 
 	/* PAGE */
@@ -1026,7 +1165,7 @@ do_op(void)
 			return (0);
 		if (pass == LAST_PASS) {
 			if (expr_lablptr->vram == -1)
-				error("No VRAM address for this symbol!");
+				error("No VRAM() address for this symbol!");
 		}
 		val[0] = expr_lablptr->vram;
 		break;
@@ -1037,7 +1176,7 @@ do_op(void)
 			return (0);
 		if (pass == LAST_PASS) {
 			if (expr_lablptr->pal == -1)
-				error("No palette index for this symbol!");
+				error("No PAL() index for this symbol!");
 		}
 		val[0] = expr_lablptr->pal;
 		break;
@@ -1046,6 +1185,7 @@ do_op(void)
 	case OP_DEFINED:
 		if (!check_func_args("DEFINED"))
 			return (0);
+
 		if ((expr_lablptr->type != IFUNDEF) && (expr_lablptr->type != UNDEF))
 			val[0] = 1;
 		else {
@@ -1060,7 +1200,7 @@ do_op(void)
 			return (0);
 		if (pass == LAST_PASS) {
 			if (expr_lablptr->data_type == -1) {
-				error("No size attributes for this symbol!");
+				error("No SIZEOF() attribute for this symbol!");
 				return (0);
 			}
 		}
@@ -1068,14 +1208,14 @@ do_op(void)
 		break;
 
 	/* HIGH */
-	case OP_dotHI:
-	case OP_HIGH:
+	case OP_HIGH_SYMBOL:
+	case OP_HIGH_KEYWORD:
 		val[0] = (val[0] & 0xFF00) >> 8;
 		break;
 
 	/* LOW */
-	case OP_dotLO:
-	case OP_LOW:
+	case OP_LOW_SYMBOL:
+	case OP_LOW_KEYWORD:
 		val[0] = val[0] & 0xFF;
 		break;
 
@@ -1163,6 +1303,14 @@ do_op(void)
 		val[0] = (val[1] >= val[0]);
 		break;
 
+	case OP_LOGICAL_OR:
+		val[0] = ((val[1] != 0) || (val[0] != 0));
+		break;
+
+	case OP_LOGICAL_AND:
+		val[0] = ((val[1] != 0) && (val[0] != 0));
+		break;
+
 	default:
 		error("Invalid operator in expression!");
 		return (0);
@@ -1177,23 +1325,19 @@ do_op(void)
 /* ----
  * check_func_args()
  * ----
- * check BANK/PAGE/VRAM/PAL function arguments
+ * check OVERLAY/LINEAR/BANK/PAGE/VRAM/PAL function arguments
  */
 
 int
 check_func_args(char *func_name)
 {
-	char string[64];
-
 	if (expr_lablcnt == 1)
 		return (1);
 	else if (expr_lablcnt == 0)
-		sprintf(string, "No symbol in function %s!", func_name);
+		error("No symbol in function %s!", func_name);
 	else {
-		sprintf(string, "Too many symbols in function %s!", func_name);
+		error("Too many symbols in function %s!", func_name);
 	}
 
-	/* output message */
-	error(string);
 	return (0);
 }

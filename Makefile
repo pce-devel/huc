@@ -24,6 +24,7 @@ install:
 
 test:
 	@cd test ; /bin/sh ./test_compiler.sh
+	@cd test ; /bin/sh ./test_hucc.sh
 
 check:
 	@cd test ; /bin/sh ./test_examples.sh

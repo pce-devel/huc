@@ -6,14 +6,30 @@
 #include "externs.h"
 #include "protos.h"
 
-struct t_proc *proc_tbl[256];
-struct t_proc *proc_ptr;
-struct t_proc *proc_first;
-struct t_proc *proc_last;
+t_proc *proc_tbl[HASH_COUNT];
+t_proc *proc_ptr;
+t_proc *proc_first;
+t_proc *proc_last;
 int proc_nb;
 int call_1st;
 int call_ptr;
 int call_bank;
+
+/* this is set when suppressing the listing output of stripped procedures */
+/* n.b. fully compatible with 2-pass assembly because code is still built */
+int cloaking_stripped;
+
+/* this is set when not assembling the code within the stripped procedure */
+/* n.b. not compatible with 2-pass assembly because symbol addresses will */
+/* change because both multi-label and branch tracking counts will change */
+int skipping_stripped;
+
+/* this is set to say that skipping is an acceptable alternative to */
+/* cloaking, which means that we've decided to do a 3-pass assembly */
+int allow_skipping;
+
+/* set this to spew procedure stripping information to the tty */
+#define DEBUG_STRIPPING 0
 
 extern int dump_seg;
 
@@ -22,6 +38,83 @@ struct t_proc *proc_look(void);
 int            proc_install(void);
 void           poke(int addr, int data);
 void           proc_sortlist(void);
+
+
+/* ----
+ * add_thunk()
+ * ----
+ * add a procedure thunk
+ */
+
+void
+add_thunk(struct t_proc *proc)
+{
+	if (!proc->call) {
+		/* init */
+		if (call_bank > max_bank) {
+			/* don't increase ROM size until we need a thunk */
+			if (call_bank > bank_limit) {
+				fatal_error("There is no target memory left to allocate a bank for .PROC thunks!");
+				if (asm_opt[OPT_OPTIMIZE] == 0) {
+					fprintf(ERROUT, "Optimized procedure packing is currently disabled, use \"-O\" to enable.\n\n");
+				}
+				return;
+			}
+			max_bank = call_bank;
+		}
+
+		/* new call */
+		if (newproc_opt == 0) {
+			/* check that the new thunk won't overrun the bank */
+			if (((call_ptr + 17) & 0xE000) != (call_1st & 0xE000)) {
+				error("The .PROC thunk bank is full, there are too many procedures!");
+				return;
+			}
+
+			/* install HuC thunks at start of MPR4, map code into MPR5 */
+			proc->call = call_ptr;
+
+			poke(call_ptr++, 0xA8);			// tay
+			poke(call_ptr++, 0x43);			// tma #5
+			poke(call_ptr++, 0x20);
+			poke(call_ptr++, 0x48);			// pha
+			poke(call_ptr++, 0xA9);			// lda #...
+			poke(call_ptr++, proc->label->mprbank);
+			poke(call_ptr++, 0x53);			// tam #5
+			poke(call_ptr++, 0x20);
+			poke(call_ptr++, 0x98);			// tya
+			poke(call_ptr++, 0x20);			// jsr ...
+			poke(call_ptr++, (proc->org + 0xA000) & 255);
+			poke(call_ptr++, (proc->org + 0xA000) >> 8);
+			poke(call_ptr++, 0xA8);			// tay
+			poke(call_ptr++, 0x68);			// pla
+			poke(call_ptr++, 0x53);			// tam #5
+			poke(call_ptr++, 0x20);
+			poke(call_ptr++, 0x98);			// tya
+			poke(call_ptr++, 0x60);			// rts
+		} else {
+			/* check that the new thunk won't overrun the bank */
+			if (((call_ptr - 9) & 0xE000) != (call_1st & 0xE000)) {
+				error("The .PROC thunk bank is full, there are too many procedures!");
+				return;
+			}
+
+			/* install new thunks at end of MPR7, map code into MPR6 */
+			poke(call_ptr--, (proc->org + 0xC000) >> 8);
+			poke(call_ptr--, (proc->org + 0xC000) & 255);
+			poke(call_ptr--, 0x4C);			// jmp ...
+			poke(call_ptr--, 0x40);
+			poke(call_ptr--, 0x53);			// tam #6
+			poke(call_ptr--, proc->label->mprbank);
+			poke(call_ptr--, 0xA9);			// lda #...
+			poke(call_ptr--, 0x48);			// pha
+			poke(call_ptr--, 0x40);
+			poke(call_ptr--, 0x43);			// tma #6
+
+			proc->call = call_ptr + 1;
+		}
+	}
+}
 
 
 /* ----
@@ -37,7 +130,7 @@ do_call(int *ip)
 
 	/* define label, unless already defined in classC() instruction flow */
 	if (opflg == PSEUDO)
-		labldef(0, 0, LOCATION);
+		labldef(LOCATION);
 
 	/* update location counter */
 	data_loccnt = loccnt;
@@ -59,78 +152,9 @@ do_call(int *ip)
 				value = proc->org + 0xA000;
 			} else {
 				/* different bank */
-				if (proc->call) {
-					value = proc->call;
-				} else {
-					/* init */
-					if (call_bank > max_bank) {
-						/* don't increase ROM size until we need a trampoline */
-						if (call_bank > bank_limit) {
-							fatal_error("Not enough ROM space for proc trampolines!");
-							if (asm_opt[OPT_OPTIMIZE] == 0) {
-								printf("Procedure optimization is currently disabled, use \"-O\" to enable.\n\n");
-							}
-							return;
-						}
-						max_bank = call_bank;
-					}
-
-					/* new call */
-					if (newproc_opt == 0) {
-						/* check that the new trampoline won't overrun the bank */
-						if (((call_ptr + 17) & 0xE000) != (call_1st & 0xE000)) {
-							error("No more space in bank for .proc trampoline!");
-							if (asm_opt[OPT_OPTIMIZE] == 0) {
-								printf("Procedure optimization is currently disabled, use \"-O\" to enable.\n\n");
-							}
-							return;
-						}
-
-						/* install HuC trampolines at start of MPR4, map code into MPR5 */
-						value = call_ptr;
-
-						poke(call_ptr++, 0xA8);			// tay
-						poke(call_ptr++, 0x43);			// tma #5
-						poke(call_ptr++, 0x20);
-						poke(call_ptr++, 0x48);			// pha
-						poke(call_ptr++, 0xA9);			// lda #...
-						poke(call_ptr++, proc->bank + bank_base);
-						poke(call_ptr++, 0x53);			// tam #5
-						poke(call_ptr++, 0x20);
-						poke(call_ptr++, 0x98);			// tya
-						poke(call_ptr++, 0x20);			// jsr ...
-						poke(call_ptr++, (proc->org + 0xA000) & 255);
-						poke(call_ptr++, (proc->org + 0xA000) >> 8);
-						poke(call_ptr++, 0xA8);			// tay
-						poke(call_ptr++, 0x68);			// pla
-						poke(call_ptr++, 0x53);			// tam #5
-						poke(call_ptr++, 0x20);
-						poke(call_ptr++, 0x98);			// tya
-						poke(call_ptr++, 0x60);			// rts
-					} else {
-						/* check that the new trampoline won't overrun the bank */
-						if (((call_ptr - 9) & 0xE000) != (call_1st & 0xE000)) {
-							error("No more space in bank for .proc trampoline!");
-							return;
-						}
-
-						/* install new trampolines at end of MPR7, map code into MPR6 */
-						poke(call_ptr--, (proc->org + 0xC000) >> 8);
-						poke(call_ptr--, (proc->org + 0xC000) & 255);
-						poke(call_ptr--, 0x4C);			// jmp ...
-						poke(call_ptr--, 0x40);
-						poke(call_ptr--, 0x53);			// tam #6
-						poke(call_ptr--, proc->bank + bank_base);
-						poke(call_ptr--, 0xA9);			// lda #...
-						poke(call_ptr--, 0x48);			// pha
-						poke(call_ptr--, 0x40);
-						poke(call_ptr--, 0x43);			// tma #6
-
-						value = call_ptr + 1;
-					}
-
-					proc->call = value;
-				}
+				if (!proc->call)
+					add_thunk(proc);
+				value = proc->call;
 
 				/* special handling for a jmp between procedures */
 				if ((newproc_opt != 0) && (optype == 1)) {
@@ -176,7 +200,7 @@ void
 do_leave(int *ip)
 {
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* check end of line */
 	if (!check_eol(ip))
@@ -218,7 +242,7 @@ do_proc(int *ip)
 	if (optype == P_KICKC) {
 		/* reserve "{}" syntax for KickC code */
 		if (kickc_mode == 0) {
-			fatal_error("Cannot use \"{}\" syntax in .pceas mode!");
+			fatal_error("Cannot use \"{}\" syntax in .PCEAS mode!");
 			return;
 		}
 
@@ -229,16 +253,22 @@ do_proc(int *ip)
 		}
 	}
 
+	/* not allowed while .phase is active */
+	if (phase_offset) {
+		fatal_error("Cannot declare a .PROC/.PROCGROUP a .PHASE'd chunk of code!");
+		return;
+	}
+
 	/* do not mix different types of label-scope */
 	if (scopeptr) {
-		fatal_error("Cannot declare a .proc/.procgroup inside a .struct!");
+		fatal_error("Cannot declare a .PROC/.PROCGROUP inside a .STRUCT!");
 			return;
 	}
 
 	/* check if nesting procs/groups */
 	if (proc_ptr) {
 		if (optype == P_PGROUP) {
-			fatal_error("Cannot declare a .procgroup inside a .proc/.procgroup!");
+			fatal_error("Cannot declare a .PROCGROUP inside a .PROC/.PROCGROUP!");
 			return;
 		}
 		else {
@@ -261,16 +291,19 @@ do_proc(int *ip)
 
 		/* extract name */
 		if (!colsym(ip, 0)) {
+			/* was there a bad symbol */
 			if (symbol[0])
 				return;
+
+			/* or just no symbol at all */
 			if (optype == P_PROC) {
-				fatal_error(".proc name is missing!");
+				fatal_error(".PROC name is missing!");
 				return;
 			}
 
 			/* default name */
-			sprintf(&symbol[1], "__group_%i__", proc_nb + 1);
-			symbol[0] = strlen(&symbol[1]);
+			sprintf(&symbol[1], "__group_%d_%d__", input_file[infile_num].file->number, slnum);
+			symbol[0] = (char)strlen(&symbol[1]);
 		}
 
 		/* lookup symbol table */
@@ -280,11 +313,11 @@ do_proc(int *ip)
 
 	/* check symbol */
 	if (symbol[1] == '.' || symbol[1] == '@') {
-		fatal_error(".proc/.procgroup name cannot be a local label!");
+		fatal_error(".PROC/.PROCGROUP name cannot be a local label!");
 		return;
 	}
 	if (symbol[1] == '!') {
-		fatal_error(".proc/.procgroup name cannot be a multi-label!");
+		fatal_error(".PROC/.PROCGROUP name cannot be a multi-label!");
 		return;
 	}
 
@@ -293,19 +326,51 @@ do_proc(int *ip)
 		return;
 
 	/* search (or create new) proc */
-	if((ptr = proc_look()))
+	if ((ptr = proc_look()))
 		proc_ptr = ptr;
 	else {
 		if (!proc_install())
 			return;
 	}
 	if (pass == FIRST_PASS && proc_ptr->defined) {
-		fatal_error(".proc/.procgroup multiply defined!");
+		fatal_error(".PROC/.PROCGROUP multiply defined!");
 		return;
 	}
 
+	/* reset location and size in case it changed due to skipping */
+	if (pass != LAST_PASS) {
+		proc_ptr->org = proc_ptr->base = proc_ptr->group ? loccnt : 0;
+		proc_ptr->label->data_size = proc_ptr->size = 0;
+	}
+
+	/* can we just not assemble a stripped .proc/.procgroup */
+	/* at all instead of assembling it to the STRIPPED_BANK */
+	if (proc_ptr->bank == STRIPPED_BANK && allow_skipping && proc_ptr->is_skippable) {
+		#if DEBUG_STRIPPING
+		printf("Skipping %s \"%s\" with parent \"%s\".\n",
+			proc_ptr->type == P_PROC ? ".PROC" : ".PROCGROUP",
+			proc_ptr->label->name + 1,
+			proc_ptr->group == NULL ? "none" : proc_ptr->group->label->name + 1);
+		#endif
+		proc_ptr = proc_ptr->group;
+		skipping_stripped = optype;
+		if (pass == LAST_PASS) {
+			println();
+		}
+		return;
+	}
+
+	#if DEBUG_STRIPPING
+	printf("Assembling %s \"%s\" to bank %d with parent \"%s\".\n",
+		proc_ptr->type == P_PROC ? ".PROC" : ".PROCGROUP",
+		proc_ptr->label->name + 1,
+		proc_ptr->bank,
+		proc_ptr->group == NULL ? "none" : proc_ptr->group->label->name + 1);
+	#endif
+
 	/* increment proc ref counter */
 	proc_ptr->defined = 1;
+	proc_ptr->is_skippable = if_level;
 
 	/* backup current bank infos */
 	bank_glabl[section][bank]  = proc_ptr->old_glablptr = glablptr;
@@ -324,7 +389,7 @@ do_proc(int *ip)
 	discontiguous = 1;
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* a KickC procedure also opens a label-scope */
 	if (optype == P_KICKC) {
@@ -334,8 +399,13 @@ do_proc(int *ip)
 
 	/* output */
 	if (pass == LAST_PASS) {
-		loadlc(loccnt, 0);
-		println();
+		if (proc_ptr->bank == STRIPPED_BANK) {
+			println();
+			++cloaking_stripped;
+		} else {
+			loadlc(loccnt, 0);
+			println();
+		}
 	}
 }
 
@@ -353,17 +423,23 @@ do_endp(int *ip)
 	if (optype == P_KICKC) {
 		/* reserve "{}" syntax for KickC code */
 		if (kickc_mode == 0) {
-			fatal_error("Cannot use \"{}\" syntax in .pceas mode!");
+			fatal_error("Cannot use \"{}\" syntax in .PCEAS mode!");
 			return;
 		}
 	}
 
+	/* not allowed while .phase is active */
+	if (phase_offset) {
+		fatal_error("Cannot .ENDP/.ENDPROCGROUP within a .PHASE'd chunk of code!");
+		return;
+	}
+
 	if (proc_ptr == NULL) {
-		fatal_error("Unexpected .endp/.endprocgroup!");
+		fatal_error("Unexpected .ENDP/.ENDPROCGROUP!");
 		return;
 	}
 	if (optype != proc_ptr->type) {
-		fatal_error("Unexpected .endp/.endprocgroup!");
+		fatal_error("Unexpected .ENDP/.ENDPROCGROUP!");
 		return;
 	}
 
@@ -371,33 +447,21 @@ do_endp(int *ip)
 	if (!check_eol(ip))
 		return;
 
-	/* restore procedure's initial section */
-	if (section != proc_ptr->label->section) {
-		/* backup current section data */
-		section_bank[section] = bank;
-		bank_glabl[section][bank] = glablptr;
-		bank_loccnt[section][bank] = loccnt;
-		bank_page[section][bank] = page;
-
-		/* change section */
-		section = proc_ptr->label->section;
-
-		/* switch to the new section */
-		bank = section_bank[section];
-		page = bank_page[section][bank];
-		loccnt = bank_loccnt[section][bank];
-		glablptr = bank_glabl[section][bank];
-
-		/* signal discontiguous change in loccnt */
-		discontiguous = 1;
+	/* disable skipping if the procedure starts and ends at different .if nesting */
+	if (!(proc_ptr->is_skippable = (proc_ptr->is_skippable == if_level))) {
+		if (asm_opt[OPT_WARNING])
+			warning(".PROC/.PROCGROUP has mismatched .IF nesting!\n");
 	}
 
+	/* restore procedure's initial section */
+	set_section(proc_ptr->label->section);
+
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* sanity check */
 	if (bank != proc_ptr->bank) {
-		fatal_error(".endp/.endprocgroup is in a different bank to .proc/,procgroup!");
+		fatal_error(".ENDP/.ENDPROCGROUP is in a different bank to .PROC/.PROCGROUP!");
 		return;
 	}
 
@@ -420,6 +484,13 @@ do_endp(int *ip)
 		discontiguous = 1;
 	}
 
+	#if DEBUG_STRIPPING
+	printf("Ending %s \"%s\" with parent \"%s\".\n",
+		optype == P_PROC ? ".PROC" : ".PROCGROUP",
+		proc_ptr->label->name + 1,
+		proc_ptr->group == NULL ? "none" : proc_ptr->group->label->name + 1);
+	#endif
+
 	proc_ptr = proc_ptr->group;
 
 	/* a KickC procedure also closes the label-scope */
@@ -433,8 +504,86 @@ do_endp(int *ip)
 	}
 
 	/* output */
-	if (pass == LAST_PASS)
+	if (pass == LAST_PASS) {
+		if (cloaking_stripped)
+			--cloaking_stripped;
 		println();
+	}
+}
+
+
+/* ----
+ * proc_strip()
+ * ----
+ *
+ */
+
+void
+proc_strip(void)
+{
+	int num_stripped = 0;
+
+	if (proc_nb == 0)
+		return;
+
+	if (strip_opt == 0)
+		return;
+
+	/* calculate the refthispass for each group */
+	proc_ptr = proc_first;
+
+	while (proc_ptr) {
+		/* proc within a group */
+		if (proc_ptr->group != NULL) {
+			proc_ptr->group->label->refthispass += proc_ptr->label->refthispass;
+		}
+		proc_ptr = proc_ptr->link;
+	}
+
+	/* strip out the groups and procs with zero references */
+	proc_ptr = proc_first;
+
+	while (proc_ptr) {
+
+		/* group or standalone proc */
+		if (proc_ptr->group == NULL) {
+			/* strip this .proc or .procgroup? */
+			if (proc_ptr->label->refthispass < 1) {
+				/* strip this unused code from the ROM */
+				#if DEBUG_STRIPPING
+				printf("Stripping %s \"%s\" with parent \"%s\".\n",
+					proc_ptr->type == P_PROC ? ".PROC" : ".PROCGROUP",
+					proc_ptr->label->name + 1,
+					proc_ptr->group == NULL ? "none" : proc_ptr->group->label->name + 1);
+				#endif
+				proc_ptr->bank = STRIPPED_BANK;
+				--proc_nb;
+				++num_stripped;
+			}
+		}
+
+		/* proc within a group */
+		else {
+			/* strip this .proc? */
+			if ((proc_ptr->group->bank == STRIPPED_BANK) ||
+			    (proc_ptr->label->refthispass < 1 && allow_skipping && proc_ptr->is_skippable)) {
+				/* strip this unused code from the ROM */
+				#if DEBUG_STRIPPING
+				printf("Stripping %s \"%s\" with parent \"%s\".\n",
+					proc_ptr->type == P_PROC ? ".PROC" : ".PROCGROUP",
+					proc_ptr->label->name + 1,
+					proc_ptr->group == NULL ? "none" : proc_ptr->group->label->name + 1);
+				#endif
+				proc_ptr->bank = STRIPPED_BANK;
+				--proc_nb;
+				++num_stripped;
+			}
+		}
+
+		/* next */
+		proc_ptr->defined = 0;
+		proc_ptr = proc_ptr->link;
+	}
 }
 
 
@@ -477,40 +626,30 @@ proc_reloc(void)
 		new_bank = max_bank + 1;
 	}
 
-	proc_ptr = proc_first;
-
-	/* sum up each group's refcnt */
-	while (proc_ptr) {
-		/* proc within a group */
-		if (proc_ptr->group != NULL) {
-			proc_ptr->group->label->refcnt += proc_ptr->label->refcnt;
-		}
-		proc_ptr = proc_ptr->link;
-	}
-
-	proc_ptr = proc_first;
-
 	/* alloc memory */
+	proc_ptr = proc_first;
+
 	while (proc_ptr) {
 
 		/* group or standalone proc */
 		if (proc_ptr->group == NULL) {
 
-			/* relocate or strip? */
-			if ((strip_opt != 0) && (proc_ptr->label->refcnt < 1)) {
-				/* strip this unused code from the ROM */
-				proc_ptr->bank = STRIPPED_BANK;
-			} else {
+			/* relocate if not stripped */
+			if (proc_ptr->bank != STRIPPED_BANK) {
 				/* relocate code to any unused bank in ROM */
 				int reloc_bank = -1;
 				int check_bank = 0;
+				int check_last = 0;
 				int smallest = 0x2000;
 
 				while (reloc_bank == -1)
 				{
 					check_bank = (asm_opt[OPT_OPTIMIZE]) ? 0 : max_bank;
 
-					for (; check_bank <= max_bank; check_bank++)
+					/* limit procs to the first 64 banks if using the SF2 mapper */
+					check_last = (section_flags[S_DATA] & S_IS_SF2) ? 63 : max_bank;
+
+					for (; check_bank <= check_last; check_bank++)
 					{
 						/* don't use a full bank, even if proc_ptr->size==0 */
 						if ((bank_free[check_bank] != 0) && (bank_free[check_bank] >= proc_ptr->size))
@@ -525,46 +664,46 @@ proc_reloc(void)
 
 					if (reloc_bank == -1)
 					{
-						/* need new bank */
-						if (++max_bank > bank_limit) {
+						/* new bank needed, is there space below 1MB? */
+						if ((max_bank >= 127) || (max_bank >= bank_limit)) {
 							int total = 0, totfree = 0;
 							struct t_proc *current = NULL;
 
 							current = proc_ptr;
 
-							fatal_error("\nThere is not enough free memory for all the procedures!\n");
+							fatal_error("There is not enough free target memory for all the procedures!\n");
 
 							if (asm_opt[OPT_OPTIMIZE] == 0) {
-								printf("Procedure optimization is currently disabled, use \"-O\" to enable.\n\n");
+								fprintf(ERROUT, "Optimized procedure packing is currently disabled, use \"-O\" to enable.\n\n");
 							}
 
-							for (i = new_bank; i < max_bank; i++) {
-								printf("BANK %02X: %d bytes free\n", i, bank_free[i]);
+							for (i = new_bank; i <= max_bank; i++) {
+								fprintf(ERROUT, "BANK %3X: %d bytes free\n", i, bank_free[i]);
 								totfree += bank_free[i];
 							}
-							printf("\nTotal free space in all banks %d.\n\n", totfree);
+							fprintf(ERROUT, "\nTotal free space in all banks %d.\n\n", totfree);
 
 							total = 0;
 							proc_ptr = proc_first;
 							while (proc_ptr) {
 								if (proc_ptr->bank == PROC_BANK) {
-									printf("Proc: %s Bank: 0x%02X Size: %4d %s\n",
-										proc_ptr->name, proc_ptr->bank == PROC_BANK ? 0 : proc_ptr->bank, proc_ptr->size,
+									fprintf(ERROUT, "Proc: %s Bank: 0x%02X Size: %4d %s\n",
+										proc_ptr->label->name + 1, proc_ptr->bank == PROC_BANK ? 0 : proc_ptr->bank, proc_ptr->size,
 										proc_ptr->bank == PROC_BANK && proc_ptr == current ? " ** too big **" : proc_ptr->bank == PROC_BANK ? "** unassigned **" : "");
 									total += proc_ptr->size;
 								}
 								proc_ptr = proc_ptr->link;
 							}
-							printf("\nTotal bytes that didn't fit in ROM: %d\n\n", total);
+							fprintf(ERROUT, "\nTotal bytes that didn't fit in ROM: %d\n\n", total);
 							if (totfree > total && current)
-								printf("Try splitting the \"%s\" procedure into smaller chunks.\n\n", current->name);
+								fprintf(ERROUT, "Try splitting the \"%s\" procedure into smaller chunks.\n\n", current->label->name + 1);
 							else
-								printf("There are %d bytes that won't fit into the currently available BANK space\n\n", total - totfree);
+								fprintf(ERROUT, "There are %d bytes that won't fit into the currently available BANK space\n\n", total - totfree);
 							errcnt++;
 
 							return;
 						}
-						reloc_bank = max_bank;
+						reloc_bank = ++max_bank;
 					}
 				}
 
@@ -581,7 +720,8 @@ proc_reloc(void)
 		else {
 			/* reloc proc */
 			group = proc_ptr->group;
-			proc_ptr->bank = group->bank;
+			if (proc_ptr->bank != STRIPPED_BANK)
+				proc_ptr->bank = group->bank;
 			proc_ptr->org += (group->org - group->base);
 		}
 
@@ -594,7 +734,7 @@ proc_reloc(void)
 	bank_free = NULL;
 
 	/* remap proc symbols */
-	for (i = 0; i < 256; i++) {
+	for (i = 0; i < HASH_COUNT; i++) {
 		sym = hash_tbl[i];
 
 		while (sym) {
@@ -602,18 +742,18 @@ proc_reloc(void)
 
 			/* remap addr */
 			if (sym->proc) {
-				if (proc_ptr->bank == STRIPPED_BANK)
-					sym->bank = STRIPPED_BANK;
-				else
-					sym->bank = proc_ptr->bank + bank_base;
-
-				sym->value = (sym->value & 0x007FFFFF);
-				sym->value += (proc_ptr->org - proc_ptr->base);
-
-				/* KickC can't call bank(), so put it in the label */
-				if (proc_ptr->kickc) {
-					sym->value += sym->bank << 23;
+				if (proc_ptr->bank == STRIPPED_BANK) {
+					sym->rombank =
+					sym->mprbank = STRIPPED_BANK;
+					sym->overlay = 0;
+				} else {
+					sym->rombank = proc_ptr->bank;
+					sym->mprbank = bank2mprbank(sym->rombank, sym->section);
+					sym->overlay = bank2overlay(sym->rombank, sym->section);
 				}
+
+				if (sym->phase == 0)
+					sym->value += (proc_ptr->org - proc_ptr->base);
 
 				/* local symbols */
 				if (sym->local) {
@@ -624,18 +764,18 @@ proc_reloc(void)
 
 						/* remap addr */
 						if (local->proc) {
-							if (proc_ptr->bank == STRIPPED_BANK)
-								local->bank = STRIPPED_BANK;
-							else
-								local->bank = proc_ptr->bank + bank_base;
-
-							local->value = (local->value & 0x007FFFFF);
-							local->value += (proc_ptr->org - proc_ptr->base);
-
-							/* KickC can't call bank(), so put it in the label */
-							if (proc_ptr->kickc) {
-								local->value += local->bank << 23;
+							if (proc_ptr->bank == STRIPPED_BANK) {
+								local->rombank =
+								local->mprbank = STRIPPED_BANK;
+								local->overlay = 0;
+							} else {
+								local->rombank = proc_ptr->bank;
+								local->mprbank = bank2mprbank(local->rombank, local->section);
+								local->overlay = bank2overlay(local->rombank, local->section);
 							}
+
+							if (local->phase == 0)
+								local->value += (proc_ptr->org - proc_ptr->base);
 						}
 
 						/* next */
@@ -651,9 +791,8 @@ proc_reloc(void)
 
 	/* reset */
 	proc_ptr = NULL;
-	proc_nb = 0;
 
-	/* initialize trampoline bank/addr after relocation */
+	/* initialize thunk bank/addr after relocation */
 	if (newproc_opt) {
 		call_bank = 0;
 		call_ptr  = 0xFFF5;
@@ -676,12 +815,15 @@ proc_reloc(void)
 		/* install code for leaving .proc */
 		/* fix do_proc() if this changes! */
 		poke(call_ptr--, 0x60);			// rts
-		poke(call_ptr--, 0x98);			// tya
+		if (hucc_opt)
+			poke(call_ptr--, 0x8A);			// txa
+		else
+			poke(call_ptr--, 0x98);			// tya
 		poke(call_ptr--, 0x40);
 		poke(call_ptr--, 0x53);			// tam #6
 		poke(call_ptr--, 0x68);			// pla
 
-		lablset("leave_proc", call_ptr + 1 + (call_bank << 23));
+		lablset("leave_proc", call_ptr + 1);
 	}
 }
 
@@ -702,7 +844,7 @@ proc_look(void)
 	hash = symhash();
 	ptr = proc_tbl[hash];
 	while (ptr) {
-		if (!strcmp(&symbol[1], ptr->name))
+		if (!strcmp(symbol, ptr->label->name))
 			break;
 		ptr = ptr->next;
 	}
@@ -732,7 +874,6 @@ proc_install(void)
 	}
 
 	/* initialize it */
-	strcpy(ptr->name, &symbol[1]);
 	hash = symhash();
 	ptr->bank = (optype == P_PGROUP)  ? GROUP_BANK : PROC_BANK;
 	ptr->base = proc_ptr ? loccnt : 0;
@@ -741,6 +882,7 @@ proc_install(void)
 	ptr->call = 0;
 	ptr->kickc = kickc_mode;
 	ptr->defined = 0;
+	ptr->is_skippable = 0;
 	ptr->link = NULL;
 	ptr->next = proc_tbl[hash];
 	ptr->group = proc_ptr;
@@ -773,7 +915,7 @@ proc_install(void)
 void
 poke(int addr, int data)
 {
-	/* do not overwrite existing data! check_trampolines() will report */
+	/* do not overwrite existing data! check_thunks() will report */
 	/* this error later on and show a segment dump to provide help */
 	if ((map[call_bank][(addr & 0x1FFF)] & 0x0F) == 0x0F) {
 		rom[call_bank][(addr & 0x1FFF)] = data;
@@ -812,9 +954,9 @@ proc_sortlist(void)
 			struct t_proc *previous = NULL;
 			while(!inserted && list)
 			{
-				if(list->size < proc_ptr->size)
+				if (list->size < proc_ptr->size)
 				{
-					if(!previous)
+					if (!previous)
 						sorted_list = proc_ptr;
 					else
 						previous->link = proc_ptr;
@@ -828,7 +970,7 @@ proc_sortlist(void)
 				}
 			}
 
-			if(!inserted)
+			if (!inserted)
 				previous->link = proc_ptr;
 		}
 	}
@@ -850,9 +992,9 @@ list_procs(void)
 
 	if ((lst_fp != NULL) && (proc_ptr != NULL) && (fprintf(lst_fp, "\nPROCEDURE LIST (in order of size):\n\n") > 0)) {
 		while (proc_ptr) {
-			if ((proc_ptr->group == NULL) && (proc_ptr->bank < RESERVED_BANK)) {
-				if (fprintf( lst_fp, "Size: $%04X, Addr: $%02X:%04X, %s %s\n", proc_ptr->size, proc_ptr->bank, proc_ptr->label->value,
-					(proc_ptr->type == P_PGROUP) ? ".procgroup" : "     .proc" , proc_ptr->name) < 0)
+			if ((proc_ptr->group == NULL) && (proc_ptr->bank < UNDEFINED_BANK)) {
+				if (fprintf(lst_fp, "Size: $%04X, Addr: $%02X:%04X, %s %s\n", proc_ptr->size, proc_ptr->bank, proc_ptr->label->value,
+					(proc_ptr->type == P_PGROUP) ? ".procgroup" : "     .proc" , proc_ptr->label->name + 1) < 0)
 					break;
 			}
 			proc_ptr = proc_ptr->link;
@@ -862,13 +1004,13 @@ list_procs(void)
 
 
 /* ----
- * check_trampolines()
+ * check_thunks()
  * ----
  * were they overwritten by other code/data?
  */
 
 int
-check_trampolines(void)
+check_thunks(void)
 {
 	int first_bad = -1;
 	int final_bad = -1;
@@ -892,11 +1034,11 @@ check_trampolines(void)
 	}
 
 	if (first_bad >= 0) {
-		printf("Error: .proc trampolines between $%04X-$%04X are overwritten by code or data!\n\nTrampoline Bank ...\n",
+		fatal_error(".PROC thunks between $%04X-$%04X are overwritten by code or data!\n\nThunk Bank ...\n",
 			first_bad, final_bad);
 		dump_seg = 2;
-		show_bnk_usage(call_bank);
-		printf("\n");
+		show_bank_usage(ERROUT, call_bank);
+		fprintf(ERROUT, "\n");
 		return (1);
 	}
 	return (0);

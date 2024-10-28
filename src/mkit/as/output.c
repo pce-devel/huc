@@ -1,3 +1,4 @@
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 #include "defs.h"
@@ -21,6 +22,8 @@ println(void)
 	if (list_level == 0)
 		return;
 	if (!xlist || !asm_opt[OPT_LIST] || (expand_macro && !asm_opt[OPT_MACRO]))
+		return;
+	if (cloaking_stripped)
 		return;
 
 	/* undo the pre-processor's modification to the line */
@@ -52,15 +55,15 @@ println(void)
 			/* ok */
 			cnt = 0;
 			for (i = 0; i < nb; i++) {
-//				if (bank == RESERVED_BANK || bank == STRIPPED_BANK) {
+//				if (bank == UNDEFINED_BANK || bank == STRIPPED_BANK) {
 				if (bank > bank_limit) {
-					prlnbuf[16 + (3 * cnt)] = '-';
-					prlnbuf[17 + (3 * cnt)] = '-';
+					prlnbuf[18 + (3 * cnt)] = '-';
+					prlnbuf[19 + (3 * cnt)] = '-';
 				}
 				else {
 					hexcon(2, rom[bank][data_loccnt]);
-					prlnbuf[16 + (3 * cnt)] = hex[1];
-					prlnbuf[17 + (3 * cnt)] = hex[2];
+					prlnbuf[18 + (3 * cnt)] = hex[1];
+					prlnbuf[19 + (3 * cnt)] = hex[2];
 				}
 				data_loccnt++;
 				cnt++;
@@ -113,22 +116,36 @@ loadlc(int offset, int pos)
 	int i;
 
 	if (pos)
-		i = 16;
+		i = 20;
 	else
 		i = 7;
 
 	if (pos == 0) {
-		if (bank == RESERVED_BANK || bank == STRIPPED_BANK) {
+		if (bank == UNDEFINED_BANK || bank == STRIPPED_BANK) {
+			prlnbuf[i++] = ' ';
+			prlnbuf[i++] = ' ';
 			prlnbuf[i++] = '-';
 			prlnbuf[i++] = '-';
 		}
 		else {
-			hexcon(2, bank);
-			prlnbuf[i++] = hex[1];
-			prlnbuf[i++] = hex[2];
+			if ((section_flags[section] & S_IS_SF2) && (bank > 127)) {
+				hexcon(1, (bank / 64) - 1);
+				prlnbuf[i++] = hex[1];
+				prlnbuf[i++] = ':';
+				hexcon(2, (bank & 63) + 64);
+				prlnbuf[i++] = hex[1];
+				prlnbuf[i++] = hex[2];
+
+			} else {
+				prlnbuf[i++] = ' ';
+				prlnbuf[i++] = ' ';
+				hexcon(2, bank);
+				prlnbuf[i++] = hex[1];
+				prlnbuf[i++] = hex[2];
+			}
 		}
 		prlnbuf[i++] = ':';
-		offset += page << 13;
+		offset = (offset + (page << 13) + phase_offset) & 0xFFFF;
 	}
 	hexcon(4, offset);
 	prlnbuf[i++] = hex[1];
@@ -167,7 +184,7 @@ putbyte(int offset, int data)
 {
 	int addr;
 
-	if (bank >= RESERVED_BANK)
+	if (((section_flags[section] & S_IS_ROM) == 0) || (bank > bank_limit))
 		return;
 
 	addr = offset + 1 + (bank << 13);
@@ -208,7 +225,7 @@ putword(int offset, int data)
 {
 	int addr;
 
-	if (bank >= RESERVED_BANK)
+	if (((section_flags[section] & S_IS_ROM) == 0) || (bank > bank_limit))
 		return;
 
 	addr = offset + 2 + (bank << 13);
@@ -251,7 +268,7 @@ putdword(int offset, int data)
 {
 	int addr;
 
-	if (bank >= RESERVED_BANK)
+	if (((section_flags[section] & S_IS_ROM) == 0) || (bank > bank_limit))
 		return;
 
 	addr = offset + 4 + (bank << 13);
@@ -304,15 +321,7 @@ putbuffer(void *data, int size)
 		return;
 
 	/* check if the buffer will fit in the rom */
-	if (bank >= RESERVED_BANK) {
-		addr = loccnt + size;
-
-		if (addr > 0x2000) {
-			fatal_error("PROC overflow!");
-			return;
-		}
-	}
-	else {
+	if ((section_flags[section] & S_IS_ROM) && (bank <= bank_limit)) {
 		addr = (bank << 13) + loccnt;
 
 		if ((addr + size) > rom_limit) {
@@ -343,6 +352,11 @@ putbuffer(void *data, int size)
 				}
 			}
 		}
+	} else {
+		if ((loccnt + size) > section_limit[section]) {
+			fatal_error("Too large to fit in the current section!");
+			return;
+		}
 	}
 
 	/* update the location counter */
@@ -361,7 +375,7 @@ putbuffer(void *data, int size)
 	}
 
 	/* update rom size */
-	if (bank < RESERVED_BANK) {
+	if ((section_flags[section] & S_IS_ROM) && (bank < UNDEFINED_BANK)) {
 		if (bank > max_bank) {
 			if (loccnt)
 				max_bank = bank;
@@ -387,9 +401,9 @@ write_srec(char *file, char *ext, int base)
 
 	/* status message */
 	if (!strcmp(ext, "mx"))
-		printf("writing mx file... ");
+		printf("Writing .MX file... ");
 	else
-		printf("writing s-record file... ");
+		printf("Writing S-record file... ");
 
 	/* flush output */
 	fflush(stdout);
@@ -401,7 +415,7 @@ write_srec(char *file, char *ext, int base)
 
 	/* open the file */
 	if ((fp = fopen(fname, "w")) == NULL) {
-		printf("can not open file '%s'!\n", fname);
+		fprintf(ERROUT, "Error: Cannot open file \"%s\"!\n", fname);
 		return;
 	}
 
@@ -467,41 +481,13 @@ write_srec(char *file, char *ext, int base)
 
 
 /* ----
- * fatal_error()
+ * vmessage()
  * ----
- * stop compilation
+ * display the current source line and a message
  */
 
-void
-fatal_error(char *stptr)
-{
-	error(stptr);
-	stop_pass = 1;
-}
-
-
-/* ----
- * error()
- * ----
- * error printing routine
- */
-
-void
-error(char *stptr)
-{
-	warning(stptr);
-	errcnt++;
-}
-
-
-/* ----
- * warning()
- * ----
- * warning printing routine
- */
-
-void
-warning(char *stptr)
+static void
+vmessage(const char *msgtype, const char *format, va_list args)
 {
 	int i, temp;
 
@@ -516,7 +502,7 @@ warning(char *stptr)
 	/* update the current file name */
 	if (infile_error != infile_num) {
 		infile_error = infile_num;
-		printf("#[%i]   %s\n", infile_num, input_file[infile_num].name);
+		fprintf(ERROUT, "#[%i]   \"%s\"\n", infile_num, input_file[infile_num].file->name);
 	}
 
 	/* undo the pre-processor's modification to the line */
@@ -526,8 +512,9 @@ warning(char *stptr)
 
 	/* output the line and the error message */
 	loadlc(loccnt, 0);
-	printf("%s\n", prlnbuf);
-	printf("       %s\n", stptr);
+	fprintf(ERROUT, "%s\n       %s", prlnbuf, msgtype);
+	vfprintf(ERROUT, format, args);
+	fprintf(ERROUT, "\n");
 
 	/* redo the pre-processor's modification to the line */
 	if (preproc_modidx != 0) {
@@ -535,3 +522,56 @@ warning(char *stptr)
 	}
 }
 
+
+/* ----
+ * fatal_error()
+ * ----
+ * stop compilation
+ */
+
+void
+fatal_error(const char *format, ...)
+{
+	va_list args;
+
+	va_start(args, format);
+	vmessage("Error: ", format, args);
+	va_end(args);
+	errcnt++;
+	stop_pass = 1;
+}
+
+
+/* ----
+ * error()
+ * ----
+ * error printing routine
+ */
+
+void
+error(const char *format, ...)
+{
+	va_list args;
+
+	va_start(args, format);
+	vmessage("Error: ", format, args);
+	va_end(args);
+	errcnt++;
+}
+
+
+/* ----
+ * warning()
+ * ----
+ * warning printing routine
+ */
+
+void
+warning(const char *format, ...)
+{
+	va_list args;
+
+	va_start(args, format);
+	vmessage("Warning: ", format, args);
+	va_end(args);
+}

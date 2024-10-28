@@ -405,11 +405,11 @@ _spr_ctrl:	ldy	#7
 
 _spr_pal:	lda	<_al
 		and	#$0F
-		sta	<_temp
+		sta	<__temp
 		ldy	#6
 		lda	[spr_ptr], y
 		and	#$F0
-		ora	<_temp
+		ora	<__temp
 		sta	[spr_ptr], y
 		rts
 

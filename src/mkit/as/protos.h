@@ -47,7 +47,6 @@ void do_org(int *ip);
 void do_bank(int *ip);
 void do_incbin(int *ip);
 void do_mx(char *fname);
-void forget_included_files(void);
 void do_include(int *ip);
 void do_rsset(int *ip);
 void do_rs(int *ip);
@@ -57,25 +56,30 @@ void do_section(int *ip);
 void do_incchr(int *ip);
 void do_opt(int *ip);
 void do_align(int *ip);
+void do_3pass(int *ip);
 void do_kickc(int *ip);
-void do_cpu(int *ip);
+void do_ignore(int *ip);
 void do_segment(int *ip);
 void do_star(int *ip);
 void do_label(int *ip);
-void do_encoding(int *ip);
 void do_struct(int *ip);
 void do_ends(int *ip);
+void do_alias(int *ip);
+void do_ref(int *ip);
+void do_phase(int *ip);
 int  htoi(char *str, int nb);
+void set_section(int new_section);
 
 /* CRC.C */
-void         crc_init(void);
-unsigned int crc_calc(unsigned char *data, int len);
+unsigned int crc_calc(const unsigned char *data, int len);
+unsigned int filename_crc(const char *name);
 
 /* EXPR.C */
 int  evaluate(int *ip, char flag, char allow_bank);
 int  push_val(int type);
 int  getsym(struct t_symbol * curscope);
-int  check_keyword(void);
+int  check_keyword(char * name);
+int  check_prefix(char * name);
 int  push_op(int op);
 int  do_op(void);
 int  check_func_args(char *func_name);
@@ -92,9 +96,12 @@ int   add_path(char*, int);
 void  cleanup_path(void);
 int   init_path(void);
 int   readline(void);
-int   open_input(char *name);
+const char *remember_string(const char * string, size_t length);
+t_file *remember_file(int hash);
+void  clear_included(void);
+int   open_input(const char *name);
 int   close_input(void);
-FILE *open_file(char *fname, char *mode);
+FILE *open_file(const char *fname, const char *mode);
 
 /* MACRO.C */
 void do_macro(int *ip);
@@ -106,10 +113,9 @@ int  macro_getargtype(char *arg);
 
 /* MAIN.C */
 int  main(int argc, char **argv);
-int  calc_bank_base(void);
 void help(void);
-void show_bnk_usage(int which_bank);
-void show_seg_usage(void);
+void show_bank_usage(FILE *fp, int which_bank);
+void show_seg_usage(FILE *fp);
 
 /* MAP.C */
 int pce_load_map(char *fname, int mode);
@@ -125,9 +131,9 @@ void putword(int offset, int data);
 void putdword(int offset, int data);
 void putbuffer(void *data, int size);
 void write_srec(char *fname, char *ext, int base);
-void error(char *stptr);
-void warning(char *stptr);
-void fatal_error(char *stptr);
+void error(const char *format, ...);
+void warning(const char *format, ...);
+void fatal_error(const char *format, ...);
 
 /* PCX.C */
 int  pcx_pack_8x8_tile(unsigned char *buffer, int x, int y);
@@ -144,13 +150,15 @@ int  png_load(char *name);
 int  bmp_load(char *name);
 
 /* PROC.C */
+void add_thunk(struct t_proc *proc);
 void do_call(int *ip);
 void do_leave(int *ip);
 void do_proc(int *ip);
 void do_endp(int *ip);
+void proc_strip(void);
 void proc_reloc(void);
 void list_procs(void);
-int check_trampolines(void);
+int check_thunks(void);
 
 /* SYMBOL.C */
 int  symhash(void);
@@ -158,9 +166,12 @@ int  addscope(struct t_symbol * curscope, int i);
 int  colsym(int *ip, int flag);
 struct t_symbol *stlook(int flag);
 struct t_symbol *stinstall(int hash, int type);
-int  labldef(int lval, int lbnk, int lsrc);
+int  labldef(int reason);
 void lablset(char *name, int val);
 int  lablexists(char *name);
 void lablremap(void);
 void labldump(FILE *fp);
-void lablresetdefcnt(void);
+void lablstartpass(void);
+int bank2mprbank (int what_bank, int what_section);
+int bank2overlay (int what_bank, int what_section);
+int mprbank2bank (int what_bank, int what_overlay);

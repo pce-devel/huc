@@ -28,64 +28,122 @@
 #define OP_HIGHER	19
 #define OP_HIGHER_EQUAL 20
 #define OP_DEFINED	21
-#define OP_HIGH		22
-#define OP_LOW		23
+#define OP_HIGH_KEYWORD	22
+#define OP_LOW_KEYWORD	23
 #define OP_PAGE		24
 #define OP_BANK		25
 #define OP_VRAM		26
 #define OP_PAL		27
 #define OP_SIZEOF	28
 #define OP_LINEAR	29
-#define OP_dotLO	30
-#define OP_dotHI	31
+#define OP_OVERLAY	30
+#define OP_LOW_SYMBOL	31
+#define OP_HIGH_SYMBOL	32
+#define OP_LOGICAL_OR	33
+#define OP_LOGICAL_AND	34
 
-/* operator priority */
+/* operator priority (bigger number is higher precedence) */
+/* precedence is left-to-right if same priority */
 const int op_pri[] = {
-	 0 /* START */,  0 /* OPEN  */,
-	 8 /* ADD   */,  8 /* SUB   */,  9 /* MUL   */,  9 /* DIV   */,
-	 9 /* MOD   */, 11 /* NEG   */,  7 /* SHL   */,  7 /* SHR   */,
-	 1 /* OR    */,  2 /* XOR   */,  3 /* AND   */, 11 /* COM   */,
-	10 /* NOT   */,  4 /* ==    */,  4 /* <>    */,  5 /* <     */,
-	 5 /* <=    */,  5 /* >     */,  5 /* >=    */,
-	11 /* DEFIN.*/, 11 /* HIGH  */, 11 /* LOW   */, 11 /* PAGE  */,
-	11 /* BANK  */, 11 /* VRAM  */, 11 /* PAL   */, 11 /* SIZEOF*/,
-	11 /* LINEAR*/,  6 /* dotLO */,  6 /* dotHI */
+   0 /* OP_START        */,
+   0 /* OP_OPEN         */,
+  10 /* OP_ADD          */,
+  10 /* OP_SUB          */,
+  11 /* OP_MUL          */,
+  11 /* OP_DIV          */,
+  11 /* OP_MOD          */,
+  13 /* OP_NEG          */,
+   9 /* OP_SHL          */,
+   9 /* OP_SHR          */,
+   3 /* OP_OR           */,
+   4 /* OP_XOR          */,
+   5 /* OP_AND          */,
+  13 /* OP_COM          */,
+  12 /* OP_NOT          */,
+   6 /* OP_EQUAL        */,
+   6 /* OP_NOT_EQUAL    */,
+   7 /* OP_LOWER        */,
+   7 /* OP_LOWER_EQUAL  */,
+   7 /* OP_HIGHER       */,
+   7 /* OP_HIGHER_EQUAL */,
+  13 /* OP_DEFINED      */,
+  13 /* OP_HIGH_KEYWORD */,
+  13 /* OP_LOW_KEYWORD  */,
+  13 /* OP_PAGE         */,
+  13 /* OP_BANK         */,
+  13 /* OP_VRAM         */,
+  13 /* OP_PAL          */,
+  13 /* OP_SIZEOF       */,
+  13 /* OP_LINEAR       */,
+  13 /* OP_TAGOF        */,
+   8 /* OP_LOW_SYMBOL   */,
+   8 /* OP_HIGH_SYMBOL  */,
+   1 /* OP_LOGICAL_OR   */,
+   2 /* OP_LOGICAL_AND  */
 };
 
 /* second argument */
 const int op_2nd[] = {
-	 0 /* START */,  0 /* OPEN  */,
-	 1 /* ADD   */,  1 /* SUB   */,  1 /* MUL   */,  1 /* DIV   */,
-	 1 /* MOD   */,  0 /* NEG   */,  1 /* SHL   */,  1 /* SHR   */,
-	 1 /* OR    */,  1 /* XOR   */,  1 /* AND   */,  0 /* COM   */,
-	 0 /* NOT   */,  1 /* ==    */,  1 /* <>    */,  1 /* <     */,
-	 1 /* <=    */,  1 /* >     */,  1 /* >=    */,
-	 0 /* DEFIN.*/,  0 /* HIGH  */,  0 /* LOW   */,  0 /* PAGE  */,
-	 0 /* BANK  */,  0 /* VRAM  */,  0 /* PAL   */,  0 /* SIZEOF*/,
-	 0 /* LINEAR*/,  0 /* dotLO */,  0 /* dotHI */
+   0 /* OP_START        */,
+   0 /* OP_OPEN         */,
+   1 /* OP_ADD          */,
+   1 /* OP_SUB          */,
+   1 /* OP_MUL          */,
+   1 /* OP_DIV          */,
+   1 /* OP_MOD          */,
+   0 /* OP_NEG          */,
+   1 /* OP_SHL          */,
+   1 /* OP_SHR          */,
+   1 /* OP_OR           */,
+   1 /* OP_XOR          */,
+   1 /* OP_AND          */,
+   0 /* OP_COM          */,
+   0 /* OP_NOT          */,
+   1 /* OP_EQUAL        */,
+   1 /* OP_NOT_EQUAL    */,
+   1 /* OP_LOWER        */,
+   1 /* OP_LOWER_EQUAL  */,
+   1 /* OP_HIGHER       */,
+   1 /* OP_HIGHER_EQUAL */,
+   0 /* OP_DEFINED      */,
+   0 /* OP_HIGH_KEYWORD */,
+   0 /* OP_LOW_KEYWORD  */,
+   0 /* OP_PAGE         */,
+   0 /* OP_BANK         */,
+   0 /* OP_VRAM         */,
+   0 /* OP_PAL          */,
+   0 /* OP_SIZEOF       */,
+   0 /* OP_LINEAR       */,
+   0 /* OP_OVERLAY      */,
+   0 /* OP_LOW_SYMBOL   */,
+   0 /* OP_HIGH_SYMBOL  */,
+   1 /* OP_LOGICAL_OR   */,
+   1 /* OP_LOGICAL_AND  */
 };
 
 unsigned int op_stack[64] = {
-	OP_START
-};				/* operator stack */
-unsigned int val_stack[64];	/* value stack */
-int op_idx, val_idx;		/* index in the operator and value stacks */
-int need_operator;		/* when set await an operator, else await a value */
-char *expr;			/* pointer to the expression string */
-char *expr_stack[16];		/* expression stack */
-struct t_symbol *expr_toplabl;	/* pointer to the innermost scope-label */
-struct t_symbol *expr_lablptr;	/* pointer to the last-referenced label */
-int expr_lablcnt;		/* number of label seen in an expression */
-int expr_valbank;		/* last-defined bank# in an expression */
-int complex_expr;		/* NZ if an expression contains operators */
-const char *keyword[9] = {	/* predefined functions */
-	"\7DEFINED",
-	"\4HIGH",
-	"\3LOW",
-	"\4PAGE",
-	"\4BANK",
-	"\4VRAM",
-	"\3PAL",
-	"\6SIZEOF",
-	"\6LINEAR"
+  OP_START
+};                              /* operator stack */
+unsigned int val_stack[64];     /* value stack */
+int op_idx, val_idx;            /* index in the operator and value stacks */
+int need_operator;              /* when set await an operator, else await a value */
+char *expr;                     /* pointer to the expression string */
+char *expr_stack[16];           /* expression stack */
+struct t_symbol *expr_toplabl;  /* pointer to the innermost scope-label */
+struct t_symbol *expr_lablptr;  /* pointer to the last-referenced label */
+int expr_lablcnt;               /* number of label seen in an expression */
+int expr_mprbank;               /* last-defined bank# in an expression */
+int expr_overlay;               /* last-defined overlay# in an expression */
+int complex_expr;               /* NZ if an expression contains operators */
+const char *keyword[10] = {     /* predefined functions */
+  "\7DEFINED",
+  "\4HIGH",
+  "\3LOW",
+  "\4PAGE",
+  "\4BANK",
+  "\4VRAM",
+  "\3PAL",
+  "\6SIZEOF",
+  "\6LINEAR",
+  "\7OVERLAY"
 };

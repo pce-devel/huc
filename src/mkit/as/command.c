@@ -7,15 +7,90 @@
 #include "externs.h"
 #include "protos.h"
 
+/* section types mask for pseudo_allowed */
+#define IN_NONE		(1 << S_NONE)
+#define IN_ZP		(1 << S_ZP)
+#define IN_BSS		(1 << S_BSS)
+#define IN_CODE		(1 << S_CODE)
+#define IN_DATA		(1 << S_DATA)
+#define IN_HOME		(1 << S_HOME)
+#define IN_XDATA	(1 << S_XDATA)
+#define IN_XINIT	(1 << S_XINIT)
+#define IN_CONST	(1 << S_CONST)
+#define IN_OSEG		(1 << S_OSEG)
+#define ANYWHERE	(0xFFFF)
+
 /* pseudo instructions section flag */
-char pseudo_flag[] = {
-	0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0C, 0x0C, 0x0C, 0x0F,
-	0x0C, 0x0C, 0x0C, 0x0C, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F,
-	0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F,
-	0x0C, 0x0F, 0x0F, 0x0F, 0x0C, 0x0C, 0x0C, 0x0C, 0x0F, 0x0F,
-	0x0F, 0x0F, 0x0F, 0x0C, 0x0C, 0x0C, 0x04, 0x0F, 0x04, 0x0F,
-	0x04, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x0F, 0x0F, 0x0F, 0x0F,
-	0x0F, 0x0F, 0x0F, 0x0F, 0x0F
+unsigned short pseudo_allowed[] = {
+/* P_DB          */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS + IN_CONST + IN_XINIT,
+/* P_DW          */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS + IN_CONST + IN_XINIT,
+/* P_DD          */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS + IN_CONST + IN_XINIT,
+/* P_DS          */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS + IN_CONST + IN_XINIT + IN_XDATA + IN_OSEG,
+/* P_EQU         */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_ORG         */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_PAGE        */	IN_CODE + IN_HOME + IN_DATA,
+/* P_BANK        */	IN_CODE + IN_HOME + IN_DATA,
+/* P_INCBIN      */	IN_CODE + IN_HOME + IN_DATA,
+/* P_INCLUDE     */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_INCCHR      */	IN_CODE + IN_HOME + IN_DATA,
+/* P_INCSPR      */	IN_CODE + IN_HOME + IN_DATA,
+/* P_INCPAL      */	IN_CODE + IN_HOME + IN_DATA,
+/* P_INCBAT      */	IN_CODE + IN_HOME + IN_DATA,
+/* P_MACRO       */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_ENDM        */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_LIST        */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_MLIST       */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_NOLIST      */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_NOMLIST     */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_RSSET       */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_RS          */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_IF          */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_ELSE        */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_ENDIF       */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_FAIL        */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_ZP          */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_BSS         */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_CODE        */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_DATA        */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_DEFCHR      */	IN_CODE + IN_HOME + IN_DATA,
+/* P_FUNC        */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_IFDEF       */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_IFNDEF      */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_VRAM        */	IN_CODE + IN_HOME + IN_DATA,
+/* P_PAL         */	IN_CODE + IN_HOME + IN_DATA,
+/* P_DEFPAL      */	IN_CODE + IN_HOME + IN_DATA,
+/* P_DEFSPR      */	IN_CODE + IN_HOME + IN_DATA,
+/* P_INESPRG     */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_INESCHR     */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_INESMAP     */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_INESMIR     */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_OPT         */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_INCTILE     */	IN_CODE + IN_HOME + IN_DATA,
+/* P_INCMAP      */	IN_CODE + IN_HOME + IN_DATA,
+/* P_MML         */	IN_CODE + IN_HOME + IN_DATA,
+/* P_PROC        */	IN_CODE + IN_HOME,
+/* P_ENDP        */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_PGROUP      */	IN_CODE + IN_HOME,
+/* P_ENDPG       */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_CALL        */	IN_CODE + IN_HOME,
+/* P_DWL         */	IN_CODE + IN_HOME + IN_DATA + IN_CONST + IN_XINIT,
+/* P_DWH         */	IN_CODE + IN_HOME + IN_DATA + IN_CONST + IN_XINIT,
+/* P_INCCHRPAL   */	IN_CODE + IN_HOME + IN_DATA,
+/* P_INCSPRPAL   */	IN_CODE + IN_HOME + IN_DATA,
+/* P_INCTILEPAL  */	IN_CODE + IN_HOME + IN_DATA,
+/* P_CARTRIDGE   */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_ALIGN       */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_KICKC       */	ANYWHERE,
+/* P_IGNORE      */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS + IN_CONST + IN_XINIT,
+/* P_SEGMENT     */	ANYWHERE,
+/* P_LABEL       */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_ENCODING    */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_STRUCT      */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_ENDS        */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_3PASS       */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_ALIAS       */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_REF         */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
+/* P_PHASE       */	IN_CODE + IN_HOME
 };
 
 
@@ -28,13 +103,13 @@ char pseudo_flag[] = {
 void
 do_pseudo(int *ip)
 {
-	char str[80];
 	int old_bank;
 	int size;
 
 	/* check if the directive is allowed in the current section */
-	if (!(pseudo_flag[opval] & (1 << section)))
-		fatal_error("Directive not allowed in the current section!");
+	if (!(pseudo_allowed[opval] & (1 << section))) {
+		fatal_error("Directive not allowed in the %s section!", section_name[section]);
+	}
 
 	/* save current location */
 	old_bank = bank;
@@ -82,8 +157,7 @@ do_pseudo(int *ip)
 				if (bank != old_bank) {
 					size = ((bank - old_bank - 1) * 8192) + loccnt;
 					if (size) {
-						sprintf(str, "Warning, bank overflow by %i bytes!\n", size);
-						warning(str);
+						warning("Bank overflow by %i bytes!\n", size);
 					}
 				}
 				break;
@@ -165,7 +239,9 @@ do_nomlist(int *ip)
 /* ----
  * do_db()
  * ----
- * .db pseudo
+ * .db    pseudo (optype == 0)
+ * .text  pseudo (optype == 1)
+ * .ascii pseudo (optype == 2)
  */
 
 void
@@ -175,7 +251,7 @@ do_db(int *ip)
 	unsigned char h;
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output infos */
 	data_loccnt = loccnt;
@@ -190,7 +266,7 @@ do_db(int *ip)
 		if (prlnbuf[*ip] == '\"') {
 			/* check for non-zero value in ZP or BSS sections */
 			if (section == S_ZP || section == S_BSS) {
-				error("Cannot store non-zero data in .zp or .bss sections!");
+				error("Cannot store non-zero data in .ZP or .BSS sections!");
 				return;
 			}
 
@@ -297,6 +373,10 @@ do_db(int *ip)
 		}
 		/* bytes */
 		else {
+			/* skip SDCC's junk at the start of some .db output */
+			if (sdcc_mode && prlnbuf[*ip] == '#')
+				(*ip)++;
+
 			/* get a byte */
 			if (!evaluate(ip, 0, 0))
 				return;
@@ -307,14 +387,15 @@ do_db(int *ip)
 			/* store byte on last pass */
 			if (pass == LAST_PASS) {
 				/* check for non-zero value in ZP or BSS sections */
-				if ((value != 0) && (section == S_ZP || section == S_BSS)) {
-					error("Cannot store non-zero data in .zp or .bss sections!");
+				if ((value != 0) && (section_flags[section] & S_NO_DATA)) {
+					error("Cannot store non-zero data in .ZP or .BSS sections!");
 					return;
 				}
 
-				/* check for overflow */
-				if (((value & 0x007FFFFF) > 0xFF) && ((value & 0x007FFFFF) < 0x007FFF80)) {
-					error("Overflow error!");
+				/* check for overflow, except in SDCC code (-256..255 are ok) */
+				/* SDCC's code generator assumes that the assembler doesn't care */
+				if ((sdcc_mode == 0) && (value & ~0xFF) && ((value & ~0xFF) != ~0xFF)) {
+					error("Operand too large to fit in a byte!");
 					return;
 				}
 
@@ -351,7 +432,7 @@ do_db(int *ip)
 	/* output line */
 	if (pass == LAST_PASS) {
 		/* just output an address in S_ZP and S_BSS, else show the data */
-		if (section == S_ZP || section == S_BSS) {
+		if (section_flags[section] & S_NO_DATA) {
 			loadlc(data_loccnt, 0);
 			data_loccnt = -1;
 		}
@@ -372,7 +453,7 @@ do_dw(int *ip)
 	char c;
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output infos */
 	data_loccnt = loccnt;
@@ -381,6 +462,13 @@ do_dw(int *ip)
 
 	/* get data */
 	for (;;) {
+		/* skip spaces */
+		while (isspace(prlnbuf[*ip])) { ++(*ip); }
+
+		/* skip SDCC's junk at the start of some .dw output */
+		if (sdcc_mode && prlnbuf[*ip] == '#')
+			(*ip)++;
+
 		/* get a word */
 		if (!evaluate(ip, 0, 0))
 			return;
@@ -391,14 +479,15 @@ do_dw(int *ip)
 		/* store word on last pass */
 		if (pass == LAST_PASS) {
 			/* check for non-zero value in ZP or BSS sections */
-			if ((value != 0) && (section == S_ZP || section == S_BSS)) {
-				error("Cannot store non-zero data in .zp or .bss sections!");
+			if ((value != 0) && (section_flags[section] & S_NO_DATA)) {
+				error("Cannot store non-zero data in .ZP or .BSS sections!");
 				return;
 			}
 
-			/* check for overflow */
-			if (((value & 0x007FFFFF) > 0xFFFF) && ((value & 0x007FFFFF) < 0x007F8000)) {
-				error("Overflow error!");
+			/* check for overflow, except in SDCC code (-65536..65535 are ok) */
+			/* SDCC's code generator assumes that the assembler doesn't care */
+			if ((sdcc_mode == 0) && (value & ~0xFFFF) && ((value & ~0xFFFF) != ~0xFFFF)) {
+				error("Operand too large to fit in a word!");
 				return;
 			}
 
@@ -434,7 +523,7 @@ do_dw(int *ip)
 	/* output line */
 	if (pass == LAST_PASS) {
 		/* just output an address in S_ZP and S_BSS, else show the data */
-		if (section == S_ZP || section == S_BSS) {
+		if (section_flags[section] & S_NO_DATA) {
 			loadlc(data_loccnt, 0);
 			data_loccnt = -1;
 		}
@@ -455,7 +544,7 @@ do_dwl(int *ip)
 	char c;
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output infos */
 	data_loccnt = loccnt;
@@ -474,14 +563,14 @@ do_dwl(int *ip)
 		/* store word on last pass */
 		if (pass == LAST_PASS) {
 			/* check for non-zero value in ZP or BSS sections */
-			if ((value != 0) && (section == S_ZP || section == S_BSS)) {
-				error("Cannot store non-zero data in .zp or .bss sections!");
+			if ((value != 0) && (section_flags[section] & S_NO_DATA)) {
+				error("Cannot store non-zero data in .ZP or .BSS sections!");
 				return;
 			}
 
-			/* check for overflow */
-			if (((value & 0x007FFFFF) > 0xFFFF) && ((value & 0x007FFFFF) < 0x007F8000)) {
-				error("Overflow error!");
+			/* check for overflow (-65536..65535 are ok) */
+			if ((value & ~0xFFFF) && ((value & ~0xFFFF) != ~0xFFFF)) {
+				error("Operand too large to fit in a word!");
 				return;
 			}
 
@@ -517,7 +606,7 @@ do_dwl(int *ip)
 	/* output line */
 	if (pass == LAST_PASS) {
 		/* just output an address in S_ZP and S_BSS, else show the data */
-		if (section == S_ZP || section == S_BSS) {
+		if (section_flags[section] & S_NO_DATA) {
 			loadlc(data_loccnt, 0);
 			data_loccnt = -1;
 		}
@@ -538,7 +627,7 @@ do_dwh(int *ip)
 	char c;
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output infos */
 	data_loccnt = loccnt;
@@ -557,14 +646,14 @@ do_dwh(int *ip)
 		/* store word on last pass */
 		if (pass == LAST_PASS) {
 			/* check for non-zero value in ZP or BSS sections */
-			if ((value != 0) && (section == S_ZP || section == S_BSS)) {
-				error("Cannot store non-zero data in .zp or .bss sections!");
+			if ((value != 0) && (section_flags[section] & S_NO_DATA)) {
+				error("Cannot store non-zero data in .ZP or .BSS sections!");
 				return;
 			}
 
-			/* check for overflow */
-			if (((value & 0x007FFFFF) > 0xFFFF) && ((value & 0x007FFFFF) < 0x007F8000)) {
-				error("Overflow error!");
+			/* check for overflow (-65536..65535 are ok) */
+			if ((value & ~0xFFFF) && ((value & ~0xFFFF) != ~0xFFFF)) {
+				error("Operand too large to fit in a word!");
 				return;
 			}
 
@@ -600,7 +689,7 @@ do_dwh(int *ip)
 	/* output line */
 	if (pass == LAST_PASS) {
 		/* just output an address in S_ZP and S_BSS, else show the data */
-		if (section == S_ZP || section == S_BSS) {
+		if (section_flags[section] & S_NO_DATA) {
 			loadlc(data_loccnt, 0);
 			data_loccnt = -1;
 		}
@@ -621,7 +710,7 @@ do_dd(int *ip)
 	char c;
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output infos */
 	data_loccnt = loccnt;
@@ -640,8 +729,8 @@ do_dd(int *ip)
 		/* store dword on last pass */
 		if (pass == LAST_PASS) {
 			/* check for non-zero value in ZP or BSS sections */
-			if ((value != 0) && (section == S_ZP || section == S_BSS)) {
-				error("Cannot store non-zero data in .zp or .bss sections!");
+			if ((value != 0) && (section_flags[section] & S_NO_DATA)) {
+				error("Cannot store non-zero data in .ZP or .BSS sections!");
 				return;
 			}
 
@@ -677,7 +766,7 @@ do_dd(int *ip)
 	/* output line */
 	if (pass == LAST_PASS) {
 		/* just output an address in S_ZP and S_BSS, else show the data */
-		if (section == S_ZP || section == S_BSS) {
+		if (section_flags[section] & S_NO_DATA) {
 			loadlc(data_loccnt, 0);
 			data_loccnt = -1;
 		}
@@ -690,7 +779,8 @@ do_dd(int *ip)
 /* ----
  * do_equ()
  * ----
- * .equ pseudo
+ * .equ pseudo (optype == 0)
+ * .set pseudo (optype == 1)
  */
 
 void
@@ -710,24 +800,17 @@ do_equ(int *ip)
 	if (!evaluate(ip, ';', 1))
 		return;
 
-	/* check for undefined symbols - they are not allowed in .equ or .set */
-	if ((undef != 0) && (kickc_mode == 0)) {
-		error("Symbols must be defined before their use in .EQU or .SET!");
+	/* check for undefined symbols - they are only allowed in the FIRST_PASS */
+	if (undef != 0) {
+		if ((asm_opt[OPT_FORWARD] == 0) || (pass != FIRST_PASS))
+			error("Undefined symbol in operand field!");
+		else
+			need_another_pass = 1;
 		return;
 	}
 
-	/* allow ".set" to change a label's value */
-	if ((optype == 1) && (lablptr->type == DEFABS)) {
-		lablptr->value = value;
-		lablptr->bank = expr_valbank;
-	} else
-	if (undef != 0) {
-		/* needed for KickC forward-references */
-		need_another_pass = 1;
-	} else {
-		/* assign value to the label */
-		labldef(value, expr_valbank, CONSTANT);
-	}
+	/* assign value to the label */
+	labldef(CONSTANT + optype); /* or VARIABLE */
 
 	/* output line */
 	if (pass == LAST_PASS) {
@@ -746,14 +829,20 @@ do_equ(int *ip)
 void
 do_page(int *ip)
 {
+	/* not allowed while .phase is active */
+	if (phase_offset) {
+		fatal_error(".PAGE cannot be changed within a .PHASE'd chunk of code!");
+		return;
+	}
+
 	/* not allowed in procs */
-	if (proc_ptr) {
-		fatal_error("PAGE can not be changed in procs!");
+	if (proc_ptr && (section_flags[section] & S_IS_CODE)) {
+		fatal_error("Code .PAGE cannot be changed within a .PROC!");
 		return;
 	}
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* get page index */
 	if (!evaluate(ip, ';', 0))
@@ -781,6 +870,12 @@ do_page(int *ip)
 void
 do_org(int *ip)
 {
+	/* not allowed while .phase is active */
+	if (phase_offset) {
+		fatal_error(".ORG cannot be changed within a .PHASE'd chunk of code!");
+		return;
+	}
+
 	/* get the .org value */
 	if (!evaluate(ip, ';', 0))
 		return;
@@ -794,8 +889,8 @@ do_org(int *ip)
 	/* section switch */
 	switch (section) {
 	case S_ZP:
-		/* zero page section */
-		if ((value & 0x007FFF00) && ((value & 0x007FFF00) != machine->ram_base)) {
+		/* zero page section (accept traditional 6502 zero-page) */
+		if ((value & ~0xFF) && ((value & ~0xFF) != machine->ram_base)) {
 			error("Invalid address!");
 			return;
 		}
@@ -803,7 +898,7 @@ do_org(int *ip)
 
 	case S_BSS:
 		/* ram section */
-		if (((value & 0x007FFFFF) < machine->ram_base) || ((value & 0x007FFFFF) >= (machine->ram_base + machine->ram_limit))) {
+		if ((value < machine->ram_base) || (value >= (machine->ram_base + machine->ram_limit))) {
 			error("Invalid address!");
 			return;
 		}
@@ -812,13 +907,13 @@ do_org(int *ip)
 	case S_CODE:
 	case S_DATA:
 		/* not allowed in procs */
-		if (proc_ptr) {
-			fatal_error("ORG can not be changed in procs!");
+		if (proc_ptr && (section_flags[section] & S_IS_CODE)) {
+			fatal_error("Code .ORG cannot be changed within a .PROC!");
 			return;
 		}
 
 		/* code and data section */
-		if (value & 0x007F0000) {
+		if (value & ~0xFFFF) {
 			error("Invalid address!");
 			return;
 		}
@@ -833,7 +928,7 @@ do_org(int *ip)
 	discontiguous = 1;
 
 	/* set label value if there was one */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output line on last pass */
 	if (pass == LAST_PASS) {
@@ -854,20 +949,32 @@ do_bank(int *ip)
 {
 	char name[128];
 
+	/* not allowed while .phase is active */
+	if (phase_offset) {
+		fatal_error(".BANK cannot be changed within a .PHASE'd chunk of code!");
+		return;
+	}
+
 	/* not allowed in procs */
-	if (proc_ptr) {
-		fatal_error("Bank can not be changed in procs!");
+	if (proc_ptr && (section_flags[section] & S_IS_CODE)) {
+		fatal_error("Code .BANK cannot be changed within a .PROC!");
 		return;
 	}
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* get bank index */
 	if (!evaluate(ip, 0, 0))
 		return;
 
-	if (value > bank_limit) {
+	/* check for undefined symbol - they are not allowed in .bank */
+	if (undef != 0) {
+		error("Undefined symbol in operand field!");
+		return;
+	}
+
+	if (value > (unsigned)bank_limit) {
 		error("Bank index out of range!");
 		return;
 	}
@@ -944,12 +1051,14 @@ do_incbin(int *ip)
 {
 	FILE *fp;
 	char *p;
-	char fname[128];
+	char fname[PATHSZ];
 	int size;
 	int step;
+	int offset =  0;
+	int length = -1;
 
 	/* get file name */
-	if (!getstring(ip, fname, 127))
+	if (!getstring(ip, fname, PATHSZ - 1))
 		return;
 
 	/* get file extension */
@@ -973,8 +1082,49 @@ do_incbin(int *ip)
 		}
 	}
 
+	/* get the optional offset and length */
+	if (prlnbuf[*ip] == ',') {
+		/* get the offset */
+		++(*ip);
+		if (!evaluate(ip, 0, 0))
+			return;
+
+		if (undef != 0) {
+			error("Undefined symbol in offset field!");
+			return;
+		}
+
+		if (0 > (int)value) {
+			error(".INCBIN offset cannot be negative!");
+			return;
+		}
+		offset = value;
+
+		if (prlnbuf[*ip] == ',') {
+			/* get a byte */
+			++(*ip);
+			if (!evaluate(ip, 0, 0))
+				return;
+
+			if (undef != 0) {
+				error("Undefined symbol in length field!");
+				return;
+			}
+
+			if (0 > (int)value) {
+				error(".INCBIN length cannot be negative!");
+				return;
+			}
+			length = value;
+		}
+	}
+
+	/* check end of line */
+	if (!check_eol(ip))
+		return;
+
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -982,23 +1132,34 @@ do_incbin(int *ip)
 
 	/* open file */
 	if ((fp = open_file(fname, "rb")) == NULL) {
-		fatal_error("Can not open file!");
+		fatal_error("Unable to open file!");
 		return;
 	}
 
 	/* get file size */
 	fseek(fp, 0, SEEK_END);
-	size = ftell(fp);
-	fseek(fp, 0, SEEK_SET);
+	size = ftell(fp) - offset;
+
+	if (size < 0) {
+		fclose(fp);
+		error(".INCBIN offset is greater than the file's length!");
+		return;
+	}
+
+	if (length >= 0) {
+		if (length > size) {
+			fclose(fp);
+			error(".INCBIN length is greater than the file's length!");
+			return;
+			}
+		size = length;
+	}
+
+	/* seek to the file offset */
+	fseek(fp, offset, SEEK_SET);
 
 	/* check if it will fit in the rom */
-	if (bank >= RESERVED_BANK) {
-		if ((loccnt + size) > 0x2000) {
-			fclose(fp);
-			fatal_error("PROC overflow!");
-			return;
-		}
-	} else {
+	if ((section_flags[section] & S_IS_ROM) && (bank < UNDEFINED_BANK)) {
 		/* check if it will fit in the rom */
 		if (((bank << 13) + loccnt + size) > rom_limit) {
 			fclose(fp);
@@ -1030,6 +1191,12 @@ do_incbin(int *ip)
 			/* output line */
 			println();
 		}
+	} else {
+		if ((loccnt + size) > section_limit[section]) {
+			fclose(fp);
+			fatal_error("Too large to fit in the current section!");
+			return;
+		}
 	}
 
 	/* close file */
@@ -1051,7 +1218,7 @@ do_incbin(int *ip)
 	}
 
 	/* update rom size */
-	if (bank < RESERVED_BANK) {
+	if ((section_flags[section] & S_IS_ROM) && (bank < UNDEFINED_BANK)) {
 		if (bank > max_bank) {
 			if (loccnt)
 				max_bank = bank;
@@ -1096,7 +1263,7 @@ do_mx(char *fname)
 
 	/* open the file */
 	if ((fp = open_file(fname, "r")) == NULL) {
-		fatal_error("Can not open file!");
+		fatal_error("Unable to open file!");
 		return;
 	}
 
@@ -1170,7 +1337,7 @@ do_mx(char *fname)
 				/* define label */
 				if (flag == 0) {
 					flag = 1;
-					labldef(0, 0, LOCATION);
+					labldef(LOCATION);
 
 					/* output */
 					if (pass == LAST_PASS)
@@ -1195,7 +1362,7 @@ do_mx(char *fname)
 
 	/* define label */
 	if (flag == 0) {
-		labldef(0, 0, LOCATION);
+		labldef(LOCATION);
 
 		/* output */
 		if (pass == LAST_PASS)
@@ -1221,31 +1388,6 @@ do_mx(char *fname)
 
 
 /* ----
- * forget_included_files()
- * ----
- * keep a list of the .include files during each pass
- */
-
-typedef struct t_filelist {
-	struct t_filelist * next;
-	int size;
-	char name[128];
-} t_filelist;
-
-t_filelist * included_files = NULL;
-
-void
-forget_included_files(void)
-{
-	t_filelist * list = included_files;
-	while ((list = included_files) != NULL) {
-		included_files = list->next;
-		free(list);
-	}
-}
-
-
-/* ----
  * do_include()
  * ----
  * .include pseudo
@@ -1254,55 +1396,37 @@ forget_included_files(void)
 void
 do_include(int *ip)
 {
-	char fname[128];
-	int fsize;
-	int found_include;
-	t_filelist * list;
+	char fname[PATHSZ];
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 #if 0 // This breaks @turboxray's code, so disable it for now.
 	/* avoid problems */
 	if (expand_macro) {
-		error("Cannot use INCLUDE inside a macro!");
+		error("Cannot use .INCLUDE inside a macro!");
 		return;
 	}
 #endif
 
-	/* get file name */
-	if (!getstring(ip, fname, 127))
-		return;
+	/* if this is an SDCC .module pseudo-op then auto-include sdcc.asm */
+	if (optype == 1) {
+		/* ignore the module name and everything else on the line */
+		strcpy(fname, "sdcc.asm");
+	} else {
+		/* get file name */
+		if (!getstring(ip, fname, PATHSZ - 1))
+			return;
 
-	/* have we already included this file on this pass? */
-	fsize = strlen(fname);
-	found_include = 0;
-
-	for (list = included_files; list != NULL; list = list->next) {
-		if ((list->size == fsize) && (strcasecmp(list->name, fname) == 0)) {
-			found_include = 1;
-			break;
-		}
+		/* check end of line */
+		if (!check_eol(ip))
+			return;
 	}
 
-	/* do not include the file a 2nd time on this pass */
-	if (!found_include) {
-		/* remember include file name */
-		if ((list = malloc(sizeof(t_filelist) + fsize - 127)) == NULL) {
-			fatal_error("Out of memory!");
-			return;
-		}
-
-		strcpy(list->name, fname);
-		list->size = fsize;
-		list->next = included_files;
-		included_files = list;
-
-		/* open file */
-		if (open_input(fname) == -1) {
-			fatal_error("Can not open file!");
-			return;
-		}
+	/* open file */
+	if (open_input(fname) == -1) {
+		fatal_error("Unable to open file!");
+		return;
 	}
 
 	/* output line */
@@ -1321,23 +1445,24 @@ void
 do_rsset(int *ip)
 {
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* get value */
 	if (!evaluate(ip, ';', 1))
 		return;
-	if (value & 0x007F0000) {
+	if (value & ~0xFFFF) {
 		error("Address out of range!");
 		return;
 	}
 
 	/* set 'rs' base and bank */
-	rsbase = value & 0xFFFF;
-	rsbank = expr_valbank;
+	rs_base = value;
+	rs_mprbank = expr_mprbank;
+	rs_overlay = expr_overlay;
 
 	/* output line */
 	if (pass == LAST_PASS) {
-		loadlc(rsbase, 1);
+		loadlc(rs_base, 1);
 		println();
 	}
 }
@@ -1352,10 +1477,13 @@ do_rsset(int *ip)
 void
 do_rs(int *ip)
 {
-	int oldrs = rsbase;
+	int old_rs = rs_base;
 
 	/* define label */
-	labldef(rsbase, rsbank, CONSTANT);
+	value = rs_base;
+	expr_mprbank = rs_mprbank;
+	expr_overlay = rs_overlay;
+	labldef(CONSTANT);
 
 	/* get the number of bytes to reserve */
 	if (!evaluate(ip, ';', 0))
@@ -1363,20 +1491,20 @@ do_rs(int *ip)
 
 	/* ouput line */
 	if (pass == LAST_PASS) {
-		loadlc(rsbase, 1);
+		loadlc(rs_base, 1);
 		println();
 	}
 
 	/* update 'rs' base */
-	rsbase += value;
-	if (rsbase & 0x007F0000)
+	rs_base += value;
+	if (rs_base & ~0xFFFF)
 		error("Address out of range!");
 
 	/* update 'rs' bank */
-	if (rsbank != RESERVED_BANK) {
-		while ((oldrs & 0xE000) != (rsbase & 0xE000)) {
-			oldrs += 0x2000;
-			++rsbank;
+	if (rs_mprbank != UNDEFINED_BANK) {
+		while ((old_rs & 0xE000) != (rs_base & 0xE000)) {
+			old_rs += 0x2000;
+			++rs_mprbank;
 		}
 	}
 }
@@ -1391,15 +1519,14 @@ do_rs(int *ip)
 void
 do_ds(int *ip)
 {
-	int limit = 0;
 	int addr;
 	int step;
-	unsigned int nbytes;
+	int nbytes;
 	unsigned int filler = 0;
 	unsigned char c;
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output infos */
 	data_loccnt = loccnt;
@@ -1411,7 +1538,10 @@ do_ds(int *ip)
 
 	/* check for undefined symbol - they are not allowed in .ds */
 	if (undef != 0) {
-		error("Undefined symbol in operand field!");
+		if ((asm_opt[OPT_FORWARD] == 0) || (pass != FIRST_PASS))
+			error("Undefined symbol in operand field!");
+		else
+			need_another_pass = 1;
 		return;
 	}
 
@@ -1442,34 +1572,22 @@ do_ds(int *ip)
 		return;
 	}
 
-	/* section switch */
-	switch (section) {
-	case S_ZP:
-		/* zero page section */
-		limit = machine->zp_limit;
-		break;
-
-	case S_BSS:
-		/* ram section */
-		limit = machine->ram_limit;
-		break;
-
-	case S_CODE:
-	case S_DATA:
-		/* code and data sections */
-		limit = 0x2000;
-		break;
-	}
-
 	/* check range */
-	if ((loccnt + nbytes) > limit) {
+	addr = loccnt + nbytes;
+
+	if ((section_flags[section] & S_IS_ROM) && (bank < UNDEFINED_BANK)) {
+		if (((bank << 13) + addr) > rom_limit) {
+			error("ROM overflow!");
+			return;
+		}
+	}
+	else
+	if (addr > section_limit[section]) {
 		error("The .DS is too large for the current bank or section!");
 		return;
 	}
 
 	/* update max counter for zp and bss sections */
-	addr = loccnt + nbytes;
-
 	switch (section) {
 	case S_ZP:
 		/* zero page */
@@ -1482,13 +1600,6 @@ do_ds(int *ip)
 		if (addr > max_bss)
 			max_bss = addr;
 		break;
-
-	default:
-		/* rom page */
-		if (((bank << 13) + addr) > rom_limit) {
-			error("ROM overflow!");
-			return;
-		}
 	}
 
 	/* output line on last pass */
@@ -1539,7 +1650,7 @@ do_ds(int *ip)
 	}
 
 	/* update rom size */
-	if (bank < RESERVED_BANK) {
+	if ((section_flags[section] & S_IS_ROM) && (bank < UNDEFINED_BANK)) {
 		if (bank > max_bank) {
 			if (loccnt)
 				max_bank = bank;
@@ -1588,31 +1699,13 @@ do_fail(int *ip)
 /* ----
  * do_section()
  * ----
- * .zp/.bss/.code/.data pseudo
+ * .zp/.bss/.home/.code/.data pseudo
  */
 
 void
 do_section(int *ip)
 {
-	if (section != optype) {
-		/* backup current section data */
-		section_bank[section] = bank;
-		bank_glabl[section][bank] = glablptr;
-		bank_loccnt[section][bank] = loccnt;
-		bank_page[section][bank] = page;
-
-		/* change section */
-		section = optype;
-
-		/* switch to the new section */
-		bank = section_bank[section];
-		page = bank_page[section][bank];
-		loccnt = bank_loccnt[section][bank];
-		glablptr = bank_glabl[section][bank];
-
-		/* signal discontiguous change in loccnt */
-		discontiguous = 1;
-	}
+	set_section(optype);
 
 	/* output line */
 	if (pass == LAST_PASS) {
@@ -1632,14 +1725,14 @@ void
 do_incchr(int *ip)
 {
 	unsigned char buffer[32];
-	unsigned int i, j;
+	int i, j;
 	int x, y, w, h;
-	unsigned int tx, ty;
+	int tx, ty;
 	int total = 0;
 	int size;
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -1752,6 +1845,8 @@ do_opt(int *ip)
 			asm_opt[OPT_LBRANCH] = i;
 		else if (!strcasecmp(name, "d"))
 			asm_opt[OPT_DATAPAGE] = i;
+		else if (!strcasecmp(name, "f"))
+			asm_opt[OPT_FORWARD] = i;
 		else {
 			error("Unknown option!");
 			return;
@@ -1792,6 +1887,12 @@ do_align(int *ip)
 {
 	int offset;
 
+	/* not allowed while .phase is active - but could be implemented if needed */
+	if (phase_offset) {
+		fatal_error("Cannot .ALIGN within a .PHASE'd chunk of code!");
+		return;
+	}
+
 	/* get the .align value */
 	if (!evaluate(ip, ';', 0))
 		return;
@@ -1804,7 +1905,7 @@ do_align(int *ip)
 
 	/* check for power-of-two, 1 bank maximum */
 	if ((value > 8192) || (value == 0) || ((value & (value - 1)) != 0)) {
-		error(".align value must be a power-of-two, with a maximum of 8192!");
+		error(".ALIGN value must be a power-of-two, with a maximum of 8192!");
 		return;
 	}
 
@@ -1837,7 +1938,7 @@ do_align(int *ip)
 	}
 
 	/* set label value if there was one */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* output line on last pass */
 	if (pass == LAST_PASS) {
@@ -1848,33 +1949,27 @@ do_align(int *ip)
 
 
 /* ----
- * do_kickc()
+ * do_3pass()
  * ----
- * .pceas pseudo
- * .kickc pseudo
+ * .3pass  pseudo (optype == 0)
  */
 
 void
-do_kickc(int *ip)
+do_3pass(int *ip)
 {
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* check end of line */
-	if (!check_eol(ip))
+	if (optype == 0 && !check_eol(ip))
 		return;
 
-	/* enable/disable KickC mode */
-	kickc_mode = optype;
+	/* signal that an extra pass is wanted */
+	if (pass == FIRST_PASS)
+		need_another_pass = 1;
 
-	/* enable () for indirect addressing in KickC mode */
-	asm_opt[OPT_INDPAREN] = optype;
-
-	/* enable auto-detect ZP addressing in KickC mode */
-	asm_opt[OPT_ZPDETECT] = optype;
-
-	/* enable long-branch support in KickC mode */
-	asm_opt[OPT_LBRANCH] = optype;
+	/* enable forward-reference support in 3pass mode */
+	asm_opt[OPT_FORWARD] = 1;
 
 	/* output line */
 	if (pass == LAST_PASS)
@@ -1883,17 +1978,74 @@ do_kickc(int *ip)
 
 
 /* ----
- * do_cpu()
+ * do_kickc()
  * ----
- * .cpu pseudo (ignored, only for compatibility with KickC)
+ * .pceas  pseudo (optype == 0)
+ * .kickc  pseudo (optype == 1) (for KickC code)
+ * .r6502  pseudo (optype == 2) (for compatibility with SDCC)
+ * .r65c02 pseudo (optype == 2) (for compatibility with SDCC)
  */
 
 void
-do_cpu(int *ip)
+do_kickc(int *ip)
 {
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
+	/* check end of line */
+	if (!check_eol(ip))
+		return;
+
+	/* enable/disable KickC, SDCC or HuCC mode */
+	kickc_mode = (optype & 1) >> 0;
+	sdcc_mode  = (optype & 2) >> 1;
+	hucc_mode  = (optype & 4) >> 2;
+
+	/* signal to include final.asm, but not if already inside final.asm */
+	if (!in_final) {
+		kickc_final |= kickc_mode;
+		hucc_final  |= (sdcc_mode | hucc_mode);
+	}
+
+	/* enable () for indirect addressing during KickC code */
+	asm_opt[OPT_INDPAREN] = kickc_mode;
+
+	/* enable auto-detect ZP addressing during KickC and SDCC code */
+	/* for SDCC, this is needed to assemble library function params into ZP */
+	asm_opt[OPT_ZPDETECT] = (kickc_mode | sdcc_mode | hucc_mode);
+
+	/* enable long-branch support when building KickC code */
+	asm_opt[OPT_LBRANCH] |= (kickc_mode | hucc_mode);
+
+	/* enable forward-references when building KickC code */
+	asm_opt[OPT_FORWARD] |= kickc_mode;
+
+	/* disable C comments in HuCC code, it breaks HuCC's macro comments */
+	if (hucc_mode)
+		asm_opt[OPT_CCOMMENT] = 0;
+
+	/* output line */
+	if (pass == LAST_PASS)
+		println();
+}
+
+
+/* ----
+ * do_ignore()
+ * ----
+ * .cpu      pseudo (ignored, for compatibility with KickC)
+ * .encoding pseudo (ignored, for compatibility with KickC)
+ * .optsdcc  pseudo (ignored, for compatibility with SDCC)
+ * .globl    pseudo (ignored, for compatibility with SDCC)
+ */
+
+void
+do_ignore(int *ip)
+{
+	/* define label */
+	labldef(LOCATION);
+
+#if 0
 	/* skip spaces */
 	while (isspace(prlnbuf[*ip]))
 		(*ip)++;
@@ -1908,6 +2060,7 @@ do_cpu(int *ip)
 	/* check end of line */
 	if (!check_eol(ip))
 		return;
+#endif
 
 	/* output line */
 	if (pass == LAST_PASS)
@@ -1918,14 +2071,15 @@ do_cpu(int *ip)
 /* ----
  * do_segment()
  * ----
- * .segment pseudo (for KickC code)
+ * .segment pseudo (optype == 0) (for compatibility with KickC)
+ * .area    pseudo (optype == 1) (for compatibility with SDCC)
  */
 
 void
 do_segment(int *ip)
 {
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* skip spaces */
 	while (isspace(prlnbuf[*ip]))
@@ -1939,7 +2093,7 @@ do_segment(int *ip)
 	}
 
 	/* check end of line */
-	if (!check_eol(ip))
+	if (sdcc_mode == 0 && !check_eol(ip))
 		return;
 
 	/* which segment? */
@@ -1952,10 +2106,51 @@ do_segment(int *ip)
 	if (!strcasecmp(&symbol[1], "CODE"))
 		optype = S_CODE;
 	else
-	if (!strcasecmp(&symbol[1], "DATA"))
-		optype = S_DATA;
+	if (!strcasecmp(&symbol[1], "DATA")) {
+		if (sdcc_mode)
+			optype = S_XDATA;
+		else
+			optype = S_DATA;
+	}
+	else
+	if (!strcasecmp(&symbol[1], "XDATA"))
+		optype = S_XDATA;
+	else
+	if (!strcasecmp(&symbol[1], "XINIT"))
+		optype = S_XINIT;
+	else
+	if (!strcasecmp(&symbol[1], "CONST"))
+		optype = S_CONST;
+	else
+	if (!strcasecmp(&symbol[1], "RODATA"))
+		optype = S_CONST;
+	else
+	if (!strcasecmp(&symbol[1], "OSEG"))
+		optype = S_OSEG;
+	else
+	if (!strcasecmp(&symbol[1], "_CODE"))
+		optype = S_HOME;
+	else
+	if (!strcasecmp(&symbol[1], "_DATA")) {
+		if (sdcc_mode)
+			optype = S_DATA;
+		else
+			optype = S_NONE;
+	}
+	else
+	if (!strcasecmp(&symbol[1], "CABS"))
+		optype = S_NONE;
+	else
+	if (!strcasecmp(&symbol[1], "DABS"))
+		optype = S_NONE;
+	else
+	if (!strcasecmp(&symbol[1], "GSINIT"))
+		optype = S_NONE;
+	else
+	if (!strcasecmp(&symbol[1], "GSFINAL"))
+		optype = S_NONE;
 	else {
-		fatal_error("Segment can only be CODE, DATA, BSS or ZP!");
+		fatal_error("Unknown %s name!", (optype) ? ".AREA" : ".SEGMENT");
 		return;
 	}
 
@@ -1990,14 +2185,14 @@ do_star(int *ip)
 /* ----
  * do_label()
  * ----
- * .label & .const pseudo (for KickC code)
+ * .label & .const pseudo (for compatibility with KickC)
  */
 
 void
 do_label(int *ip)
 {
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* skip spaces */
 	while (isspace(prlnbuf[*ip]))
@@ -2029,41 +2224,6 @@ do_label(int *ip)
 
 
 /* ----
- * do_encoding()
- * ----
- * .encoding pseudo (ignored, only for compatibility with KickC)
- */
-
-void
-do_encoding(int *ip)
-{
-	/* define label */
-	labldef(0, 0, LOCATION);
-
-	/* skip spaces */
-	while (isspace(prlnbuf[*ip]))
-		(*ip)++;
-
-#if 0
-	/* extract name */
-	if (!colsym(ip, 0)) {
-		if (symbol[0] == 0)
-			fatal_error("Syntax error!");
-		return;
-	}
-
-	/* check end of line */
-	if (!check_eol(ip))
-		return;
-#endif
-
-	/* output line */
-	if (pass == LAST_PASS)
-		println();
-}
-
-
-/* ----
  * do_struct()
  * ----
  * '.struct' pseudo
@@ -2072,35 +2232,41 @@ do_encoding(int *ip)
 void
 do_struct(int *ip)
 {
+	/* not allowed while .phase is active */
+	if (phase_offset) {
+		fatal_error("Cannot declare a .STRUCT within a .PHASE'd chunk of code!");
+		return;
+	}
+
 	/* the code is written to handle nesting, but try */
 	/* this temporarily, while we see if it is needed */
 	if (scopeptr != NULL) {
-		fatal_error("Cannot nest .struct scopes!");
+		fatal_error("Cannot nest .STRUCT scopes!");
 		return;
 	}
 
 	/* do not mix different types of label-scope */
 	if (proc_ptr) {
-		fatal_error("Cannot declare a .struct inside a .proc/.procgroup!");
+		fatal_error("Cannot declare a .STRUCT inside a .PROC/.PROCGROUP!");
 			return;
 	}
 
 	/* check symbol */
 	if (lablptr == NULL) {
-		fatal_error("Label name missing from .struct!");
+		fatal_error("Label name missing from .STRUCT!");
 		return;
 	}
 	if (lablptr->name[1] == '.' || lablptr->name[1] == '@') {
-		fatal_error("Cannot open .struct scope on a local label!");
+		fatal_error("Cannot open .STRUCT scope on a local label!");
 		return;
 	}
 	if (lablptr->name[1] == '!') {
-		fatal_error("Cannot open .struct scope on a multi-label!");
+		fatal_error("Cannot open .STRUCT scope on a multi-label!");
 		return;
 	}
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* check end of line */
 	if (!check_eol(ip))
@@ -2130,7 +2296,7 @@ do_ends(int *ip)
 
 	/* sanity check */
 	if (scopeptr == NULL) {
-		fatal_error("Unexpected '.ends'!");
+		fatal_error("Unexpected .ENDS!");
 		return;
 	}
 
@@ -2143,11 +2309,17 @@ do_ends(int *ip)
 	do_section(ip);
 
 	/* define label */
-	labldef(0, 0, LOCATION);
+	labldef(LOCATION);
 
 	/* remember the size of the scope */
 	scopeptr->data_type = P_STRUCT;
-	scopeptr->data_size = (loccnt + (bank << 13)) - ((scopeptr->value & 0x1FFF) + (scopeptr->bank << 13));
+
+	// fixme:
+	fatal_error("This needs to be fixed, but not today!");
+	return;
+	// end of fixme:
+
+	scopeptr->data_size = (loccnt + (bank << 13)) - ((scopeptr->value & 0x1FFF) + (scopeptr->mprbank << 13));
 
 	/* add a label with the scope size */
 	i = addscope(scopeptr, 0);
@@ -2164,7 +2336,7 @@ do_ends(int *ip)
 		return;
 
 	/* assign value to the label */
-	labldef(scopeptr->data_size, RESERVED_BANK, CONSTANT);
+//	labldef(scopeptr->data_size, UNDEFINED_BANK, 0, CONSTANT);
 
 	/* restore the previous label */
 	lablptr = curlabl;
@@ -2175,6 +2347,271 @@ do_ends(int *ip)
 //	/* output line */
 //	if (pass == LAST_PASS)
 //		println();
+}
+
+
+/* ----
+ * do_alias()
+ * ----
+ * .alias pseudo
+ */
+
+void
+do_alias(int *ip)
+{
+	struct t_symbol *alias;
+	int i;
+
+
+	/* get alias name */
+	if (lablptr) {
+		/* go back to the unaliased label */
+		if (lablptr != unaliased) {
+			lablptr = unaliased;
+		}
+
+		/* copy the procedure name from the label */
+		strcpy(symbol, lablptr->name);
+	}
+	else {
+		/* skip spaces */
+		while (isspace(prlnbuf[*ip]))
+			(*ip)++;
+
+		/* extract name */
+		if (!colsym(ip, 0)) {
+			/* was there a bad symbol */
+			if (symbol[0])
+				return;
+			/* or just no symbol at all */
+			fatal_error(".ALIAS name is missing!");
+			return;
+		}
+
+		/* lookup symbol table */
+		if ((lablptr = stlook(SYM_DEF)) == NULL)
+			return;
+
+		/* go back to the unaliased label */
+		if (lablptr != unaliased) {
+			lablptr = unaliased;
+		}
+
+		/* skip spaces */
+		while (isspace(prlnbuf[*ip]))
+			(*ip)++;
+
+		if (prlnbuf[(*ip)++] != '=') {
+			fatal_error("Syntax error!");
+			return;
+		}
+	}
+
+	/* check symbol */
+	if (symbol[1] == '.' || symbol[1] == '@') {
+		error(".ALIAS name cannot be a local label!");
+		return;
+	}
+	if (symbol[1] == '!') {
+		error(".ALIAS name cannot be a multi-label!");
+		return;
+	}
+
+	/* is the symbol already used for somthing else */
+	if (lablptr->type == MACRO) {
+		error("Symbol already used by a macro!");
+		return;
+	}
+	if (lablptr->type == FUNC) {
+		error("Symbol already used by a function!");
+		return;
+	}
+	if (lablptr->type == DEFABS || lablptr->type == MDEF ) {
+		error("Symbol already used by a label!");
+		return;
+	}
+	if (lablptr->reserved) {
+		error("Reserved symbol!");
+		return;
+	}
+
+	/* skip spaces */
+	while (isspace(prlnbuf[*ip]))
+		(*ip)++;
+
+	/* make sure that it's not an instruction or pseudo op, N.B. "i" is altered by oplook() */
+	i = *ip;
+	if (oplook(&i) >= 0) {
+		fatal_error("Cannot create a .ALIAS to an instruction name!");
+		return;
+	}
+
+	/* extract symbol name of .ALIAS target */
+	if (!colsym(ip, 0)) {
+		/* was there a bad symbol */
+		if (symbol[0] == 0)
+			return;
+		/* or just no symbol at all */
+		error(".ALIAS target symbol name is missing!");
+		return;
+	}
+
+	/* check end of line */
+	if (!check_eol(ip))
+		return;
+
+	/* check symbol */
+	if (symbol[1] == '.' || symbol[1] == '@') {
+		fatal_error("Cannot create a .ALIAS to a local label!");
+		return;
+	}
+	if (symbol[1] == '!') {
+		fatal_error("Cannot create a .ALIAS to a multi-label!");
+		return;
+	}
+
+	/* check for redefinition */
+	if (lablptr->type == ALIAS) {
+		alias = lablptr->local;
+		if (strcmp(alias->name, symbol) != 0) {
+			error(".ALIAS was already defined differently!");
+			return;
+		}
+	} else {
+		/* lookup or create the target symbol name */
+		if ((alias = stlook(SYM_DEF)) == NULL)
+			return;
+
+		/* is the symbol already used for somthing else */
+		if (alias->type == MACRO) {
+			error("Cannot create a .ALIAS to a macro!");
+			return;
+		}
+		if (alias->type == FUNC) {
+			error("Cannot create a .ALIAS to a function!");
+			return;
+		}
+		if (alias->reserved) {
+			error("Cannot create a .ALIAS to a reserved symbol!");
+			return;
+		}
+
+		/* define alias */
+		lablptr->type = ALIAS;
+		lablptr->local = alias;
+
+		/* remember where this was defined */
+		lablptr->fileinfo = input_file[infile_num].file;
+		lablptr->fileline = slnum;
+
+		/* the alias needs to inherit any previous references to the label */
+		alias->refthispass += lablptr->refthispass;
+	}
+
+	/* check for circular definition */
+	if (strcmp(lablptr->name, alias->name) == 0) {
+		error(".ALIAS cannot refer to itself!");
+		return;
+	}
+
+	/* record definition */
+	lablptr->defthispass = 1;
+
+	/* output */
+	if (pass == LAST_PASS) {
+		loadlc(loccnt, 0);
+		println();
+	}
+}
+
+
+/* ----
+ * do_ref()
+ * ----
+ * .ref pseudo
+ */
+
+void
+do_ref(int *ip)
+{
+	/* define label */
+	labldef(LOCATION);
+
+	/* evaluate expression to increment a label's reference count */
+	if (!evaluate(ip, ';', 0))
+		return;
+
+	/* output line */
+	if (pass == LAST_PASS) {
+		loadlc(loccnt, 0);
+		println();
+	}
+}
+
+
+/* ----
+ * do_phase()
+ * ----
+ * .phase   pseudo (optype == 0)
+ * .dephase pseudo (optype == 1)
+ */
+
+void
+do_phase(int *ip)
+{
+	/* set label value if there was one */
+	labldef(LOCATION);
+
+	if (optype == 0) {
+		/* not allowed while .phase is active */
+		if (phase_offset) {
+			error("Already in a .PHASE'd chunk of code!");
+			return;
+		}
+
+		/* get the .phase value */
+		if (!evaluate(ip, ';', 0))
+			return;
+
+		/* check for undefined symbols - they are only allowed in the FIRST_PASS */
+		if (undef != 0) {
+			phase_offset = 1;
+
+			if ((asm_opt[OPT_FORWARD] == 0) || (pass != FIRST_PASS))
+				error("Undefined symbol in operand field!");
+			else
+				need_another_pass = 1;
+			return;
+		}
+
+		/* check for address out of range */
+		if (value > 0xFFFF) {
+			error(".PHASE value must be an address $0000..$FFFF!");
+			return;
+		}
+
+	} else {
+		/* not allowed while .phase is inactive */
+		if (!phase_offset) {
+			error("Not in a .PHASE'd chunk of code!");
+			return;
+		}
+
+		/* check end of line */
+		if (!check_eol(ip))
+			return;
+
+		value = (loccnt + (page << 13));
+	}
+
+	/* output line on last pass */
+	if (pass == LAST_PASS) {
+		loadlc(loccnt, 0);
+		println();
+	}
+
+	/* set the phase_offset to add to subsequent location labels */
+	phase_offset = value - (loccnt + (page << 13));
 }
 
 
@@ -2205,4 +2642,36 @@ htoi(char *str, int nb)
 
 	/* ok */
 	return (val);
+}
+
+
+/* ----
+ * set_section(int new_section)
+ * ----
+ */
+
+void
+set_section(int new_section)
+{
+	if (section != new_section) {
+		/* backup current section data */
+		section_bank[section] = bank;
+		bank_glabl[section][bank] = glablptr;
+		bank_loccnt[section][bank] = loccnt;
+		bank_page[section][bank] = page;
+		section_phase[section] = phase_offset;
+
+		/* change section */
+		section = new_section;
+
+		/* switch to the new section */
+		bank = section_bank[section];
+		page = bank_page[section][bank];
+		loccnt = bank_loccnt[section][bank];
+		glablptr = bank_glabl[section][bank];
+		phase_offset = section_phase[section];
+
+		/* signal discontiguous change in loccnt */
+		discontiguous = 1;
+	}
 }

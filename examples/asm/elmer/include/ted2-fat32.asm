@@ -214,7 +214,7 @@ FLAG_Last_Ord	=	$40
 
 
 
-		.procgroup			; Group ted2-fat32 in 1 bank!
+ted2_fat32	.procgroup			; Group ted2-fat32 in 1 bank!
 
 ; ***************************************************************************
 ; ***************************************************************************
@@ -481,9 +481,6 @@ f32_mount_vol	.proc
 
 f32_minimum_cnt:dd	$0000FFF5		; 65525 clusters
 f32_illegal_cnt:dd	$0FFFFFF5		; Too many clusters.
-f32_cluster_bad:dd	$0FFFFFF7		; Test if == val.
-f32_cluster_eoc:dd	$0FFFFFF8		; Test if >= val.
-f32_cluster_msk:dd	$0FFFFFFF		; Mask out the top 4-bits.
 
 		.endp				; f32_mount_vol
 
@@ -769,6 +766,10 @@ f32_use_cluster:ldy	#3			; Copy the cluster # from the
 .bad_cluster:	ldy	#F32_ERR_INVALID	; Invalid cluster.
 		rts
 
+f32_cluster_bad:dd	$0FFFFFF7		; Test if == val.
+f32_cluster_eoc:dd	$0FFFFFF8		; Test if >= val.
+f32_cluster_msk:dd	$0FFFFFFF		; Mask out the top 4-bits.
+
 
 
 ; ***************************************************************************
@@ -806,7 +807,7 @@ f32_set_cluster:clx				; Copy the cluster # from the
 ; N.B. This includes unused ($E5) and end-of-directory ($00) entries.
 ;
 ; Uses: f32_ptr = Pointer to directory entry within f32_cache_buf.
-; Uses: _temp = Temporary variable (trashed).
+; Uses: __temp = Temporary variable (trashed).
 ;
 ; Returns: f32_ptr, Y,Z-flag,N-flag = F32_OK or an error code
 ;
@@ -1010,7 +1011,7 @@ f32_nxt_entry	.proc
 		pla
 		jmp	!nxt_entry-		; Get the next part of it!
 
-.copy_utf16:	sta	<_temp			; Copy UTF16 glyphs to the
+.copy_utf16:	sta	<__temp			; Copy UTF16 glyphs to the
 .copy_loop:	lda	[f32_ptr], y		; long name buffer.
 		sta	f32_long_name, x
 		iny
@@ -1027,7 +1028,7 @@ f32_nxt_entry	.proc
 .copy_next:	iny
 		inx
 		beq	.too_long		; Is name > than 255 glyphs?
-		cpy	<_temp
+		cpy	<__temp
 		bne	.copy_loop
 		rts
 
@@ -1390,7 +1391,7 @@ f32_seek_cur	.proc
 		sta	<_ax + 0
 
 		bsr	f32_next_frag		; Move forward to next fragment.
-		bra	f32_seek_cur		; Try again.
+		jmp	f32_seek_cur		; Try again.
 
 		; frag_len >  seek_len
 

@@ -27,8 +27,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
 #include <ctype.h>
+#ifdef _MSC_VER
+#include "xgetopt.h"
+#else
+#include <getopt.h>
+#endif
 #include "defs.h"
 #include "externs.h"
 #include "protos.h"
@@ -51,12 +55,23 @@ char zeroes[2048];	/* CDROM sector full of zeores */
 char *prg_name;		/* program name */
 FILE *in_fp;		/* file pointers, input */
 FILE *lst_fp;		/* listing */
-char section_name[5][8] = {
-	"  ZP", " BSS", "CODE", "DATA", "PROC"
+char *section_name[MAX_S + 1] = {
+	"NULL",
+	"ZP",
+	"BSS",
+	"CODE",
+	"DATA",
+	"HOME",
+	"XDATA",
+	"XINIT",
+	"CONST",
+	"OSEG",
+	"PROC"
 };
 int newproc_opt;
 int strip_opt;
 int kickc_opt;
+int hucc_opt;
 int dump_seg;
 int overlayflag;
 int develo_opt;
@@ -69,15 +84,58 @@ int ipl_opt;
 int sgx_opt;
 int scd_opt;
 int cd_opt;
+int sf2_opt;
 int mx_opt;
 int mlist_opt;		/* macro listing main flag */
 int xlist;		/* listing file main flag */
 int list_level;		/* output level */
-int asm_opt[9];		/* assembler options */
+int asm_opt[MAX_OPTS];	/* assembler options */
 int zero_need;		/* counter for trailing empty sectors on CDROM */
 int rom_used;
 int rom_free;
 
+/* current flags for each section */
+int section_flags[MAX_S] = {
+/* S_NONE  */	S_NO_DATA,
+/* S_ZP    */	S_IS_RAM + S_NO_DATA,
+/* S_BSS   */	S_IS_RAM + S_NO_DATA,
+/* S_CODE  */	S_IS_ROM + S_IS_CODE,
+/* S_DATA  */	S_IS_ROM,
+/* S_HOME  */	S_IS_ROM + S_IS_CODE,
+/* S_XDATA */	S_IS_RAM + S_NO_DATA,
+/* S_XINIT */	S_IS_ROM,
+/* S_CONST */	S_IS_ROM,
+/* S_OSEG  */	S_IS_RAM
+};
+
+/* initial page for the banks for each section */
+const int section_default_page[MAX_S] = {
+/* S_NONE  */	0,
+/* S_ZP    */	2,
+/* S_BSS   */	2,
+/* S_CODE  */	7,
+/* S_DATA  */	3,
+/* S_HOME  */	5,
+/* S_XDATA */	0,
+/* S_XINIT */	0,
+/* S_CONST */	0,
+/* S_OSEG  */	0
+};
+
+/* maximum loccnt limit for each section */
+/* N.B. this isn't used, yet! */
+int section_limit[MAX_S] = {
+/* S_NONE  */	0x0000,
+/* S_ZP    */	0x0100,
+/* S_BSS   */	0x2000,
+/* S_CODE  */	0x2000,
+/* S_DATA  */	0x2000,
+/* S_HOME  */	0x2000,
+/* S_XDATA */	0x2000,
+/* S_XINIT */	0x2000,
+/* S_CONST */	0x2000,
+/* S_OSEG  */	0x0100
+};
 
 /* ----
  * atexit callback
@@ -214,36 +272,42 @@ main(int argc, char **argv)
 {
 	FILE *fp;
 	char *p;
-	char cmd[512];
 	int i, j, opt;
-	int file;
 	int ram_bank;
-	int cd_type;
-	int pass_count = 0;
-	const char *cmd_line_options = "sSl:mhI:o:O";
-	const struct option cmd_line_long_options[] = {
-		{"segment",     0, 0,           's'},
-		{"fullsegment", 0, 0,           'S'},
-		{"listing",     1, 0,           'l'},
-		{"macro",       0, 0,           'm'},
-		{"raw",         0, &header_opt,  0 },
-		{"pad",         0, &padding_opt, 1 },
-		{"trim",        0, &trim_opt,    1 },
-		{"cd",          0, &cd_type,     1 },
-		{"scd",         0, &cd_type,     2 },
-		{"sgx",         0, &sgx_opt,     1 },
-		{"ipl",         0, &ipl_opt,     1 },
-		{"over",        0, &overlayflag, 1 },
-		{"overlay",     0, &overlayflag, 1 },
-		{"dev",         0, &develo_opt,  1 },
-		{"develo",      0, &develo_opt,  1 },
-		{"mx",          0, &mx_opt,      1 },
-		{"srec",        0, &srec_opt,    1 },
-		{"help",        0, 0,           'h'},
-		{"strip",       0, &strip_opt,   1 },
-		{"newproc",     0, &newproc_opt, 1 },
-		{"kc",          0, &kickc_opt,   1 },
-		{0,		0, 0,		 0 }
+	static t_file *extra_source = NULL;
+	static t_file *final_source = NULL;
+
+	static int cd_type;
+	static const char *cmd_line_options = "I:OShl:mo:s";
+	static const struct option cmd_line_long_options[] = {
+		{"include",     required_argument, 0,           'I'},
+		{"pack",        no_argument,       0,           'O'},
+		{"fullsegment", no_argument,       0,           'S'},
+		{"help",        no_argument,       0,           'h'},
+		{"listing",     required_argument, 0,           'l'},
+		{"macro",       no_argument,       0,           'm'},
+		{"output",      required_argument, 0,           'o'},
+		{"segment",     no_argument,       0,           's'},
+
+		{"cd",          no_argument,       &cd_type,     1 },
+		{"develo",      no_argument,       &develo_opt,  1 },
+		{"hucc",        no_argument,       &hucc_opt,    1 },
+		{"ipl",         no_argument,       &ipl_opt,     1 },
+		{"kc",          no_argument,       &kickc_opt,   1 },
+		{"mx",          no_argument,       &mx_opt,      1 },
+		{"overlay",     no_argument,       &overlayflag, 1 },
+		{"newproc",     no_argument,       &newproc_opt, 1 },
+		{"pad",         no_argument,       &padding_opt, 1 },
+		{"raw",         no_argument,       &header_opt,  0 },
+		{"scd",         no_argument,       &cd_type,     2 },
+		{"sdcc",        no_argument,       &hucc_opt,    1 },
+		{"sf2",         no_argument,       &sf2_opt,     1 },
+		{"sgx",         no_argument,       &sgx_opt,     1 },
+		{"srec",        no_argument,       &srec_opt,    1 },
+		{"strip",       no_argument,       &strip_opt,   1 },
+		{"trim",        no_argument,       &trim_opt,    1 },
+
+		{0,		no_argument,       0,		 0 }
 	};
 
 	/* register atexit callback */
@@ -271,7 +335,7 @@ main(int argc, char **argv)
 		) {
 		machine = &pce;
 	}
-	else if(
+	else if (
 			((prg_name[0] == 'N') || (prg_name[0] == 'n')) &&
 			((prg_name[1] == 'E') || (prg_name[1] == 'e')) &&
 			((prg_name[2] == 'S') || (prg_name[2] == 's'))
@@ -294,35 +358,60 @@ main(int argc, char **argv)
 	run_opt = 0;
 	ipl_opt = 0;
 	sgx_opt = 0;
+	sf2_opt = 0;
 	scd_opt = 0;
 	cd_opt = 0;
 	mx_opt = 0;
-	file = 0;
 	cd_type = 0;
 	strip_opt = 0;
 	kickc_opt = 0;
 	newproc_opt = 0;
 
-    	memset(out_fname, 0, 256);
-
 	/* display assembler version message */
 	printf("%s\n\n", machine->asm_title);
 
+	/* process the command line options */
 	while ((opt = getopt_long_only (argc, argv, cmd_line_options, cmd_line_long_options, NULL)) != -1)
 	{
 		switch(opt)
 		{
-			case 's':
-				dump_seg = 1;
+			case 'I':
+				/* optarg can have a leading space on linux/mac */
+				while (*optarg == ' ') { ++optarg; }
+
+				if (*optarg == '-') {
+					fprintf(stderr, "%s: include path missing after \"-I\"!\n", argv[0]);
+					return (1);
+				}
+				if (!add_path(optarg, (int)strlen(optarg)+1)) {
+					fprintf(stderr, "%s: could not add path to list of include directories\n", argv[0]);
+					return (1);
+				}
+				break;
+
+			case 'O':
+				asm_opt[OPT_OPTIMIZE] = 1;
 				break;
 
 			case 'S':
 				dump_seg = 2;
 				break;
 
+			case 'h':
+				help();
+				return (0);
+
 			case 'l':
+				/* optarg can have a leading space on linux/mac */
+				while (*optarg == ' ') { ++optarg; }
+
+				if ((isdigit(*optarg) == 0) || (optarg[1] != '\0')) {
+					fprintf(stderr, "%s: \"-l\" option must be followed by a single digit\n", argv[0]);
+					return (1);
+				}
+
 				/* get level */
-				list_level = atol(optarg);
+				list_level = *optarg - '0';
 
 				/* check range */
 				if (list_level < 0 || list_level > 3)
@@ -333,31 +422,33 @@ main(int argc, char **argv)
 				mlist_opt = 1;
 				break;
 
-			case 'I':
-				if(!add_path(optarg, strlen(optarg)+1))
-				{
-					printf("Error while adding include path\n");
-					return 0;
-				}
-				break;
-
 			case 'o':
+				/* optarg can have a leading space on linux/mac */
+				while (*optarg == ' ') { ++optarg; }
+
+				if (*optarg == '-') {
+					fprintf(stderr, "%s: output filename missing after \"-o\"\n", argv[0]);
+					return (1);
+				}
+				if (strlen(optarg) >= PATHSZ) {
+					fprintf(stderr, "%s: output filename too long, maximum %d characters\n", argv[0], PATHSZ - 1);
+					return (1);
+				}
 				strcpy(out_fname, optarg);
 				break;
 
-			case 'O':
-				asm_opt[OPT_OPTIMIZE] = 1;
+			case 's':
+				dump_seg = 1;
 				break;
 
-			case 'h':
-				help();
-				return 0;
-
+			/* when a long-option has been processed */
 			case 0:
 				break;
 
+			/* unknown option */
 			default:
-				return 1;
+				help();
+				return (1);
 		}
 	}
 
@@ -375,20 +466,15 @@ main(int argc, char **argv)
 		overlayflag = 0;
 	}
 
-	/* enable optimized procedure packing if stripping */
-	asm_opt[OPT_OPTIMIZE] |= strip_opt;
-
-	/* check for missing asm file */
-	if(optind == argc)
+	/* HuCC option requires newproc_opt and strip_opt as well */
+	if (hucc_opt)
 	{
-		fprintf(stderr, "Missing input file\n");
-		return 0;
+		newproc_opt = 1;
+		strip_opt = 1;
 	}
 
-	/* get file names */
-	for ( ; optind < argc; ++optind, ++file) {
-		strcpy(in_fname, argv[optind]);
-	}
+	/* enable optimized procedure packing if stripping */
+	asm_opt[OPT_OPTIMIZE] |= (newproc_opt | strip_opt);
 
 	if (machine->type == MACHINE_PCE) {
 		/* Adjust cdrom type values ... */
@@ -408,19 +494,30 @@ main(int argc, char **argv)
 
 		if ((overlayflag == 1) &&
 		    ((scd_opt == 0) && (cd_opt == 0))) {
-			printf("Overlay option only valid for CD or SCD programs\n\n");
+			fprintf(ERROUT, "Error: Overlay option only valid for CD or SCD programs.\n\n");
 			help();
-			return (0);
+			return (1);
 		}
 	} else {
 		/* Force ipl_opt off if not PCEAS */
 		ipl_opt = 0;
 	}
 
-	if (!file) {
-		help();
-		return (0);
+	/* check for input file name missing */
+	if (optind == argc)
+	{
+		fprintf(ERROUT, "Error: Input file name missing!\n");
+		return (1);
 	}
+
+	/* check for input file name too long (including room to add an extension) */
+	if (strlen(argv[optind]) > (PATHSZ - 5)) {
+		fprintf(ERROUT, "Error: Input file name too long!\n");
+		return (1);
+	}
+
+	/* get the input file name */
+	strcpy(in_fname, argv[optind++]);
 
 	/* search file extension */
 	if ((p = strrchr(in_fname, '.')) != NULL) {
@@ -458,21 +555,35 @@ main(int argc, char **argv)
 	else
 		strcat(in_fname, ".asm");
 
+	/* get any additional file names */
+	while (optind < argc) {
+		t_file *file = malloc(sizeof(t_file));
+		if (file == NULL) {
+			fprintf(ERROUT, "Error: Not enough memory!\n");
+			exit(1);
+		}
+		file->next = NULL;
+		file->name = argv[optind++];
+
+		if (extra_source == NULL)
+			extra_source = file;
+		if (final_source != NULL)
+			final_source->next = file;
+		final_source = file;
+	}
+
 	/* init include path */
 	init_path();
 
-	/* init crc functions */
-	crc_init();
-
 	/* open the input file */
 	if (open_input(in_fname)) {
-		printf("Can not open input file '%s'!\n", in_fname);
+		fprintf(ERROUT, "Error: Cannot open input file \"%s\"!\n", in_fname);
 		exit(1);
 	}
 
 	/* clear the ROM array */
-	memset(rom, 0xFF, 8192 * 128);
-	memset(map, 0xFF, 8192 * 128);
+	memset(rom, 0xFF, MAX_BANKS * 8192);
+	memset(map, 0xFF, MAX_BANKS * 8192);
 
 	/* are we creating a custom PCE CDROM IPL? */
 	if (ipl_opt) {
@@ -482,7 +593,7 @@ main(int argc, char **argv)
 	}
 
 	/* clear symbol hash tables */
-	for (i = 0; i < 256; i++) {
+	for (i = 0; i < HASH_COUNT; i++) {
 		hash_tbl[i] = NULL;
 		macro_tbl[i] = NULL;
 		func_tbl[i] = NULL;
@@ -509,7 +620,17 @@ main(int argc, char **argv)
 	bank_base  = 0x00;
 	bank_limit = 0x7F;
 
-	if (ipl_opt) {
+	/* fixme: these should be exclusive! */
+	/* process -sf2 first, because overlays are incompatible with the other modes */
+	if (sf2_opt) {
+		rom_limit  = ROM_BANKS * 8192;	/* 8MB */
+		bank_base  = 0x00;
+		bank_limit = ROM_BANKS - 1;
+		section_flags[S_HOME] |= S_IS_SF2;
+		section_flags[S_CODE] |= S_IS_SF2;
+		section_flags[S_DATA] |= S_IS_SF2;
+	}
+	else if (ipl_opt) {
 		rom_limit  = 0x01800;	/* 4KB */
 		bank_base  = 0x00;
 		bank_limit = 0x00;
@@ -542,8 +663,8 @@ main(int argc, char **argv)
 
 	/* assemble */
 	for (pass = FIRST_PASS; pass <= LAST_PASS; pass++) {
+		extra_file = extra_source;
 		infile_error = -1;
-		page = 7;
 		bank = 0;
 		loccnt = 0;
 		slnum = 0;
@@ -553,14 +674,19 @@ main(int argc, char **argv)
 		glablptr = NULL;
 		scopeptr = NULL;
 		branchptr = branchlst;
-		xvertlong = 0;
+		branches_changed = 0;
 		need_another_pass = 0;
 		skip_lines = 0;
-		rsbase = 0;
-		rsbank = RESERVED_BANK;
+		rs_base = 0;
+		rs_mprbank = UNDEFINED_BANK;
+		rs_overlay = 0;
+		proc_ptr = NULL;
 		proc_nb = 0;
 		kickc_mode = 0;
-		kickc_incl = kickc_opt;
+		sdcc_mode = 0;
+		kickc_final = 0;
+		hucc_final = 0;
+		in_final = 0;
 
 		/* reset assembler options */
 		asm_opt[OPT_LIST] = 0;
@@ -570,20 +696,26 @@ main(int argc, char **argv)
 		asm_opt[OPT_INDPAREN] = 0;
 		asm_opt[OPT_ZPDETECT] = 0;
 		asm_opt[OPT_LBRANCH] = 0;
+		asm_opt[OPT_DATAPAGE] = 0;
+		asm_opt[OPT_FORWARD] = 1;
 
 		/* reset bank arrays */
-		for (i = 0; i < 4; i++) {
-			for (j = 0; j < 256; j++) {
+		for (i = 0; i < MAX_S; i++) {
+			page = newproc_opt ? section_default_page[i] : 0;
+			section_bank[i] = 0;
+			section_phase[i] = 0;
+			for (j = 0; j < MAX_BANKS; j++) {
 				bank_maxloc[j] = 0;
 				bank_loccnt[i][j] = 0;
 				bank_glabl[i][j] = NULL;
-				bank_page[i][j] = 0;
+				bank_page[i][j] = page;
 			}
 		}
 
 		/* reset sections */
 		ram_bank = machine->ram_bank;
 		section = S_CODE;
+		page = 7;
 
 		/* .zp */
 		section_bank[S_ZP] = ram_bank;
@@ -600,18 +732,23 @@ main(int argc, char **argv)
 		bank_page[S_CODE][0x00] = 0x07;
 		bank_loccnt[S_CODE][0x00] = 0x0000;
 
+		/* .home */
+		section_bank[S_HOME] = 0x00;
+		bank_page[S_HOME][0x00] = 0x05;
+		bank_loccnt[S_HOME][0x00] = 0x0000;
+
 		/* .data */
 		section_bank[S_DATA] = 0x00;
-		bank_page[S_DATA][0x00] = 0x07;
+		bank_page[S_DATA][0x00] = 0x03;
 		bank_loccnt[S_DATA][0x00] = 0x0000;
 
 		/* reset symbol table and include files */
 		if (pass != FIRST_PASS) {
-			/* clear the label and multi-label defcnt */
-			lablresetdefcnt();
+			/* reset symbol definition and reference tracking */
+			lablstartpass();
 
 			/* clear the list of included files */
-			forget_included_files();
+			clear_included();
 		}
 
 		/* reset max_bank */
@@ -633,8 +770,7 @@ main(int argc, char **argv)
 				/* N.B. $2000 is a legal loccnt that says that the bank is full! */
 				if (loccnt > 0x2000) {
 					if (proc_ptr) {
-						snprintf(cmd, sizeof(cmd), ".proc/.progroup \"%s\" is larger than 8192 bytes!\n", proc_ptr->name);
-						fatal_error(cmd);
+						fatal_error(".PROC/.PROGROUP \"%s\" is larger than 8192 bytes!\n", proc_ptr->label->name + 1);
 						break;
 					}
 
@@ -646,12 +782,12 @@ main(int argc, char **argv)
 					if (section != S_DATA || asm_opt[OPT_DATAPAGE] == 0)
 						page = (page + 1) & 7;
 
-					if (section == S_CODE && page == 0) {
-						error("CODE section wrapped from MPR7 to MPR0!");
+					if ((section_flags[section] & S_IS_CODE) && page == 0) {
+						error(".CODE or .HOME section wrapped from MPR7 to MPR0!");
 					}
 
 					if (asm_opt[OPT_WARNING] && pass == LAST_PASS) {
-						printf("   (Warning. Opcode crossing page boundary $%04X, bank $%02X)\n", (page * 0x2000), bank);
+						warning("Opcode crossing page boundary $%04X, bank $%02X", (page * 0x2000), bank);
 					}
 				}
 				while (old_bank != bank) {
@@ -664,39 +800,51 @@ main(int argc, char **argv)
 
 			/* sanity check */
 			if (max_bank > bank_limit) {
-				snprintf(cmd, sizeof(cmd), "Assembler bug ... max_bank (0x%02X) > bank_limit (0x%02X)!\n", max_bank, bank_limit);
-				fatal_error(cmd);
+				fatal_error("Assembler bug ... max_bank (0x%04X) > bank_limit (0x%04X)!\n", max_bank, bank_limit);
 			}
 
 			if (stop_pass)
 				break;
 		}
 
-		/* abort pass on errors */
+		/* abort pass on errors during the pass */
 		if (errcnt) {
-			printf("# %d error(s)\n", errcnt);
+			fprintf(ERROUT, "# %d error(s)\n", errcnt);
 			exit(1);
 		}
 
-		/* set pass to FIRST_PASS to run BRANCH_PASS next */
-		/* or set it to BRANCH_PASS to run LAST_PASS next */
+		/* check which procedures have been referenced */
+		if (pass == FIRST_PASS) {
+//			/* force a 3rd pass for testing */
+//			need_another_pass = 1;
+
+			/* only skip stripped procedures if we're going to
+			** run a 3rd pass anyway, just hide them if not */
+			allow_skipping = need_another_pass;
+
+			/* strip unreferenced procedures */
+			proc_strip();
+		}
+
+		/* set pass to FIRST_PASS to run EXTRA_PASS next */
+		/* or set it to EXTRA_PASS to run LAST_PASS next */
 		if (pass != LAST_PASS) {
 			/* fix out-of-range short-branches, return number fixed */
 			if ((branchopt() != 0) || (need_another_pass != 0))
 				pass = FIRST_PASS;
 			else
-				pass = BRANCH_PASS;
+				pass = EXTRA_PASS;
 		}
 
 		/* do this just before the last pass */
-		if (pass == BRANCH_PASS) {
+		if (pass == EXTRA_PASS) {
 			/* open the listing file */
 			if (lst_fp == NULL && xlist && list_level) {
 				if ((lst_fp = fopen(lst_fname, "w")) == NULL) {
-					printf("Can not open listing file '%s'!\n", lst_fname);
+					fprintf(ERROUT, "Error: Cannot open listing file \"%s\"!\n", lst_fname);
 					exit(1);
 				}
-				fprintf(lst_fp, "#[1]   %s\n", input_file[1].name);
+				fprintf(lst_fp, "#[1]   \"%s\"\n", input_file[1].file->name);
 			}
 
 			/* relocate procs */
@@ -712,9 +860,9 @@ main(int argc, char **argv)
 			}
 		}
 
-		/* abort pass on errors */
+		/* abort pass on errors after the pass */
 		if (errcnt) {
-			printf("# %d error(s)\n", errcnt);
+			fprintf(ERROUT, "# %d error(s)\n", errcnt);
 			exit(1);
 		}
 
@@ -739,7 +887,7 @@ main(int argc, char **argv)
 		if ((cd_opt || scd_opt) && !trim_opt) {
 			/* open output file */
 			if ((fp = fopen(bin_fname, "wb")) == NULL) {
-				printf("Can not open output file '%s'!\n", bin_fname);
+				fprintf(ERROUT, "Error: Cannot open output file \"%s\"!\n", bin_fname);
 				exit(1);
 			}
 
@@ -841,6 +989,7 @@ main(int argc, char **argv)
 
 			/* execute */
 			if (develo_opt) {
+				char cmd[PATHSZ+6];
 				snprintf(cmd, sizeof(cmd), "perun %s", out_fname);
 				system(cmd);
 			}
@@ -854,8 +1003,20 @@ main(int argc, char **argv)
 
 			/* binary file */
 			else {
-				/* pad rom to power-of-two? */
 				int num_banks = max_bank + 1;
+
+				/* make StreetFighterII roms compatible with emulators which detect size */
+				if (sf2_opt) {
+					/* Pad a StreetFighterII HuCARD to a minimum of the 2MB */
+					if (num_banks < (64 * 4))
+						num_banks = (64 * 4);
+
+					/* Also pad it to a multiple of the 512KB mapper size */
+					if (num_banks & 63)
+						num_banks = num_banks + 64 - (num_banks & 63);
+				}
+
+				/* pad rom to power-of-two? */
 				if (padding_opt) {
 					num_banks = 1;
 					while (num_banks <= max_bank) num_banks <<= 1;
@@ -863,7 +1024,7 @@ main(int argc, char **argv)
 
 				/* open file */
 				if ((fp = fopen(bin_fname, "wb")) == NULL) {
-					printf("Can not open binary file '%s'!\n", bin_fname);
+					fprintf(ERROUT, "Error: Cannot open binary file \"%s\"!\n", bin_fname);
 					exit(1);
 				}
 
@@ -923,23 +1084,21 @@ main(int argc, char **argv)
 
 	/* dump the bank table */
 	if (dump_seg)
-		show_seg_usage();
+		show_seg_usage(stdout);
 
-	/* check for corrupted trampolines */
-	if (check_trampolines()) {
+	/* check for corrupted thunks */
+	if (check_thunks()) {
 		exit(1);
 	}
 
 	/* warn about 384KB hucard rom size */
 	if (cd_opt == 0 && scd_opt == 0 && padding_opt == 0) {
 		if (max_bank == 0x2F) {
-			printf(
-				"\n!!!WARNING!!!\n"
+			warning("A 384KB ROM size may not work with emulators!\n\n"
 				"Most emulators expect a 384KB HuCard ROM to be in a split-image layout.\n\n"
 				"Unless you are patching an existing 384KB HuCard game image, you are\n"
 				"almost-certainly not using that layout, and your ROM will crash.\n\n"
-				"To avoid problems, add or remove enough data to avoid the 384KB size.\n"
-				"!!!WARNING!!!\n\n");
+				"To avoid problems, add or remove enough data to avoid the 384KB size.\n\n");
 		}
 	}
 
@@ -962,40 +1121,42 @@ help(void)
 		prg_name = machine->asm_name;
 
 	/* display help */
-	printf("%s [-options] [-? (for help)] [-o outfile] infile\n\n", prg_name);
-	printf("-s/S       : show segment usage\n");
-	printf("-l #       : listing file output level (0-3)\n");
+	printf("%s [options] [-h (for help)] [-o outfile] infiles\n\n", prg_name);
+	printf("-s         : show segment usage\n");
+	printf("-S         : show segment usage and contents\n");
+	printf("-l <0..3>  : listing file output level (0-3), default is 2\n");
 	printf("-m         : force macro expansion in listing\n");
-	printf("-raw       : prevent adding a ROM header\n");
-	printf("-pad       : pad ROM size to power-of-two\n");
-	printf("-trim      : strip unused head and tail from ROM\n");
+	printf("--raw      : prevent adding a ROM header\n");
+	printf("--pad      : pad ROM size to power-of-two\n");
+	printf("--trim     : strip unused head and tail from ROM\n");
 	printf("-I         : add include path\n");
 	if (machine->type == MACHINE_PCE) {
-		printf("-cd        : create a CD-ROM track image\n");
-		printf("-scd       : create a Super CD-ROM track image\n");
-		printf("-sgx       : add a SuperGRAFX signature to the CD-ROM\n");
-		printf("-over(lay) : create an executable 'overlay' program segment\n");
-		printf("-ipl       : create a custom CD-ROM IPL file\n");
-		printf("-dev       : assemble and run on the Develo Box\n");
-		printf("-mx        : create a Develo MX file\n");
+		printf("--sf2      : create a StreetFighterII HuCARD\n");
+		printf("--cd       : create a CD-ROM track image\n");
+		printf("--scd      : create a Super CD-ROM track image\n");
+		printf("--sgx      : add a SuperGRAFX signature to the CD-ROM\n");
+		printf("--overlay  : create an executable 'overlay' program segment\n");
+		printf("--ipl      : create a custom CD-ROM IPL file\n");
+		printf("--develo   : assemble and run on the Develo Box\n");
+		printf("--mx       : create a Develo MX file\n");
 		printf("-O         : optimize .proc packing (compared to HuC v3.21)\n");
-		printf("-strip     : strip unused .proc & .procgroup\n");
-		printf("-newproc   : run .proc code in MPR6, instead of MPR5\n");
+		printf("--strip    : strip unused .proc & .procgroup\n");
+		printf("--newproc  : run .proc code in MPR6, instead of MPR5\n");
 	}
-	printf("-kc        : assemble code generated by the KickC compiler\n");
-	printf("-srec      : create a Motorola S-record file\n");
-	printf("infile     : file to be assembled\n");
+	printf("--kc       : assemble code generated by the KickC compiler\n");
+	printf("--srec     : create a Motorola S-record file\n");
+	printf("infiles    : one or more files to be assembled\n");
 	printf("\n");
 }
 
 
 /* ----
- * show_bnk_usage()
+ * show_bank_usage()
  * ----
  */
 
 void
-show_bnk_usage(int which_bank)
+show_bank_usage(FILE *fp, int which_bank)
 {
 	int addr, start, nb;
 
@@ -1013,10 +1174,10 @@ show_bnk_usage(int which_bank)
 
 	/* display bank infos */
 	if (nb)
-		printf("BANK %2X  %-23s    %4i/%4i\n",
+		fprintf(fp, "BANK $%-3X  %-23s    %4i / %4i\n",
 		       which_bank, bank_name[which_bank], nb, 8192 - nb);
 	else {
-		printf("BANK %2X  %-23s       0/8192\n", which_bank, bank_name[which_bank]);
+		fprintf(fp, "BANK $%-3X  %-23s       0 / 8192\n", which_bank, bank_name[which_bank]);
 		return;
 	}
 
@@ -1045,7 +1206,7 @@ show_bnk_usage(int which_bank)
 				break;
 
 		/* display section infos */
-		printf("    %s    $%04X-$%04X  [%4i]\n",
+		fprintf(fp, "    %5s    $%04X-$%04X  [%4i]\n",
 			section_name[section],		/* section name */
 			start + page,			/* starting address */
 			addr + page - 1,		/* end address */
@@ -1060,33 +1221,32 @@ show_bnk_usage(int which_bank)
  */
 
 void
-show_seg_usage(void)
+show_seg_usage(FILE *fp)
 {
 	int i;
 	int start, stop;
 	int ram_base = machine->ram_base;
 
-	printf("segment usage:\n");
-	printf("\n");
+	fprintf(fp, "\nSegment Usage:\n");
 
-	printf("\t\t\t\t    USED/FREE\n");
+	fprintf(fp, "%37c USED / FREE\n", ' ');
 
 	/* zp usage */
 	if (max_zp <= 1)
-		printf("      ZP    -\n");
+		fprintf(fp, "       ZP    -\n");
 	else {
 		start = ram_base;
 		stop = ram_base + (max_zp - 1);
-		printf("      ZP    $%04X-$%04X  [%4i]     %4i/%4i\n", start, stop, stop - start + 1, stop - start + 1, 256 - (stop - start + 1));
+		fprintf(fp, "       ZP    $%04X-$%04X  [%4i]      %4i / %4i\n", start, stop, stop - start + 1, stop - start + 1, 256 - (stop - start + 1));
 	}
 
 	/* bss usage */
 	if (max_bss <= 0x201)
-		printf("     BSS    -\n\n");
+		fprintf(fp, "      BSS    -\n\n");
 	else {
 		start = ram_base + 0x200;
 		stop = ram_base + (max_bss - 1);
-		printf("     BSS    $%04X-$%04X  [%4i]     %4i/%4i\n\n", start, stop, stop - start + 1, stop - start + 1, 8192 - (stop - start + 1));
+		fprintf(fp, "      BSS    $%04X-$%04X  [%4i]      %4i / %4i\n\n", start, stop, stop - start + 1, stop - start + 1, 8192 - (stop - start + 1));
 	}
 
 	/* bank usage */
@@ -1095,13 +1255,13 @@ show_seg_usage(void)
 
 	/* scan banks */
 	for (i = 0; i <= max_bank; i++) {
-		show_bnk_usage(i);
+		show_bank_usage(fp, i);
 	}
 
 	/* total */
 	rom_used = (rom_used + 1023) >> 10;
 	rom_free = (rom_free) >> 10;
-	printf("\t\t\t\t    ---- ----\n");
-	printf("\t\t\t\t    %4iK%4iK\n", rom_used, rom_free);
-	printf("\n\t\t\tTOTAL SIZE =     %4iK\n\n", (rom_used + rom_free));
+	fprintf(fp, "%36c -----  -----\n", ' ');
+	fprintf(fp, "%36c %4iK  %4iK\n", ' ', rom_used, rom_free);
+	fprintf(fp, "\n%24c TOTAL SIZE =       %4iK\n\n", ' ', (rom_used + rom_free));
 }

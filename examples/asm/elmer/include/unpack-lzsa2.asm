@@ -5,13 +5,25 @@
 ;
 ; HuC6280 decompressor for Emmanuel Marty's LZSA2 format.
 ;
-; The code is 247 bytes for the small version, and 262 bytes for the normal.
+; The code is 248 bytes for the small version, and 263 bytes for the normal.
 ;
-; Copyright John Brandwood 2019-2021.
+; Copyright John Brandwood 2019-2024.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
 ;  http://www.boost.org/LICENSE_1_0.txt)
+;
+; ***************************************************************************
+; ***************************************************************************
+;
+; N.B. The decompressor expects the data to be compressed without a header!
+;
+; Use Emmanuel Marty's LZSA compressor which can be found here ...
+;  https://github.com/emmanuel-marty/lzsa
+;
+; To create an LZSA2 file to decompress to RAM
+;
+;  lzsa -r -f 2 <infile> <outfile>
 ;
 ; ***************************************************************************
 ; ***************************************************************************
@@ -73,7 +85,9 @@ lzsa2_nibble	=	_dl			; 1 byte.
 ; lzsa2_to_ram - Decompress data stored in Emmanuel Marty's LZSA2 format.
 ;
 ; Args: _bp, Y = _farptr to compressed data in MPR3.
-; Args: _di = ptr to output address in RAM.
+; Args: _di = ptr to output address in RAM (anywhere except MPR3!).
+;
+; Returns: _bp, Y = _farptr to byte after compressed data.
 ;
 ; Uses: _bp, _di, _ax, _bx, _cx, _dl !
 ;
@@ -83,11 +97,9 @@ lzsa2_to_ram	.proc
 		tma3				; Preserve MPR3.
 		pha
 
-		tya				; Map lzsa2_srcptr to MPR3.
-		beq	!+
-		tam3
+		jsr	set_bp_to_mpr3		; Map lzsa2_srcptr to MPR3.
 
-!:		clx				; Hi-byte of length or offset.
+		clx				; Hi-byte of length or offset.
 		cly				; Initialize source index.
 		stz	<lzsa2_nibflg		; Initialize nibble buffer.
 
@@ -274,6 +286,9 @@ lzsa2_to_ram	.proc
 
 .finished:	pla				; Decompression completed, pop
 		pla				; return address.
+
+		tma3				; Return final MPR3 in Y reg.
+		tay
 
 		pla				; Restore MPR3.
 		tam3

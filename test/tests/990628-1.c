@@ -1,3 +1,13 @@
+#ifdef __HUCC__
+
+// malloc() is not supported in HuCC at this time.
+main()
+{
+    exit (0);
+}
+
+#else
+
 #include <stdlib.h>
 
 struct sqlca_s {
@@ -56,3 +66,5 @@ main()
 #endif
     exit (0);
 }
+
+#endif // __HUCC__

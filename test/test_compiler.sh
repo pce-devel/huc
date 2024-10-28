@@ -31,7 +31,7 @@ do
 	echo opt="$opt"
 	for i in $tests
 	do
-		echo "Type: $d   Test: $i"
+		echo "HuC Type: $d   Test: $i"
 		if ! ../bin/huc${exesuffix} -DNO_LABEL_VALUES $opt $i -lmalloc >/dev/null ; then
 			echo NOCOMPILE
 			../bin/huc${exesuffix} $opt $i

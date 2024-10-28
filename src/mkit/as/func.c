@@ -6,8 +6,8 @@
 #include "externs.h"
 #include "protos.h"
 
-struct t_func *func_tbl[256];
-struct t_func *func_ptr;
+t_func *func_tbl[HASH_COUNT];
+t_func *func_ptr;
 char func_line[128];
 char func_arg[8][10][80];
 int func_idx;
@@ -43,10 +43,15 @@ do_func(int *ip)
 			fatal_error("Function name cannot be a multi-label!");
 			return;
 		}
-		if (lablptr->defcnt || lablptr->refcnt) {
+		if (lablptr->defthispass || lablptr->refthispass) {
 			switch (lablptr->type) {
+			case ALIAS:
+				fatal_error("Symbol already used by an alias!");
+				return;
+
 			case MACRO:
 				fatal_error("Symbol already used by a macro!");
+				return;
 
 			case FUNC:
 				fatal_error("Function already defined!");
@@ -75,7 +80,7 @@ func_look(void)
 	hash = symhash();
 	func_ptr = func_tbl[hash];
 	while (func_ptr) {
-		if (!strcmp(&symbol[1], func_ptr->name))
+		if (!strcmp(symbol, func_ptr->label->name))
 			break;
 		func_ptr = func_ptr->next;
 	}
@@ -97,7 +102,11 @@ func_install(int ip)
 
 	/* mark the function name as reserved */
 	lablptr->type = FUNC;
-	lablptr->defcnt = 1;
+	lablptr->defthispass = 1;
+
+	/* remember where this was defined */
+	lablptr->fileinfo = input_file[infile_num].file;
+	lablptr->fileline = slnum;
 
 	/* check function name syntax */
 	if (strchr(&symbol[1], '.')) {
@@ -110,14 +119,21 @@ func_install(int ip)
 		return (0);
 
 	/* allocate a new func struct */
-	if ((func_ptr = (void *)malloc(sizeof(struct t_func))) == NULL) {
+	func_ptr = (void *)malloc(sizeof(struct t_func));
+	if (func_ptr == NULL) {
 		error("Out of memory!");
 		return (0);
 	}
 
 	/* initialize it */
-	strcpy(func_ptr->name, &symbol[1]);
+	func_ptr->label = lablptr;
+	func_ptr->line = malloc(strlen(func_line) + 1);
+	if (func_ptr->line == NULL) {
+		error("Out of memory!");
+		return (0);
+	}
 	strcpy(func_ptr->line, func_line);
+
 	hash = symhash();
 	func_ptr->next = func_tbl[hash];
 	func_tbl[hash] = func_ptr;
@@ -194,7 +210,7 @@ func_getargs(void)
 	int arg, level, space, flag;
 	int i, x;
 
-	/* can not nest too much macros */
+	/* Cannot nest macros too deeply */
 	if (func_idx == 7) {
 		error("Too many nested function calls!");
 		return (0);

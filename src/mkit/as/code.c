@@ -52,6 +52,13 @@ classC(int *ip)
 void
 classR(int *ip)
 {
+	/* Check for someone exiting a C function from within a #asm section. */
+	if (hucc_mode && proc_ptr)
+	{
+		error("You cannot exit a C function with an RTS in HuCC!\nPlease read the documentation!");
+		return;
+	}
+
 	/* Only if ".kickc" and currently inside a C function/procedure */
 	if (kickc_mode && scopeptr && proc_ptr)
 	{
@@ -110,11 +117,10 @@ class2(int *ip)
 		return;
 
 	/* all branches tracked for long-branch handling */
-	if ((branch = getbranch(2)) == NULL)
-		return;
+	branch = getbranch(2);
 
 	/* need more space for a long-branch */
-	if (branch->convert) {
+	if ((branch) && (branch->convert)) {
 		if ((opval & 0x1F) == 0x10)
 			/* conditional branch */
 			loccnt += 3;
@@ -125,7 +131,7 @@ class2(int *ip)
 
 	/* generate code */
 	if (pass == LAST_PASS) {
-		if (branch->convert) {
+		if ((branch) && (branch->convert)) {
 			/* long-branch opcode */
 			if ((opval & 0x1F) == 0x10) {
 				/* conditional-branch */
@@ -144,7 +150,7 @@ class2(int *ip)
 			putbyte(data_loccnt, opval);
 
 			/* calculate branch offset */
-			addr = (value & 0xFFFF) - (loccnt + (page << 13));
+			addr = (value & 0xFFFF) - (loccnt + (page << 13) + phase_offset);
 
 			/* check range */
 			if (addr > 0x7Fu && addr < ~0x7Fu) {
@@ -344,16 +350,15 @@ class5(int *ip)
 		return;
 
 	/* all branches tracked for long-branch handling */
-	if ((branch = getbranch(3)) == NULL)
-		return;
+	branch = getbranch(3);
 
 	/* need more space for a long-branch */
-	if (branch->convert)
+	if ((branch) && (branch->convert))
 		loccnt += 3;
 
 	/* generate code */
 	if (pass == LAST_PASS) {
-		if (branch->convert) {
+		if ((branch) && (branch->convert)) {
 			/* long-branch opcode */
 			putbyte(data_loccnt, opval ^ 0x80);
 			putbyte(data_loccnt + 1, zp);
@@ -367,7 +372,7 @@ class5(int *ip)
 			putbyte(data_loccnt + 1, zp);
 
 			/* calculate branch offset */
-			addr = (value & 0xFFFF) - (loccnt + (page << 13));
+			addr = (value & 0xFFFF) - (loccnt + (page << 13) + phase_offset);
 
 			/* check range */
 			if (addr > 0x7Fu && addr < ~0x7Fu) {
@@ -405,7 +410,7 @@ class6(int *ip)
 		if (!evaluate(ip, (i < 2) ? ',' : ';', 0))
 			return;
 		if (pass == LAST_PASS) {
-			if (value & 0x007F0000) {
+			if (value & ~0xFFFF) {
 				error("Operand size error!");
 				return;
 			}
@@ -610,11 +615,10 @@ class10(int *ip)
 		return;
 
 	/* all branches tracked for long-branch handling */
-	if ((branch = getbranch(3)) == NULL)
-		return;
+	branch = getbranch(3);
 
 	/* need more space for a long-branch */
-	if (branch->convert)
+	if ((branch) && (branch->convert))
 		loccnt += 3;
 
 	/* generate code */
@@ -625,7 +629,7 @@ class10(int *ip)
 			return;
 		}
 
-		if (branch->convert) {
+		if ((branch) && (branch->convert)) {
 			/* long-branch opcode */
 			putbyte(data_loccnt, (opval + (bit << 4)) ^ 0x80);
 			putbyte(data_loccnt + 1, zp);
@@ -639,7 +643,7 @@ class10(int *ip)
 			putbyte(data_loccnt + 1, zp);
 
 			/* calculate branch offset */
-			addr = (value & 0xFFFF) - (loccnt + (page << 13));
+			addr = (value & 0xFFFF) - (loccnt + (page << 13) + phase_offset);
 
 			/* check range */
 			if (addr > 0x7Fu && addr < ~0x7Fu) {
@@ -706,7 +710,13 @@ getoperand(int *ip, int flag, int last_char)
 
 	default:
 		/* other */
-		switch (prlnbuf[*ip]) {
+		c = prlnbuf[*ip];
+		if (c == '*' && sdcc_mode) {
+			/* change SDCC's '*' for ZP to '<' */
+			c = '<';
+		}
+
+		switch (c) {
 		case '#':
 			/* immediate */
 			mode = IMM;
@@ -729,6 +739,10 @@ getoperand(int *ip, int flag, int last_char)
 			/* indirect */
 			mode = ABS_IND | ABS_IND_X | ZP_IND | ZP_IND_X | ZP_IND_Y;
 			(*ip)++;
+			if (prlnbuf[*ip] == '*' && sdcc_mode) {
+				/* skip SDCC's redundant '*' */
+				(*ip)++;
+			}
 			break;
 
 		case '(':
@@ -768,8 +782,7 @@ getoperand(int *ip, int flag, int last_char)
 		if (mode == (ABS | ABS_X | ABS_Y | ZP | ZP_X | ZP_Y)) {
 			/* was there an undefined or undefined-this-pass symbol? */
 			if (undef || notyetdef ||
-				((value & 0x007FFF00) != machine->ram_base)) {
-//				((value & 0x007FFF00) && ((value & 0x007FFF00) != machine->ram_base))) {
+				((value & ~0xFF) != machine->ram_base)) {
 				/* use ABS addressing, if available */
 				if (flag & ABS)
 					mode &= ~ZP;
@@ -895,8 +908,8 @@ getoperand(int *ip, int flag, int last_char)
 					if (opext == 'H')
 						value++;
 				}
-				/* check address validity */
-				if ((value & 0x007FFF00) && ((value & 0x007FFF00) != machine->ram_base))
+				/* check address validity (accept $00xx as well for 6502-compatibility) */
+				if ((value & ~0xFF) && ((value & ~0xFF) != machine->ram_base))
 					error("Incorrect zero page address!");
 			}
 
@@ -910,9 +923,10 @@ getoperand(int *ip, int flag, int last_char)
 				else if (opext != 0)
 					error("Instruction extension not supported in immediate mode!");
 				else {
-					/* check value validity */
-					if (((value & 0x007FFF00) > 0xFF) && ((value & 0x007FFF00) < 0x007FFF00))
-						error("Incorrect immediate value!");
+					/* check for overflow, except in SDCC code (-256..255 are ok) */
+					/* SDCC's code generator assumes that the assembler doesn't care */
+					if ((sdcc_mode == 0) && (value & ~0xFF) && ((value & ~0xFF) != ~0xFF))
+						error("Operand too large to fit in a byte!");
 				}
 			}
 
@@ -926,7 +940,7 @@ getoperand(int *ip, int flag, int last_char)
 						value++;
 				}
 				/* check address validity */
-				if (value & 0x007F0000)
+				if (value & ~0xFFFF)
 					error("Incorrect absolute address!");
 
 				/* if HuC6280 and currently inside a ".kickc" C function/procedure */
@@ -1008,6 +1022,10 @@ getstring(int *ip, char *buffer, int size)
 		c = prlnbuf[(*ip)++];
 		if (c == '\"')
 			break;
+		if (c == '\0') {
+			error("String terminator missing!");
+			return (0);
+		}
 		if (i >= size) {
 			error("String too long!");
 			return (0);
@@ -1039,8 +1057,21 @@ getbranch(int opcode_length)
 	struct t_branch * branch;
 	unsigned int addr;
 
+#if 1
+	/* do not track yet, because .ifref can change after the first */
+	/* pass which can then change the sequence of tracked branches */
+	if (pass == FIRST_PASS)
+		return (NULL);
+
+	/* no tracking info if transitioned from FIRST_PASS to LAST_PASS */
+	if ((branchlst == NULL) && (pass == LAST_PASS))
+		return (NULL);
+
 	/* track all branches for long-branch handling */
+	if (pass_count == 2) {
+#else
 	if (pass == FIRST_PASS) {
+#endif
 		/* remember this branch instruction */
 		if ((branch = malloc(sizeof(struct t_branch))) == NULL) {
 			error("Out of memory!");
@@ -1065,7 +1096,7 @@ getbranch(int opcode_length)
 	} else {
 		/* update this branch instruction */
 		if (branchptr == NULL) {
-			error("Untracked branch instruction!");
+			fatal_error("Untracked branch instruction!");
 			return NULL;
 		}
 
@@ -1074,41 +1105,46 @@ getbranch(int opcode_length)
 
 		/* sanity check */
 		if ((branch->label != NULL) && (branch->label != expr_lablptr)) {
+#if 0
 			if (branch->label == expr_toplabl) {
 				/* resolve branch outside of label-scope */
 				/* disable for now, because this is more */
 				/* likely to be an error than deliberate */
 //				branch->label = expr_lablptr;
 			} else {
-				error("Branch label mismatch!");
+				fatal_error("Branch label mismatch!");
 				return NULL;
 			}
+#else
+			fatal_error("Branch label mismatch!");
+			return NULL;
+#endif
 		}
 	}
 
-	branch->addr = (loccnt + (page << 13)) & 0xFFFF;
+	branch->addr = (loccnt + (page << 13) + phase_offset) & 0xFFFF;
 	branch->checked = 0;
 
 	if (pass == LAST_PASS) {
 		/* display the branches that have been converted */
 		if (branch->convert && asm_opt[OPT_WARNING]) {
 			loccnt -= opcode_length;
-			warning("Warning: Converted to long-branch!\n");
+			warning("Converted to long-branch!\n");
 			loccnt += opcode_length;
 		}
 	} else {
-		/* has target already been defined (this pass)? */
-		if ((branch->convert == 0) &&
-		    (branch->label != NULL) &&
-		    (branch->label->defcnt != 0) &&
+		/* check if it is outside short-branch range */
+		if ((branch->label != NULL) &&
+		    (branch->label->defthispass) &&
 		    (branch->label->type == DEFABS)) {
-			/* check if it is outside short-branch range */
 			addr = (branch->label->value & 0xFFFF) - branch->addr;
 
 			if (addr > 0x7Fu && addr < ~0x7Fu) {
+				if (branch->convert == 0)
+					++branches_changed;
 				branch->convert = 1;
-				++xvertlong;
 			}
+
 			branch->checked = 1;
 		}
 	}
@@ -1120,7 +1156,8 @@ getbranch(int opcode_length)
 /* ----
  * branchopt()
  * ----
- * convert out-of-range short-branches into long-branches
+ * convert out-of-range short-branches into long-branches, also
+ * convert incorrectly-guessed long-branches back to short-branches
  */
 
 int
@@ -1128,32 +1165,38 @@ branchopt(void)
 {
 	struct t_branch * branch;
 	unsigned int addr;
-	int changed = 0;
+	int just_changed = 0;
 
 	/* look through the entire list of branch instructions */
 	for (branch = branchlst; branch != NULL; branch = branch->next) {
 
-		/* check to see if a short-branch needs to be converted */
-		if ((branch->convert == 0) &&
-		    (branch->checked == 0) &&
+		/* check to see if a branch needs to be converted */
+		if ((branch->checked == 0) &&
 		    (branch->label != NULL) &&
 		    (branch->label->type == DEFABS)) {
 			/* check if it is outside short-branch range */
 			addr = (branch->label->value & 0xFFFF) - branch->addr;
 
 			if (addr > 0x7Fu && addr < ~0x7Fu) {
+				if (branch->convert == 0)
+					++just_changed;
 				branch->convert = 1;
-				++changed;
+#if 0 /* This saving just doesn't seem to be worth an extra pass */
+			} else {
+				if (branch->convert == 1)
+					++just_changed;
+				branch->convert = 0;
+#endif
 			}
 		}
 	}
 
 	/* report total changes this pass */
-	xvertlong += changed;
-	if (xvertlong)
-		printf("Changed %d branches from short to long.\n", xvertlong);
+	branches_changed += just_changed;
+	if (branches_changed)
+		printf("     Changed %4d branches from short to long.\n", branches_changed);
 
 	/* do another pass if anything just changed, except if KickC because */
 	/* any changes during the pass itself can change a forward-reference */
-	return ((kickc_opt) ? xvertlong : changed);
+	return ((kickc_opt) ? branches_changed : just_changed);
 }

@@ -297,13 +297,9 @@ tty_printf_huc	.proc				; HuC entry point.
 		tma3				; Preserve MPR3.
 		pha
 
-		tya				; Map farptr to MPR3.
-		beq	!+
-		tam3
-		inc	a
-		tam4
+		jsr	set_bp_to_mpr34		; Map farptr to MPR3 & MPR4.
 
-!:		stz	tty_xyok		; Make sure VRAM addr is set!
+		stz	tty_xyok		; Make sure VRAM addr is set!
 
 		lda	[_bp]			; Get string length from the
 		inc	a			; PASCAL-format string, the
@@ -489,9 +485,9 @@ tty_printf_huc	.proc				; HuC entry point.
 	.endif	TTY_NO_DOT == 0
 
 .read_minimum:	sbc	#'0'			; Initialize the width.
-		sta	<_temp
+		sta	<__temp
 		jsr	.next_decimal		; Read the rest.
-		ldx	<_temp			; Set the minimum output.
+		ldx	<__temp			; Set the minimum output.
 		stx	tty_outmin
 
 	.if	TTY_NO_DOT == 0
@@ -505,7 +501,7 @@ tty_printf_huc	.proc				; HuC entry point.
 		bne	.read_length
 
 		jsr	.read_decimal		; Read the precision value.
-		ldx	<_temp			; Set the maximum output.
+		ldx	<__temp			; Set the maximum output.
 		stx	tty_outmax
 
 		cmp	'#'			; Or read the maximum from
@@ -816,14 +812,14 @@ tty_printf_huc	.proc				; HuC entry point.
 		beq	.set_xlhs
 
 .set_xpos:	jsr	.read_decimal		; Read decimal, return chr.
-		ldx	<_temp
+		ldx	<__temp
 		stx	tty_xpos
 		stz	tty_xyok
 		jmp	.test_chr		; Process the next chr.
 
 .set_xlhs:	iny				; Swallow the 'L'.
 		jsr	.read_decimal		; Read decimal, return chr.
-		ldx	<_temp
+		ldx	<__temp
 		stx	tty_xlhs
 		jmp	.test_chr		; Process the next chr.
 
@@ -839,14 +835,14 @@ tty_printf_huc	.proc				; HuC entry point.
 		beq	.set_ytop
 
 .set_ypos:	jsr	.read_decimal		; Read decimal, return chr.
-		ldx	<_temp
+		ldx	<__temp
 		stx	tty_ypos
 		stz	tty_xyok
 		jmp	.test_chr		; Process the next chr.
 
 .set_ytop:	iny				; Swallow the 'T'.
 		jsr	.read_decimal		; Read decimal, return chr.
-		ldx	<_temp
+		ldx	<__temp
 		stx	tty_ytop
 		jmp	.test_chr		; Process the next chr.
 
@@ -897,19 +893,19 @@ tty_printf_huc	.proc				; HuC entry point.
 		jsr	.read_decimal		; Box width.
 		cmp	#','
 		bne	.box_done		; Abort if parameter missing.
-		lda	<_temp
+		lda	<__temp
 		sta	<_al
 		jsr	.read_decimal		; Box height.
 		cmp	#','
 		bne	.box_done		; Abort if parameter missing.
-		lda	<_temp
+		lda	<__temp
 		sta	<_ah
 		jsr	.read_decimal		; Box type.
 
 		phy				; Preserve string index.
 		pha				; Preserve next string char.
 
-		lda	<_temp
+		lda	<__temp
 		sta	<_bl
 		call	tty_draw_box
 
@@ -994,7 +990,7 @@ tty_printf_huc	.proc				; HuC entry point.
 		; Read decimal number (returns next non-decimal chr read).
 		;
 
-.read_decimal:	stz	<_temp			; Initialize to zero.
+.read_decimal:	stz	<__temp			; Initialize to zero.
 
 .next_decimal:	lda	[_bp], y		; Read char from string.
 		iny
@@ -1004,12 +1000,12 @@ tty_printf_huc	.proc				; HuC entry point.
 		bcc	.param_exit
 
 		sbc	#'0'			; Accumulate the decimal value
-		asl	<_temp			; within the range (0..255).
-		adc	<_temp
-		asl	<_temp
-		asl	<_temp
-		adc	<_temp
-		sta	<_temp
+		asl	<__temp			; within the range (0..255).
+		adc	<__temp
+		asl	<__temp
+		asl	<__temp
+		adc	<__temp
+		sta	<__temp
 		bra	.next_decimal
 
 		;
@@ -1327,8 +1323,8 @@ tty_dump_line	.proc
 
 		phx
 		phy
-		stx.l	<_temp
-		sty.h	<_temp
+		stx.l	<__temp
+		sty.h	<__temp
 
 		cly
 
@@ -1362,7 +1358,7 @@ tty_dump_line	.proc
 		phy
 
 		ldx	#1
-.addr_loop:	lda	<_temp, x
+.addr_loop:	lda	<__temp, x
 		lsr	a
 		lsr	a
 		lsr	a
@@ -1374,7 +1370,7 @@ tty_dump_line	.proc
 .addr_lo:	sta	VDC_DL
 		st2.h	#CHR_ZERO
 
-		lda	<_temp, x
+		lda	<__temp, x
 		and	#$0F
 		ora.l	#CHR_ZERO + '0'
 		cmp.l	#CHR_ZERO + '0' + 10
@@ -1391,7 +1387,7 @@ tty_dump_line	.proc
 		st1.l	#CHR_ZERO + ' '
 		st2.h	#CHR_ZERO
 
-.byte_loop:	lda	[_temp], y
+.byte_loop:	lda	[__temp], y
 		lsr	a
 		lsr	a
 		lsr	a
@@ -1403,7 +1399,7 @@ tty_dump_line	.proc
 .skip_lo:	sta	VDC_DL
 		st2.h	#CHR_ZERO
 
-		lda	[_temp], y
+		lda	[__temp], y
 		and	#$0F
 		ora.l	#CHR_ZERO + '0'
 		cmp.l	#CHR_ZERO + '0' + 10
@@ -1425,7 +1421,7 @@ tty_dump_line	.proc
 
 		ply
 
-.char_loop:	lda	[_temp], y
+.char_loop:	lda	[__temp], y
 		cmp	#$20
 		bcc	.non_ascii
 		cmp	#$7F

@@ -357,3 +357,26 @@ _decw	.macro
 	decw	\1
 	pla
 .endm
+
+;-------------------------------
+
+;
+; Macro to use for the exit instruction of a ".proc" routine.
+;
+; In the old HuC method, procedures end with an "rts", with
+; the "-newproc" option, they jump to a piece of shared code.
+;
+
+.if	USING_NEWPROC
+
+leave	.macro
+	jmp	leave_proc
+	.endm
+
+.else
+
+leave	.macro
+	rts
+	.endm
+
+.endif	USING_NEWPROC

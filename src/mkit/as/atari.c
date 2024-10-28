@@ -105,7 +105,7 @@ fuji_carttype(int *ip)
 	int num_banks;
 
 	/* define label */
-//	labldef(0, 0, LOCATION);
+//	labldef(LOCATION);
 
 	/* get cartridge type value */
 	if (!evaluate(ip, ';', 0))
@@ -207,7 +207,7 @@ fuji_pack_8x8_tile(unsigned char *buffer, void *data, int line_offset, int forma
 
 	default:
 		/* other formats not supported */
-		error("Internal error: unsupported format passed to 'pack_8x8_tile'!");
+		error("Unsupported format passed to 'pack_8x8_tile'!");
 		break;
 	}
 
