@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "defs.h"
 #include "data.h"
@@ -17,14 +18,14 @@
 #include "sym.h"
 
 /*
- *	open input file
+ * open input file
+ *
  * Input : char* p
  * Output : int error code
  *
  * Try to open the file whose filename is p, return YES if opened, else NO
  * Updates fname with the actual opened name
  * input is the handle of the opened file
- *
  */
 int openin (char *p)
 {
@@ -44,14 +45,14 @@ int openin (char *p)
 }
 
 /*
- *	open output file
+ * open output file
+ *
  * Input : nothing but uses global fname
  * Output : nothing but fname contain the name of the out file now
  *
  * Guess the name of the outfile thanks to the input one and try to open it
  * In case of succes returns YES and output is the handle of the opened file
  * else returns NO
- *
  */
 int openout (void)
 {
@@ -75,13 +76,13 @@ int openout (void)
 }
 
 /*
- *	change input filename to output filename
+ * change input filename to output filename
+ *
  * Input : char* s
  * Output : char* s is updated
  *
  * Simply replace the last letter of s by 's'
  * Used to return "file.s" from "file.c"
- *
  */
 void outfname (char *s)
 {
@@ -91,12 +92,12 @@ void outfname (char *s)
 }
 
 /*
- *	remove NL from filenames
+ * remove NL from filenames
+ *
  * Input : char* s
  * Output : char* s is updated
  *
  * if any, remove the trailing newline char from the s string
- *
  */
 void fixname (char *s)
 {
@@ -107,13 +108,13 @@ void fixname (char *s)
 }
 
 /*
- *	check that filename is "*.c"
+ * check that filename is "*.c"
+ *
  * Input : char* s
  * Output : int
  *
  * verify that the 2 last letter of s are ".c", returns YES in this case,
  * else NO
- *
  */
 int checkname (char *s)
 {
@@ -129,13 +130,13 @@ int checkname (char *s)
 }
 
 /*
- *             kill
+ * kill
+ *
  * Input : nothing
  * Output : nothing but updates lptr and line[lptr]
  *
  * lptr and line[lptr] are set to zero what appears to clear the current
  * input line
- *
  */
 void kill (void)
 {
@@ -145,6 +146,7 @@ void kill (void)
 
 /*
  * unget_line
+ *
  * Input : # of characters to kill preceding what we see in line[lptr]
  * Output : nothing
  *
@@ -154,7 +156,6 @@ void kill (void)
  *
  * Only use this function for operations at the top level (ie. the
  * file pointer 'fp')
- *
  */
 void unget_line (void)
 {
@@ -171,13 +172,13 @@ void unget_line (void)
 
 
 /*
- *            readline
+ * readline
+ *
  * Input : nothing
  * Output : nothing
  *
  * This function seems to fill line and lptr variables with a line of text
- * coming either form an included file or the main one
- *
+ * coming either from an included file or the main one
  */
 void readline (void)
 {
@@ -215,16 +216,27 @@ void readline (void)
 			}
 		if (lptr) {
 			if ((ctext) & (cmode)) {
-				flush_ins();
-				comment();
-				tab();
-				tab();
-				tab();
-				tab();
-				tab();
-				tab();
-				outstr(line);
-				nl();
+				if (fexitlab) {
+					/* do not flush the instruction queue while compiling a function */
+					/* instead put the comment inline with the queued instructions */
+					char * temp = malloc(LINESIZE);
+					if (temp) {
+						memcpy(temp, line, LINESIZE);
+						out_ins(I_COMMENT, T_SOURCE_LINE, (intptr_t)temp);
+					}
+				}
+				else {
+					flush_ins();
+					comment();
+					tab();
+					tab();
+					tab();
+					tab();
+					tab();
+					tab();
+					outstr(line);
+					nl();
+				}
 			}
 			lptr = 0;
 			return;
@@ -233,13 +245,13 @@ void readline (void)
 }
 
 /*
- *              inbyte
+ * inbyte
+ *
  * Input : nothing
  * Output : int, (actualy char)
  *
  * Uses the preprocessor as much as possible to get readable data
  * then read the next char and make lptr points to the next one
- *
  */
 int inbyte (void)
 {
@@ -253,13 +265,13 @@ int inbyte (void)
 }
 
 /*
- *               inchar
+ * inchar
+ *
  * Input : nothing
  * Output : int, (actualy char)
  *
  * Returns the current char, making lptr points to the next one
  * If the buffer if empty, fill it with next line from input
- *
  */
 int inchar (void)
 {
@@ -272,14 +284,14 @@ int inchar (void)
 }
 
 /*
- *              gch
+ * gch
+ *
  * Input : nothing
  * Output : int, (actualy char)
  *
  * If the pointed char (by line and lptr) is 0, return this value
  * else return the current pointed char and advance the lptr to point
  * on the following char
- *
  */
 int gch (void)
 {
@@ -290,14 +302,14 @@ int gch (void)
 }
 
 /*
- *                 nch
+ * nch
+ *
  * Input : nothing
  * Output : int, (actualy char)
  *
  * If called when the pointed char is at the end of the line, return 0
  * else return the following char
  * Doesn't change line nor lptr variable
- *
  */
 int nch (void)
 {
@@ -308,7 +320,7 @@ int nch (void)
 }
 
 /*
- *           ch
+ * ch
  *
  * Input : nothing but use global line and lptr variables
  * Output : int, (actually char), corresponding to the current pointed char
@@ -316,7 +328,6 @@ int nch (void)
  *
  * Appears to be the major function used during the parsing.
  * The global variables line and lptr aren't changed
- *
  */
 int ch (void)
 {
@@ -324,11 +335,9 @@ int ch (void)
 }
 
 /*
- *	print a carriage return and a string only to console
- *
+ * print a carriage return and a string only to console
  */
 void pl (char *str)
-/*char	*str; */
 {
 	int k;
 
@@ -339,10 +348,9 @@ void pl (char *str)
 }
 
 /*
- *	glabel - generate label
+ * glabel - generate label
  */
 void glabel (char *lab)
-/*char	*lab;*/
 {
 	flush_ins();	/* David - optimize.c related */
 	prefix();
@@ -352,7 +360,7 @@ void glabel (char *lab)
 }
 
 /*
- *	gnlabel - generate numeric label
+ * gnlabel - generate numeric label
  */
 void gnlabel (int nlab)
 {
@@ -360,7 +368,7 @@ void gnlabel (int nlab)
 }
 
 /*
- *	Output internal generated label prefix
+ * Output internal generated label prefix
  */
 void olprfix (void)
 {
@@ -368,7 +376,7 @@ void olprfix (void)
 }
 
 /*
- *	Output a label definition terminator
+ * Output a label definition terminator
  */
 void col (void)
 {
@@ -376,8 +384,7 @@ void col (void)
 }
 
 /*
- *	begin a comment line for the assembler
- *
+ * begin a comment line for the assembler
  */
 void comment (void)
 {
@@ -385,7 +392,7 @@ void comment (void)
 }
 
 /*
- *	Output a prefix in front of user labels
+ * Output a prefix in front of user labels
  */
 void prefix (void)
 {
@@ -393,12 +400,12 @@ void prefix (void)
 }
 
 /*
- *               tab
+ * tab
+ *
  * Input : nothing
  * Output : nothing
  *
  * Write a tab charater in the assembler file
- *
  */
 void tab (void)
 {
@@ -406,28 +413,27 @@ void tab (void)
 }
 
 /*
- *               ol
+ * ol
+ *
  * Input : char* ptr
  * Output : nothing
  *
  * Writes the string ptr to the assembler file, preceded by a tab, ended by
  * a newline
- *
  */
 void ol (char *ptr)
-/*char ptr[]; */
 {
 	ot(ptr);
 	nl();
 }
 
 /*
- *                ot
+ * ot
+ *
  * Input : char* ptr
  * Output : nothing
  *
  * Writes the string ptr to the assembler file, preceded by a tab
- *
  */
 void ot (char *ptr)
 /*char ptr[]; */
@@ -437,12 +443,12 @@ void ot (char *ptr)
 }
 
 /*
- *            nl
+ * nl
+ *
  * Input : nothing
  * Output : nothing
  *
  * Display a newline in the assembler file
- *
  */
 void nl (void)
 {
@@ -450,12 +456,12 @@ void nl (void)
 }
 
 /*
- *         outsymbol
+ * outsymbol
+ *
  * Input : char* ptr
  * Output : nothing
  *
  * Writes the string ptr preceded with the result of the function prefix
- *
  */
 void outsymbol (SYMBOL *ptr)
 {
@@ -473,7 +479,7 @@ void outsymbol (SYMBOL *ptr)
 }
 
 /*
- *	print specified number as label
+ * print specified number as label
  */
 void outconst (int label)
 {
@@ -482,7 +488,7 @@ void outconst (int label)
 }
 
 /*
- *	print specified number as label
+ * print specified number as label
  */
 void outlabel (int label)
 {
@@ -491,10 +497,10 @@ void outlabel (int label)
 }
 
 /*
- *  Output a decimal number to the assembler file
+ * Output a decimal number to the assembler file
  */
 /*
-   void outdec (int number)
+void outdec (int number)
    {
         int	k, zs;
         char	c;
@@ -521,7 +527,9 @@ void outlabel (int label)
    }
  */
 
-/* Newer version, shorter and certainly faster */
+/*
+ * Newer version, shorter and certainly faster
+ */
 void outdec (int number)
 {
 	char s[16];
@@ -534,9 +542,8 @@ void outdec (int number)
 }
 
 /*
- *  Output an hexadecimal unsigned number to the assembler file
+ * Output an hexadecimal unsigned number to the assembler file
  */
-
 /*
    void outhex (int number)
    {
@@ -563,7 +570,9 @@ void outdec (int number)
    }
  */
 
-/* Newer version, shorter and certainly faster */
+/*
+ * Newer version, shorter and certainly faster
+ */
 void outhex (int number)
 {
 	int i = 0;
@@ -596,14 +605,13 @@ void outhexfix (int number, int length)
 		outbyte(s[i++]);
 }
 
-
 /*
- *             outbyte
+ * outbyte
+ *
  * Input : char c
  * Output : same as input, c
  *
  * if c is different of zero, write it to the output file
- *
  */
 char outbyte (char c)
 {
@@ -615,12 +623,12 @@ char outbyte (char c)
 }
 
 /*
- *               outstr
+ * outstr
+ *
  * Input : char*, ptr
  * Output : nothing
  *
  * Send the input char* to the assembler file
- *
  */
 void outstr (const char *ptr)
 {
@@ -631,12 +639,12 @@ void outstr (const char *ptr)
 }
 
 /*
- *         outlocal
+ * outlocal
+ *
  * Input : char* ptr
  * Output : nothing
  *
  * Writes the variable name as a comment
- *
  */
 void outlocal (SYMBOL *ptr)
 {

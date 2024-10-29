@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 #include <string.h>
 
@@ -288,6 +289,30 @@ void gen_code (INS *tmp)
 
 	switch (code) {
 
+	/* i-code for a text comment */
+
+	case I_COMMENT:
+		switch(type) {
+		case T_SOURCE_LINE:
+			if (data) {
+				comment();
+				tab();
+				tab();
+				tab();
+				tab();
+				tab();
+				tab();
+				outstr((char *)data);
+				nl();
+				free((void *)data);
+			}
+			break;
+		case T_LINE_NUMBER:
+			break;
+
+		}
+		break;
+
 	/* i-code that retires the primary register contents */
 
 	case I_FENCE:
@@ -429,7 +454,7 @@ void gen_code (INS *tmp)
 		break;
 
 	case I_RETURN:
-		ot("__return\t\t");
+		ot("__return\t");
 		outdec((int)data);
 		nl();
 		break;

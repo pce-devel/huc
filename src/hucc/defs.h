@@ -12,9 +12,13 @@
  * as the table of i-code flag information in optimize.c
  */
 enum ICODE {
+	/* i-code for a text comment */
+
+	I_COMMENT = 1,
+
 	/* i-code that retires the primary register contents */
 
-	I_FENCE = 1,
+	I_FENCE,
 
 	/* i-code that declares a byte sized primary register */
 
@@ -385,6 +389,8 @@ enum ICOMPARE {
 #define T_VRAM           9
 #define T_PAL           10
 #define T_LITERAL       11
+#define T_SOURCE_LINE   12
+#define T_LINE_NUMBER   13
 
 #define FOREVER for (;;)
 #define FALSE   0
@@ -528,7 +534,7 @@ struct tag_symbol {
 
 /* input line */
 
-#define LINESIZE        384
+#define LINESIZE        512
 #define LINEMAX (LINESIZE - 1)
 #define MPMAX   LINEMAX
 

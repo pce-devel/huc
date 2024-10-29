@@ -17,6 +17,15 @@
 /* flag information for each of the i-code instructions */
 extern unsigned char icode_flags[];
 
+/* defines */
+#define Q_SIZE		32
+
+/* instruction queue */
+extern INS q_ins[Q_SIZE];
+extern int q_rd;
+extern int q_wr;
+extern int q_nb;
+
 void push_ins (INS *ins);
 void flush_ins (void);
 void flush_ins_label (int nextlabel);

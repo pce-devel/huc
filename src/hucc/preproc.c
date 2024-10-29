@@ -612,7 +612,7 @@ int cpp (int subline)
 								parg[0] = c;
 								parg[1] = '\0';
 								if (++parg >= pend) {
-									error("macro argument too int");
+									error("macro argument too long");
 									return (0);
 								}
 								if (ch() == ')') {
@@ -681,7 +681,7 @@ int cpp (int subline)
 	}
 	keepch(0);
 	if (mptr >= MPMAX)
-		error("line too int");
+		error("line too long");
 	/* copy cooked input back to where we got the raw input from */
 	strcpy(&line[llptr], mline);
 	/* ...and continue processing at that point */
