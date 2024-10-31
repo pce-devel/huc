@@ -215,6 +215,7 @@ void readline (void)
 				fclose(unit);
 			}
 		if (lptr) {
+			char * filename = (inclsp) ? inclstk_name[inclsp - 1] : fname_copy;
 			if ((ctext) & (cmode)) {
 				if (fexitlab) {
 					/* do not flush the instruction queue while compiling a function */
@@ -222,19 +223,24 @@ void readline (void)
 					char * temp = malloc(LINESIZE);
 					if (temp) {
 						memcpy(temp, line, LINESIZE);
-						out_ins(I_COMMENT, T_SOURCE_LINE, (intptr_t)temp);
+						out_ins_ex_arg(I_COMMENT, T_SOURCE_LINE, (intptr_t)temp, T_VALUE, line_number, filename);
 					}
 				}
 				else {
+					char * source;
 					flush_ins();
 					comment();
 					tab();
 					tab();
 					tab();
-					tab();
-					tab();
-					tab();
-					outstr(line);
+					outstr(filename);
+					outstr(": ");
+					outdec(line_number);
+					outstr(": ");
+					source = line;
+					while (source[0] == ' ' || source[0] == '\t')
+						++source;
+					outstr(source);
 					nl();
 				}
 			}

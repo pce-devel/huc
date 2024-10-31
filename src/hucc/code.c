@@ -159,6 +159,21 @@ void out_ins_ex (int code, int type, intptr_t data, int imm_type, intptr_t imm_d
 	gen_ins(&tmp);
 }
 
+void out_ins_ex_arg (int code, int type, intptr_t data, int imm_type, intptr_t imm_data, char * string)
+{
+	INS tmp;
+
+	memset(&tmp, 0, sizeof(INS));
+
+	tmp.ins_code = code;
+	tmp.ins_type = type;
+	tmp.ins_data = data;
+	tmp.imm_type = imm_type;
+	tmp.imm_data = imm_data;
+	tmp.arg[0] = string;
+	gen_ins(&tmp);
+}
+
 void out_ins_sym (int code, int type, intptr_t data, SYMBOL *sym)
 {
 	INS tmp;
@@ -295,14 +310,22 @@ void gen_code (INS *tmp)
 		switch(type) {
 		case T_SOURCE_LINE:
 			if (data) {
+				char * source = (char *)data;
+				if (source)
+					while (source[0] == ' ' || source[0] == '\t')
+						++source;
+				nl();
 				comment();
 				tab();
 				tab();
 				tab();
-				tab();
-				tab();
-				tab();
-				outstr((char *)data);
+				if (tmp->arg[0]) {
+					outstr(tmp->arg[0]);
+				}
+				outstr(": ");
+				outdec((int)imm_data);
+				outstr(": ");
+				outstr(source);
 				nl();
 				free((void *)data);
 			}
@@ -556,13 +579,11 @@ void gen_code (INS *tmp)
 		ot("__bfalse\t");
 		outlabel((int)data);
 		nl();
-		nl();
 		break;
 
 	case I_BTRUE:
 		ot("__btrue\t\t");
 		outlabel((int)data);
-		nl();
 		nl();
 		break;
 

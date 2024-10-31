@@ -119,7 +119,7 @@ int main (int argc, char *argv[])
 	char *asmdefs_global_end;
 
 	macptr = 0;
-	ctext = 0;
+	ctext = 1;
 	argc--; argv++;
 	errs = 0;
 	sflag = 0;
@@ -296,8 +296,8 @@ unknown_option:
 					}
 				/* fallthrough */
 				case 'T':
-					ctext = 1;
-					fprintf(stderr, "\nwarning: Outputting C source to the listing file disables some optimizations!\n\n");
+					/* accept this but ignore it */
+//					ctext = 1;
 					break;
 
 				case 'v':
@@ -497,7 +497,7 @@ void usage (char *exename)
 	fprintf(stderr, "-Asym[=val]       define symbol 'sym' to assembler\n");
 	fprintf(stderr, "\nDebugging options:\n");
 	fprintf(stderr, "-g                enable extra debugging checks in output code\n");
-	fprintf(stderr, "-t/-T             include C source code in assembler output/listings\n");
+//	fprintf(stderr, "-t/-T             include C source code in assembler output/listings\n");
 	fprintf(stderr, "-v/-V             increase verbosity of output files\n\n");
 	exit(1);
 }

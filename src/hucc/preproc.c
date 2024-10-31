@@ -258,6 +258,7 @@ FILE *fixiname (void)
  */
 void doasm (void)
 {
+	char * source;
 	/* Save the SP if this #asm section is inside a function */
 	if (fexitlab)
 		out_ins(I_SAVESP, 0, 0);
@@ -269,16 +270,36 @@ void doasm (void)
 			break;
 		if (feof(input))
 			break;
+#if 1
+		source = line;
+		if (source[0] == ' ' || source[0] == '\t') {
+			while (source[0] == ' ' || source[0] == '\t')
+				++source;
+			tab();
+			tab();
+		}
+		outstr(source);
+#else
 		outstr(line);
+#endif
 		nl();
 	}
-	kill();
-	cmode = 1;
 	/* Restore the SP if this #asm section is inside a function */
 	if (fexitlab) {
 		out_ins(I_LOADSP, 0, 0);
-		flush_ins();	/* David - optimize.c related */
 	}
+	/* Mark the end of the #asm section */
+	if (ctext) {
+		char * temp = malloc(LINESIZE);
+		char * filename = (inclsp) ? inclstk_name[inclsp - 1] : fname_copy;
+		if (temp) {
+			memcpy(temp, line, LINESIZE);
+			out_ins_ex_arg(I_COMMENT, T_SOURCE_LINE, (intptr_t)temp, T_VALUE, line_number, filename);
+			}
+	}
+	flush_ins();	/* David - optimize.c related */
+	kill();
+	cmode = 1;
 }
 
 void doasmdef (void)

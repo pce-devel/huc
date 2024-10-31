@@ -379,8 +379,9 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 
 	flush_ins();	/* David, .proc directive support */
 	gtext();
-	comment();
-	outstr("*******\n\n");
+	outstr(";***********************\n");
+	outstr(";***********************\n");
+	nl();
 	ol(".hucc");
 	ot(".proc\t\t");
 	prefix();
