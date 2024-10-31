@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -610,7 +611,6 @@ decode_16(FILE *f, int w, int h)
 	pcx_nb_colors = 16;
 }
 
-#include <stdint.h>
 #pragma pack(1)
 typedef struct
 {

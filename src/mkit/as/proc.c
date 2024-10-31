@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -991,12 +992,14 @@ list_procs(void)
 	struct t_proc *proc_ptr = proc_first;
 
 	if ((lst_fp != NULL) && (proc_ptr != NULL) && (fprintf(lst_fp, "\nPROCEDURE LIST (in order of size):\n\n") > 0)) {
+		++lst_line;
 		while (proc_ptr) {
 			if ((proc_ptr->group == NULL) && (proc_ptr->bank < UNDEFINED_BANK)) {
 				if (fprintf(lst_fp, "Size: $%04X, Addr: $%02X:%04X, %s %s\n", proc_ptr->size, proc_ptr->bank, proc_ptr->label->value,
 					(proc_ptr->type == P_PGROUP) ? ".procgroup" : "     .proc" , proc_ptr->label->name + 1) < 0)
 					break;
 			}
+			++lst_line;
 			proc_ptr = proc_ptr->link;
 		}
 	}

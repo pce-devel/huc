@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -1169,6 +1170,8 @@ do_incbin(int *ip)
 
 		/* load data on last pass */
 		if (pass == LAST_PASS) {
+			uint32_t info, *fill;
+
 			fread(&rom[bank][loccnt], 1, size, fp);
 
 			if (section == S_DATA && asm_opt[OPT_DATAPAGE] != 0)
@@ -1186,6 +1189,12 @@ do_incbin(int *ip)
 					addr += step;
 					left -= step;
 				}
+
+			info = DBGINFO;
+			fill = &dbg[bank][loccnt];
+			step = size;
+			while (step--)
+				*fill++ = info;
 			}
 
 			/* output line */
@@ -1604,6 +1613,8 @@ do_ds(int *ip)
 
 	/* output line on last pass */
 	if (pass == LAST_PASS) {
+		uint32_t info, *fill;
+
 		if (filler != 0) {
 			if (section == S_ZP)
 				error("Cannot fill .ZP section with non-zero data!");
@@ -1630,6 +1641,12 @@ do_ds(int *ip)
 					addr += step;
 					left -= step;
 				}
+
+			info = DBGINFO;
+			fill = &dbg[bank][loccnt];
+			step = nbytes;
+			while (step--)
+				*fill++ = info;
 			}
 		}
 	}
@@ -1931,8 +1948,16 @@ do_align(int *ip)
 				page = (page + 1) & 7;
 		} else {
 			if (section == S_CODE || section == S_DATA) {
+				uint32_t info, *fill;
+
 				memset(&rom[bank][oldloc], 0, loccnt - oldloc);
 				memset(&map[bank][oldloc], section + (page << 5), loccnt - oldloc);
+
+				info = DBGINFO;
+				fill = &dbg[bank][oldloc];
+				offset = loccnt - oldloc;
+				while (offset--)
+					*fill++ = info;
 			}
 		}
 	}

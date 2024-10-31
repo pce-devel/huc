@@ -25,6 +25,7 @@
  */
 
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -55,6 +56,7 @@ char zeroes[2048];	/* CDROM sector full of zeores */
 char *prg_name;		/* program name */
 FILE *in_fp;		/* file pointers, input */
 FILE *lst_fp;		/* listing */
+int lst_line;		/* listing */
 char *section_name[MAX_S + 1] = {
 	"NULL",
 	"ZP",
@@ -845,6 +847,7 @@ main(int argc, char **argv)
 					exit(1);
 				}
 				fprintf(lst_fp, "#[1]   \"%s\"\n", input_file[1].file->name);
+				++lst_line;
 			}
 
 			/* relocate procs */

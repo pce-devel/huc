@@ -39,6 +39,11 @@
 /* total number of banks to allocate for workspace */
 #define MAX_BANKS	(ROM_BANKS + RESERVED_BANKS)
 
+/* number of bits to shift the source line number */
+#define DBGLINE 10
+#define DBGMASK ((1 << DBGLINE) - 1)
+#define DBGINFO ((slnum << DBGLINE) + input_file[infile_num].file->number)
+
 /* tile format for encoder */
 #define CHUNKY_TILE	1
 #define PACKED_TILE	2

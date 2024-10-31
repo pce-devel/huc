@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -546,9 +547,10 @@ open_input(const char *name)
 	input_file[infile_num].fp = fp;
 	input_file[infile_num].if_level = if_level;
 	input_file[infile_num].file = file;
-	if ((pass == LAST_PASS) && (xlist) && (list_level))
+	if ((pass == LAST_PASS) && (xlist) && (list_level)) {
 		fprintf(lst_fp, "#[%i]   \"%s\"\n", infile_num, input_file[infile_num].file->name);
-
+		++lst_line;
+	}
 	/* ok */
 	return (0);
 }
@@ -587,9 +589,10 @@ close_input(void)
 	infile_error = -1;
 	slnum = input_file[infile_num].lnum;
 	in_fp = input_file[infile_num].fp;
-	if ((pass == LAST_PASS) && (xlist) && (list_level))
+	if ((pass == LAST_PASS) && (xlist) && (list_level)) {
 		fprintf(lst_fp, "#[%i]   \"%s\"\n", infile_num, input_file[infile_num].file->name);
-
+		++lst_line;
+	}
 	/* ok */
 	return (0);
 }
