@@ -99,6 +99,7 @@ unsigned char icode_flags[] = {
 
 	/* I_SWITCH_WR          */	IS_USEPR,
 	/* I_SWITCH_UR          */	IS_USEPR,
+	/* I_DEFAULT            */	0,
 	/* I_CASE               */	0,
 	/* I_ENDCASE            */	0,
 	/* I_LABEL              */	0,
@@ -2068,6 +2069,10 @@ lv1_loop:
 			 *  __endcase
 			 *  LLnn:
 			 *
+			 *  __default			-->	LLnn:
+			 *  __endcase
+			 *  LLnn:
+			 *
 			 *  I_ENDCASE is only generated in order to catch which
 			 *  case statements could fall through to the next case
 			 *  so that an SAX instruction could be generated if or
@@ -2079,7 +2084,8 @@ lv1_loop:
 			if
 			((p[0]->ins_code == I_LABEL) &&
 			 (p[1]->ins_code == I_ENDCASE) &&
-			 (p[2]->ins_code == I_CASE)
+			 (p[2]->ins_code == I_CASE ||
+			  p[2]->ins_code == I_DEFAULT)
 			) {
 				/* remove code */
 				*p[2] = *p[0];

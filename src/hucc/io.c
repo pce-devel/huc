@@ -229,12 +229,9 @@ void readline (void)
 				else {
 					char * source;
 					flush_ins();
-					comment();
-					tab();
-					tab();
-					tab();
+					ot(".line\t\t\"");
 					outstr(filename);
-					outstr(": ");
+					outstr("\": ");
 					outdec(line_number);
 					outstr(": ");
 					source = line;

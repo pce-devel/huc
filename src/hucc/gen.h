@@ -21,6 +21,7 @@ void gaslint (void);
 void gasrint (void);
 void gswitch (int nlab);
 void gcase (int nlab, int value);
+void gdefault (int nlab);
 void gadd (LVALUE *lval, LVALUE *lval2);
 void gsub (void);
 void gmult (int is_unsigned);

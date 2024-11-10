@@ -315,14 +315,11 @@ void gen_code (INS *tmp)
 					while (source[0] == ' ' || source[0] == '\t')
 						++source;
 				nl();
-				comment();
-				tab();
-				tab();
-				tab();
+				ot(".line\t\t\"");
 				if (tmp->arg[0]) {
 					outstr(tmp->arg[0]);
 				}
-				outstr(": ");
+				outstr("\": ");
 				outdec((int)imm_data);
 				outstr(": ");
 				outstr(source);
@@ -448,7 +445,7 @@ void gen_code (INS *tmp)
 		   in HuC we get a string and not a symbol */
 		switch (type) {
 		case T_LITERAL:
-			ot("  call\t\t");
+			ot("__call\t\t");
 			prefix();
 			outstr((const char *)data);
 			if (imm_data) {
@@ -545,6 +542,10 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case I_DEFAULT:
+		ol("__default");
+		break;
+
 	case I_CASE:
 		ot("__case\t\t");
 		if (type == T_VALUE)
@@ -553,8 +554,7 @@ void gen_code (INS *tmp)
 		break;
 
 	case I_ENDCASE:
-		ot("__endcase");
-		nl();
+		ol("__endcase");
 		break;
 
 	case I_LABEL:

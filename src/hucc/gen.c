@@ -281,16 +281,23 @@ void gswitch (int nlab)
 }
 
 /*
- *	mark the start of a case or default statement
+ *	mark the start of a case statement
  */
 void gcase (int nlab, int value)
 {
 	out_ins(I_ENDCASE, 0, 0);
 	gnlabel(nlab);
-	if (value == INT_MAX)
-		out_ins(I_CASE, 0, 0);
-	else
-		out_ins(I_CASE, T_VALUE, value);
+	out_ins(I_CASE, T_VALUE, value);
+}
+
+/*
+ *	mark the start of a default statement
+ */
+void gdefault (int nlab)
+{
+	out_ins(I_ENDCASE, 0, 0);
+	gnlabel(nlab);
+	out_ins(I_DEFAULT, 0, 0);
 }
 
 /*

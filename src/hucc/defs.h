@@ -64,6 +64,7 @@ enum ICODE {
 
 	I_SWITCH_WR,
 	I_SWITCH_UR,
+	I_DEFAULT,
 	I_CASE,
 	I_ENDCASE,
 	I_LABEL,
@@ -509,7 +510,7 @@ struct tag_symbol {
 #define WS_INCR_LABEL     4
 #define WS_DEFAULT_LABEL  4
 #define WS_BODY_LABEL     5
-#define WS_TABLE_LABEL    5	/* label for dumpswitch() data table */
+#define WS_SWITCH_LABEL   5
 #define WS_EXIT_LABEL     6
 
 /* possible entries for "WS_TYPE" */
