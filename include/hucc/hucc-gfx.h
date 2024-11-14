@@ -83,8 +83,14 @@ extern void __fastcall sgx_set_tile_address( unsigned int vram<acc> );
 extern void __fastcall __xsafe __nop set_tile_data( unsigned char __far *tiles<vdc_tile_bank:vdc_tile_addr>, unsigned char num_tiles<vdc_num_tiles>, unsigned char __far *palette_table<vdc_attr_bank:vdc_attr_addr>, unsigned char tile_type<vdc_tile_type> );
 extern void __fastcall __xsafe __nop sgx_set_tile_data( unsigned char __far *tiles<sgx_tile_bank:sgx_tile_addr>, unsigned char num_tiles<sgx_num_tiles>, unsigned char __far *palette_table<sgx_attr_bank:sgx_attr_addr>, unsigned char tile_type<sgx_tile_type> );
 
+extern void __fastcall __xsafe __nop set_far_tile_data( unsigned char tile_bank<vdc_tile_bank>, unsigned char *tile_addr<vdc_tile_addr>, unsigned char num_tiles<vdc_num_tiles>, unsigned char palette_table_bank<vdc_attr_bank>, unsigned char *palette_table_addr<vdc_attr_addr>, unsigned char tile_type<vdc_tile_type> );
+extern void __fastcall __xsafe __nop sgx_set_far_tile_data( unsigned char tile_bank<vdc_tile_bank>, unsigned char *tile_addr<vdc_tile_addr>, unsigned char num_tiles<vdc_num_tiles>, unsigned char palette_table_bank<vdc_attr_bank>, unsigned char *palette_table_addr<vdc_attr_addr>, unsigned char tile_type<vdc_tile_type> );
+
 extern void __fastcall __xsafe load_vram( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned int num_words<_ax> );
 extern void __fastcall __xsafe sgx_load_vram( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned int num_words<_ax> );
+
+extern void __fastcall __xsafe far_load_vram( unsigned int vram<_di>, unsigned char data_bank<_bp_bank>, unsigned char *data_addr<_bp>, unsigned int num_words<_ax> );
+extern void __fastcall __xsafe sgx_far_load_vram( unsigned int vram<_di>, unsigned char data_bank<_bp_bank>, unsigned char *data_addr<_bp>, unsigned int num_words<_ax> );
 
 extern void __fastcall __xsafe load_tile( unsigned int vram<_di> );
 extern void __fastcall __xsafe sgx_load_tile( unsigned int vram<_di> );
@@ -92,13 +98,20 @@ extern void __fastcall __xsafe sgx_load_tile( unsigned int vram<_di> );
 extern void __fastcall __xsafe load_bat( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned char tiles_w<_al>, unsigned char tiles_h<_ah> );
 extern void __fastcall __xsafe sgx_load_bat( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned char tiles_w<_al>, unsigned char tiles_h<_ah> );
 
+extern void __fastcall __xsafe far_load_bat( unsigned int vram<_di>, unsigned char data_bank<_bp_bank>, unsigned char *data_addr<_bp>, unsigned char tiles_w<_al>, unsigned char tiles_h<_ah> );
+extern void __fastcall __xsafe far_sgx_load_bat( unsigned int vram<_di>, unsigned char data_bank<_bp_bank>, unsigned char *data_addr<_bp>, unsigned char tiles_w<_al>, unsigned char tiles_h<_ah> );
+
 extern void __fastcall __xsafe load_palette( unsigned char palette<_al>, unsigned char __far *data<_bp_bank:_bp>, unsigned char num_palettes<_ah> );
+
+extern void __fastcall __xsafe far_load_palette( unsigned char palette<_al>, unsigned char data_bank<_bp_bank>, unsigned char *data_addr<_bp>, unsigned char num_palettes<_ah> );
 
 extern void __fastcall __xsafe set_font_addr( unsigned int vram<acc> );
 extern void __fastcall __xsafe set_font_pal( unsigned char palette<acc> );
 
 extern void __fastcall __xsafe load_font( char __far *font<_bp_bank:_bp>, unsigned char count<_al> );
 extern void __fastcall __xsafe load_font( char __far *font<_bp_bank:_bp>, unsigned char count<_al>, unsigned int vram<acc> );
+
+extern void __fastcall __xsafe far_load_font( unsigned char font_bank<_bp_bank>, unsigned char *font_addr<_bp>, unsigned char count<_al>, unsigned int vram<acc> );
 
 extern void __fastcall __xsafe __nop set_font_color( unsigned char foreground<monofont_fg>, unsigned char background<monofont_bg> );
 extern void __fastcall __xsafe load_default_font( void );
