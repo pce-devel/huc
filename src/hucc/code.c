@@ -304,9 +304,9 @@ void gen_code (INS *tmp)
 
 	switch (code) {
 
-	/* i-code for a text comment */
+	/* i-code for debug information */
 
-	case I_COMMENT:
+	case I_DEBUG:
 		switch(type) {
 		case T_SOURCE_LINE:
 			if (data) {
@@ -315,13 +315,13 @@ void gen_code (INS *tmp)
 					while (source[0] == ' ' || source[0] == '\t')
 						++source;
 				nl();
-				ot(".line\t\t\"");
+				ot(".dbg\tline,\t\"");
 				if (tmp->arg[0]) {
 					outstr(tmp->arg[0]);
 				}
-				outstr("\": ");
+				outstr("\", ");
 				outdec((int)imm_data);
-				outstr(": ");
+				outstr("; ");
 				outstr(source);
 				nl();
 				free((void *)data);

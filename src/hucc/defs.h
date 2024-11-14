@@ -12,9 +12,9 @@
  * as the table of i-code flag information in optimize.c
  */
 enum ICODE {
-	/* i-code for a text comment */
+	/* i-code for debug information */
 
-	I_COMMENT = 1,
+	I_DEBUG = 1,
 
 	/* i-code that retires the primary register contents */
 

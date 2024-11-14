@@ -223,17 +223,17 @@ void readline (void)
 					char * temp = malloc(LINESIZE);
 					if (temp) {
 						memcpy(temp, line, LINESIZE);
-						out_ins_ex_arg(I_COMMENT, T_SOURCE_LINE, (intptr_t)temp, T_VALUE, line_number, filename);
+						out_ins_ex_arg(I_DEBUG, T_SOURCE_LINE, (intptr_t)temp, T_VALUE, line_number, filename);
 					}
 				}
 				else {
 					char * source;
 					flush_ins();
-					ot(".line\t\t\"");
+					ot(".dbg\tline,\t\"");
 					outstr(filename);
-					outstr("\": ");
+					outstr("\", ");
 					outdec(line_number);
-					outstr(": ");
+					outstr("; ");
 					source = line;
 					while (source[0] == ' ' || source[0] == '\t')
 						++source;

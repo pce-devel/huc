@@ -47,9 +47,9 @@
 unsigned char icode_flags[] = {
 	0,
 
-	// i-code for a text comment
+	// i-code for debug information
 
-	/* I_COMMENT            */	0,
+	/* I_DEBUG              */	0,
 
 	// i-code that retires the primary register contents
 
@@ -505,7 +505,7 @@ void push_ins (INS *ins)
 	q_ins[q_wr] = *ins;
 
 	/* can't optimize a comment */
-	if (ins->ins_code == I_COMMENT)
+	if (ins->ins_code == I_DEBUG)
 		return;
 
 #ifdef DEBUG_OPTIMIZER
@@ -527,7 +527,7 @@ lv1_loop:
 			q_nb -= remove;
 			i = q_wr;
 			while (remove) {
-				if (q_ins[i].ins_code != I_COMMENT)
+				if (q_ins[i].ins_code != I_DEBUG)
 					--remove;
 				if ((--i) < 0)
 					i += Q_SIZE;
@@ -536,7 +536,7 @@ lv1_loop:
 			do {
 				if ((++j) >= Q_SIZE)
 					j -= Q_SIZE;
-				if (q_ins[j].ins_code == I_COMMENT) {
+				if (q_ins[j].ins_code == I_DEBUG) {
 					if ((++i) >= Q_SIZE)
 						i -= Q_SIZE;
 					memcpy(&q_ins[i], &q_ins[j], sizeof(INS));
@@ -550,7 +550,7 @@ lv1_loop:
 		i = q_nb;
 		j = q_wr;
 		while (i != 0 && p_nb < 6) {
-			if (q_ins[j].ins_code != I_COMMENT) {
+			if (q_ins[j].ins_code != I_DEBUG) {
 #ifdef DEBUG_OPTIMIZER
 				printf("%d ", p_nb); dump_ins(&q_ins[j]);
 #endif
@@ -1924,7 +1924,7 @@ lv1_loop:
 						}
 					}
 					else
-					if (q_ins[j].ins_code != I_COMMENT)
+					if (q_ins[j].ins_code != I_DEBUG)
 						break;
 				}
 			}
@@ -3385,7 +3385,7 @@ lv2_loop:
 			q_nb -= remove;
 			i = q_wr;
 			while (remove) {
-				if (q_ins[i].ins_type != I_COMMENT)
+				if (q_ins[i].ins_type != I_DEBUG)
 					--remove;
 				if ((--i) < 0)
 					i += Q_SIZE;
@@ -3394,7 +3394,7 @@ lv2_loop:
 			do {
 				if ((++j) >= Q_SIZE)
 					j -= Q_SIZE;
-				if (q_ins[j].ins_type == I_COMMENT) {
+				if (q_ins[j].ins_type == I_DEBUG) {
 					if ((++i) >= Q_SIZE)
 						i -= Q_SIZE;
 					memcpy(&q_ins[i], &q_ins[j], sizeof(INS));
@@ -3408,7 +3408,7 @@ lv2_loop:
 		i = q_nb;
 		j = q_wr;
 		while (i != 0 && p_nb < 3) {
-			if (q_ins[j].ins_type != I_COMMENT) {
+			if (q_ins[j].ins_type != I_DEBUG) {
 				p[p_nb++] = &q_ins[j];
 			}
 			--i;

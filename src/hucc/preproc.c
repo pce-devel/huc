@@ -294,7 +294,7 @@ void doasm (void)
 		char * filename = (inclsp) ? inclstk_name[inclsp - 1] : fname_copy;
 		if (temp) {
 			memcpy(temp, line, LINESIZE);
-			out_ins_ex_arg(I_COMMENT, T_SOURCE_LINE, (intptr_t)temp, T_VALUE, line_number, filename);
+			out_ins_ex_arg(I_DEBUG, T_SOURCE_LINE, (intptr_t)temp, T_VALUE, line_number, filename);
 			}
 	}
 	flush_ins();	/* David - optimize.c related */
