@@ -141,6 +141,10 @@ do_call(int *ip)
 	if (!evaluate(ip, ';', 0))
 		return;
 
+	/* remember what labels are function calls */
+	if (optype == 0 && expr_lablptr != NULL)
+		expr_lablptr->flags |= FLG_FUNCTION;
+
 	/* generate code */
 	if (pass == LAST_PASS) {
 		/* lookup proc table */
@@ -179,11 +183,11 @@ do_call(int *ip)
 
 		/* opcode */
 		if (optype == 0)
-			putbyte(data_loccnt, 0x20); /* JSR */
+			putbyte(data_loccnt, 0x20, CODE_OUT); /* JSR */
 		else
-			putbyte(data_loccnt, 0x4C); /* JMP */
+			putbyte(data_loccnt, 0x4C, CODE_OUT); /* JMP */
 
-		putword(data_loccnt+1, value);
+		putword(data_loccnt+1, value, CODE_OUT);
 
 		/* output line */
 		println();
@@ -215,11 +219,11 @@ do_leave(int *ip)
 	if (pass == LAST_PASS) {
 		if (newproc_opt != 0) {
 			/* "jmp" opcode */
-			putbyte(data_loccnt, 0x4C);
-			putword(data_loccnt+1, call_1st - 4);
+			putbyte(data_loccnt, 0x4C, CODE_OUT);
+			putword(data_loccnt+1, call_1st - 4, CODE_OUT);
 		} else {
 			/* "rts" opcode */
-			putbyte(data_loccnt, 0x60);
+			putbyte(data_loccnt, 0x60, CODE_OUT);
 		}
 
 		/* output line */
@@ -391,6 +395,10 @@ do_proc(int *ip)
 
 	/* define label */
 	labldef(LOCATION);
+
+	/* remember what labels are function calls */
+	if (optype != P_PGROUP && lablptr != NULL)
+		lablptr->flags |= FLG_FUNCTION;
 
 	/* a KickC procedure also opens a label-scope */
 	if (optype == P_KICKC) {

@@ -391,7 +391,7 @@ pce_pal(int *ip)
 		error("Incorrect palette index!");
 		return;
 	}
-	lastlabl->pal = value;
+	lastlabl->palette = value;
 
 	/* output line */
 	if (pass == LAST_PASS) {
@@ -439,7 +439,7 @@ pce_defchr(int *ip)
 			error("Incorrect palette index!");
 			return;
 		}
-		lablptr->pal = value;
+		lablptr->palette = value;
 	}
 
 	/* get tile data */
@@ -500,7 +500,7 @@ pce_defpal(int *ip)
 			color = (g << 6) + (r << 3) + (b);
 
 			/* store color */
-			putword(loccnt, color);
+			putword(loccnt, color, DATA_OUT);
 		}
 
 		/* update location counter */
@@ -561,7 +561,7 @@ pce_defspr(int *ip)
 			error("Incorrect palette index!");
 			return;
 		}
-		lablptr->pal = value;
+		lablptr->palette = value;
 	}
 
 	/* get sprite data */
@@ -1157,7 +1157,7 @@ pce_incmap(int *ip)
 
 			/* store tile index */
 			if (pass == LAST_PASS)
-				putbyte(loccnt, tile & 0xFF);
+				putbyte(loccnt, tile & 0xFF, DATA_OUT);
 
 			/* update location counter */
 			loccnt++;

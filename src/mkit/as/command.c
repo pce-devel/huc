@@ -91,7 +91,8 @@ unsigned short pseudo_allowed[] = {
 /* P_3PASS       */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
 /* P_ALIAS       */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
 /* P_REF         */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
-/* P_PHASE       */	IN_CODE + IN_HOME
+/* P_PHASE       */	IN_CODE + IN_HOME,
+/* P_LINE        */	ANYWHERE
 };
 
 
@@ -364,7 +365,7 @@ do_db(int *ip)
 				/* store char on last pass */
 				if (pass == LAST_PASS) {
 					/* store character */
-					putbyte(loccnt, c);
+					putbyte(loccnt, c, DATA_OUT);
 				}
 
 				/* update location counter */
@@ -401,7 +402,7 @@ do_db(int *ip)
 				}
 
 				/* store byte */
-				putbyte(loccnt - 1, value);
+				putbyte(loccnt - 1, value, DATA_OUT);
 			}
 		}
 
@@ -493,7 +494,7 @@ do_dw(int *ip)
 			}
 
 			/* store word */
-			putword(loccnt - 2, value);
+			putword(loccnt - 2, value, DATA_OUT);
 		}
 
 		/* check if there's another word */
@@ -576,7 +577,7 @@ do_dwl(int *ip)
 			}
 
 			/* store word */
-			putbyte(loccnt - 1, (value & 0xff));
+			putbyte(loccnt - 1, (value & 0xff), DATA_OUT);
 		}
 
 		/* check if there's another word */
@@ -659,7 +660,7 @@ do_dwh(int *ip)
 			}
 
 			/* store word */
-			putbyte(loccnt - 1, ((value >> 8) & 0xff));
+			putbyte(loccnt - 1, ((value >> 8) & 0xff), DATA_OUT);
 		}
 
 		/* check if there's another word */
@@ -1171,6 +1172,7 @@ do_incbin(int *ip)
 		/* load data on last pass */
 		if (pass == LAST_PASS) {
 			uint32_t info, *fill;
+			int is_code = DATA_OUT;
 
 			fread(&rom[bank][loccnt], 1, size, fp);
 
@@ -1356,7 +1358,7 @@ do_mx(char *fname)
 				/* copy data */
 				if (pass == LAST_PASS) {
 					for (i = 0; i < cnt; i++)
-						putbyte(loccnt + i, buffer[i]);
+						putbyte(loccnt + i, buffer[i], DATA_OUT);
 				}
 
 				/* update location counter */
@@ -1614,6 +1616,7 @@ do_ds(int *ip)
 	/* output line on last pass */
 	if (pass == LAST_PASS) {
 		uint32_t info, *fill;
+		int is_code = DATA_OUT;
 
 		if (filler != 0) {
 			if (section == S_ZP)
@@ -1949,6 +1952,7 @@ do_align(int *ip)
 		} else {
 			if (section == S_CODE || section == S_DATA) {
 				uint32_t info, *fill;
+				int is_code = DATA_OUT;
 
 				memset(&rom[bank][oldloc], 0, loccnt - oldloc);
 				memset(&map[bank][oldloc], section + (page << 5), loccnt - oldloc);
@@ -2455,7 +2459,7 @@ do_alias(int *ip)
 		error("Symbol already used by a label!");
 		return;
 	}
-	if (lablptr->reserved) {
+	if (lablptr->flags & FLG_RESERVED) {
 		error("Reserved symbol!");
 		return;
 	}
@@ -2516,7 +2520,7 @@ do_alias(int *ip)
 			error("Cannot create a .ALIAS to a function!");
 			return;
 		}
-		if (alias->reserved) {
+		if (alias->flags & FLG_RESERVED) {
 			error("Cannot create a .ALIAS to a reserved symbol!");
 			return;
 		}
@@ -2641,6 +2645,26 @@ do_phase(int *ip)
 
 
 /* ----
+ * do_debug()
+ * ----
+ * .dbg pseudo for C source code debugging
+ */
+
+void
+do_debug(int *ip)
+{
+	/* set label value if there was one */
+	labldef(LOCATION);
+
+	/* output line on last pass */
+	if (pass == LAST_PASS) {
+//		loadlc(loccnt, 0);
+		println();
+	}
+}
+
+
+/* ----
  * htoi()
  * ----
  */
@@ -2671,12 +2695,12 @@ htoi(char *str, int nb)
 
 
 /* ----
- * set_section(int new_section)
+ * set_section(unsigned char new_section)
  * ----
  */
 
 void
-set_section(int new_section)
+set_section(unsigned char new_section)
 {
 	if (section != new_section) {
 		/* backup current section data */

@@ -11,6 +11,7 @@
 int file_count;
 t_str_pool * str_pool;
 t_file * file_hash[HASH_COUNT];
+t_file ** file_list;
 
 #define INCREMENT_BASE 256
 #define INCREMENT_BASE_MASK 255
@@ -407,7 +408,7 @@ remember_string(const char * string, size_t size)
 {
 	const char * output;
 
-	if ((str_pool == NULL) || (str_pool->remain < size)) {
+	if ((str_pool == NULL) || (str_pool->remain < (int) size)) {
 		t_str_pool *temp = malloc(sizeof(t_str_pool));
 		if (temp == NULL)
 			return (NULL);
@@ -464,6 +465,34 @@ clear_included(void)
 		file = file_hash[i];
 		while (file) {
 			file->included = 0;
+			file = file->next;
+		}
+	}
+}
+
+
+/* ----
+ * make_filelist()
+ * ----
+ * create a numerical list of the files used
+ */
+
+void
+make_filelist(void)
+{
+	t_file *file;
+	int i;
+
+	file_list = calloc(file_count + 1, sizeof(t_file *));
+	if (file_list == NULL) {
+		fprintf(ERROUT, "Error: Cannot create debug filelist!\n");
+		exit(1);
+	}
+
+	for (i = 0; i < HASH_COUNT; i++) {
+		file = file_hash[i];
+		while (file) {
+			file_list[file->number] = file;
 			file = file->next;
 		}
 	}
@@ -548,6 +577,7 @@ open_input(const char *name)
 	input_file[infile_num].if_level = if_level;
 	input_file[infile_num].file = file;
 	if ((pass == LAST_PASS) && (xlist) && (list_level)) {
+		fprintf(lst_fp, "%*c", SFIELD-1, ' ');
 		fprintf(lst_fp, "#[%i]   \"%s\"\n", infile_num, input_file[infile_num].file->name);
 		++lst_line;
 	}
@@ -590,6 +620,7 @@ close_input(void)
 	slnum = input_file[infile_num].lnum;
 	in_fp = input_file[infile_num].fp;
 	if ((pass == LAST_PASS) && (xlist) && (list_level)) {
+		fprintf(lst_fp, "%*c", SFIELD-1, ' ');
 		fprintf(lst_fp, "#[%i]   \"%s\"\n", infile_num, input_file[infile_num].file->name);
 		++lst_line;
 	}

@@ -40,9 +40,16 @@
 #define MAX_BANKS	(ROM_BANKS + RESERVED_BANKS)
 
 /* number of bits to shift the source line number */
-#define DBGLINE 10
-#define DBGMASK ((1 << DBGLINE) - 1)
-#define DBGINFO ((slnum << DBGLINE) + input_file[infile_num].file->number)
+#define DBGLINE 12
+#define DBGMASK ((1 << DBGLINE) - 4)
+
+// #define DBGINFO ((((slnum - 1) << DBGLINE) + (input_file[infile_num].file->number << 2)) + is_code)
+#define DBGINFO ((((lst_line - 1) << DBGLINE) + (lst_tfile->number << 2)) + is_code)
+
+/* type of ROM output for DBGINFO */
+#define DATA_OUT 0
+#define FUNC_OUT 1
+#define CODE_OUT 2
 
 /* tile format for encoder */
 #define CHUNKY_TILE	1
@@ -180,8 +187,9 @@
 #define P_ALIAS		66	// .alias
 #define P_REF		67	// .ref
 #define P_PHASE		68	// .phase
+#define P_DEBUG		69	// .dbg
 
-/* symbol flags */
+/* symbol type */
 #define UNDEF	1	/* undefined - may be zero page */
 #define IFUNDEF 2	/* declared in a .if expression */
 #define MDEF	3	/* multiply defined */
@@ -189,6 +197,10 @@
 #define MACRO	5	/* used for a macro name */
 #define FUNC	6	/* used for a function */
 #define ALIAS	7	/* used for an alias */
+
+/* symbol flags */
+#define FLG_RESERVED 1
+#define FLG_FUNCTION 2
 
 /* symbol lookup flags */
 #define SYM_CHK	0	/* does it exist? */
@@ -295,26 +307,26 @@ typedef struct t_symbol {
 	const char *name;
 	struct t_file *fileinfo;
 	int fileline;
-	int reason;
-	int type;
+	int deflastpass;
+	int defthispass;
+	int reflastpass;
+	int refthispass;
+	int rombank;
+	int mprbank;
 	int value;
 	int phase;
-	int section;
-	int overlay;
-	int mprbank;
-	int rombank;
-	int page;
 	int nb;
 	int size;
 	int vram;
-	int pal;
-	int reserved;
-	int data_type;
 	int data_size;
-	int deflastpass;
-	int reflastpass;
-	int defthispass;
-	int refthispass;
+	unsigned char data_type;
+	unsigned char section;
+	unsigned char overlay;
+	unsigned char page;
+	unsigned char reason;
+	unsigned char type;
+	unsigned char flags;
+	unsigned char palette;
 } t_symbol;
 
 typedef struct t_branch {

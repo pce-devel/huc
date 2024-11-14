@@ -56,7 +56,8 @@ char zeroes[2048];	/* CDROM sector full of zeores */
 char *prg_name;		/* program name */
 FILE *in_fp;		/* file pointers, input */
 FILE *lst_fp;		/* listing */
-int lst_line;		/* listing */
+int lst_line = 1;	/* listing */
+t_file * lst_tfile;	/* listing */
 char *section_name[MAX_S + 1] = {
 	"NULL",
 	"ZP",
@@ -90,6 +91,7 @@ int sf2_opt;
 int mx_opt;
 int mlist_opt;		/* macro listing main flag */
 int xlist;		/* listing file main flag */
+int debug_format;	/* debug output type */
 int list_level;		/* output level */
 int asm_opt[MAX_OPTS];	/* assembler options */
 int zero_need;		/* counter for trailing empty sectors on CDROM */
@@ -280,7 +282,7 @@ main(int argc, char **argv)
 	static t_file *final_source = NULL;
 
 	static int cd_type;
-	static const char *cmd_line_options = "I:OShl:mo:s";
+	static const char *cmd_line_options = "I:OSg:hl:mo:s";
 	static const struct option cmd_line_long_options[] = {
 		{"include",     required_argument, 0,           'I'},
 		{"pack",        no_argument,       0,           'O'},
@@ -349,6 +351,7 @@ main(int argc, char **argv)
 	}
 
 	/* init assembler options */
+	debug_format = 0;
 	list_level = 2;
 	trim_opt = 0;
 	header_opt = 1;
@@ -397,6 +400,23 @@ main(int argc, char **argv)
 
 			case 'S':
 				dump_seg = 2;
+				break;
+
+			case 'g':
+				/* optarg can have a leading space on linux/mac */
+				while (*optarg == ' ') { ++optarg; }
+
+				if ((isdigit(*optarg) == 0) || (optarg[1] != '\0')) {
+					fprintf(stderr, "%s: \"-g\" option must be followed by a single digit\n", argv[0]);
+					return (1);
+				}
+
+				/* get level */
+				debug_format = *optarg - '0';
+
+				/* check range */
+				if (debug_format < 0 || debug_format > 1)
+					debug_format = 1;
 				break;
 
 			case 'h':
@@ -576,6 +596,14 @@ main(int argc, char **argv)
 
 	/* init include path */
 	init_path();
+
+	/* remember the list file now for debug output */
+	strcpy(full_path, lst_fname);
+	lst_tfile = remember_file(filename_crc(full_path) & (HASH_COUNT - 1));
+	if (lst_tfile == NULL) {
+		fprintf(ERROUT, "Error: No memory left to remember filename!\n");
+		exit(1);
+	}
 
 	/* open the input file */
 	if (open_input(in_fname)) {
@@ -846,6 +874,7 @@ main(int argc, char **argv)
 					fprintf(ERROUT, "Error: Cannot open listing file \"%s\"!\n", lst_fname);
 					exit(1);
 				}
+				fprintf(lst_fp, "%*c", SFIELD-1, ' ');
 				fprintf(lst_fp, "#[1]   \"%s\"\n", input_file[1].file->name);
 				++lst_line;
 			}
@@ -1081,7 +1110,12 @@ main(int argc, char **argv)
 
 	/* dump the symbol table */
 	if ((fp = fopen(sym_fname, "w")) != NULL) {
-		labldump(fp);
+		/* this reorders the symbols, making them unusable for assembling! */
+		lablsort();
+		if (debug_format == 0)
+			labldump(fp);
+		else
+			debugdump(fp);
 		fclose(fp);
 	}
 

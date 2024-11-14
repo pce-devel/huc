@@ -90,7 +90,7 @@ class1(int *ip)
 	/* generate code */
 	if (pass == LAST_PASS) {
 		/* opcode */
-		putbyte(data_loccnt, opval);
+		putbyte(data_loccnt, opval, CODE_OUT);
 
 		/* output line */
 		println();
@@ -136,19 +136,19 @@ class2(int *ip)
 			/* long-branch opcode */
 			if ((opval & 0x1F) == 0x10) {
 				/* conditional-branch */
-				putbyte(data_loccnt + 0, opval ^ 0x20);
-				putbyte(data_loccnt + 1, 0x03);
+				putbyte(data_loccnt + 0, opval ^ 0x20, CODE_OUT);
+				putbyte(data_loccnt + 1, 0x03, CODE_OUT);
 
-				putbyte(data_loccnt + 2, 0x4C);
-				putword(data_loccnt + 3, value & 0xFFFF);
+				putbyte(data_loccnt + 2, 0x4C, CODE_OUT);
+				putword(data_loccnt + 3, value & 0xFFFF, CODE_OUT);
 			} else {
 				/* bra and bsr */
-				putbyte(data_loccnt + 0, (opval == 0x80) ? 0x4C : 0x20);
-				putword(data_loccnt + 1, value & 0xFFFF);
+				putbyte(data_loccnt + 0, (opval == 0x80) ? 0x4C : 0x20, CODE_OUT);
+				putword(data_loccnt + 1, value & 0xFFFF, CODE_OUT);
 			}
 		} else {
 			/* short-branch opcode */
-			putbyte(data_loccnt, opval);
+			putbyte(data_loccnt, opval, CODE_OUT);
 
 			/* calculate branch offset */
 			addr = (value & 0xFFFF) - (loccnt + (page << 13) + phase_offset);
@@ -160,7 +160,7 @@ class2(int *ip)
 			}
 
 			/* offset */
-			putbyte(data_loccnt + 1, addr);
+			putbyte(data_loccnt + 1, addr, CODE_OUT);
 		}
 
 		/* output line */
@@ -186,8 +186,8 @@ class3(int *ip)
 	/* generate code */
 	if (pass == LAST_PASS) {
 		/* opcodes */
-		putbyte(data_loccnt, opval);
-		putbyte(data_loccnt + 1, optype);
+		putbyte(data_loccnt, opval, CODE_OUT);
+		putbyte(data_loccnt + 1, optype, CODE_OUT);
 
 		/* output line */
 		println();
@@ -263,8 +263,8 @@ class4(int *ip)
 	/* auto-tag */
 	if (auto_tag) {
 		if (pass == LAST_PASS) {
-			putbyte(loccnt, 0xA0);
-			putbyte(loccnt + 1, auto_tag_value);
+			putbyte(loccnt, 0xA0, CODE_OUT);
+			putbyte(loccnt + 1, auto_tag_value, CODE_OUT);
 		}
 		loccnt += 2;
 	}
@@ -274,7 +274,7 @@ class4(int *ip)
 	case ACC:
 		/* one byte */
 		if (pass == LAST_PASS)
-			putbyte(loccnt, opval);
+			putbyte(loccnt, opval, CODE_OUT);
 
 		loccnt++;
 		break;
@@ -288,8 +288,8 @@ class4(int *ip)
 	case ZP_IND_Y:
 		/* two bytes */
 		if (pass == LAST_PASS) {
-			putbyte(loccnt, opval);
-			putbyte(loccnt + 1, value);
+			putbyte(loccnt, opval, CODE_OUT);
+			putbyte(loccnt + 1, value, CODE_OUT);
 		}
 		loccnt += 2;
 		break;
@@ -299,10 +299,14 @@ class4(int *ip)
 	case ABS_Y:
 	case ABS_IND:
 	case ABS_IND_X:
+		/* remember what labels are function calls */
+		if (opval == 0x20 && expr_lablptr != NULL)
+			expr_lablptr->flags |= FLG_FUNCTION;
+
 		/* three bytes */
 		if (pass == LAST_PASS) {
-			putbyte(loccnt, opval);
-			putword(loccnt + 1, value);
+			putbyte(loccnt, opval, CODE_OUT);
+			putword(loccnt + 1, value, CODE_OUT);
 		}
 		loccnt += 3;
 		break;
@@ -311,7 +315,7 @@ class4(int *ip)
 	/* auto-increment */
 	if (auto_inc) {
 		if (pass == LAST_PASS)
-			putbyte(loccnt, auto_inc);
+			putbyte(loccnt, auto_inc, CODE_OUT);
 
 		loccnt += 1;
 	}
@@ -361,16 +365,16 @@ class5(int *ip)
 	if (pass == LAST_PASS) {
 		if ((branch) && (branch->convert)) {
 			/* long-branch opcode */
-			putbyte(data_loccnt, opval ^ 0x80);
-			putbyte(data_loccnt + 1, zp);
-			putbyte(data_loccnt + 2, 0x03);
+			putbyte(data_loccnt, opval ^ 0x80, CODE_OUT);
+			putbyte(data_loccnt + 1, zp, CODE_OUT);
+			putbyte(data_loccnt + 2, 0x03, CODE_OUT);
 
-			putbyte(data_loccnt + 3, 0x4C);
-			putword(data_loccnt + 4, value & 0xFFFF);
+			putbyte(data_loccnt + 3, 0x4C, CODE_OUT);
+			putword(data_loccnt + 4, value & 0xFFFF, CODE_OUT);
 		} else {
 			/* short-branch opcode */
-			putbyte(data_loccnt, opval);
-			putbyte(data_loccnt + 1, zp);
+			putbyte(data_loccnt, opval, CODE_OUT);
+			putbyte(data_loccnt + 1, zp, CODE_OUT);
 
 			/* calculate branch offset */
 			addr = (value & 0xFFFF) - (loccnt + (page << 13) + phase_offset);
@@ -382,7 +386,7 @@ class5(int *ip)
 			}
 
 			/* offset */
-			putbyte(data_loccnt + 2, addr);
+			putbyte(data_loccnt + 2, addr, CODE_OUT);
 		}
 
 		/* output line */
@@ -422,10 +426,10 @@ class6(int *ip)
 	/* generate code */
 	if (pass == LAST_PASS) {
 		/* opcodes */
-		putbyte(data_loccnt, opval);
-		putword(data_loccnt + 1, addr[0]);
-		putword(data_loccnt + 3, addr[1]);
-		putword(data_loccnt + 5, addr[2]);
+		putbyte(data_loccnt, opval, CODE_OUT);
+		putword(data_loccnt + 1, addr[0], CODE_OUT);
+		putword(data_loccnt + 3, addr[1], CODE_OUT);
+		putword(data_loccnt + 5, addr[2], CODE_OUT);
 
 		/* output line */
 		println();
@@ -468,15 +472,15 @@ class7(int *ip)
 	/* generate code */
 	if (pass == LAST_PASS) {
 		/* opcodes */
-		putbyte(loccnt, opval);
-		putbyte(loccnt + 1, imm);
+		putbyte(loccnt, opval, CODE_OUT);
+		putbyte(loccnt + 1, imm, CODE_OUT);
 
 		if (mode & (ZP | ZP_X))
 			/* zero page */
-			putbyte(loccnt + 2, addr);
+			putbyte(loccnt + 2, addr, CODE_OUT);
 		else
 			/* absolute */
-			putword(loccnt + 2, addr);
+			putword(loccnt + 2, addr, CODE_OUT);
 	}
 
 	/* update location counter */
@@ -488,7 +492,7 @@ class7(int *ip)
 	/* auto-increment */
 	if (auto_inc) {
 		if (pass == LAST_PASS)
-			putbyte(loccnt, auto_inc);
+			putbyte(loccnt, auto_inc, CODE_OUT);
 
 		loccnt += 1;
 	}
@@ -527,8 +531,8 @@ class8(int *ip)
 		}
 
 		/* opcodes */
-		putbyte(data_loccnt, opval);
-		putbyte(data_loccnt + 1, (1 << value));
+		putbyte(data_loccnt, opval, CODE_OUT);
+		putbyte(data_loccnt + 1, (1 << value), CODE_OUT);
 
 		/* output line */
 		println();
@@ -571,8 +575,8 @@ class9(int *ip)
 		}
 
 		/* opcodes */
-		putbyte(data_loccnt, opval + (bit << 4));
-		putbyte(data_loccnt + 1, value);
+		putbyte(data_loccnt, opval + (bit << 4), CODE_OUT);
+		putbyte(data_loccnt + 1, value, CODE_OUT);
 
 		/* output line */
 		println();
@@ -632,16 +636,16 @@ class10(int *ip)
 
 		if ((branch) && (branch->convert)) {
 			/* long-branch opcode */
-			putbyte(data_loccnt, (opval + (bit << 4)) ^ 0x80);
-			putbyte(data_loccnt + 1, zp);
-			putbyte(data_loccnt + 2, 0x03);
+			putbyte(data_loccnt, (opval + (bit << 4)) ^ 0x80, CODE_OUT);
+			putbyte(data_loccnt + 1, zp, CODE_OUT);
+			putbyte(data_loccnt + 2, 0x03, CODE_OUT);
 
-			putbyte(data_loccnt + 3, 0x4C);
-			putword(data_loccnt + 4, value & 0xFFFF);
+			putbyte(data_loccnt + 3, 0x4C, CODE_OUT);
+			putword(data_loccnt + 4, value & 0xFFFF, CODE_OUT);
 		} else {
 			/* short-branch opcode */
-			putbyte(data_loccnt, opval + (bit << 4));
-			putbyte(data_loccnt + 1, zp);
+			putbyte(data_loccnt, opval + (bit << 4), CODE_OUT);
+			putbyte(data_loccnt + 1, zp, CODE_OUT);
 
 			/* calculate branch offset */
 			addr = (value & 0xFFFF) - (loccnt + (page << 13) + phase_offset);
@@ -653,7 +657,7 @@ class10(int *ip)
 			}
 
 			/* offset */
-			putbyte(data_loccnt + 2, addr);
+			putbyte(data_loccnt + 2, addr, CODE_OUT);
 		}
 
 		/* output line */

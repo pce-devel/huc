@@ -188,7 +188,7 @@ hexcon(int digit, int num)
  */
 
 void
-putbyte(int offset, int data)
+putbyte(int offset, int data, int is_code)
 {
 	int addr;
 	uint32_t info;
@@ -233,7 +233,7 @@ putbyte(int offset, int data)
  */
 
 void
-putword(int offset, int data)
+putword(int offset, int data, int is_code)
 {
 	int addr;
 	uint32_t info;
@@ -283,6 +283,7 @@ putword(int offset, int data)
 void
 putdword(int offset, int data)
 {
+	int is_code = DATA_OUT;
 	int addr;
 	uint32_t info;
 
@@ -337,6 +338,7 @@ putdword(int offset, int data)
 void
 putbuffer(void *data, int size)
 {
+	int is_code = DATA_OUT;
 	int addr;
 	int step;
 

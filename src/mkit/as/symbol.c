@@ -249,27 +249,27 @@ stinstall(int hash, int type)
 	sym->local = NULL;
 	sym->scope = NULL;
 	sym->proc = NULL;
-	sym->reason = -1;
-	sym->type = if_expr ? IFUNDEF : UNDEF;
-	sym->value = 0;
-	sym->phase = 0;
-	sym->section = S_NONE;
-	sym->overlay = 0;
-	sym->mprbank = UNDEFINED_BANK;
-	sym->rombank = UNDEFINED_BANK;
-	sym->page = -1;
-	sym->nb = 0;
-	sym->size = 0;
-	sym->vram = -1;
-	sym->pal = -1;
-	sym->reserved = 0;
-	sym->data_type = -1;
-	sym->data_size = 0;
+	sym->name = remember_string(symbol, (size_t)symbol[0] + 2);
 	sym->deflastpass = 0;
 	sym->reflastpass = 1; /* so that .ifref triggers in 1st pass */
 	sym->defthispass = 0;
 	sym->refthispass = 0;
-	sym->name = remember_string(symbol, (size_t)symbol[0] + 2);
+	sym->rombank = UNDEFINED_BANK;
+	sym->mprbank = UNDEFINED_BANK;
+	sym->value = 0;
+	sym->phase = 0;
+	sym->nb = 0;
+	sym->size = 0;
+	sym->vram = -1;
+	sym->data_size = 0;
+	sym->data_type = -1;
+	sym->section = S_NONE;
+	sym->overlay = 0;
+	sym->page = 0;
+	sym->reason = LOCATION;
+	sym->type = if_expr ? IFUNDEF : UNDEF;
+	sym->flags = 0;
+	sym->palette = -1;
 
 	/* add the symbol to the hash table */
 	if (type) {
@@ -296,10 +296,11 @@ stinstall(int hash, int type)
  */
 
 int
-labldef(int reason)
+labldef(unsigned char reason)
 {
 	char c;
-	int labl_value, labl_rombank, labl_mprbank, labl_overlay, labl_section;
+	int labl_value, labl_rombank, labl_mprbank, labl_overlay;
+	unsigned char labl_section;
 
 	/* check for NULL ptr */
 	if (lablptr == NULL)
@@ -319,14 +320,19 @@ labldef(int reason)
 		return (-1);
 	}
 
-	if (lablptr->reserved) {
+	if (lablptr->flags & FLG_RESERVED) {
 		fatal_error("Reserved symbol!");
 		return (-1);
 	}
 
 	/* remember where this was defined */
-	lablptr->fileinfo = input_file[infile_num].file;
-	lablptr->fileline = slnum;
+	if (debug_format == 1) {
+		lablptr->fileinfo = lst_tfile;
+		lablptr->fileline = lst_line;
+	} else {
+		lablptr->fileinfo = input_file[infile_num].file;
+		lablptr->fileline = slnum;
+	}
 
 	if (reason == LOCATION) {
 		/* label is set from the current LOCATION */
@@ -396,7 +402,7 @@ labldef(int reason)
 	if ((lablptr->type == UNDEF) || (lablptr->type == IFUNDEF)) {
 		/* allow the definition */
 	}
-	/* don't allow the reason, or the value, to change during a single pass */
+	/* don't allow the reason or the value to change during a pass */
 	else if ((lablptr->reason != reason) ||
 		 (lablptr->defthispass && lablptr->value != labl_value)) {
 		/* normal label */
@@ -481,7 +487,7 @@ lablset(char *name, int val)
 			lablptr->type = DEFABS;
 			lablptr->value = val;
 			lablptr->defthispass = 1;
-			lablptr->reserved = 1;
+			lablptr->flags |= FLG_RESERVED;
 		}
 	}
 
@@ -561,7 +567,117 @@ lablremap(void)
 
 
 /* ----
- * dumplabl()
+ * lablsort()
+ * ----
+ * sort all label values
+ *
+ * THIS IS DESTRUCTIVE AND SHOULD ONLY BE USED JUST PRIOR TO EXITING!
+ */
+
+void
+lablsort(void)
+{
+	struct t_symbol *sort_tbl[HASH_COUNT];
+	struct t_symbol *newsym;
+	struct t_symbol *locsym;
+	struct t_symbol *nextsym;
+	struct t_symbol *lastsym;
+	struct t_symbol *sortsym;
+	int i, j, bucket;
+	uint32_t dbginfo;
+
+	memset(sort_tbl, 0, HASH_COUNT * sizeof(struct t_symbol *));
+
+	/* insertion-sort the symbol table */
+	for (i = 0; i < HASH_COUNT; i++) {
+		for (newsym = hash_tbl[i]; newsym != NULL; newsym = nextsym) {
+			nextsym = newsym->next;
+
+			/* skip undefined symbols and stripped symbols */
+			if ((newsym->type != DEFABS) || (newsym->mprbank == STRIPPED_BANK) || (newsym->name[1] == '!'))
+				continue;
+
+			if (newsym->mprbank >= 256 && newsym->mprbank != UNDEFINED_BANK) {
+				printf("WTF is going on!\n");
+				exit(1);
+				continue;
+			}
+
+			/* mark the first rom byte of every function */
+			if (newsym->flags & FLG_FUNCTION) {
+				if (newproc_opt && newsym->proc && newsym->proc->label == newsym && newsym->proc->call != 0) {
+					/* remap procedure name symbols to their thunk address (if it exists) */
+//					dbginfo = dbg[newsym->rombank][newsym->value & 0x1FFF];
+					dbginfo = ((((newsym->fileline - 1) << DBGLINE) + (newsym->fileinfo->number << 2)) + CODE_OUT);
+					newsym->mprbank = bank2mprbank(call_bank, S_CODE);
+					newsym->value = newsym->proc->call;
+					/* mark the rom thunk as the start of the procedure's code */
+					j = newsym->value & 0x1FFF;
+					dbg[call_bank][j] = dbginfo | FUNC_OUT;
+					while (++j < ((newsym->value & 0x1FFF) + 10)) {
+						dbg[call_bank][j] = dbginfo;
+					}
+				} else {
+					dbg[newsym->rombank][newsym->value & 0x1FFF] |= FUNC_OUT;
+				}
+			}
+
+			bucket = newsym->mprbank & (HASH_COUNT - 1);
+			if (newsym->mprbank == UNDEFINED_BANK)
+				newsym->mprbank = -1;
+
+			lastsym = NULL;
+			for (sortsym = sort_tbl[bucket];;) {
+				if ((sortsym == NULL) || (newsym->overlay < sortsym->overlay) || (newsym->mprbank < sortsym->mprbank) ||
+				    ((newsym->overlay == sortsym->overlay) && (newsym->mprbank == sortsym->mprbank) && (newsym->value < sortsym->value))) {
+					if (lastsym == NULL) {
+						sort_tbl[bucket] = newsym;
+					} else {
+						lastsym->next = newsym;
+					}
+					newsym->next = sortsym;
+					break;
+				}
+				lastsym = sortsym;
+				sortsym = sortsym->next;
+			}
+
+			/* insertion-sort the local symbols */
+			if (newsym->local) {
+				locsym = newsym->local;
+				newsym->local = NULL;
+
+				while (locsym) {
+					if (locsym->mprbank == UNDEFINED_BANK)
+						locsym->mprbank = -1;
+					lastsym = NULL;
+					for (sortsym = newsym->local;;) {
+						if ((sortsym == NULL) || (locsym->overlay < sortsym->overlay) || (locsym->mprbank < sortsym->mprbank) ||
+						    ((locsym->overlay == sortsym->overlay) && (locsym->mprbank == sortsym->mprbank) && (locsym->value < sortsym->value))) {
+							if (lastsym == NULL) {
+								newsym->local = locsym;
+							} else {
+								lastsym->next = locsym;
+							}
+							lastsym = locsym;
+							locsym = locsym->next;
+							lastsym->next = sortsym;
+							break;
+						}
+						lastsym = sortsym;
+						sortsym = sortsym->next;
+					}
+				}
+			}
+		}
+	}
+
+	memcpy(hash_tbl, sort_tbl, HASH_COUNT * sizeof(struct t_symbol *));
+}
+
+
+/* ----
+ * labldump()
  * ----
  * dump all label values
  */
@@ -584,7 +700,7 @@ labldump(FILE *fp)
 				continue;
 
 			/* dump the label */
-			if (sym->mprbank >= UNDEFINED_BANK)
+			if (sym->mprbank < 0 || sym->mprbank >= UNDEFINED_BANK)
 				fprintf(fp, "   -");
 			else if (sym->overlay == 0)
 				fprintf(fp, "  %2.2x", sym->mprbank);
@@ -608,7 +724,7 @@ labldump(FILE *fp)
 				local = sym->local;
 
 				while (local) {
-					if (local->mprbank >= UNDEFINED_BANK)
+					if (local->mprbank < 0 || local->mprbank >= UNDEFINED_BANK)
 						fprintf(fp, "   -");
 					else if (sym->overlay == 0)
 						fprintf(fp, "  %2.2x", local->mprbank);
@@ -628,6 +744,157 @@ labldump(FILE *fp)
 					local = local->next;
 				}
 			}
+		}
+	}
+}
+
+
+/* ----
+ * debugdump()
+ * ----
+ * dump all label values
+ */
+
+extern int file_count;
+extern t_file ** file_list;
+
+void
+debugdump(FILE *fp)
+{
+	struct t_symbol *sym;
+//	struct t_symbol *local;
+	int i, j;
+
+	make_filelist();
+
+	fprintf(fp, "; Generated by %s\n\n", machine->asm_name);
+	fprintf(fp, "[information]\nversion 2\n");
+
+	/* output the [labels] section */
+	fprintf(fp, "\n[labels]\n");
+	for (i = 0; i < HASH_COUNT; i++) {
+		for (sym = hash_tbl[i]; sym != NULL; sym = sym->next) {
+//			/* skip undefined symbols and stripped symbols */
+//			if ((sym->type != DEFABS) || (sym->mprbank == STRIPPED_BANK) || (sym->name[1] == '!'))
+//				continue;
+
+			/* skip undefined symbols and stripped symbols */
+			if (sym->mprbank < 0 || sym->mprbank >= UNDEFINED_BANK)
+				continue;
+
+			/* dump the label */
+#if 0
+			if (sym->proc && sym->proc->label == sym) {
+				fprintf(fp, "%2.2x", bank2mprbank(call_bank, S_CODE));
+				fprintf(fp, ":%4.4x ", sym->proc->call & 0xFFFF);
+			} else {
+				if (sym->overlay == 0)
+					fprintf(fp, "%2.2x", sym->mprbank);
+				else
+					fprintf(fp, "%3.3x", (sym->overlay * 0x40) + (sym->mprbank - 0x40) + 0xC0);
+				fprintf(fp, ":%4.4x ", sym->value & 0xFFFF);
+			}
+#endif
+
+			if (sym->overlay == 0)
+				fprintf(fp, "%2.2x", sym->mprbank);
+			else
+				fprintf(fp, "%3.3x", (sym->overlay * 0x40) + (sym->mprbank - 0x40) + 0xC0);
+			fprintf(fp, ":%4.4x ", sym->value & 0xFFFF);
+			fprintf(fp, "%s\n", &(sym->name[1]));
+		}
+	}
+
+	/* output the [definitions] section */
+	fprintf(fp, "\n[definitions]\n");
+	for (i = 0; i < 1; i++) {
+		for (sym = hash_tbl[i]; sym != NULL; sym = sym->next) {
+			/* only print symbols in the UNDEFINED_BANK */
+			if (sym->mprbank >= 0 && sym->mprbank != UNDEFINED_BANK)
+				continue;
+
+			/* dump the label */
+			fprintf(fp, "%8.8x ", sym->value & 0xFFFFFFFF);
+			fprintf(fp, "%s\n", &(sym->name[1]));
+		}
+	}
+
+	/* output the [source files v2] section */
+	fprintf(fp, "\n[source files v2]\n");
+	for (i = 0; i <= file_count; i++) {
+		t_file *file = file_list[i];
+		if (file) {
+#if 1
+			fprintf(fp, "0000:%4.4x 00000000 \"", i);
+			if (i == 1)
+				fprintf(fp, "%s\" ; IgnoreColumns=30\n", file->name);
+			else
+				fprintf(fp, "%s\"\n", file->name);
+#else
+			fprintf(fp, "0000:%4.4x 00000000 ", i);
+			fprintf(fp, "%s\n", file->name);
+#endif
+		}
+	}
+
+	/* output the [addr-to-line mapping v2] section */
+	fprintf(fp, "\n[addr-to-line mapping v2]\n");
+	for (i = 0; i <= max_bank; i++) {
+		int indx = -1;
+		int line = -1;
+		int code = 0;
+		int bank;
+		uint32_t info;
+		for (j = 0; j < 0x2000; j++) {
+			info = dbg[i][j];
+#if 0
+			if (indx != ((info & DBGMASK) >> 2) || line != (info >> DBGLINE) || code != (info & 3)) {
+				indx = (info & DBGMASK) >> 2;
+				line = (info >> DBGLINE);
+				code = (info & 3);
+
+				if (indx) {
+					/* start SFII mapper banks at bank $100 */
+					if (i < 0x80)
+						bank = i + bank_base;
+					else
+						bank = i + 0x80;
+					fprintf(fp, "%8.8x ", (code << 30) + (bank << 13) + j);
+
+					if (i < 0x80)
+						fprintf(fp, "%2.2x:%4.4x ", bank, j);
+					else
+						fprintf(fp, "%3.3x:%4.4x ", bank, j);
+
+					fprintf(fp, "%4.4x ", ((map[i][j] >> 5) << 13) + j);
+					fprintf(fp, "0000:%4.4x:%8.8x\n", indx, line);
+				}
+			}
+#else
+			if (indx != ((info & DBGMASK) >> 2) || line != (info >> DBGLINE) || code != (info & CODE_OUT)) {
+				indx = (info & DBGMASK) >> 2;
+				line = (info >> DBGLINE);
+				code = (info & (CODE_OUT | FUNC_OUT));
+
+				if (indx) {
+					/* start SFII mapper banks at bank $100 */
+					if (i < 0x80)
+						bank = i + bank_base;
+					else
+						bank = i + 0x80;
+					fprintf(fp, "%8.8x ", (code << 30) + (bank << 13) + j);
+
+					if (i < 0x80)
+						fprintf(fp, "%2.2x:%4.4x ", bank, j);
+					else
+						fprintf(fp, "%3.3x:%4.4x ", bank, j);
+
+					fprintf(fp, "%4.4x ", ((map[i][j] >> 5) << 13) + j);
+					fprintf(fp, "0000:%4.4x:%8.8x\n", indx, line);
+				}
+				code = (code & CODE_OUT);
+			}
+#endif
 		}
 	}
 }
@@ -682,7 +949,7 @@ lablstartpass(void)
  * convert a bank number into a value to put into an MPR register
  */
 
-int bank2mprbank (int what_bank, int what_section)
+int bank2mprbank (int what_bank, unsigned char what_section)
 {
 	if ((section_flags[what_section] & S_IS_ROM) && (what_bank < UNDEFINED_BANK)) {
 		if ((section_flags[what_section] & S_IS_SF2) && (what_bank > 0x7F)) {
@@ -703,7 +970,7 @@ int bank2mprbank (int what_bank, int what_section)
  * convert a bank number into an overlay number
  */
 
-int bank2overlay (int what_bank, int what_section)
+int bank2overlay (int what_bank, unsigned char what_section)
 {
 	if ((section_flags[what_section] & S_IS_ROM) && (what_bank < UNDEFINED_BANK)) {
 		if ((section_flags[what_section] & S_IS_SF2) && (what_bank > 0x7F)) {
@@ -735,5 +1002,5 @@ int mprbank2bank (int what_bank, int what_overlay)
 		return (what_bank + what_overlay * 0x40);
 	}
 	what_bank = what_bank - bank_base;
-	return (what_bank <= bank_limit) ? what_bank : UNDEFINED_BANK;
+	return (what_bank >= 0 && what_bank <= bank_limit) ? what_bank : UNDEFINED_BANK;
 }
