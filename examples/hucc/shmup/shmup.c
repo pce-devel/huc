@@ -206,7 +206,12 @@ void main(void)
 	sgx_load_vram(0x5000,bonk,0x400);
 
 	// or by using using the bank and address
-	sgx_far_load_vram(0x5000,aSpriteDataBank[0],aSpriteDataAddr[0],0x400);
+	set_far_base(aSpriteDataBank[0],aSpriteDataAddr[0]);
+	sgx_far_load_vram(0x5000,0x400);
+
+	// or by using using the bank and address with an offset
+	set_far_offset(0,aSpriteDataBank[0],aSpriteDataAddr[0]);
+	sgx_far_load_vram(0x5000,0x400);
 
 	sgx_load_vram(0x5400,bullet,0x40);
 	sgx_load_vram(0x5500,ship,0x400);

@@ -3,7 +3,7 @@
 ;
 ; hucc-baselib.asm
 ;
-; Basic library functions provided as macros.
+; Basic library functions provided (mostly) as macros.
 ;
 ; Copyright John Brandwood 2024.
 ;
@@ -65,6 +65,36 @@ _exit.1:	tax				; Put the return code into X.
 		tax
 		jmp	exec_overlay
 		.endm
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; void __fastcall __xsafe __nop set_far_base( unsigned char data_bank<_bp_bank>, unsigned char *data_addr<_bp> );
+; void __fastcall __xsafe set_far_offset( unsigned int offset<_bp>, unsigned char data_bank<_bp_bank>, unsigned char *data_addr<acc> );
+
+_set_far_offset.3:
+		clc
+		adc.l	<_bp
+		sta.l	<_bp
+		tya
+		and	#$1F
+		adc.h	<_bp
+		tay
+		and	#$1F
+		ora	#$60
+		sta.h	<_bp
+		tya
+		ror	a
+		lsr	a
+		lsr	a
+		lsr	a
+		lsr	a
+		clc
+		adc	<_bp_bank
+		sta	<_bp_bank
+		rts
 
 
 

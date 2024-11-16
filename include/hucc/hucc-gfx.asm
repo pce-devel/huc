@@ -39,6 +39,7 @@ _font_base	.ds	2
 		.alias	_disp_off		= set_dspoff
 
 
+
 ; ***************************************************************************
 ; ***************************************************************************
 ;
@@ -114,204 +115,6 @@ _set_256x224	.proc
 		dw	VDC_HSR_256
 		db	VDC_HDR			; Horizontal Display Register
 		dw	VDC_HDR_256
-		db	VDC_VPR			; Vertical Sync Register
-		dw	VDC_VPR_224
-		db	VDC_VDW			; Vertical Display Register
-		dw	VDC_VDW_224
-		db	VDC_VCR			; Vertical Display END position Register
-		dw	VDC_VCR_224
-		db	VDC_DCR			; DMA Control Register
-		dw	$0010			;   Enable automatic VRAM->SATB
-		db	VDC_DVSSR		; VRAM->SATB address $7F00
-		dw	.SAT_ADDR
-		db	VDC_BXR			; Background X-Scroll Register
-		dw	$0000
-		db	VDC_BYR			; Background Y-Scroll Register
-		dw	$0000
-		db	VDC_RCR			; Raster Counter Register
-		dw	$0000			;   Never occurs!
-		db	VDC_CR			; Control Register
-		dw	$00CC			;   Enable VSYNC & RCR IRQ, BG & SPR
-		db	0
-
-		.endp
-
-
-
-; ***************************************************************************
-; ***************************************************************************
-;
-; void __fastcall __xsafe set_352x224( void );
-
-_set_352x224	.proc
-
-.BAT_SIZE	=	64 * 32
-.CHR_0x20	=	.BAT_SIZE / 16		; 1st tile # after the BAT.
-.SAT_ADDR	=	$7F00			; SAT takes 16 tiles of VRAM.
-
-		phx				; Preserve X (aka __sp).
-
-		php				; Disable interrupts.
-		sei
-
-		call	clear_vce		; Clear all palettes.
-
-		lda.l	#.CHR_0x20		; Tile # of ' ' CHR.
-		sta.l	<_ax
-		lda.h	#.CHR_0x20
-		sta.h	<_ax
-
-		lda	#>.BAT_SIZE		; Size of BAT in words.
-		sta	<_bl
-
-		call	clear_vram_vdc		; Clear VRAM.
-	.if	SUPPORT_SGX
-		call	clear_vram_sgx
-	.endif
-
-		lda	#<.mode_352x224		; Disable BKG & SPR layers but
-		sta.l	<_bp			; enable RCR & VBLANK IRQ.
-		lda	#>.mode_352x224
-		sta.h	<_bp
-
-	.if	SUPPORT_SGX
-		call	sgx_detect		; Are we really on an SGX?
-		bcc	!+
-		ldy	#^.mode_352x224		; Set SGX 1st, with no VBL.
-		call	set_mode_sgx
-
-		ldy	#VDC_MWR_64x32 >> 4	; HuCC sets up various vars
-		call	screen_size_sgx         ; related to the BAT size.
-	.endif
-!:		ldy	#^.mode_352x224		; Set VDC 2nd, VBL allowed.
-		call	set_mode_vdc
-
-		lda	#VDC_MWR_64x32 >> 4	; HuCC sets up various vars
-		sta	<_al			; related to the BAT size.
-		call	screen_size_vdc
-
-	.if	SUPPORT_SGX
-		bit	SGX_SR			; Purge any overdue RCR.
-	.endif
-		bit	VDC_SR			; Purge any overdue RCR/VBL.
-		plp				; Restore interrupts.
-
-		call	wait_vsync		; Wait for the next VBLANK.
-
-		plx				; Restore X (aka __sp).
-
-		leave				; All done, phew!
-
-		; A standard 352x224 screen with overscan.
-
-.mode_352x224:	db	$80			; VCE Control Register.
-		db	VCE_CR_7MHz + XRES_SOFT	;   Video Clock + Artifact Reduction
-
-		db	VDC_MWR			; Memory-access Width Register
-		dw	VDC_MWR_64x32 + VDC_MWR_1CYCLE
-		db	VDC_HSR			; Horizontal Sync Register
-		dw	VDC_HSR_352
-		db	VDC_HDR			; Horizontal Display Register
-		dw	VDC_HDR_352
-		db	VDC_VPR			; Vertical Sync Register
-		dw	VDC_VPR_224
-		db	VDC_VDW			; Vertical Display Register
-		dw	VDC_VDW_224
-		db	VDC_VCR			; Vertical Display END position Register
-		dw	VDC_VCR_224
-		db	VDC_DCR			; DMA Control Register
-		dw	$0010			;   Enable automatic VRAM->SATB
-		db	VDC_DVSSR		; VRAM->SATB address $7F00
-		dw	.SAT_ADDR
-		db	VDC_BXR			; Background X-Scroll Register
-		dw	$0000
-		db	VDC_BYR			; Background Y-Scroll Register
-		dw	$0000
-		db	VDC_RCR			; Raster Counter Register
-		dw	$0000			;   Never occurs!
-		db	VDC_CR			; Control Register
-		dw	$00CC			;   Enable VSYNC & RCR IRQ, BG & SPR
-		db	0
-
-		.endp
-
-
-
-; ***************************************************************************
-; ***************************************************************************
-;
-; void __fastcall __xsafe set_496x224( void );
-
-_set_496x224	.proc
-
-.BAT_SIZE	=	64 * 32
-.CHR_0x20	=	.BAT_SIZE / 16		; 1st tile # after the BAT.
-.SAT_ADDR	=	$7F00			; SAT takes 16 tiles of VRAM.
-
-		phx				; Preserve X (aka __sp).
-
-		php				; Disable interrupts.
-		sei
-
-		call	clear_vce		; Clear all palettes.
-
-		lda.l	#.CHR_0x20		; Tile # of ' ' CHR.
-		sta.l	<_ax
-		lda.h	#.CHR_0x20
-		sta.h	<_ax
-
-		lda	#>.BAT_SIZE		; Size of BAT in words.
-		sta	<_bl
-
-		call	clear_vram_vdc		; Clear VRAM.
-	.if	SUPPORT_SGX
-		call	clear_vram_sgx
-	.endif
-
-		lda	#<.mode_496x224		; Disable BKG & SPR layers but
-		sta.l	<_bp			; enable RCR & VBLANK IRQ.
-		lda	#>.mode_496x224
-		sta.h	<_bp
-
-	.if	SUPPORT_SGX
-		call	sgx_detect		; Are we really on an SGX?
-		bcc	!+
-		ldy	#^.mode_496x224		; Set SGX 1st, with no VBL.
-		call	set_mode_sgx
-
-		ldy	#VDC_MWR_64x32 >> 4	; HuCC sets up various vars
-		call	screen_size_sgx         ; related to the BAT size.
-	.endif
-!:		ldy	#^.mode_496x224		; Set VDC 2nd, VBL allowed.
-		call	set_mode_vdc
-
-		lda	#VDC_MWR_64x32 >> 4	; HuCC sets up various vars
-		sta	<_al			; related to the BAT size.
-		call	screen_size_vdc
-
-	.if	SUPPORT_SGX
-		bit	SGX_SR			; Purge any overdue RCR.
-	.endif
-		bit	VDC_SR			; Purge any overdue RCR/VBL.
-		plp				; Restore interrupts.
-
-		call	wait_vsync		; Wait for the next VBLANK.
-
-		plx				; Restore X (aka __sp).
-
-		leave				; All done, phew!
-
-		; A standard 496x224 screen with overscan.
-
-.mode_496x224:	db	$80			; VCE Control Register.
-		db	VCE_CR_10MHz + XRES_SOFT;   Video Clock + Artifact Reduction
-
-		db	VDC_MWR			; Memory-access Width Register
-		dw	VDC_MWR_64x32 + VDC_MWR_2CYCLE
-		db	VDC_HSR			; Horizontal Sync Register
-		dw	VDC_HSR_496
-		db	VDC_HDR			; Horizontal Display Register
-		dw	VDC_HDR_496
 		db	VDC_VPR			; Vertical Sync Register
 		dw	VDC_VPR_224
 		db	VDC_VDW			; Vertical Display Register
@@ -771,8 +574,8 @@ load_vram_group	.procgroup			; These routines share code!
 ; void __fastcall __xsafe load_vram( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned int num_words<_ax> );
 ; void __fastcall __xsafe sgx_load_vram( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned int num_words<_ax> );
 ;
-; void __fastcall __xsafe far_load_vram( unsigned int vram<_di>, unsigned char data_bank<_bp_bank>, unsigned char *data_addr<_bp>, unsigned int num_words<_ax> );
-; void __fastcall __xsafe sgx_far_load_vram( unsigned int vram<_di>, unsigned char data_bank<_bp_bank>, unsigned char *data_addr<_bp>, unsigned int num_words<_ax> );
+; void __fastcall __xsafe far_load_vram( unsigned int vram<_di>, unsigned int num_words<_ax> );
+; void __fastcall __xsafe sgx_far_load_vram( unsigned int vram<_di>, unsigned int num_words<_ax> );
 ;
 ; load_vram_sgx -  copy a block of memory to VRAM
 ; load_vram_vdc -  copy a block of memory to VRAM
@@ -790,7 +593,7 @@ VRAM_XFER_SIZE	=	16
 
 	.if	SUPPORT_SGX
 		.proc	_sgx_load_vram.3
-		.alias	_sgx_far_load_vram.4	= _sgx_load_vram.3
+		.alias	_sgx_far_load_vram.2	= _sgx_load_vram.3
 
 
 		ldy	#SGX_VDC_OFFSET		; Offset to SGX VDC.
@@ -801,7 +604,7 @@ VRAM_XFER_SIZE	=	16
 	.endif
 
 		.proc	_load_vram.3
-		.alias	_far_load_vram.4	= _load_vram.3
+		.alias	_far_load_vram.2	= _load_vram.3
 
 		cly				; Offset to PCE VDC.
 
@@ -907,8 +710,8 @@ huc_load_vram:	tma3
 ; void __fastcall __xsafe load_bat( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned char tiles_w<_al>, unsigned char tiles_h<_ah> );
 ; void __fastcall __xsafe sgx_load_bat( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned char tiles_w<_al>, unsigned char tiles_h<_ah> );
 ;
-; void __fastcall __xsafe far_load_bat( unsigned int vram<_di>, unsigned char data_bank<_bp_bank>, unsigned char *data_addr<_bp>, unsigned char tiles_w<_al>, unsigned char tiles_h<_ah> );
-; void __fastcall __xsafe sgx_far_load_bat( unsigned int vram<_di>, unsigned char data_bank<_bp_bank>, unsigned char *data_addr<_bp>, unsigned char tiles_w<_al>, unsigned char tiles_h<_ah> );
+; void __fastcall __xsafe far_load_bat( unsigned int vram<_di>, unsigned char tiles_w<_al>, unsigned char tiles_h<_ah> );
+; void __fastcall __xsafe sgx_far_load_bat( unsigned int vram<_di>, unsigned char tiles_w<_al>, unsigned char tiles_h<_ah> );
 ;
 ; load_bat_sgx - transfer a BAT to VRAM
 ; load_bat_vdc - transfer a BAT to VRAM
@@ -932,7 +735,7 @@ load_bat_group	.procgroup			; These routines share code!
 
 	.if	SUPPORT_SGX
 		.proc	_sgx_load_bat.4
-		.alias	_sgx_far_load_bat.5	= _sgx_load_bat.4
+		.alias	_sgx_far_load_bat.3	= _sgx_load_bat.4
 
 		ldy	#SGX_VDC_OFFSET		; Offset to SGX VDC.
 		db	$F0			; Turn "cly" into a "beq".
@@ -942,7 +745,7 @@ load_bat_group	.procgroup			; These routines share code!
 	.endif
 
 		.proc	_load_bat.4
-		.alias	_far_load_bat.5		= _load_bat.4
+		.alias	_far_load_bat.3		= _load_bat.4
 
 		cly				; Offset to PCE VDC.
 
@@ -1000,10 +803,10 @@ load_bat_group	.procgroup			; These routines share code!
 ;
 ; void __fastcall __xsafe load_palette( unsigned char palette<_al>, unsigned char __far *data<_bp_bank:_bp>, unsigned char num_palettes<_ah> );
 ;
-; void __fastcall __xsafe far_load_palette( unsigned char palette<_al>, unsigned char data_bank<_bp_bank>, unsigned char *data_addr<_bp>, unsigned char num_palettes<_ah> );
+; void __fastcall __xsafe far_load_palette( unsigned char palette<_al>, unsigned char num_palettes<_ah> );
 
 		.proc	_load_palette.3
-		.alias	_far_load_palette.4	= _load_palette.3
+		.alias	_far_load_palette.2	= _load_palette.3
 
 		ldy	color_queue_w		; Get the queue's write index.
 
@@ -1166,7 +969,7 @@ _set_font_pal:
 ; void __fastcall __xsafe load_font( char far *font<_bp_bank:_bp>, unsigned char count<_al> );
 ; void __fastcall __xsafe load_font( char far *font<_bp_bank:_bp>, unsigned char count<_al>, unsigned int vram<acc> );
 ;
-; void __fastcall __xsafe far_load_font( char far *font<_bp_bank:_bp>, unsigned char count<_al>, unsigned int vram<acc> );
+; void __fastcall __xsafe far_load_font( unsigned char count<_al>, unsigned int vram<acc> );
 
 _load_font.2:	ldy	vdc_bat_limit		; BAT limit mask hi-byte.
 		iny
@@ -1190,7 +993,7 @@ _load_font.3:	sta.l	<_di			; Load the font directly
 		sta	<__al
 		jmp	_load_vram.3		; This is __xsafe!
 
-		.alias	_far_load_font.4	= _load_font.3
+		.alias	_far_load_font.2	= _load_font.3
 
 
 
