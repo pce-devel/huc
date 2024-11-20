@@ -447,9 +447,9 @@ int constant (int *val)
 {
 	if (number(val))
 		immed(T_VALUE, *val);
-	else if (pstr(val))
+	else if (quoted_chr(val))
 		immed(T_VALUE, *val);
-	else if (qstr(val)) {
+	else if (quoted_str(val)) {
 		immed(T_STRING, *val);
 		return (2);
 	}
@@ -507,7 +507,7 @@ bool number (int *val)
 	return (true);
 }
 
-static int parse0 (int *num)
+static int parse_const0 (int *num)
 {
 	if (!const_expr(num, ")", NULL))
 		return (0);
@@ -517,7 +517,7 @@ static int parse0 (int *num)
 	return (1);
 }
 
-static int parse3 (int *num)
+static int parse_const3 (int *num)
 {
 	int num2;
 	struct type_type t;
@@ -549,9 +549,9 @@ static int parse3 (int *num)
 	else
 		op = 0;
 
-	if (!(have_paren && parse0(&num2)) &&
+	if (!(have_paren && parse_const0(&num2)) &&
 	    !number(&num2) &&
-	    !pstr(&num2) &&
+	    !quoted_chr(&num2) &&
 	    !(symname(n) && find_enum(n, &num2)))
 		return (0);
 
@@ -590,11 +590,11 @@ static int parse3 (int *num)
 	return (1);
 }
 
-static int parse5 (int *num)
+static int parse_const5 (int *num)
 {
 	int num1, num2;
 
-	if (!parse3(&num1))
+	if (!parse_const3(&num1))
 		return (0);
 
 	for (;;) {
@@ -603,26 +603,30 @@ static int parse5 (int *num)
 			op = '*';
 		else if (match("/"))
 			op = '/';
+		else if (match("%"))
+			op = '%';
 		else {
 			*num = num1;
 			return (1);
 		}
 
-		if (!parse3(&num2))
+		if (!parse_const3(&num2))
 			return (0);
 
 		if (op == '*')
 			num1 *= num2;
-		else
+		else if (op == '/')
 			num1 /= num2;
+		else
+			num1 %= num2;
 	}
 }
 
-static int parse6 (int *num)
+static int parse_const6 (int *num)
 {
 	int num1, num2;
 
-	if (!parse5(&num1))
+	if (!parse_const5(&num1))
 		return (0);
 
 	for (;;) {
@@ -636,7 +640,7 @@ static int parse6 (int *num)
 			return (1);
 		}
 
-		if (!parse5(&num2))
+		if (!parse_const5(&num2))
 			return (0);
 
 		if (op == '-')
@@ -646,11 +650,11 @@ static int parse6 (int *num)
 	}
 }
 
-static int parse7 (int *num)
+static int parse_const7 (int *num)
 {
 	int num1, num2;
 
-	if (!parse6(&num1))
+	if (!parse_const6(&num1))
 		return (0);
 
 	for (;;) {
@@ -664,7 +668,7 @@ static int parse7 (int *num)
 			return (1);
 		}
 
-		if (!parse6(&num2))
+		if (!parse_const6(&num2))
 			return (0);
 
 		if (op == 'l')
@@ -674,11 +678,45 @@ static int parse7 (int *num)
 	}
 }
 
-static int parse9 (int *num)
+static int parse_const8 (int *num)
 {
 	int num1, num2;
 
-	if (!parse7(&num1))
+	if (!parse_const7(&num1))
+		return (0);
+
+	for (;;) {
+		char op;
+		if (match("<="))
+			op = 0;
+		else if (match(">="))
+			op = 1;
+		else if (match("<"))
+			op = 2;
+		else if (match(">"))
+			op = 3;
+		else {
+			*num = num1;
+			return (1);
+		}
+
+		if (!parse_const7(&num2))
+			return (0);
+
+		switch (op) {
+			case 0: num1 = (num1 <= num2); break;
+			case 1: num1 = (num1 >= num2); break;
+			case 2: num1 = (num1 < num2); break;
+			case 3: num1 = (num1 > num2); break;
+		}
+	}
+}
+
+static int parse_const9 (int *num)
+{
+	int num1, num2;
+
+	if (!parse_const8(&num1))
 		return (0);
 
 	for (;;) {
@@ -692,7 +730,7 @@ static int parse9 (int *num)
 			return (1);
 		}
 
-		if (!parse7(&num2))
+		if (!parse_const8(&num2))
 			return (0);
 
 		if (op == '=')
@@ -702,9 +740,109 @@ static int parse9 (int *num)
 	}
 }
 
+static int parse_const10 (int *num)
+{
+	int num1, num2;
+
+	if (!parse_const9(&num1))
+		return (0);
+
+	for (;;) {
+		if (!match("&")) {
+			*num = num1;
+			return (1);
+		}
+
+		if (!parse_const9(&num2))
+			return (0);
+
+		num1 = num1 & num2;
+	}
+}
+
+static int parse_const11 (int *num)
+{
+	int num1, num2;
+
+	if (!parse_const10(&num1))
+		return (0);
+
+	for (;;) {
+		if (!match("^")) {
+			*num = num1;
+			return (1);
+		}
+
+		if (!parse_const10(&num2))
+			return (0);
+
+		num1 = num1 ^ num2;
+	}
+}
+
+static int parse_const12 (int *num)
+{
+	int num1, num2;
+
+	if (!parse_const11(&num1))
+		return (0);
+
+	for (;;) {
+		if (!match("|")) {
+			*num = num1;
+			return (1);
+		}
+
+		if (!parse_const11(&num2))
+			return (0);
+
+		num1 = num1 | num2;
+	}
+}
+
+static int parse_const13 (int *num)
+{
+	int num1, num2;
+
+	if (!parse_const12(&num1))
+		return (0);
+
+	for (;;) {
+		if (!match("&&")) {
+			*num = num1;
+			return (1);
+		}
+
+		if (!parse_const12(&num2))
+			return (0);
+
+		num1 = num1 && num2;
+	}
+}
+
+static int parse_const14 (int *num)
+{
+	int num1, num2;
+
+	if (!parse_const13(&num1))
+		return (0);
+
+	for (;;) {
+		if (!match("||")) {
+			*num = num1;
+			return (1);
+		}
+
+		if (!parse_const13(&num2))
+			return (0);
+
+		num1 = num1 || num2;
+	}
+}
+
 bool const_expr (int *num, char *end1, char *end2)
 {
-	if (!parse9(num)) {
+	if (!parse_const14(num)) {
 		error("failed to evaluate constant expression");
 		return (false);
 	}
@@ -717,11 +855,10 @@ bool const_expr (int *num, char *end1, char *end2)
 }
 
 /*
- *         pstr
- * pstr parses a character than can eventually be 'double' i.e. like 'a9'
- * returns 0 in case of failure else 1
+ * Test if we have one char enclosed in single quotes
+ * return 0 in case of failure else 1
  */
-bool pstr (int *val)
+bool quoted_chr (int *val)
 {
 	int k;
 	char c;
@@ -739,11 +876,11 @@ bool pstr (int *val)
 }
 
 /*
- *         qstr
- * qstr parses a double quoted string into litq
- * return 0 in case of failure and 1 else
+ * Test if we have string enclosed in double quotes. e.g. "abc".
+ * Load the string into literal pool.
+ * return 0 in case of failure else 1
  */
-bool qstr (int *val)
+bool quoted_str (int *val)
 {
 	char c;
 

@@ -161,7 +161,7 @@ int get_string_ptr (char typ)
 
 	if (typ == CINT || typ == CUINT)
 		error("incompatible pointer type");
-	if (qstr(&num))
+	if (quoted_str(&num))
 		return (-(num + 1024));
 	else
 		return (-1);

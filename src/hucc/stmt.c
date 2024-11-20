@@ -406,15 +406,11 @@ void doswitch (void)
  */
 void docase (void)
 {
-	int val;
-	char n[NAMESIZE];
-
-	val = 0;
+	int val = 0;
 	if (readswitch()) {
-		if (!number(&val))
-			if (!pstr(&val))
-				if (!(symname(n) && find_enum(n, &val)))
-					error("bad case label");
+		if (!const_expr(&val, ":", NULL)) {
+			error("case label must be constant");
+		}
 		addcase(val);
 		if (!match(":"))
 			error("missing colon");
