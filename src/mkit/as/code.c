@@ -301,7 +301,7 @@ class4(int *ip)
 	case ABS_IND_X:
 		/* remember what labels are function calls */
 		if (opval == 0x20 && expr_lablptr != NULL)
-			expr_lablptr->flags |= FLG_FUNCTION;
+			expr_lablptr->flags |= FLG_FUNC;
 
 		/* three bytes */
 		if (pass == LAST_PASS) {

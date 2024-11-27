@@ -14,9 +14,11 @@
 #if defined(_WIN32)
 #define PATH_SEPARATOR		'\\'
 #define PATH_SEPARATOR_STRING	"\\"
+#define WRONG_PATH_SEPARATOR	'/'
 #else
 #define PATH_SEPARATOR		'/'
 #define PATH_SEPARATOR_STRING	"/"
+#define WRONG_PATH_SEPARATOR	'\\'
 #endif
 
 /* machine */
@@ -39,14 +41,7 @@
 /* total number of banks to allocate for workspace */
 #define MAX_BANKS	(ROM_BANKS + RESERVED_BANKS)
 
-/* number of bits to shift the source line number */
-#define DBGLINE 12
-#define DBGMASK ((1 << DBGLINE) - 4)
-
-// #define DBGINFO ((((slnum - 1) << DBGLINE) + (input_file[infile_num].file->number << 2)) + is_code)
-#define DBGINFO ((((lst_line - 1) << DBGLINE) + (lst_tfile->number << 2)) + is_code)
-
-/* type of ROM output for DBGINFO */
+/* type of ROM output for debug_info() */
 #define DATA_OUT 0
 #define FUNC_OUT 1
 #define CODE_OUT 2
@@ -200,7 +195,8 @@
 
 /* symbol flags */
 #define FLG_RESERVED 1
-#define FLG_FUNCTION 2
+#define FLG_CODE 2
+#define FLG_FUNC 4
 
 /* symbol lookup flags */
 #define SYM_CHK	0	/* does it exist? */
@@ -307,6 +303,7 @@ typedef struct t_symbol {
 	const char *name;
 	struct t_file *fileinfo;
 	int fileline;
+	int filecolumn;
 	int deflastpass;
 	int defthispass;
 	int reflastpass;

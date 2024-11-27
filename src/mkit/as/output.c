@@ -221,8 +221,9 @@ putbyte(int offset, int data, int is_code)
 
 	map[bank][offset] = section + ((addr >> 8) & 0xE0);
 
-	info = DBGINFO;
-	dbg[bank][offset] = info;
+	info = debug_info(is_code);
+	dbg_info[bank][offset] = info;
+	dbg_column[bank][offset] = debug_column;
 }
 
 
@@ -268,9 +269,11 @@ putword(int offset, int data, int is_code)
 	map[bank][offset + 0] = section + ((addr++ >> 8) & 0xE0);
 	map[bank][offset + 1] = section + ((addr++ >> 8) & 0xE0);
 
-	info = DBGINFO;
-	dbg[bank][offset + 0] = info;
-	dbg[bank][offset + 1] = info;
+	info = debug_info(is_code);
+	dbg_info[bank][offset + 0] = info;
+	dbg_info[bank][offset + 1] = info;
+	dbg_column[bank][offset + 0] = debug_column;
+	dbg_column[bank][offset + 1] = debug_column;
 }
 
 
@@ -283,7 +286,6 @@ putword(int offset, int data, int is_code)
 void
 putdword(int offset, int data)
 {
-	int is_code = DATA_OUT;
 	int addr;
 	uint32_t info;
 
@@ -321,11 +323,15 @@ putdword(int offset, int data)
 	map[bank][offset + 2] = section + ((addr++ >> 8) & 0xE0);
 	map[bank][offset + 3] = section + ((addr++ >> 8) & 0xE0);
 
-	info = DBGINFO;
-	dbg[bank][offset + 0] = info;
-	dbg[bank][offset + 1] = info;
-	dbg[bank][offset + 2] = info;
-	dbg[bank][offset + 3] = info;
+	info = debug_info(DATA_OUT);
+	dbg_info[bank][offset + 0] = info;
+	dbg_info[bank][offset + 1] = info;
+	dbg_info[bank][offset + 2] = info;
+	dbg_info[bank][offset + 3] = info;
+	dbg_column[bank][offset + 0] = debug_column;
+	dbg_column[bank][offset + 1] = debug_column;
+	dbg_column[bank][offset + 2] = debug_column;
+	dbg_column[bank][offset + 3] = debug_column;
 }
 
 
@@ -338,7 +344,6 @@ putdword(int offset, int data)
 void
 putbuffer(void *data, int size)
 {
-	int is_code = DATA_OUT;
 	int addr;
 	int step;
 
@@ -357,7 +362,8 @@ putbuffer(void *data, int size)
 
 		/* copy the buffer */
 		if (pass == LAST_PASS) {
-			uint32_t info, *fill;
+			uint32_t info, *fill_a;
+			uint8_t *fill_b;
 
 			if (data)
 				memcpy(&rom[bank][loccnt], data, size);
@@ -378,12 +384,15 @@ putbuffer(void *data, int size)
 					addr += step;
 					left -= step;
 				}
+			}
 
-			info = DBGINFO;
-			fill = &dbg[bank][loccnt];
+			info = debug_info(DATA_OUT);
+			fill_a = &dbg_info[bank][loccnt];
+			fill_b = &dbg_column[bank][loccnt];
 			step = size;
-			while (step--)
-				*fill++ = info;
+			while (step--) {
+				*fill_a++ = info;
+				*fill_b++ = debug_column;
 			}
 		}
 	} else {

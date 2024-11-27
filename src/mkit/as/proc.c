@@ -143,7 +143,7 @@ do_call(int *ip)
 
 	/* remember what labels are function calls */
 	if (optype == 0 && expr_lablptr != NULL)
-		expr_lablptr->flags |= FLG_FUNCTION;
+		expr_lablptr->flags |= FLG_FUNC;
 
 	/* generate code */
 	if (pass == LAST_PASS) {
@@ -398,7 +398,7 @@ do_proc(int *ip)
 
 	/* remember what labels are function calls */
 	if (optype != P_PGROUP && lablptr != NULL)
-		lablptr->flags |= FLG_FUNCTION;
+		lablptr->flags |= FLG_FUNC;
 
 	/* a KickC procedure also opens a label-scope */
 	if (optype == P_KICKC) {

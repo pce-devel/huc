@@ -98,7 +98,8 @@ void  cleanup_path(void);
 int   init_path(void);
 int   readline(void);
 const char *remember_string(const char * string, size_t length);
-t_file *remember_file(int hash);
+t_file *remember_file(const char *name, int hash);
+t_file *lookup_file(const char *name);
 void  clear_included(void);
 void  make_filelist(void);
 int   open_input(const char *name);
@@ -163,6 +164,7 @@ void list_procs(void);
 int check_thunks(void);
 
 /* SYMBOL.C */
+uint32_t debug_info(int is_code);
 int  symhash(void);
 int  addscope(struct t_symbol * curscope, int i);
 int  colsym(int *ip, int flag);

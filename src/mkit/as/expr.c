@@ -23,6 +23,7 @@ t_symbol pc_symbol = {
 	"\1*",          /* name */
 	NULL,           /* fileinfo */
 	0,              /* fileline */
+	0,              /* filecolumn */
 	1,              /* deflastpass */
 	1,              /* defthispass */
 	1,              /* reflastpass */
@@ -612,6 +613,7 @@ push_val(int type)
 
 			pc_symbol.fileinfo = input_file[infile_num].file;
 			pc_symbol.fileline = slnum;
+			pc_symbol.filecolumn = 0;
 
 			/* complicated because loccnt & data_loccnt can be >= $2000 */
 			if (data_loccnt == -1)

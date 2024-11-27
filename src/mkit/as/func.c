@@ -108,6 +108,7 @@ func_install(int ip)
 	/* remember where this was defined */
 	lablptr->fileinfo = input_file[infile_num].file;
 	lablptr->fileline = slnum;
+	lablptr->filecolumn = 0;
 
 	/* check function name syntax */
 	if (strchr(&symbol[1], '.')) {

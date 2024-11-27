@@ -799,7 +799,7 @@ do_equ(int *ip)
 	}
 
 	/* get value */
-	if (!evaluate(ip, ';', 1))
+	if (!evaluate(ip, 0, 1))
 		return;
 
 	/* check for undefined symbols - they are only allowed in the FIRST_PASS */
@@ -813,6 +813,38 @@ do_equ(int *ip)
 
 	/* assign value to the label */
 	labldef(CONSTANT + optype); /* or VARIABLE */
+
+	/* check for a 2nd parameter */
+	if (prlnbuf[*ip] == ',') {
+		/* skip spaces */
+		while (isspace(prlnbuf[++(*ip)])) {}
+
+		if (strncmp(&prlnbuf[*ip], "CODE", 4) == 0 ||
+		    strncmp(&prlnbuf[*ip], "code", 4) == 0) {
+			*ip += 4;
+			lablptr->data_type = -1;
+			lablptr->data_size = 0;
+			lablptr->flags |= FLG_CODE;
+		}
+		else
+		if (strncmp(&prlnbuf[*ip], "FUNC", 4) == 0 ||
+		    strncmp(&prlnbuf[*ip], "func", 4) == 0) {
+			*ip += 4;
+			lablptr->data_type = -1;
+			lablptr->data_size = 0;
+			lablptr->flags |= FLG_CODE + FLG_FUNC;
+		}
+		else {
+			if (!evaluate(ip, 0, 1))
+				return;
+			lablptr->data_type = P_DB;
+			lablptr->data_size = value;
+		}
+	}
+
+	/* check end of line */
+	if (!check_eol(ip))
+		return;
 
 	/* output line */
 	if (pass == LAST_PASS) {
@@ -1171,8 +1203,8 @@ do_incbin(int *ip)
 
 		/* load data on last pass */
 		if (pass == LAST_PASS) {
-			uint32_t info, *fill;
-			int is_code = DATA_OUT;
+			uint32_t info, *fill_a;
+			uint8_t *fill_b;
 
 			fread(&rom[bank][loccnt], 1, size, fp);
 
@@ -1191,14 +1223,16 @@ do_incbin(int *ip)
 					addr += step;
 					left -= step;
 				}
-
-			info = DBGINFO;
-			fill = &dbg[bank][loccnt];
-			step = size;
-			while (step--)
-				*fill++ = info;
 			}
 
+			info = debug_info(DATA_OUT);
+			fill_a = &dbg_info[bank][loccnt];
+			fill_b = &dbg_column[bank][loccnt];
+			step = size;
+			while (step--) {
+				*fill_a++ = info;
+				*fill_b++ = debug_column;
+			}
 			/* output line */
 			println();
 		}
@@ -1615,8 +1649,8 @@ do_ds(int *ip)
 
 	/* output line on last pass */
 	if (pass == LAST_PASS) {
-		uint32_t info, *fill;
-		int is_code = DATA_OUT;
+		uint32_t info, *fill_a;
+		uint8_t *fill_b;
 
 		if (filler != 0) {
 			if (section == S_ZP)
@@ -1644,12 +1678,15 @@ do_ds(int *ip)
 					addr += step;
 					left -= step;
 				}
+			}
 
-			info = DBGINFO;
-			fill = &dbg[bank][loccnt];
+			info = debug_info(DATA_OUT);
+			fill_a = &dbg_info[bank][loccnt];
+			fill_b = &dbg_column[bank][loccnt];
 			step = nbytes;
-			while (step--)
-				*fill++ = info;
+			while (step--) {
+				*fill_a++ = info;
+				*fill_b++ = debug_column;
 			}
 		}
 	}
@@ -1950,18 +1987,21 @@ do_align(int *ip)
 			if (section != S_DATA || asm_opt[OPT_DATAPAGE] == 0)
 				page = (page + 1) & 7;
 		} else {
-			if (section == S_CODE || section == S_DATA) {
-				uint32_t info, *fill;
-				int is_code = DATA_OUT;
+			if ((section == S_CODE || section == S_DATA) && (bank < UNDEFINED_BANK)) {
+				uint32_t info, *fill_a;
+				uint8_t *fill_b;
 
 				memset(&rom[bank][oldloc], 0, loccnt - oldloc);
 				memset(&map[bank][oldloc], section + (page << 5), loccnt - oldloc);
 
-				info = DBGINFO;
-				fill = &dbg[bank][oldloc];
+				info = debug_info(DATA_OUT);
+				fill_a = &dbg_info[bank][oldloc];
+				fill_b = &dbg_column[bank][oldloc];
 				offset = loccnt - oldloc;
-				while (offset--)
-					*fill++ = info;
+				while (offset--) {
+					*fill_a++ = info;
+					*fill_b++ = debug_column;
+				}
 			}
 		}
 	}
@@ -2532,6 +2572,7 @@ do_alias(int *ip)
 		/* remember where this was defined */
 		lablptr->fileinfo = input_file[infile_num].file;
 		lablptr->fileline = slnum;
+		lablptr->filecolumn = 0;
 
 		/* the alias needs to inherit any previous references to the label */
 		alias->refthispass += lablptr->refthispass;
@@ -2653,12 +2694,88 @@ do_phase(int *ip)
 void
 do_debug(int *ip)
 {
+	char fname[PATHSZ];
+
 	/* set label value if there was one */
 	labldef(LOCATION);
 
+	/* skip spaces */
+	while (isspace(prlnbuf[*ip]))
+		(*ip)++;
+
+	/* extract type */
+	if (!colsym(ip, 0)) {
+		if (symbol[0] == 0)
+			fatal_error("Syntax error!");
+		return;
+	}
+
+	if (!strcasecmp(&symbol[1], "line")) {
+		debug_file = NULL;
+		debug_line = 0;
+		debug_column = 0;
+
+		/* get file name */
+		if (prlnbuf[*ip] != ',') {
+			error(".DBG line filename missing!");
+			return;
+		}
+		++(*ip);
+		if (!getstring(ip, fname, PATHSZ - 1))
+			return;
+
+		/* get file line */
+		if (prlnbuf[*ip] != ',') {
+			error(".DBG line number missing!");
+			return;
+		}
+		++(*ip);
+		if (!evaluate(ip, 0, 0))
+			return;
+		if (0 > (int)value) {
+			error(".DBG line number cannot be negative!");
+			return;
+		}
+		debug_line = value;
+
+		/* get file column (optional) */
+		debug_column = 1;
+		if (prlnbuf[*ip] == ',') {
+			++(*ip);
+			if (!evaluate(ip, 0, 0))
+				return;
+			if (0 > (int)value) {
+				error(".DBG column number cannot be negative!");
+				return;
+			}
+			debug_column = value;
+		}
+
+		debug_file = lookup_file(fname);
+		if (debug_file == NULL)
+			return;
+
+		/* check end of line */
+		if (!check_eol(ip))
+			return;
+	}
+	else
+	if (!strcasecmp(&symbol[1], "clear")) {
+		debug_file = NULL;
+		debug_line = 0;
+		debug_column = 0;
+
+		/* check end of line */
+		if (!check_eol(ip))
+			return;
+	}
+	else {
+		error("Unknown .DBG type \"%s\"!", &symbol[1]);
+		return;
+	}
+
 	/* output line on last pass */
 	if (pass == LAST_PASS) {
-//		loadlc(loccnt, 0);
 		println();
 	}
 }

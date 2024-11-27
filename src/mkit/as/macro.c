@@ -367,6 +367,7 @@ macro_install(void)
 	/* remember where this was defined */
 	lablptr->fileinfo = input_file[infile_num].file;
 	lablptr->fileline = slnum;
+	lablptr->filecolumn = 0;
 
 	/* check macro name syntax */
 	/*

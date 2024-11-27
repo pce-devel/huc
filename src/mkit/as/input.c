@@ -22,6 +22,7 @@ int infile_num;
 t_file *extra_file;
 t_input input_file[MAX_NESTING + 1];
 
+static char *curpath = NULL;
 static char *incpath = NULL;
 static int *incpath_offset = NULL;
 static int incpath_remaining = 0;
@@ -37,11 +38,15 @@ static int incpath_count = 0;
 void
 cleanup_path(void)
 {
-	if (incpath)
+	if (incpath) {
 		free(incpath);
+		incpath = NULL;
+	}
 
-	if (incpath_offset)
+	if (incpath_offset) {
 		free(incpath_offset);
+		incpath_offset = NULL;
+	}
 }
 
 /* ----
@@ -52,6 +57,8 @@ cleanup_path(void)
 int
 add_path(char* newpath, int newpath_size)
 {
+	char *p;
+
 	/* sanity check */
 	if (newpath_size < 2)
 		return 0;
@@ -91,8 +98,12 @@ add_path(char* newpath, int newpath_size)
 	strncpy(incpath + incpath_offset[incpath_count], newpath, newpath_size);
 	incpath[incpath_offset[incpath_count] + newpath_size - 1] = '\0';
 
-	++incpath_count;
+	/* Sanitize path */
+	p = incpath + incpath_offset[incpath_count];
+	while ((p = strchr(p, WRONG_PATH_SEPARATOR)) != NULL)
+		*p++ = PATH_SEPARATOR;
 
+	++incpath_count;
 	return 1;
 }
 
@@ -114,6 +125,12 @@ init_path(void)
 	char *p,*pl;
 	int	ret, l;
 
+	/* Get current working directory */
+	if ((curpath = getcwd(NULL, 0)) == NULL || curpath[0] == '(') {
+		fprintf(stderr, "Unable to get the current directory name\n");
+		return 0;
+	}
+
 	/* Get env variable holding PCE path*/
 	p = getenv(machine->include_env);
 	printf("%s = \"%s\"\n\n", machine->include_env, p);
@@ -125,7 +142,6 @@ init_path(void)
 	pl = p;
 	while(pl != NULL)
 	{
-
 		/* Jump to next separator */
 		pl = strchr(p, ENV_PATH_SEPARATOR);
 
@@ -431,14 +447,14 @@ remember_string(const char * string, size_t size)
  */
 
 t_file *
-remember_file(int hash)
+remember_file(const char *name, int hash)
 {
 	t_file * file = malloc(sizeof(t_file));
 
 	if (file == NULL)
 		return (NULL);
 
-	file->name = remember_string(full_path, strlen(full_path) + 1);
+	file->name = remember_string(name, strlen(name) + 1);
 	file->number = ++file_count;
 	file->included = 0;
 
@@ -446,6 +462,41 @@ remember_file(int hash)
 	file_hash[hash] = file;
 
 	return (file);
+}
+
+
+/* ----
+ * lookup_file()
+ * ----
+ * lookup file name
+ */
+
+t_file *
+lookup_file(const char *name)
+{
+	int hash;
+	t_file * file;
+
+	hash = filename_crc(name) & (HASH_COUNT - 1);
+	file = file_hash[hash];
+	while (file) {
+#if defined(_WIN32) || defined(__APPLE__)
+		if (strcasecmp(file->name, name) == 0)
+			break;
+#else
+		if (strcmp(file->name, name) == 0)
+			break;
+#endif
+		file = file->next;
+	}
+	if (file == NULL) {
+		file = remember_file(name, hash);
+		if (file == NULL) {
+			fatal_error("No memory left to remember filename!");
+			return (NULL);
+		}
+	}
+	return file;
 }
 
 
@@ -512,7 +563,6 @@ open_input(const char *name)
 	char *p;
 	t_file * file;
 	char temp[PATHSZ + 4];
-	int hash;
 
 	/* only MAX_NESTING nested input files */
 	if (infile_num == MAX_NESTING) {
@@ -539,25 +589,10 @@ open_input(const char *name)
 		return (-1);
 
 	/* remember all filenames */
-	hash = filename_crc(full_path) & (HASH_COUNT - 1);
-	file = file_hash[hash];
-	while (file) {
-#if defined(_WIN32) || defined(__APPLE__)
-		if (strcasecmp(file->name, full_path) == 0)
-			break;
-#else
-		if (strcmp(file->name, full_path) == 0)
-			break;
-#endif
-		file = file->next;
-	}
+	file = lookup_file(full_path);
 	if (file == NULL) {
-		file = remember_file(hash);
-		if (file == NULL) {
-			fclose(fp);
-			fatal_error("No memory left to remember filename!");
-			return (-1);
-		}
+		fclose(fp);
+		return (-1);
 	}
 
 	/* do not include the same file twice in a pass */
@@ -581,6 +616,9 @@ open_input(const char *name)
 		fprintf(lst_fp, "#[%i]   \"%s\"\n", infile_num, input_file[infile_num].file->name);
 		++lst_line;
 	}
+	debug_file = NULL;
+	debug_line = 0;
+	debug_column = 0;
 	/* ok */
 	return (0);
 }
@@ -624,6 +662,9 @@ close_input(void)
 		fprintf(lst_fp, "#[%i]   \"%s\"\n", infile_num, input_file[infile_num].file->name);
 		++lst_line;
 	}
+	debug_file = NULL;
+	debug_line = 0;
+	debug_column = 0;
 	/* ok */
 	return (0);
 }
@@ -638,12 +679,18 @@ close_input(void)
 FILE *
 open_file(const char *name, const char *mode)
 {
-	FILE 	*fileptr;
-	int	i;
+	FILE *fileptr;
+	char *p;
+	int i;
 
 	fileptr = fopen(name, mode);
 	if (fileptr != NULL) {
 		strcpy(full_path, name);
+
+		p = full_path;
+		while ((p = strchr(p, WRONG_PATH_SEPARATOR)) != NULL)
+			*p++ = PATH_SEPARATOR;
+
 		return(fileptr);
 	}
 

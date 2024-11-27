@@ -1,6 +1,8 @@
 extern unsigned char rom[MAX_BANKS][8192];
 extern unsigned char map[MAX_BANKS][8192];
-extern uint32_t dbg[MAX_BANKS][8192];
+extern uint32_t dbg_info[MAX_BANKS][8192];
+extern uint8_t dbg_column[MAX_BANKS][8192];
+
 extern char bank_name[MAX_BANKS][64];
 extern int bank_loccnt[MAX_S][MAX_BANKS];
 extern int bank_page[MAX_S][MAX_BANKS];
@@ -71,6 +73,9 @@ extern FILE *in_fp;                             /* input */
 extern FILE *lst_fp;                            /* listing */
 extern int lst_line;                            /* listing */
 extern t_file *lst_tfile;                       /* listing */
+extern int debug_line;                          /* .DBG info */
+extern int debug_column;                        /* .DBG info */
+extern t_file *debug_file;                      /* .DBG info */
 extern char *section_name[MAX_S + 1];
 extern t_file *extra_file;
 extern t_input input_file[MAX_NESTING + 1];
