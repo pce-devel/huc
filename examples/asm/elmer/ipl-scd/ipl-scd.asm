@@ -124,6 +124,26 @@ iso_128mb	=	iso_dirhi		; index # of 1st beyond 128MB
 		.mlist
 
 
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; "pcengine.inc" only defines these for a CD/SCD/ACD build so ...
+;
+
+	.ifndef	cd_read
+cd_read		= $00:E009, FUNC
+ex_getver	= $00:E05A, FUNC
+ex_scrsiz	= $00:E069, FUNC
+ex_scrmod	= $00:E06F, FUNC
+ex_vsync	= $00:E07B, FUNC
+ex_bgon		= $00:E08A, FUNC
+ex_dspoff	= $00:E099, FUNC
+ex_memopen	= $00:E0DE, FUNC
+	.endif
+
+
+
 ; ***************************************************************************
 ; ***************************************************************************
 ;
