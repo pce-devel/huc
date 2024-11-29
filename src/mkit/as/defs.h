@@ -316,14 +316,14 @@ typedef struct t_symbol {
 	int size;
 	int vram;
 	int data_size;
-	unsigned char data_type;
+	signed char data_type;
 	unsigned char section;
 	unsigned char overlay;
 	unsigned char page;
 	unsigned char reason;
 	unsigned char type;
 	unsigned char flags;
-	unsigned char palette;
+	signed char palette;
 } t_symbol;
 
 typedef struct t_branch {
