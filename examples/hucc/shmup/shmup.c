@@ -13,6 +13,12 @@
 #incspr(explosion,"explosion.pcx",0,0,2,16)
 #incpal(explosionpal,"explosion.pcx")
 
+const unsigned char * aSpriteDataAddr[] = {
+	&bonk, &bullet, &ship, &explosion };
+
+const unsigned char aSpriteDataBank[] = {
+	^bonk, ^bullet, ^ship, ^explosion };
+
 #incchr(scene_chr,"scene.png")
 #incpal(scene_pal,"scene.png")
 #incbat(scene_bat,"scene.png",0x1000,32,28)
@@ -196,7 +202,17 @@ void main(void)
 	load_palette(18,shippal,1);
 	load_palette(19,explosionpal,1);
 
+	// you can either load vram using the label
 	sgx_load_vram(0x5000,bonk,0x400);
+
+	// or by using using the bank and address
+	set_far_base(aSpriteDataBank[0],aSpriteDataAddr[0]);
+	sgx_far_load_vram(0x5000,0x400);
+
+	// or by using using the bank and address with an offset
+	set_far_offset(0,aSpriteDataBank[0],aSpriteDataAddr[0]);
+	sgx_far_load_vram(0x5000,0x400);
+
 	sgx_load_vram(0x5400,bullet,0x40);
 	sgx_load_vram(0x5500,ship,0x400);
 	sgx_load_vram(0x5900,explosion,0x800);

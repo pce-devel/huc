@@ -7,9 +7,11 @@ void incl_globals_h (void);
 
 void incl_huc_h (void);
 
-FILE *fixiname (void);
+FILE *open_include (void);
 
-void init_path (void);
+int init_path (void);
+
+FILE *file_open (char *name, int initial_path);
 
 void doasmdef (void);
 

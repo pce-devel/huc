@@ -43,7 +43,7 @@ static int init (char *symbol_name, int type, int identity, int *dim, TAG_SYMBOL
 		return (0);
 	}
 
-	if (qstr(&value)) {
+	if (quoted_str(&value)) {
 		if ((identity == VARIABLE) || (type != CCHAR && type != CUCHAR))
 			error("found string: must assign to char pointer or array");	/* XXX: make this a warning? */
 		if (identity == POINTER) {
@@ -65,7 +65,7 @@ static int init (char *symbol_name, int type, int identity, int *dim, TAG_SYMBOL
 		add_data_initials(symbol_name, CINT, value, tag);
 		*dim = *dim - 1;
 	}
-	else if (qstr(&value)) {
+	else if (quoted_str(&value)) {
 		add_data_initials(symbol_name, CCHAR, value, tag);
 		*dim = *dim - 1;
 	}

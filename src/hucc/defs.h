@@ -12,9 +12,13 @@
  * as the table of i-code flag information in optimize.c
  */
 enum ICODE {
+	/* i-code for debug information */
+
+	I_DEBUG = 1,
+
 	/* i-code that retires the primary register contents */
 
-	I_FENCE = 1,
+	I_FENCE,
 
 	/* i-code that declares a byte sized primary register */
 
@@ -60,6 +64,7 @@ enum ICODE {
 
 	I_SWITCH_WR,
 	I_SWITCH_UR,
+	I_DEFAULT,
 	I_CASE,
 	I_ENDCASE,
 	I_LABEL,
@@ -385,6 +390,8 @@ enum ICOMPARE {
 #define T_VRAM           9
 #define T_PAL           10
 #define T_LITERAL       11
+#define T_SOURCE_LINE   12
+#define T_CLEAR_LINE    13
 
 #define FOREVER for (;;)
 #define FALSE   0
@@ -401,7 +408,11 @@ enum ICOMPARE {
 #define FFEED   12
 #define TAB     9
 
-#define FILENAMESIZE    256
+#ifdef _WIN32
+#define FILENAMESIZE 260
+#else
+#define FILENAMESIZE 256
+#endif
 
 /* symbol table parameters (locals are reset for every function) */
 #define SYMTBSZ 4096
@@ -503,7 +514,7 @@ struct tag_symbol {
 #define WS_INCR_LABEL     4
 #define WS_DEFAULT_LABEL  4
 #define WS_BODY_LABEL     5
-#define WS_TABLE_LABEL    5	/* label for dumpswitch() data table */
+#define WS_SWITCH_LABEL   5
 #define WS_EXIT_LABEL     6
 
 /* possible entries for "WS_TYPE" */
@@ -528,7 +539,7 @@ struct tag_symbol {
 
 /* input line */
 
-#define LINESIZE        384
+#define LINESIZE        512
 #define LINEMAX (LINESIZE - 1)
 #define MPMAX   LINEMAX
 

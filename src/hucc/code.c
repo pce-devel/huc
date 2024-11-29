@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 #include <string.h>
 
@@ -158,6 +159,21 @@ void out_ins_ex (int code, int type, intptr_t data, int imm_type, intptr_t imm_d
 	gen_ins(&tmp);
 }
 
+void out_ins_ex_arg (int code, int type, intptr_t data, int imm_type, intptr_t imm_data, char * string)
+{
+	INS tmp;
+
+	memset(&tmp, 0, sizeof(INS));
+
+	tmp.ins_code = code;
+	tmp.ins_type = type;
+	tmp.ins_data = data;
+	tmp.imm_type = imm_type;
+	tmp.imm_data = imm_data;
+	tmp.arg[0] = string;
+	gen_ins(&tmp);
+}
+
 void out_ins_sym (int code, int type, intptr_t data, SYMBOL *sym)
 {
 	INS tmp;
@@ -288,6 +304,37 @@ void gen_code (INS *tmp)
 
 	switch (code) {
 
+	/* i-code for debug information */
+
+	case I_DEBUG:
+		switch(type) {
+		case T_SOURCE_LINE:
+			if (data) {
+				char * source = (char *)data;
+				if (source)
+					while (source[0] == ' ' || source[0] == '\t')
+						++source;
+				nl();
+				ot(".dbg\tline,\t\"");
+				if (tmp->arg[0]) {
+					outstr(tmp->arg[0]);
+				}
+				outstr("\", ");
+				outdec((int)imm_data);
+				outstr("; ");
+				outstr(source);
+				nl();
+				free((void *)data);
+			}
+			break;
+		case T_CLEAR_LINE:
+			nl();
+			ol(".dbg\tclear");
+			break;
+
+		}
+		break;
+
 	/* i-code that retires the primary register contents */
 
 	case I_FENCE:
@@ -400,7 +447,7 @@ void gen_code (INS *tmp)
 		   in HuC we get a string and not a symbol */
 		switch (type) {
 		case T_LITERAL:
-			ot("  call\t\t");
+			ot("__call\t\t");
 			prefix();
 			outstr((const char *)data);
 			if (imm_data) {
@@ -429,7 +476,7 @@ void gen_code (INS *tmp)
 		break;
 
 	case I_RETURN:
-		ot("__return\t\t");
+		ot("__return\t");
 		outdec((int)data);
 		nl();
 		break;
@@ -497,6 +544,10 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case I_DEFAULT:
+		ol("__default");
+		break;
+
 	case I_CASE:
 		ot("__case\t\t");
 		if (type == T_VALUE)
@@ -505,8 +556,7 @@ void gen_code (INS *tmp)
 		break;
 
 	case I_ENDCASE:
-		ot("__endcase");
-		nl();
+		ol("__endcase");
 		break;
 
 	case I_LABEL:
@@ -531,13 +581,11 @@ void gen_code (INS *tmp)
 		ot("__bfalse\t");
 		outlabel((int)data);
 		nl();
-		nl();
 		break;
 
 	case I_BTRUE:
 		ot("__btrue\t\t");
 		outlabel((int)data);
-		nl();
 		nl();
 		break;
 

@@ -25,6 +25,7 @@
  */
 
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -55,6 +56,12 @@ char zeroes[2048];	/* CDROM sector full of zeores */
 char *prg_name;		/* program name */
 FILE *in_fp;		/* file pointers, input */
 FILE *lst_fp;		/* listing */
+int lst_line = 1;	/* listing */
+t_file * lst_tfile;	/* listing */
+int debug_line;		/* .DBG info */
+int debug_column;	/* .DBG info */
+t_file *debug_file;	/* .DBG info */
+
 char *section_name[MAX_S + 1] = {
 	"NULL",
 	"ZP",
@@ -88,6 +95,7 @@ int sf2_opt;
 int mx_opt;
 int mlist_opt;		/* macro listing main flag */
 int xlist;		/* listing file main flag */
+int debug_format;	/* debug output type */
 int list_level;		/* output level */
 int asm_opt[MAX_OPTS];	/* assembler options */
 int zero_need;		/* counter for trailing empty sectors on CDROM */
@@ -278,7 +286,7 @@ main(int argc, char **argv)
 	static t_file *final_source = NULL;
 
 	static int cd_type;
-	static const char *cmd_line_options = "I:OShl:mo:s";
+	static const char *cmd_line_options = "I:OSg:hl:mo:s";
 	static const struct option cmd_line_long_options[] = {
 		{"include",     required_argument, 0,           'I'},
 		{"pack",        no_argument,       0,           'O'},
@@ -347,6 +355,7 @@ main(int argc, char **argv)
 	}
 
 	/* init assembler options */
+	debug_format = 0;
 	list_level = 2;
 	trim_opt = 0;
 	header_opt = 1;
@@ -395,6 +404,23 @@ main(int argc, char **argv)
 
 			case 'S':
 				dump_seg = 2;
+				break;
+
+			case 'g':
+				/* optarg can have a leading space on linux/mac */
+				while (*optarg == ' ') { ++optarg; }
+
+				/* get debug format */
+				debug_format = toupper(*optarg);
+
+				if ((optarg[1] != '\0') || (debug_format != 'C' && debug_format != 'A' && debug_format != 'L')) {
+					fprintf(stderr, "%s: \"-g\" option must be followed by a 'C', 'A' or 'L'\n", argv[0]);
+					return (1);
+				}
+				if (debug_format == 'L') {
+					list_level = 2;
+					mlist_opt = 1;
+				}
 				break;
 
 			case 'h':
@@ -494,8 +520,8 @@ main(int argc, char **argv)
 
 		if ((overlayflag == 1) &&
 		    ((scd_opt == 0) && (cd_opt == 0))) {
-			fprintf(ERROUT, "Error: Overlay option only valid for CD or SCD programs.\n\n");
 			help();
+			fprintf(ERROUT, "Error: Overlay option only valid for CD or SCD programs.\n\n");
 			return (1);
 		}
 	} else {
@@ -506,6 +532,7 @@ main(int argc, char **argv)
 	/* check for input file name missing */
 	if (optind == argc)
 	{
+		help();
 		fprintf(ERROUT, "Error: Input file name missing!\n");
 		return (1);
 	}
@@ -573,7 +600,17 @@ main(int argc, char **argv)
 	}
 
 	/* init include path */
-	init_path();
+	if (!init_path()) {
+		fprintf(ERROUT, "Error: Unable to initialize include path!\n");
+		exit(1);
+	}
+
+	/* remember the list file now for debug output */
+	strcpy(full_path, lst_fname);
+	lst_tfile = lookup_file(full_path);
+	if (lst_tfile == NULL) {
+		exit(1);
+	}
 
 	/* open the input file */
 	if (open_input(in_fname)) {
@@ -844,7 +881,9 @@ main(int argc, char **argv)
 					fprintf(ERROUT, "Error: Cannot open listing file \"%s\"!\n", lst_fname);
 					exit(1);
 				}
+				fprintf(lst_fp, "%*c", SFIELD-1, ' ');
 				fprintf(lst_fp, "#[1]   \"%s\"\n", input_file[1].file->name);
+				++lst_line;
 			}
 
 			/* relocate procs */
@@ -1078,7 +1117,11 @@ main(int argc, char **argv)
 
 	/* dump the symbol table */
 	if ((fp = fopen(sym_fname, "w")) != NULL) {
-		labldump(fp);
+		/* this reorders the symbols, making them unusable for assembling! */
+		if (debug_format == 0)
+			labldump(fp);
+		else
+			debugdump(fp);
 		fclose(fp);
 	}
 
@@ -1121,32 +1164,54 @@ help(void)
 		prg_name = machine->asm_name;
 
 	/* display help */
-	printf("%s [options] [-h (for help)] [-o outfile] infiles\n\n", prg_name);
-	printf("-s         : show segment usage\n");
-	printf("-S         : show segment usage and contents\n");
-	printf("-l <0..3>  : listing file output level (0-3), default is 2\n");
-	printf("-m         : force macro expansion in listing\n");
-	printf("--raw      : prevent adding a ROM header\n");
-	printf("--pad      : pad ROM size to power-of-two\n");
-	printf("--trim     : strip unused head and tail from ROM\n");
-	printf("-I         : add include path\n");
+	printf("%s [options] [-o outfile] infiles\n\n", prg_name);
+
 	if (machine->type == MACHINE_PCE) {
+		printf("-gC        : output .SYM for mesen2 C source file debugging\n");
+		printf("-gA        : output .SYM for mesen2 ASM source file debugging\n");
+		printf("-gL        : output .SYM for mesen2 debugging using .LST file\n");
+		printf("-h         : display this help message\n");
+		printf("-I         : add include path\n");
+		printf("-l <0..3>  : listing file output level (0-3), default is 2\n");
+		printf("-m         : force macro expansion in listing\n");
+		printf("-o         : change output ROM/ISO name and extension\n");
+		printf("-O         : optimize .proc packing (compared to HuC v3.21)\n");
+		printf("-s         : show segment usage\n");
+		printf("-S         : show segment usage and contents\n");
+		printf("--hucc     : set all the options needed for HuCC code\n");
+//		printf("--kc       : assemble code generated by the KickC compiler\n");
 		printf("--sf2      : create a StreetFighterII HuCARD\n");
 		printf("--cd       : create a CD-ROM track image\n");
 		printf("--scd      : create a Super CD-ROM track image\n");
+		printf("--overlay  : create a CD overlay program, not a .ISO\n");
 		printf("--sgx      : add a SuperGRAFX signature to the CD-ROM\n");
-		printf("--overlay  : create an executable 'overlay' program segment\n");
 		printf("--ipl      : create a custom CD-ROM IPL file\n");
+		printf("--raw      : prevent adding a ROM header\n");
+		printf("--pad      : pad ROM size to power-of-two\n");
+		printf("--trim     : strip unused head and tail from ROM\n");
+		printf("--newproc  : run .proc code in MPR6, instead of MPR5\n");
+		printf("--strip    : strip unused .proc & .procgroup\n");
+		printf("--srec     : create a Motorola S-record file\n");
 		printf("--develo   : assemble and run on the Develo Box\n");
 		printf("--mx       : create a Develo MX file\n");
-		printf("-O         : optimize .proc packing (compared to HuC v3.21)\n");
-		printf("--strip    : strip unused .proc & .procgroup\n");
-		printf("--newproc  : run .proc code in MPR6, instead of MPR5\n");
+		printf("infiles    : one or more files to be assembled\n");
+		printf("\n");
+	} else {
+		printf("-gC        : output .SYM for mesen2 C source file debugging\n");
+		printf("-gA        : output .SYM for mesen2 ASM source file debugging\n");
+		printf("-gL        : output .SYM for mesen2 debugging using .lst file\n");
+		printf("-I         : add include path\n");
+		printf("-l <0..3>  : listing file output level (0-3), default is 2\n");
+		printf("-m         : force macro expansion in listing\n");
+		printf("-s         : show segment usage\n");
+		printf("-S         : show segment usage and contents\n");
+		printf("--raw      : prevent adding a ROM header\n");
+		printf("--pad      : pad ROM size to power-of-two\n");
+		printf("--trim     : strip unused head and tail from ROM\n");
+		printf("--srec     : create a Motorola S-record file\n");
+		printf("infiles    : one or more files to be assembled\n");
+		printf("\n");
 	}
-	printf("--kc       : assemble code generated by the KickC compiler\n");
-	printf("--srec     : create a Motorola S-record file\n");
-	printf("infiles    : one or more files to be assembled\n");
-	printf("\n");
 }
 
 

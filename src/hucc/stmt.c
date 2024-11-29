@@ -370,15 +370,14 @@ void doswitch (void)
 	ws[WS_STACK_OFFSET] = stkp;
 	ws[WS_TYPE] = WS_SWITCH;
 	ws[WS_CASE_INDEX] = swstp;
-	ws[WS_TABLE_LABEL] = getlabel();
+	ws[WS_SWITCH_LABEL] = getlabel();
 	ws[WS_DEFAULT_LABEL] = ws[WS_EXIT_LABEL] = getlabel();
 	addwhile(ws);
 	needbracket("(");
 	expression(YES);
 	needbracket(")");
-	gswitch(ws[WS_TABLE_LABEL]);
+	jump(ws[WS_SWITCH_LABEL]);
 	statement(NO);
-
 	ptr = readswitch();
 	jump(ptr[WS_EXIT_LABEL]);
 
@@ -386,13 +385,16 @@ void doswitch (void)
 		ptr[WS_DEFAULT_LABEL] = getlabel();
 		auto_default = true;
 	}
+	gnlabel(ptr[WS_SWITCH_LABEL]);
+
 	dumpswitch(ptr);
+
 	if (auto_default) {
 		gnlabel((int)ptr[WS_DEFAULT_LABEL]);
-		out_ins(I_CASE, 0, 0);
+		out_ins(I_DEFAULT, 0, 0);
 	}
-
 	gnlabel(ptr[WS_EXIT_LABEL]);
+
 	locsym_index = ptr[WS_LOCSYM_INDEX];
 	stkp = modstk(ptr[WS_STACK_OFFSET]);
 	swstp = ptr[WS_CASE_INDEX];
@@ -404,15 +406,11 @@ void doswitch (void)
  */
 void docase (void)
 {
-	int val;
-	char n[NAMESIZE];
-
-	val = 0;
+	int val = 0;
 	if (readswitch()) {
-		if (!number(&val))
-			if (!pstr(&val))
-				if (!(symname(n) && find_enum(n, &val)))
-					error("bad case label");
+		if (!const_expr(&val, ":", NULL)) {
+			error("case label must be constant");
+		}
 		addcase(val);
 		if (!match(":"))
 			error("missing colon");
@@ -432,7 +430,7 @@ void dodefault (void)
 	ptr = readswitch();
 	if (ptr) {
 		ptr[WS_DEFAULT_LABEL] = lab = getlabel();
-		gcase(lab, INT_MAX);
+		gdefault(lab);
 		if (!match(":"))
 			error("missing colon");
 	}
@@ -577,7 +575,9 @@ void dumpswitch (int *ws)
 {
 	int i, j, column;
 
-	gnlabel(ws[WS_TABLE_LABEL]);
+	i = getlabel();
+	gswitch(i);
+	gnlabel(i);
 	flush_ins();
 
 	i = ws[WS_CASE_INDEX];

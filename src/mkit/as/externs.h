@@ -1,5 +1,8 @@
 extern unsigned char rom[MAX_BANKS][8192];
 extern unsigned char map[MAX_BANKS][8192];
+extern uint32_t dbg_info[MAX_BANKS][8192];
+extern uint8_t dbg_column[MAX_BANKS][8192];
+
 extern char bank_name[MAX_BANKS][64];
 extern int bank_loccnt[MAX_S][MAX_BANKS];
 extern int bank_page[MAX_S][MAX_BANKS];
@@ -22,7 +25,7 @@ extern int page;                                /* page */
 extern int rs_base;                             /* .rs counter */
 extern int rs_mprbank;                          /* .rs counter */
 extern int rs_overlay;                          /* .rs counter */
-extern int section;                             /* current section: S_ZP, S_BSS, S_CODE or S_DATA */
+extern unsigned char section;                   /* current section: S_ZP, S_BSS, S_CODE or S_DATA */
 extern int section_bank[MAX_S];                 /* current bank for each section */
 extern int section_phase[MAX_S];                /* current phase offset for each section */
 extern int section_flags[MAX_S];                /* current flags for each section */
@@ -68,6 +71,11 @@ extern int infile_num;
 extern FILE *out_fp;                            /* file pointers, output */
 extern FILE *in_fp;                             /* input */
 extern FILE *lst_fp;                            /* listing */
+extern int lst_line;                            /* listing */
+extern t_file *lst_tfile;                       /* listing */
+extern int debug_line;                          /* .DBG info */
+extern int debug_column;                        /* .DBG info */
+extern t_file *debug_file;                      /* .DBG info */
 extern char *section_name[MAX_S + 1];
 extern t_file *extra_file;
 extern t_input input_file[MAX_NESTING + 1];
@@ -113,6 +121,7 @@ extern int kickc_opt;                           /* NZ if -kc flag on command lin
 extern int hucc_opt;                            /* NZ if -hucc flag on command line */
 extern int mlist_opt;                           /* macro listing main flag */
 extern int xlist;                               /* listing file main flag */
+extern int debug_format;                        /* debug output type */
 extern int list_level;                          /* output level */
 extern int asm_opt[MAX_OPTS];                   /* assembler option state */
 extern int opvaltab[6][16];

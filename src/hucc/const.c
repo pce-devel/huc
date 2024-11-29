@@ -161,7 +161,7 @@ int get_string_ptr (char typ)
 
 	if (typ == CINT || typ == CUINT)
 		error("incompatible pointer type");
-	if (qstr(&num))
+	if (quoted_str(&num))
 		return (-(num + 1024));
 	else
 		return (-1);
@@ -255,6 +255,16 @@ int get_raw_value (char sep)
 			}
 
 			/* add char */
+			if (c == '^') {
+				/* we want the succeeding identifier's bank */
+				is_address = 1;
+				/* we need to remember that we had an address
+				   somewhere so we can barf if the identifier
+				   contains arithmetic */
+				had_address = 1;
+				/* drop through and add the '^' to the const_data[] */
+			}
+
 			if (c == '&') {
 				/* we want the succeeding identifier's address */
 				is_address = 1;

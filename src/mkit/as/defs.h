@@ -14,9 +14,11 @@
 #if defined(_WIN32)
 #define PATH_SEPARATOR		'\\'
 #define PATH_SEPARATOR_STRING	"\\"
+#define WRONG_PATH_SEPARATOR	'/'
 #else
 #define PATH_SEPARATOR		'/'
 #define PATH_SEPARATOR_STRING	"/"
+#define WRONG_PATH_SEPARATOR	'\\'
 #endif
 
 /* machine */
@@ -38,6 +40,11 @@
 
 /* total number of banks to allocate for workspace */
 #define MAX_BANKS	(ROM_BANKS + RESERVED_BANKS)
+
+/* type of ROM output for debug_info() */
+#define DATA_OUT 0
+#define FUNC_OUT 1
+#define CODE_OUT 2
 
 /* tile format for encoder */
 #define CHUNKY_TILE	1
@@ -175,8 +182,9 @@
 #define P_ALIAS		66	// .alias
 #define P_REF		67	// .ref
 #define P_PHASE		68	// .phase
+#define P_DEBUG		69	// .dbg
 
-/* symbol flags */
+/* symbol type */
 #define UNDEF	1	/* undefined - may be zero page */
 #define IFUNDEF 2	/* declared in a .if expression */
 #define MDEF	3	/* multiply defined */
@@ -184,6 +192,11 @@
 #define MACRO	5	/* used for a macro name */
 #define FUNC	6	/* used for a function */
 #define ALIAS	7	/* used for an alias */
+
+/* symbol flags */
+#define FLG_RESERVED 1
+#define FLG_CODE 2
+#define FLG_FUNC 4
 
 /* symbol lookup flags */
 #define SYM_CHK	0	/* does it exist? */
@@ -290,26 +303,27 @@ typedef struct t_symbol {
 	const char *name;
 	struct t_file *fileinfo;
 	int fileline;
-	int reason;
-	int type;
+	int filecolumn;
+	int deflastpass;
+	int defthispass;
+	int reflastpass;
+	int refthispass;
+	int rombank;
+	int mprbank;
 	int value;
 	int phase;
-	int section;
-	int overlay;
-	int mprbank;
-	int rombank;
-	int page;
 	int nb;
 	int size;
 	int vram;
-	int pal;
-	int reserved;
-	int data_type;
 	int data_size;
-	int deflastpass;
-	int reflastpass;
-	int defthispass;
-	int refthispass;
+	signed char data_type;
+	unsigned char section;
+	unsigned char overlay;
+	unsigned char page;
+	unsigned char reason;
+	unsigned char type;
+	unsigned char flags;
+	signed char palette;
 } t_symbol;
 
 typedef struct t_branch {

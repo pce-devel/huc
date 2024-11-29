@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -366,6 +367,7 @@ macro_install(void)
 	/* remember where this was defined */
 	lablptr->fileinfo = input_file[infile_num].file;
 	lablptr->fileline = slnum;
+	lablptr->filecolumn = 0;
 
 	/* check macro name syntax */
 	/*

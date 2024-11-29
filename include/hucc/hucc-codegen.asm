@@ -521,15 +521,25 @@ __switch.ur	.macro
 		.endm
 
 ; **************
+; the start of a "default" statement
+
+__default	.macro
+		plx
+		.endm
+
+; **************
 ; the start of a "case" statement
 
 __case		.macro
+		plx
 		.endm
 
 ; **************
 ; the end of the previous "case" statement if it drops through
+; turns next __case "plx" into an "ora"
 
 __endcase	.macro
+		db	$09
 		.endm
 
 ; **************
@@ -4239,7 +4249,9 @@ smodw:		sta.l	<divisor
 
 ; **************
 
-do_switchw:	sty.h	<__ptr		; Save hi-byte of the table address.
+do_switchw:	phx
+
+		sty.h	<__ptr		; Save hi-byte of the table address.
 		sta.l	<__temp		; Save lo-byte of the value to find.
 
 		lda	[__ptr]		; Read #bytes of case values to check.
@@ -4276,7 +4288,9 @@ test_case_hi:	lda.h	<__temp		; Slow test loop for the hi-byte, which
 
 ; **************
 
-do_switchb:	sty.h	<__ptr		; Save hi-byte of the table address.
+do_switchb:	phx
+
+		sty.h	<__ptr		; Save hi-byte of the table address.
 		tay			; Save lo-byte of the value to find.
 
 		lda	[__ptr]		; Read #bytes of case values to check.

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 #include <ctype.h>
 #include "defs.h"
@@ -22,26 +23,27 @@ t_symbol pc_symbol = {
 	"\1*",          /* name */
 	NULL,           /* fileinfo */
 	0,              /* fileline */
-	CONSTANT,       /* reason */
-	DEFABS,         /* type */
+	0,              /* filecolumn */
+	1,              /* deflastpass */
+	1,              /* defthispass */
+	1,              /* reflastpass */
+	1,              /* refthispass */
+	UNDEFINED_BANK, /* rombank */
+	0,              /* mprbank */
 	0,              /* value */
 	0,              /* phase */
-	S_NONE,         /* section */
-	0,              /* overlay */
-	0,              /* mprbank */
-	UNDEFINED_BANK, /* bank */
-	0,              /* page */
 	0,              /* nb */
 	0,              /* size */
 	0,              /* vram */
-	0,              /* pal */
-	1,              /* reserved */
-	0,              /* data_type */
 	0,              /* data_size */
-	1,              /* deflastpass */
-	1,              /* reflastpass */
-	1,              /* defthispass */
-	1               /* refthispass */
+	0,              /* data_type */
+	S_NONE,         /* section */
+	0,              /* overlay */
+	0,              /* page */
+	CONSTANT,       /* reason */
+	DEFABS,         /* type */
+	FLG_RESERVED,   /* flags */
+	0               /* palette */
 };
 
 
@@ -611,6 +613,7 @@ push_val(int type)
 
 			pc_symbol.fileinfo = input_file[infile_num].file;
 			pc_symbol.fileline = slnum;
+			pc_symbol.filecolumn = 0;
 
 			/* complicated because loccnt & data_loccnt can be >= $2000 */
 			if (data_loccnt == -1)
@@ -718,9 +721,10 @@ push_val(int type)
 		else {
 			/* resolve newproc procedure labels to their thunk location in the last pass */
 			struct t_proc *proc;
-
 			if ((pass == LAST_PASS) && (newproc_opt != 0) &&
-			    ((proc = expr_lablptr->proc) != NULL) && (proc->label == expr_lablptr)) {
+			    ((proc = expr_lablptr->proc) != NULL) &&
+			    (proc->label == expr_lablptr) &&
+			    (proc->bank != STRIPPED_BANK)) {
 				if (!proc->call)
 					add_thunk(proc);
 				expr_overlay = 0;
@@ -728,7 +732,7 @@ push_val(int type)
 				val = proc->call;
 			} else {
 				expr_overlay = expr_lablptr->overlay;
-				expr_mprbank = expr_lablptr->mprbank;
+				expr_mprbank = (expr_lablptr->mprbank < UNDEFINED_BANK) ? expr_lablptr->mprbank : UNDEFINED_BANK;
 				val = expr_lablptr->value;
 			}
 
@@ -1175,10 +1179,10 @@ do_op(void)
 		if (!check_func_args("PAL"))
 			return (0);
 		if (pass == LAST_PASS) {
-			if (expr_lablptr->pal == -1)
+			if (expr_lablptr->palette == -1)
 				error("No PAL() index for this symbol!");
 		}
-		val[0] = expr_lablptr->pal;
+		val[0] = expr_lablptr->palette;
 		break;
 
 	/* DEFINED */

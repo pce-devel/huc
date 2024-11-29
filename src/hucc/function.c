@@ -379,8 +379,9 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 
 	flush_ins();	/* David, .proc directive support */
 	gtext();
-	comment();
-	outstr("*******\n\n");
+	outstr(";***********************\n");
+	outstr(";***********************\n");
+	nl();
 	ol(".hucc");
 	ot(".proc\t\t");
 	prefix();
@@ -415,6 +416,7 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 	out_ins(I_RETURN, T_VALUE, ret_type != CVOID || ret_ptr_order != 0); /* generate the return statement */
 	flush_ins();		/* David, optimize.c related */
 
+	ol(".dbg\tclear");
 	ol(".endp");	/* David, .endp directive support */
 
 #if ULI_NORECURSE

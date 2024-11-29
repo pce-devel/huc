@@ -20,6 +20,7 @@ void defstorage (void);
 void defword (void);
 void out_ins (int code, int type, intptr_t data);
 void out_ins_ex (int code, int type, intptr_t data, int imm_type, intptr_t imm_data);
+void out_ins_ex_arg (int code, int type, intptr_t data, int imm_type, intptr_t imm_data, char * string);
 void out_ins_sym (int code, int type, intptr_t data, SYMBOL *sym);
 void out_ins_cmp (int code, int type);
 void gen_ins (INS *tmp);

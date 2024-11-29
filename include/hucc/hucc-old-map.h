@@ -29,6 +29,9 @@
 extern void __fastcall __xsafe __nop set_map_data( unsigned char __far *map<vdc_map_bank:vdc_map_addr>, unsigned char w<vdc_map_width>, unsigned char h<vdc_map_height> );
 extern void __fastcall __xsafe __nop sgx_set_map_data( unsigned char __far *map<sgx_map_bank:sgx_map_addr>, unsigned char w<sgx_map_width>, unsigned char h<sgx_map_height> );
 
+extern void __fastcall __xsafe __nop set_far_map_data( unsigned char map_bank<vdc_map_bank>, unsigned char *map_addr<vdc_map_addr>, unsigned char w<vdc_map_width>, unsigned char h<vdc_map_height> );
+extern void __fastcall __xsafe __nop sgx_set_far_map_data( unsigned char map_bank<vdc_map_bank>, unsigned char *map_addr<vdc_map_addr>, unsigned char w<sgx_map_width>, unsigned char h<sgx_map_height> );
+
 extern void __fastcall __xsafe load_map( unsigned char bat_x<_al>, unsigned char bat_y<_ah>, int map_x<_bx>, int map_y<_dx>, unsigned char tiles_w<_cl>, unsigned char tiles_h<_ch> );
 extern void __fastcall __xsafe sgx_load_map( unsigned char bat_x<_al>, unsigned char bat_y<_ah>, int map_x<_bx>, int map_y<_dx>, unsigned char tiles_w<_cl>, unsigned char tiles_h<_ch> );
 

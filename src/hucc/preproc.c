@@ -11,6 +11,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <ctype.h>
+#include <unistd.h>
 #include "code.h"
 #include "defs.h"
 #include "data.h"
@@ -28,11 +30,13 @@
 #define PATH_SEPARATOR ';'
 #define DIR_SEPARATOR '\\'
 #define DIR_SEPARATOR_STRING "\\"
+#define BAD_SEPARATOR '/'
 #define DEFAULT_DIRS "c:\\huc\\include\\hucc"
 #else
 #define PATH_SEPARATOR ':'
 #define DIR_SEPARATOR '/'
 #define DIR_SEPARATOR_STRING "/"
+#define BAD_SEPARATOR '\\'
 #define DEFAULT_DIRS "/usr/local/lib/huc/include/hucc:" \
 	"/usr/local/huc/include/hucc:" \
 	"/usr/local/share/huc/include/hucc:" \
@@ -42,8 +46,11 @@
 	"/usr/include/hucc"
 #endif
 
+#define MAX_PATHS 16
+
 /* locals */
-static char *incpath[10];
+static char *curpath;
+static char *incpath[MAX_PATHS] = { "" };
 
 static const char *include_path (void)
 {
@@ -63,14 +70,19 @@ char **include_dirs (void)
 /*
  *  init the include paths
  */
-void init_path (void)
+int init_path (void)
 {
 	const char *p, *pl;
 	int i, l;
 
+	if ((curpath = getcwd(NULL, 0)) == NULL || curpath[0] == '(') {
+		fprintf(stderr, "Unable to get the current directory name\n");
+		return (NO);
+	}
+
 	p = include_path();
 
-	for (i = 0; i < 10; i++) {
+	for (i = 1; i < MAX_PATHS; i++) {
 		pl = strchr(p, PATH_SEPARATOR);
 
 		if (pl == NULL)
@@ -96,24 +108,43 @@ void init_path (void)
 			incpath[i] = 0;
 		}
 	}
+	return (YES);
 }
 
 /*
  *  open a file - browse paths
  */
-FILE *file_open (char *name, char *mode)
+FILE *file_open (char *name, int initial_path)
 {
 	FILE *fp = NULL;
-	char testname[256];
+	char testname[FILENAMESIZE];
+	char *p;
 	int i;
 
-	for (i = 0; i < 10; i++) {
-		if (incpath[i] && strlen(incpath[i])) {
+	for (i = initial_path; i < MAX_PATHS; i++) {
+		if (incpath[i]) {
+			if (incpath[i][0] != '\0') {
+				if (name[0] == DIR_SEPARATOR || name[0] == BAD_SEPARATOR)
+					break;
+#ifdef _WIN32
+				if (isalpha(name[0]) && name[1] == ':')
+					break;
+#endif
+			}
+			if ((strlen(incpath[i]) + strlen(name)) >= FILENAMESIZE) {
+				fprintf(stderr, "%s: include path + filename is too long!\n", name);
+				break;
+			}
 			strcpy(testname, incpath[i]);
 			strcat(testname, name);
-			strcpy(inclstk_name[inclsp], testname);
-			fp = fopen(testname, mode);
-			if (fp != NULL) break;
+			p = testname;
+			while ((p = strchr(p, BAD_SEPARATOR)) != NULL)
+				*p++ = DIR_SEPARATOR;
+			fp = fopen(testname, "r");
+			if (fp != NULL) {
+				strcpy(inclstk_name[inclsp], testname);
+				break;
+			}
 		}
 	}
 
@@ -134,7 +165,7 @@ void doinclude (void)
 	FILE *inp2;
 
 	blanks();
-	inp2 = fixiname();
+	inp2 = open_include();
 	if (inp2) {
 		if (inclsp < INCLSIZ) {
 			inclstk_line[inclsp] = line_number;
@@ -152,6 +183,9 @@ void doinclude (void)
 	kill();
 }
 
+/*
+ *	open auto-include file "globals.h"
+ */
 void incl_globals_h (void)
 {
 	FILE *inp2;
@@ -159,8 +193,7 @@ void incl_globals_h (void)
 	/* open the globals.h file to include those variables */
 	/* but if we can't open it, it's no problem */
 
-	if ((inp2 = fopen("globals.h", "r")) == NULL)
-		inp2 = file_open("globals.h", "r");
+	inp2 = file_open("globals.h", 0);
 
 	if (inp2) {
 		if (inclsp < INCLSIZ) {
@@ -169,7 +202,6 @@ void incl_globals_h (void)
 #endif
 			inclstk_line[inclsp] = line_number;
 			line_number = 0;
-			strcpy(inclstk_name[inclsp], "globals.h");
 			inclstk[inclsp++] = input2;
 			input2 = inp2;
 			globals_h_in_process = 1;
@@ -181,6 +213,9 @@ void incl_globals_h (void)
 	}
 }
 
+/*
+ *	open auto-include file "huc.h"
+ */
 void incl_huc_h (void)
 {
 	FILE *inp2;
@@ -188,8 +223,7 @@ void incl_huc_h (void)
 	/* open the huc.h file to include those variables */
 	/* but if we can't open it, it's no problem */
 
-	if ((inp2 = fopen("huc.h", "r")) == NULL)
-		inp2 = file_open("huc.h", "r");
+	inp2 = file_open("huc.h", 0);
 
 	if (inp2) {
 		if (inclsp < INCLSIZ) {
@@ -198,7 +232,6 @@ void incl_huc_h (void)
 #endif
 			inclstk_line[inclsp] = line_number;
 			line_number = 0;
-			strcpy(inclstk_name[inclsp], "huc.h");
 			inclstk[inclsp++] = input2;
 			input2 = inp2;
 		}
@@ -210,12 +243,12 @@ void incl_huc_h (void)
 }
 
 /*
- *	fixiname - remove "brackets" around include file name
+ *	open_include - remove "brackets" around include file name
  */
-FILE *fixiname (void)
+FILE *open_include (void)
 {
 	char c1, c2, *p, *ibp;
-	char buf[LINESIZE];
+	char buf[FILENAMESIZE];
 	FILE *fp;
 
 	ibp = &buf[0];
@@ -225,22 +258,23 @@ FILE *fixiname (void)
 		error("incorrect file name delimiter");
 		return (NULL);
 	}
-	for (p = line + lptr; *p;) {
+	for (p = line + lptr; *p && (ibp - buf) < FILENAMESIZE;) {
 		if (*p == c2)
 			break;
 		if ((*p == '\\') && (p[1] == '\\'))
 			p++;
 		*ibp++ = *p++;
 	}
+	if ((ibp - buf) == FILENAMESIZE) {
+		error("file name too long");
+		return (NULL);
+	}
 	if (*p != c2) {
 		error("file name delimiter missing");
 		return (NULL);
 	}
 	*ibp = 0;
-	fp = NULL;
-	strcpy(inclstk_name[inclsp], buf);
-	if ((c1 == '<') || ((fp = fopen(buf, "r")) == NULL))
-		fp = file_open(buf, "r");
+	fp = file_open(buf, (c1 == '<'));
 #ifdef DEBUG_PREPROC
 	if (fp) {
 		printf("HuCC opening #include \"%s\".\n", buf);
@@ -258,10 +292,12 @@ FILE *fixiname (void)
  */
 void doasm (void)
 {
+	char * source;
 	/* Save the SP if this #asm section is inside a function */
 	if (fexitlab)
 		out_ins(I_SAVESP, 0, 0);
 	flush_ins();	/* David - optimize.c related */
+	ol(".dbg\tclear");
 	cmode = 0;
 	FOREVER {
 		readline();
@@ -269,16 +305,36 @@ void doasm (void)
 			break;
 		if (feof(input))
 			break;
+#if 1
+		source = line;
+		if (source[0] == ' ' || source[0] == '\t') {
+			while (source[0] == ' ' || source[0] == '\t')
+				++source;
+			tab();
+			tab();
+		}
+		outstr(source);
+#else
 		outstr(line);
+#endif
 		nl();
 	}
-	kill();
-	cmode = 1;
 	/* Restore the SP if this #asm section is inside a function */
 	if (fexitlab) {
 		out_ins(I_LOADSP, 0, 0);
-		flush_ins();	/* David - optimize.c related */
 	}
+	/* Mark the end of the #asm section */
+	if (ctext) {
+		char * temp = malloc(LINESIZE);
+		char * filename = (inclsp) ? inclstk_name[inclsp - 1] : fname_copy;
+		if (temp) {
+			memcpy(temp, line, LINESIZE);
+			out_ins_ex_arg(I_DEBUG, T_SOURCE_LINE, (intptr_t)temp, T_VALUE, line_number, filename);
+			}
+	}
+	flush_ins();	/* David - optimize.c related */
+	kill();
+	cmode = 1;
 }
 
 void doasmdef (void)
@@ -612,7 +668,7 @@ int cpp (int subline)
 								parg[0] = c;
 								parg[1] = '\0';
 								if (++parg >= pend) {
-									error("macro argument too int");
+									error("macro argument too long");
 									return (0);
 								}
 								if (ch() == ')') {
@@ -681,7 +737,7 @@ int cpp (int subline)
 	}
 	keepch(0);
 	if (mptr >= MPMAX)
-		error("line too int");
+		error("line too long");
 	/* copy cooked input back to where we got the raw input from */
 	strcpy(&line[llptr], mline);
 	/* ...and continue processing at that point */

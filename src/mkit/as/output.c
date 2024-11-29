@@ -1,5 +1,6 @@
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 #include "defs.h"
 #include "externs.h"
@@ -36,10 +37,11 @@ println(void)
 		strcpy(prlnbuf, tmplnbuf);
 
 	/* output */
-	if (data_loccnt == -1)
+	if (data_loccnt == -1) {
 		/* line buffer */
 		fprintf(lst_fp, "%s\n", prlnbuf);
-	else {
+		++lst_line;
+	} else {
 		/* line buffer + data bytes */
 		loadlc(data_loccnt, 0);
 
@@ -49,7 +51,9 @@ println(void)
 		/* check level */
 		if ((data_level > list_level) && (nb > 4)) {
 			/* doesn't match */
-			fputs(prlnbuf, lst_fp); putc('\n', lst_fp);
+			fputs(prlnbuf, lst_fp);
+			putc('\n', lst_fp);
+			++lst_line;
 		}
 		else {
 			/* ok */
@@ -69,13 +73,17 @@ println(void)
 				cnt++;
 				if (cnt == data_size) {
 					cnt = 0;
-					fputs(prlnbuf, lst_fp); putc('\n', lst_fp);
+					fputs(prlnbuf, lst_fp);
+					putc('\n', lst_fp);
+					++lst_line;
 					clearln();
 					loadlc(data_loccnt, 0);
 				}
 			}
 			if (cnt) {
-				fputs(prlnbuf, lst_fp); putc('\n', lst_fp);
+				fputs(prlnbuf, lst_fp);
+				putc('\n', lst_fp);
+				++lst_line;
 			}
 		}
 	}
@@ -180,9 +188,10 @@ hexcon(int digit, int num)
  */
 
 void
-putbyte(int offset, int data)
+putbyte(int offset, int data, int is_code)
 {
 	int addr;
+	uint32_t info;
 
 	if (((section_flags[section] & S_IS_ROM) == 0) || (bank > bank_limit))
 		return;
@@ -211,6 +220,10 @@ putbyte(int offset, int data)
 		addr = (page << 13) + offset;
 
 	map[bank][offset] = section + ((addr >> 8) & 0xE0);
+
+	info = debug_info(is_code);
+	dbg_info[bank][offset] = info;
+	dbg_column[bank][offset] = debug_column;
 }
 
 
@@ -221,9 +234,10 @@ putbyte(int offset, int data)
  */
 
 void
-putword(int offset, int data)
+putword(int offset, int data, int is_code)
 {
 	int addr;
+	uint32_t info;
 
 	if (((section_flags[section] & S_IS_ROM) == 0) || (bank > bank_limit))
 		return;
@@ -254,6 +268,12 @@ putword(int offset, int data)
 
 	map[bank][offset + 0] = section + ((addr++ >> 8) & 0xE0);
 	map[bank][offset + 1] = section + ((addr++ >> 8) & 0xE0);
+
+	info = debug_info(is_code);
+	dbg_info[bank][offset + 0] = info;
+	dbg_info[bank][offset + 1] = info;
+	dbg_column[bank][offset + 0] = debug_column;
+	dbg_column[bank][offset + 1] = debug_column;
 }
 
 
@@ -267,6 +287,7 @@ void
 putdword(int offset, int data)
 {
 	int addr;
+	uint32_t info;
 
 	if (((section_flags[section] & S_IS_ROM) == 0) || (bank > bank_limit))
 		return;
@@ -301,6 +322,16 @@ putdword(int offset, int data)
 	map[bank][offset + 1] = section + ((addr++ >> 8) & 0xE0);
 	map[bank][offset + 2] = section + ((addr++ >> 8) & 0xE0);
 	map[bank][offset + 3] = section + ((addr++ >> 8) & 0xE0);
+
+	info = debug_info(DATA_OUT);
+	dbg_info[bank][offset + 0] = info;
+	dbg_info[bank][offset + 1] = info;
+	dbg_info[bank][offset + 2] = info;
+	dbg_info[bank][offset + 3] = info;
+	dbg_column[bank][offset + 0] = debug_column;
+	dbg_column[bank][offset + 1] = debug_column;
+	dbg_column[bank][offset + 2] = debug_column;
+	dbg_column[bank][offset + 3] = debug_column;
 }
 
 
@@ -331,6 +362,9 @@ putbuffer(void *data, int size)
 
 		/* copy the buffer */
 		if (pass == LAST_PASS) {
+			uint32_t info, *fill_a;
+			uint8_t *fill_b;
+
 			if (data)
 				memcpy(&rom[bank][loccnt], data, size);
 			else
@@ -350,6 +384,15 @@ putbuffer(void *data, int size)
 					addr += step;
 					left -= step;
 				}
+			}
+
+			info = debug_info(DATA_OUT);
+			fill_a = &dbg_info[bank][loccnt];
+			fill_b = &dbg_column[bank][loccnt];
+			step = size;
+			while (step--) {
+				*fill_a++ = info;
+				*fill_b++ = debug_column;
 			}
 		}
 	} else {

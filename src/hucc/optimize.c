@@ -47,11 +47,15 @@
 unsigned char icode_flags[] = {
 	0,
 
+	// i-code for debug information
+
+	/* I_DEBUG              */	0,
+
 	// i-code that retires the primary register contents
 
 	/* I_FENCE              */	0,
 
-	/* i-code that declares a byte sized primary register */
+	// i-code that declares a byte sized primary register
 
 	/* I_SHORT              */	0,
 
@@ -95,6 +99,7 @@ unsigned char icode_flags[] = {
 
 	/* I_SWITCH_WR          */	IS_USEPR,
 	/* I_SWITCH_UR          */	IS_USEPR,
+	/* I_DEFAULT            */	0,
 	/* I_CASE               */	0,
 	/* I_ENDCASE            */	0,
 	/* I_LABEL              */	0,
@@ -408,14 +413,11 @@ int compare2uchar [] = {
 	CMP_UGE		// CMP_UGE
 };
 
-/* defines */
-#define Q_SIZE		16
-
-/* locals */
-static INS q_ins[Q_SIZE];
-static int q_rd;
-static int q_wr;
-static int q_nb;
+/* instruction queue */
+INS q_ins[Q_SIZE];
+int q_rd;
+int q_wr;
+int q_nb;
 
 /* externs */
 extern int arg_stack_flag;
@@ -472,9 +474,11 @@ inline bool is_small_array (SYMBOL *sym)
  */
 void push_ins (INS *ins)
 {
-#ifdef DEBUG_OPTIMIZER
-	printf("\npush "); dump_ins(ins);
-#endif
+	INS *p[Q_SIZE];
+	int p_nb;
+	int i, j;
+	int remove = 0;
+
 	/* check queue size */
 	if (q_nb == Q_SIZE) {
 		/* queue is full - flush the last instruction */
@@ -500,52 +504,73 @@ void push_ins (INS *ins)
 
 	q_ins[q_wr] = *ins;
 
+	/* can't optimize a comment */
+	if (ins->ins_code == I_DEBUG)
+		return;
+
+#ifdef DEBUG_OPTIMIZER
+	printf("\npush "); dump_ins(ins);
+#endif
+
 	/* optimization level 1 - simple peephole optimizer,
 	 * replace known instruction patterns by highly
 	 * optimized asm code
 	 */
 	if (optimize >= 1) {
-		INS *p[Q_SIZE];
-		int i, j;
-		int nb;
-
 lv1_loop:
-
-
-		/* precalculate pointers to instructions */
-		if (q_nb > 10)
-			nb = 10;
-		else
-			nb = q_nb;
 #ifdef DEBUG_OPTIMIZER
 		printf("\nlv1_loop:\n");
 #endif
-		i = 0;
-		j = q_wr;
-		while (i < nb) {
-			/* save pointer */
-			p[i] = &q_ins[j];
-#ifdef DEBUG_OPTIMIZER
-			printf("%d ", i); dump_ins(p[i]);
-#endif
-			/* next */
-			j -= 1;
-			if (j < 0)
-				j += Q_SIZE;
 
-			++i;
+		/* remove instructions from queue but preserve comments */
+		if (remove) {
+			q_nb -= remove;
+			i = q_wr;
+			while (remove) {
+				if (q_ins[i].ins_code != I_DEBUG)
+					--remove;
+				if ((--i) < 0)
+					i += Q_SIZE;
+			}
+			j = i;
+			do {
+				if ((++j) >= Q_SIZE)
+					j -= Q_SIZE;
+				if (q_ins[j].ins_code == I_DEBUG) {
+					if ((++i) >= Q_SIZE)
+						i -= Q_SIZE;
+					memcpy(&q_ins[i], &q_ins[j], sizeof(INS));
+				}
+			} while (j != q_wr);
+			q_wr = i;
 		}
 
+		/* precalculate pointers to instructions */
+		p_nb = 0;
+		i = q_nb;
+		j = q_wr;
+		while (i != 0 && p_nb < 6) {
+			if (q_ins[j].ins_code != I_DEBUG) {
+#ifdef DEBUG_OPTIMIZER
+				printf("%d ", p_nb); dump_ins(&q_ins[j]);
+#endif
+				p[p_nb++] = &q_ins[j];
+			}
+			--i;
+			if ((--j) < 0)
+				j += Q_SIZE;
+		}
+		remove = 0;
+
 		/* LEVEL 1 - FUN STUFF STARTS HERE */
-		nb = 0;
 
 		/* ********************************************************* */
 		/* ********************************************************* */
 
 		/* first check for I_FENCE, and remove it ASAP */
-		if (q_nb >= 1 && p[0]->ins_code == I_FENCE) {
+		if (p_nb >= 1 && p[0]->ins_code == I_FENCE) {
 			/* remove I_FENCE after it has been checked */
-			nb = 1;
+			remove = 1;
 
 			/*
 			 *  __ld.wi		i	-->	__st.{w/u}miq	symbol, i
@@ -557,7 +582,7 @@ lv1_loop:
 			 *  __fence
 			 */
 			if
-			((q_nb >= 3) &&
+			((p_nb >= 3) &&
 			 (p[1]->ins_code == I_ST_WM ||
 			  p[1]->ins_code == I_ST_UM ||
 			  p[1]->ins_code == X_ST_WS ||
@@ -577,7 +602,7 @@ lv1_loop:
 				}
 				p[2]->imm_type = T_VALUE;
 				p[2]->imm_data = data;
-				nb = 2;
+				remove = 2;
 			}
 
 			/*
@@ -588,12 +613,12 @@ lv1_loop:
 			 *  __fence
 			 */
 			else if
-			((q_nb >= 2) &&
+			((p_nb >= 2) &&
 			 (p[1]->ins_code == I_ADD_WI ||
 			  p[1]->ins_code == I_SUB_WI ||
 			  p[1]->ins_code == I_GETACC)
 			) {
-				nb = 2;
+				remove = 2;
 			}
 
 			/*
@@ -607,7 +632,7 @@ lv1_loop:
 			 *  unused pre-decrement or post-decrement value
 			 */
 			else if
-			((q_nb >= 2) &&
+			((p_nb >= 2) &&
 			 (p[1]->ins_code == X_INCLD_WM ||
 			  p[1]->ins_code == X_INCLD_BM ||
 			  p[1]->ins_code == X_INCLD_UM ||
@@ -701,30 +726,21 @@ lv1_loop:
 				case X_LDDEC_UAY: p[1]->ins_code = X_DEC_UAYQ; break;
 				default: abort();
 				}
-				nb = 1;
+				remove = 1;
 			}
 
-			/* flush queue */
-			if (nb) {
-				q_wr -= nb;
-				q_nb -= nb;
-				nb = 0;
-
-				if (q_wr < 0)
-					q_wr += Q_SIZE;
-
-				/* loop */
+			/* remove instructions from queue and begin again */
+			if (remove)
 				goto lv1_loop;
-			}
 		}
 
 		/* ********************************************************* */
 		/* ********************************************************* */
 
 		/* then check for I_SHORT, and remove it ASAP */
-		if (q_nb >= 1 && p[0]->ins_code == I_SHORT) {
+		if (p_nb >= 1 && p[0]->ins_code == I_SHORT) {
 			/* remove I_SHORT after it has been checked */
-			nb = 1;
+			remove = 1;
 
 			/*
 			 *  __ld.wi		i	-->	__ld.uiq	i
@@ -737,7 +753,7 @@ lv1_loop:
 			 *  __short
 			 */
 			if
-			((q_nb >= 2) &&
+			((p_nb >= 2) &&
 			 (p[1]->ins_code == I_LD_WI ||
 			  p[1]->ins_code == I_LD_WM ||
 			  p[1]->ins_code == I_LD_BM ||
@@ -756,28 +772,19 @@ lv1_loop:
 				case X_LD_US: p[1]->ins_code = X_LD_USQ; break;
 				default: abort();
 				}
-				nb = 1;
+				remove = 1;
 			}
 
-			/* flush queue */
-			if (nb) {
-				q_wr -= nb;
-				q_nb -= nb;
-				nb = 0;
-
-				if (q_wr < 0)
-					q_wr += Q_SIZE;
-
-				/* loop */
+			/* remove instructions from queue and begin again */
+			if (remove)
 				goto lv1_loop;
-			}
 		}
 
 		/* ********************************************************* */
 		/* then evaluate constant expressions */
 		/* ********************************************************* */
 
-		if (q_nb >= 3) {
+		if (p_nb >= 3) {
 			/*
 			 *  __push.wr			-->	__add.wi	i
 			 *  __ld.wi		i
@@ -858,7 +865,7 @@ lv1_loop:
 				case I_UMOD_WT: p[2]->ins_code = I_UMOD_WI; break;
 				default: abort();
 				}
-				nb = 2;
+				remove = 2;
 
 				if (p[2]->ins_type == T_VALUE && p[2]->ins_data == 0) {
 					switch (p[2]->ins_code) {
@@ -873,27 +880,18 @@ lv1_loop:
 						p[2]->ins_code = I_LD_WI;
 						break;
 					default:
-						nb = 3;
+						remove = 3;
 						break;
 					}
 				}
 			}
 
-			/* flush queue */
-			if (nb) {
-				q_wr -= nb;
-				q_nb -= nb;
-				nb = 0;
-
-				if (q_wr < 0)
-					q_wr += Q_SIZE;
-
-				/* loop */
+			/* remove instructions from queue and begin again */
+			if (remove)
 				goto lv1_loop;
-			}
 		}
 
-		if (q_nb >= 2) {
+		if (p_nb >= 2) {
 			/*
 			 *  __ld.wi		i	-->	__ld.wi		(~i)
 			 *  __com.wr
@@ -905,7 +903,7 @@ lv1_loop:
 			) {
 				/* replace code */
 				p[1]->ins_data = ~p[1]->ins_data;
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -919,7 +917,7 @@ lv1_loop:
 			) {
 				/* replace code */
 				p[1]->ins_data = -p[1]->ins_data;
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -934,7 +932,7 @@ lv1_loop:
 			) {
 				/* replace code */
 				p[1]->ins_data += p[0]->ins_data;
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -949,7 +947,7 @@ lv1_loop:
 			) {
 				/* replace code */
 				p[1]->ins_data -= p[0]->ins_data;
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -964,7 +962,7 @@ lv1_loop:
 			) {
 				/* replace code */
 				p[1]->ins_data &= p[0]->ins_data;
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -979,7 +977,7 @@ lv1_loop:
 			) {
 				/* replace code */
 				p[1]->ins_data ^= p[0]->ins_data;
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -994,7 +992,7 @@ lv1_loop:
 			) {
 				/* replace code */
 				p[1]->ins_data |= p[0]->ins_data;
-				nb = 1;
+				remove = 1;
 			}
 
 
@@ -1009,7 +1007,7 @@ lv1_loop:
 			) {
 				/* replace code */
 				p[1]->ins_data += p[1]->ins_data;
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -1024,7 +1022,7 @@ lv1_loop:
 			) {
 				/* replace code */
 				p[1]->ins_data <<= p[0]->ins_data;
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -1039,7 +1037,7 @@ lv1_loop:
 			) {
 				/* replace code */
 				p[1]->ins_data >>= p[0]->ins_data;
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -1054,7 +1052,7 @@ lv1_loop:
 			) {
 				/* replace code */
 				p[1]->ins_data = ((uintptr_t) p[1]->ins_data) >> p[0]->ins_data;
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -1069,7 +1067,7 @@ lv1_loop:
 			) {
 				/* replace code */
 				p[1]->ins_data *= p[0]->ins_data;
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -1084,7 +1082,7 @@ lv1_loop:
 			) {
 				/* replace code */
 				p[1]->ins_data = p[1]->ins_data / p[0]->ins_data;
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -1099,7 +1097,7 @@ lv1_loop:
 			) {
 				/* replace code */
 				p[1]->ins_data = ((unsigned) p[1]->ins_data) / ((unsigned) p[0]->ins_data);
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -1114,7 +1112,7 @@ lv1_loop:
 			) {
 				/* replace code */
 				p[1]->ins_data = p[1]->ins_data % p[0]->ins_data;
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -1129,28 +1127,19 @@ lv1_loop:
 			) {
 				/* replace code */
 				p[1]->ins_data = ((unsigned) p[1]->ins_data) % ((unsigned) p[0]->ins_data);
-				nb = 1;
+				remove = 1;
 			}
 
-			/* flush queue */
-			if (nb) {
-				q_wr -= nb;
-				q_nb -= nb;
-				nb = 0;
-
-				if (q_wr < 0)
-					q_wr += Q_SIZE;
-
-				/* loop */
+			/* remove instructions from queue and begin again */
+			if (remove)
 				goto lv1_loop;
-			}
 		}
 
 		/* ********************************************************* */
 		/* then transform muliplication and division by a power of 2 */
 		/* ********************************************************* */
 
-		if (q_nb >= 1) {
+		if (p_nb >= 1) {
 			/*
 			 *  __mul.wi		i	-->	__asl.wi	log2(i)
 			 */
@@ -1176,7 +1165,7 @@ lv1_loop:
 				}
 				else
 				if (p[0]->ins_data == 1) {
-					nb = 1;
+					remove = 1;
 				}
 				else
 				if (__builtin_popcount((unsigned int)p[0]->ins_data) == 1) {
@@ -1195,7 +1184,7 @@ lv1_loop:
 			 *
 			 *  N.B. You cannot convert __sdiv.wi into __asr.wi!
 			 */
-			if
+			else if
 			((p[0]->ins_code == I_UDIV_WI ||
 			  p[0]->ins_code == I_UDIV_UI) &&
 			 (p[0]->ins_type == T_VALUE) &&
@@ -1208,7 +1197,7 @@ lv1_loop:
 				}
 				else
 				if (p[0]->ins_data == 1) {
-					nb = 1;
+					remove = 1;
 				}
 				else
 				if (__builtin_popcount((unsigned int)p[0]->ins_data) == 1) {
@@ -1227,7 +1216,7 @@ lv1_loop:
 			 *
 			 *  N.B. Modifying an __smod.wi is ugly!
 			 */
-			if
+			else if
 			((p[0]->ins_code == I_UMOD_WI ||
 			  p[0]->ins_code == I_UMOD_UI) &&
 			 (p[0]->ins_type == T_VALUE) &&
@@ -1255,25 +1244,16 @@ lv1_loop:
 				}
 			}
 
-			/* flush queue */
-			if (nb) {
-				q_wr -= nb;
-				q_nb -= nb;
-				nb = 0;
-
-				if (q_wr < 0)
-					q_wr += Q_SIZE;
-
-				/* loop */
+			/* remove instructions from queue and begin again */
+			if (remove)
 				goto lv1_loop;
-			}
 		}
 
 		/* ********************************************************* */
 		/* then optimize conditional tests */
 		/* ********************************************************* */
 
-		if (q_nb >= 4) {
+		if (p_nb >= 4) {
 			/*
 			 *  is_ubyte()			-->	is_ubyte()
 			 *  __push.wr				__cmp.umq	type, symbol
@@ -1300,7 +1280,7 @@ lv1_loop:
 				default:	break;
 				}
 				p[2]->cmp_type = compare2uchar[p[0]->cmp_type];
-				nb = 2;
+				remove = 2;
 			}
 
 			/*
@@ -1320,7 +1300,7 @@ lv1_loop:
 			) {
 				*p[1] = *p[2];
 				*p[2] = *p[0];
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -1346,7 +1326,7 @@ lv1_loop:
 			 (p[3]->ins_code == I_LABEL)
 			) {
 				*p[2] = *p[0];
-				nb = 2;
+				remove = 2;
 			}
 
 			/*
@@ -1374,24 +1354,15 @@ lv1_loop:
 			) {
 				*p[1] = *p[0];
 				p[2]->ins_code = X_NOT_CF;
-				nb = 1;
+				remove = 1;
 			}
 
-			/* flush queue */
-			if (nb) {
-				q_wr -= nb;
-				q_nb -= nb;
-				nb = 0;
-
-				if (q_wr < 0)
-					q_wr += Q_SIZE;
-
-				/* loop */
+			/* remove instructions from queue and begin again */
+			if (remove)
 				goto lv1_loop;
-			}
 		}
 
-		if (q_nb >= 3) {
+		if (p_nb >= 3) {
 			/*
 			 *  __push.wr			-->	__not.wr
 			 *  __ld.wi		0
@@ -1416,7 +1387,7 @@ lv1_loop:
 				p[2]->ins_code = (p[0]->cmp_type == CMP_EQU) ? I_NOT_WR : I_TST_WR;
 				p[2]->ins_type = 0;
 				p[2]->ins_data = 0;
-				nb = 2;
+				remove = 2;
 			}
 
 			/*
@@ -1448,7 +1419,7 @@ lv1_loop:
 				default:	break;
 				}
 				p[2]->cmp_type = p[0]->cmp_type;
-				nb = 2;
+				remove = 2;
 			}
 
 			/*
@@ -1495,7 +1466,7 @@ lv1_loop:
 			  p[2]->ins_code == X_CMP_USQ)
 			) {
 				p[2]->cmp_type = compare2not[p[2]->cmp_type];
-				nb = 2;
+				remove = 2;
 			}
 
 			/*
@@ -1608,7 +1579,7 @@ lv1_loop:
 				case X_TAND_WI:  p[2]->ins_code = X_NAND_WI; break;
 				default: abort();
 				}
-				nb = 2;
+				remove = 2;
 			}
 
 			/*
@@ -1733,24 +1704,15 @@ lv1_loop:
 			  p[2]->ins_code == X_TST_UAY ||
 			  p[2]->ins_code == X_TAND_WI)
 			) {
-				nb = 2;
+				remove = 2;
 			}
 
-			/* flush queue */
-			if (nb) {
-				q_wr -= nb;
-				q_nb -= nb;
-				nb = 0;
-
-				if (q_wr < 0)
-					q_wr += Q_SIZE;
-
-				/* loop */
+			/* remove instructions from queue and begin again */
+			if (remove)
 				goto lv1_loop;
-			}
 		}
 
-		if (q_nb >= 2) {
+		if (p_nb >= 2) {
 			/*
 			 *  __ld.{w/b/u}p		-->	__tst.{w/u}p
 			 *  __tst.wr
@@ -1851,7 +1813,7 @@ lv1_loop:
 					default: abort();
 					}
 				}
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -1913,7 +1875,7 @@ lv1_loop:
 			 (p[0]->ins_code == I_BOOLEAN)
 			) {
 				*p[1] = *p[0];
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -1924,25 +1886,7 @@ lv1_loop:
 			((p[0]->ins_code == I_BRA) &&
 			 (p[1]->ins_code == I_BRA)
 			) {
-				nb = 1;
-			}
-
-			/*
-			 *  LLaa:				LLaa .alias LLbb
-			 *  __bra LLbb			-->	__bra LLbb
-			 */
-			else if
-			((p[0]->ins_code == I_BRA) &&
-			 (p[1]->ins_code == I_LABEL)
-			) {
-				int i = 1;
-				do	{
-					if (p[i]->ins_data != p[0]->ins_data) {
-						p[i]->ins_code = I_ALIAS;
-						p[i]->imm_type = T_VALUE;
-						p[i]->imm_data = p[0]->ins_data;
-					}
-				} while (++i < q_nb && i < 10 && p[i]->ins_code == I_LABEL);
+				remove = 1;
 			}
 
 			/*
@@ -1956,28 +1900,45 @@ lv1_loop:
 			 (p[0]->ins_data == p[1]->ins_data)
 			) {
 				*p[1] = *p[0];
-				nb = 1;
+				remove = 1;
 			}
 
-			/* flush queue */
-			if (nb) {
-				q_wr -= nb;
-				q_nb -= nb;
-				nb = 0;
+			/*
+			 *  LLaa:				LLaa .alias LLbb
+			 *  __bra LLbb			-->	__bra LLbb
+			 */
+			else if
+			((p[0]->ins_code == I_BRA) &&
+			 (p[1]->ins_code == I_LABEL)
+			) {
+				int i = q_nb;
+				int j = q_wr;
+				while (--i) {
+					if ((--j) < 0)
+						j += Q_SIZE;
+					if (q_ins[j].ins_code == I_LABEL) {
+						if (q_ins[j].ins_data != p[0]->ins_data) {
+							q_ins[j].ins_code = I_ALIAS;
+							q_ins[j].imm_type = T_VALUE;
+							q_ins[j].imm_data = p[0]->ins_data;
+						}
+					}
+					else
+					if (q_ins[j].ins_code != I_DEBUG)
+						break;
+				}
+			}
 
-				if (q_wr < 0)
-					q_wr += Q_SIZE;
-
-				/* loop */
+			/* remove instructions from queue and begin again */
+			if (remove)
 				goto lv1_loop;
-			}
 		}
 
 		/* ********************************************************* */
 		/* 4-instruction patterns */
 		/* ********************************************************* */
 
-		if (q_nb >= 4) {
+		if (p_nb >= 4) {
 			/*  __ld.wi		i	-->	__ld.wi		i
 			 *  __push.wr				__push.wr
 			 *  __st.wm		__ptr		__ld.{w/u}m	i
@@ -2006,7 +1967,7 @@ lv1_loop:
 					p[1]->ins_code = I_LD_BM;
 				else
 					p[1]->ins_code = I_LD_UM;
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -2039,7 +2000,7 @@ lv1_loop:
 				else
 					p[1]->ins_code = X_LD_US;
 				p[1]->ins_data += 2;
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -2061,7 +2022,7 @@ lv1_loop:
 				/* replace code */
 				p[3]->ins_code = I_LEA_S;
 				p[3]->ins_data += p[1]->ins_data;
-				nb = 3;
+				remove = 3;
 			}
 
 #if OPT_ARRAY_RD
@@ -2089,31 +2050,26 @@ lv1_loop:
 				p[3]->ins_code = X_LD_WAR;
 				p[3]->ins_type = T_SYMBOL;
 				p[3]->ins_data = p[2]->ins_data;
-				nb = 3;
+				remove = 3;
 			}
 #endif
 
-			/* flush queue */
-			if (nb) {
-				q_wr -= nb;
-				q_nb -= nb;
-				nb = 0;
-
-				if (q_wr < 0)
-					q_wr += Q_SIZE;
-
-				/* loop */
+			/* remove instructions from queue and begin again */
+			if (remove)
 				goto lv1_loop;
-			}
 		}
 
 		/* ********************************************************* */
 		/* 3-instruction patterns */
 		/* ********************************************************* */
 
-		if (q_nb >= 3) {
+		if (p_nb >= 3) {
 			/*
 			 *  __case			-->	LLnn:
+			 *  __endcase
+			 *  LLnn:
+			 *
+			 *  __default			-->	LLnn:
 			 *  __endcase
 			 *  LLnn:
 			 *
@@ -2128,11 +2084,12 @@ lv1_loop:
 			if
 			((p[0]->ins_code == I_LABEL) &&
 			 (p[1]->ins_code == I_ENDCASE) &&
-			 (p[2]->ins_code == I_CASE)
+			 (p[2]->ins_code == I_CASE ||
+			  p[2]->ins_code == I_DEFAULT)
 			) {
 				/* remove code */
 				*p[2] = *p[0];
-				nb = 2;
+				remove = 2;
 			}
 
 			/*  __ld.wi		i	-->	__ld.{w/b/u}m	i
@@ -2158,7 +2115,7 @@ lv1_loop:
 					p[2]->ins_code = I_LD_BM;
 				else
 					p[2]->ins_code = I_LD_UM;
-				nb = 2;
+				remove = 2;
 			}
 
 			/*
@@ -2185,7 +2142,7 @@ lv1_loop:
 					p[2]->ins_code = X_LD_BS;
 				else
 					p[2]->ins_code = X_LD_US;
-				nb = 2;
+				remove = 2;
 			}
 
 			/*
@@ -2218,7 +2175,7 @@ lv1_loop:
 				case I_OR_WT: p[2]->ins_code = I_OR_WM; break;
 				default: abort();
 				}
-				nb = 2;
+				remove = 2;
 			}
 
 			/*
@@ -2251,7 +2208,7 @@ lv1_loop:
 				case I_OR_WT: p[2]->ins_code = I_OR_UM; break;
 				default: abort();
 				}
-				nb = 2;
+				remove = 2;
 			}
 
 			/*
@@ -2273,7 +2230,7 @@ lv1_loop:
 				default: abort();
 				}
 				p[2]->ins_data -= 2;
-				nb = 2;
+				remove = 2;
 			}
 
 			/*
@@ -2309,7 +2266,7 @@ lv1_loop:
 				case I_LD_UM:	p[2]->ins_code = (p[1]->ins_code == I_ADD_WI) ? X_INCLD_UM : X_DECLD_UM; break;
 				default:	break;
 				}
-				nb = 2;
+				remove = 2;
 			}
 
 			/*
@@ -2344,7 +2301,7 @@ lv1_loop:
 				case X_LD_US:	p[2]->ins_code = (p[1]->ins_code == I_ADD_WI) ? X_INCLD_US : X_DECLD_US; break;
 				default:	break;
 				}
-				nb = 2;
+				remove = 2;
 			}
 
 			/*
@@ -2392,7 +2349,7 @@ lv1_loop:
 				case X_LDP_UAY:	p[2]->ins_code = (p[1]->ins_code == I_ADD_WI) ? X_INCLD_UAY : X_DECLD_UAY; break;
 				default:	break;
 				}
-				nb = 2;
+				remove = 2;
 			}
 
 #if OPT_ARRAY_RD
@@ -2417,7 +2374,7 @@ lv1_loop:
 			) {
 				/* replace code */
 				p[2]->ins_code = (p[0]->ins_code == I_LD_BP) ? X_LD_BAR : X_LD_UAR;
-				nb = 2;
+				remove = 2;
 			}
 #endif
 
@@ -2448,7 +2405,7 @@ lv1_loop:
 					p[2]->ins_code = X_LDP_WAR;
 				else
 					p[2]->ins_code = (p[0]->ins_code == I_LD_BP) ? X_LDP_BAR : X_LDP_UAR;
-				nb = 2;
+				remove = 2;
 			}
 #endif
 
@@ -2511,28 +2468,19 @@ lv1_loop:
 				case X_NOT_UAY:  p[2]->ins_code = X_BOOLNOT_UAY; break;
 				default: abort();
 				}
-				nb = 1;
+				remove = 1;
 			}
 
-			/* flush queue */
-			if (nb) {
-				q_wr -= nb;
-				q_nb -= nb;
-				nb = 0;
-
-				if (q_wr < 0)
-					q_wr += Q_SIZE;
-
-				/* loop */
+			/* remove instructions from queue and begin again */
+			if (remove)
 				goto lv1_loop;
-			}
 		}
 
 		/* ********************************************************* */
 		/* 2-instruction patterns */
 		/* ********************************************************* */
 
-		if (q_nb >= 2) {
+		if (p_nb >= 2) {
 			/*
 			 *  __ld.{b/u}p		__ptr	-->	__ld.{b/u}p	__ptr
 			 *  __switch.wr				__switch.ur
@@ -2559,7 +2507,7 @@ lv1_loop:
 			) {
 				/* optimize code */
 				p[0]->ins_code = I_SWITCH_UR;
-				nb = 0;
+				remove = 0;
 			}
 
 			/*
@@ -2583,7 +2531,7 @@ lv1_loop:
 			  p[1]->ins_code == I_BRA)
 			) {
 				/* remove code */
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -2599,7 +2547,7 @@ lv1_loop:
 			) {
 				/* replace code */
 				p[1]->ins_data += p[0]->ins_data;
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -2617,7 +2565,7 @@ lv1_loop:
 				/* replace code */
 				p[1]->ins_code = I_LEA_S;
 				p[1]->ins_data += p[0]->ins_data;
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -2632,7 +2580,7 @@ lv1_loop:
 			) {
 				/* replace code */
 				p[1]->ins_data += p[0]->ins_data;
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -2663,7 +2611,7 @@ lv1_loop:
 				p[1]->ins_code = I_ASL_WI;
 				p[1]->ins_type = T_VALUE;
 				p[1]->ins_data = data;
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -2691,7 +2639,7 @@ lv1_loop:
 					p[1]->ins_type = T_SYMBOL;
 					p[1]->ins_data = (intptr_t)newsym;
 				}
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -2718,7 +2666,7 @@ lv1_loop:
 					*p[1] = *p[0];
 					p[1]->ins_code = I_LD_WI;
 				}
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -2731,7 +2679,7 @@ lv1_loop:
 			 (cmp_operands(p[0], p[1]) == 1)
 			) {
 				/* remove code */
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -2743,7 +2691,7 @@ lv1_loop:
 			 (p[1]->ins_code == X_ST_WS) &&
 			 (p[0]->ins_data == p[1]->ins_data)) {
 				/* remove code */
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -2793,7 +2741,7 @@ lv1_loop:
 			) {
 				/* remove code */
 				*p[1] = *p[0];
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -2842,7 +2790,7 @@ lv1_loop:
 				case X_DECLD_UAY: p[1]->ins_code = X_LDDEC_UAY; break;
 				default:	break;
 				}
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -2891,7 +2839,7 @@ lv1_loop:
 				case X_INCLD_UAY: p[1]->ins_code = X_LDINC_UAY; break;
 				default:	break;
 				}
-				nb = 1;
+				remove = 1;
 			}
 
 			/*
@@ -2937,7 +2885,7 @@ lv1_loop:
 				case X_LD_US: p[1]->ins_code = X_LD_USQ; break;
 				default:	break;
 				}
-				nb = 0;
+				remove = 0;
 			}
 
 			/*
@@ -2976,7 +2924,7 @@ lv1_loop:
 				case X_LDP_UAR: p[0]->ins_code = X_LDP_UAY; break;
 				default:	break;
 				}
-				nb = 0;
+				remove = 0;
 			}
 
 			/*
@@ -3018,7 +2966,7 @@ lv1_loop:
 				case X_LDP_UAR: p[0]->ins_code = X_LDP_UAY; break;
 				default:	break;
 				}
-				nb = 0;
+				remove = 0;
 			}
 
 			/*
@@ -3068,7 +3016,7 @@ lv1_loop:
 					p[1]->ins_code = I_LD_WI;
 					p[1]->ins_type = T_VALUE;
 					p[1]->ins_data = 0;
-					nb = 1;
+					remove = 1;
 				} else {
 					p[0]->ins_code = I_LSR_UIQ;
 					/* no instructions removed, just loop */
@@ -3096,25 +3044,16 @@ lv1_loop:
 				goto lv1_loop;
 			}
 
-			/* flush queue */
-			if (nb) {
-				q_wr -= nb;
-				q_nb -= nb;
-				nb = 0;
-
-				if (q_wr < 0)
-					q_wr += Q_SIZE;
-
-				/* loop */
+			/* remove instructions from queue and begin again */
+			if (remove)
 				goto lv1_loop;
-			}
 		}
 
 		/* ********************************************************* */
 		/* 1-instruction patterns */
 		/* ********************************************************* */
 
-		if (q_nb >= 1) {
+		if (p_nb >= 1) {
 			/*
 			 *  __add.wi		0	-->
 			 *
@@ -3131,21 +3070,12 @@ lv1_loop:
 			 (p[0]->ins_type == T_VALUE) &&
 			 (p[0]->ins_data == 0)
 			) {
-				nb = 1;
+				remove = 1;
 			}
 
-			/* flush queue */
-			if (nb) {
-				q_wr -= nb;
-				q_nb -= nb;
-				nb = 0;
-
-				if (q_wr < 0)
-					q_wr += Q_SIZE;
-
-				/* loop */
+			/* remove instructions from queue and begin again */
+			if (remove)
 				goto lv1_loop;
-			}
 		}
 	}
 
@@ -3448,23 +3378,47 @@ lv1_loop:
 		/*
 		 * optimization level 2b - after the instruction re-scheduler
 		 */
-		if (q_nb >= 3) {
-			INS *p[3];
-			int i, j;
-			int nb = 0;
 
 lv2_loop:
-			/* precalculate pointers to instructions */
-			for (i = 0, j = q_wr; i < 3; i++) {
-				/* save pointer */
-				p[i] = &q_ins[j];
-
-				/* next */
-				j -= 1;
-				if (j < 0)
-					j += Q_SIZE;
+		/* remove instructions from queue but preserve comments */
+		if (remove) {
+			q_nb -= remove;
+			i = q_wr;
+			while (remove) {
+				if (q_ins[i].ins_type != I_DEBUG)
+					--remove;
+				if ((--i) < 0)
+					i += Q_SIZE;
 			}
+			j = i;
+			do {
+				if ((++j) >= Q_SIZE)
+					j -= Q_SIZE;
+				if (q_ins[j].ins_type == I_DEBUG) {
+					if ((++i) >= Q_SIZE)
+						i -= Q_SIZE;
+					memcpy(&q_ins[i], &q_ins[j], sizeof(INS));
+				}
+			} while (j != q_wr);
+			q_wr = i;
+		}
 
+		/* precalculate pointers to instructions */
+		p_nb = 0;
+		i = q_nb;
+		j = q_wr;
+		while (i != 0 && p_nb < 3) {
+			if (q_ins[j].ins_type != I_DEBUG) {
+				p[p_nb++] = &q_ins[j];
+			}
+			--i;
+			--j;
+			if ((--j) < 0)
+				j += Q_SIZE;
+		}
+		remove = 0;
+
+		if (p_nb >= 3) {
 			/*
 			 *  __push.wr			-->	__st.{w/u}pi	i
 			 *  __ld.wi		i
@@ -3485,7 +3439,7 @@ lv2_loop:
 				/* replace code */
 				p[2]->ins_code = p[0]->ins_code == I_ST_WPT ? I_ST_WPI : I_ST_UPI;
 				p[2]->ins_data = p[1]->ins_data;
-				nb = 2;
+				remove = 2;
 			}
 
 #if 0
@@ -3519,18 +3473,9 @@ lv2_loop:
 			}
 #endif
 
-			/* flush queue */
-			if (nb) {
-				q_wr -= nb;
-				q_nb -= nb;
-				nb = 0;
-
-				if (q_wr < 0)
-					q_wr += Q_SIZE;
-
-				/* loop */
+			/* remove instructions from queue and begin again */
+			if (remove)
 				goto lv2_loop;
-			}
 		}
 	}
 }

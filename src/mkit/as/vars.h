@@ -1,5 +1,7 @@
 unsigned char rom[MAX_BANKS][8192];
 unsigned char map[MAX_BANKS][8192];
+uint32_t dbg_info[MAX_BANKS][8192];
+uint8_t dbg_column[MAX_BANKS][8192];
 char bank_name[MAX_BANKS][64];
 int bank_loccnt[MAX_S][MAX_BANKS];
 int bank_page[MAX_S][MAX_BANKS];
@@ -22,7 +24,7 @@ int page;                                       /* page */
 int rs_base;                                    /* .rs counter */
 int rs_mprbank;                                 /* .rs counter */
 int rs_overlay;                                 /* .rs counter */
-int section;                                    /* current section: S_ZP, S_BSS, S_CODE or S_DATA */
+unsigned char section;                          /* current section: S_ZP, S_BSS, S_CODE or S_DATA */
 int section_bank[MAX_S];                        /* current bank for each section */
 int section_phase[MAX_S];                       /* current phase offset for each section */
 int stop_pass;                                  /* stop the program; set by fatal_error() */
