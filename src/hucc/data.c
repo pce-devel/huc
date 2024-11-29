@@ -95,6 +95,7 @@ int ted2flag;
 int verboseflag;
 int startup_incl;
 int errs;
+char debug_info;
 
 int norecurse = 0;
 #if ULI_NORECURSE

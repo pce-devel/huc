@@ -391,7 +391,7 @@ enum ICOMPARE {
 #define T_PAL           10
 #define T_LITERAL       11
 #define T_SOURCE_LINE   12
-#define T_LINE_NUMBER   13
+#define T_CLEAR_LINE    13
 
 #define FOREVER for (;;)
 #define FALSE   0
@@ -408,7 +408,11 @@ enum ICOMPARE {
 #define FFEED   12
 #define TAB     9
 
-#define FILENAMESIZE    256
+#ifdef _WIN32
+#define FILENAMESIZE 260
+#else
+#define FILENAMESIZE 256
+#endif
 
 /* symbol table parameters (locals are reset for every function) */
 #define SYMTBSZ 4096

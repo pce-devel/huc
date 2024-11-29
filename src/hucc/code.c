@@ -327,7 +327,9 @@ void gen_code (INS *tmp)
 				free((void *)data);
 			}
 			break;
-		case T_LINE_NUMBER:
+		case T_CLEAR_LINE:
+			nl();
+			ol(".dbg\tclear");
 			break;
 
 		}

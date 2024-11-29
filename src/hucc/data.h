@@ -89,6 +89,7 @@ extern int ted2flag;
 extern int verboseflag;
 extern int startup_incl;
 extern int errs;
+extern char debug_info;
 
 extern int top_level_stkp;
 extern int norecurse;

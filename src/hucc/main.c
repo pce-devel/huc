@@ -214,8 +214,14 @@ int main (int argc, char *argv[])
 					break;
 
 				case 'g':
-					debug = 1;
-					strcat(asmdefs, "_DEBUG\t\t=\t1\n");
+//					debug = 1;
+//					strcat(asmdefs, "_DEBUG\t\t=\t1\n");
+					debug_info = toupper(*(p + 1));
+					if (debug_info != 'C' && debug_info != 'A' && debug_info != 'L')
+						goto unknown_option;
+					p++;
+					if (debug_info == 'L')
+						verboseflag = 1;
 					break;
 
 				case 'l':
@@ -320,7 +326,9 @@ unknown_option:
 		usage(oldargv[0]);
 	printf(HUC_VERSION);
 	printf("\n");
-	init_path();
+	if (!init_path())
+		exit(1);
+
 	/* Remember the first file, it will be used as the base for the
 	   output file name unless there is a user-specified outfile. */
 	p = pp = infiles[0];
@@ -426,6 +434,7 @@ unknown_option:
 //			gtext ();
 			parse();
 			fclose(input);
+			ol(".dbg\tclear");
 //			gdata ();
 			dumplits();
 			dumpglbs();
@@ -477,28 +486,30 @@ void usage (char *exename)
 	fprintf(stderr, "\n\n");
 	fprintf(stderr, "USAGE: %s [-options] infile\n", exename);
 	fprintf(stderr, "\nCompiler options:\n");
-	fprintf(stderr, "-Dsym[=val]       define symbol 'sym' when compiling\n");
-	fprintf(stderr, "-O[val]           invoke optimization (level <value>)\n");
-	fprintf(stderr, "-fno-recursive    optimize assuming non-recursive code\n");
-	fprintf(stderr, "-fno-short-enums  always use signed int for enums\n");
-	fprintf(stderr, "-funsigned-char   make \"char\" unsigned (the default)\n");
-	fprintf(stderr, "-fsigned-char     make \"char\" signed\n");
+	fprintf(stderr, "-Dsym[=val]       Define symbol 'sym' when compiling\n");
+	fprintf(stderr, "-O[val]           Invoke optimization (level <value>)\n");
+	fprintf(stderr, "-fno-recursive    Optimize assuming non-recursive code\n");
+	fprintf(stderr, "-fno-short-enums  Always use signed int for enums\n");
+	fprintf(stderr, "-funsigned-char   Make \"char\" unsigned (the default)\n");
+	fprintf(stderr, "-fsigned-char     Make \"char\" signed\n");
 	fprintf(stderr, "\nOutput options:\n");
-	fprintf(stderr, "-s/-S             create asm output only (do not invoke assembler)\n");
+	fprintf(stderr, "-s/-S             Create asm output only (do not invoke assembler)\n");
 	fprintf(stderr, "\nLinker options:\n");
-	fprintf(stderr, "-lname            add library 'name.c' from include path\n");
-	fprintf(stderr, "--cd              create CD-ROM output\n");
-	fprintf(stderr, "--scd             create Super CD-ROM output\n");
-	fprintf(stderr, "--acd             create Arcade Card CD output\n");
-	fprintf(stderr, "--sgx             enable SuperGrafx support\n");
-	fprintf(stderr, "--ted2            enable Turbo Everdrive2 support\n");
-	fprintf(stderr, "--over(lay)       create CD-ROM overlay section\n");
+	fprintf(stderr, "-lname            Add library 'name.c' from include path\n");
+	fprintf(stderr, "--cd              Create CD-ROM output\n");
+	fprintf(stderr, "--scd             Create Super CD-ROM output\n");
+	fprintf(stderr, "--acd             Create Arcade Card CD output\n");
+	fprintf(stderr, "--sgx             Enable SuperGrafx support\n");
+	fprintf(stderr, "--ted2            Enable Turbo Everdrive2 support\n");
+	fprintf(stderr, "--over(lay)       Create CD-ROM overlay section\n");
 	fprintf(stderr, "\nAssembler options:\n");
-	fprintf(stderr, "-Asym[=val]       define symbol 'sym' to assembler\n");
+	fprintf(stderr, "-Asym[=val]       Define symbol 'sym' to assembler\n");
 	fprintf(stderr, "\nDebugging options:\n");
-	fprintf(stderr, "-g                enable extra debugging checks in output code\n");
-//	fprintf(stderr, "-t/-T             include C source code in assembler output/listings\n");
-	fprintf(stderr, "-v/-V             increase verbosity of output files\n\n");
+	fprintf(stderr, "-gC               Output .SYM for mesen2 C source debugging\n");
+	fprintf(stderr, "-gA               Output .SYM for mesen2 ASM source debugging\n");
+	fprintf(stderr, "-gL               Output .SYM for mesen2 LST file debugging (the default)\n");
+//	fprintf(stderr, "-g                Enable extra debugging checks in output code\n");
+	fprintf(stderr, "-v/-V             Increase verbosity of output files\n\n");
 	exit(1);
 }
 
@@ -1104,6 +1115,16 @@ int assemble (char *s)
 
 	strcat_s(buf, sizeof(buf), "--hucc ");
 
+	if (debug_info) {
+		const char * debug_opt;
+		switch (debug_info) {
+		case 'C': debug_opt = "-gC "; break;
+		case 'A': debug_opt = "-gA "; break;
+		default:  debug_opt = "-gL "; break;
+		}
+		strcat_s(buf, sizeof(buf), debug_opt);
+	}
+
 	strcat_s(buf, sizeof(buf), "\"");
 	strcat_s(buf, sizeof(buf), s);
 	buf[strlen(buf) - 1] = 's';
@@ -1154,6 +1175,14 @@ int assemble (char *s)
 		opts[i++] = "-l 0";
 
 	opts[i++] = "--hucc";		/* --newproc --strip -O and more! */
+
+	if (debug_info) {
+		switch (debug_info) {
+		case 'C': opts[i++] = "-gC"; break;
+		case 'A': opts[i++] = "-gA"; break;
+		default:  opts[i++] = "-gL"; break;
+		}
+	}
 
 	strcpy(buf, s);
 	buf[strlen(buf) - 1] = 's';

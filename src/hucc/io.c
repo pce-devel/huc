@@ -29,17 +29,17 @@
  */
 int openin (char *p)
 {
-	strcpy(fname, p);
+//	fixname(fname);
+	if (!checkname(p)) {
+		fprintf(stderr, "%s: unknown file type\n", p);
+		return (NO);
+	}
+	if ((input = file_open(p, 0)) == NULL) {
+		perror(p);
+		return (NO);
+	}
+	strcpy(fname, inclstk_name[inclsp]);
 	strcpy(fname_copy, fname);
-	fixname(fname);
-	if (!checkname(fname)) {
-		fprintf(stderr, "%s: unknown file type\n", fname);
-		return (NO);
-	}
-	if ((input = fopen(fname, "r")) == NULL) {
-		perror(fname);
-		return (NO);
-	}
 	kill();
 	return (YES);
 }
@@ -203,6 +203,7 @@ void readline (void)
 			if (input2 != NULL) {
 				if (globals_h_in_process) {
 					/* Add special treatment to ensure globals.h stuff appears at the beginning */
+					ol(".dbg\tclear");
 					gdata();
 					outstr("huc_globals:\n");
 					dumpglbs();
