@@ -1092,6 +1092,11 @@ int assemble (char *s)
 	strcat_s(buf, sizeof(buf), " ");
 	for (p = buf; (p = strchr(p, '/')) != NULL; *p++ = '\\');
 
+	strcat_s(buf, sizeof(buf), "--hucc ");
+
+	if (sgflag)
+		strcat_s(buf, sizeof(buf), "--sgx ");
+
 	switch (cdflag) {
 	case 1:
 		strcat_s(buf, sizeof(buf), "--cd ");
@@ -1112,8 +1117,6 @@ int assemble (char *s)
 	if (verboseflag) {
 		strcat_s(buf, sizeof(buf), "-S -l 3 -m ");
 	}
-
-	strcat_s(buf, sizeof(buf), "--hucc ");
 
 	if (debug_info) {
 		const char * debug_opt;
@@ -1148,6 +1151,11 @@ int assemble (char *s)
 		exe = "pceas";
 	}
 	opts[i++] = exe;
+	opts[i++] = "--hucc";		/* --newproc --strip -O and more! */
+
+	if (sgflag)
+		opts[i++] = "--sgx";
+
 	switch (cdflag) {
 	case 1:
 		opts[i++] = "--cd";
@@ -1166,6 +1174,7 @@ int assemble (char *s)
 	if (overlayflag)
 		opts[i++] = "--over";	/* compile as overlay */
 
+
 	if (verboseflag) {
 		opts[i++] = "-S";	/* asm: display full segment map */
 		opts[i++] = "-l 3";	/* top listing output */
@@ -1173,8 +1182,6 @@ int assemble (char *s)
 	}
 	else
 		opts[i++] = "-l 0";
-
-	opts[i++] = "--hucc";		/* --newproc --strip -O and more! */
 
 	if (debug_info) {
 		switch (debug_info) {

@@ -1,18 +1,15 @@
-all: sgx_test.iso sgx_test.sgx
+all: sgx_test.sgx sgx_test.iso
 
 include ../Make_ex.inc
 
 SRC = sgx_test.c
 
-CFLAGS ?= -sgx -fno-recursive
-CDFLAGS = -scd -over
+CFLAGS ?= --sgx -fno-recursive -gA
+CDFLAGS = --scd
+LIBS =
 
-sgx_test.sgx: $(SRC)
-	$(CC) $(CFLAGS) $(SRC) $(LIBS)
-	$(MV) sgx_test.pce $@
+sgx_test.iso: $(SRC)
+	$(CC) $(CFLAGS) $(CDFLAGS) $< $(LIBS)
 
-sgx_test.ovl: $(SRC) sgx_test.sgx
-	$(CC) $(CFLAGS) $(CDFLAGS) $(SRC) $(LIBS)
-
-sgx_test.iso: sgx_test.ovl
-	$(IL) $@ -ipl="SuperGRAFX Test" $^
+sgx_test.sgx: $(SRC) sgx_test.iso
+	$(CC) $(CFLAGS) $< $(LIBS)
