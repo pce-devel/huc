@@ -2,7 +2,7 @@
 # Makefile for examples
 #
 
-SUBDIRS = huc asm
+SUBDIRS = hucc huc asm
 
 all clean:
 	@$(MAKE) $(SUBDIRS) "COMMAND=$@"
