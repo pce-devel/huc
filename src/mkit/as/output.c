@@ -147,7 +147,10 @@ loadlc(int offset, int pos)
 			} else {
 				prlnbuf[i++] = ' ';
 				prlnbuf[i++] = ' ';
-				hexcon(2, bank);
+				if (phase_offset)
+					hexcon(2, phase_bank);
+				else
+					hexcon(2, bank);
 				prlnbuf[i++] = hex[1];
 				prlnbuf[i++] = hex[2];
 			}

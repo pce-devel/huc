@@ -15,6 +15,7 @@ int data_loccnt;                                /* data location counter */
 int data_size;                                  /* size of binary output (in bytes) */
 int data_level;                                 /* data output level, must be <= listlevel to be outputed */
 int phase_offset;                               /* location counter offset for .phase */
+int phase_bank;                                 /* location counter bank for .phase */
 int loccnt;                                     /* location counter */
 int bank;                                       /* current bank */
 int bank_base;                                  /* bank base index */

@@ -397,7 +397,10 @@ labldef(unsigned char reason)
 
 		labl_value = (loccnt + (page << 13) + phase_offset) & 0xFFFF;
 		labl_rombank = bank;
-		labl_mprbank = bank2mprbank(bank, section);
+		if (phase_offset)
+			labl_mprbank = phase_bank;
+		else
+			labl_mprbank = bank2mprbank(bank, section);
 		labl_overlay = bank2overlay(bank, section);
 		labl_section = section;
 	} else {
@@ -893,11 +896,9 @@ debugdump(FILE *fp)
 
 						/* start SFII mapper banks at bank $100 */
 						if (bank < 0x80) {
-							bank += bank_base;
-							fprintf(fp, "%2.2x:%4.4x ", bank, ((map[bank][addr] >> 5) << 13) + addr);
+							fprintf(fp, "%2.2x:%4.4x ", bank + bank_base, ((map[bank][addr] >> 5) << 13) + addr);
 						} else {
-							bank += 0x80;
-							fprintf(fp, "%3.3x:%4.4x ", bank, ((map[bank][addr] >> 5) << 13) + addr);
+							fprintf(fp, "%3.3x:%4.4x ", bank + 0x80, ((map[bank][addr] >> 5) << 13) + addr);
 						}
 
 						fprintf(fp, "%8.8x ", (code << 30) + size);

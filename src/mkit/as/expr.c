@@ -622,7 +622,10 @@ push_val(int type)
 				pc_symbol.value = data_loccnt;
 
 			pc_symbol.rombank = bank + (pc_symbol.value >> 13);
-			pc_symbol.mprbank = bank2mprbank(pc_symbol.rombank, section);
+			if (phase_offset)
+				pc_symbol.mprbank = phase_bank;
+			else
+				pc_symbol.mprbank = bank2mprbank(pc_symbol.rombank, section);
 			pc_symbol.overlay = bank2overlay(pc_symbol.rombank, section);
 			pc_symbol.section = section;
 
