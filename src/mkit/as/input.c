@@ -3,8 +3,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <unistd.h>
 #include <sys/stat.h>
+#ifdef _MSC_VER
+#include <direct.h>
+#else
+#include <unistd.h>
+#endif
+
 #include "defs.h"
 #include "externs.h"
 #include "protos.h"
