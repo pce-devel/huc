@@ -36,7 +36,7 @@ int file_count = 0;
 int cderr_flag = 0;
 int cderr_ovl = 0;
 int pcfx_flag = 0;
-int asm_flag = 0;
+int asm_flag = 1;
 int sgx_flag = 0;
 char prj_type[8];
 char incpath[10][256];
@@ -44,7 +44,7 @@ int debug;
 
 int ipl_flag = 0;
 int ipl_load = 0x4000;
-int ipl_exec = BOOT_ENTRY_POINT;
+int ipl_exec = 0x4000;
 int ipl_mpr2 = 0x00;
 int ipl_mpr3 = 0x01;
 int ipl_mpr4 = 0x02;
@@ -580,19 +580,16 @@ ipl_write(FILE *outfile)
             if (memcmp(" CD", prj_type + 3, 3) == 0) {
                /* HuCC or CORE asm-library CD */
                use_ipl_scd = 0;
-               asm_flag = 1;
             }
             else
             if (memcmp("SCD", prj_type + 3, 3) == 0) {
                /* HuCC or CORE asm-library SuperCD */
                use_ipl_scd = 1;
-               asm_flag = 1;
             }
             else
             if (memcmp("SGX", prj_type + 3, 3) == 0) {
                /* HuCC or CORE asm-library SuperGRAFX SuperCD */
                use_ipl_scd = 1;
-               asm_flag = 1;
                sgx_flag = 1;
             }
             else
@@ -601,7 +598,6 @@ ipl_write(FILE *outfile)
                /* If use_ipl_scd then the kernel won't be loaded */
                /* when running on the wrong System Card! */
                use_ipl_scd = 0;
-               asm_flag = 1;
             }
             else
             if (memcmp("SG1", prj_type + 3, 3) == 0) {
@@ -609,7 +605,6 @@ ipl_write(FILE *outfile)
                /* If use_ipl_scd then the kernel won't be loaded */
                /* when running on the wrong System Card! */
                use_ipl_scd = 0;
-               asm_flag = 1;
                sgx_flag = 1;
             }
          }
@@ -976,9 +971,8 @@ main(int argc, char *argv[])
             continue;
 
          } else
-         if ((strcmp(argv[i], "-asm") == 0) &&
-             (asm_flag == 0)) {        /* only valid once on line */
-            asm_flag = 1;
+         if ((strcmp(argv[i], "-asm") == 0)) {
+            /* ignore this now that HuC programs are identified by signature */
             continue;
 
          } else
