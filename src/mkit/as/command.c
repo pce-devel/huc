@@ -2682,7 +2682,10 @@ do_phase(int *ip)
 
 	/* set the phase_offset to add to subsequent location labels */
 	phase_offset = value - (loccnt + (page << 13));
-	phase_bank = expr_mprbank;
+	if (expr_mprbank == UNDEFINED_BANK)
+		phase_bank = bank2mprbank(bank, section);
+	else
+		phase_bank = expr_mprbank;
 }
 
 
