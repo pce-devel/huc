@@ -462,7 +462,7 @@ inline bool is_usepr (INS *i)
 	return (icode_flags[i->ins_code] & IS_USEPR);
 }
 
-inline bool is_small_array (SYMBOL *sym)
+bool is_small_array (SYMBOL *sym)
 {
 	return (sym->identity == ARRAY && sym->alloc_size > 0 && sym->alloc_size <= 256);
 }
@@ -504,7 +504,7 @@ void push_ins (INS *ins)
 
 	q_ins[q_wr] = *ins;
 
-	/* can't optimize a comment */
+	/* can't optimize debug information */
 	if (ins->ins_code == I_DEBUG)
 		return;
 
