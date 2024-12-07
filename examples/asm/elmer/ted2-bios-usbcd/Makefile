@@ -4,7 +4,7 @@ include ../Make_ex.inc
 
 SRC = ted2usbcd.asm ../ted2-bios-romcd/syscard3-ted2.inc
 
-AFLAGS ?= -raw -m -l 2 -S
+AFLAGS ?= --raw -m -l 2 -S
 
 ted2usbcd.pce: $(SRC)
 	$(AS) $(AFLAGS) ted2usbcd.asm

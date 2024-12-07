@@ -2,7 +2,7 @@ all: core-2stage.iso
 
 include ../Make_ex.inc
 
-AFLAGS ?= -newproc -strip -m -l 2 -S -overlay
+AFLAGS ?= --overlay --newproc --strip -m -l 2 -S -gA
 
 SRC1_INC = pceas.inc pcengine.inc core.inc core-startup.asm core-kernel.asm joypad.asm
 SRC1_OVL = core-stage1.asm core-config.inc
@@ -13,13 +13,13 @@ SRC2_OVL = stage2.asm core-config.inc
 SRC_ISO  = core-stage1.bin stage2.ovl
 
 core-2stage.iso: $(SRC_ISO)
-	$(IL) core-2stage.iso -ipl="2-Stage CD",0x4000,0x4000,0,1,2,3,4 -asm $(SRC_ISO)
+	$(IL) core-2stage.iso --ipl="2-Stage CD" $(SRC_ISO)
 
 core-stage1.bin core-stage1.sym: $(SRC1_OVL) $(SRC1_INC)
-	$(AS) $(AFLAGS) -cd -trim core-stage1.asm
+	$(AS) --cd --overlay --trim core-stage1.asm
 
 core-stage1.s: core-stage1.s2i core-stage1.sym
 	$(S2I) core-stage1.s2i
 
 stage2.ovl: $(SRC2_OVL) $(SRC2_INC) core-stage1.s
-	$(AS) $(AFLAGS) -cd stage2.asm
+	$(AS) $(AFLAGS) --cd stage2.asm

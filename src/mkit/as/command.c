@@ -2640,7 +2640,7 @@ do_phase(int *ip)
 		}
 
 		/* get the .phase value */
-		if (!evaluate(ip, ';', 0))
+		if (!evaluate(ip, ';', 1))
 			return;
 
 		/* check for undefined symbols - they are only allowed in the FIRST_PASS */
@@ -2682,6 +2682,10 @@ do_phase(int *ip)
 
 	/* set the phase_offset to add to subsequent location labels */
 	phase_offset = value - (loccnt + (page << 13));
+	if (expr_mprbank == UNDEFINED_BANK)
+		phase_bank = bank2mprbank(bank, section);
+	else
+		phase_bank = expr_mprbank;
 }
 
 

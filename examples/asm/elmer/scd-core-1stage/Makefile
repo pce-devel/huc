@@ -2,7 +2,7 @@ all: core-1stage.iso
 
 include ../Make_ex.inc
 
-AFLAGS ?= -newproc -strip -m -l 2 -S -overlay
+AFLAGS ?= --overlay --newproc --strip -m -l 2 -S -gA
 
 SRC_INC = pceas.inc pcengine.inc core.inc core-startup.asm core-kernel.asm joypad.asm
 SRC_OVL = stage1.asm core-config.inc
@@ -10,7 +10,7 @@ SRC_OVL = stage1.asm core-config.inc
 SRC_ISO = stage1.ovl
 
 core-1stage.iso: $(SRC_ISO)
-	$(IL) core-1stage.iso -boot="../include/ipl-scd.dat" -ipl="1-Stage SuperCD" -asm $(SRC_ISO)
+	$(IL) core-1stage.iso --ipl="1-Stage SuperCD" $(SRC_ISO)
 
 stage1.ovl: $(SRC_OVL) $(SRC_INC)
-	$(AS) $(AFLAGS) -scd stage1.asm
+	$(AS) $(AFLAGS) --scd stage1.asm

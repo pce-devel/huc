@@ -26,6 +26,7 @@ extern int q_rd;
 extern int q_wr;
 extern int q_nb;
 
+bool is_small_array (SYMBOL *sym);
 void push_ins (INS *ins);
 void flush_ins (void);
 void flush_ins_label (int nextlabel);
