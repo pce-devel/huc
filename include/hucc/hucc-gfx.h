@@ -106,11 +106,12 @@ extern void __fastcall __xsafe load_font( char __far *font<_bp_bank:_bp>, unsign
 extern void __fastcall __xsafe __nop set_font_color( unsigned char foreground<monofont_fg>, unsigned char background<monofont_bg> );
 extern void __fastcall __xsafe load_default_font( void );
 
-extern void __fastcall __xsafe put_char( unsigned char digit<_bl>, unsigned char bat_x<_al>, unsigned char bat_y<_ah> );
-extern void __fastcall __xsafe put_digit( unsigned char digit<_bl>, unsigned char bat_x<_al>, unsigned char bat_y<_ah> );
-extern void __fastcall __xsafe put_hex( unsigned int number<_bx>, unsigned char length<_cl>, unsigned char bat_x<_al>, unsigned char bat_y<_ah> );
-extern void __fastcall __xsafe put_number( unsigned int number<_bx>, unsigned char length<_cl>, unsigned char bat_x<_al>, unsigned char bat_y<_ah> );
-extern void __fastcall __xsafe put_string( unsigned char *string<_bp>, unsigned char bat_x<_al>, unsigned char bat_y<_ah> );
+extern void __fastcall __xsafe put_char( unsigned char digit<_bl>, unsigned char bat_x<_dil>, unsigned char bat_y<_dih> );
+extern void __fastcall __xsafe put_digit( unsigned char digit<_bl>, unsigned char bat_x<_dil>, unsigned char bat_y<_dih> );
+extern void __fastcall __xsafe put_hex( unsigned int number<_bx>, unsigned char length<_cl>, unsigned char bat_x<_dil>, unsigned char bat_y<_dih> );
+extern void __fastcall __xsafe put_number( unsigned int number<_bx>, unsigned char length<_cl>, unsigned char bat_x<_dil>, unsigned char bat_y<_dih> );
+extern void __fastcall __xsafe put_raw( unsigned int data<_bx>, unsigned char bat_x<_dil>, unsigned char bat_y<_dih> );
+extern void __fastcall __xsafe put_string( unsigned char *string<_bp>, unsigned char bat_x<_dil>, unsigned char bat_y<_dih> );
 
 extern void __fastcall cls( void ); /* NOT __xsafe! */
 extern void __fastcall cls( unsigned int tile<acc> ); /* NOT __xsafe! */

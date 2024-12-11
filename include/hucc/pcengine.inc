@@ -311,8 +311,14 @@ psg_r0_h	= $F8:20EB, 1	;
 
 zpg_sys_top	= $F8:20EC
 _bp		= $F8:20EC, 2	; base pointer
+_bpl		= $F8:20EC, 1
+_bph		= $F8:20ED, 1
 _si		= $F8:20EE, 2	; source address
+_sil		= $F8:20EE, 1
+_sih		= $F8:20EF, 1
 _di		= $F8:20F0, 2	; destination address
+_dil		= $F8:20F0, 1
+_dih		= $F8:20F1, 1
 cdi_b		= $F8:20F2, 1	; IRQ2 interrupt status (like vdc_sr)
 vdc_crl		= $F8:20F3, 1	; shadow of VDC control register (lo-byte)
 vdc_crh		= $F8:20F4, 1	; shadow of VDC control register (hi-byte)

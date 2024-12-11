@@ -1187,7 +1187,7 @@ vdc_tty_out	.procgroup			; These routines share code!
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe put_char( unsigned char digit<_bl>, unsigned char bat_x<_al>, unsigned char bat_y<_ah> );
+; void __fastcall __xsafe put_char( unsigned char digit<_bl>, unsigned char bat_x<_dil>, unsigned char bat_y<_dih> );
 
 	.if	SUPPORT_SGX
 put_char_sgx	.proc
@@ -1225,7 +1225,7 @@ put_char_vdc	.proc
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe put_digit( unsigned char digit<_bl>, unsigned char bat_x<_al>, unsigned char bat_y<_ah> );
+; void __fastcall __xsafe put_digit( unsigned char digit<_bl>, unsigned char bat_x<_dil>, unsigned char bat_y<_dih> );
 
 	.if	SUPPORT_SGX
 put_digit_sgx	.proc
@@ -1268,7 +1268,7 @@ put_digit_vdc	.proc
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe put_hex( unsigned int number<_bx>, unsigned char length<_cl>, unsigned char bat_x<_al>, unsigned char bat_y<_ah> );
+; void __fastcall __xsafe put_hex( unsigned int number<_bx>, unsigned char length<_cl>, unsigned char bat_x<_dil>, unsigned char bat_y<_dih> );
 
 	.if	SUPPORT_SGX
 put_hex_sgx	.proc
@@ -1348,7 +1348,7 @@ put_hex_vdc	.proc
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe put_number( unsigned int number<_bx>, unsigned char length<_cl>, unsigned char bat_x<_al>, unsigned char bat_y<_ah> );
+; void __fastcall __xsafe put_number( unsigned int number<_bx>, unsigned char length<_cl>, unsigned char bat_x<_dil>, unsigned char bat_y<_dih> );
 
 	.if	SUPPORT_SGX
 put_number_sgx	.proc
@@ -1432,6 +1432,44 @@ put_number_vdc	.proc
 
 		.alias	_put_number.4 = put_number_vdc
 
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; void __fastcall __xsafe put_raw( unsigned int data<_bx>, unsigned char bat_x<_dil>, unsigned char bat_y<_dih> );
+
+	.if	SUPPORT_SGX
+put_raw_sgx	.proc
+
+		ldy	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		db	$F0			; Turn "cly" into a "beq".
+
+		.endp
+	.endif
+
+put_raw_vdc	.proc
+
+		cly				; Offset to PCE VDC.
+
+		phx				; Preserve X (aka __sp).
+		sxy				; Put VDC offset in X.
+
+		jsr	set_di_xy_mawr
+
+		lda.l	<_bx
+		sta	VDC_DL, x
+		lda.h	<_bx
+		sta	VDC_DH, x
+
+		plx				; Restore X (aka __sp).
+
+		leave				; All done!
+
+		.endp
+
+		.alias	_put_raw.3		= put_raw_vdc
+
 		.endprocgroup			; vdc_tty_out
 
 
@@ -1439,7 +1477,7 @@ put_number_vdc	.proc
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe put_string( unsigned char *string<_bp>, unsigned char bat_x<_al>, unsigned char bat_y<_ah> );
+; void __fastcall __xsafe put_string( unsigned char *string<_bp>, unsigned char bat_x<_dil>, unsigned char bat_y<_dih> );
 ;
 ; N.B. This is not a .proc right now because it is called from procedures
 ; that contain embedded strings, and the string aren't banked in before
@@ -1504,7 +1542,6 @@ put_string_vdc: ;	.proc
 
 
 
-
 ; ***************************************************************************
 ; ***************************************************************************
 ; put_xy(char x, char y)
@@ -1522,21 +1559,19 @@ put_string_vdc: ;	.proc
 ;
 ;xput_xy_vdc:	clx				; Offset to PCE VDC.
 ;
-;		sta.l	<_al
-;		sty.h	<_ah
+;		sta.l	<_di
+;		sty.h	<_di
 
 set_di_xy_mawr:	cla
 		bit	vdc_bat_width, x
 		bmi	.w128
 		bvs	.w64
-.w32:		lsr	<_ah
+.w32:		lsr.h	<_di
 		ror	a
-.w64:		lsr	<_ah
+.w64:		lsr.h	<_di
 		ror	a
-.w128:		lsr	<_ah
+.w128:		lsr.h	<_di
 		ror	a
-		ora	<_al
+		ora.l	<_di
 		sta.l	<_di
-		lda	<_ah
-		sta.h	<_di
 		jmp	set_di_to_mawr
