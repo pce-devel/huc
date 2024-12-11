@@ -13,6 +13,22 @@
 ;
 ; ***************************************************************************
 ; ***************************************************************************
+;
+; The maximum number of splits for each screen layer is set in your project's
+; "hucc-config.inc" file, with the library having a limit of 128-per-layer.
+;
+; Your first active split must be defined to start at screen line 0, and then
+; the rest of the active splits must be in increasing line order to match the
+; way that the PC Engine displays the output image.
+;
+; You can have disabled splits interleaved with your active splits.
+;
+; Splits that are normally disabled can be used to create full screen effects
+; such as bouncing the screen up and down by adding blank areas at the top or
+; bottom of the screen, and then rapidly changing the height of those areas.
+;
+; ***************************************************************************
+; ***************************************************************************
 
 
 
@@ -42,79 +58,93 @@ HUCC_SCR_HEIGHT	=	224
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe scroll_split( unsigned char index<_al>, unsigned char top<_ah>, unsigned int x<_bx>, unsigned int y<_cx>, unsigned char disp<_dl> );
-; void __fastcall __xsafe sgx_scroll_split( unsigned char index<_al>, unsigned char top<_ah>, unsigned int x<_bx>, unsigned int y<_cx>, unsigned char disp<_dl> );
+; void __fastcall __xsafe scroll_split( unsigned char index<_al>, unsigned char screen_line<_ah>, unsigned int bat_x<_bx>, unsigned int bat_y<_cx>, unsigned char display_flags<_dl> );
+; void __fastcall __xsafe sgx_scroll_split( unsigned char index<_al>, unsigned char screen_line<_ah>, unsigned int bat_x<_bx>, unsigned int bat_y<_cx>, unsigned char display_flags<_dl> );
 ;
 ; set screen scrolling
 
 		.proc	_scroll_split.5
 
-		ldy	<_al			; Region number.
-		cpy	#HUCC_PCE_SPLITS
+		phx				; Preserve X (aka __sp).
+
+		php				; Disable interrupts while
+		sei				; updating this structure.
+
+		ldx	<_al			; Region number.
+		cpx	#HUCC_PCE_SPLITS
 .hang:		bcs	.hang			; Better a hang than a crash!
 
-		lda	vdc_region_sel, y	; Update the parameter copy
-		bne	.regionA		; that is not displayed now.
+		lda	vdc_region_sel, x	; Update the parameter copy
+		eor	vdc_region_new, x	; that is not displayed now.
+		bne	.regionA
 
 .regionB:	lda	<_ah			; Scanline (i.e. top).
 		cmp	#HUCC_SCR_HEIGHT	; Skip if offscreen.
 		bcs	!done+
-		sta	vdc_regionB_rcr, y
+		sta	vdc_regionB_rcr, x
 
 		cmp	#0			; Either Y at top of the frame
 		beq	!+			; or Y-1 because the RCR code
 		clc				; sets it on the line before.
 !:		lda.l	<_cx
 		sbc	#0
-		sta	vdc_regionB_yl, y
+		sta	vdc_regionB_yl, x
 		lda.h	<_cx
 		sbc	#0
-		sta	vdc_regionB_yh, y
+		sta	vdc_regionB_yh, x
 
 		lda.l	<_bx
-		sta	vdc_regionB_xl, y
+		sta	vdc_regionB_xl, x
 		lda.h	<_bx
-		sta	vdc_regionB_xh, y
+		sta	vdc_regionB_xh, x
 
 		lda	<_dl			; Flags (mark it as enabled).
 		and	#$C0
 		ora	#$0C
-		sta	vdc_regionB_crl, y
+		sta	vdc_regionB_crl, x
 
-		lda	#1			; Update last so there is no
-		sta	vdc_region_sel, y	; need to disable irqs.
+		lda	#1			; Mark that we've changed the
+		sta	vdc_region_new, x	; selected region.
+		sta	vdc_region_sel, x
 
-!done:		leave				; All done!
+!done:		plp				; Restore interrupts.
+
+		plx				; Restore X (aka __sp).
+		leave				; All done!
 
 .regionA:	lda	<_ah			; Scanline (i.e. top).
 		cmp	#HUCC_SCR_HEIGHT	; Skip if offscreen.
 		bcs	!done+
-		sta	vdc_regionA_rcr, y
+		sta	vdc_regionA_rcr, x
 
 		cmp	#0			; Either Y at top of the frame
 		beq	!+			; or Y-1 because the RCR code
 		clc				; sets it on the line before.
 !:		lda.l	<_cx
 		sbc	#0
-		sta	vdc_regionA_yl, y
+		sta	vdc_regionA_yl, x
 		lda.h	<_cx
 		sbc	#0
-		sta	vdc_regionA_yh, y
+		sta	vdc_regionA_yh, x
 
 		lda.l	<_bx
-		sta	vdc_regionA_xl, y
+		sta	vdc_regionA_xl, x
 		lda.h	<_bx
-		sta	vdc_regionA_xh, y
+		sta	vdc_regionA_xh, x
 
 		lda	<_dl			; Flags (mark it as enabled).
 		and	#$C0
 		ora	#$0C
-		sta	vdc_regionA_crl, y
+		sta	vdc_regionA_crl, x
 
-		cla				; Update last so there is no
-		sta	vdc_region_sel, y	; need to disable irqs.
+		lda	#1			; Mark that we've changed the
+		sta	vdc_region_new, x	; selected region.
+		stz	vdc_region_sel, x
 
-!done:		leave				; All done!
+!done:		plp				; Restore interrupts.
+
+		plx				; Restore X (aka __sp).
+		leave				; All done!
 
 		.endp
 
@@ -122,72 +152,88 @@ HUCC_SCR_HEIGHT	=	224
 
 		.proc	_sgx_scroll_split.5
 
-		ldy	<_al			; Region number.
-		cpy	#HUCC_SGX_SPLITS
+		phx				; Preserve X (aka __sp).
+
+		php				; Disable interrupts while
+		sei				; updating this structure.
+
+		ldx	<_al			; Region number.
+		cpx	#HUCC_SGX_SPLITS
 .hang:		bcs	.hang			; Better a hang than a crash!
 
-		lda	sgx_region_sel, y	; Update the parameter copy
-		bne	.regionA		; that is not displayed now.
+		lda	sgx_region_sel, x	; Update the parameter copy
+		eor	sgx_region_new, x	; that is not displayed now.
+		bne	.regionA
 
 .regionB:	lda	<_ah			; Scanline (i.e. top).
 		cmp	#HUCC_SCR_HEIGHT	; Skip if offscreen.
 		bcs	!done+
-		sta	sgx_regionB_rcr, y
+		sta	sgx_regionB_rcr, x
 
 		cmp	#0			; Either Y at top of the frame
 		beq	!+			; or Y-1 because the RCR code
 		clc				; sets it on the line before.
 !:		lda.l	<_cx
 		sbc	#0
-		sta	sgx_regionB_yl, y
+		sta	sgx_regionB_yl, x
 		lda.h	<_cx
 		sbc	#0
-		sta	sgx_regionB_yh, y
+		sta	sgx_regionB_yh, x
 
 		lda.l	<_bx
-		sta	sgx_regionB_xl, y
+		sta	sgx_regionB_xl, x
 		lda.h	<_bx
-		sta	sgx_regionB_xh, y
+		sta	sgx_regionB_xh, x
 
 		lda	<_dl
 		and	#$C0			; Flags (mark it as enabled).
 		ora	#$0C
-		sta	sgx_regionB_crl, y
+		sta	sgx_regionB_crl, x
 
-		lda	#1			; Update last so there is no
-		sta	sgx_region_sel, y	; need to disable irqs.
+		lda	#1			; Mark that we've changed the
+		sta	sgx_region_new, x	; selected region.
 
-!done:		leave				; All done!
+		sta	sgx_region_sel, x
+
+!done:		plp				; Restore interrupts.
+
+		plx				; Restore X (aka __sp).
+		leave				; All done!
 
 .regionA:	lda	<_ah			; Scanline (i.e. top).
 		cmp	#HUCC_SCR_HEIGHT	; Skip if offscreen.
 		bcs	!done+
-		sta	sgx_regionA_rcr, y
+		sta	sgx_regionA_rcr, x
 
 		cmp	#0			; Either Y at top of the frame
 		beq	!+			; or Y-1 because the RCR code
 		clc				; sets it on the line before.
 !:		lda.l	<_cx
 		sbc	#0
-		sta	sgx_regionA_yl, y
+		sta	sgx_regionA_yl, x
 		lda.h	<_cx
 		sbc	#0
-		sta	sgx_regionA_yh, y
+		sta	sgx_regionA_yh, x
 
 		lda.l	<_bx
-		sta	sgx_regionA_xl, y
+		sta	sgx_regionA_xl, x
 		lda.h	<_bx
-		sta	sgx_regionA_xh, y
+		sta	sgx_regionA_xh, x
 
 		lda	<_dl
 		and	#$C0			; Flags (mark it as enabled).
 		ora	#$0C
-		sta	sgx_regionA_crl, y
+		sta	sgx_regionA_crl, x
 
-		cla				; Update last so there is no
-		sta	sgx_region_sel, y	; need to disable irqs.
+		lda	#1			; Mark that we've changed the
+		sta	sgx_region_new, x	; selected region.
 
-!done:		leave				; All done!
+		stz	sgx_region_sel, x
+
+!done:		plp				; Restore interrupts.
+
+		plx				; Restore X (aka __sp).
+		leave				; All done!
 
 		.endp
 
@@ -204,45 +250,75 @@ HUCC_SCR_HEIGHT	=	224
 ; disable screen scrolling for a scroll region
 
 _disable_split.1:
-		cmp	#HUCC_PCE_SPLITS
-.hang:		bcs	.hang			; Better a hang than a crash!
-		sax
+		phx				; Preserve X (aka __sp).
 
-		ldy	vdc_region_sel, x	; Update the parameter copy
-		bne	.regionA                ; that is not displayed now.
+		php				; Disable interrupts while
+		sei				; updating this structure.
+
+		cmp	#HUCC_PCE_SPLITS	; Better a hang than a crash!
+.hang:		bcs	.hang
+		tax
+
+		lda	vdc_region_sel, x	; Update the parameter copy
+		eor	vdc_region_new, x	; that is not displayed now.
+		bne	.regionA
 
 .regionB:	stz	vdc_regionB_crl, x	; Region disabled if $00.
 
-		inc	vdc_region_sel, x	; Update last so there is no
-		tax                             ; need to disable irqs.
+		lda	#1			; Mark that we've changed the
+		sta	vdc_region_new, x	; selected region.
+		sta	vdc_region_sel, x
+
+		plp				; Restore interrupts.
+
+		plx				; Restore X (aka __sp).
 		rts
 
 .regionA:	stz	vdc_regionA_crl, x	; Region disabled if $00.
 
-		stz	vdc_region_sel, x	; Update last so there is no
-		tax                             ; need to disable irqs.
+		lda	#1			; Mark that we've changed the
+		sta	vdc_region_new, x	; selected region.
+		stz	vdc_region_sel, x
+
+		plp				; Restore interrupts.
+
+		plx				; Restore X (aka __sp).
 		rts
 
 	.if	SUPPORT_SGX
 
 _sgx_disable_split.1:
-		cmp	#HUCC_SGX_SPLITS
-.hang:		bcs	.hang			; Better a hang than a crash!
-		sax
+		phx				; Preserve X (aka __sp).
 
-		ldy	sgx_region_sel, x	; Update the parameter copy
-		bne	.regionA                ; that is not displayed now.
+		php				; Disable interrupts while
+		sei				; updating this structure.
+
+		cmp	#HUCC_SGX_SPLITS	; Better a hang than a crash!
+.hang:		bcs	.hang
+		tax
+
+		lda	sgx_region_sel, x	; Update the parameter copy
+		eor	sgx_region_new, x	; that is not displayed now.
+		bne	.regionA
 
 .regionB:	stz	sgx_regionB_crl, x	; Region disabled if $00.
 
-		inc	sgx_region_sel, x	; Update last so there is no
-		tax                             ; need to disable irqs.
+		lda	#1			; Mark that we've changed the
+		sta	sgx_region_new, x	; selected region.
+		sta	sgx_region_sel, x	; Update last so there is no
+
+		plx                             ; need to disable irqs.
 		rts
 
 .regionA:	stz	sgx_regionA_crl, x	; Region disabled if $00.
 
-		stz	sgx_region_sel, x	; Update last so there is no
-		tax                             ; need to disable irqs.
+		lda	#1			; Mark that we've changed the
+		sta	sgx_region_new, x	; selected region.
+		stz	sgx_region_sel, x
+
+		plp				; Restore interrupts.
+
+		plx				; Restore X (aka __sp).
 		rts
 
 	.endif	SUPPORT_SGX
@@ -271,29 +347,30 @@ _sgx_disable_split.1:
 ;  Any other RCR values that are out of range ($00-$3F, $147-$3FF) will never
 ;  result in a successful line compare.
 ;
-; Memory used is 15 bytes per scroll per VDC!
-;
 ; Old HuC rcr_init: 2148 cycles if all 8 regions pre-sorted
 ; Old HuC rcr_init: 4346 cycles if all 8 regions need sorting
 ;
-; New HuCC vbl_init_scroll:   8 disabled splits:  246 cycles
-; New HuCC vbl_init_scroll:   8  enabled splits:  340 cycles
+; New HuCC vbl_init_scroll:   8 disabled splits:  290 cycles
+; New HuCC vbl_init_scroll:   8  enabled splits:  384 cycles
 ;
-; New HuCC vbl_init_scroll:  16 disabled splits:  422 cycles
-; New HuCC vbl_init_scroll:  16  enabled splits:  588 cycles
+; New HuCC vbl_init_scroll:  16 disabled splits:  506 cycles
+; New HuCC vbl_init_scroll:  16  enabled splits:  672 cycles
 ;
-; New HuCC vbl_init_scroll:  32 disabled splits:  774 cycles
-; New HuCC vbl_init_scroll:  32  enabled splits: 1084 cycles
+; New HuCC vbl_init_scroll:  32 disabled splits:  953 cycles
+; New HuCC vbl_init_scroll:  32  enabled splits: 1263 cycles
 ;
-; New HuCC vbl_init_scroll:  64 disabled splits: 1478 cycles
-; New HuCC vbl_init_scroll:  64  enabled splits: 2076 cycles
+; New HuCC vbl_init_scroll:  64 disabled splits: 1802 cycles
+; New HuCC vbl_init_scroll:  64  enabled splits: 2400 cycles
 ;
-; New HuCC vbl_init_scroll: 128 disabled splits: 2886 cycles
-; New HuCC vbl_init_scroll: 128  enabled splits: 4060 cycles
+; New HuCC vbl_init_scroll: 128 disabled splits: 3530 cycles
+; New HuCC vbl_init_scroll: 128  enabled splits: 4704 cycles
+;
+; Memory used is 16 bytes per scroll per VDC!
 
 		.bss
 
 vdc_region_sel:	.ds	HUCC_PCE_SPLITS		; Use A or B region next frame?
+vdc_region_new:	.ds	HUCC_PCE_SPLITS		; 1 if vdc_region_sel modified.
 
 vdc_regionA_crl:.ds	HUCC_PCE_SPLITS		; Two copies of each setting
 vdc_regionB_crl:.ds	HUCC_PCE_SPLITS		; HUCC_PCE_SPLITS bytes apart.
@@ -315,6 +392,7 @@ vdc_regionB_nxt:.ds	HUCC_PCE_SPLITS
 	.if	SUPPORT_SGX
 
 sgx_region_sel:	.ds	HUCC_SGX_SPLITS		; Use A or B region next frame?
+sgx_region_new:	.ds	HUCC_SGX_SPLITS		; 1 if sgx_region_sel modified.
 
 sgx_regionA_crl:.ds	HUCC_SGX_SPLITS		; Two copies of each setting
 sgx_regionB_crl:.ds	HUCC_SGX_SPLITS		; HUCC_SGX_SPLITS bytes apart.
@@ -339,13 +417,15 @@ sgx_regionB_nxt:.ds	HUCC_SGX_SPLITS
 
 vbl_init_scroll	.proc
 
-		lda	#$FF			; A = previous active index
-		ldx	#HUCC_PCE_SPLITS	; so $FF for end-of-screen.
+		cla				; A = previous active index
+		ldx	#HUCC_PCE_SPLITS	; so $00 for end-of-screen.
 
 		clc				; For regionB indexes.
 
 !next_region:	dex				; All regions updated?
 		bmi	!save_first+
+
+		stz	vdc_region_new, x	; Clear region modified flag.
 
 		ldy	vdc_region_sel, x	; 0=regionA or 1=regionB.
 		beq	!use_regionA+
@@ -364,10 +444,13 @@ vbl_init_scroll	.proc
 		bra	!next_region-
 
 !save_first:	sta	vdc_next_region		; Save index of 1st region.
-		tax				; $FF if no active regions.
-		bmi	!+
 
-		smb7	<vdc_crl		; Ensure BURST MODE is off.
+		tax				; NZ if first active region
+		bne	!init_first+		; is not region 0.
+		tya				; NZ if region 0 is active.
+		beq	!+			; If no active leave RCR=0.
+
+!init_first:	smb7	<vdc_crl		; Ensure BURST MODE is off.
 
 		lda	#VDC_RCR		; 1st RCR always happens just
 		sta	VDC_AR			; before the display starts.
@@ -378,8 +461,8 @@ vbl_init_scroll	.proc
 
 	.if	SUPPORT_SGX
 
-!:		lda	#$FF			; A = previous active index
-		ldx	#HUCC_SGX_SPLITS	; so $FF for end-of-screen.
+!:		cla				; A = previous active index
+		ldx	#HUCC_SGX_SPLITS	; so $00 for end-of-screen.
 
 		clc				; For regionB indexes.
 
@@ -403,10 +486,13 @@ vbl_init_scroll	.proc
 		bra	!next_region-
 
 !save_first:	sta	sgx_next_region		; Save index of 1st region.
-		tax				; $FF if no active regions.
-		bmi	!+
 
-		smb7	<sgx_crl		; Ensure BURST MODE is off.
+		tax				; NZ if first active region
+		bne	!init_first+		; is not region 0.
+		tya				; NZ if region 0 is active.
+		beq	!+			; If no active leave RCR=0.
+
+!init_first:	smb7	<sgx_crl		; Ensure BURST MODE is off.
 
 		lda	#VDC_RCR		; 1st RCR always happens just
 		sta	SGX_AR			; before the display starts.
@@ -470,7 +556,7 @@ USING_RCR_MACROS	=	1		; Tell IRQ1 to use the macros.
 		ldx	vdc_next_region		; 5 X and Y can be greater than
 		ldy	vdc_regionA_nxt, x	; 5 HUCC_PCE_SPLITS if regionB!
 		clc				; 2
-		bpl	!set_next_rcr+		; 4
+		bne	!set_next_rcr+		; 4
 
 		and	const_0000		; 5 A=$00 with the same #cycles
 		bra	!clr_next_rcr+		; 4 as if the branch were taken.
@@ -517,7 +603,7 @@ USING_RCR_MACROS	=	1		; Tell IRQ1 to use the macros.
 		ldx	sgx_next_region		; 5 X and Y can be greater than
 		ldy	sgx_regionA_nxt, x	; 5 HUCC_SGX_SPLITS if regionB!
 		clc				; 2
-		bpl	!set_next_rcr+		; 4
+		bne	!set_next_rcr+		; 4
 
 		and	const_0000		; 5 A=$00 with the same #cycles
 		bra	!clr_next_rcr+		; 4 as if the branch were taken.
@@ -597,7 +683,7 @@ USING_RCR_MACROS	=	1		; Tell IRQ1 to use the macros.
 		ldx	vdc_next_region		; 5 X and Y can be greater than
 		ldy	vdc_regionA_nxt, x	; 5 HUCC_PCE_SPLITS if regionB!
 		clc				; 2
-		bpl	!set_next_rcr+		; 4
+		bne	!set_next_rcr+		; 4
 
 		and	const_0000		; 5 A=$00 with the same #cycles
 		bra	!clr_next_rcr+		; 4 as if the branch were taken.
