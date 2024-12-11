@@ -38,13 +38,13 @@ RM     = rm -f
 # Override "cp" and "rm" if using default Windows CMD.
 
 ifeq ($(OS),Windows_NT)
-ifeq ($(MSYSTEM),)
+ifeq ($(findstring ;,$(PATH)),;)
 # Use CMD.EXE and Windows pathing.
 CP     = copy
 MV     = ren
 RM     = del
 else
-# Use UNIX tools if Windows MSYS2.
+# Use UNIX tools if Windows MSYS2 or CYGWIN.
 endif
 endif
 
