@@ -94,8 +94,6 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 			fc->nargs = 0;
 			fc_args = 0;
 			fc->flags = 0;
-			if (match("__xsafe"))
-				fc->flags |= FASTCALL_XSAFE;
 			if (match("__nop"))
 				fc->flags |= FASTCALL_NOP;
 			else
@@ -513,7 +511,7 @@ int getarg (int t, int syntax, int otag, int is_fastcall)
 			if ((argptr = findloc(n))) {
 				argptr->identity = j;
 				argptr->sym_type = t;
-				address = argtop - glint(argptr) - 2;
+				address = argtop - argptr->offset - 2;
 				if ((t == CCHAR || t == CUCHAR) && j == VARIABLE)
 					address = address + BYTEOFF;
 				argptr->offset = address;
@@ -812,8 +810,6 @@ void callfunction (SYMBOL *ptr)
 	}
 
 	if (ptr->identity == FUNCTION) {
-		if (fast && !(fast->flags & FASTCALL_XSAFE))
-			out_ins(I_SAVESP, 0, 0);
 		if (fast && (fast->flags & (FASTCALL_NOP | FASTCALL_MACRO))) {
 
 			// Only macro fastcalls get a name generated
@@ -829,8 +825,6 @@ void callfunction (SYMBOL *ptr)
 			gcall(ptr->name, argcnt);
 		else
 			gcall(ptr->name, 0);
-		if (fast && !(fast->flags & FASTCALL_XSAFE))
-			out_ins(I_LOADSP, 0, 0);
 	} else {
 //		/* restore indirect call function-ptr from the hardware-stack */
 //		out_ins(I_SPOP_WR, 0, 0);
@@ -849,18 +843,6 @@ void callfunction (SYMBOL *ptr)
 		/* The function that is called is actually the one responsible  */
 		/* for removing the arguments from the stack. */
 		out_ins(I_MODSP, T_NOP, argsiz);
-	}
-
-	/* load acc.l if this a standard func returning a value */
-	if (!is_fc) {
-		if (ptr->identity == FUNCTION) {
-			if (ptr->sym_type != CVOID || ptr->ptr_order != 0)
-			out_ins(I_GETACC, 0, 0);
-		}
-		else {
-			if (ptr->funcptr_type != CVOID || ptr->funcptr_order != 0)
-			out_ins(I_GETACC, 0, 0);
-		}
 	}
 }
 

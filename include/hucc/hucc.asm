@@ -116,7 +116,9 @@ HUCC		=	1
 		.list
 		.mlist
 
-		;
+		; The hardware stack is used for expressions.
+
+__tos		=	$F8:2101, 255
 
 		.zp
 		.align	2
@@ -158,10 +160,6 @@ ___SDCC_m6502_ret5:	.ds	1
 ___SDCC_m6502_ret6:	.ds	1
 ___SDCC_m6502_ret7:	.ds	1
 	.endif
-
-		; This is the lo-byte of the value returned by a HuCC function.
-
-__hucc_ret	=	___SDCC_m6502_ret3
 
 		; HuCC keeps a realtime clock, updated in hucc_vbl.
 		;
@@ -304,8 +302,7 @@ core_main:	tma7				; Get the CORE_BANK.
 
 		call	_main			; Execute the HuCC program.
 
-		lda	<__hucc_ret		; Pass the exit code on, then
-		jmp	_exit.1			; hang if not running TGEMU.
+		jmp	_exit.1			; Pass the exit code on.
 
 .stack_fill:	db	$EA,$EA			; To make it easier to see.
 

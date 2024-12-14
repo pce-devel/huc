@@ -13,6 +13,5 @@ SYMBOL *addloc (char *sname, char id, char typ, int value, char stclass, int siz
 bool symname (char *sname);
 void illname (void);
 void multidef (char *sname);
-int glint (SYMBOL *sym);
 SYMBOL *copysym (SYMBOL *sym);
 #endif

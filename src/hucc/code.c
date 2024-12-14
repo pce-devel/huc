@@ -481,18 +481,6 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case I_GETACC:
-		ol("__getacc");
-		break;
-
-	case I_SAVESP:
-		ol("__savesp");
-		break;
-
-	case I_LOADSP:
-		ol("__loadsp");
-		break;
-
 	case I_MODSP:
 		ot("__modsp");
 		if (type == T_LITERAL) {
@@ -504,6 +492,10 @@ void gen_code (INS *tmp)
 			outdec((int)data);
 		}
 		nl();
+		break;
+
+	case I_PUSHARG_WR:
+		ol("__pusharg.wr");
 		break;
 
 	case I_PUSH_WR:
@@ -597,9 +589,9 @@ void gen_code (INS *tmp)
 		break;
 
 	case I_CMP_WT:
-		ot("__cmp.wt\t");
+		ot("__");
 		outstr(compare2str[tmp->cmp_type]);
-		outstr("_w");
+		outstr("_w.wt");
 		nl();
 		break;
 
@@ -1066,33 +1058,6 @@ void gen_code (INS *tmp)
 		out_type(type, data);
 		nl();
 		break;
-
-//	case X_LDWA_S:
-//		ot("__ld.was\t");
-//		outsymbol((SYMBOL *)imm_data);
-//		outstr(", ");
-//		outdec((int)data);
-//		outlocal(tmp->sym);
-//		nl();
-//		break;
-//
-//	case X_LDBA_S:
-//		ot("__ld.bas\t");
-//		outsymbol((SYMBOL *)imm_data);
-//		outstr(", ");
-//		outdec((int)data);
-//		outlocal(tmp->sym);
-//		nl();
-//		break;
-//
-//	case X_LDUBA_S:
-//		ot("__ld.uas\t");
-//		outsymbol((SYMBOL *)imm_data);
-//		outstr(", ");
-//		outdec((int)data);
-//		outlocal(tmp->sym);
-//		nl();
-//		break;
 
 	/* i-codes for pre- and post- increment and decrement */
 
@@ -1577,22 +1542,6 @@ void gen_code (INS *tmp)
 		out_type(type, data);
 		nl();
 		break;
-
-//	case X_STWA_S:
-//		ot("__stwa_s\t");
-//		outsymbol((SYMBOL *)imm_data);
-//		outstr(", ");
-//		outdec((int)data);
-//		nl();
-//		break;
-//
-//	case X_STBA_S:
-//		ot("__stba_s\t");
-//		outsymbol((SYMBOL *)imm_data);
-//		outstr(", ");
-//		outdec((int)data);
-//		nl();
-//		break;
 
 	/* i-codes for extending a byte to a word */
 

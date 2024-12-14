@@ -941,11 +941,11 @@ int heir11 (LVALUE *lval, int comma)
 			}
 			if (deferred) {
 #if ULI_NORECURSE
-				if ((ptr->storage & STORAGE) == AUTO && norecurse && glint(ptr) < 0) {
+				if ((ptr->storage & STORAGE) == AUTO && norecurse && ptr->offset < 0) {
 					/* XXX: bit of a memory leak, but whatever... */
 					SYMBOL * locsym = copysym(ptr);
 					if (NAMEALLOC <=
-						sprintf(locsym->name, "_%s_end - %d", current_fn, -glint(ptr)))
+						sprintf(locsym->name, "_%s_end - %d", current_fn, -ptr->offset))
 						error("norecurse local name too long");
 					locsym->linked = ptr;
 					out_ins(I_ADD_WI, T_SYMBOL, (intptr_t)locsym);

@@ -49,10 +49,8 @@ enum ICODE {
 
 	I_ENTER,
 	I_RETURN,
-	I_GETACC,
-	I_SAVESP,
-	I_LOADSP,
 	I_MODSP,
+	I_PUSHARG_WR,
 	I_PUSH_WR,
 	I_POP_WR,
 	I_SPUSH_WR,	/* push and pop on the hw-stack */
@@ -607,9 +605,8 @@ struct const_array {
 
 #define MAX_FASTCALL_ARGS 16
 #define FASTCALL_EXTRA    0x01  // bitmask values
-#define FASTCALL_XSAFE    0x02  // bitmask values
-#define FASTCALL_NOP      0x04  // bitmask values
-#define FASTCALL_MACRO    0x08  // bitmask values
+#define FASTCALL_NOP      0x02  // bitmask values
+#define FASTCALL_MACRO    0x04  // bitmask values
 
 struct fastcall {
 	struct fastcall *next;

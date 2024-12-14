@@ -297,9 +297,6 @@ FILE *open_include (void)
 void doasm (void)
 {
 	char * source;
-	/* Save the SP if this #asm section is inside a function */
-	if (fexitlab)
-		out_ins(I_SAVESP, 0, 0);
 	flush_ins();	/* David - optimize.c related */
 	ol(".dbg\tclear");
 	cmode = 0;
@@ -322,10 +319,6 @@ void doasm (void)
 		outstr(line);
 #endif
 		nl();
-	}
-	/* Restore the SP if this #asm section is inside a function */
-	if (fexitlab) {
-		out_ins(I_LOADSP, 0, 0);
 	}
 	/* Mark the end of the #asm section */
 	if (ctext) {

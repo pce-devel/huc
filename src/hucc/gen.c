@@ -67,7 +67,7 @@ void getloc (SYMBOL *sym)
 		out_ins(I_LD_WI, T_SYMBOL, (intptr_t)(sym->linked));
 	else {
 #if ULI_NORECURSE
-		value = glint(sym);
+		value = sym->offset;
 		if (norecurse && value < 0) {
 			/* XXX: bit of a memory leak, but whatever... */
 			SYMBOL * locsym = copysym(sym);
@@ -82,7 +82,7 @@ void getloc (SYMBOL *sym)
 			out_ins_sym(I_LEA_S, T_STACK, value, sym);
 		}
 #else
-		value = glint(sym) - stkp;
+		value = sym->offset - stkp;
 		out_ins_sym(I_LEA_S, T_STACK, value, sym);
 #endif
 	}
@@ -119,7 +119,6 @@ void putstk (char typeobj)
 		out_ins(I_ST_UPT, 0, 0);
 	else
 		out_ins(I_ST_WPT, 0, 0);
-	stkp = stkp + INTSIZE;
 }
 
 /*
@@ -176,16 +175,15 @@ void immed (int type, intptr_t data)
 void gpush (void)
 {
 	out_ins(I_PUSH_WR, T_VALUE, INTSIZE);
-	stkp = stkp - INTSIZE;
 }
 
 /*
- *	push the primary register onto the stack
+ *	push the primary register onto the argument stack
  *
  */
 void gpusharg (int size)
 {
-	out_ins(I_PUSH_WR, T_SIZE, size);
+	out_ins(I_PUSHARG_WR, T_SIZE, size);
 	stkp = stkp - size;
 }
 
@@ -196,7 +194,6 @@ void gpusharg (int size)
 void gpop (void)
 {
 	out_ins(I_POP_WR, 0, 0);
-	stkp = stkp + INTSIZE;
 }
 
 /*
@@ -311,7 +308,6 @@ void gadd (LVALUE *lval, LVALUE *lval2)
 	if (dbltest(lval2, lval))
 		out_ins(I_DOUBLE, 0, 0);
 	out_ins(I_ADD_WT, 0, 0);
-	stkp = stkp + INTSIZE;
 }
 
 /*
@@ -321,7 +317,6 @@ void gadd (LVALUE *lval, LVALUE *lval2)
 void gsub (void)
 {
 	out_ins(I_SUB_WT, 0, 0);
-	stkp = stkp + INTSIZE;
 }
 
 /*
@@ -336,7 +331,6 @@ void gmult (int is_unsigned)
 		out_ins(I_MUL_WT, 0, 0);
 	else
 		out_ins(I_MUL_WT, 0, 0);
-	stkp = stkp + INTSIZE;
 }
 
 void gmult_imm (int value)
@@ -355,7 +349,6 @@ void gdiv (int is_unsigned)
 		out_ins(I_UDIV_WT, 0, 0);
 	else
 		out_ins(I_SDIV_WT, 0, 0);
-	stkp = stkp + INTSIZE;
 }
 
 void gdiv_imm (int value)
@@ -377,7 +370,6 @@ void gmod (int is_unsigned)
 		out_ins(I_UMOD_WT, 0, 0);
 	else
 		out_ins(I_SMOD_WT, 0, 0);
-	stkp = stkp + INTSIZE;
 }
 
 /*
@@ -387,7 +379,6 @@ void gmod (int is_unsigned)
 void gor (void)
 {
 	out_ins(I_OR_WT, 0, 0);
-	stkp = stkp + INTSIZE;
 }
 
 /*
@@ -397,7 +388,6 @@ void gor (void)
 void gxor (void)
 {
 	out_ins(I_EOR_WT, 0, 0);
-	stkp = stkp + INTSIZE;
 }
 
 /*
@@ -407,7 +397,6 @@ void gxor (void)
 void gand (void)
 {
 	out_ins(I_AND_WT, 0, 0);
-	stkp = stkp + INTSIZE;
 }
 
 /*
@@ -422,7 +411,6 @@ void gasr (int is_unsigned)
 		out_ins(I_LSR_WT, 0, 0);
 	else
 		out_ins(I_ASR_WT, 0, 0);
-	stkp = stkp + INTSIZE;
 }
 
 /*
@@ -434,7 +422,6 @@ void gasr (int is_unsigned)
 void gasl (void)
 {
 	out_ins(I_ASL_WT, 0, 0);
-	stkp = stkp + INTSIZE;
 }
 
 /*
@@ -532,7 +519,6 @@ void geq (void)
 {
 	out_ins_cmp(I_CMP_WT, CMP_EQU);
 	out_ins(I_BOOLEAN, 0, 0);
-	stkp = stkp + INTSIZE;
 }
 
 /*
@@ -543,7 +529,6 @@ void gne (void)
 {
 	out_ins_cmp(I_CMP_WT, CMP_NEQ);
 	out_ins(I_BOOLEAN, 0, 0);
-	stkp = stkp + INTSIZE;
 }
 
 /*
@@ -554,7 +539,6 @@ void glt (void)
 {
 	out_ins_cmp(I_CMP_WT, CMP_SLT);
 	out_ins(I_BOOLEAN, 0, 0);
-	stkp = stkp + INTSIZE;
 }
 
 /*
@@ -565,7 +549,6 @@ void gle (void)
 {
 	out_ins_cmp(I_CMP_WT, CMP_SLE);
 	out_ins(I_BOOLEAN, 0, 0);
-	stkp = stkp + INTSIZE;
 }
 
 /*
@@ -576,7 +559,6 @@ void ggt (void)
 {
 	out_ins_cmp(I_CMP_WT, CMP_SGT);
 	out_ins(I_BOOLEAN, 0, 0);
-	stkp = stkp + INTSIZE;
 }
 
 /*
@@ -587,7 +569,6 @@ void gge (void)
 {
 	out_ins_cmp(I_CMP_WT, CMP_SGE);
 	out_ins(I_BOOLEAN, 0, 0);
-	stkp = stkp + INTSIZE;
 }
 
 /*
@@ -598,7 +579,6 @@ void gult (void)
 {
 	out_ins_cmp(I_CMP_WT, CMP_ULT);
 	out_ins(I_BOOLEAN, 0, 0);
-	stkp = stkp + INTSIZE;
 }
 
 /*
@@ -609,7 +589,6 @@ void gule (void)
 {
 	out_ins_cmp(I_CMP_WT, CMP_ULE);
 	out_ins(I_BOOLEAN, 0, 0);
-	stkp = stkp + INTSIZE;
 }
 
 /*
@@ -620,7 +599,6 @@ void gugt (void)
 {
 	out_ins_cmp(I_CMP_WT, CMP_UGT);
 	out_ins(I_BOOLEAN, 0, 0);
-	stkp = stkp + INTSIZE;
 }
 
 /*
@@ -631,7 +609,6 @@ void guge (void)
 {
 	out_ins_cmp(I_CMP_WT, CMP_UGE);
 	out_ins(I_BOOLEAN, 0, 0);
-	stkp = stkp + INTSIZE;
 }
 
 void scale_const (int type, int otag, int *size)
