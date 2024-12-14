@@ -39,8 +39,8 @@
 
 #asmdef	HUCC_USES_OLD_SCROLL 1
 
-extern void __fastcall __xsafe scroll( unsigned char num<_al>, unsigned int x<_cx>, unsigned int y<_dx>, unsigned char top<_ah>, unsigned char bottom<_bl>, unsigned char disp<acc> );
-extern void __fastcall __xsafe scroll_disable( unsigned char num<acc> );
+extern void __fastcall scroll( unsigned char num<_al>, unsigned int x<_cx>, unsigned int y<_dx>, unsigned char top<_ah>, unsigned char bottom<_bl>, unsigned char disp<acc> );
+extern void __fastcall scroll_disable( unsigned char num<acc> );
 
 #endif // __HUCC__
 

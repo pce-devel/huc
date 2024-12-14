@@ -85,59 +85,59 @@ extern unsigned char dh;
 
 #asmdef	HUCC_USES_BASELIB 1
 
-extern void __fastcall __xsafe __nop set_far_base( unsigned char data_bank<_bp_bank>, unsigned char *data_addr<_bp> );
-extern void __fastcall __xsafe set_far_offset( unsigned int offset<_bp>, unsigned char data_bank<_bp_bank>, unsigned char *data_addr<acc> );
+extern void __fastcall __nop set_far_base( unsigned char data_bank<_bp_bank>, unsigned char *data_addr<_bp> );
+extern void __fastcall set_far_offset( unsigned int offset<_bp>, unsigned char data_bank<_bp_bank>, unsigned char *data_addr<acc> );
 
-extern unsigned char __fastcall __xsafe __macro sgx_detect( void );
-extern unsigned char __fastcall __xsafe __macro ac_exists( void );
+extern unsigned char __fastcall __macro sgx_detect( void );
+extern unsigned char __fastcall __macro ac_exists( void );
 
-extern void __fastcall __xsafe __nop vpc_set_ctl( unsigned int bits<VPC_CR> );
-extern void __fastcall __xsafe __nop vpc_set_win1( unsigned int width<VPC_WINDOW1> );
-extern void __fastcall __xsafe __nop vpc_set_win2( unsigned int width<VPC_WINDOW2> );
+extern void __fastcall __nop vpc_set_ctl( unsigned int bits<VPC_CR> );
+extern void __fastcall __nop vpc_set_win1( unsigned int width<VPC_WINDOW1> );
+extern void __fastcall __nop vpc_set_win2( unsigned int width<VPC_WINDOW2> );
 
-extern unsigned int __fastcall __xsafe __macro peek( unsigned int addr<__ptr> );
-extern unsigned int __fastcall __xsafe __macro peekw( unsigned int addr<__ptr> );
-extern void __fastcall __xsafe __macro poke( unsigned int addr<__poke>, unsigned char with<acc> );
-extern void __fastcall __xsafe __macro pokew( unsigned int addr<__poke>, unsigned int with<acc> );
+extern unsigned int __fastcall __macro peek( unsigned int addr<__ptr> );
+extern unsigned int __fastcall __macro peekw( unsigned int addr<__ptr> );
+extern void __fastcall __macro poke( unsigned int addr<__poke>, unsigned char with<acc> );
+extern void __fastcall __macro pokew( unsigned int addr<__poke>, unsigned int with<acc> );
 
-extern unsigned int __fastcall __xsafe __farpeekw( void __far *addr<__fbank:__fptr> );
+extern unsigned int __fastcall __farpeekw( void __far *addr<__fbank:__fptr> );
 
-extern void __fastcall __xsafe __macro vsync( void );
-extern void __fastcall __xsafe __macro vsync( unsigned char count<acc> );
+extern void __fastcall __macro vsync( void );
+extern void __fastcall __macro vsync( unsigned char count<acc> );
 
-extern unsigned int __fastcall __xsafe __macro joy( unsigned char which<acc> );
-extern unsigned int __fastcall __xsafe __macro joytrg( unsigned char which<acc> );
+extern unsigned int __fastcall __macro joy( unsigned char which<acc> );
+extern unsigned int __fastcall __macro joytrg( unsigned char which<acc> );
 
-extern void __fastcall __xsafe __nop set_color( unsigned int index<VCE_CTA>, unsigned int value<VCE_CTW> );
-extern void __fastcall __xsafe set_color_rgb( unsigned int index<VCE_CTA>, unsigned char r<_al>, unsigned char g<_ah>, unsigned char b<acc> );
-extern unsigned int __fastcall __xsafe __macro get_color( unsigned int index<VCE_CTA> );
+extern void __fastcall __nop set_color( unsigned int index<VCE_CTA>, unsigned int value<VCE_CTW> );
+extern void __fastcall set_color_rgb( unsigned int index<VCE_CTA>, unsigned char r<_al>, unsigned char g<_ah>, unsigned char b<acc> );
+extern unsigned int __fastcall __macro get_color( unsigned int index<VCE_CTA> );
 
-extern unsigned char __fastcall __xsafe __macro clock_hh( void );
-extern unsigned char __fastcall __xsafe __macro clock_mm( void );
-extern unsigned char __fastcall __xsafe __macro clock_ss( void );
-extern unsigned char __fastcall __xsafe __macro clock_tt( void );
-extern void __fastcall __xsafe __macro clock_reset( void );
+extern unsigned char __fastcall __macro clock_hh( void );
+extern unsigned char __fastcall __macro clock_mm( void );
+extern unsigned char __fastcall __macro clock_ss( void );
+extern unsigned char __fastcall __macro clock_tt( void );
+extern void __fastcall __macro clock_reset( void );
 
-extern unsigned char __fastcall __xsafe __macro cd_execoverlay( unsigned char ovl_index<acc> );
+extern unsigned char __fastcall __macro cd_execoverlay( unsigned char ovl_index<acc> );
 
-extern int __fastcall __xsafe abs( int value<acc> );
+extern int __fastcall abs( int value<acc> );
 
-extern void __fastcall __xsafe srand( unsigned char seed<acc> );
-extern unsigned int __fastcall __xsafe rand( void );
-extern unsigned char __fastcall __xsafe rand8( void );
+extern void __fastcall srand( unsigned char seed<acc> );
+extern unsigned int __fastcall rand( void );
+extern unsigned char __fastcall rand8( void );
 
 // Note: "limit" is 0..255.
-extern unsigned char __fastcall __xsafe random8( unsigned char limit<acc> );
+extern unsigned char __fastcall random8( unsigned char limit<acc> );
 
 // Note: "limit" is 0..128, 129..255 is treated as 128!
-extern unsigned char __fastcall __xsafe random( unsigned char limit<acc> );
+extern unsigned char __fastcall random( unsigned char limit<acc> );
 
 // Functions that are only implemented in the TGEMU emulator for unit-testing
 // the compiler and which should never be used in normal HuCC projects ...
 
-extern void __fastcall __xsafe dump_screen( void );
-extern void __fastcall __xsafe abort( void );
-extern void __fastcall __xsafe exit( int value<acc> );
+extern void __fastcall dump_screen( void );
+extern void __fastcall abort( void );
+extern void __fastcall exit( int value<acc> );
 
 extern unsigned char __fastcall __builtin_ffs( unsigned int value<__temp> );
 

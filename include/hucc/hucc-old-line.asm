@@ -20,7 +20,7 @@
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe gfx_init( unsigned int start_vram_addr<_ax> );
+; void __fastcall gfx_init( unsigned int start_vram_addr<_ax> );
 ;
 ; initialize graphics mode
 ; - points graphics map to tiles at start_vram_addr
@@ -71,7 +71,7 @@ _gfx_init.1	.proc
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe gfx_clear( unsigned int start_vram_addr<_di> );
+; void __fastcall gfx_clear( unsigned int start_vram_addr<_di> );
 ;
 ; Clear the values in the graphics tiles
 ; - places zeroes in graphics tiles at start_vram_addr
@@ -107,7 +107,7 @@ _gfx_clear.1	.proc
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe gfx_line( unsigned int x1<_gfx_x1>, unsigned int y1<_gfx_y1>, unsigned int x2<_gfx_x2>, unsigned int y2<_gfx_y2>, unsigned char color<_gfx_color> );
+; void __fastcall gfx_line( unsigned int x1<_gfx_x1>, unsigned int y1<_gfx_y1>, unsigned int x2<_gfx_x2>, unsigned int y2<_gfx_y2>, unsigned char color<_gfx_color> );
 
 huc_gfx_line	.procgroup
 
@@ -446,7 +446,7 @@ _gfx_xdir	=	__fptr + 1
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe gfx_plot( unsigned int x<_gfx_x1>, unsigned int y<_gfx_y1>, char color<_gfx_color> );
+; void __fastcall gfx_plot( unsigned int x<_gfx_x1>, unsigned int y<_gfx_y1>, char color<_gfx_color> );
 
 _gfx_plot.3:	.proc
 

@@ -58,8 +58,8 @@ HUCC_SCR_HEIGHT	=	224
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe scroll_split( unsigned char index<_al>, unsigned char screen_line<_ah>, unsigned int bat_x<_bx>, unsigned int bat_y<_cx>, unsigned char display_flags<_dl> );
-; void __fastcall __xsafe sgx_scroll_split( unsigned char index<_al>, unsigned char screen_line<_ah>, unsigned int bat_x<_bx>, unsigned int bat_y<_cx>, unsigned char display_flags<_dl> );
+; void __fastcall scroll_split( unsigned char index<_al>, unsigned char screen_line<_ah>, unsigned int bat_x<_bx>, unsigned int bat_y<_cx>, unsigned char display_flags<_dl> );
+; void __fastcall sgx_scroll_split( unsigned char index<_al>, unsigned char screen_line<_ah>, unsigned int bat_x<_bx>, unsigned int bat_y<_cx>, unsigned char display_flags<_dl> );
 ;
 ; set screen scrolling
 
@@ -244,8 +244,8 @@ HUCC_SCR_HEIGHT	=	224
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe disable_split( unsigned char index<acc> );
-; void __fastcall __xsafe sgx_disable_split( unsigned char index<acc> );
+; void __fastcall disable_split( unsigned char index<acc> );
+; void __fastcall sgx_disable_split( unsigned char index<acc> );
 ;
 ; disable screen scrolling for a scroll region
 

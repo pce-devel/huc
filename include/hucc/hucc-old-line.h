@@ -26,10 +26,10 @@
 
 #asmdef	HUCC_USES_OLD_LINE 1
 
-extern void __fastcall __xsafe gfx_init( unsigned int start_vram_addr<_ax> );
-extern void __fastcall __xsafe gfx_clear( unsigned int start_vram_addr<_di> );
-extern void __fastcall __xsafe gfx_plot( unsigned int x<_gfx_x1>, unsigned int y<_gfx_y1>, char color<_gfx_color> );
-extern void __fastcall __xsafe gfx_line( unsigned int x1<_gfx_x1>, unsigned int y1<_gfx_y1>, unsigned int x2<_gfx_x2>, unsigned int y2<_gfx_y2>, unsigned char color<_gfx_color> );
+extern void __fastcall gfx_init( unsigned int start_vram_addr<_ax> );
+extern void __fastcall gfx_clear( unsigned int start_vram_addr<_di> );
+extern void __fastcall gfx_plot( unsigned int x<_gfx_x1>, unsigned int y<_gfx_y1>, char color<_gfx_color> );
+extern void __fastcall gfx_line( unsigned int x1<_gfx_x1>, unsigned int y1<_gfx_y1>, unsigned int x2<_gfx_x2>, unsigned int y2<_gfx_y2>, unsigned char color<_gfx_color> );
 
 #endif // __HUCC__
 

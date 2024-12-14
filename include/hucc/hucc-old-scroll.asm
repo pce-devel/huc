@@ -77,7 +77,7 @@ HUC_1ST_RCR	=	$144
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe scroll( unsigned char num<_al>, unsigned int x<_cx>, unsigned int y<_dx>, unsigned char top<_ah>, unsigned char bottom<_bl>, unsigned char disp<acc> );
+; void __fastcall scroll( unsigned char num<_al>, unsigned int x<_cx>, unsigned int y<_dx>, unsigned char top<_ah>, unsigned char bottom<_bl>, unsigned char disp<acc> );
 ;
 ; set screen scrolling
 
@@ -116,7 +116,7 @@ _scroll.6:	ldy	<_al			; Region number.
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe scroll_disable( unsigned char num<acc> );
+; void __fastcall scroll_disable( unsigned char num<acc> );
 ;
 ; disable screen scrolling for a scroll region
 
