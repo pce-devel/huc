@@ -84,39 +84,39 @@
 
 #asmdef	HUCC_USES_SYSTEMCARD 1
 
-extern void __fastcall __xsafe __macro cd_boot( void );
-extern unsigned int __fastcall __xsafe __macro cd_getver( void );
-extern void __fastcall __xsafe __macro cd_reset( void );
-extern unsigned char __fastcall __xsafe __macro cd_pause( void );
-extern unsigned char __fastcall __xsafe cd_unpause( void );
-extern void __fastcall __xsafe __macro cd_fade( unsigned char type<acc> );
+extern void __fastcall __macro cd_boot( void );
+extern unsigned int __fastcall __macro cd_getver( void );
+extern void __fastcall __macro cd_reset( void );
+extern unsigned char __fastcall __macro cd_pause( void );
+extern unsigned char __fastcall cd_unpause( void );
+extern void __fastcall __macro cd_fade( unsigned char type<acc> );
 extern unsigned char __fastcall cd_playtrk( unsigned char start_track<_bx>, unsigned char end_track<_cx>, unsigned char mode<_dh> );
 extern unsigned char __fastcall cd_playmsf( unsigned char start_minute<_al>,  unsigned char start_second<_ah>,  unsigned char start_frame<_bl>, unsigned char end_minute<_cl>,  unsigned char end_second<_ch>,  unsigned char end_frame<_dl>,  unsigned char mode<_dh> );
 extern unsigned char __fastcall cd_loadvram( unsigned char ovl_index<_cl>, unsigned int sect_offset<_si>, unsigned int vramaddr<_bx>, unsigned int bytes<_ax> );
 extern unsigned char __fastcall cd_loaddata( unsigned char ovl_index<_cl>, unsigned int sect_offset<_si>, unsigned char __far *buffer<_bp_bank:_bp>, unsigned int bytes<__ptr> );
 extern unsigned char __fastcall cd_loadbank( unsigned char ovl_index<_cl>, unsigned int sect_offset<_si>, unsigned char bank<_bl>, unsigned int sectors<_al> );
-extern unsigned char __fastcall __xsafe __macro cd_status( unsigned char mode<acc> );
+extern unsigned char __fastcall __macro cd_status( unsigned char mode<acc> );
 
-extern void __fastcall __xsafe __macro ad_reset( void );
-extern unsigned char __fastcall __xsafe __macro ad_trans( unsigned char ovl_index<_cl>, unsigned int sect_offset<_si>, unsigned char nb_sectors<_dh>, unsigned int ad_addr<_bx> );
-extern void __fastcall __xsafe __macro ad_read( unsigned int ad_addr<_cx>, unsigned char mode<_dh>, unsigned int buf<_bx>, unsigned int bytes<_ax> );
-extern void __fastcall __xsafe __macro ad_write( unsigned int ad_addr<_cx>, unsigned char mode<_dh>, unsigned int buf<_bx>, unsigned int bytes<_ax> );
-extern unsigned char __fastcall __xsafe __macro ad_play( unsigned int ad_addr<_bx>, unsigned int bytes<_ax>, unsigned char freq<_dh>, unsigned char mode<_dl> );
-extern unsigned char __fastcall __xsafe __macro ad_cplay( unsigned char ovl_index<_cl>, unsigned int sect_offset<_si>, unsigned int nb_sectors<_bx>, unsigned char freq<_dh> );
-extern void __fastcall __xsafe __macro ad_stop( void );
-extern unsigned char __fastcall __xsafe __macro ad_stat( void );
+extern void __fastcall __macro ad_reset( void );
+extern unsigned char __fastcall __macro ad_trans( unsigned char ovl_index<_cl>, unsigned int sect_offset<_si>, unsigned char nb_sectors<_dh>, unsigned int ad_addr<_bx> );
+extern void __fastcall __macro ad_read( unsigned int ad_addr<_cx>, unsigned char mode<_dh>, unsigned int buf<_bx>, unsigned int bytes<_ax> );
+extern void __fastcall __macro ad_write( unsigned int ad_addr<_cx>, unsigned char mode<_dh>, unsigned int buf<_bx>, unsigned int bytes<_ax> );
+extern unsigned char __fastcall __macro ad_play( unsigned int ad_addr<_bx>, unsigned int bytes<_ax>, unsigned char freq<_dh>, unsigned char mode<_dl> );
+extern unsigned char __fastcall __macro ad_cplay( unsigned char ovl_index<_cl>, unsigned int sect_offset<_si>, unsigned int nb_sectors<_bx>, unsigned char freq<_dh> );
+extern void __fastcall __macro ad_stop( void );
+extern unsigned char __fastcall __macro ad_stat( void );
 
 extern unsigned char __fastcall bm_check( void );
 extern unsigned char __fastcall bm_format( void );
-extern unsigned int __fastcall __xsafe __macro bm_free( void );
-extern unsigned char __fastcall __xsafe __macro bm_read( unsigned char *buffer<_bx>, unsigned char *name<_ax>, unsigned int offset<_dx>, unsigned int length<_cx> );
-extern unsigned char __fastcall __xsafe __macro bm_write( unsigned char *buffer<_bx>, unsigned char *name<_ax>, unsigned int offset<_dx>, unsigned int length<_cx> );
-extern unsigned char __fastcall __xsafe __macro bm_delete( unsigned char *name<_ax> );
+extern unsigned int __fastcall __macro bm_free( void );
+extern unsigned char __fastcall __macro bm_read( unsigned char *buffer<_bx>, unsigned char *name<_ax>, unsigned int offset<_dx>, unsigned int length<_cx> );
+extern unsigned char __fastcall __macro bm_write( unsigned char *buffer<_bx>, unsigned char *name<_ax>, unsigned int offset<_dx>, unsigned int length<_cx> );
+extern unsigned char __fastcall __macro bm_delete( unsigned char *name<_ax> );
 
 // Deprecated functions ...
 
-extern unsigned char __fastcall __xsafe __macro bm_exist( unsigned char *name<_ax> );
-extern unsigned char __fastcall __xsafe __macro bm_create( unsigned char *name<_ax>, unsigned int length<_cx> );
+extern unsigned char __fastcall __macro bm_exist( unsigned char *name<_ax> );
+extern unsigned char __fastcall __macro bm_create( unsigned char *name<_ax>, unsigned int length<_cx> );
 
 // void __fastcall _xsafe add_sectors( unsigned int sector_offset<acc> );
 

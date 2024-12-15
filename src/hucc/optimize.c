@@ -84,10 +84,8 @@ unsigned char icode_flags[] = {
 
 	/* I_ENTER              */	0,
 	/* I_RETURN              */	0,
-	/* I_GETACC             */	0,
-	/* I_SAVESP             */	0,
-	/* I_LOADSP             */	0,
 	/* I_MODSP              */	0,
+	/* I_PUSHARG_WR         */	IS_USEPR,
 	/* I_PUSH_WR            */	IS_USEPR,
 	/* I_POP_WR             */	0,
 	/* I_SPUSH_WR           */	IS_USEPR,
@@ -606,17 +604,13 @@ lv1_loop:
 			}
 
 			/*
-			 *  __getacc			-->
-			 *  __fence
-			 *
 			 *  __add.wi / __sub.wi		-->
 			 *  __fence
 			 */
 			else if
 			((p_nb >= 2) &&
 			 (p[1]->ins_code == I_ADD_WI ||
-			  p[1]->ins_code == I_SUB_WI ||
-			  p[1]->ins_code == I_GETACC)
+			  p[1]->ins_code == I_SUB_WI)
 			) {
 				remove = 2;
 			}
@@ -1261,7 +1255,7 @@ lv1_loop:
 			 *  __cmp.wt		type
 			 *
 			 *  is_ubyte()			-->	is_ubyte()
-			 *  __push.wr				__cmp.usq	type, (n - 2)
+			 *  __push.wr				__cmp.usq	type, n
 			 *  __ld.us		n
 			 *  __cmp.wt		type
 			 */
@@ -1276,7 +1270,7 @@ lv1_loop:
 				*p[2] = *p[1];
 				switch (p[1]->ins_code) {
 				case I_LD_UM: p[2]->ins_code = X_CMP_UMQ; break;
-				case X_LD_US: p[2]->ins_code = X_CMP_USQ; p[2]->ins_data -= 2; break;
+				case X_LD_US: p[2]->ins_code = X_CMP_USQ; break;
 				default:	break;
 				}
 				p[2]->cmp_type = compare2uchar[p[0]->cmp_type];
@@ -1399,7 +1393,7 @@ lv1_loop:
 			 *  __ld.wm		symbol
 			 *  __cmp.wt		type
 			 *
-			 *  __push.wr			-->	__cmp.ws	type, (n - 2)
+			 *  __push.wr			-->	__cmp.ws	type, n
 			 *  __ld.ws		n
 			 *  __cmp.wt		type
 			 */
@@ -1415,7 +1409,7 @@ lv1_loop:
 				switch (p[1]->ins_code) {
 				case I_LD_WI: p[2]->ins_code = X_CMP_WI; break;
 				case I_LD_WM: p[2]->ins_code = X_CMP_WM; break;
-				case X_LD_WS: p[2]->ins_code = X_CMP_WS; p[2]->ins_data -= 2; break;
+				case X_LD_WS: p[2]->ins_code = X_CMP_WS; break;
 				default:	break;
 				}
 				p[2]->cmp_type = p[0]->cmp_type;
@@ -1973,7 +1967,7 @@ lv1_loop:
 			/*
 			 *  __lea.s		i	-->	__lea.s		i
 			 *  __push.wr				__push.wr
-			 *  __st.wm		__ptr		__ld.{w/b/u}s	(i + 2)
+			 *  __st.wm		__ptr		__ld.{w/b/u}s	i
 			 *  __ld.{w/b/u}p	__ptr
 			 *
 			 *  Load a variable from memory, this is generated for
@@ -1999,7 +1993,6 @@ lv1_loop:
 					p[1]->ins_code = X_LD_BS;
 				else
 					p[1]->ins_code = X_LD_US;
-				p[1]->ins_data += 2;
 				remove = 1;
 			}
 
@@ -2212,7 +2205,7 @@ lv1_loop:
 			}
 
 			/*
-			 *  __push.wr			-->	__add.ws	(i - 2)
+			 *  __push.wr			-->	__add.ws	i
 			 *  __ld.ws		i
 			 *  __add.wt
 			 */
@@ -2229,7 +2222,6 @@ lv1_loop:
 				case X_LD_US: p[2]->ins_code = X_ADD_US; break;
 				default: abort();
 				}
-				p[2]->ins_data -= 2;
 				remove = 2;
 			}
 
@@ -3173,11 +3165,13 @@ lv1_loop:
 
 				/* check instruction */
 				switch (q_ins[scan].ins_code) {
+#if 0 // NOT ANYMORE!
 				case I_MODSP:
 					if ((q_ins[scan].ins_type == T_STACK) ||
 					    (q_ins[scan].ins_type == T_NOP))
 						offset += (int)q_ins[scan].ins_data;
 					break;
+#endif
 
 				case I_POP_WR:
 				case I_CMP_WT:
@@ -3202,6 +3196,7 @@ lv1_loop:
 				case I_PUSH_WR:
 					offset -= 2;
 					break;
+
 				default:
 					break;
 				}
@@ -3334,6 +3329,7 @@ lv1_loop:
 						}
 					}
 
+#if 0 // NOT ANYMORE!
 					/*
 					 * adjust stack references for the
 					 * removal of the I_PUSH_WR
@@ -3349,6 +3345,7 @@ lv1_loop:
 							q_ins[scan].ins_data -= 2;
 						}
 					}
+#endif
 
 					/*
 					 * remove all the instructions ...
@@ -3461,10 +3458,6 @@ lv2_loop:
 			) {
 				p[2]->ins_code = I_ST_WM;
 				p[2]->ins_type = T_PTR;
-				/* We just removed a push, adjust SP-relative
-				   addresses. */
-				if (is_sprel(p[1]))
-					p[1]->ins_data -= 2;
 				if (p[0]->ins_code == I_ST_UPT)
 					p[0]->ins_code = I_ST_UP;
 				else

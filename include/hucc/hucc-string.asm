@@ -45,21 +45,21 @@
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe strcpy( char *destination<_di>, char *source<_bp> );
-; void __fastcall __xsafe strcat( char *destination<_di>, char *source<_bp> );
+; void __fastcall strcpy( char *destination<_di>, char *source<_bp> );
+; void __fastcall strcat( char *destination<_di>, char *source<_bp> );
 ;
-; unsigned int __fastcall __xsafe strlcpy( char *destination<_di>, char *source<_bp>, unsigned char size<acc> );
-; unsigned int __fastcall __xsafe strlcat( char *destination<_di>, char *source<_bp>, unsigned char size<acc> );
-; unsigned int __fastcall __xsafe strlen( char *source<_bp> );
+; unsigned int __fastcall strlcpy( char *destination<_di>, char *source<_bp>, unsigned char size<acc> );
+; unsigned int __fastcall strlcat( char *destination<_di>, char *source<_bp>, unsigned char size<acc> );
+; unsigned int __fastcall strlen( char *source<_bp> );
 ;
 ; NOT WORKING YET (needs compiler changes) ...
 ;
-; void __fastcall __xsafe strcpy( char *destination<_di>, char __far *source<_bp_bank:_bp> );
-; void __fastcall __xsafe strcat( char *destination<_di>, char __far *source<_bp_bank:_bp> );
+; void __fastcall strcpy( char *destination<_di>, char __far *source<_bp_bank:_bp> );
+; void __fastcall strcat( char *destination<_di>, char __far *source<_bp_bank:_bp> );
 ;
-; unsigned int __fastcall __xsafe strlcpy( char *destination<_di>, char __far *source<_bp_bank:_bp>, unsigned char size<acc> );
-; unsigned int __fastcall __xsafe strlcat( char *destination<_di>, char __far *source<_bp_bank:_bp>, unsigned char size<acc> );
-; unsigned int __fastcall __xsafe strlen( char __far *source<_bp_bank:_bp> );
+; unsigned int __fastcall strlcpy( char *destination<_di>, char __far *source<_bp_bank:_bp>, unsigned char size<acc> );
+; unsigned int __fastcall strlcat( char *destination<_di>, char __far *source<_bp_bank:_bp>, unsigned char size<acc> );
+; unsigned int __fastcall strlen( char __far *source<_bp_bank:_bp> );
 
 _strcat:	cla				; Max string length == 256!
 		ldy.h	#256
@@ -192,12 +192,12 @@ str_exit:	tax				; X:Y = string or buffer length.
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe memcpy( unsigned char *destination<ram_tii_dst>, unsigned char  *source<ram_tii_src>, unsigned int count<acc> );
-; unsigned char * __fastcall __xsafe mempcpy( unsigned char *destination<ram_tii_dst>, unsigned char  *source<ram_tii_src>, unsigned int count<acc> );
+; void __fastcall memcpy( unsigned char *destination<ram_tii_dst>, unsigned char  *source<ram_tii_src>, unsigned int count<acc> );
+; unsigned char * __fastcall mempcpy( unsigned char *destination<ram_tii_dst>, unsigned char  *source<ram_tii_src>, unsigned int count<acc> );
 ;
 ; NOT WORKING YET (needs compiler changes) ...
-; void __fastcall __xsafe memcpy( unsigned char *destination<ram_tii_dst>, unsigned char __far *source<_bp_bank:ram_tii_src>, unsigned int count<acc> );
-; unsigned char * __fastcall __xsafe mempcpy( unsigned char *destination<ram_tii_dst>, unsigned char __far *source<_bp_bank:ram_tii_src>, unsigned int count<acc> );
+; void __fastcall memcpy( unsigned char *destination<ram_tii_dst>, unsigned char __far *source<_bp_bank:ram_tii_src>, unsigned int count<acc> );
+; unsigned char * __fastcall mempcpy( unsigned char *destination<ram_tii_dst>, unsigned char __far *source<_bp_bank:ram_tii_src>, unsigned int count<acc> );
 
 _memcpy:
 _mempcpy:	sty.h	ram_tii_len		; Check for zero length.
@@ -251,7 +251,7 @@ _mempcpy:	sty.h	ram_tii_len		; Check for zero length.
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe memset( unsigned char *destination<ram_tii_src>, unsigned char value<_al>, unsigned int count<acc> );
+; void __fastcall memset( unsigned char *destination<ram_tii_src>, unsigned char value<_al>, unsigned int count<acc> );
 
 _memset:	cmp	#0			; Decrement the length, check
 		bne	!+			; for zero and set C. 

@@ -7,10 +7,10 @@
    easy to accomplish with a bit of inline asm!
    Note that HuC's scroll(), HuCC's scroll_split() and sgx_scroll_split()
    *all* override the current disp_on() or disp_off()! */
-void __fastcall __xsafe __macro pce_disp_on( void );
-void __fastcall __xsafe __macro pce_disp_off( void );
-void __fastcall __xsafe __macro sgx_disp_on( void );
-void __fastcall __xsafe __macro sgx_disp_off( void );
+void __fastcall __macro pce_disp_on( void );
+void __fastcall __macro pce_disp_off( void );
+void __fastcall __macro sgx_disp_on( void );
+void __fastcall __macro sgx_disp_off( void );
 #asm
 	.macro	_pce_disp_on
 	lda	#$C0

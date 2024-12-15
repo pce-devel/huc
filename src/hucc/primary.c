@@ -297,7 +297,7 @@ int primary (LVALUE *lval, int comma, bool *deferred)
 			    (ptr->identity == VARIABLE && ptr->sym_type == CSTRUCT)) {
 				/* add array base address after index calculation */
 #if ULI_NORECURSE
-				if (/* ptr->identity == ARRAY && */ ch() == '[' && (ptr->storage & STORAGE) == AUTO && norecurse && glint(ptr) < 0)
+				if (/* ptr->identity == ARRAY && */ ch() == '[' && (ptr->storage & STORAGE) == AUTO && norecurse && ptr->offset < 0)
 					*deferred = true;
 				else
 #endif

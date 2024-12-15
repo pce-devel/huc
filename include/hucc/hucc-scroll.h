@@ -53,14 +53,14 @@
 
 #asmdef	HUCC_USES_NEW_SCROLL 1
 
-extern void __fastcall __xsafe scroll_split( unsigned char index<_al>, unsigned char screen_line<_ah>, unsigned int bat_x<_bx>, unsigned int bat_y<_cx>, unsigned char display_flags<_dl> );
-extern void __fastcall __xsafe sgx_scroll_split( unsigned char index<_al>, unsigned char screen_line<_ah>, unsigned int bat_x<_bx>, unsigned int bat_y<_cx>, unsigned char display_flags<_dl> );
+extern void __fastcall scroll_split( unsigned char index<_al>, unsigned char screen_line<_ah>, unsigned int bat_x<_bx>, unsigned int bat_y<_cx>, unsigned char display_flags<_dl> );
+extern void __fastcall sgx_scroll_split( unsigned char index<_al>, unsigned char screen_line<_ah>, unsigned int bat_x<_bx>, unsigned int bat_y<_cx>, unsigned char display_flags<_dl> );
 
-extern void __fastcall __xsafe disable_split( unsigned char index<acc> );
-extern void __fastcall __xsafe sgx_disable_split( unsigned char index<acc> );
+extern void __fastcall disable_split( unsigned char index<acc> );
+extern void __fastcall sgx_disable_split( unsigned char index<acc> );
 
-extern void __fastcall __xsafe __macro disable_all_splits( void );
-extern void __fastcall __xsafe __macro sgx_disable_all_splits( void );
+extern void __fastcall __macro disable_all_splits( void );
+extern void __fastcall __macro sgx_disable_all_splits( void );
 
 #asm
 		.macro	_disable_all_splits

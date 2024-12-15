@@ -743,11 +743,6 @@ void multidef (char *sname)
 	nl();
 }
 
-int glint (SYMBOL *sym)
-{
-	return (sym->offset);
-}
-
 SYMBOL *copysym (SYMBOL *sym)
 {
 	SYMBOL *ptr = malloc(sizeof(SYMBOL));

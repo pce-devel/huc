@@ -47,37 +47,37 @@
 
 #asmdef	HUCC_USES_OLD_SPR 1
 
-extern void __fastcall __xsafe init_satb( void );
-extern void __fastcall __xsafe reset_satb( void );
-extern void __fastcall __xsafe satb_update( void );
-extern void __fastcall __xsafe spr_set( unsigned char num<acc> );
-extern void __fastcall __xsafe spr_hide( void );
-extern void __fastcall __xsafe spr_show( void );
-extern void __fastcall __xsafe spr_x( unsigned int value<acc> );
-extern void __fastcall __xsafe spr_y( unsigned int value<acc> );
-extern void __fastcall __xsafe spr_pattern( unsigned int vaddr<acc> );
-extern void __fastcall __xsafe spr_ctrl( unsigned char mask<_al>, unsigned char value<acc> );
-extern void __fastcall __xsafe spr_pal( unsigned char palette<acc> );
-extern void __fastcall __xsafe spr_pri( unsigned char priority<acc> );
+extern void __fastcall init_satb( void );
+extern void __fastcall reset_satb( void );
+extern void __fastcall satb_update( void );
+extern void __fastcall spr_set( unsigned char num<acc> );
+extern void __fastcall spr_hide( void );
+extern void __fastcall spr_show( void );
+extern void __fastcall spr_x( unsigned int value<acc> );
+extern void __fastcall spr_y( unsigned int value<acc> );
+extern void __fastcall spr_pattern( unsigned int vaddr<acc> );
+extern void __fastcall spr_ctrl( unsigned char mask<_al>, unsigned char value<acc> );
+extern void __fastcall spr_pal( unsigned char palette<acc> );
+extern void __fastcall spr_pri( unsigned char priority<acc> );
 
-extern unsigned int __fastcall __xsafe spr_get_x( void );
-extern unsigned int __fastcall __xsafe spr_get_y( void );
+extern unsigned int __fastcall spr_get_x( void );
+extern unsigned int __fastcall spr_get_y( void );
 
-extern void __fastcall __xsafe sgx_init_satb( void );
-extern void __fastcall __xsafe sgx_reset_satb( void );
-extern void __fastcall __xsafe sgx_satb_update( void );
-extern void __fastcall __xsafe sgx_spr_set( unsigned char num<acc> );
-extern void __fastcall __xsafe sgx_spr_hide( void );
-extern void __fastcall __xsafe sgx_spr_show( void );
-extern void __fastcall __xsafe sgx_spr_x( unsigned int value<acc> );
-extern void __fastcall __xsafe sgx_spr_y( unsigned int value<acc> );
-extern void __fastcall __xsafe sgx_spr_pattern( unsigned int vaddr<acc> );
-extern void __fastcall __xsafe sgx_spr_ctrl( unsigned char mask<_al>, unsigned char value<acc> );
-extern void __fastcall __xsafe sgx_spr_pal( unsigned char palette<acc> );
-extern void __fastcall __xsafe sgx_spr_pri( unsigned char priority<acc> );
+extern void __fastcall sgx_init_satb( void );
+extern void __fastcall sgx_reset_satb( void );
+extern void __fastcall sgx_satb_update( void );
+extern void __fastcall sgx_spr_set( unsigned char num<acc> );
+extern void __fastcall sgx_spr_hide( void );
+extern void __fastcall sgx_spr_show( void );
+extern void __fastcall sgx_spr_x( unsigned int value<acc> );
+extern void __fastcall sgx_spr_y( unsigned int value<acc> );
+extern void __fastcall sgx_spr_pattern( unsigned int vaddr<acc> );
+extern void __fastcall sgx_spr_ctrl( unsigned char mask<_al>, unsigned char value<acc> );
+extern void __fastcall sgx_spr_pal( unsigned char palette<acc> );
+extern void __fastcall sgx_spr_pri( unsigned char priority<acc> );
 
-extern unsigned int __fastcall __xsafe sgx_spr_get_x( void );
-extern unsigned int __fastcall __xsafe sgx_spr_get_y( void );
+extern unsigned int __fastcall sgx_spr_get_x( void );
+extern unsigned int __fastcall sgx_spr_get_y( void );
 
 #endif // __HUCC__
 

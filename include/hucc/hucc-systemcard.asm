@@ -69,7 +69,7 @@ __bm_error	.ds	1
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; unsigned int __fastcall __xsafe __macro cd_getver( void );
+; unsigned int __fastcall __macro cd_getver( void );
 
 _cd_getver	.macro
 		phx				; Preserve X (aka __sp).
@@ -84,7 +84,7 @@ _cd_getver	.macro
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe __macro cd_boot( void );
+; void __fastcall __macro cd_boot( void );
 
 _cd_boot	.macro
 		system	cd_boot
@@ -95,7 +95,7 @@ _cd_boot	.macro
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe __macro cd_reset( void );
+; void __fastcall __macro cd_reset( void );
 
 _cd_reset	.macro
 		phx				; Preserve X (aka __sp).
@@ -108,7 +108,7 @@ _cd_reset	.macro
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; unsigned char __fastcall __xsafe __macro cd_pause( void );
+; unsigned char __fastcall __macro cd_pause( void );
 
 _cd_pause	.macro
 		phx				; Preserve X (aka __sp).
@@ -122,7 +122,7 @@ _cd_pause	.macro
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe __macro cd_fade( unsigned char type<acc> );
+; void __fastcall __macro cd_fade( unsigned char type<acc> );
 ;
 ;   type = $00 -> cancel fade
 ;	   $08 -> PCM fadeout 6 seconds
@@ -440,7 +440,7 @@ _cd_loadbank.4	.macro
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; unsigned char __fastcall __xsafe __macro cd_status( unsigned char mode<acc> );
+; unsigned char __fastcall __macro cd_status( unsigned char mode<acc> );
 
 _cd_status.1	.macro
 		phx				; Preserve X (aka __sp).
@@ -454,7 +454,7 @@ _cd_status.1	.macro
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe __macro ad_reset( void );
+; void __fastcall __macro ad_reset( void );
 
 _ad_reset	.macro
 		phx				; Preserve X (aka __sp).
@@ -466,7 +466,7 @@ _ad_reset	.macro
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; unsigned char __fastcall __xsafe __macro ad_trans( unsigned char ovl_index<_cl>, unsigned int sect_offset<_si>, unsigned char nb_sectors<_dh>, unsigned int ad_addr<_bx> );
+; unsigned char __fastcall __macro ad_trans( unsigned char ovl_index<_cl>, unsigned int sect_offset<_si>, unsigned char nb_sectors<_dh>, unsigned int ad_addr<_bx> );
 
 _ad_trans.4	.macro
 		phx				; Preserve X (aka __sp).
@@ -490,7 +490,7 @@ _ad_trans.4	.macro
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe __macro ad_read( unsigned int ad_addr<_cx>, unsigned char mode<_dh>, unsigned int buf<_bx>, unsigned int bytes<_ax> );
+; void __fastcall __macro ad_read( unsigned int ad_addr<_cx>, unsigned char mode<_dh>, unsigned int buf<_bx>, unsigned int bytes<_ax> );
 
 _ad_read.4	.macro
 		phx				; Preserve X (aka __sp).
@@ -503,7 +503,7 @@ _ad_read.4	.macro
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe __macro ad_write( unsigned int ad_addr<_cx>, unsigned char mode<_dh>, unsigned int buf<_bx>, unsigned int bytes<_ax> );
+; void __fastcall __macro ad_write( unsigned int ad_addr<_cx>, unsigned char mode<_dh>, unsigned int buf<_bx>, unsigned int bytes<_ax> );
 
 _ad_write.4	.macro
 		phx				; Preserve X (aka __sp).
@@ -515,7 +515,7 @@ _ad_write.4	.macro
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; unsigned char __fastcall __xsafe __macro ad_play( unsigned int ad_addr<_bx>, unsigned int bytes<_ax>, unsigned char freq<_dh>, unsigned char mode<_dl> );
+; unsigned char __fastcall __macro ad_play( unsigned int ad_addr<_bx>, unsigned int bytes<_ax>, unsigned char freq<_dh>, unsigned char mode<_dl> );
 
 _ad_play.4	.macro
 		phx				; Preserve X (aka __sp).
@@ -529,7 +529,7 @@ _ad_play.4	.macro
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; unsigned char __fastcall __xsafe __macro ad_cplay( unsigned char ovl_index<_cl>, unsigned int sect_offset<_si>, unsigned int nb_sectors<_bx>, unsigned char freq<_dh> );
+; unsigned char __fastcall __macro ad_cplay( unsigned char ovl_index<_cl>, unsigned int sect_offset<_si>, unsigned int nb_sectors<_bx>, unsigned char freq<_dh> );
 
 _ad_cplay.4	.macro
 		phx				; Preserve X (aka __sp).
@@ -559,7 +559,7 @@ _ad_cplay.4	.macro
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe __macro ad_stop( void );
+; void __fastcall __macro ad_stop( void );
 
 _ad_stop	.macro
 		phx				; Preserve X (aka __sp).
@@ -572,7 +572,7 @@ _ad_stop	.macro
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; unsigned char __fastcall __xsafe __macro ad_stat( void );
+; unsigned char __fastcall __macro ad_stat( void );
 
 _ad_stat	.macro
 		phx				; Preserve X (aka __sp).
@@ -586,7 +586,7 @@ _ad_stat	.macro
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe add_sectors( unsigned int sector_offset<acc> );
+; void __fastcall add_sectors( unsigned int sector_offset<acc> );
 
 _add_sectors:	clc
 		adc	<_dl
@@ -701,7 +701,7 @@ _bm_format	.proc
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; unsigned int __fastcall __xsafe __macro bm_free( void );
+; unsigned int __fastcall __macro bm_free( void );
 ;
 ; Returns (int) number of user bytes available in BRAM, or 0 if error.
 ;
@@ -725,7 +725,7 @@ _bm_free	.macro
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; unsigned char __fastcall __xsafe __macro bm_read( unsigned char *buffer<_bx>, unsigned char *name<_ax>, unsigned int offset<_dx>, unsigned int length<_cx> );
+; unsigned char __fastcall __macro bm_read( unsigned char *buffer<_bx>, unsigned char *name<_ax>, unsigned int offset<_dx>, unsigned int length<_cx> );
 ;
 ; Check for existence of BRAM file with a matching name
 ;
@@ -750,7 +750,7 @@ _bm_read.4	.macro
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; unsigned char __fastcall __xsafe __macro bm_write( unsigned char *buffer<_bx>, unsigned char *name<_ax>, unsigned int offset<_dx>, unsigned int length<_cx> );
+; unsigned char __fastcall __macro bm_write( unsigned char *buffer<_bx>, unsigned char *name<_ax>, unsigned int offset<_dx>, unsigned int length<_cx> );
 ;
 ; Given the name of a BRAM file, update some info inside of it
 ;
@@ -775,7 +775,7 @@ _bm_write.4	.macro
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; unsigned char __fastcall __xsafe __macro bm_delete( unsigned char *name<_ax> );
+; unsigned char __fastcall __macro bm_delete( unsigned char *name<_ax> );
 ;
 ; Delete the entry specified by the name provided
 ;
@@ -800,7 +800,7 @@ _bm_delete.1	.macro
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; unsigned char __fastcall __xsafe __macro bm_exist( unsigned char *name<_ax> );
+; unsigned char __fastcall __macro bm_exist( unsigned char *name<_ax> );
 ;
 ; Check for existence of BRAM file with a matching name
 ;
@@ -835,7 +835,7 @@ _bm_exist.1	.macro
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; unsigned char __fastcall __xsafe __macro bm_create( unsigned char *name<_ax>, unsigned int length<_cx> );
+; unsigned char __fastcall __macro bm_create( unsigned char *name<_ax>, unsigned int length<_cx> );
 ;
 ; Create a new BRAM file, given the name and size
 ;

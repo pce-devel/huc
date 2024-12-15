@@ -32,8 +32,8 @@ _font_base	.ds	2
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe disp_on( void );
-; void __fastcall __xsafe disp_off( void );
+; void __fastcall disp_on( void );
+; void __fastcall disp_off( void );
 
 		.alias	_disp_on		= set_dspon
 		.alias	_disp_off		= set_dspoff
@@ -43,7 +43,7 @@ _font_base	.ds	2
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe set256x224( void );
+; void __fastcall set256x224( void );
 
 _set_256x224	.proc
 
@@ -142,8 +142,8 @@ _set_256x224	.proc
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe set_screen_size( unsigned char value<_al> );
-; void __fastcall __xsafe sgx_set_screen_size( unsigned char value<_al> );
+; void __fastcall set_screen_size( unsigned char value<_al> );
+; void __fastcall sgx_set_screen_size( unsigned char value<_al> );
 ;
 ; screen_size_sgx
 ; screen_size_vdc
@@ -154,10 +154,10 @@ _set_256x224	.proc
 ;
 ; (VDC_MWR_32x32  >> 4) or in HuC, SCR_SIZE_32x32
 ; (VDC_MWR_32x64  >> 4) or in HuC, SCR_SIZE_32x64
-; (VDC_MWR_64x32  >> 4) or in HuC, SCR_SIZE_64x32 
-; (VDC_MWR_64x64  >> 4) or in HuC, SCR_SIZE_64x64 
-; (VDC_MWR_128x32 >> 4) or in HuC, SCR_SIZE_128x32 
-; (VDC_MWR_128x64 >> 4) or in HuC, SCR_SIZE_128x64 
+; (VDC_MWR_64x32  >> 4) or in HuC, SCR_SIZE_64x32
+; (VDC_MWR_64x64  >> 4) or in HuC, SCR_SIZE_64x64
+; (VDC_MWR_128x32 >> 4) or in HuC, SCR_SIZE_128x32
+; (VDC_MWR_128x64 >> 4) or in HuC, SCR_SIZE_128x64
 
 huc_screen_size	.procgroup
 
@@ -300,11 +300,11 @@ sgx_tile_base	ds	2	; Where the TILE data is in VRAM / 16.
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe _macro set_xres( unsigned int x_pixels<_ax> );
-; void __fastcall __xsafe _macro sgx_set_xres( unsigned int x_pixels<_ax> );
+; void __fastcall _macro set_xres( unsigned int x_pixels<_ax> );
+; void __fastcall _macro sgx_set_xres( unsigned int x_pixels<_ax> );
 ;
-; void __fastcall __xsafe set_xres( unsigned int x_pixels<_ax>, unsigned char blur_flag<_bl> );
-; void __fastcall __xsafe sgx_set_xres( unsigned int x_pixels<_ax>, unsigned char blur_flag<_bl> );
+; void __fastcall set_xres( unsigned int x_pixels<_ax>, unsigned char blur_flag<_bl> );
+; void __fastcall sgx_set_xres( unsigned int x_pixels<_ax>, unsigned char blur_flag<_bl> );
 ;
 ; blur_flag = XRES_SOFT (default if not specified), XRES_SHARP or XRES_KEEP
 
@@ -391,7 +391,7 @@ _set_xres.2	.proc
 		sta	VDC_DL, x
 		lda	<.hds
 		sta	VDC_DH, x
-	
+
 		lda	#VDC_HDR		; Set the VDC's HDR register.
 		sta	<vdc_reg, x
 		sta	VDC_AR, x
@@ -399,7 +399,7 @@ _set_xres.2	.proc
 		sta	VDC_DL, x
 		lda	<.hde
 		sta	VDC_DH, x
-	
+
 		plp				; Restore interrupts.
 
 !exit:		plx				; Restore X (aka __sp).
@@ -441,7 +441,7 @@ set_tile_base:	sty	<__temp			; Set TILE base = (VRAM / 16).
 		sta.l	vdc_tile_base, x
 		lda	<__temp
 		sta.h	vdc_tile_base, x
-		rts 
+		rts
 
 		.alias	_set_tile_address.1	= set_tiles_vdc
 		.alias	_sgx_set_tile_address.1	= set_tiles_sgx
@@ -454,13 +454,13 @@ set_tile_base:	sty	<__temp			; Set TILE base = (VRAM / 16).
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe set_tile_data( unsigned char *tile_ex<_di> );
+; void __fastcall set_tile_data( unsigned char *tile_ex<_di> );
 ;
-; void __fastcall __xsafe __nop set_tile_data( unsigned char far *map<vdc_tile_bank:vdc_tile_addr>, unsigned char nb_tile<vdc_num_tiles>, unsigned char far *ptable<vdc_attr_bank:vdc_attr_addr>, unsigned char type<vdc_tile_type> );
-; void __fastcall __xsafe __nop sgx_set_tile_data( unsigned char far *map<vdc_tile_bank:vdc_tile_addr>, unsigned char nb_tile<vdc_num_tiles>, unsigned char far *ptable<vdc_attr_bank:vdc_attr_addr>, unsigned char type<vdc_tile_type> );
+; void __fastcall __nop set_tile_data( unsigned char far *map<vdc_tile_bank:vdc_tile_addr>, unsigned char nb_tile<vdc_num_tiles>, unsigned char far *ptable<vdc_attr_bank:vdc_attr_addr>, unsigned char type<vdc_tile_type> );
+; void __fastcall __nop sgx_set_tile_data( unsigned char far *map<vdc_tile_bank:vdc_tile_addr>, unsigned char nb_tile<vdc_num_tiles>, unsigned char far *ptable<vdc_attr_bank:vdc_attr_addr>, unsigned char type<vdc_tile_type> );
 ;
-; void __fastcall __xsafe __nop set_far_tile_data( unsigned char tile_bank<vdc_tile_bank>, unsigned char *tile_addr<vdc_tile_addr>, unsigned char num_tiles<vdc_num_tiles>, unsigned char palette_table_bank<vdc_attr_bank>, unsigned char *palette_table_addr<vdc_attr_addr>, unsigned char tile_type<vdc_tile_type> );
-; void __fastcall __xsafe __nop sgx_set_far_tile_data( unsigned char tile_bank<vdc_tile_bank>, unsigned char *tile_addr<vdc_tile_addr>, unsigned char num_tiles<vdc_num_tiles>, unsigned char palette_table_bank<vdc_attr_bank>, unsigned char *palette_table_addr<vdc_attr_addr>, unsigned char tile_type<vdc_tile_type> );
+; void __fastcall __nop set_far_tile_data( unsigned char tile_bank<vdc_tile_bank>, unsigned char *tile_addr<vdc_tile_addr>, unsigned char num_tiles<vdc_num_tiles>, unsigned char palette_table_bank<vdc_attr_bank>, unsigned char *palette_table_addr<vdc_attr_addr>, unsigned char tile_type<vdc_tile_type> );
+; void __fastcall __nop sgx_set_far_tile_data( unsigned char tile_bank<vdc_tile_bank>, unsigned char *tile_addr<vdc_tile_addr>, unsigned char num_tiles<vdc_num_tiles>, unsigned char palette_table_bank<vdc_attr_bank>, unsigned char *palette_table_addr<vdc_attr_addr>, unsigned char tile_type<vdc_tile_type> );
 ;
 ; tile,	tile base index
 ; nb_tile, number of tile
@@ -512,8 +512,8 @@ load_vram_group	.procgroup			; These routines share code!
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe load_tile( unsigned int vram<_di> );
-; void __fastcall __xsafe sgx_load_tile( unsigned int vram<_di> );
+; void __fastcall load_tile( unsigned int vram<_di> );
+; void __fastcall sgx_load_tile( unsigned int vram<_di> );
 
 	.if	SUPPORT_SGX
 		.proc	_sgx_load_tile.1
@@ -561,7 +561,7 @@ load_vram_group	.procgroup			; These routines share code!
 		ror.l	<_ax
 
 !:		sta.h	<_ax
-		bra	huc_load_vram		; This is __xsafe!
+		bra	huc_load_vram
 
 		.ref	_load_vram.3
 		.endp
@@ -571,11 +571,11 @@ load_vram_group	.procgroup			; These routines share code!
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe load_vram( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned int num_words<_ax> );
-; void __fastcall __xsafe sgx_load_vram( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned int num_words<_ax> );
+; void __fastcall load_vram( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned int num_words<_ax> );
+; void __fastcall sgx_load_vram( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned int num_words<_ax> );
 ;
-; void __fastcall __xsafe far_load_vram( unsigned int vram<_di>, unsigned int num_words<_ax> );
-; void __fastcall __xsafe sgx_far_load_vram( unsigned int vram<_di>, unsigned int num_words<_ax> );
+; void __fastcall far_load_vram( unsigned int vram<_di>, unsigned int num_words<_ax> );
+; void __fastcall sgx_far_load_vram( unsigned int vram<_di>, unsigned int num_words<_ax> );
 ;
 ; load_vram_sgx -  copy a block of memory to VRAM
 ; load_vram_vdc -  copy a block of memory to VRAM
@@ -707,11 +707,11 @@ huc_load_vram:	tma3
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe load_bat( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned char tiles_w<_al>, unsigned char tiles_h<_ah> );
-; void __fastcall __xsafe sgx_load_bat( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned char tiles_w<_al>, unsigned char tiles_h<_ah> );
+; void __fastcall load_bat( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned char tiles_w<_al>, unsigned char tiles_h<_ah> );
+; void __fastcall sgx_load_bat( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned char tiles_w<_al>, unsigned char tiles_h<_ah> );
 ;
-; void __fastcall __xsafe far_load_bat( unsigned int vram<_di>, unsigned char tiles_w<_al>, unsigned char tiles_h<_ah> );
-; void __fastcall __xsafe sgx_far_load_bat( unsigned int vram<_di>, unsigned char tiles_w<_al>, unsigned char tiles_h<_ah> );
+; void __fastcall far_load_bat( unsigned int vram<_di>, unsigned char tiles_w<_al>, unsigned char tiles_h<_ah> );
+; void __fastcall sgx_far_load_bat( unsigned int vram<_di>, unsigned char tiles_w<_al>, unsigned char tiles_h<_ah> );
 ;
 ; load_bat_sgx - transfer a BAT to VRAM
 ; load_bat_vdc - transfer a BAT to VRAM
@@ -801,9 +801,9 @@ load_bat_group	.procgroup			; These routines share code!
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe load_palette( unsigned char palette<_al>, unsigned char __far *data<_bp_bank:_bp>, unsigned char num_palettes<_ah> );
+; void __fastcall load_palette( unsigned char palette<_al>, unsigned char __far *data<_bp_bank:_bp>, unsigned char num_palettes<_ah> );
 ;
-; void __fastcall __xsafe far_load_palette( unsigned char palette<_al>, unsigned char num_palettes<_ah> );
+; void __fastcall far_load_palette( unsigned char palette<_al>, unsigned char num_palettes<_ah> );
 
 		.proc	_load_palette.3
 		.alias	_far_load_palette.2	= _load_palette.3
@@ -867,7 +867,7 @@ _gfx_load_vram:
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe load_background( unsigned char __far *tiles<_bp_bank:_bp>, unsigned char __far *palettes<__fbank:__fptr>, unsigned char __far *bat<_cl:_bx>, unsigned char w<_dl>, unsigned char w<_dh> );
+; void __fastcall load_background( unsigned char __far *tiles<_bp_bank:_bp>, unsigned char __far *palettes<__fbank:__fptr>, unsigned char __far *bat<_cl:_bx>, unsigned char w<_dl>, unsigned char w<_dh> );
 
 		.proc	_load_background.5
 
@@ -877,7 +877,7 @@ _gfx_load_vram:
 		stz.l	<_ax
 		lda.h	#$4000
 		sta.h	<_ax
-		call	_load_vram.3		; This is __xsafe!
+		call	_load_vram.3
 
 		lda.l	<__fptr
 		sta.l	<_bp
@@ -888,9 +888,9 @@ _gfx_load_vram:
 		stz	<_al
 		lda	#16
 		sta	<_ah
-		call	_load_palette.3		; This is __xsafe!
+		call	_load_palette.3
 
-		jsr	wait_vsync		; This is __xsafe!
+		jsr	wait_vsync
 
 		stz.l	<_di
 		stz.h	<_di
@@ -904,7 +904,7 @@ _gfx_load_vram:
 		sta	<_al
 		lda	<_dh
 		sta	<_ah
-		jmp	_load_bat.4		; This is __xsafe!
+		jmp	_load_bat.4
 
 		.endp
 
@@ -919,7 +919,7 @@ _gfx_load_vram:
 ; ***************************************************************************
 
 ; **************
-; void __fastcall __xsafe set_font_addr( unsigned int vram<acc> );
+; void __fastcall set_font_addr( unsigned int vram<acc> );
 
 _set_font_addr:
 		sty	<__temp
@@ -947,7 +947,7 @@ _set_font_addr:
 
 
 ; **************
-; void __fastcall __xsafe set_font_pal( unsigned char palette<acc> );
+; void __fastcall set_font_pal( unsigned char palette<acc> );
 
 _set_font_pal:
 		asl	a
@@ -966,10 +966,10 @@ _set_font_pal:
 
 
 ; **************
-; void __fastcall __xsafe load_font( char far *font<_bp_bank:_bp>, unsigned char count<_al> );
-; void __fastcall __xsafe load_font( char far *font<_bp_bank:_bp>, unsigned char count<_al>, unsigned int vram<acc> );
+; void __fastcall load_font( char far *font<_bp_bank:_bp>, unsigned char count<_al> );
+; void __fastcall load_font( char far *font<_bp_bank:_bp>, unsigned char count<_al>, unsigned int vram<acc> );
 ;
-; void __fastcall __xsafe far_load_font( unsigned char count<_al>, unsigned int vram<acc> );
+; void __fastcall far_load_font( unsigned char count<_al>, unsigned int vram<acc> );
 
 _load_font.2:	ldy	vdc_bat_limit		; BAT limit mask hi-byte.
 		iny
@@ -991,7 +991,7 @@ _load_font.3:	sta.l	<_di			; Load the font directly
 		asl	a
 		rol	<__ah
 		sta	<__al
-		jmp	_load_vram.3		; This is __xsafe!
+		jmp	_load_vram.3
 
 		.alias	_far_load_font.2	= _load_font.3
 
@@ -1019,7 +1019,7 @@ _cls.1:		sta.l	<_ax			; VRAM word to write.
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe load_default_font( void );
+; void __fastcall load_default_font( void );
 ;
 ; huc_font_sgx - transfer a 8x8 monochrome font into VRAM
 ; huc_font_vdc - transfer a 8x8 monochrome font into VRAM
@@ -1187,7 +1187,7 @@ vdc_tty_out	.procgroup			; These routines share code!
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe put_char( unsigned char digit<_bl>, unsigned char bat_x<_dil>, unsigned char bat_y<_dih> );
+; void __fastcall put_char( unsigned char digit<_bl>, unsigned char bat_x<_dil>, unsigned char bat_y<_dih> );
 
 	.if	SUPPORT_SGX
 put_char_sgx	.proc
@@ -1225,7 +1225,7 @@ put_char_vdc	.proc
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe put_digit( unsigned char digit<_bl>, unsigned char bat_x<_dil>, unsigned char bat_y<_dih> );
+; void __fastcall put_digit( unsigned char digit<_bl>, unsigned char bat_x<_dil>, unsigned char bat_y<_dih> );
 
 	.if	SUPPORT_SGX
 put_digit_sgx	.proc
@@ -1268,7 +1268,7 @@ put_digit_vdc	.proc
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe put_hex( unsigned int number<_bx>, unsigned char length<_cl>, unsigned char bat_x<_dil>, unsigned char bat_y<_dih> );
+; void __fastcall put_hex( unsigned int number<_bx>, unsigned char length<_cl>, unsigned char bat_x<_dil>, unsigned char bat_y<_dih> );
 
 	.if	SUPPORT_SGX
 put_hex_sgx	.proc
@@ -1348,7 +1348,7 @@ put_hex_vdc	.proc
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe put_number( unsigned int number<_bx>, unsigned char length<_cl>, unsigned char bat_x<_dil>, unsigned char bat_y<_dih> );
+; void __fastcall put_number( unsigned int number<_bx>, unsigned char length<_cl>, unsigned char bat_x<_dil>, unsigned char bat_y<_dih> );
 
 	.if	SUPPORT_SGX
 put_number_sgx	.proc
@@ -1437,7 +1437,7 @@ put_number_vdc	.proc
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe put_raw( unsigned int data<_bx>, unsigned char bat_x<_dil>, unsigned char bat_y<_dih> );
+; void __fastcall put_raw( unsigned int data<_bx>, unsigned char bat_x<_dil>, unsigned char bat_y<_dih> );
 
 	.if	SUPPORT_SGX
 put_raw_sgx	.proc
@@ -1477,7 +1477,7 @@ put_raw_vdc	.proc
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe put_string( unsigned char *string<_bp>, unsigned char bat_x<_dil>, unsigned char bat_y<_dih> );
+; void __fastcall put_string( unsigned char *string<_bp>, unsigned char bat_x<_dil>, unsigned char bat_y<_dih> );
 ;
 ; N.B. This is not a .proc right now because it is called from procedures
 ; that contain embedded strings, and the string aren't banked in before

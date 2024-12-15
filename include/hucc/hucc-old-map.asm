@@ -20,8 +20,8 @@
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe load_map( unsigned char bat_x<_al>, unsigned char bat_y<_ah>, int map_x<_bx>, int map_y<_dx>, unsigned char tiles_w<_cl>, unsigned char tiles_h<_ch> );
-; void __fastcall __xsafe sgx_load_map( unsigned char bat_x<_al>, unsigned char bat_y<_ah>, int map_x<_bx>, int map_y<_dx>, unsigned char tiles_w<_cl>, unsigned char tiles_h<_ch> );
+; void __fastcall load_map( unsigned char bat_x<_al>, unsigned char bat_y<_ah>, int map_x<_bx>, int map_y<_dx>, unsigned char tiles_w<_cl>, unsigned char tiles_h<_ch> );
+; void __fastcall sgx_load_map( unsigned char bat_x<_al>, unsigned char bat_y<_ah>, int map_x<_bx>, int map_y<_dx>, unsigned char tiles_w<_cl>, unsigned char tiles_h<_ch> );
 ;
 ; Transfer a HuC tiled map into the BAT in VRAM
 ;
@@ -578,8 +578,8 @@ sgx_spr_clr:	ds	1
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe map_put_tile( unsigned char map_x<_bl>, unsigned char map_y<_bh>, unsigned char tile<_al> );
-; void __fastcall __xsafe sgx_map_put_tile( unsigned char map_x<_bl>, unsigned char map_y<_bh>, unsigned char tile<_al> );
+; void __fastcall map_put_tile( unsigned char map_x<_bl>, unsigned char map_y<_bh>, unsigned char tile<_al> );
+; void __fastcall sgx_map_put_tile( unsigned char map_x<_bl>, unsigned char map_y<_bh>, unsigned char tile<_al> );
 
 	.if	SUPPORT_SGX
 
@@ -632,8 +632,8 @@ sgx_spr_clr:	ds	1
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe put_tile( unsigned char tile<_bl>, unsigned char bat_x<_al>, unsigned char bat_y<_ah> );
-; void __fastcall __xsafe sgx_put_tile( unsigned char tile<_bl>, unsigned char bat_x<_al>, unsigned char bat_y<_ah> );
+; void __fastcall put_tile( unsigned char tile<_bl>, unsigned char bat_x<_al>, unsigned char bat_y<_ah> );
+; void __fastcall sgx_put_tile( unsigned char tile<_bl>, unsigned char bat_x<_al>, unsigned char bat_y<_ah> );
 ;
 ; Transfer a single HuC map tile to the BAT in VRAM
 ;

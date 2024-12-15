@@ -63,11 +63,11 @@ sgx_spr_sat:	ds	512	; N.B. Directly after spr_sat!
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe init_satb( void );
-; void __fastcall __xsafe reset_satb( void );
+; void __fastcall init_satb( void );
+; void __fastcall reset_satb( void );
 ;
-; void __fastcall __xsafe sgx_init_satb( void );
-; void __fastcall __xsafe sgx_reset_satb( void );
+; void __fastcall sgx_init_satb( void );
+; void __fastcall sgx_reset_satb( void );
 
 _reset_satb:
 _init_satb:	cly
@@ -100,8 +100,8 @@ _sgx_init_satb:	cly
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe satb_update( void );
-; void __fastcall __xsafe sgx_satb_update( void );
+; void __fastcall satb_update( void );
+; void __fastcall sgx_satb_update( void );
 
 old_satb_group	.procgroup
 
@@ -194,7 +194,7 @@ old_satb_group	.procgroup
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe spr_set( unsigned char num<acc> );
+; void __fastcall spr_set( unsigned char num<acc> );
 
 _spr_set.1:	cmp	spr_max
 		bcc	!+
@@ -218,7 +218,7 @@ _spr_set.1:	cmp	spr_max
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe spr_hide( void );
+; void __fastcall spr_hide( void );
 
 _spr_hide:	ldy	#1
 		lda	[spr_ptr], y
@@ -231,7 +231,7 @@ _spr_hide:	ldy	#1
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe spr_show( void );
+; void __fastcall spr_show( void );
 
 _spr_show:	ldy	#1
 		lda	[spr_ptr], y
@@ -244,7 +244,7 @@ _spr_show:	ldy	#1
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe spr_x( unsigned int value<acc> );
+; void __fastcall spr_x( unsigned int value<acc> );
 
 _spr_x.1:	phy
 		clc
@@ -262,7 +262,7 @@ _spr_x.1:	phy
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe spr_y( unsigned int value<acc> );
+; void __fastcall spr_y( unsigned int value<acc> );
 
 _spr_y.1:	clc
 		adc	#64
@@ -278,7 +278,7 @@ _spr_y.1:	clc
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe spr_pattern( unsigned int vaddr<acc> );
+; void __fastcall spr_pattern( unsigned int vaddr<acc> );
 
 _spr_pattern.1:	sty	<__temp		;     zp=fedcba98 a=76543210
 		asl	a		; c=f zp=edcba987 a=6543210_
@@ -300,7 +300,7 @@ _spr_pattern.1:	sty	<__temp		;     zp=fedcba98 a=76543210
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe spr_ctrl( unsigned char mask<_al>, unsigned char value<acc> );
+; void __fastcall spr_ctrl( unsigned char mask<_al>, unsigned char value<acc> );
 
 _spr_ctrl.2:	and	<_al
 		sta	<__temp
@@ -317,7 +317,7 @@ _spr_ctrl.2:	and	<_al
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe spr_pal( unsigned char palette<acc> )
+; void __fastcall spr_pal( unsigned char palette<acc> )
 
 _spr_pal.1:	and	#$0F
 		sta	<__temp
@@ -333,7 +333,7 @@ _spr_pal.1:	and	#$0F
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe spr_pri( unsigned char priority<acc> )
+; void __fastcall spr_pri( unsigned char priority<acc> )
 
 _spr_pri.1:	cmp	#1
 		ldy	#6
@@ -349,7 +349,7 @@ _spr_pri.1:	cmp	#1
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; unsigned int __fastcall __xsafe spr_get_x( void );
+; unsigned int __fastcall spr_get_x( void );
 
 _spr_get_x:	sec
 		ldy	#2
@@ -368,7 +368,7 @@ _spr_get_x:	sec
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; unsigned int __fastcall __xsafe spr_get_y( void );
+; unsigned int __fastcall spr_get_y( void );
 
 _spr_get_y:	sec
 		lda	[spr_ptr]
@@ -388,7 +388,7 @@ _spr_get_y:	sec
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe sgx_spr_set( unsigned char num<acc> );
+; void __fastcall sgx_spr_set( unsigned char num<acc> );
 
 _sgx_spr_set.1:	cmp	sgx_spr_max
 		bcc	!+
@@ -412,7 +412,7 @@ _sgx_spr_set.1:	cmp	sgx_spr_max
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe sgx_spr_hide( void );
+; void __fastcall sgx_spr_hide( void );
 
 _sgx_spr_hide:	ldy	#1
 		lda	[sgx_spr_ptr], y
@@ -425,7 +425,7 @@ _sgx_spr_hide:	ldy	#1
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe sgx_spr_show( void );
+; void __fastcall sgx_spr_show( void );
 
 _sgx_spr_show:	ldy	#1
 		lda	[sgx_spr_ptr], y
@@ -438,7 +438,7 @@ _sgx_spr_show:	ldy	#1
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe sgx_spr_x( unsigned int value<acc> );
+; void __fastcall sgx_spr_x( unsigned int value<acc> );
 
 _sgx_spr_x.1:	phy
 		clc
@@ -456,7 +456,7 @@ _sgx_spr_x.1:	phy
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe sgx_spr_y( unsigned int value<acc> );
+; void __fastcall sgx_spr_y( unsigned int value<acc> );
 
 _sgx_spr_y.1:	clc
 		adc	#64
@@ -472,7 +472,7 @@ _sgx_spr_y.1:	clc
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe sgx_spr_pattern( unsigned int vaddr<acc> );
+; void __fastcall sgx_spr_pattern( unsigned int vaddr<acc> );
 
 _sgx_spr_pattern.1:
 		sty	<__temp		;     zp=fedcba98 a=76543210
@@ -495,7 +495,7 @@ _sgx_spr_pattern.1:
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe sgx_spr_ctrl( unsigned char mask<_al>, unsigned char value<acc> );
+; void __fastcall sgx_spr_ctrl( unsigned char mask<_al>, unsigned char value<acc> );
 
 _sgx_spr_ctrl.2:and	<_al
 		sta	<__temp
@@ -512,7 +512,7 @@ _sgx_spr_ctrl.2:and	<_al
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe sgx_spr_pal( unsigned char palette<acc> )
+; void __fastcall sgx_spr_pal( unsigned char palette<acc> )
 
 _sgx_spr_pal.1:	and	#$0F
 		sta	<__temp
@@ -528,7 +528,7 @@ _sgx_spr_pal.1:	and	#$0F
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __xsafe sgx_spr_pri( unsigned char priority<acc> )
+; void __fastcall sgx_spr_pri( unsigned char priority<acc> )
 
 _sgx_spr_pri.1:	cmp	#1
 		ldy	#6
@@ -544,7 +544,7 @@ _sgx_spr_pri.1:	cmp	#1
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; unsigned int __fastcall __xsafe sgx_spr_get_x( void );
+; unsigned int __fastcall sgx_spr_get_x( void );
 
 _sgx_spr_get_x:	sec
 		ldy	#2
@@ -563,7 +563,7 @@ _sgx_spr_get_x:	sec
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; unsigned int __fastcall __xsafe sgx_spr_get_y( void );
+; unsigned int __fastcall sgx_spr_get_y( void );
 
 _sgx_spr_get_y:	sec
 		lda	[sgx_spr_ptr]
