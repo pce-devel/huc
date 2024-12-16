@@ -51,8 +51,6 @@ _set_256x224	.proc
 .CHR_0x20	=	.BAT_SIZE / 16		; 1st tile # after the BAT.
 .SAT_ADDR	=	$7F00			; SAT takes 16 tiles of VRAM.
 
-		phx				; Preserve X (aka __sp).
-
 		php				; Disable interrupts.
 		sei
 
@@ -99,8 +97,6 @@ _set_256x224	.proc
 		plp				; Restore interrupts.
 
 		call	wait_vsync		; Wait for the next VBLANK.
-
-		plx				; Restore X (aka __sp).
 
 		leave				; All done, phew!
 
@@ -164,8 +160,8 @@ huc_screen_size	.procgroup
 	.if	SUPPORT_SGX
 screen_size_sgx	.proc
 
-		ldy	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$F0		        ; Turn "cly" into a "beq".
+		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		db	$F0		        ; Turn "clx" into a "beq".
 
 		.ref	screen_size_vdc
 		.endp
@@ -173,10 +169,7 @@ screen_size_sgx	.proc
 
 screen_size_vdc	.proc
 
-		cly				; Offset to PCE VDC.
-
-		phx				; Preserve X (aka __sp).
-		sxy				; Put VDC offset in X.
+		clx				; Offset to PCE VDC.
 
 		lda	<_al			; Get screen size value.
 		and	#7			; Sanitize screen size value.
@@ -220,8 +213,6 @@ screen_size_vdc	.proc
 		lda	#VDC_VWR
 		sta	<vdc_reg, x
 		sta	VDC_AR, x
-
-		plx				; Restore X (aka __sp).
 
 		leave
 
@@ -314,8 +305,8 @@ set_xres_group	.procgroup			; These routines share code!
 
 _sgx_set_xres.2	.proc
 
-		ldy	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$F0			; Turn "cly" into a "beq".
+		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		db	$F0			; Turn "clx" into a "beq".
 
 		.endp
 	.endif
@@ -326,10 +317,7 @@ _set_xres.2	.proc
 .hds		=	_al
 .hde		=	_ah
 
-		cly				; Offset to PCE VDC.
-
-		phx				; Preserve X (aka __sp).
-		sxy				; Put VDC offset in X.
+		clx				; Offset to PCE VDC.
 
 		lda.l	<_ax			; Convert x pixel resolution to
 		lsr.h	<_ax			; tiles.
@@ -402,9 +390,7 @@ _set_xres.2	.proc
 
 		plp				; Restore interrupts.
 
-!exit:		plx				; Restore X (aka __sp).
-
-		leave				; All done!
+!exit:		leave				; All done!
 
 .hsw_tbl:	.db	2, 3, 5
 .hds_tbl:	.db	36,50,86
@@ -424,7 +410,7 @@ _set_xres.2	.proc
 
 	.if	SUPPORT_SGX
 set_tiles_sgx:	ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$F0		        ; Turn "cly" into a "beq".
+		db	$F0		        ; Turn "clx" into a "beq".
 	.endif
 
 set_tiles_vdc:	clx				; Offset to PCE VDC.
@@ -518,8 +504,8 @@ load_vram_group	.procgroup			; These routines share code!
 	.if	SUPPORT_SGX
 		.proc	_sgx_load_tile.1
 
-		ldy	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$F0		        ; Turn "cly" into a "beq".
+		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		db	$F0		        ; Turn "clx" into a "beq".
 
 		.ref	_load_tile.1
 		.endp
@@ -527,10 +513,7 @@ load_vram_group	.procgroup			; These routines share code!
 
 		.proc	_load_tile.1
 
-		cly				; Offset to PCE VDC.
-
-		phx				; Preserve X (aka __sp).
-		sxy				; Put VDC offset in X.
+		clx				; Offset to PCE VDC.
 
 		lda.l	<_di			; Set VRAM address.
 		ldy.h	<_di
@@ -596,8 +579,8 @@ VRAM_XFER_SIZE	=	16
 		.alias	_sgx_far_load_vram.2	= _sgx_load_vram.3
 
 
-		ldy	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$F0			; Turn "cly" into a "beq".
+		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		db	$F0			; Turn "clx" into a "beq".
 
 		.ref	_load_vram.3
 		.endp
@@ -606,10 +589,7 @@ VRAM_XFER_SIZE	=	16
 		.proc	_load_vram.3
 		.alias	_far_load_vram.2	= _load_vram.3
 
-		cly				; Offset to PCE VDC.
-
-		phx				; Preserve X (aka __sp).
-		sxy				; Put VDC offset in X.
+		clx				; Offset to PCE VDC.
 
 huc_load_vram:	tma3
 		pha
@@ -694,8 +674,6 @@ huc_load_vram:	tma3
 		pla
 		tam3
 
-		plx				; Restore X (aka __sp).
-
 		leave
 
 		.endp
@@ -737,8 +715,8 @@ load_bat_group	.procgroup			; These routines share code!
 		.proc	_sgx_load_bat.4
 		.alias	_sgx_far_load_bat.3	= _sgx_load_bat.4
 
-		ldy	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$F0			; Turn "cly" into a "beq".
+		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		db	$F0			; Turn "clx" into a "beq".
 
 		.ref	_load_bat.4
 		.endp
@@ -747,10 +725,7 @@ load_bat_group	.procgroup			; These routines share code!
 		.proc	_load_bat.4
 		.alias	_far_load_bat.3		= _load_bat.4
 
-		cly				; Offset to PCE VDC.
-
-		phx				; Preserve X (aka __sp).
-		sxy				; Put VDC offset in X.
+		clx				; Offset to PCE VDC.
 
 		tma3
 		pha
@@ -787,8 +762,6 @@ load_bat_group	.procgroup			; These routines share code!
 
 		pla
 		tam3
-
-		plx				; Restore X (aka __sp).
 
 		leave
 
@@ -1035,7 +1008,7 @@ huc_mono_font	.procgroup
 	.if	SUPPORT_SGX
 huc_font_sgx	.proc
 
-		ldy	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
 		bra	!+
 
 		.ref	huc_font_vdc		; Need huc_font_vdc
@@ -1076,12 +1049,9 @@ monofont_fg:	.ds	1
 monofont_bg:	.ds	1
 		.code
 
-		cly				; Offset to PCE VDC.
+		clx				; Offset to PCE VDC.
 
-!:		phx				; Preserve X (aka __sp).
-		sxy				; Put VDC offset in X.
-
-		tma3				; Preserve MPR3.
+!:		tma3				; Preserve MPR3.
 		pha
 		tma4				; Preserve MPR4.
 		pha
@@ -1162,8 +1132,6 @@ monofont_bg:	.ds	1
 		pla				; Restore MPR3.
 		tam3
 
-		plx				; Restore X (aka __sp).
-
 		leave				; All done, phew!
 
 		.endp
@@ -1192,18 +1160,15 @@ vdc_tty_out	.procgroup			; These routines share code!
 	.if	SUPPORT_SGX
 put_char_sgx	.proc
 
-		ldy	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$F0			; Turn "cly" into a "beq".
+		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		db	$F0			; Turn "clx" into a "beq".
 
 		.endp
 	.endif
 
 put_char_vdc	.proc
 
-		cly				; Offset to PCE VDC.
-
-		phx				; Preserve X (aka __sp).
-		sxy				; Put VDC offset in X.
+		clx				; Offset to PCE VDC.
 
 		jsr	set_di_xy_mawr
 
@@ -1230,18 +1195,15 @@ put_char_vdc	.proc
 	.if	SUPPORT_SGX
 put_digit_sgx	.proc
 
-		ldy	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$F0			; Turn "cly" into a "beq".
+		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		db	$F0			; Turn "clx" into a "beq".
 
 		.endp
 	.endif
 
 put_digit_vdc	.proc
 
-		cly				; Offset to PCE VDC.
-
-		phx				; Preserve X (aka __sp).
-		sxy				; Put VDC offset in X.
+		clx				; Offset to PCE VDC.
 
 		jsr	set_di_xy_mawr
 
@@ -1273,18 +1235,15 @@ put_digit_vdc	.proc
 	.if	SUPPORT_SGX
 put_hex_sgx	.proc
 
-		ldy	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$F0			; Turn "cly" into a "beq".
+		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		db	$F0			; Turn "clx" into a "beq".
 
 		.endp
 	.endif
 
 put_hex_vdc	.proc
 
-		cly				; Offset to PCE VDC.
-
-		phx				; Preserve X (aka __sp).
-		sxy				; Put VDC offset in X.
+		clx				; Offset to PCE VDC.
 
 		jsr	set_di_xy_mawr
 
@@ -1335,9 +1294,7 @@ put_hex_vdc	.proc
 !output:	pla				; Pop the digits and output.
 		bne	.write
 
-!exit:		plx				; Restore X (aka __sp).
-
-		leave				; All done!
+!exit:		leave				; All done!
 
 		.endp
 
@@ -1353,7 +1310,7 @@ put_hex_vdc	.proc
 	.if	SUPPORT_SGX
 put_number_sgx	.proc
 
-		ldy	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
 		db	$F0			; Turn "clx" into a "beq".
 
 		.endp
@@ -1361,10 +1318,7 @@ put_number_sgx	.proc
 
 put_number_vdc	.proc
 
-		cly				; Offset to PCE VDC.
-
-		phx				; Preserve X (aka __sp).
-		sxy				; Put VDC offset in X.
+		clx				; Offset to PCE VDC.
 
 		jsr	set_di_xy_mawr
 
@@ -1442,18 +1396,15 @@ put_number_vdc	.proc
 	.if	SUPPORT_SGX
 put_raw_sgx	.proc
 
-		ldy	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$F0			; Turn "cly" into a "beq".
+		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		db	$F0			; Turn "clx" into a "beq".
 
 		.endp
 	.endif
 
 put_raw_vdc	.proc
 
-		cly				; Offset to PCE VDC.
-
-		phx				; Preserve X (aka __sp).
-		sxy				; Put VDC offset in X.
+		clx				; Offset to PCE VDC.
 
 		jsr	set_di_xy_mawr
 
@@ -1461,8 +1412,6 @@ put_raw_vdc	.proc
 		sta	VDC_DL, x
 		lda.h	<_bx
 		sta	VDC_DH, x
-
-		plx				; Restore X (aka __sp).
 
 		leave				; All done!
 
@@ -1486,18 +1435,15 @@ put_raw_vdc	.proc
 ;	.if	SUPPORT_SGX
 ;put_string_sgx	.proc
 ;
-;		ldy	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-;		db	$F0			; Turn "cly" into a "beq".
+;		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+;		db	$F0			; Turn "clx" into a "beq".
 ;
 ;		.endp
 ;	.endif
 
 put_string_vdc: ;	.proc
 
-		cly				; Offset to PCE VDC.
-
-		phx				; Preserve X (aka __sp).
-		sxy				; Put VDC offset in X.
+		clx				; Offset to PCE VDC.
 
 		tma3
 		pha
@@ -1529,8 +1475,6 @@ put_string_vdc: ;	.proc
 		tam4
 		pla
 		tam3
-
-		plx				; Restore X (aka __sp).
 
 		rts
 

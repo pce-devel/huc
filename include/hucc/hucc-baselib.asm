@@ -271,11 +271,9 @@ _vsync.1	.macro
 
 _joy.1		.macro
 	.if	SUPPORT_6BUTTON
-		tay
-		lda	joy6now, y
-		pha
-		lda	joynow, y
-		ply
+		tax
+		lda	joy6now, x
+		ldy	joynow, x
 	.else
 		tay
 		lda	joynow, y
@@ -292,11 +290,9 @@ _joy.1		.macro
 
 _joytrg.1	.macro
 	.if	SUPPORT_6BUTTON
-		tay
-		lda	joy6trg, y
-		pha
-		lda	joytrg, y
-		ply
+		tax
+		lda	joy6trg, x
+		ldy	joytrg, x
 	.else
 		tay
 		lda	joytrg, y
@@ -531,18 +527,14 @@ _set_xres.1	.macro
 ; void __fastcall __macro sgx_put_vram( unsigned int address<_di>, unsigned int data<acc> );
 
 		.macro	_get_vram.1
-		phx
 		jsr	vdc_di_to_marr
-		plx
 		lda	VDC_DL
 		ldy	VDC_DH
 		.endm
 
 		.macro	_put_vram.2
 		pha
-		phx
 		jsr	vdc_di_to_mawr
-		plx
 		pla
 		sta	VDC_DL
 		sty	VDC_DH
@@ -550,18 +542,14 @@ _set_xres.1	.macro
 
 	.if	SUPPORT_SGX
 		.macro	_sgx_get_vram.1
-		phx
 		jsr	sgx_di_to_marr
-		plx
 		lda	SGX_DL
 		ldy	SGX_DH
 		.endm
 
 		.macro	_sgx_put_vram.2
 		pha
-		phx
 		jsr	sgx_di_to_mawr
-		plx
 		pla
 		sta	SGX_DL
 		sty	SGX_DH

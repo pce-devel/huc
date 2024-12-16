@@ -65,8 +65,6 @@ HUCC_SCR_HEIGHT	=	224
 
 		.proc	_scroll_split.5
 
-		phx				; Preserve X (aka __sp).
-
 		php				; Disable interrupts while
 		sei				; updating this structure.
 
@@ -108,8 +106,6 @@ HUCC_SCR_HEIGHT	=	224
 		sta	vdc_region_sel, x
 
 !done:		plp				; Restore interrupts.
-
-		plx				; Restore X (aka __sp).
 		leave				; All done!
 
 .regionA:	lda	<_ah			; Scanline (i.e. top).
@@ -142,8 +138,6 @@ HUCC_SCR_HEIGHT	=	224
 		stz	vdc_region_sel, x
 
 !done:		plp				; Restore interrupts.
-
-		plx				; Restore X (aka __sp).
 		leave				; All done!
 
 		.endp
@@ -151,8 +145,6 @@ HUCC_SCR_HEIGHT	=	224
 	.if	SUPPORT_SGX
 
 		.proc	_sgx_scroll_split.5
-
-		phx				; Preserve X (aka __sp).
 
 		php				; Disable interrupts while
 		sei				; updating this structure.
@@ -196,8 +188,6 @@ HUCC_SCR_HEIGHT	=	224
 		sta	sgx_region_sel, x
 
 !done:		plp				; Restore interrupts.
-
-		plx				; Restore X (aka __sp).
 		leave				; All done!
 
 .regionA:	lda	<_ah			; Scanline (i.e. top).
@@ -231,8 +221,6 @@ HUCC_SCR_HEIGHT	=	224
 		stz	sgx_region_sel, x
 
 !done:		plp				; Restore interrupts.
-
-		plx				; Restore X (aka __sp).
 		leave				; All done!
 
 		.endp
@@ -250,8 +238,6 @@ HUCC_SCR_HEIGHT	=	224
 ; disable screen scrolling for a scroll region
 
 _disable_split.1:
-		phx				; Preserve X (aka __sp).
-
 		php				; Disable interrupts while
 		sei				; updating this structure.
 
@@ -270,8 +256,6 @@ _disable_split.1:
 		sta	vdc_region_sel, x
 
 		plp				; Restore interrupts.
-
-		plx				; Restore X (aka __sp).
 		rts
 
 .regionA:	stz	vdc_regionA_crl, x	; Region disabled if $00.
@@ -281,15 +265,11 @@ _disable_split.1:
 		stz	vdc_region_sel, x
 
 		plp				; Restore interrupts.
-
-		plx				; Restore X (aka __sp).
 		rts
 
 	.if	SUPPORT_SGX
 
 _sgx_disable_split.1:
-		phx				; Preserve X (aka __sp).
-
 		php				; Disable interrupts while
 		sei				; updating this structure.
 
@@ -307,7 +287,7 @@ _sgx_disable_split.1:
 		sta	sgx_region_new, x	; selected region.
 		sta	sgx_region_sel, x	; Update last so there is no
 
-		plx                             ; need to disable irqs.
+		plp				; Restore interrupts.
 		rts
 
 .regionA:	stz	sgx_regionA_crl, x	; Region disabled if $00.
@@ -317,8 +297,6 @@ _sgx_disable_split.1:
 		stz	sgx_region_sel, x
 
 		plp				; Restore interrupts.
-
-		plx				; Restore X (aka __sp).
 		rts
 
 	.endif	SUPPORT_SGX

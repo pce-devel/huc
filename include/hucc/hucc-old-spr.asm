@@ -108,8 +108,8 @@ old_satb_group	.procgroup
 	.if	SUPPORT_SGX
 		.proc	_sgx_satb_update
 
-		ldy	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$F0			; Turn "cly" into a "beq".
+		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		db	$F0			; Turn "clx" into a "beq".
 
 		.ref	_satb_update
 		.endp
@@ -117,10 +117,7 @@ old_satb_group	.procgroup
 
 		.proc	_satb_update
 
-		cly				; Offset to PCE VDC.
-
-		phx				; Preserve X (aka __sp).
-		sxy				; Put VDC offset in X.
+		clx				; Offset to PCE VDC.
 
 		lda.h	#$7F00			; HuC puts the SAT here in VRAM
 ;		lda.h	#$0800			; but we put it here instead
@@ -181,9 +178,7 @@ old_satb_group	.procgroup
 .same_page:	dey
 		bne	.chunk_loop
 
-.exit:		plx				; Restore X.
-
-		leave
+.exit:		leave
 
 		.endp
 
@@ -246,12 +241,12 @@ _spr_show:	ldy	#1
 ;
 ; void __fastcall spr_x( unsigned int value<acc> );
 
-_spr_x.1:	phy
+_spr_x.1:	sxy
 		clc
 		adc	#32
 		ldy	#2
 		sta	[spr_ptr], y
-		pla
+		txa
 		adc	#0
 		iny
 		sta	[spr_ptr], y
@@ -355,12 +350,12 @@ _spr_get_x:	sec
 		ldy	#2
 		lda	[spr_ptr], y
 		sbc	#32
-		pha
+		tax
 		iny
 		lda	[spr_ptr], y
 		sbc	#0
 		tay
-		pla
+		txa
 		rts
 
 
@@ -373,12 +368,12 @@ _spr_get_x:	sec
 _spr_get_y:	sec
 		lda	[spr_ptr]
 		sbc	#64
-		pha
+		tax
 		ldy	#1
 		lda	[spr_ptr], y
 		sbc	#0
 		tay
-		pla
+		txa
 		rts
 
 
@@ -440,12 +435,12 @@ _sgx_spr_show:	ldy	#1
 ;
 ; void __fastcall sgx_spr_x( unsigned int value<acc> );
 
-_sgx_spr_x.1:	phy
+_sgx_spr_x.1:	sxy
 		clc
 		adc	#32
 		ldy	#2
 		sta	[sgx_spr_ptr], y
-		pla
+		txa
 		adc	#0
 		iny
 		sta	[sgx_spr_ptr], y
@@ -550,12 +545,12 @@ _sgx_spr_get_x:	sec
 		ldy	#2
 		lda	[sgx_spr_ptr], y
 		sbc	#32
-		pha
+		tax
 		iny
 		lda	[sgx_spr_ptr], y
 		sbc	#0
 		tay
-		pla
+		txa
 		rts
 
 
@@ -568,12 +563,12 @@ _sgx_spr_get_x:	sec
 _sgx_spr_get_y:	sec
 		lda	[sgx_spr_ptr]
 		sbc	#64
-		pha
+		tax
 		ldy	#1
 		lda	[sgx_spr_ptr], y
 		sbc	#0
 		tay
-		pla
+		txa
 		rts
 
 	.endif	SUPPORT_SGX

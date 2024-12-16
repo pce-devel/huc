@@ -297,8 +297,8 @@ core_main:	tma7				; Get the CORE_BANK.
 		call	init_random		; Initialize random seed.
 	.endif
 
-		ldx	#HUCC_STACK_SZ		; Initialize the HuCC stack
-		stx	<__sp			; and put the __sp in X.
+		ldx	#HUCC_STACK_SZ		; Initialize the HuCC stack.
+		stx	<__sp
 
 		call	_main			; Execute the HuCC program.
 

@@ -27,8 +27,6 @@
 
 _gfx_init.1	.proc
 
-		phx				; Preserve X (aka __sp).
-
 		stz.l	<_di
 		stz.h	<_di
 		jsr	vdc_di_to_mawr
@@ -60,8 +58,6 @@ _gfx_init.1	.proc
 		dec	<__temp
 		bne	.loop
 
-		plx				; Restore X (aka __sp).
-
 		leave
 
 		.endp
@@ -78,8 +74,6 @@ _gfx_init.1	.proc
 
 _gfx_clear.1	.proc
 
-		phx				; Preserve X (aka __sp).
-
 		jsr	vdc_di_to_mawr
 
 		lda	vdc_bat_limit		; Size of BAT determines
@@ -95,8 +89,6 @@ _gfx_clear.1	.proc
 		bne	.loop
 		dec	a
 		bne	.loop
-
-		plx				; Restore X (aka __sp).
 
 		leave
 
@@ -128,8 +120,6 @@ _gfx_adj	=	_dx
 _gfx_dx		=	_bp
 _gfx_dy		=	_si
 _gfx_xdir	=	__fptr + 1
-
-		phx				; Preserve X (aka __sp).
 
 		clx				; Offset to PCE VDC.
 
@@ -261,9 +251,7 @@ _gfx_xdir	=	__fptr + 1
 
 		; ******
 
-.finished:	plx				; Restore X (aka __sp).
-
-		leave
+.finished:	leave
 
 		; ******
 
@@ -450,12 +438,8 @@ _gfx_xdir	=	__fptr + 1
 
 _gfx_plot.3:	.proc
 
-		phx				; Preserve X (aka __sp).
 		clx				; Offset to PCE VDC.
-
 		jsr	!plot_pixel-
-
-		plx				; Restore X (aka __sp).
 		leave
 
 		.endp

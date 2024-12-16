@@ -64,8 +64,7 @@
 _strcat:	cla				; Max string length == 256!
 		ldy.h	#256
 
-_strlcat:	phx				; Preserve X (aka __sp).
-		tax				; X = buffer length (1..256).
+_strlcat:	tax				; X = buffer length (1..256).
 
 	.ifdef	_DEBUG
 		bne	!+			; Sanity check buffer length. 
@@ -109,8 +108,7 @@ _strlcat:	phx				; Preserve X (aka __sp).
 _strcpy:	cla				; Max string length == 256!
 		ldy.h	#256
 
-_strlcpy:	phx				; Preserve X (aka __sp).
-		tax				; X = buffer length (1..256).
+_strlcpy:	tax				; X = buffer length (1..256).
 
 	.ifdef	_DEBUG
 		bne	!+			; Sanity check buffer length.
@@ -148,9 +146,7 @@ str_overflow:	bne	str_exit
 
 		;
 
-_strlen:	phx				; Preserve X (aka __sp).
-
-		tma3
+_strlen:	tma3
 		pha
 		tma4
 		pha
@@ -178,7 +174,6 @@ str_exit:	tax				; X:Y = string or buffer length.
 		txa				; A:Y = string or buffer length.
 		say				; Y:A = string or buffer length.
 
-		plx				; Restore X (aka __sp).
 		rts
 
 		.alias	_strlen.1		= _strlen

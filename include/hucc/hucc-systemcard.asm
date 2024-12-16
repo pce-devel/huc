@@ -72,11 +72,9 @@ __bm_error	.ds	1
 ; unsigned int __fastcall __macro cd_getver( void );
 
 _cd_getver	.macro
-		phx				; Preserve X (aka __sp).
 		system	ex_getver
 		txa				; Put version in A:Y
 		say				; Put version in Y:A
-		plx				; Restore X (aka __sp).
 		.endm
 
 
@@ -98,9 +96,7 @@ _cd_boot	.macro
 ; void __fastcall __macro cd_reset( void );
 
 _cd_reset	.macro
-		phx				; Preserve X (aka __sp).
 		system	cd_reset
-		plx				; Restore X (aka __sp).
 		.endm
 
 
@@ -111,10 +107,8 @@ _cd_reset	.macro
 ; unsigned char __fastcall __macro cd_pause( void );
 
 _cd_pause	.macro
-		phx				; Preserve X (aka __sp).
 		system	cd_pause
 		cly
-		plx				; Restore X (aka __sp).
 		.endm
 
 
@@ -131,9 +125,7 @@ _cd_pause	.macro
 ;	   $0E -> ADPCM fadeout 2.5 seconds
 
 _cd_fade.1	.macro
-		phx				; Preserve X (aka __sp).
 		system	cd_fade
-		plx				; Restore X (aka __sp).
 		.endm
 
 
@@ -405,8 +397,6 @@ _cd_loaddata.4	.proc
 ; unsigned char __fastcall cd_loadbank( unsigned char ovl_index<_cl>, unsigned int sect_offset<_si>, unsigned char bank<_bl>, unsigned int sectors<_al> );
 
 _cd_loadbank.4	.macro
-		phx				; Preserve X (aka __sp).
-
 		ldx	<_cl			; Get file address and length.
 		jsr	get_file_info
 
@@ -432,7 +422,6 @@ _cd_loadbank.4	.macro
 		txa				; value on a CD error.
 
 		cly
-		plx				; Restore X (aka __sp).
 		.endm
 
 
@@ -443,10 +432,8 @@ _cd_loadbank.4	.macro
 ; unsigned char __fastcall __macro cd_status( unsigned char mode<acc> );
 
 _cd_status.1	.macro
-		phx				; Preserve X (aka __sp).
 		system	cd_stat
 		cly
-		plx				; Restore X (aka __sp).
 		.endm
 
 
@@ -457,9 +444,7 @@ _cd_status.1	.macro
 ; void __fastcall __macro ad_reset( void );
 
 _ad_reset	.macro
-		phx				; Preserve X (aka __sp).
 		system	ad_reset
-		plx				; Restore X (aka __sp).
 		.endm
 
 
@@ -469,7 +454,6 @@ _ad_reset	.macro
 ; unsigned char __fastcall __macro ad_trans( unsigned char ovl_index<_cl>, unsigned int sect_offset<_si>, unsigned char nb_sectors<_dh>, unsigned int ad_addr<_bx> );
 
 _ad_trans.4	.macro
-		phx				; Preserve X (aka __sp).
 		ldx	<_cl			; Get file address and length.
 		jsr	get_file_info
 
@@ -484,7 +468,6 @@ _ad_trans.4	.macro
 
 !:		system	ad_trans
 		cly
-		plx				; Restore X (aka __sp).
 		.endm
 
 ; ***************************************************************************
@@ -493,9 +476,7 @@ _ad_trans.4	.macro
 ; void __fastcall __macro ad_read( unsigned int ad_addr<_cx>, unsigned char mode<_dh>, unsigned int buf<_bx>, unsigned int bytes<_ax> );
 
 _ad_read.4	.macro
-		phx				; Preserve X (aka __sp).
 		system	ad_read
-		plx				; Restore X (aka __sp).
 		.endm
 
 
@@ -506,9 +487,7 @@ _ad_read.4	.macro
 ; void __fastcall __macro ad_write( unsigned int ad_addr<_cx>, unsigned char mode<_dh>, unsigned int buf<_bx>, unsigned int bytes<_ax> );
 
 _ad_write.4	.macro
-		phx				; Preserve X (aka __sp).
 		system	ad_write
-		plx				; Restore X (aka __sp).
 		.endm
 
 
@@ -518,10 +497,8 @@ _ad_write.4	.macro
 ; unsigned char __fastcall __macro ad_play( unsigned int ad_addr<_bx>, unsigned int bytes<_ax>, unsigned char freq<_dh>, unsigned char mode<_dl> );
 
 _ad_play.4	.macro
-		phx				; Preserve X (aka __sp).
 		system	ad_play
 		cly
-		plx				; Restore X (aka __sp).
 		.endm
 
 
@@ -532,7 +509,6 @@ _ad_play.4	.macro
 ; unsigned char __fastcall __macro ad_cplay( unsigned char ovl_index<_cl>, unsigned int sect_offset<_si>, unsigned int nb_sectors<_bx>, unsigned char freq<_dh> );
 
 _ad_cplay.4	.macro
-		phx				; Preserve X (aka __sp).
 		ldx	<_cl			; Get file address and length.
 		jsr	get_file_info
 
@@ -551,7 +527,6 @@ _ad_cplay.4	.macro
 
 		system	ad_cplay
 		cly
-		plx				; Restore X (aka __sp).
 		.endm
 
 
@@ -562,9 +537,7 @@ _ad_cplay.4	.macro
 ; void __fastcall __macro ad_stop( void );
 
 _ad_stop	.macro
-		phx				; Preserve X (aka __sp).
 		system	ad_stop
-		plx				; Restore X (aka __sp).
 		.endm
 
 
@@ -575,10 +548,8 @@ _ad_stop	.macro
 ; unsigned char __fastcall __macro ad_stat( void );
 
 _ad_stat	.macro
-		phx				; Preserve X (aka __sp).
 		system	ad_stat
 		cly
-		plx				; Restore X (aka __sp).
 		.endm
 
 
@@ -708,7 +679,6 @@ _bm_format	.proc
 ; After return __bm_error = BM_OK or BM_NOT_FORMATTED.
 
 _bm_free	.macro
-		phx				; Preserve X (aka __sp).
 		system	bm_free
 		sta	__bm_error
 		tay
@@ -717,7 +687,6 @@ _bm_free	.macro
 		stz.h	<_cx
 !ok:		lda.l	<_cx
 		ldy.h	<_cx
-		plx				; Restore X (aka __sp).
 		.endm
 
 
@@ -738,11 +707,9 @@ _bm_free	.macro
 ; After return __bm_error = BM_OK or BM_NOT_FORMATTED.
 
 _bm_read.4	.macro
-		phx				; Preserve X (aka __sp).
 		system	bm_read
 		sta	__bm_error
 		cly
-		plx				; Restore X (aka __sp).
 		.endm
 
 
@@ -763,11 +730,9 @@ _bm_read.4	.macro
 ; After return __bm_error = BM_OK, BM_NOT_FOUND (i.e. not enough memory) or BM_NOT_FORMATTED.
 
 _bm_write.4	.macro
-		phx				; Preserve X (aka __sp).
 		system	bm_write
 		sta	__bm_error
 		cly
-		plx				; Restore X (aka __sp).
 		.endm
 
 
@@ -788,11 +753,9 @@ _bm_write.4	.macro
 ; After return __bm_error = BM_OK, BM_NOT_FOUND or BM_NOT_FORMATTED.
 
 _bm_delete.1	.macro
-		phx				; Preserve X (aka __sp).
 		system	bm_delete
 		sta	__bm_error
 		cly
-		plx				; Restore X (aka __sp).
 		.endm
 
 
@@ -819,7 +782,6 @@ _bm_exist.1	.macro
 		stz.h	<_cx
 		stz.l	<_dx			; Offset from start.
 		stz.h	<_dx
-		phx				; Preserve X (aka __sp).
 		system	bm_read
 		sta	__bm_error
 		tay				; $00 if file OK, else NZ.
@@ -827,7 +789,6 @@ _bm_exist.1	.macro
 		lda	#$FF
 !done:		inc	a			; $01 if file OK, else $00.
 		cly
-		plx				; Restore X (aka __sp).
 		.endm
 
 
@@ -855,9 +816,7 @@ _bm_create.2	.macro
 		sta.h	<_bx
 		stz.l	<_dx			; Offset from start.
 		stz.h	<_dx
-		phx				; Preserve X (aka __sp).
 		system	bm_write
 		sta	__bm_error
 		cly
-		plx				; Restore X (aka __sp).
 		.endm
