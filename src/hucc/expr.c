@@ -18,6 +18,23 @@
 #include "lex.h"
 #include "primary.h"
 #include "sym.h"
+#include "optimize.h"
+
+#define INFORM_POTENTIAL_REORDER 0
+
+/* invert comparison operation */
+int compare2swap [] = {
+	CMP_EQU,	// CMP_EQU
+	CMP_NEQ,	// CMP_NEQ
+	CMP_SGT,	// CMP_SLT
+	CMP_SGE,	// CMP_SLE
+	CMP_SLT,	// CMP_SGT
+	CMP_SLE,	// CMP_SGE
+	CMP_UGT,	// CMP_ULT
+	CMP_UGE,	// CMP_ULE
+	CMP_ULT,	// CMP_UGT
+	CMP_ULE		// CMP_UGE
+};
 
 /*
  *	lval->symbol - symbol table address, else 0 for constant
@@ -118,6 +135,8 @@ int heir1 (LVALUE *lval, int comma)
 	int k;
 	LVALUE lval2[1] = {{0}};
 	char fc;
+	INS variable;
+	variable.ins_code = 0;
 
 	k = heir1a(lval, comma);
 	if (match("=")) {
@@ -125,13 +144,33 @@ int heir1 (LVALUE *lval, int comma)
 			needlval();
 			return (0);
 		}
-		if (lval->indirect)
+		if (lval->indirect) {
+#if 0
+			/* peek at the output to see the variable's address type */
+			if (q_nb) {
+				if
+				((q_ins[q_wr].ins_code == I_LEA_S) ||
+				 (q_ins[q_wr].ins_code == I_LD_WI) ||
+				 (q_ins[q_wr].ins_code == I_ADD_WI &&
+				  q_ins[q_wr].ins_type == T_SYMBOL &&
+				  is_small_array((SYMBOL *)q_ins[q_wr].ins_data))
+				) {
+					variable = q_ins[q_wr];
+//					if ((--q_wr) < 0)
+//						q_wr += Q_SIZE;
+					printf("\nassignment: ");
+					dump_ins(&variable);
+				}
+			}
+#endif
 			gpush();
+		}
 		if (heir1(lval2, comma))
 			rvalue(lval2);
 		if (lval2->val_type == CVOID)
 			void_value_error(lval2);
-		store(lval);
+		if (variable.ins_code == 0)
+			store(lval);
 		return (0);
 	}
 	else {
@@ -150,8 +189,27 @@ int heir1 (LVALUE *lval, int comma)
 				needlval();
 				return (0);
 			}
-			if (lval->indirect)
+			if (lval->indirect) {
+#if 0
+				/* peek at the output to see the variable's address type */
+				if (q_nb) {
+					if
+					((q_ins[q_wr].ins_code == I_LEA_S) ||
+					 (q_ins[q_wr].ins_code == I_LD_WI) ||
+					 (q_ins[q_wr].ins_code == I_ADD_WI &&
+					  q_ins[q_wr].ins_type == T_SYMBOL &&
+					  is_small_array((SYMBOL *)q_ins[q_wr].ins_data))
+					) {
+						variable = q_ins[q_wr];
+//						if ((--q_wr) < 0)
+//							q_wr += Q_SIZE;
+						printf("\nassignment: ");
+						dump_ins(&variable);
+					}
+				}
+#endif
 				gpush();
+			}
 			rvalue(lval);
 			gpush();
 			if (heir1(lval2, comma))
@@ -176,11 +234,12 @@ int heir1 (LVALUE *lval, int comma)
 			case '%':       gmod(is_unsigned(lval) || is_unsigned(lval2)); break;
 			case '>':       gasr(is_unsigned(lval)); break;
 			case '<':       gasl(); break;
-			case '&':       gand(); break;
-			case '^':       gxor(); break;
-			case '|':       gor(); break;
+			case '&':       out_ins(I_AND_WT, 0, 0); break;
+			case '^':       out_ins(I_EOR_WT, 0, 0); break;
+			case '|':       out_ins(I_OR_WT, 0, 0); break;
 			}
-			store(lval);
+			if (variable.ins_code == 0)
+				store(lval);
 			return (0);
 		}
 		else
@@ -189,7 +248,7 @@ int heir1 (LVALUE *lval, int comma)
 }
 
 /*
- * processes ? : expression
+ * processes "? :" expression
  * @param lval
  * @return 0 or 1, fetch or no fetch
  */
@@ -231,7 +290,7 @@ int heir1a (LVALUE *lval, int comma)
 }
 
 /*
- * processes logical or ||
+ * processes logical "or"
  * @param lval
  * @return 0 or 1, fetch or no fetch
  */
@@ -265,7 +324,7 @@ int heir1b (LVALUE *lval, int comma)
 }
 
 /*
- * processes logical and &&
+ * processes logical "and"
  * @param lval
  * @return 0 or 1, fetch or no fetch
  */
@@ -299,7 +358,7 @@ int heir1c (LVALUE *lval, int comma)
 }
 
 /*
- * processes bitwise or |
+ * processes bitwise "or"
  * @param lval
  * @return 0 or 1, fetch or no fetch
  */
@@ -307,6 +366,8 @@ int heir2 (LVALUE *lval, int comma)
 {
 	int k;
 	LVALUE lval2[1] = {{0}};
+	int linst;
+	unsigned lseqn;
 
 	k = heir3(lval, comma);
 	blanks();
@@ -318,6 +379,10 @@ int heir2 (LVALUE *lval, int comma)
 	if (lval->val_type == CVOID)
 		void_value_error(lval);
 	FOREVER {
+		/* remember the lval position in the peephole instruction queue */
+		linst = q_wr;
+		lseqn = q_ins[q_wr].sequence;
+
 		if ((ch() == '|') && (nch() != '|') && (nch() != '=')) {
 			inbyte();
 			gpush();
@@ -325,16 +390,29 @@ int heir2 (LVALUE *lval, int comma)
 				rvalue(lval2);
 			if (lval2->val_type == CVOID)
 				void_value_error(lval2);
-			gor();
+			out_ins(I_OR_WT, 0, 0);
 			blanks();
 		}
 		else
 			return (0);
+
+		/* is this a candidate for reordering */
+		if (optimize >= 2 && q_nb && q_ins[q_wr].ins_code == I_OR_WT) {
+			/* is the lval still in the peephole instruction queue? */
+			if (q_ins[linst].ins_code != I_RETIRED && q_ins[linst].sequence == lseqn) {
+#if INFORM_POTENTIAL_REORDER
+				printf("stacked operator \"|\" with: ");
+				dump_ins(&q_ins[linst]);
+				printf("File \"%s\", Line %d\n", (inclsp) ? inclstk_name[inclsp - 1] : fname_copy, line_number);
+				printf("%s\n\n", line);
+#endif
+			}
+		}
 	}
 }
 
 /*
- * processes bitwise exclusive or
+ * processes bitwise "exclusive or"
  * @param lval
  * @return 0 or 1, fetch or no fetch
  */
@@ -342,6 +420,8 @@ int heir3 (LVALUE *lval, int comma)
 {
 	int k;
 	LVALUE lval2[1] = {{0}};
+	int linst;
+	unsigned lseqn;
 
 	k = heir4(lval, comma);
 	blanks();
@@ -353,6 +433,10 @@ int heir3 (LVALUE *lval, int comma)
 	if (lval->val_type == CVOID)
 		void_value_error(lval);
 	FOREVER {
+		/* remember the lval position in the peephole instruction queue */
+		linst = q_wr;
+		lseqn = q_ins[q_wr].sequence;
+
 		if ((ch() == '^') && (nch() != '=')) {
 			inbyte();
 			gpush();
@@ -360,16 +444,29 @@ int heir3 (LVALUE *lval, int comma)
 				rvalue(lval2);
 			if (lval2->val_type == CVOID)
 				void_value_error(lval2);
-			gxor();
+			out_ins(I_EOR_WT, 0, 0);
 			blanks();
 		}
 		else
 			return (0);
+
+		/* is this a candidate for reordering */
+		if (optimize >= 2 && q_nb && q_ins[q_wr].ins_code == I_EOR_WT) {
+			/* is the lval still in the peephole instruction queue? */
+			if (q_ins[linst].ins_code != I_RETIRED && q_ins[linst].sequence == lseqn) {
+#if INFORM_POTENTIAL_REORDER
+				printf("stacked operator \"^\" with: ");
+				dump_ins(&q_ins[linst]);
+				printf("File \"%s\", Line %d\n", (inclsp) ? inclstk_name[inclsp - 1] : fname_copy, line_number);
+				printf("%s\n\n", line);
+#endif
+			}
+		}
 	}
 }
 
 /*
- * processes bitwise and &
+ * processes bitwise "and"
  * @param lval
  * @return 0 or 1, fetch or no fetch
  */
@@ -377,6 +474,8 @@ int heir4 (LVALUE *lval, int comma)
 {
 	int k;
 	LVALUE lval2[1] = {{0}};
+	int linst;
+	unsigned lseqn;
 
 	k = heir5(lval, comma);
 	blanks();
@@ -388,6 +487,10 @@ int heir4 (LVALUE *lval, int comma)
 	if (lval->val_type == CVOID)
 		void_value_error(lval);
 	FOREVER {
+		/* remember the lval position in the peephole instruction queue */
+		linst = q_wr;
+		lseqn = q_ins[q_wr].sequence;
+
 		if ((ch() == '&') && (nch() != '&') && (nch() != '=')) {
 			inbyte();
 			gpush();
@@ -395,16 +498,29 @@ int heir4 (LVALUE *lval, int comma)
 				rvalue(lval2);
 			if (lval2->val_type == CVOID)
 				void_value_error(lval2);
-			gand();
+			out_ins(I_AND_WT, 0, 0);
 			blanks();
 		}
 		else
 			return (0);
+
+		/* is this a candidate for reordering */
+		if (optimize >= 2 && q_nb && q_ins[q_wr].ins_code == I_AND_WT) {
+			/* is the lval still in the peephole instruction queue? */
+			if (q_ins[linst].ins_code != I_RETIRED && q_ins[linst].sequence == lseqn) {
+#if INFORM_POTENTIAL_REORDER
+				printf("stacked operator \"&\" with: ");
+				dump_ins(&q_ins[linst]);
+				printf("File \"%s\", Line %d\n", (inclsp) ? inclstk_name[inclsp - 1] : fname_copy, line_number);
+				printf("%s\n\n", line);
+#endif
+			}
+		}
 	}
 }
 
 /*
- * processes equal and not equal operators
+ * processes "equal" and "not equal" operators
  * @param lval
  * @return 0 or 1, fetch or no fetch
  */
@@ -412,6 +528,8 @@ int heir5 (LVALUE *lval, int comma)
 {
 	int k;
 	LVALUE lval2[1] = {{0}};
+	int linst;
+	unsigned lseqn;
 
 	k = heir6(lval, comma);
 	blanks();
@@ -424,13 +542,17 @@ int heir5 (LVALUE *lval, int comma)
 	if (lval->val_type == CVOID)
 		void_value_error(lval);
 	FOREVER {
+		/* remember the lval position in the peephole instruction queue */
+		linst = q_wr;
+		lseqn = q_ins[q_wr].sequence;
+
 		if (match("==")) {
 			gpush();
 			if (heir6(lval2, comma))
 				rvalue(lval2);
 			if (lval2->val_type == CVOID)
 				void_value_error(lval2);
-			geq();
+			out_ins_cmp(I_CMP_WT, CMP_EQU);
 		}
 		else if (match("!=")) {
 			gpush();
@@ -438,10 +560,68 @@ int heir5 (LVALUE *lval, int comma)
 				rvalue(lval2);
 			if (lval2->val_type == CVOID)
 				void_value_error(lval2);
-			gne();
+			out_ins_cmp(I_CMP_WT, CMP_NEQ);
 		}
 		else
 			return (0);
+
+		/* is this a candidate for reordering */
+		if (optimize >= 2 && q_nb && q_ins[q_wr].ins_code == I_CMP_WT) {
+			/* is the lval still in the peephole instruction queue? */
+			if (q_ins[linst].ins_code != I_RETIRED && q_ins[linst].sequence == lseqn) {
+#if INFORM_POTENTIAL_REORDER
+				printf("stacked comparison with: ");
+				dump_ins(&q_ins[linst]);
+				printf("File \"%s\", Line %d\n", (inclsp) ? inclstk_name[inclsp - 1] : fname_copy, line_number);
+				printf("%s\n\n", line);
+#endif
+				if
+				((q_ins[linst].ins_code == I_LD_WI) ||
+				 (q_ins[linst].ins_code == I_LD_WM) ||
+				 (q_ins[linst].ins_code == I_LD_UM) ||
+				 (q_ins[linst].ins_code == X_LD_WS) ||
+				 (q_ins[linst].ins_code == X_LD_US)
+				) {
+					/* preserve the lval instructions */
+					INS parked[1];
+					int copy, from;
+					int compare = compare2swap[q_ins[q_wr].cmp_type];
+					parked[0] = q_ins[linst];
+					/* remove both the lval and rval instructions */
+					copy = q_wr - linst;
+					if (copy++ < 0)
+						copy += Q_SIZE;
+					q_nb -= copy;
+					q_wr = linst - 1;
+					if (q_wr < 0)
+						q_wr += Q_SIZE;
+					/* re-insert the rval instructions */
+					from = linst + 2; /* skip I_LD_WM, I_PUSH_WR */
+					copy = copy - 3; /* skip I_LD_WM, I_PUSH_WR, I_CMP_WT */
+					for (; copy > 0; copy--) {
+						if (from >= Q_SIZE)
+							from -= Q_SIZE;
+#ifdef DEBUG_OPTIMIZER
+						printf("\nReinserting after reordering ...");
+#endif
+						push_ins(&q_ins[from++]);
+					}
+					/* re-insert the lval instructions */
+					gpush();
+					push_ins(&parked[0]);
+					out_ins_cmp(I_CMP_WT, compare);
+#if INFORM_POTENTIAL_REORDER
+					printf("reorder comparison with: ");
+					dump_ins(&q_ins[q_wr]);
+					printf("\n\n");
+#endif
+				}
+			}
+		}
+
+		/* convert the C flag into a boolean (usually removed by the optimizer) */
+		out_ins(I_BOOLEAN, 0, 0);
+		blanks();
 	}
 }
 
@@ -454,6 +634,8 @@ int heir6 (LVALUE *lval, int comma)
 {
 	int k;
 	LVALUE lval2[1] = {{0}};
+	int linst;
+	unsigned lseqn;
 
 	k = heir7(lval, comma);
 	blanks();
@@ -471,6 +653,10 @@ int heir6 (LVALUE *lval, int comma)
 	if (lval->val_type == CVOID)
 		void_value_error(lval);
 	FOREVER {
+		/* remember the lval position in the peephole instruction queue */
+		linst = q_wr;
+		lseqn = q_ins[q_wr].sequence;
+
 		if (match("<=")) {
 			gpush();
 			if (heir7(lval2, comma))
@@ -480,11 +666,10 @@ int heir6 (LVALUE *lval, int comma)
 			if (lval->ptr_type || lval2->ptr_type ||
 			    is_unsigned(lval) ||
 			    is_unsigned(lval2)
-			    ) {
-				gule();
-				continue;
-			}
-			gle();
+			    )
+				out_ins_cmp(I_CMP_WT, CMP_ULE);
+			else
+				out_ins_cmp(I_CMP_WT, CMP_SLE);
 		}
 		else if (match(">=")) {
 			gpush();
@@ -495,11 +680,10 @@ int heir6 (LVALUE *lval, int comma)
 			if (lval->ptr_type || lval2->ptr_type ||
 			    is_unsigned(lval) ||
 			    is_unsigned(lval2)
-			    ) {
-				guge();
-				continue;
-			}
-			gge();
+			    )
+				out_ins_cmp(I_CMP_WT, CMP_UGE);
+			else
+				out_ins_cmp(I_CMP_WT, CMP_SGE);
 		}
 		else if ((sstreq("<")) &&
 			 !sstreq("<<")) {
@@ -512,11 +696,10 @@ int heir6 (LVALUE *lval, int comma)
 			if (lval->ptr_type || lval2->ptr_type ||
 			    is_unsigned(lval) ||
 			    is_unsigned(lval2)
-			    ) {
-				gult();
-				continue;
-			}
-			glt();
+			    )
+				out_ins_cmp(I_CMP_WT, CMP_ULT);
+			else
+				out_ins_cmp(I_CMP_WT, CMP_SLT);
 		}
 		else if ((sstreq(">")) &&
 			 !sstreq(">>")) {
@@ -529,15 +712,70 @@ int heir6 (LVALUE *lval, int comma)
 			if (lval->ptr_type || lval2->ptr_type ||
 			    is_unsigned(lval) ||
 			    is_unsigned(lval2)
-			    ) {
-				gugt();
-				continue;
-			}
-			ggt();
+			    )
+				out_ins_cmp(I_CMP_WT, CMP_UGT);
+			else
+				out_ins_cmp(I_CMP_WT, CMP_SGT);
 		}
 		else
 			return (0);
 
+		/* is this a candidate for reordering */
+		if (optimize >= 2 && q_nb && q_ins[q_wr].ins_code == I_CMP_WT) {
+			/* is the lval still in the peephole instruction queue? */
+			if (q_ins[linst].ins_code != I_RETIRED && q_ins[linst].sequence == lseqn) {
+#if INFORM_POTENTIAL_REORDER
+				printf("stacked comparison with: ");
+				dump_ins(&q_ins[linst]);
+				printf("File \"%s\", Line %d\n", (inclsp) ? inclstk_name[inclsp - 1] : fname_copy, line_number);
+				printf("%s\n\n", line);
+#endif
+				if
+				((q_ins[linst].ins_code == I_LD_WI) ||
+				 (q_ins[linst].ins_code == I_LD_WM) ||
+				 (q_ins[linst].ins_code == I_LD_UM) ||
+				 (q_ins[linst].ins_code == X_LD_WS) ||
+				 (q_ins[linst].ins_code == X_LD_US)
+				) {
+					/* preserve the lval instructions */
+					INS parked[1];
+					int copy, from;
+					int compare = compare2swap[q_ins[q_wr].cmp_type];
+					parked[0] = q_ins[linst];
+					/* remove both the lval and rval instructions */
+					copy = q_wr - linst;
+					if (copy++ < 0)
+						copy += Q_SIZE;
+					q_nb -= copy;
+					q_wr = linst - 1;
+					if (q_wr < 0)
+						q_wr += Q_SIZE;
+					/* re-insert the rval instructions */
+					from = linst + 2; /* skip I_LD_WM, I_PUSH_WR */
+					copy = copy - 3; /* skip I_LD_WM, I_PUSH_WR, I_CMP_WT */
+					for (; copy > 0; copy--) {
+						if (from >= Q_SIZE)
+							from -= Q_SIZE;
+#ifdef DEBUG_OPTIMIZER
+						printf("\nReinserting after reordering ...");
+#endif
+						push_ins(&q_ins[from++]);
+					}
+					/* re-insert the lval instructions */
+					gpush();
+					push_ins(&parked[0]);
+					out_ins_cmp(I_CMP_WT, compare);
+#if INFORM_POTENTIAL_REORDER
+					printf("reorder comparison with: ");
+					dump_ins(&q_ins[q_wr]);
+					printf("\n\n");
+#endif
+				}
+			}
+		}
+
+		/* convert the C flag into a boolean (usually removed by the optimizer) */
+		out_ins(I_BOOLEAN, 0, 0);
 		blanks();
 	}
 }
@@ -597,6 +835,8 @@ int heir8 (LVALUE *lval, int comma)
 {
 	int k;
 	LVALUE lval2[1] = {{0}};
+	int linst;
+	unsigned lseqn;
 
 	k = heir9(lval, comma);
 	blanks();
@@ -608,6 +848,10 @@ int heir8 (LVALUE *lval, int comma)
 	if (lval->val_type == CVOID)
 		void_value_error(lval);
 	FOREVER {
+		/* remember the lval position in the peephole instruction queue */
+		linst = q_wr;
+		lseqn = q_ins[q_wr].sequence;
+
 		if (match("+")) {
 			gpush();
 			if (heir9(lval2, comma))
@@ -616,8 +860,21 @@ int heir8 (LVALUE *lval, int comma)
 				void_value_error(lval2);
 			/* if left is pointer and right is int, scale right */
 			gen_scale_right(lval, lval2);
-			/* will scale left if right int pointer and left int */
+			/* will scale left if right is pointer and left int */
 			gadd(lval, lval2);
+
+			/* is this a candidate for reordering */
+			if (optimize >= 2 && q_nb && q_ins[q_wr].ins_code == I_ADD_WT) {
+				/* is the lval still in the peephole instruction queue? */
+				if (q_ins[linst].ins_code != I_RETIRED && q_ins[linst].sequence == lseqn) {
+#if INFORM_POTENTIAL_REORDER
+					printf("stacked operation \"+\" with: ");
+					dump_ins(&q_ins[linst]);
+					printf("File \"%s\", Line %d\n", (inclsp) ? inclstk_name[inclsp - 1] : fname_copy, line_number);
+					printf("%s\n\n", line);
+#endif
+				}
+			}
 			result(lval, lval2);
 		}
 		else if (match("-")) {
@@ -632,6 +889,19 @@ int heir8 (LVALUE *lval, int comma)
 			        in second, result is scaled down. */
 			gen_scale_right(lval, lval2);
 			gsub();
+
+			/* is this a candidate for reordering */
+			if (optimize >= 2 && q_nb && q_ins[q_wr].ins_code == I_SUB_WT) {
+				/* is the lval still in the peephole instruction queue? */
+				if (q_ins[linst].ins_code != I_RETIRED && q_ins[linst].sequence == lseqn) {
+#if INFORM_POTENTIAL_REORDER
+					printf("stacked operation \"-\" with: ");
+					dump_ins(&q_ins[linst]);
+					printf("File \"%s\", Line %d\n", (inclsp) ? inclstk_name[inclsp - 1] : fname_copy, line_number);
+					printf("%s\n\n", line);
+#endif
+				}
+			}
 			/* if both pointers, scale result */
 			if ((lval->ptr_type == CINT || lval->ptr_type == CUINT || is_ptrptr(lval)) &&
 			    (lval2->ptr_type == CINT || lval2->ptr_type == CUINT || is_ptrptr(lval2)))
@@ -659,6 +929,8 @@ int heir9 (LVALUE *lval, int comma)
 {
 	int k;
 	LVALUE lval2[1] = {{0}};
+	int linst;
+	unsigned lseqn;
 
 	k = heir10(lval, comma);
 	blanks();
@@ -671,6 +943,8 @@ int heir9 (LVALUE *lval, int comma)
 	if (lval->val_type == CVOID)
 		void_value_error(lval);
 	FOREVER {
+		linst = q_wr;
+		lseqn = q_ins[q_wr].sequence;
 		if (match("*")) {
 			gpush();
 			if (heir10(lval2, comma))
@@ -678,6 +952,18 @@ int heir9 (LVALUE *lval, int comma)
 			if (lval2->val_type == CVOID)
 				void_value_error(lval2);
 			gmult(is_unsigned(lval) || is_unsigned(lval2));
+			/* is this a candidate for reordering */
+			if (optimize >= 2 && q_nb && q_ins[q_wr].ins_code == I_MUL_WT) {
+				/* is the lval still in the peephole instruction queue? */
+				if (q_ins[linst].ins_code != I_RETIRED && q_ins[linst].sequence == lseqn) {
+#if INFORM_POTENTIAL_REORDER
+					printf("stacked operation \"*\" with: ");
+					dump_ins(&q_ins[linst]);
+					printf("File \"%s\", Line %d\n", (inclsp) ? inclstk_name[inclsp - 1] : fname_copy, line_number);
+					printf("%s\n\n", line);
+#endif
+				}
+			}
 		}
 		else if (match("/")) {
 			gpush();

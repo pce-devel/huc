@@ -4,6 +4,7 @@
 #define INCLUDE_DEFS_H
 
 #define ULI_NORECURSE 1
+// #define DEBUG_OPTIMIZER
 
 /*
  * i-code pseudo instructions
@@ -12,9 +13,13 @@
  * as the table of i-code flag information in optimize.c
  */
 enum ICODE {
+	/* i-code to mark an instrucion as retired */
+
+	I_RETIRED = 0,
+
 	/* i-code for debug information */
 
-	I_DEBUG = 1,
+	I_DEBUG,
 
 	/* i-code that retires the primary register contents */
 
@@ -75,7 +80,9 @@ enum ICODE {
 	I_CMP_WT,
 	X_CMP_WI,
 	X_CMP_WM,
+	X_CMP_UM,
 	X_CMP_WS,
+	X_CMP_US,
 
 	X_CMP_UIQ,
 	X_CMP_UMQ,
@@ -578,6 +585,7 @@ struct macro {
 /* pseudo instruction structure */
 
 typedef struct {
+	unsigned sequence;
 	enum ICODE ins_code;
 	enum ICOMPARE cmp_type;
 	int ins_type;

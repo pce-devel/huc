@@ -200,6 +200,9 @@ void out_ins_cmp (int code, int type)
 
 void gen_ins (INS *tmp)
 {
+	static unsigned sequence = 0;
+	tmp->sequence = sequence++;
+
 	if (optimize)
 		push_ins(tmp);
 	else {
@@ -274,10 +277,14 @@ static void out_addr (int type, intptr_t data)
 
 void dump_ins (INS *tmp)
 {
+	INS copy = *tmp;
 	FILE *save = output;
 
+	if (copy.ins_code == I_DEBUG)
+		copy.ins_data = 0;
+
 	output = stdout;
-	gen_code(tmp);
+	gen_code(&copy);
 	output = save;
 }
 
@@ -322,9 +329,12 @@ void gen_code (INS *tmp)
 				outstr("\", ");
 				outdec((int)imm_data);
 				outstr("; ");
-				outstr(source);
+				if (source) {
+					outstr(source);
+					free((void *)data);
+					tmp->ins_data = 0;
+				}
 				nl();
-				free((void *)data);
 			}
 			break;
 		case T_CLEAR_LINE:
@@ -611,10 +621,27 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_CMP_UM:
+		ot("__");
+		outstr(compare2str[tmp->cmp_type]);
+		outstr("_w.um\t");
+		out_type(type, data);
+		nl();
+		break;
+
 	case X_CMP_WS:
 		ot("__");
 		outstr(compare2str[tmp->cmp_type]);
 		outstr("_w.ws\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_CMP_US:
+		ot("__");
+		outstr(compare2str[tmp->cmp_type]);
+		outstr("_w.us\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
@@ -1809,6 +1836,9 @@ void gen_code (INS *tmp)
 		gen_asm(tmp);
 		break;
 	}
+
+	/* mark the instruction as invalid */
+	tmp->ins_code = I_RETIRED;
 }
 
 /* ----
