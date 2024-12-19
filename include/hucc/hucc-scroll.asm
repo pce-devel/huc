@@ -184,7 +184,6 @@ HUCC_SCR_HEIGHT	=	224
 
 		lda	#1			; Mark that we've changed the
 		sta	sgx_region_new, x	; selected region.
-
 		sta	sgx_region_sel, x
 
 !done:		plp				; Restore interrupts.
@@ -217,7 +216,6 @@ HUCC_SCR_HEIGHT	=	224
 
 		lda	#1			; Mark that we've changed the
 		sta	sgx_region_new, x	; selected region.
-
 		stz	sgx_region_sel, x
 
 !done:		plp				; Restore interrupts.
@@ -447,6 +445,8 @@ vbl_init_scroll	.proc
 !next_region:	dex				; All regions updated?
 		bmi	!save_first+
 
+		stz	sgx_region_new, x	; Clear region modified flag.
+
 		ldy	sgx_region_sel, x	; 0=regionA or 1=regionB.
 		beq	!use_regionA+
 
@@ -540,8 +540,8 @@ USING_RCR_MACROS	=	1		; Tell IRQ1 to use the macros.
 		bra	!clr_next_rcr+		; 4 as if the branch were taken.
 
 !set_next_rcr:	lda	vdc_regionA_rcr, y	; 5 Set next RCR 1 line before
-		adc	#64-1			; 2 the region begins.
-!clr_next_rcr:	sta	VDC_DL			; 6
+		adc	#64-1			; 2 the region begins, or 0 to
+!clr_next_rcr:	sta	VDC_DL			; 6 disable.
 		cla				; 2
 		rol	a			; 2
 		sta	VDC_DH			; 6
@@ -587,8 +587,8 @@ USING_RCR_MACROS	=	1		; Tell IRQ1 to use the macros.
 		bra	!clr_next_rcr+		; 4 as if the branch were taken.
 
 !set_next_rcr:	lda	sgx_regionA_rcr, y	; 5 Set next RCR 1 line before
-		adc	#64-1			; 2 the region begins.
-!clr_next_rcr:	sta	SGX_DL			; 6
+		adc	#64-1			; 2 the region begins, or 0 to
+!clr_next_rcr:	sta	SGX_DL			; 6 disable.
 		cla				; 2
 		rol	a			; 2
 		sta	SGX_DH			; 6
@@ -667,8 +667,8 @@ USING_RCR_MACROS	=	1		; Tell IRQ1 to use the macros.
 		bra	!clr_next_rcr+		; 4 as if the branch were taken.
 
 !set_next_rcr:	lda	vdc_regionA_rcr, y	; 5 Set next RCR 1 line before
-		adc	#64-1			; 2 the region begins.
-!clr_next_rcr:	sta	VDC_DL			; 6
+		adc	#64-1			; 2 the region begins, or 0 to
+!clr_next_rcr:	sta	VDC_DL			; 6 disable.
 		cla				; 2
 		rol	a			; 2
 		sta	VDC_DH			; 6

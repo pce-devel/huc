@@ -272,8 +272,8 @@ _vsync.1	.macro
 _joy.1		.macro
 	.if	SUPPORT_6BUTTON
 		tax
-		lda	joy6now, x
-		ldy	joynow, x
+		lda	joynow, x
+		ldy	joy6now, x
 	.else
 		tay
 		lda	joynow, y
@@ -291,8 +291,8 @@ _joy.1		.macro
 _joytrg.1	.macro
 	.if	SUPPORT_6BUTTON
 		tax
-		lda	joy6trg, x
-		ldy	joytrg, x
+		lda	joytrg, x
+		ldy	joy6trg, x
 	.else
 		tay
 		lda	joytrg, y
