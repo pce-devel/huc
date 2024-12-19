@@ -3,17 +3,6 @@
  *
  */
 
-// #define DEBUG_OPTIMIZER
-
-#define OPT_ARRAY_RD	1
-#define OPT_ARRAY_WR	1
-
-#ifdef DEBUG_OPTIMIZER
-#define ODEBUG(...) printf( __VA_ARGS__ )
-#else
-#define ODEBUG(...)
-#endif
-
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -39,13 +28,24 @@
  #pragma GCC diagnostic ignored "-Wstringop-overread"
 #endif
 
+#define OPT_ARRAY_RD	1
+#define OPT_ARRAY_WR	1
+
+#ifdef DEBUG_OPTIMIZER
+#define ODEBUG(...) printf( __VA_ARGS__ )
+#else
+#define ODEBUG(...)
+#endif
+
 /* flag information for each of the i-code instructions */
 /*
  * N.B. this table MUST be kept updated and in the same order as the i-code
  * enum list in defs.h
  */
 unsigned char icode_flags[] = {
-	0,
+	// i-code to mark an instrucion as retired */
+
+	/* I_RETIRED            */	0,
 
 	// i-code for debug information
 
@@ -110,7 +110,9 @@ unsigned char icode_flags[] = {
 	/* I_CMP_WT             */	IS_USEPR,
 	/* X_CMP_WI             */	IS_USEPR,
 	/* X_CMP_WM             */	IS_USEPR,
+	/* X_CMP_UM             */	IS_USEPR,
 	/* X_CMP_WS             */	IS_USEPR + IS_SPREL,
+	/* X_CMP_US             */	IS_USEPR + IS_SPREL,
 
 	/* X_CMP_UIQ            */	IS_USEPR + IS_UBYTE,
 	/* X_CMP_UMQ            */	IS_USEPR + IS_UBYTE,
@@ -1385,23 +1387,33 @@ lv1_loop:
 			}
 
 			/*
-			 *  __push.wr			-->	__cmp.wi	type, i
+			 *  __push.wr			-->	__cmp_w.wi	type, i
 			 *  __ld.wi		i
-			 *  __cmp.wt		type
+			 *  __cmp_w.wt		type
 			 *
-			 *  __push.wr			-->	__cmp.wm	type, symbol
+			 *  __push.wr			-->	__cmp_w.wm	type, symbol
 			 *  __ld.wm		symbol
-			 *  __cmp.wt		type
+			 *  __cmp_w.wt		type
 			 *
-			 *  __push.wr			-->	__cmp.ws	type, n
+			 *  __push.wr			-->	__cmp_w.um	type, symbol
+			 *  __ld.um		symbol
+			 *  __cmp_w.wt		type
+			 *
+			 *  __push.wr			-->	__cmp_w.ws	type, n
 			 *  __ld.ws		n
-			 *  __cmp.wt		type
+			 *  __cmp_w.wt		type
+			 *
+			 *  __push.wr			-->	__cmp_w.us	type, n
+			 *  __ld.us		n
+			 *  __cmp_w.wt		type
 			 */
 			else if
 			((p[0]->ins_code == I_CMP_WT) &&
 			 (p[1]->ins_code == I_LD_WI ||
 			  p[1]->ins_code == I_LD_WM ||
-			  p[1]->ins_code == X_LD_WS) &&
+			  p[1]->ins_code == I_LD_UM ||
+			  p[1]->ins_code == X_LD_WS ||
+			  p[1]->ins_code == X_LD_US) &&
 			 (p[2]->ins_code == I_PUSH_WR)
 			) {
 				/* replace code */
@@ -1409,7 +1421,9 @@ lv1_loop:
 				switch (p[1]->ins_code) {
 				case I_LD_WI: p[2]->ins_code = X_CMP_WI; break;
 				case I_LD_WM: p[2]->ins_code = X_CMP_WM; break;
+				case I_LD_UM: p[2]->ins_code = X_CMP_UM; break;
 				case X_LD_WS: p[2]->ins_code = X_CMP_WS; break;
+				case X_LD_US: p[2]->ins_code = X_CMP_US; break;
 				default:	break;
 				}
 				p[2]->cmp_type = p[0]->cmp_type;
@@ -1429,7 +1443,15 @@ lv1_loop:
 			 *  __bool
 			 *  __not.wr
 			 *
+			 *  __cmp.um			-->	__cmp.um
+			 *  __bool
+			 *  __not.wr
+			 *
 			 *  __cmp.ws			-->	__cmp.ws
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __cmp.us			-->	__cmp.us
 			 *  __bool
 			 *  __not.wr
 			 *
@@ -1454,7 +1476,9 @@ lv1_loop:
 			 (p[2]->ins_code == I_CMP_WT ||
 			  p[2]->ins_code == X_CMP_WI ||
 			  p[2]->ins_code == X_CMP_WM ||
+			  p[2]->ins_code == X_CMP_UM ||
 			  p[2]->ins_code == X_CMP_WS ||
+			  p[2]->ins_code == X_CMP_US ||
 			  p[2]->ins_code == X_CMP_UIQ ||
 			  p[2]->ins_code == X_CMP_UMQ ||
 			  p[2]->ins_code == X_CMP_USQ)

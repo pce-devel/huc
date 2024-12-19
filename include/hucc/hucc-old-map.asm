@@ -85,8 +85,8 @@ sgx_spr_clr:	ds	1
 
 		.proc	_sgx_load_map.6
 
-		ldy	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$F0			; Turn "cly" into a "beq".
+		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		db	$F0			; Turn "clx" into a "beq".
 
 		.ref	_load_map.6
 		.endp
@@ -105,10 +105,7 @@ sgx_spr_clr:	ds	1
 .map_line	=	_bp
 .attr_tbl	=	_si
 
-		cly				; Offset to PCE VDC.
-
-		phx				; Preserve X (aka __sp).
-		sxy				; Put VDC offset in X.
+		clx				; Offset to PCE VDC.
 
 		; wrap 16-bit signed map x coordinate, and only use the bottom byte.
 
@@ -252,8 +249,6 @@ sgx_spr_clr:	ds	1
 		tam3
 		pla
 		tam2
-
-		plx				; Restore X (aka __sp).
 
 		leave				; All done!
 
@@ -585,8 +580,8 @@ sgx_spr_clr:	ds	1
 
 		.proc	_sgx_map_put_tile.3
 
-		ldy	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$F0			; Turn "cly" into a "beq".
+		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		db	$F0			; Turn "clx" into a "beq".
 
 		.ref	_map_put_tile.3
 		.endp
@@ -599,10 +594,7 @@ sgx_spr_clr:	ds	1
 .map_y		=	_bh			; addresses used by _load_map.6
 .map_line	=	_bp
 
-		cly				; Offset to PCE VDC.
-
-		phx				; Preserve X (aka __sp).
-		sxy				; Put VDC offset in X.
+		clx				; Offset to PCE VDC.
 
 		tma3				; Preserve MPR3, MPR4.
 		pha
@@ -619,8 +611,6 @@ sgx_spr_clr:	ds	1
 		tam4
 		pla
 		tam3
-
-		plx				; Restore X (aka __sp).
 
 		leave				; All done!
 
@@ -646,8 +636,8 @@ sgx_spr_clr:	ds	1
 
 		.proc	_sgx_put_tile.3
 
-		ldy	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$F0			; Turn "cly" into a "beq".
+		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		db	$F0			; Turn "clx" into a "beq".
 
 		.ref	_put_tile.3
 		.endp
@@ -662,10 +652,7 @@ sgx_spr_clr:	ds	1
 .bat_line	=	_di
 .attr_tbl	=	_si
 
-		cly				; Offset to PCE VDC.
-
-		phx				; Preserve X (aka __sp).
-		sxy				; Put VDC offset in X.
+		clx				; Offset to PCE VDC.
 
 		tma2				; Preserve MPR2.
 		pha
@@ -748,8 +735,6 @@ sgx_spr_clr:	ds	1
 
 .finished:	pla				; Restore MPR2.
 		tam2
-
-		plx				; Restore X (aka __sp).
 
 		leave				; All done!
 
