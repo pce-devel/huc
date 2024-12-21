@@ -280,6 +280,34 @@ _cd_playmsf.7	.proc
 ; ***************************************************************************
 ; ***************************************************************************
 ;
+; unsigned char __fastcall cd_loadvram( unsigned char ovl_index<_cl>, unsigned int sect_offset<_si>, unsigned int vramaddr<_bx>, unsigned int sectors<_al> );
+
+_cd_fastvram.4	.proc
+
+		ldx	<_cl			; Get file address and length.
+		jsr	get_file_lba
+
+		lda.l	<_si			; Add the sector offset.
+		ldy.h	<_si
+		jsr	_add_sectors
+
+		lda	#$FF			; Signal a VRAM load.
+		sta	<_dh
+
+		system	cd_read
+		tax				; Put return code in X.
+
+		cly				; Return code in Y:X, X -> A.
+
+		leave				; Return and copy X -> A.
+
+		.endp
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
 ; unsigned char __fastcall cd_loadvram( unsigned char ovl_index<_cl>, unsigned int sect_offset<_si>, unsigned int vramaddr<_bx>, unsigned int bytes<_ax> );
 
 _cd_loadvram.4	.proc
