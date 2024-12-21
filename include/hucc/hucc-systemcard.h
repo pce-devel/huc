@@ -92,6 +92,7 @@ extern unsigned char __fastcall cd_unpause( void );
 extern void __fastcall __macro cd_fade( unsigned char type<acc> );
 extern unsigned char __fastcall cd_playtrk( unsigned char start_track<_bx>, unsigned char end_track<_cx>, unsigned char mode<_dh> );
 extern unsigned char __fastcall cd_playmsf( unsigned char start_minute<_al>,  unsigned char start_second<_ah>,  unsigned char start_frame<_bl>, unsigned char end_minute<_cl>,  unsigned char end_second<_ch>,  unsigned char end_frame<_dl>,  unsigned char mode<_dh> );
+extern unsigned char __fastcall cd_fastvram( unsigned char ovl_index<_cl>, unsigned int sect_offset<_si>, unsigned int vramaddr<_bx>, unsigned int sectors<_al> );
 extern unsigned char __fastcall cd_loadvram( unsigned char ovl_index<_cl>, unsigned int sect_offset<_si>, unsigned int vramaddr<_bx>, unsigned int bytes<_ax> );
 extern unsigned char __fastcall cd_loaddata( unsigned char ovl_index<_cl>, unsigned int sect_offset<_si>, unsigned char __far *buffer<_bp_bank:_bp>, unsigned int bytes<__ptr> );
 extern unsigned char __fastcall cd_loadbank( unsigned char ovl_index<_cl>, unsigned int sect_offset<_si>, unsigned char bank<_bl>, unsigned int sectors<_al> );
