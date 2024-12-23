@@ -28,6 +28,7 @@ extern int q_nb;
 
 bool is_small_array (SYMBOL *sym);
 void push_ins (INS *ins);
+void try_swap_order (int linst, int lseqn, INS *operation);
 void flush_ins (void);
 void flush_ins_label (int nextlabel);
 void gen_asm (INS *inst);

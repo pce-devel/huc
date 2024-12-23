@@ -1648,9 +1648,53 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case I_ISUB_WI:
+	case X_SUB_WS:
+		ot("__sub.ws\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_SUB_US:
+		ot("__sub.us\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_ISUB_WT:
+		ol("__isub.wt");
+		break;
+
+	case X_ISUB_WI:
 		ot("__isub.wi\t");
 		out_type(type, data);
+		nl();
+		break;
+
+	case X_ISUB_WM:
+		ot("__isub.wm\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ISUB_UM:
+		ot("__isub.um\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ISUB_WS:
+		ot("__isub.ws\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_ISUB_US:
+		ot("__isub.us\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
 		nl();
 		break;
 
@@ -1682,6 +1726,20 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_AND_WS:
+		ot("__and.ws\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_AND_US:
+		ot("__and.us\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
 	case I_EOR_WT:
 		ol("__eor.wt");
 		break;
@@ -1704,6 +1762,20 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_EOR_WS:
+		ot("__eor.ws\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_EOR_US:
+		ot("__eor.us\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
 	case I_OR_WT:
 		ol("__or.wt");
 		break;
@@ -1723,6 +1795,20 @@ void gen_code (INS *tmp)
 	case I_OR_UM:
 		ot("__or.um\t");
 		out_addr(type, data);
+		nl();
+		break;
+
+	case X_OR_WS:
+		ot("__or.ws\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_OR_US:
+		ot("__or.us\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
 		nl();
 		break;
 
@@ -1828,7 +1914,7 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case I_DOUBLE:
+	case I_DOUBLE_WT:
 		ol("__double");
 		break;
 

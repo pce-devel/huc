@@ -4,7 +4,6 @@
 #define INCLUDE_DEFS_H
 
 #define ULI_NORECURSE 1
-// #define DEBUG_OPTIMIZER
 
 /*
  * i-code pseudo instructions
@@ -13,7 +12,7 @@
  * as the table of i-code flag information in optimize.c
  */
 enum ICODE {
-	/* i-code to mark an instrucion as retired */
+	/* i-code to mark an instruction as retired */
 
 	I_RETIRED = 0,
 
@@ -296,24 +295,37 @@ enum ICODE {
 	I_SUB_WI,
 	I_SUB_WM,
 	I_SUB_UM,
+	X_SUB_WS,
+	X_SUB_US,
 
-	I_ISUB_WI,
+	X_ISUB_WT,
+	X_ISUB_WI,
+	X_ISUB_WM,
+	X_ISUB_UM,
+	X_ISUB_WS,
+	X_ISUB_US,
 
 	I_AND_WT,
 	I_AND_WI,
 	I_AND_UIQ,
 	I_AND_WM,
 	I_AND_UM,
+	X_AND_WS,
+	X_AND_US,
 
 	I_EOR_WT,
 	I_EOR_WI,
 	I_EOR_WM,
 	I_EOR_UM,
+	X_EOR_WS,
+	X_EOR_US,
 
 	I_OR_WT,
 	I_OR_WI,
 	I_OR_WM,
 	I_OR_UM,
+	X_OR_WS,
+	X_OR_US,
 
 	I_ASL_WT,
 	I_ASL_WI,
@@ -343,7 +355,7 @@ enum ICODE {
 	I_UMOD_WI,
 	I_UMOD_UI,
 
-	I_DOUBLE,
+	I_DOUBLE_WT,
 
 	/* i-codes for 32-bit longs */
 

@@ -3,6 +3,9 @@
  *
  */
 
+// #define DEBUG_OPTIMIZER
+// #define INFORM_VALUE_SWAP
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -13,6 +16,7 @@
 #include "sym.h"
 #include "code.h"
 #include "function.h"
+#include "gen.h"
 #include "optimize.h"
 #include "io.h"
 #include "error.h"
@@ -37,13 +41,14 @@
 #define ODEBUG(...)
 #endif
 
+
 /* flag information for each of the i-code instructions */
 /*
  * N.B. this table MUST be kept updated and in the same order as the i-code
  * enum list in defs.h
  */
 unsigned char icode_flags[] = {
-	// i-code to mark an instrucion as retired */
+	// i-code to mark an instruction as retired */
 
 	/* I_RETIRED            */	0,
 
@@ -326,24 +331,37 @@ unsigned char icode_flags[] = {
 	/* I_SUB_WI             */	IS_USEPR,
 	/* I_SUB_WM             */	IS_USEPR,
 	/* I_SUB_UM             */	IS_USEPR,
+	/* X_SUB_WS             */	IS_USEPR + IS_SPREL,
+	/* X_SUB_US             */	IS_USEPR + IS_SPREL,
 
-	/* I_ISUB_WI            */	IS_USEPR,
+	/* X_ISUB_WT            */	IS_USEPR,
+	/* X_ISUB_WI            */	IS_USEPR,
+	/* X_ISUB_WM            */	IS_USEPR,
+	/* X_ISUB_UM            */	IS_USEPR,
+	/* X_ISUB_WS            */	IS_USEPR + IS_SPREL,
+	/* X_ISUB_US            */	IS_USEPR + IS_SPREL,
 
 	/* I_AND_WT             */	IS_USEPR,
 	/* I_AND_WI             */	IS_USEPR,
 	/* I_AND_UIQ            */	IS_USEPR + IS_UBYTE,
 	/* I_AND_WM             */	IS_USEPR,
 	/* I_AND_UM             */	IS_USEPR,
+	/* X_AND_WS             */	IS_USEPR + IS_SPREL,
+	/* X_AND_US             */	IS_USEPR + IS_SPREL,
 
 	/* I_EOR_WT             */	IS_USEPR,
 	/* I_EOR_WI             */	IS_USEPR,
 	/* I_EOR_WM             */	IS_USEPR,
 	/* I_EOR_UM             */	IS_USEPR,
+	/* X_EOR_WS             */	IS_USEPR + IS_SPREL,
+	/* X_EOR_US             */	IS_USEPR + IS_SPREL,
 
 	/* I_OR_WT              */	IS_USEPR,
 	/* I_OR_WI              */	IS_USEPR,
 	/* I_OR_WM              */	IS_USEPR,
 	/* I_OR_UM              */	IS_USEPR,
+	/* X_OR_WS              */	IS_USEPR + IS_SPREL,
+	/* X_OR_US              */	IS_USEPR + IS_SPREL,
 
 	/* I_ASL_WT             */	IS_USEPR,
 	/* I_ASL_WI             */	IS_USEPR,
@@ -373,7 +391,7 @@ unsigned char icode_flags[] = {
 	/* I_UMOD_WI            */	IS_USEPR,
 	/* I_UMOD_UI            */	IS_USEPR + IS_UBYTE,
 
-	/* I_DOUBLE             */	0,
+	/* I_DOUBLE_WT             */	0,
 
 	// i-codes for 32-bit longs
 
@@ -2163,6 +2181,10 @@ lv1_loop:
 			}
 
 			/*
+			 *  __push.wr			-->	__isub.wm	symbol
+			 *  __ld.wm		symbol
+			 *  __isub.wt
+			 *
 			 *  __push.wr			-->	__add.wm	symbol
 			 *  __ld.wm		symbol
 			 *  __add.wt
@@ -2171,80 +2193,82 @@ lv1_loop:
 			 *  __ld.wm		symbol
 			 *  __sub.wt
 			 *
-			 *  etc/etc
-			 */
-			else if
-			((p[0]->ins_code == I_ADD_WT ||
-			  p[0]->ins_code == I_SUB_WT ||
-			  p[0]->ins_code == I_AND_WT ||
-			  p[0]->ins_code == I_EOR_WT ||
-			  p[0]->ins_code == I_OR_WT) &&
-			 (p[1]->ins_code == I_LD_WM) &&
-			 (p[2]->ins_code == I_PUSH_WR)
-			) {
-				/* replace code */
-				*p[2] = *p[1];
-				switch (p[0]->ins_code) {
-				case I_ADD_WT: p[2]->ins_code = I_ADD_WM; break;
-				case I_SUB_WT: p[2]->ins_code = I_SUB_WM; break;
-				case I_AND_WT: p[2]->ins_code = I_AND_WM; break;
-				case I_EOR_WT: p[2]->ins_code = I_EOR_WM; break;
-				case I_OR_WT: p[2]->ins_code = I_OR_WM; break;
-				default: abort();
-				}
-				remove = 2;
-			}
-
-			/*
-			 *  __push.wr			-->	__add.um	symbol
-			 *  __ld.um		symbol
-			 *  __add.wt
+			 *  __push.wr			-->	__and.wm	symbol
+			 *  __ld.wm		symbol
+			 *  __and.wt
 			 *
-			 *  __push.wr			-->	__sub.um	symbol
-			 *  __ld.um		symbol
-			 *  __sub.wt
+			 *  __push.wr			-->	__eor.wm	symbol
+			 *  __ld.wm		symbol
+			 *  __eor.wt
+			 *
+			 *  __push.wr			-->	__or.wm		symbol
+			 *  __ld.wm		symbol
+			 *  __or.wt
 			 *
 			 *  etc/etc
 			 */
 			else if
-			((p[0]->ins_code == I_ADD_WT ||
+			((p[0]->ins_code == X_ISUB_WT ||
+			  p[0]->ins_code == I_ADD_WT ||
 			  p[0]->ins_code == I_SUB_WT ||
 			  p[0]->ins_code == I_AND_WT ||
 			  p[0]->ins_code == I_EOR_WT ||
 			  p[0]->ins_code == I_OR_WT) &&
-			 (p[1]->ins_code == I_LD_UM) &&
-			 (p[2]->ins_code == I_PUSH_WR)
-			) {
-				/* replace code */
-				*p[2] = *p[1];
-				switch (p[0]->ins_code) {
-				case I_ADD_WT: p[2]->ins_code = I_ADD_UM; break;
-				case I_SUB_WT: p[2]->ins_code = I_SUB_UM; break;
-				case I_AND_WT: p[2]->ins_code = I_AND_UM; break;
-				case I_EOR_WT: p[2]->ins_code = I_EOR_UM; break;
-				case I_OR_WT: p[2]->ins_code = I_OR_UM; break;
-				default: abort();
-				}
-				remove = 2;
-			}
-
-			/*
-			 *  __push.wr			-->	__add.ws	i
-			 *  __ld.ws		i
-			 *  __add.wt
-			 */
-			else if
-			((p[0]->ins_code == I_ADD_WT) &&
-			 (p[1]->ins_code == X_LD_WS ||
+			 (p[1]->ins_code == I_LD_WM ||
+			  p[1]->ins_code == I_LD_UM ||
+			  p[1]->ins_code == X_LD_WS ||
 			  p[1]->ins_code == X_LD_US) &&
 			 (p[2]->ins_code == I_PUSH_WR)
 			) {
 				/* replace code */
 				*p[2] = *p[1];
 				switch (p[1]->ins_code) {
-				case X_LD_WS: p[2]->ins_code = X_ADD_WS; break;
-				case X_LD_US: p[2]->ins_code = X_ADD_US; break;
-				default: abort();
+				case I_LD_WM:
+					switch (p[0]->ins_code) {
+					case X_ISUB_WT: p[2]->ins_code = X_ISUB_WM; break;
+					case I_ADD_WT:  p[2]->ins_code = I_ADD_WM; break;
+					case I_SUB_WT:  p[2]->ins_code = I_SUB_WM; break;
+					case I_AND_WT:  p[2]->ins_code = I_AND_WM; break;
+					case I_EOR_WT:  p[2]->ins_code = I_EOR_WM; break;
+					case I_OR_WT:   p[2]->ins_code = I_OR_WM; break;
+					default:
+					}
+					break;
+				case I_LD_UM:
+					switch (p[0]->ins_code) {
+					case X_ISUB_WT: p[2]->ins_code = X_ISUB_UM; break;
+					case I_ADD_WT:  p[2]->ins_code = I_ADD_UM; break;
+					case I_SUB_WT:  p[2]->ins_code = I_SUB_UM; break;
+					case I_AND_WT:  p[2]->ins_code = I_AND_UM; break;
+					case I_EOR_WT:  p[2]->ins_code = I_EOR_UM; break;
+					case I_OR_WT:   p[2]->ins_code = I_OR_UM; break;
+					default:
+					}
+					break;
+
+				case X_LD_WS:
+					switch (p[0]->ins_code) {
+					case X_ISUB_WT: p[2]->ins_code = X_ISUB_WS; break;
+					case I_ADD_WT:  p[2]->ins_code = X_ADD_WS; break;
+					case I_SUB_WT:  p[2]->ins_code = X_SUB_WS; break;
+					case I_AND_WT:  p[2]->ins_code = X_AND_WS; break;
+					case I_EOR_WT:  p[2]->ins_code = X_EOR_WS; break;
+					case I_OR_WT:   p[2]->ins_code = X_OR_WS; break;
+					default:
+					}
+					break;
+				case X_LD_US:
+					switch (p[0]->ins_code) {
+					case X_ISUB_WT: p[2]->ins_code = X_ISUB_US; break;
+					case I_ADD_WT:  p[2]->ins_code = X_ADD_US; break;
+					case I_SUB_WT:  p[2]->ins_code = X_SUB_US; break;
+					case I_AND_WT:  p[2]->ins_code = X_AND_US; break;
+					case I_EOR_WT:  p[2]->ins_code = X_EOR_US; break;
+					case I_OR_WT:   p[2]->ins_code = X_OR_US; break;
+					default:
+					}
+					break;
+				default:
 				}
 				remove = 2;
 			}
@@ -3283,7 +3307,7 @@ lv1_loop:
 								q_ins[q_wr].ins_code = I_ADD_WI;
 								break;
 							case I_SUB_WT:
-								q_ins[q_wr].ins_code = I_ISUB_WI;
+								q_ins[q_wr].ins_code = X_ISUB_WI;
 								break;
 							case I_AND_WT:
 								q_ins[q_wr].ins_code = I_AND_WI;
@@ -3493,6 +3517,71 @@ lv2_loop:
 			/* remove instructions from queue and begin again */
 			if (remove)
 				goto lv2_loop;
+		}
+	}
+}
+
+/* ----
+ * try_swap_order()
+ * ----
+ * swap the lval and the rval, if that would allow an optimization
+ *
+ */
+void try_swap_order (int linst, int lseqn, INS *operation)
+{
+	/* is the lval still in the peephole instruction queue? */
+	if (q_ins[linst].ins_code != I_RETIRED && q_ins[linst].sequence == lseqn) {
+		INS parked[1];
+		int copy, from;
+		int lprev = linst - 1;
+		if (lprev < 0)
+			lprev += Q_SIZE;
+
+#ifdef INFORM_VALUE_SWAP
+		printf("Stacked operator: ");
+		dump_ins(&q_ins[q_wr]);
+		printf("with LVAL: ");
+		dump_ins(&q_ins[linst]);
+		printf("File \"%s\", Line %d\n", (inclsp) ? inclstk_name[inclsp - 1] : fname_copy, line_number);
+		printf("%s\n\n", line);
+#endif
+		if
+		((q_ins[linst].ins_code == I_LD_WI) ||
+		 (q_ins[linst].ins_code == I_LD_WM) ||
+		 (q_ins[linst].ins_code == I_LD_UM) ||
+		 (q_ins[linst].ins_code == X_LD_WS) ||
+		 (q_ins[linst].ins_code == X_LD_US)
+		) {
+			/* preserve the lval instructions */
+			parked[0] = q_ins[linst];
+			/* remove both the lval and rval instructions */
+			copy = q_wr - linst;
+			if (copy++ < 0)
+				copy += Q_SIZE;
+			q_nb -= copy;
+			q_wr = linst - 1;
+			if (q_wr < 0)
+				q_wr += Q_SIZE;
+			/* re-insert the rval instructions */
+			from = linst + 2; /* skip I_LD_WM, I_PUSH_WR */
+			copy = copy - 3; /* skip I_LD_WM, I_PUSH_WR and final stacked op */
+			for (; copy > 0; copy--) {
+				if (from >= Q_SIZE)
+					from -= Q_SIZE;
+#ifdef DEBUG_OPTIMIZER
+				printf("\nReinserting after reordering ...");
+#endif
+				push_ins(&q_ins[from++]);
+			}
+			/* re-insert the lval instructions */
+			gpush();
+			push_ins(&parked[0]);
+			push_ins(operation);
+#ifdef INFORM_VALUE_SWAP
+			printf("Reordered operator is: ");
+			dump_ins(&q_ins[q_wr]);
+			printf("\n\n");
+#endif
 		}
 	}
 }
