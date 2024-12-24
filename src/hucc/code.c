@@ -280,7 +280,7 @@ void dump_ins (INS *tmp)
 	INS copy = *tmp;
 	FILE *save = output;
 
-	if (copy.ins_code == I_DEBUG)
+	if (copy.ins_code == I_INFO)
 		copy.ins_data = 0;
 
 	output = stdout;
@@ -311,9 +311,9 @@ void gen_code (INS *tmp)
 
 	switch (code) {
 
-	/* i-code for debug information */
+	/* i-code for internal compiler information */
 
-	case I_DEBUG:
+	case I_INFO:
 		switch(type) {
 		case T_SOURCE_LINE:
 			if (data) {
@@ -341,7 +341,6 @@ void gen_code (INS *tmp)
 			nl();
 			ol(".dbg\tclear");
 			break;
-
 		}
 		break;
 

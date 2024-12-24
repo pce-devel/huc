@@ -1026,9 +1026,11 @@ int heir11 (LVALUE *lval, int comma)
 	bool deferred = false;
 	char sname[NAMESIZE];
 
+	/* expect a symbol name or literal */
 	k = primary(lval, comma, &deferred);
 	ptr = lval->symbol;
 	blanks();
+
 	for (;;) {
 		if (match("[")) {
 			if (lval->val_type == CVOID)

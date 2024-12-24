@@ -16,9 +16,9 @@ enum ICODE {
 
 	I_RETIRED = 0,
 
-	/* i-code for debug information */
+	/* i-code for internal compiler information */
 
-	I_DEBUG,
+	I_INFO,
 
 	/* i-code that retires the primary register contents */
 
@@ -407,8 +407,10 @@ enum ICOMPARE {
 #define T_VRAM           9
 #define T_PAL           10
 #define T_LITERAL       11
+/* pseudo instruction arg types for compiler I_INFO */
 #define T_SOURCE_LINE   12
 #define T_CLEAR_LINE    13
+#define T_MARKER        14
 
 #define FOREVER for (;;)
 #define FALSE   0
