@@ -587,6 +587,7 @@ void callfunction (SYMBOL *ptr)
 	int spilled_arg_sizes[MAX_FASTCALL_ARGS];
 	int sparg_idx = 0;	/* index into spilled_args[] */
 	int uses_acc = 0;	/* does callee use acc? */
+	static bool using_funcptr = false;
 
 	is_leaf_function = 0;
 
@@ -614,8 +615,10 @@ void callfunction (SYMBOL *ptr)
 		/* fastcall check, but don't know how many parameters */
 		is_fc = fastcall_look(ptr->name, -1, NULL);
 	} else {
-//		/* save indirect call function-ptr on the hardware-stack */
-//		out_ins(I_SPUSH_WR, 0, 0);
+		/* save function-ptr for indirect call */
+		if (using_funcptr)
+			error("HuCC can only invoke one function-pointer call at a time");
+		using_funcptr = true;
 		out_ins(I_FUNCP_WR, 0, 0);
 	}
 
@@ -850,9 +853,9 @@ void callfunction (SYMBOL *ptr)
 		else
 			gcall(ptr->name, 0);
 	} else {
-//		/* restore indirect call function-ptr from the hardware-stack */
-//		out_ins(I_SPOP_WR, 0, 0);
+		/* invoke saved function-ptr for call indirect */
 		out_ins(I_CALLP, 0, 0);
+		using_funcptr = false;
 	}
 
 	/* adjust stack */
