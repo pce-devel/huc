@@ -18,10 +18,11 @@
 extern unsigned char icode_flags[];
 
 /* defines */
-#define Q_SIZE		32
+#define Q_SIZE		64
 
 /* instruction queue */
-extern INS q_ins[Q_SIZE];
+extern INS ins_queue[Q_SIZE];
+extern INS *q_ins;
 extern int q_rd;
 extern int q_wr;
 extern int q_nb;
@@ -30,7 +31,6 @@ bool is_small_array (SYMBOL *sym);
 void push_ins (INS *ins);
 void try_swap_order (int linst, int lseqn, INS *operation);
 void flush_ins (void);
-void flush_ins_label (int nextlabel);
 void gen_asm (INS *inst);
 
 #endif

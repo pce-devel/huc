@@ -27,8 +27,14 @@
 #include "struct.h"
 
 /* locals */
-static INS ins_stack[1024];
-static int ins_stack_idx;
+static INS arg_queue[Q_SIZE];
+static int which_queue;
+static int saved_rd;
+static int saved_wr;
+static int saved_nb;
+
+static INS arg_stack[1024];
+static int arg_stack_idx;
 static int arg_list[32][2];
 static int arg_idx;
 static int func_call_stack;
@@ -604,9 +610,6 @@ void callfunction (SYMBOL *ptr)
 		do_asm_func(T_PAL);  return;
 	}
 
-//	flush_ins();
-//	ot("__calling\n");
-
 	if (ptr->identity == FUNCTION) {
 		/* fastcall check, but don't know how many parameters */
 		is_fc = fastcall_look(ptr->name, -1, NULL);
@@ -617,9 +620,7 @@ void callfunction (SYMBOL *ptr)
 	}
 
 	/* calling regular functions in fastcall arguments is OK */
-	if (is_fc)
-		flush_ins();
-	else
+	if (!is_fc)
 		--func_call_stack;
 
 	/* get args */
@@ -630,9 +631,31 @@ void callfunction (SYMBOL *ptr)
 		if (is_fc) {
 			int nfc = func_call_stack;
 
-			arg_stack(arg_idx++);
+			/* switch to the alternate instruction queue so that */
+			/* the temporary stacking of arguments does not mess */
+			/* up optimizing statements that use function calls. */
+			if (which_queue++ == 0) {
+				saved_rd = q_rd;
+				saved_wr = q_wr;
+				saved_nb = q_nb;
+				q_ins = arg_queue;
+				q_rd = 0;
+				q_wr = Q_SIZE - 1;
+				q_nb = 0;
+			}
+
+			new_arg_stack(arg_idx++);
 			expression(NO);
 			flush_ins();
+
+			/* switch back to the normal instruction queue */
+			if (--which_queue == 0) {
+				q_ins = ins_queue;
+				q_rd = saved_rd;
+				q_wr = saved_wr;
+				q_nb = saved_nb;
+			}
+
 			stkp = stkp - INTSIZE;
 
 			/* Check if we had a fastcall in our argument. */
@@ -657,13 +680,14 @@ void callfunction (SYMBOL *ptr)
 	/* adjust arg stack */
 	if (is_fc) {
 		if (argcnt) {
-			arg_list[arg_idx - 1][1] = ins_stack_idx;
+			arg_list[arg_idx - 1][1] = arg_stack_idx;
 			arg_idx -= argcnt;
 		}
+
 		if (argcnt && arg_idx)
-			ins_stack_idx = arg_list[arg_idx - 1][1];
+			arg_stack_idx = arg_list[arg_idx - 1][1];
 		else {
-			ins_stack_idx = 0;
+			arg_stack_idx = 0;
 			arg_stack_flag = 0;
 		}
 	}
@@ -831,9 +855,6 @@ void callfunction (SYMBOL *ptr)
 		out_ins(I_CALLP, 0, 0);
 	}
 
-//	flush_ins();
-//	ot("__called\n");
-
 	/* adjust stack */
 	if (argsiz) {
 		stkp = stkp + argsiz;
@@ -850,18 +871,18 @@ void callfunction (SYMBOL *ptr)
  * start arg instruction stacking
  *
  */
-void arg_stack (int arg)
+void new_arg_stack (int arg)
 {
 	if (arg > 31)
 		error("too many args");
 	else {
 		/* close previous stack */
 		if (arg)
-			arg_list[arg - 1][1] = ins_stack_idx;
+			arg_list[arg - 1][1] = arg_stack_idx;
 
 		/* init new stack */
-		ins_stack_idx += 4;
-		arg_list[arg][0] = ins_stack_idx;
+		arg_stack_idx += 4;
+		arg_list[arg][0] = arg_stack_idx;
 		arg_list[arg][1] = -1;
 		arg_stack_flag = 1;
 	}
@@ -873,11 +894,11 @@ void arg_stack (int arg)
  */
 void arg_push_ins (INS *ptr)
 {
-	if (ins_stack_idx < 1024)
-		ins_stack[ins_stack_idx++] = *ptr;
+	if (arg_stack_idx < 1024)
+		arg_stack[arg_stack_idx++] = *ptr;
 	else {
-		if (ins_stack_idx < 1025) {
-			ins_stack_idx++;
+		if (arg_stack_idx < 1025) {
+			arg_stack_idx++;
 			error("arg stack full");
 		}
 	}
@@ -903,13 +924,13 @@ void arg_flush (int arg, int adj)
 	for (i = 0; i < nb;) {
 		/* adjust stack refs */
 		i++;
-		ins = &ins_stack[idx];
+		ins = &arg_stack[idx];
 
 		if ((ins->ins_type == T_STACK) && (ins->ins_code == I_LD_WM)) {
 printf("Can this ever occur?\n");
 abort();
 			if (i < nb) {
-				ins = &ins_stack[idx + 1];
+				ins = &arg_stack[idx + 1];
 				if ((ins->ins_code == I_ADD_WI) && (ins->ins_type == T_VALUE))
 					ins->ins_data -= adj;
 			}
@@ -920,7 +941,7 @@ abort();
 		}
 
 		/* flush */
-		gen_ins(&ins_stack[idx++]);
+		gen_ins(&arg_stack[idx++]);
 	}
 }
 
@@ -941,7 +962,7 @@ void arg_to_fptr (struct fastcall *fast, int i, int arg, int adj)
 
 	idx = arg_list[arg][0];
 	nb = arg_list[arg][1] - arg_list[arg][0];
-	ins = &ins_stack[idx];
+	ins = &arg_stack[idx];
 	err = 0;
 
 	/* check arg */
@@ -988,7 +1009,7 @@ void arg_to_fptr (struct fastcall *fast, int i, int arg, int adj)
 		}
 
 		/* check if last instruction is a pointer dereference */
-		switch (ins_stack[ arg_list[arg][0] + nb - 1 ].ins_code) {
+		switch (arg_stack[ arg_list[arg][0] + nb - 1 ].ins_code) {
 			case I_LD_UP:
 			case I_LD_WP:
 				err = 1;
@@ -1062,7 +1083,7 @@ void arg_to_dword (struct fastcall *fast, int i, int arg, int adj)
 
 	idx = arg_list[arg][0];
 	nb = arg_list[arg][1] - arg_list[arg][0];
-	ins = &ins_stack[idx];
+	ins = &arg_stack[idx];
 	gen = 0;
 	err = 1;
 
@@ -1157,7 +1178,7 @@ void arg_to_dword (struct fastcall *fast, int i, int arg, int adj)
 			/* check type */
 			if (sym->identity == ARRAY) {
 				ptr = ins;
-				ins = &ins_stack[idx + 1];
+				ins = &arg_stack[idx + 1];
 
 				if ((ins->ins_code == I_ADD_WI) && (ins->ins_type == T_VALUE)) {
 					gen_ins(ptr);

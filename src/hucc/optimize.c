@@ -432,14 +432,14 @@ int compare2uchar [] = {
 };
 
 /* instruction queue */
-INS q_ins[Q_SIZE];
+INS ins_queue[Q_SIZE];
+INS *q_ins = ins_queue;
 int q_rd;
 int q_wr;
 int q_nb;
 
 /* externs */
 extern int arg_stack_flag;
-
 
 int cmp_operands (INS *p1, INS *p2)
 {
@@ -2232,7 +2232,7 @@ lv1_loop:
 					case I_AND_WT:  p[2]->ins_code = I_AND_WM; break;
 					case I_EOR_WT:  p[2]->ins_code = I_EOR_WM; break;
 					case I_OR_WT:   p[2]->ins_code = I_OR_WM; break;
-					default:
+					default:;
 					}
 					break;
 				case I_LD_UM:
@@ -2243,7 +2243,7 @@ lv1_loop:
 					case I_AND_WT:  p[2]->ins_code = I_AND_UM; break;
 					case I_EOR_WT:  p[2]->ins_code = I_EOR_UM; break;
 					case I_OR_WT:   p[2]->ins_code = I_OR_UM; break;
-					default:
+					default:;
 					}
 					break;
 
@@ -2255,7 +2255,7 @@ lv1_loop:
 					case I_AND_WT:  p[2]->ins_code = X_AND_WS; break;
 					case I_EOR_WT:  p[2]->ins_code = X_EOR_WS; break;
 					case I_OR_WT:   p[2]->ins_code = X_OR_WS; break;
-					default:
+					default:;
 					}
 					break;
 				case X_LD_US:
@@ -2266,10 +2266,10 @@ lv1_loop:
 					case I_AND_WT:  p[2]->ins_code = X_AND_US; break;
 					case I_EOR_WT:  p[2]->ins_code = X_EOR_US; break;
 					case I_OR_WT:   p[2]->ins_code = X_OR_US; break;
-					default:
+					default:;
 					}
 					break;
-				default:
+				default:;
 				}
 				remove = 2;
 			}
@@ -3588,41 +3588,6 @@ void try_swap_order (int linst, int lseqn, INS *operation)
 }
 
 /* ----
- * flush_ins_label(int nextlabel)
- * ----
- * flush instruction queue, eliminating redundant trailing branches to a
- * label following immediately
- *
- */
-void flush_ins_label (int nextlabel)
-{
-	while (q_nb) {
-		/* skip last op if it's a branch to nextlabel */
-		if (q_nb > 1 || nextlabel == -1 ||
-		    (q_ins[q_rd].ins_code != I_BRA) ||
-		    q_ins[q_rd].ins_data != nextlabel) {
-			/* gen code */
-			if (arg_stack_flag)
-				arg_push_ins(&q_ins[q_rd]);
-			else
-				gen_code(&q_ins[q_rd]);
-		}
-
-		/* advance and wrap queue read pointer */
-		q_rd++;
-		q_nb--;
-
-		if (q_rd == Q_SIZE)
-			q_rd = 0;
-	}
-
-	/* reset queue */
-	q_rd = 0;
-	q_wr = Q_SIZE - 1;
-	q_nb = 0;
-}
-
-/* ----
  * flush_ins()
  * ----
  * flush instruction queue
@@ -3630,5 +3595,21 @@ void flush_ins_label (int nextlabel)
  */
 void flush_ins (void)
 {
-	flush_ins_label(-1);
+	while (q_nb) {
+		/* gen code */
+		if (arg_stack_flag)
+			arg_push_ins(&q_ins[q_rd]);
+		else
+			gen_code(&q_ins[q_rd]);
+
+		/* advance and wrap queue read pointer */
+		--q_nb;
+		if (++q_rd == Q_SIZE)
+			q_rd = 0;
+	}
+
+	/* reset queue */
+	q_rd = 0;
+	q_wr = Q_SIZE - 1;
+	q_nb = 0;
 }

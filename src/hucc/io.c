@@ -352,18 +352,6 @@ void pl (char *str)
 }
 
 /*
- * glabel - generate label
- */
-void glabel (char *lab)
-{
-	flush_ins();	/* David - optimize.c related */
-	prefix();
-	outstr(lab);
-	col();
-	nl();
-}
-
-/*
  * gnlabel - generate numeric label
  */
 void gnlabel (int nlab)
