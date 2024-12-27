@@ -1953,6 +1953,19 @@ __not.uar	.macro
 ; C is true (1) if memory-value == 0, else false (0)
 ; this MUST set the C flag for the subsequent branches!
 
+__not.uax	.macro
+		lda	\1, y
+		clc
+		bne	!+
+		sec
+!:
+		.endm
+
+; **************
+; optimized boolean test
+; C is true (1) if memory-value == 0, else false (0)
+; this MUST set the C flag for the subsequent branches!
+
 __not.uay	.macro
 		lda	\1, y
 		clc
@@ -2059,6 +2072,16 @@ __tst.us	.macro	; __STACK
 __tst.uar	.macro
 		tay
 		lda	\1, y
+		cmp	#1
+		.endm
+
+; **************
+; optimized boolean test
+; C is true (1) if memory-value != 0, else false (0)
+; this MUST set the C flag for the subsequent branches!
+
+__tst.uax	.macro
+		lda	\1, x
 		cmp	#1
 		.endm
 
@@ -2261,6 +2284,18 @@ __boolnot.uar	.macro
 ; optimized boolean test used before a store, not a branch
 ; Y:A is true (1) if memory-value == 0, else false (0)
 
+__boolnot.uax	.macro
+		lda	\1, x
+		cla
+		bne	!+
+		inc	a
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test used before a store, not a branch
+; Y:A is true (1) if memory-value == 0, else false (0)
+
 __boolnot.uay	.macro
 		lda	\1, y
 		cla
@@ -2364,6 +2399,24 @@ __ld.umq	.macro
 
 ; **************
 
+__ldx.wmq	.macro
+		ldx.l	\1
+		.endm
+
+; **************
+
+__ldx.bmq	.macro
+		ldx	\1
+		.endm
+
+; **************
+
+__ldx.umq	.macro
+		ldx	\1
+		.endm
+
+; **************
+
 __ldy.wmq	.macro
 		ldy.l	\1
 		.endm
@@ -2431,6 +2484,23 @@ __ld.bar	.macro
 __ld.uar	.macro
 		tay
 		lda	\1, y
+		cly
+		.endm
+
+; **************
+
+__ld.bax	.macro
+		lda	\1, x
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+
+__ld.uax	.macro
+		lda	\1, x
 		cly
 		.endm
 
@@ -2521,6 +2591,29 @@ __ldp.uar	.macro
 ; special load for when array writes are optimized
 ; the cpu stack is balanced with an __st.uat
 
+__ldp.bax	.macro
+		phx
+		lda	\1, x
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+; special load for when array writes are optimized
+; the cpu stack is balanced with an __st.uat
+
+__ldp.uax	.macro
+		phx
+		lda	\1, x
+		cly
+		.endm
+
+; **************
+; special load for when array writes are optimized
+; the cpu stack is balanced with an __st.uat
+
 __ldp.bay	.macro
 		phy
 		lda	\1, y
@@ -2586,6 +2679,27 @@ __ld.bsq	.macro	; __STACK
 __ld.usq	.macro	; __STACK
 		ldx.l	<__sp
 		lda	<__stack + \1, x
+		.endm
+
+; **************
+
+__ldx.wsq	.macro	; __STACK
+		ldy.l	<__sp
+		ldx.l	<__stack + \1, y
+		.endm
+
+; **************
+
+__ldx.bsq	.macro	; __STACK
+		ldy.l	<__sp
+		ldx	<__stack + \1, y
+		.endm
+
+; **************
+
+__ldx.usq	.macro	; __STACK
+		ldy.l	<__sp
+		ldx	<__stack + \1, y
 		.endm
 
 ; **************
@@ -3081,6 +3195,80 @@ __lddec.uar	.macro
 
 ; **************
 
+__incld.bax	.macro
+		inc	\1, x
+		lda	\1, x
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+
+__incld.uax	.macro
+		inc	\1, x
+		lda	\1, x
+		cly
+		.endm
+
+; **************
+
+__ldinc.bax	.macro
+		lda	\1, x
+		cly
+		bpl	!+
+		dey
+!:		inc	\1, x
+		.endm
+
+; **************
+
+__ldinc.uax	.macro
+		lda	\1, x
+		cly
+		inc	\1, x
+		.endm
+
+; **************
+
+__decld.bax	.macro
+		dec	\1, x
+		lda	\1, x
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+
+__decld.uax	.macro
+		dec	\1, x
+		lda	\1, x
+		cly
+		.endm
+
+; **************
+
+__lddec.bax	.macro
+		lda	\1, x
+		cly
+		bpl	!+
+		dey
+!:		dec	\1, x
+		.endm
+
+; **************
+
+__lddec.uax	.macro
+		lda	\1, x
+		cly
+		dec	\1, x
+		.endm
+
+; **************
+
 __incld.bay	.macro
 		lda	\1, y
 		inc	a
@@ -3190,6 +3378,13 @@ __inc.uarq	.macro
 ; **************
 ; optimized macro used when the value isn't needed in the primary register
 
+__inc.uaxq	.macro
+		inc	\1, x
+		.endm
+
+; **************
+; optimized macro used when the value isn't needed in the primary register
+
 __inc.uayq	.macro
 		sxy
 		inc	\1, x
@@ -3212,6 +3407,13 @@ __dec.warq	.macro
 
 __dec.uarq	.macro
 		tax
+		dec	\1, x
+		.endm
+
+; **************
+; optimized macro used when the value isn't needed in the primary register
+
+__dec.uaxq	.macro
 		dec	\1, x
 		.endm
 

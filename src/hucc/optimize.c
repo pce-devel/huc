@@ -132,6 +132,7 @@ unsigned char icode_flags[] = {
 	/* X_NOT_UM             */	0,
 	/* X_NOT_US             */	IS_SPREL,
 	/* X_NOT_UAR            */	0,
+	/* X_NOT_UAX            */	0,
 	/* X_NOT_UAY            */	0,
 
 	/* I_TST_WR             */	IS_USEPR,
@@ -143,6 +144,7 @@ unsigned char icode_flags[] = {
 	/* X_TST_UM             */	0,
 	/* X_TST_US             */	IS_SPREL,
 	/* X_TST_UAR            */	0,
+	/* X_TST_UAX            */	0,
 	/* X_TST_UAY            */	0,
 
 	/* X_NAND_WI            */	IS_USEPR,
@@ -160,6 +162,7 @@ unsigned char icode_flags[] = {
 	/* X_BOOLNOT_UM         */	0,
 	/* X_BOOLNOT_US         */	IS_SPREL,
 	/* X_BOOLNOT_UAR        */	0,
+	/* X_BOOLNOT_UAX        */	0,
 	/* X_BOOLNOT_UAY        */	0,
 
 	// i-codes for loading the primary register
@@ -176,6 +179,10 @@ unsigned char icode_flags[] = {
 	/* I_LD_BMQ             */	IS_SBYTE,
 	/* I_LD_UMQ             */	IS_UBYTE,
 
+	/* I_LDX_WMQ            */	0,
+	/* I_LDX_BMQ            */	IS_SBYTE,
+	/* I_LDX_UMQ            */	IS_UBYTE,
+
 	/* I_LDY_WMQ            */	0,
 	/* I_LDY_BMQ            */	IS_SBYTE,
 	/* I_LDY_UMQ            */	IS_UBYTE,
@@ -188,6 +195,9 @@ unsigned char icode_flags[] = {
 	/* X_LD_BAR             */	IS_SBYTE,
 	/* X_LD_UAR             */	IS_UBYTE,
 
+	/* X_LD_BAX             */	IS_SBYTE,
+	/* X_LD_UAX             */	IS_UBYTE,
+
 	/* X_LD_BAY             */	IS_SBYTE,
 	/* X_LD_UAY             */	IS_UBYTE,
 
@@ -199,6 +209,10 @@ unsigned char icode_flags[] = {
 	/* X_LD_BSQ             */	IS_SBYTE + IS_SPREL,
 	/* X_LD_USQ             */	IS_UBYTE + IS_SPREL,
 
+	/* X_LDX_WSQ            */	IS_SPREL,
+	/* X_LDX_BSQ            */	IS_SBYTE + IS_SPREL,
+	/* X_LDX_USQ            */	IS_UBYTE + IS_SPREL,
+
 	/* X_LDY_WSQ            */	IS_SPREL,
 	/* X_LDY_BSQ            */	IS_SBYTE + IS_SPREL,
 	/* X_LDY_USQ            */	IS_UBYTE + IS_SPREL,
@@ -206,6 +220,9 @@ unsigned char icode_flags[] = {
 	/* X_LDP_WAR            */	0,
 	/* X_LDP_BAR            */	IS_SBYTE,
 	/* X_LDP_UAR            */	IS_UBYTE,
+
+	/* X_LDP_BAX            */	IS_SBYTE,
+	/* X_LDP_UAX            */	IS_UBYTE,
 
 	/* X_LDP_BAY            */	IS_SBYTE,
 	/* X_LDP_UAY            */	IS_UBYTE,
@@ -270,6 +287,15 @@ unsigned char icode_flags[] = {
 	/* X_LDDEC_BAR          */	IS_SBYTE,
 	/* X_LDDEC_UAR          */	IS_UBYTE,
 
+	/* X_INCLD_BAX          */	IS_SBYTE,
+	/* X_INCLD_UAX          */	IS_UBYTE,
+	/* X_LDINC_BAX          */	IS_SBYTE,
+	/* X_LDINC_UAX          */	IS_UBYTE,
+	/* X_DECLD_BAX          */	IS_SBYTE,
+	/* X_DECLD_UAX          */	IS_UBYTE,
+	/* X_LDDEC_BAX          */	IS_SBYTE,
+	/* X_LDDEC_UAX          */	IS_UBYTE,
+
 	/* X_INCLD_BAY          */	IS_SBYTE,
 	/* X_INCLD_UAY          */	IS_UBYTE,
 	/* X_LDINC_BAY          */	IS_SBYTE,
@@ -281,10 +307,12 @@ unsigned char icode_flags[] = {
 
 	/* X_INC_WARQ           */	0,
 	/* X_INC_UARQ           */	0,
+	/* X_INC_UAXQ           */	0,
 	/* X_INC_UAYQ           */	0,
 
 	/* X_DEC_WARQ           */	0,
 	/* X_DEC_UARQ           */	0,
+	/* X_DEC_UAXQ           */	0,
 	/* X_DEC_UAYQ           */	0,
 
 	// i-codes for saving the primary register
@@ -684,6 +712,14 @@ lv1_loop:
 			  p[1]->ins_code == X_DECLD_UAR ||
 			  p[1]->ins_code == X_LDDEC_BAR ||
 			  p[1]->ins_code == X_LDDEC_UAR ||
+			  p[1]->ins_code == X_INCLD_BAX ||
+			  p[1]->ins_code == X_INCLD_UAX ||
+			  p[1]->ins_code == X_LDINC_BAX ||
+			  p[1]->ins_code == X_LDINC_UAX ||
+			  p[1]->ins_code == X_DECLD_BAX ||
+			  p[1]->ins_code == X_DECLD_UAX ||
+			  p[1]->ins_code == X_LDDEC_BAX ||
+			  p[1]->ins_code == X_LDDEC_UAX ||
 			  p[1]->ins_code == X_INCLD_BAY ||
 			  p[1]->ins_code == X_INCLD_UAY ||
 			  p[1]->ins_code == X_LDINC_BAY ||
@@ -731,6 +767,14 @@ lv1_loop:
 				case X_DECLD_UAR:
 				case X_LDDEC_BAR:
 				case X_LDDEC_UAR: p[1]->ins_code = X_DEC_UARQ; break;
+				case X_INCLD_BAX:
+				case X_INCLD_UAX:
+				case X_LDINC_BAX:
+				case X_LDINC_UAX: p[1]->ins_code = X_INC_UAXQ; break;
+				case X_DECLD_BAX:
+				case X_DECLD_UAX:
+				case X_LDDEC_BAX:
+				case X_LDDEC_UAX: p[1]->ins_code = X_DEC_UAXQ; break;
 				case X_INCLD_BAY:
 				case X_INCLD_UAY:
 				case X_LDINC_BAY:
@@ -1527,6 +1571,10 @@ lv1_loop:
 			 *  __bool
 			 *  __not.wr
 			 *
+			 *  __not.uax		symbol	-->	__tst.uax	symbol
+			 *  __bool
+			 *  __not.wr
+			 *
 			 *  __not.uay		symbol	-->	__tst.uay	symbol
 			 *  __bool
 			 *  __not.wr
@@ -1555,6 +1603,10 @@ lv1_loop:
 			 *  __bool
 			 *  __not.wr
 			 *
+			 *  __tst.uax		symbol	-->	__not.uax	symbol
+			 *  __bool
+			 *  __not.wr
+			 *
 			 *  __tst.uay		symbol	-->	__not.uay	symbol
 			 *  __bool
 			 *  __not.wr
@@ -1577,6 +1629,7 @@ lv1_loop:
 			  p[2]->ins_code == X_NOT_UM ||
 			  p[2]->ins_code == X_NOT_US ||
 			  p[2]->ins_code == X_NOT_UAR ||
+			  p[2]->ins_code == X_NOT_UAX ||
 			  p[2]->ins_code == X_NOT_UAY ||
 			  p[2]->ins_code == X_NAND_WI ||
 			  p[2]->ins_code == I_TST_WR ||
@@ -1588,6 +1641,7 @@ lv1_loop:
 			  p[2]->ins_code == X_TST_UM ||
 			  p[2]->ins_code == X_TST_US ||
 			  p[2]->ins_code == X_TST_UAR ||
+			  p[2]->ins_code == X_TST_UAX ||
 			  p[2]->ins_code == X_TST_UAY ||
 			  p[2]->ins_code == X_TAND_WI)
 			) {
@@ -1601,6 +1655,7 @@ lv1_loop:
 				case X_NOT_UM:   p[2]->ins_code = X_TST_UM; break;
 				case X_NOT_US:   p[2]->ins_code = X_TST_US; break;
 				case X_NOT_UAR:  p[2]->ins_code = X_TST_UAR; break;
+				case X_NOT_UAX:  p[2]->ins_code = X_TST_UAX; break;
 				case X_NOT_UAY:  p[2]->ins_code = X_TST_UAY; break;
 				case X_NAND_WI:  p[2]->ins_code = X_TAND_WI; break;
 				case I_TST_WR:   p[2]->ins_code = I_NOT_WR; break;
@@ -1612,6 +1667,7 @@ lv1_loop:
 				case X_TST_UM:   p[2]->ins_code = X_NOT_UM; break;
 				case X_TST_US:   p[2]->ins_code = X_NOT_US; break;
 				case X_TST_UAR:  p[2]->ins_code = X_NOT_UAR; break;
+				case X_TST_UAX:  p[2]->ins_code = X_NOT_UAX; break;
 				case X_TST_UAY:  p[2]->ins_code = X_NOT_UAY; break;
 				case X_TAND_WI:  p[2]->ins_code = X_NAND_WI; break;
 				default: abort();
@@ -1668,6 +1724,10 @@ lv1_loop:
 			 *  __bool
 			 *  __tst.wr
 			 *
+			 *  __not.uax		symbol	-->	__not.uax	symbol
+			 *  __bool
+			 *  __tst.wr
+			 *
 			 *  __not.uay		symbol	-->	__not.uay	symbol
 			 *  __bool
 			 *  __tst.wr
@@ -1693,6 +1753,10 @@ lv1_loop:
 			 *  __tst.wr
 			 *
 			 *  __tst.{w/u}ar	symbol	-->	__tst.{w/u}ar	symbol
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __tst.uax		symbol	-->	__tst.uax	symbol
 			 *  __bool
 			 *  __tst.wr
 			 *
@@ -1727,6 +1791,7 @@ lv1_loop:
 			  p[2]->ins_code == X_NOT_UM ||
 			  p[2]->ins_code == X_NOT_US ||
 			  p[2]->ins_code == X_NOT_UAR ||
+			  p[2]->ins_code == X_NOT_UAX ||
 			  p[2]->ins_code == X_NOT_UAY ||
 			  p[2]->ins_code == X_NAND_WI ||
 			  p[2]->ins_code == I_TST_WR ||
@@ -1738,6 +1803,7 @@ lv1_loop:
 			  p[2]->ins_code == X_TST_UM ||
 			  p[2]->ins_code == X_TST_US ||
 			  p[2]->ins_code == X_TST_UAR ||
+			  p[2]->ins_code == X_TST_UAX ||
 			  p[2]->ins_code == X_TST_UAY ||
 			  p[2]->ins_code == X_TAND_WI)
 			) {
@@ -1763,6 +1829,9 @@ lv1_loop:
 			 *  __ld.{w/b/u}ar	symbol	-->	__tst.{w/u}ar	symbol
 			 *  __tst.wr
 			 *
+			 *  __ld.{b/u}ax	symbol	-->	__tst.uax	symbol
+			 *  __tst.wr
+			 *
 			 *  __ld.{b/u}ay	symbol	-->	__tst.uay	symbol
 			 *  __tst.wr
 			 *
@@ -1779,6 +1848,9 @@ lv1_loop:
 			 *  __not.wr
 			 *
 			 *  __ld.{w/b/u}ar	symbol	-->	__not.{w/u}ar	symbol
+			 *  __not.wr
+			 *
+			 *  __ld.{b/u}ax	symbol	-->	__not.uax	symbol
 			 *  __not.wr
 			 *
 			 *  __ld.{b/u}ay	symbol	-->	__not.uay	symbol
@@ -1799,11 +1871,13 @@ lv1_loop:
 			  p[1]->ins_code == I_LD_BM ||
 			  p[1]->ins_code == X_LD_BS ||
 			  p[1]->ins_code == X_LD_BAR ||
+			  p[1]->ins_code == X_LD_BAX ||
 			  p[1]->ins_code == X_LD_BAY ||
 			  p[1]->ins_code == I_LD_UP ||
 			  p[1]->ins_code == I_LD_UM ||
 			  p[1]->ins_code == X_LD_US ||
 			  p[1]->ins_code == X_LD_UAR ||
+			  p[1]->ins_code == X_LD_UAX ||
 			  p[1]->ins_code == X_LD_UAY ||
 			  p[1]->ins_code == I_AND_WI ||
 			  p[1]->ins_code == I_AND_UIQ)
@@ -1823,6 +1897,8 @@ lv1_loop:
 					case X_LD_US:  p[1]->ins_code = X_TST_US; break;
 					case X_LD_BAR:
 					case X_LD_UAR: p[1]->ins_code = X_TST_UAR; break;
+					case X_LD_BAX:
+					case X_LD_UAX: p[1]->ins_code = X_TST_UAX; break;
 					case X_LD_BAY:
 					case X_LD_UAY: p[1]->ins_code = X_TST_UAY; break;
 					case I_AND_UIQ:
@@ -1843,6 +1919,8 @@ lv1_loop:
 					case X_LD_US:  p[1]->ins_code = X_NOT_US; break;
 					case X_LD_BAR:
 					case X_LD_UAR: p[1]->ins_code = X_NOT_UAR; break;
+					case X_LD_BAX:
+					case X_LD_UAX: p[1]->ins_code = X_NOT_UAX; break;
 					case X_LD_BAY:
 					case X_LD_UAY: p[1]->ins_code = X_NOT_UAY; break;
 					case I_AND_UIQ:
@@ -1854,7 +1932,7 @@ lv1_loop:
 			}
 
 			/*
-			 *  __ld.u{p/m/s/ar/ay}	symbol	-->	__ld.u{p/m/s/ar/ay}  symbol
+			 *  __ld.u{p/m/s/ar/ax}	symbol	-->	__ld.u{p/m/s/ar/ax}  symbol
 			 *  __cmp_w.wi		j		__cmp_b.uiq	j
 			 *
 			 *  __and.uiq		i	-->	__and.uiq	i
@@ -2354,11 +2432,11 @@ lv1_loop:
 			 *  __sub.wi		1
 			 *  __st.{w/u}at	symbol
 			 *
-			 *  __ldp.{b/u}ay	symbol	-->	__incld_{b/u}ay  symbol
+			 *  __ldp.{b/u}ax	symbol	-->	__incld_{b/u}ax  symbol
 			 *  __add.wi		1
 			 *  __st.{w/u}at	symbol
 			 *
-			 *  __ldp.{b/u}ay	symbol	-->	__decld_{b/u}ay  symbol
+			 *  __ldp.{b/u}ax	symbol	-->	__decld_{b/u}ax  symbol
 			 *  __sub.wi		1
 			 *  __st.{w/u}at	symbol
 			 *
@@ -2375,6 +2453,8 @@ lv1_loop:
 			 (p[2]->ins_code == X_LDP_WAR ||
 			  p[2]->ins_code == X_LDP_BAR ||
 			  p[2]->ins_code == X_LDP_UAR ||
+			  p[2]->ins_code == X_LDP_BAX ||
+			  p[2]->ins_code == X_LDP_UAX ||
 			  p[2]->ins_code == X_LDP_BAY ||
 			  p[2]->ins_code == X_LDP_UAY) &&
 			 (p[0]->ins_type == p[2]->ins_type) &&
@@ -2386,6 +2466,8 @@ lv1_loop:
 				case X_LDP_WAR:	p[2]->ins_code = (p[1]->ins_code == I_ADD_WI) ? X_INCLD_WAR : X_DECLD_WAR; break;
 				case X_LDP_BAR:	p[2]->ins_code = (p[1]->ins_code == I_ADD_WI) ? X_INCLD_BAR : X_DECLD_BAR; break;
 				case X_LDP_UAR:	p[2]->ins_code = (p[1]->ins_code == I_ADD_WI) ? X_INCLD_UAR : X_DECLD_UAR; break;
+				case X_LDP_BAX:	p[2]->ins_code = (p[1]->ins_code == I_ADD_WI) ? X_INCLD_BAX : X_DECLD_BAX; break;
+				case X_LDP_UAX:	p[2]->ins_code = (p[1]->ins_code == I_ADD_WI) ? X_INCLD_UAX : X_DECLD_UAX; break;
 				case X_LDP_BAY:	p[2]->ins_code = (p[1]->ins_code == I_ADD_WI) ? X_INCLD_BAY : X_DECLD_BAY; break;
 				case X_LDP_UAY:	p[2]->ins_code = (p[1]->ins_code == I_ADD_WI) ? X_INCLD_UAY : X_DECLD_UAY; break;
 				default:	break;
@@ -2471,6 +2553,10 @@ lv1_loop:
 			 *  __bool				is_usepr()
 			 *  is_usepr()
 			 *
+			 *  __not.uax		symbol	-->	__boolnot.uax	symbol
+			 *  __bool				is_usepr()
+			 *  is_usepr()
+			 *
 			 *  __not.uay		symbol	-->	__boolnot.uay	symbol
 			 *  __bool				is_usepr()
 			 *  is_usepr()
@@ -2492,6 +2578,7 @@ lv1_loop:
 			  p[2]->ins_code == X_NOT_UM ||
 			  p[2]->ins_code == X_NOT_US ||
 			  p[2]->ins_code == X_NOT_UAR ||
+			  p[2]->ins_code == X_NOT_UAX ||
 			  p[2]->ins_code == X_NOT_UAY)
 			) {
 				/* replace code */
@@ -2506,6 +2593,7 @@ lv1_loop:
 				case X_NOT_UM:   p[2]->ins_code = X_BOOLNOT_UM; break;
 				case X_NOT_US:   p[2]->ins_code = X_BOOLNOT_US; break;
 				case X_NOT_UAR:  p[2]->ins_code = X_BOOLNOT_UAR; break;
+				case X_NOT_UAX:  p[2]->ins_code = X_BOOLNOT_UAX; break;
 				case X_NOT_UAY:  p[2]->ins_code = X_BOOLNOT_UAY; break;
 				default: abort();
 				}
@@ -2795,6 +2883,9 @@ lv1_loop:
 			 *  __decld.{w/b/u}ar	array	-->	__lddec.{w/b/u}ar array
 			 *  __add.wi  1
 			 *
+			 *  __decld.{b/u}ax	array	-->	__lddec.{b/u}ax array
+			 *  __add.wi  1
+			 *
 			 *  __decld.{b/u}ay	array	-->	__lddec.{b/u}ay array
 			 *  __add.wi  1
 			 *
@@ -2813,6 +2904,8 @@ lv1_loop:
 			  p[1]->ins_code == X_DECLD_WAR ||
 			  p[1]->ins_code == X_DECLD_BAR ||
 			  p[1]->ins_code == X_DECLD_UAR ||
+			  p[1]->ins_code == X_DECLD_BAX ||
+			  p[1]->ins_code == X_DECLD_UAX ||
 			  p[1]->ins_code == X_DECLD_BAY ||
 			  p[1]->ins_code == X_DECLD_UAY)
 			) {
@@ -2827,6 +2920,8 @@ lv1_loop:
 				case X_DECLD_WAR: p[1]->ins_code = X_LDDEC_WAR; break;
 				case X_DECLD_BAR: p[1]->ins_code = X_LDDEC_BAR; break;
 				case X_DECLD_UAR: p[1]->ins_code = X_LDDEC_UAR; break;
+				case X_DECLD_BAX: p[1]->ins_code = X_LDDEC_BAX; break;
+				case X_DECLD_UAX: p[1]->ins_code = X_LDDEC_UAX; break;
 				case X_DECLD_BAY: p[1]->ins_code = X_LDDEC_BAY; break;
 				case X_DECLD_UAY: p[1]->ins_code = X_LDDEC_UAY; break;
 				default:	break;
@@ -2842,6 +2937,9 @@ lv1_loop:
 			 *  __sub.wi  1
 			 *
 			 *  __incld.{w/b/u}ar	array	-->	__ldinc.{w/b/u}ar array
+			 *  __sub.wi  1
+			 *
+			 *  __incld.{w/b/u}ax	array	-->	__ldinc.{w/b/u}ax array
 			 *  __sub.wi  1
 			 *
 			 *  __incld.{w/b/u}ay	array	-->	__ldinc.{w/b/u}ay array
@@ -2862,6 +2960,8 @@ lv1_loop:
 			  p[1]->ins_code == X_INCLD_WAR ||
 			  p[1]->ins_code == X_INCLD_BAR ||
 			  p[1]->ins_code == X_INCLD_UAR ||
+			  p[1]->ins_code == X_INCLD_BAX ||
+			  p[1]->ins_code == X_INCLD_UAX ||
 			  p[1]->ins_code == X_INCLD_BAY ||
 			  p[1]->ins_code == X_INCLD_UAY)
 			) {
@@ -2876,6 +2976,8 @@ lv1_loop:
 				case X_INCLD_WAR: p[1]->ins_code = X_LDINC_WAR; break;
 				case X_INCLD_BAR: p[1]->ins_code = X_LDINC_BAR; break;
 				case X_INCLD_UAR: p[1]->ins_code = X_LDINC_UAR; break;
+				case X_INCLD_BAX: p[1]->ins_code = X_LDINC_BAX; break;
+				case X_INCLD_UAX: p[1]->ins_code = X_LDINC_UAX; break;
 				case X_INCLD_BAY: p[1]->ins_code = X_LDINC_BAY; break;
 				case X_INCLD_UAY: p[1]->ins_code = X_LDINC_UAY; break;
 				default:	break;
@@ -2929,6 +3031,88 @@ lv1_loop:
 				remove = 0;
 			}
 
+			/*
+			 *  __ld.{w/b/u}m	symbol	-->	__ldx.{w/b/u}mq
+			 *  __ld.{b/u}ar	array		__ld.{b/u}ax	array
+			 *
+			 *  __ld.{w/b/u}s	n	-->	__ldx.{w/b/u}sq	n
+			 *  __ld.{b/u}ar	array		__ld.{b/u}ax	array
+			 *
+			 *  Index optimizations for base+offset array access.
+			 */
+			else if
+			((p[0]->ins_code == X_LD_BAR ||
+			  p[0]->ins_code == X_LD_UAR) &&
+			 (p[1]->ins_code == I_LD_WM ||
+			  p[1]->ins_code == I_LD_BM ||
+			  p[1]->ins_code == I_LD_UM ||
+			  p[1]->ins_code == X_LD_WS ||
+			  p[1]->ins_code == X_LD_BS ||
+			  p[1]->ins_code == X_LD_US)
+			) {
+				/* replace code */
+				switch (p[1]->ins_code) {
+				case I_LD_WM: p[1]->ins_code = I_LDX_WMQ; break;
+				case I_LD_BM: p[1]->ins_code = I_LDX_BMQ; break;
+				case I_LD_UM: p[1]->ins_code = I_LDX_UMQ; break;
+				case X_LD_WS: p[1]->ins_code = X_LDX_WSQ; break;
+				case X_LD_BS: p[1]->ins_code = X_LDX_BSQ; break;
+				case X_LD_US: p[1]->ins_code = X_LDX_USQ; break;
+				default:	break;
+				}
+				switch (p[0]->ins_code) {
+				case X_LD_BAR: p[0]->ins_code = X_LD_BAX; break;
+				case X_LD_UAR: p[0]->ins_code = X_LD_UAX; break;
+				case X_LDP_BAR: p[0]->ins_code = X_LDP_BAX; break;
+				case X_LDP_UAR: p[0]->ins_code = X_LDP_UAX; break;
+				default:	break;
+				}
+				remove = 0;
+			}
+
+			/*
+			 *  __ld.{w/b/u}mq	symbol	-->	__ldx.{w/b/u}mq
+			 *  __ldp.{b/u}ar	array		__ldp.{b/u}ax	array
+			 *
+			 *  __ld.{w/b/u}sq	n	-->	__ldx.{w/b/u}sq	n
+			 *  __ldp.{b/u}ar	array		__ldp.{b/u}ax	array
+			 *
+			 *  Index optimizations for base+offset array access.
+			 *
+			 *  The X_INDEX_UR rule above already converted __ld.{w/b/u}m
+			 *  to __ld.{w/b/u}mq!
+			 */
+			else if
+			((p[0]->ins_code == X_LDP_BAR ||
+			  p[0]->ins_code == X_LDP_UAR) &&
+			 (p[1]->ins_code == I_LD_WMQ ||
+			  p[1]->ins_code == I_LD_BMQ ||
+			  p[1]->ins_code == I_LD_UMQ ||
+			  p[1]->ins_code == X_LD_WSQ ||
+			  p[1]->ins_code == X_LD_BSQ ||
+			  p[1]->ins_code == X_LD_USQ)
+			) {
+				/* replace code */
+				switch (p[1]->ins_code) {
+				case I_LD_WMQ: p[1]->ins_code = I_LDX_WMQ; break;
+				case I_LD_BMQ: p[1]->ins_code = I_LDX_BMQ; break;
+				case I_LD_UMQ: p[1]->ins_code = I_LDX_UMQ; break;
+				case X_LD_WSQ: p[1]->ins_code = X_LDX_WSQ; break;
+				case X_LD_BSQ: p[1]->ins_code = X_LDX_BSQ; break;
+				case X_LD_USQ: p[1]->ins_code = X_LDX_USQ; break;
+				default:	break;
+				}
+				switch (p[0]->ins_code) {
+				case X_LD_BAR: p[0]->ins_code = X_LD_BAX; break;
+				case X_LD_UAR: p[0]->ins_code = X_LD_UAX; break;
+				case X_LDP_BAR: p[0]->ins_code = X_LDP_BAX; break;
+				case X_LDP_UAR: p[0]->ins_code = X_LDP_UAX; break;
+				default:	break;
+				}
+				remove = 0;
+			}
+
+#if 0
 			/*
 			 *  __ld.{w/b/u}m	symbol	-->	__ldy.{w/b/u}mq
 			 *  __ld.{b/u}ar	array		__ld.{b/u}ay	array
@@ -3009,12 +3193,13 @@ lv1_loop:
 				}
 				remove = 0;
 			}
+#endif
 
 			/*
-			 *  __ld.u{p/m/s/ar/ay}	symbol	-->	__ld.u{p/m/s/ar/ay}  symbol
+			 *  __ld.u{p/m/s/ar/ax}	symbol	-->	__ld.u{p/m/s/ar/ax}  symbol
 			 *  __sdiv.wi		i		__udiv.wi	i
 			 *
-			 *  __ld.u{p/m/s/ar/ay}	symbol	-->	__ld.u{p/m/s/ar/ay}  symbol
+			 *  __ld.u{p/m/s/ar/ax}	symbol	-->	__ld.u{p/m/s/ar/ax}  symbol
 			 *  __smod.wi		i		__umod.wi	i
 			 *
 			 *  C promotes an unsigned char to a signed int so this
@@ -3037,10 +3222,10 @@ lv1_loop:
 			}
 
 			/*
-			 *  __ld.u{p/m/s/ar/ay}	symbol	-->	__ld.u{p/m/s/ar/ay}  symbol
+			 *  __ld.u{p/m/s/ar/ax}	symbol	-->	__ld.u{p/m/s/ar/ax}  symbol
 			 *  __asr.wi		i		__lsr.uiq	i
 			 *
-			 *  __ld.u{p/m/s/ar/ay}	symbol	-->	__ld.u{p/m/s/ar/ay}  symbol
+			 *  __ld.u{p/m/s/ar/ax}	symbol	-->	__ld.u{p/m/s/ar/ax}  symbol
 			 *  __lsr.wi		i		__lsr.uiq	i
 			 *
 			 *  C promotes an unsigned char to a signed int so this
@@ -3066,7 +3251,7 @@ lv1_loop:
 			}
 
 			/*
-			 *  __ld.u{p/m/s/ar/ay}	symbol	-->	__ld.u{p/m/s/ar/ay}  symbol
+			 *  __ld.u{p/m/s/ar/ax}	symbol	-->	__ld.u{p/m/s/ar/ax}  symbol
 			 *  __and.wi		i		__and.uiq	i
 			 *
 			 *  C promotes an unsigned char to a signed int so this

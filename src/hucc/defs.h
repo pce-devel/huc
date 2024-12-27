@@ -96,6 +96,7 @@ enum ICODE {
 	X_NOT_UM,
 	X_NOT_US,
 	X_NOT_UAR,
+	X_NOT_UAX,
 	X_NOT_UAY,
 
 	I_TST_WR,
@@ -107,6 +108,7 @@ enum ICODE {
 	X_TST_UM,
 	X_TST_US,
 	X_TST_UAR,
+	X_TST_UAX,
 	X_TST_UAY,
 
 	X_NAND_WI,
@@ -124,6 +126,7 @@ enum ICODE {
 	X_BOOLNOT_UM,
 	X_BOOLNOT_US,
 	X_BOOLNOT_UAR,
+	X_BOOLNOT_UAX,
 	X_BOOLNOT_UAY,
 
 	/* i-codes for loading the primary register */
@@ -140,6 +143,10 @@ enum ICODE {
 	I_LD_BMQ,
 	I_LD_UMQ,
 
+	I_LDX_WMQ,
+	I_LDX_BMQ,
+	I_LDX_UMQ,
+
 	I_LDY_WMQ,
 	I_LDY_BMQ,
 	I_LDY_UMQ,
@@ -152,6 +159,9 @@ enum ICODE {
 	X_LD_BAR,
 	X_LD_UAR,
 
+	X_LD_BAX,
+	X_LD_UAX,
+
 	X_LD_BAY,
 	X_LD_UAY,
 
@@ -163,6 +173,10 @@ enum ICODE {
 	X_LD_BSQ,
 	X_LD_USQ,
 
+	X_LDX_WSQ,
+	X_LDX_BSQ,
+	X_LDX_USQ,
+
 	X_LDY_WSQ,
 	X_LDY_BSQ,
 	X_LDY_USQ,
@@ -170,6 +184,9 @@ enum ICODE {
 	X_LDP_WAR,
 	X_LDP_BAR,
 	X_LDP_UAR,
+
+	X_LDP_BAX,
+	X_LDP_UAX,
 
 	X_LDP_BAY,
 	X_LDP_UAY,
@@ -234,6 +251,15 @@ enum ICODE {
 	X_LDDEC_BAR,
 	X_LDDEC_UAR,
 
+	X_INCLD_BAX,
+	X_INCLD_UAX,
+	X_LDINC_BAX,
+	X_LDINC_UAX,
+	X_DECLD_BAX,
+	X_DECLD_UAX,
+	X_LDDEC_BAX,
+	X_LDDEC_UAX,
+
 	X_INCLD_BAY,
 	X_INCLD_UAY,
 	X_LDINC_BAY,
@@ -245,10 +271,12 @@ enum ICODE {
 
 	X_INC_WARQ,
 	X_INC_UARQ,
+	X_INC_UAXQ,
 	X_INC_UAYQ,
 
 	X_DEC_WARQ,
 	X_DEC_UARQ,
+	X_DEC_UAXQ,
 	X_DEC_UAYQ,
 
 	/* i-codes for saving the primary register */
