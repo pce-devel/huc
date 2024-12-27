@@ -298,28 +298,6 @@ void gdefault (int nlab)
 }
 
 /*
- *	add the primary and secondary registers
- *	if lval2 is int pointer and lval is int, scale lval
- */
-void gadd (LVALUE *lval, LVALUE *lval2)
-{
-	/* XXX: isn't this done in expr.c already? */
-	/* Nope, it is used when calculating a pointer variable address into a word array */
-	if (dbltest(lval2, lval))
-		out_ins(I_DOUBLE, 0, 0);
-	out_ins(I_ADD_WT, 0, 0);
-}
-
-/*
- *	subtract the primary register from the secondary
- *
- */
-void gsub (void)
-{
-	out_ins(I_SUB_WT, 0, 0);
-}
-
-/*
  *	multiply the primary and secondary registers
  *	(result in primary)
  *

@@ -224,7 +224,7 @@ void readline (void)
 					char * temp = malloc(LINESIZE);
 					if (temp) {
 						memcpy(temp, line, LINESIZE);
-						out_ins_ex_arg(I_DEBUG, T_SOURCE_LINE, (intptr_t)temp, T_VALUE, line_number, filename);
+						out_ins_ex_arg(I_INFO, T_SOURCE_LINE, (intptr_t)temp, T_VALUE, line_number, filename);
 					}
 				}
 				else {
@@ -349,18 +349,6 @@ void pl (char *str)
 	putchar(EOL);
 	while (str[k])
 		putchar(str[k++]);
-}
-
-/*
- * glabel - generate label
- */
-void glabel (char *lab)
-{
-	flush_ins();	/* David - optimize.c related */
-	prefix();
-	outstr(lab);
-	col();
-	nl();
 }
 
 /*

@@ -3,6 +3,9 @@
  *
  */
 
+// #define DEBUG_OPTIMIZER
+// #define INFORM_VALUE_SWAP
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -13,6 +16,7 @@
 #include "sym.h"
 #include "code.h"
 #include "function.h"
+#include "gen.h"
 #include "optimize.h"
 #include "io.h"
 #include "error.h"
@@ -37,19 +41,20 @@
 #define ODEBUG(...)
 #endif
 
+
 /* flag information for each of the i-code instructions */
 /*
  * N.B. this table MUST be kept updated and in the same order as the i-code
  * enum list in defs.h
  */
 unsigned char icode_flags[] = {
-	// i-code to mark an instrucion as retired */
+	// i-code to mark an instruction as retired */
 
 	/* I_RETIRED            */	0,
 
-	// i-code for debug information
+	// i-code for internal compiler information
 
-	/* I_DEBUG              */	0,
+	/* I_INFO               */	0,
 
 	// i-code that retires the primary register contents
 
@@ -127,6 +132,7 @@ unsigned char icode_flags[] = {
 	/* X_NOT_UM             */	0,
 	/* X_NOT_US             */	IS_SPREL,
 	/* X_NOT_UAR            */	0,
+	/* X_NOT_UAX            */	0,
 	/* X_NOT_UAY            */	0,
 
 	/* I_TST_WR             */	IS_USEPR,
@@ -138,6 +144,7 @@ unsigned char icode_flags[] = {
 	/* X_TST_UM             */	0,
 	/* X_TST_US             */	IS_SPREL,
 	/* X_TST_UAR            */	0,
+	/* X_TST_UAX            */	0,
 	/* X_TST_UAY            */	0,
 
 	/* X_NAND_WI            */	IS_USEPR,
@@ -155,6 +162,7 @@ unsigned char icode_flags[] = {
 	/* X_BOOLNOT_UM         */	0,
 	/* X_BOOLNOT_US         */	IS_SPREL,
 	/* X_BOOLNOT_UAR        */	0,
+	/* X_BOOLNOT_UAX        */	0,
 	/* X_BOOLNOT_UAY        */	0,
 
 	// i-codes for loading the primary register
@@ -171,6 +179,10 @@ unsigned char icode_flags[] = {
 	/* I_LD_BMQ             */	IS_SBYTE,
 	/* I_LD_UMQ             */	IS_UBYTE,
 
+	/* I_LDX_WMQ            */	0,
+	/* I_LDX_BMQ            */	IS_SBYTE,
+	/* I_LDX_UMQ            */	IS_UBYTE,
+
 	/* I_LDY_WMQ            */	0,
 	/* I_LDY_BMQ            */	IS_SBYTE,
 	/* I_LDY_UMQ            */	IS_UBYTE,
@@ -183,6 +195,9 @@ unsigned char icode_flags[] = {
 	/* X_LD_BAR             */	IS_SBYTE,
 	/* X_LD_UAR             */	IS_UBYTE,
 
+	/* X_LD_BAX             */	IS_SBYTE,
+	/* X_LD_UAX             */	IS_UBYTE,
+
 	/* X_LD_BAY             */	IS_SBYTE,
 	/* X_LD_UAY             */	IS_UBYTE,
 
@@ -194,6 +209,10 @@ unsigned char icode_flags[] = {
 	/* X_LD_BSQ             */	IS_SBYTE + IS_SPREL,
 	/* X_LD_USQ             */	IS_UBYTE + IS_SPREL,
 
+	/* X_LDX_WSQ            */	IS_SPREL,
+	/* X_LDX_BSQ            */	IS_SBYTE + IS_SPREL,
+	/* X_LDX_USQ            */	IS_UBYTE + IS_SPREL,
+
 	/* X_LDY_WSQ            */	IS_SPREL,
 	/* X_LDY_BSQ            */	IS_SBYTE + IS_SPREL,
 	/* X_LDY_USQ            */	IS_UBYTE + IS_SPREL,
@@ -201,6 +220,9 @@ unsigned char icode_flags[] = {
 	/* X_LDP_WAR            */	0,
 	/* X_LDP_BAR            */	IS_SBYTE,
 	/* X_LDP_UAR            */	IS_UBYTE,
+
+	/* X_LDP_BAX            */	IS_SBYTE,
+	/* X_LDP_UAX            */	IS_UBYTE,
 
 	/* X_LDP_BAY            */	IS_SBYTE,
 	/* X_LDP_UAY            */	IS_UBYTE,
@@ -265,6 +287,15 @@ unsigned char icode_flags[] = {
 	/* X_LDDEC_BAR          */	IS_SBYTE,
 	/* X_LDDEC_UAR          */	IS_UBYTE,
 
+	/* X_INCLD_BAX          */	IS_SBYTE,
+	/* X_INCLD_UAX          */	IS_UBYTE,
+	/* X_LDINC_BAX          */	IS_SBYTE,
+	/* X_LDINC_UAX          */	IS_UBYTE,
+	/* X_DECLD_BAX          */	IS_SBYTE,
+	/* X_DECLD_UAX          */	IS_UBYTE,
+	/* X_LDDEC_BAX          */	IS_SBYTE,
+	/* X_LDDEC_UAX          */	IS_UBYTE,
+
 	/* X_INCLD_BAY          */	IS_SBYTE,
 	/* X_INCLD_UAY          */	IS_UBYTE,
 	/* X_LDINC_BAY          */	IS_SBYTE,
@@ -276,10 +307,12 @@ unsigned char icode_flags[] = {
 
 	/* X_INC_WARQ           */	0,
 	/* X_INC_UARQ           */	0,
+	/* X_INC_UAXQ           */	0,
 	/* X_INC_UAYQ           */	0,
 
 	/* X_DEC_WARQ           */	0,
 	/* X_DEC_UARQ           */	0,
+	/* X_DEC_UAXQ           */	0,
 	/* X_DEC_UAYQ           */	0,
 
 	// i-codes for saving the primary register
@@ -326,24 +359,37 @@ unsigned char icode_flags[] = {
 	/* I_SUB_WI             */	IS_USEPR,
 	/* I_SUB_WM             */	IS_USEPR,
 	/* I_SUB_UM             */	IS_USEPR,
+	/* X_SUB_WS             */	IS_USEPR + IS_SPREL,
+	/* X_SUB_US             */	IS_USEPR + IS_SPREL,
 
-	/* I_ISUB_WI            */	IS_USEPR,
+	/* X_ISUB_WT            */	IS_USEPR,
+	/* X_ISUB_WI            */	IS_USEPR,
+	/* X_ISUB_WM            */	IS_USEPR,
+	/* X_ISUB_UM            */	IS_USEPR,
+	/* X_ISUB_WS            */	IS_USEPR + IS_SPREL,
+	/* X_ISUB_US            */	IS_USEPR + IS_SPREL,
 
 	/* I_AND_WT             */	IS_USEPR,
 	/* I_AND_WI             */	IS_USEPR,
 	/* I_AND_UIQ            */	IS_USEPR + IS_UBYTE,
 	/* I_AND_WM             */	IS_USEPR,
 	/* I_AND_UM             */	IS_USEPR,
+	/* X_AND_WS             */	IS_USEPR + IS_SPREL,
+	/* X_AND_US             */	IS_USEPR + IS_SPREL,
 
 	/* I_EOR_WT             */	IS_USEPR,
 	/* I_EOR_WI             */	IS_USEPR,
 	/* I_EOR_WM             */	IS_USEPR,
 	/* I_EOR_UM             */	IS_USEPR,
+	/* X_EOR_WS             */	IS_USEPR + IS_SPREL,
+	/* X_EOR_US             */	IS_USEPR + IS_SPREL,
 
 	/* I_OR_WT              */	IS_USEPR,
 	/* I_OR_WI              */	IS_USEPR,
 	/* I_OR_WM              */	IS_USEPR,
 	/* I_OR_UM              */	IS_USEPR,
+	/* X_OR_WS              */	IS_USEPR + IS_SPREL,
+	/* X_OR_US              */	IS_USEPR + IS_SPREL,
 
 	/* I_ASL_WT             */	IS_USEPR,
 	/* I_ASL_WI             */	IS_USEPR,
@@ -373,7 +419,7 @@ unsigned char icode_flags[] = {
 	/* I_UMOD_WI            */	IS_USEPR,
 	/* I_UMOD_UI            */	IS_USEPR + IS_UBYTE,
 
-	/* I_DOUBLE             */	0,
+	/* I_DOUBLE_WT             */	0,
 
 	// i-codes for 32-bit longs
 
@@ -414,14 +460,14 @@ int compare2uchar [] = {
 };
 
 /* instruction queue */
-INS q_ins[Q_SIZE];
+INS ins_queue[Q_SIZE];
+INS *q_ins = ins_queue;
 int q_rd;
 int q_wr;
 int q_nb;
 
 /* externs */
 extern int arg_stack_flag;
-
 
 int cmp_operands (INS *p1, INS *p2)
 {
@@ -504,8 +550,8 @@ void push_ins (INS *ins)
 
 	q_ins[q_wr] = *ins;
 
-	/* can't optimize debug information */
-	if (ins->ins_code == I_DEBUG)
+	/* can't optimize internal compiler information */
+	if (ins->ins_code == I_INFO)
 		return;
 
 #ifdef DEBUG_OPTIMIZER
@@ -527,7 +573,7 @@ lv1_loop:
 			q_nb -= remove;
 			i = q_wr;
 			while (remove) {
-				if (q_ins[i].ins_code != I_DEBUG)
+				if (q_ins[i].ins_code != I_INFO)
 					--remove;
 				if ((--i) < 0)
 					i += Q_SIZE;
@@ -536,10 +582,11 @@ lv1_loop:
 			do {
 				if ((++j) >= Q_SIZE)
 					j -= Q_SIZE;
-				if (q_ins[j].ins_code == I_DEBUG) {
+				if (q_ins[j].ins_code == I_INFO) {
 					if ((++i) >= Q_SIZE)
 						i -= Q_SIZE;
-					memcpy(&q_ins[i], &q_ins[j], sizeof(INS));
+//					memcpy(&q_ins[i], &q_ins[j], sizeof(INS));
+					q_ins[i] = q_ins[j];
 				}
 			} while (j != q_wr);
 			q_wr = i;
@@ -550,7 +597,7 @@ lv1_loop:
 		i = q_nb;
 		j = q_wr;
 		while (i != 0 && p_nb < 6) {
-			if (q_ins[j].ins_code != I_DEBUG) {
+			if (q_ins[j].ins_code != I_INFO) {
 #ifdef DEBUG_OPTIMIZER
 				printf("%d ", p_nb); dump_ins(&q_ins[j]);
 #endif
@@ -665,6 +712,14 @@ lv1_loop:
 			  p[1]->ins_code == X_DECLD_UAR ||
 			  p[1]->ins_code == X_LDDEC_BAR ||
 			  p[1]->ins_code == X_LDDEC_UAR ||
+			  p[1]->ins_code == X_INCLD_BAX ||
+			  p[1]->ins_code == X_INCLD_UAX ||
+			  p[1]->ins_code == X_LDINC_BAX ||
+			  p[1]->ins_code == X_LDINC_UAX ||
+			  p[1]->ins_code == X_DECLD_BAX ||
+			  p[1]->ins_code == X_DECLD_UAX ||
+			  p[1]->ins_code == X_LDDEC_BAX ||
+			  p[1]->ins_code == X_LDDEC_UAX ||
 			  p[1]->ins_code == X_INCLD_BAY ||
 			  p[1]->ins_code == X_INCLD_UAY ||
 			  p[1]->ins_code == X_LDINC_BAY ||
@@ -712,6 +767,14 @@ lv1_loop:
 				case X_DECLD_UAR:
 				case X_LDDEC_BAR:
 				case X_LDDEC_UAR: p[1]->ins_code = X_DEC_UARQ; break;
+				case X_INCLD_BAX:
+				case X_INCLD_UAX:
+				case X_LDINC_BAX:
+				case X_LDINC_UAX: p[1]->ins_code = X_INC_UAXQ; break;
+				case X_DECLD_BAX:
+				case X_DECLD_UAX:
+				case X_LDDEC_BAX:
+				case X_LDDEC_UAX: p[1]->ins_code = X_DEC_UAXQ; break;
 				case X_INCLD_BAY:
 				case X_INCLD_UAY:
 				case X_LDINC_BAY:
@@ -1508,6 +1571,10 @@ lv1_loop:
 			 *  __bool
 			 *  __not.wr
 			 *
+			 *  __not.uax		symbol	-->	__tst.uax	symbol
+			 *  __bool
+			 *  __not.wr
+			 *
 			 *  __not.uay		symbol	-->	__tst.uay	symbol
 			 *  __bool
 			 *  __not.wr
@@ -1536,6 +1603,10 @@ lv1_loop:
 			 *  __bool
 			 *  __not.wr
 			 *
+			 *  __tst.uax		symbol	-->	__not.uax	symbol
+			 *  __bool
+			 *  __not.wr
+			 *
 			 *  __tst.uay		symbol	-->	__not.uay	symbol
 			 *  __bool
 			 *  __not.wr
@@ -1558,6 +1629,7 @@ lv1_loop:
 			  p[2]->ins_code == X_NOT_UM ||
 			  p[2]->ins_code == X_NOT_US ||
 			  p[2]->ins_code == X_NOT_UAR ||
+			  p[2]->ins_code == X_NOT_UAX ||
 			  p[2]->ins_code == X_NOT_UAY ||
 			  p[2]->ins_code == X_NAND_WI ||
 			  p[2]->ins_code == I_TST_WR ||
@@ -1569,6 +1641,7 @@ lv1_loop:
 			  p[2]->ins_code == X_TST_UM ||
 			  p[2]->ins_code == X_TST_US ||
 			  p[2]->ins_code == X_TST_UAR ||
+			  p[2]->ins_code == X_TST_UAX ||
 			  p[2]->ins_code == X_TST_UAY ||
 			  p[2]->ins_code == X_TAND_WI)
 			) {
@@ -1582,6 +1655,7 @@ lv1_loop:
 				case X_NOT_UM:   p[2]->ins_code = X_TST_UM; break;
 				case X_NOT_US:   p[2]->ins_code = X_TST_US; break;
 				case X_NOT_UAR:  p[2]->ins_code = X_TST_UAR; break;
+				case X_NOT_UAX:  p[2]->ins_code = X_TST_UAX; break;
 				case X_NOT_UAY:  p[2]->ins_code = X_TST_UAY; break;
 				case X_NAND_WI:  p[2]->ins_code = X_TAND_WI; break;
 				case I_TST_WR:   p[2]->ins_code = I_NOT_WR; break;
@@ -1593,6 +1667,7 @@ lv1_loop:
 				case X_TST_UM:   p[2]->ins_code = X_NOT_UM; break;
 				case X_TST_US:   p[2]->ins_code = X_NOT_US; break;
 				case X_TST_UAR:  p[2]->ins_code = X_NOT_UAR; break;
+				case X_TST_UAX:  p[2]->ins_code = X_NOT_UAX; break;
 				case X_TST_UAY:  p[2]->ins_code = X_NOT_UAY; break;
 				case X_TAND_WI:  p[2]->ins_code = X_NAND_WI; break;
 				default: abort();
@@ -1649,6 +1724,10 @@ lv1_loop:
 			 *  __bool
 			 *  __tst.wr
 			 *
+			 *  __not.uax		symbol	-->	__not.uax	symbol
+			 *  __bool
+			 *  __tst.wr
+			 *
 			 *  __not.uay		symbol	-->	__not.uay	symbol
 			 *  __bool
 			 *  __tst.wr
@@ -1674,6 +1753,10 @@ lv1_loop:
 			 *  __tst.wr
 			 *
 			 *  __tst.{w/u}ar	symbol	-->	__tst.{w/u}ar	symbol
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __tst.uax		symbol	-->	__tst.uax	symbol
 			 *  __bool
 			 *  __tst.wr
 			 *
@@ -1708,6 +1791,7 @@ lv1_loop:
 			  p[2]->ins_code == X_NOT_UM ||
 			  p[2]->ins_code == X_NOT_US ||
 			  p[2]->ins_code == X_NOT_UAR ||
+			  p[2]->ins_code == X_NOT_UAX ||
 			  p[2]->ins_code == X_NOT_UAY ||
 			  p[2]->ins_code == X_NAND_WI ||
 			  p[2]->ins_code == I_TST_WR ||
@@ -1719,6 +1803,7 @@ lv1_loop:
 			  p[2]->ins_code == X_TST_UM ||
 			  p[2]->ins_code == X_TST_US ||
 			  p[2]->ins_code == X_TST_UAR ||
+			  p[2]->ins_code == X_TST_UAX ||
 			  p[2]->ins_code == X_TST_UAY ||
 			  p[2]->ins_code == X_TAND_WI)
 			) {
@@ -1744,6 +1829,9 @@ lv1_loop:
 			 *  __ld.{w/b/u}ar	symbol	-->	__tst.{w/u}ar	symbol
 			 *  __tst.wr
 			 *
+			 *  __ld.{b/u}ax	symbol	-->	__tst.uax	symbol
+			 *  __tst.wr
+			 *
 			 *  __ld.{b/u}ay	symbol	-->	__tst.uay	symbol
 			 *  __tst.wr
 			 *
@@ -1760,6 +1848,9 @@ lv1_loop:
 			 *  __not.wr
 			 *
 			 *  __ld.{w/b/u}ar	symbol	-->	__not.{w/u}ar	symbol
+			 *  __not.wr
+			 *
+			 *  __ld.{b/u}ax	symbol	-->	__not.uax	symbol
 			 *  __not.wr
 			 *
 			 *  __ld.{b/u}ay	symbol	-->	__not.uay	symbol
@@ -1780,11 +1871,13 @@ lv1_loop:
 			  p[1]->ins_code == I_LD_BM ||
 			  p[1]->ins_code == X_LD_BS ||
 			  p[1]->ins_code == X_LD_BAR ||
+			  p[1]->ins_code == X_LD_BAX ||
 			  p[1]->ins_code == X_LD_BAY ||
 			  p[1]->ins_code == I_LD_UP ||
 			  p[1]->ins_code == I_LD_UM ||
 			  p[1]->ins_code == X_LD_US ||
 			  p[1]->ins_code == X_LD_UAR ||
+			  p[1]->ins_code == X_LD_UAX ||
 			  p[1]->ins_code == X_LD_UAY ||
 			  p[1]->ins_code == I_AND_WI ||
 			  p[1]->ins_code == I_AND_UIQ)
@@ -1804,6 +1897,8 @@ lv1_loop:
 					case X_LD_US:  p[1]->ins_code = X_TST_US; break;
 					case X_LD_BAR:
 					case X_LD_UAR: p[1]->ins_code = X_TST_UAR; break;
+					case X_LD_BAX:
+					case X_LD_UAX: p[1]->ins_code = X_TST_UAX; break;
 					case X_LD_BAY:
 					case X_LD_UAY: p[1]->ins_code = X_TST_UAY; break;
 					case I_AND_UIQ:
@@ -1824,6 +1919,8 @@ lv1_loop:
 					case X_LD_US:  p[1]->ins_code = X_NOT_US; break;
 					case X_LD_BAR:
 					case X_LD_UAR: p[1]->ins_code = X_NOT_UAR; break;
+					case X_LD_BAX:
+					case X_LD_UAX: p[1]->ins_code = X_NOT_UAX; break;
 					case X_LD_BAY:
 					case X_LD_UAY: p[1]->ins_code = X_NOT_UAY; break;
 					case I_AND_UIQ:
@@ -1835,7 +1932,7 @@ lv1_loop:
 			}
 
 			/*
-			 *  __ld.u{p/m/s/ar/ay}	symbol	-->	__ld.u{p/m/s/ar/ay}  symbol
+			 *  __ld.u{p/m/s/ar/ax}	symbol	-->	__ld.u{p/m/s/ar/ax}  symbol
 			 *  __cmp_w.wi		j		__cmp_b.uiq	j
 			 *
 			 *  __and.uiq		i	-->	__and.uiq	i
@@ -1942,7 +2039,7 @@ lv1_loop:
 						}
 					}
 					else
-					if (q_ins[j].ins_code != I_DEBUG)
+					if (q_ins[j].ins_code != I_INFO)
 						break;
 				}
 			}
@@ -2163,6 +2260,10 @@ lv1_loop:
 			}
 
 			/*
+			 *  __push.wr			-->	__isub.wm	symbol
+			 *  __ld.wm		symbol
+			 *  __isub.wt
+			 *
 			 *  __push.wr			-->	__add.wm	symbol
 			 *  __ld.wm		symbol
 			 *  __add.wt
@@ -2171,80 +2272,82 @@ lv1_loop:
 			 *  __ld.wm		symbol
 			 *  __sub.wt
 			 *
-			 *  etc/etc
-			 */
-			else if
-			((p[0]->ins_code == I_ADD_WT ||
-			  p[0]->ins_code == I_SUB_WT ||
-			  p[0]->ins_code == I_AND_WT ||
-			  p[0]->ins_code == I_EOR_WT ||
-			  p[0]->ins_code == I_OR_WT) &&
-			 (p[1]->ins_code == I_LD_WM) &&
-			 (p[2]->ins_code == I_PUSH_WR)
-			) {
-				/* replace code */
-				*p[2] = *p[1];
-				switch (p[0]->ins_code) {
-				case I_ADD_WT: p[2]->ins_code = I_ADD_WM; break;
-				case I_SUB_WT: p[2]->ins_code = I_SUB_WM; break;
-				case I_AND_WT: p[2]->ins_code = I_AND_WM; break;
-				case I_EOR_WT: p[2]->ins_code = I_EOR_WM; break;
-				case I_OR_WT: p[2]->ins_code = I_OR_WM; break;
-				default: abort();
-				}
-				remove = 2;
-			}
-
-			/*
-			 *  __push.wr			-->	__add.um	symbol
-			 *  __ld.um		symbol
-			 *  __add.wt
+			 *  __push.wr			-->	__and.wm	symbol
+			 *  __ld.wm		symbol
+			 *  __and.wt
 			 *
-			 *  __push.wr			-->	__sub.um	symbol
-			 *  __ld.um		symbol
-			 *  __sub.wt
+			 *  __push.wr			-->	__eor.wm	symbol
+			 *  __ld.wm		symbol
+			 *  __eor.wt
+			 *
+			 *  __push.wr			-->	__or.wm		symbol
+			 *  __ld.wm		symbol
+			 *  __or.wt
 			 *
 			 *  etc/etc
 			 */
 			else if
-			((p[0]->ins_code == I_ADD_WT ||
+			((p[0]->ins_code == X_ISUB_WT ||
+			  p[0]->ins_code == I_ADD_WT ||
 			  p[0]->ins_code == I_SUB_WT ||
 			  p[0]->ins_code == I_AND_WT ||
 			  p[0]->ins_code == I_EOR_WT ||
 			  p[0]->ins_code == I_OR_WT) &&
-			 (p[1]->ins_code == I_LD_UM) &&
-			 (p[2]->ins_code == I_PUSH_WR)
-			) {
-				/* replace code */
-				*p[2] = *p[1];
-				switch (p[0]->ins_code) {
-				case I_ADD_WT: p[2]->ins_code = I_ADD_UM; break;
-				case I_SUB_WT: p[2]->ins_code = I_SUB_UM; break;
-				case I_AND_WT: p[2]->ins_code = I_AND_UM; break;
-				case I_EOR_WT: p[2]->ins_code = I_EOR_UM; break;
-				case I_OR_WT: p[2]->ins_code = I_OR_UM; break;
-				default: abort();
-				}
-				remove = 2;
-			}
-
-			/*
-			 *  __push.wr			-->	__add.ws	i
-			 *  __ld.ws		i
-			 *  __add.wt
-			 */
-			else if
-			((p[0]->ins_code == I_ADD_WT) &&
-			 (p[1]->ins_code == X_LD_WS ||
+			 (p[1]->ins_code == I_LD_WM ||
+			  p[1]->ins_code == I_LD_UM ||
+			  p[1]->ins_code == X_LD_WS ||
 			  p[1]->ins_code == X_LD_US) &&
 			 (p[2]->ins_code == I_PUSH_WR)
 			) {
 				/* replace code */
 				*p[2] = *p[1];
 				switch (p[1]->ins_code) {
-				case X_LD_WS: p[2]->ins_code = X_ADD_WS; break;
-				case X_LD_US: p[2]->ins_code = X_ADD_US; break;
-				default: abort();
+				case I_LD_WM:
+					switch (p[0]->ins_code) {
+					case X_ISUB_WT: p[2]->ins_code = X_ISUB_WM; break;
+					case I_ADD_WT:  p[2]->ins_code = I_ADD_WM; break;
+					case I_SUB_WT:  p[2]->ins_code = I_SUB_WM; break;
+					case I_AND_WT:  p[2]->ins_code = I_AND_WM; break;
+					case I_EOR_WT:  p[2]->ins_code = I_EOR_WM; break;
+					case I_OR_WT:   p[2]->ins_code = I_OR_WM; break;
+					default:;
+					}
+					break;
+				case I_LD_UM:
+					switch (p[0]->ins_code) {
+					case X_ISUB_WT: p[2]->ins_code = X_ISUB_UM; break;
+					case I_ADD_WT:  p[2]->ins_code = I_ADD_UM; break;
+					case I_SUB_WT:  p[2]->ins_code = I_SUB_UM; break;
+					case I_AND_WT:  p[2]->ins_code = I_AND_UM; break;
+					case I_EOR_WT:  p[2]->ins_code = I_EOR_UM; break;
+					case I_OR_WT:   p[2]->ins_code = I_OR_UM; break;
+					default:;
+					}
+					break;
+
+				case X_LD_WS:
+					switch (p[0]->ins_code) {
+					case X_ISUB_WT: p[2]->ins_code = X_ISUB_WS; break;
+					case I_ADD_WT:  p[2]->ins_code = X_ADD_WS; break;
+					case I_SUB_WT:  p[2]->ins_code = X_SUB_WS; break;
+					case I_AND_WT:  p[2]->ins_code = X_AND_WS; break;
+					case I_EOR_WT:  p[2]->ins_code = X_EOR_WS; break;
+					case I_OR_WT:   p[2]->ins_code = X_OR_WS; break;
+					default:;
+					}
+					break;
+				case X_LD_US:
+					switch (p[0]->ins_code) {
+					case X_ISUB_WT: p[2]->ins_code = X_ISUB_US; break;
+					case I_ADD_WT:  p[2]->ins_code = X_ADD_US; break;
+					case I_SUB_WT:  p[2]->ins_code = X_SUB_US; break;
+					case I_AND_WT:  p[2]->ins_code = X_AND_US; break;
+					case I_EOR_WT:  p[2]->ins_code = X_EOR_US; break;
+					case I_OR_WT:   p[2]->ins_code = X_OR_US; break;
+					default:;
+					}
+					break;
+				default:;
 				}
 				remove = 2;
 			}
@@ -2329,11 +2432,11 @@ lv1_loop:
 			 *  __sub.wi		1
 			 *  __st.{w/u}at	symbol
 			 *
-			 *  __ldp.{b/u}ay	symbol	-->	__incld_{b/u}ay  symbol
+			 *  __ldp.{b/u}ax	symbol	-->	__incld_{b/u}ax  symbol
 			 *  __add.wi		1
 			 *  __st.{w/u}at	symbol
 			 *
-			 *  __ldp.{b/u}ay	symbol	-->	__decld_{b/u}ay  symbol
+			 *  __ldp.{b/u}ax	symbol	-->	__decld_{b/u}ax  symbol
 			 *  __sub.wi		1
 			 *  __st.{w/u}at	symbol
 			 *
@@ -2350,6 +2453,8 @@ lv1_loop:
 			 (p[2]->ins_code == X_LDP_WAR ||
 			  p[2]->ins_code == X_LDP_BAR ||
 			  p[2]->ins_code == X_LDP_UAR ||
+			  p[2]->ins_code == X_LDP_BAX ||
+			  p[2]->ins_code == X_LDP_UAX ||
 			  p[2]->ins_code == X_LDP_BAY ||
 			  p[2]->ins_code == X_LDP_UAY) &&
 			 (p[0]->ins_type == p[2]->ins_type) &&
@@ -2361,6 +2466,8 @@ lv1_loop:
 				case X_LDP_WAR:	p[2]->ins_code = (p[1]->ins_code == I_ADD_WI) ? X_INCLD_WAR : X_DECLD_WAR; break;
 				case X_LDP_BAR:	p[2]->ins_code = (p[1]->ins_code == I_ADD_WI) ? X_INCLD_BAR : X_DECLD_BAR; break;
 				case X_LDP_UAR:	p[2]->ins_code = (p[1]->ins_code == I_ADD_WI) ? X_INCLD_UAR : X_DECLD_UAR; break;
+				case X_LDP_BAX:	p[2]->ins_code = (p[1]->ins_code == I_ADD_WI) ? X_INCLD_BAX : X_DECLD_BAX; break;
+				case X_LDP_UAX:	p[2]->ins_code = (p[1]->ins_code == I_ADD_WI) ? X_INCLD_UAX : X_DECLD_UAX; break;
 				case X_LDP_BAY:	p[2]->ins_code = (p[1]->ins_code == I_ADD_WI) ? X_INCLD_BAY : X_DECLD_BAY; break;
 				case X_LDP_UAY:	p[2]->ins_code = (p[1]->ins_code == I_ADD_WI) ? X_INCLD_UAY : X_DECLD_UAY; break;
 				default:	break;
@@ -2446,6 +2553,10 @@ lv1_loop:
 			 *  __bool				is_usepr()
 			 *  is_usepr()
 			 *
+			 *  __not.uax		symbol	-->	__boolnot.uax	symbol
+			 *  __bool				is_usepr()
+			 *  is_usepr()
+			 *
 			 *  __not.uay		symbol	-->	__boolnot.uay	symbol
 			 *  __bool				is_usepr()
 			 *  is_usepr()
@@ -2467,6 +2578,7 @@ lv1_loop:
 			  p[2]->ins_code == X_NOT_UM ||
 			  p[2]->ins_code == X_NOT_US ||
 			  p[2]->ins_code == X_NOT_UAR ||
+			  p[2]->ins_code == X_NOT_UAX ||
 			  p[2]->ins_code == X_NOT_UAY)
 			) {
 				/* replace code */
@@ -2481,6 +2593,7 @@ lv1_loop:
 				case X_NOT_UM:   p[2]->ins_code = X_BOOLNOT_UM; break;
 				case X_NOT_US:   p[2]->ins_code = X_BOOLNOT_US; break;
 				case X_NOT_UAR:  p[2]->ins_code = X_BOOLNOT_UAR; break;
+				case X_NOT_UAX:  p[2]->ins_code = X_BOOLNOT_UAX; break;
 				case X_NOT_UAY:  p[2]->ins_code = X_BOOLNOT_UAY; break;
 				default: abort();
 				}
@@ -2770,6 +2883,9 @@ lv1_loop:
 			 *  __decld.{w/b/u}ar	array	-->	__lddec.{w/b/u}ar array
 			 *  __add.wi  1
 			 *
+			 *  __decld.{b/u}ax	array	-->	__lddec.{b/u}ax array
+			 *  __add.wi  1
+			 *
 			 *  __decld.{b/u}ay	array	-->	__lddec.{b/u}ay array
 			 *  __add.wi  1
 			 *
@@ -2788,6 +2904,8 @@ lv1_loop:
 			  p[1]->ins_code == X_DECLD_WAR ||
 			  p[1]->ins_code == X_DECLD_BAR ||
 			  p[1]->ins_code == X_DECLD_UAR ||
+			  p[1]->ins_code == X_DECLD_BAX ||
+			  p[1]->ins_code == X_DECLD_UAX ||
 			  p[1]->ins_code == X_DECLD_BAY ||
 			  p[1]->ins_code == X_DECLD_UAY)
 			) {
@@ -2802,6 +2920,8 @@ lv1_loop:
 				case X_DECLD_WAR: p[1]->ins_code = X_LDDEC_WAR; break;
 				case X_DECLD_BAR: p[1]->ins_code = X_LDDEC_BAR; break;
 				case X_DECLD_UAR: p[1]->ins_code = X_LDDEC_UAR; break;
+				case X_DECLD_BAX: p[1]->ins_code = X_LDDEC_BAX; break;
+				case X_DECLD_UAX: p[1]->ins_code = X_LDDEC_UAX; break;
 				case X_DECLD_BAY: p[1]->ins_code = X_LDDEC_BAY; break;
 				case X_DECLD_UAY: p[1]->ins_code = X_LDDEC_UAY; break;
 				default:	break;
@@ -2817,6 +2937,9 @@ lv1_loop:
 			 *  __sub.wi  1
 			 *
 			 *  __incld.{w/b/u}ar	array	-->	__ldinc.{w/b/u}ar array
+			 *  __sub.wi  1
+			 *
+			 *  __incld.{w/b/u}ax	array	-->	__ldinc.{w/b/u}ax array
 			 *  __sub.wi  1
 			 *
 			 *  __incld.{w/b/u}ay	array	-->	__ldinc.{w/b/u}ay array
@@ -2837,6 +2960,8 @@ lv1_loop:
 			  p[1]->ins_code == X_INCLD_WAR ||
 			  p[1]->ins_code == X_INCLD_BAR ||
 			  p[1]->ins_code == X_INCLD_UAR ||
+			  p[1]->ins_code == X_INCLD_BAX ||
+			  p[1]->ins_code == X_INCLD_UAX ||
 			  p[1]->ins_code == X_INCLD_BAY ||
 			  p[1]->ins_code == X_INCLD_UAY)
 			) {
@@ -2851,6 +2976,8 @@ lv1_loop:
 				case X_INCLD_WAR: p[1]->ins_code = X_LDINC_WAR; break;
 				case X_INCLD_BAR: p[1]->ins_code = X_LDINC_BAR; break;
 				case X_INCLD_UAR: p[1]->ins_code = X_LDINC_UAR; break;
+				case X_INCLD_BAX: p[1]->ins_code = X_LDINC_BAX; break;
+				case X_INCLD_UAX: p[1]->ins_code = X_LDINC_UAX; break;
 				case X_INCLD_BAY: p[1]->ins_code = X_LDINC_BAY; break;
 				case X_INCLD_UAY: p[1]->ins_code = X_LDINC_UAY; break;
 				default:	break;
@@ -2904,6 +3031,88 @@ lv1_loop:
 				remove = 0;
 			}
 
+			/*
+			 *  __ld.{w/b/u}m	symbol	-->	__ldx.{w/b/u}mq
+			 *  __ld.{b/u}ar	array		__ld.{b/u}ax	array
+			 *
+			 *  __ld.{w/b/u}s	n	-->	__ldx.{w/b/u}sq	n
+			 *  __ld.{b/u}ar	array		__ld.{b/u}ax	array
+			 *
+			 *  Index optimizations for base+offset array access.
+			 */
+			else if
+			((p[0]->ins_code == X_LD_BAR ||
+			  p[0]->ins_code == X_LD_UAR) &&
+			 (p[1]->ins_code == I_LD_WM ||
+			  p[1]->ins_code == I_LD_BM ||
+			  p[1]->ins_code == I_LD_UM ||
+			  p[1]->ins_code == X_LD_WS ||
+			  p[1]->ins_code == X_LD_BS ||
+			  p[1]->ins_code == X_LD_US)
+			) {
+				/* replace code */
+				switch (p[1]->ins_code) {
+				case I_LD_WM: p[1]->ins_code = I_LDX_WMQ; break;
+				case I_LD_BM: p[1]->ins_code = I_LDX_BMQ; break;
+				case I_LD_UM: p[1]->ins_code = I_LDX_UMQ; break;
+				case X_LD_WS: p[1]->ins_code = X_LDX_WSQ; break;
+				case X_LD_BS: p[1]->ins_code = X_LDX_BSQ; break;
+				case X_LD_US: p[1]->ins_code = X_LDX_USQ; break;
+				default:	break;
+				}
+				switch (p[0]->ins_code) {
+				case X_LD_BAR: p[0]->ins_code = X_LD_BAX; break;
+				case X_LD_UAR: p[0]->ins_code = X_LD_UAX; break;
+				case X_LDP_BAR: p[0]->ins_code = X_LDP_BAX; break;
+				case X_LDP_UAR: p[0]->ins_code = X_LDP_UAX; break;
+				default:	break;
+				}
+				remove = 0;
+			}
+
+			/*
+			 *  __ld.{w/b/u}mq	symbol	-->	__ldx.{w/b/u}mq
+			 *  __ldp.{b/u}ar	array		__ldp.{b/u}ax	array
+			 *
+			 *  __ld.{w/b/u}sq	n	-->	__ldx.{w/b/u}sq	n
+			 *  __ldp.{b/u}ar	array		__ldp.{b/u}ax	array
+			 *
+			 *  Index optimizations for base+offset array access.
+			 *
+			 *  The X_INDEX_UR rule above already converted __ld.{w/b/u}m
+			 *  to __ld.{w/b/u}mq!
+			 */
+			else if
+			((p[0]->ins_code == X_LDP_BAR ||
+			  p[0]->ins_code == X_LDP_UAR) &&
+			 (p[1]->ins_code == I_LD_WMQ ||
+			  p[1]->ins_code == I_LD_BMQ ||
+			  p[1]->ins_code == I_LD_UMQ ||
+			  p[1]->ins_code == X_LD_WSQ ||
+			  p[1]->ins_code == X_LD_BSQ ||
+			  p[1]->ins_code == X_LD_USQ)
+			) {
+				/* replace code */
+				switch (p[1]->ins_code) {
+				case I_LD_WMQ: p[1]->ins_code = I_LDX_WMQ; break;
+				case I_LD_BMQ: p[1]->ins_code = I_LDX_BMQ; break;
+				case I_LD_UMQ: p[1]->ins_code = I_LDX_UMQ; break;
+				case X_LD_WSQ: p[1]->ins_code = X_LDX_WSQ; break;
+				case X_LD_BSQ: p[1]->ins_code = X_LDX_BSQ; break;
+				case X_LD_USQ: p[1]->ins_code = X_LDX_USQ; break;
+				default:	break;
+				}
+				switch (p[0]->ins_code) {
+				case X_LD_BAR: p[0]->ins_code = X_LD_BAX; break;
+				case X_LD_UAR: p[0]->ins_code = X_LD_UAX; break;
+				case X_LDP_BAR: p[0]->ins_code = X_LDP_BAX; break;
+				case X_LDP_UAR: p[0]->ins_code = X_LDP_UAX; break;
+				default:	break;
+				}
+				remove = 0;
+			}
+
+#if 0
 			/*
 			 *  __ld.{w/b/u}m	symbol	-->	__ldy.{w/b/u}mq
 			 *  __ld.{b/u}ar	array		__ld.{b/u}ay	array
@@ -2984,12 +3193,13 @@ lv1_loop:
 				}
 				remove = 0;
 			}
+#endif
 
 			/*
-			 *  __ld.u{p/m/s/ar/ay}	symbol	-->	__ld.u{p/m/s/ar/ay}  symbol
+			 *  __ld.u{p/m/s/ar/ax}	symbol	-->	__ld.u{p/m/s/ar/ax}  symbol
 			 *  __sdiv.wi		i		__udiv.wi	i
 			 *
-			 *  __ld.u{p/m/s/ar/ay}	symbol	-->	__ld.u{p/m/s/ar/ay}  symbol
+			 *  __ld.u{p/m/s/ar/ax}	symbol	-->	__ld.u{p/m/s/ar/ax}  symbol
 			 *  __smod.wi		i		__umod.wi	i
 			 *
 			 *  C promotes an unsigned char to a signed int so this
@@ -3012,10 +3222,10 @@ lv1_loop:
 			}
 
 			/*
-			 *  __ld.u{p/m/s/ar/ay}	symbol	-->	__ld.u{p/m/s/ar/ay}  symbol
+			 *  __ld.u{p/m/s/ar/ax}	symbol	-->	__ld.u{p/m/s/ar/ax}  symbol
 			 *  __asr.wi		i		__lsr.uiq	i
 			 *
-			 *  __ld.u{p/m/s/ar/ay}	symbol	-->	__ld.u{p/m/s/ar/ay}  symbol
+			 *  __ld.u{p/m/s/ar/ax}	symbol	-->	__ld.u{p/m/s/ar/ax}  symbol
 			 *  __lsr.wi		i		__lsr.uiq	i
 			 *
 			 *  C promotes an unsigned char to a signed int so this
@@ -3041,7 +3251,7 @@ lv1_loop:
 			}
 
 			/*
-			 *  __ld.u{p/m/s/ar/ay}	symbol	-->	__ld.u{p/m/s/ar/ay}  symbol
+			 *  __ld.u{p/m/s/ar/ax}	symbol	-->	__ld.u{p/m/s/ar/ax}  symbol
 			 *  __and.wi		i		__and.uiq	i
 			 *
 			 *  C promotes an unsigned char to a signed int so this
@@ -3283,7 +3493,7 @@ lv1_loop:
 								q_ins[q_wr].ins_code = I_ADD_WI;
 								break;
 							case I_SUB_WT:
-								q_ins[q_wr].ins_code = I_ISUB_WI;
+								q_ins[q_wr].ins_code = X_ISUB_WI;
 								break;
 							case I_AND_WT:
 								q_ins[q_wr].ins_code = I_AND_WI;
@@ -3406,7 +3616,7 @@ lv2_loop:
 			q_nb -= remove;
 			i = q_wr;
 			while (remove) {
-				if (q_ins[i].ins_type != I_DEBUG)
+				if (q_ins[i].ins_type != I_INFO)
 					--remove;
 				if ((--i) < 0)
 					i += Q_SIZE;
@@ -3415,7 +3625,7 @@ lv2_loop:
 			do {
 				if ((++j) >= Q_SIZE)
 					j -= Q_SIZE;
-				if (q_ins[j].ins_type == I_DEBUG) {
+				if (q_ins[j].ins_type == I_INFO) {
 					if ((++i) >= Q_SIZE)
 						i -= Q_SIZE;
 					memcpy(&q_ins[i], &q_ins[j], sizeof(INS));
@@ -3429,7 +3639,7 @@ lv2_loop:
 		i = q_nb;
 		j = q_wr;
 		while (i != 0 && p_nb < 3) {
-			if (q_ins[j].ins_type != I_DEBUG) {
+			if (q_ins[j].ins_type != I_INFO) {
 				p[p_nb++] = &q_ins[j];
 			}
 			--i;
@@ -3498,38 +3708,68 @@ lv2_loop:
 }
 
 /* ----
- * flush_ins_label(int nextlabel)
+ * try_swap_order()
  * ----
- * flush instruction queue, eliminating redundant trailing branches to a
- * label following immediately
+ * swap the lval and the rval, if that would allow an optimization
  *
  */
-void flush_ins_label (int nextlabel)
+void try_swap_order (int linst, int lseqn, INS *operation)
 {
-	while (q_nb) {
-		/* skip last op if it's a branch to nextlabel */
-		if (q_nb > 1 || nextlabel == -1 ||
-		    (q_ins[q_rd].ins_code != I_BRA) ||
-		    q_ins[q_rd].ins_data != nextlabel) {
-			/* gen code */
-			if (arg_stack_flag)
-				arg_push_ins(&q_ins[q_rd]);
-			else
-				gen_code(&q_ins[q_rd]);
+	/* is the lval still in the peephole instruction queue? */
+	if (q_ins[linst].ins_code != I_RETIRED && q_ins[linst].sequence == lseqn) {
+		INS parked[1];
+		int copy, from;
+		int lprev = linst - 1;
+		if (lprev < 0)
+			lprev += Q_SIZE;
+
+#ifdef INFORM_VALUE_SWAP
+		printf("Stacked operator: ");
+		dump_ins(&q_ins[q_wr]);
+		printf("with LVAL: ");
+		dump_ins(&q_ins[linst]);
+		printf("File \"%s\", Line %d\n", (inclsp) ? inclstk_name[inclsp - 1] : fname_copy, line_number);
+		printf("%s\n\n", line);
+#endif
+		if
+		((q_ins[linst].ins_code == I_LD_WI) ||
+		 (q_ins[linst].ins_code == I_LD_WM) ||
+		 (q_ins[linst].ins_code == I_LD_UM) ||
+		 (q_ins[linst].ins_code == X_LD_WS) ||
+		 (q_ins[linst].ins_code == X_LD_US)
+		) {
+			/* preserve the lval instructions */
+			parked[0] = q_ins[linst];
+			/* remove both the lval and rval instructions */
+			copy = q_wr - linst;
+			if (copy++ < 0)
+				copy += Q_SIZE;
+			q_nb -= copy;
+			q_wr = linst - 1;
+			if (q_wr < 0)
+				q_wr += Q_SIZE;
+			/* re-insert the rval instructions */
+			from = linst + 2; /* skip I_LD_WM, I_PUSH_WR */
+			copy = copy - 3; /* skip I_LD_WM, I_PUSH_WR and final stacked op */
+			for (; copy > 0; copy--) {
+				if (from >= Q_SIZE)
+					from -= Q_SIZE;
+#ifdef DEBUG_OPTIMIZER
+				printf("\nReinserting after reordering ...");
+#endif
+				push_ins(&q_ins[from++]);
+			}
+			/* re-insert the lval instructions */
+			gpush();
+			push_ins(&parked[0]);
+			push_ins(operation);
+#ifdef INFORM_VALUE_SWAP
+			printf("Reordered operator is: ");
+			dump_ins(&q_ins[q_wr]);
+			printf("\n\n");
+#endif
 		}
-
-		/* advance and wrap queue read pointer */
-		q_rd++;
-		q_nb--;
-
-		if (q_rd == Q_SIZE)
-			q_rd = 0;
 	}
-
-	/* reset queue */
-	q_rd = 0;
-	q_wr = Q_SIZE - 1;
-	q_nb = 0;
 }
 
 /* ----
@@ -3540,5 +3780,21 @@ void flush_ins_label (int nextlabel)
  */
 void flush_ins (void)
 {
-	flush_ins_label(-1);
+	while (q_nb) {
+		/* gen code */
+		if (arg_stack_flag)
+			arg_push_ins(&q_ins[q_rd]);
+		else
+			gen_code(&q_ins[q_rd]);
+
+		/* advance and wrap queue read pointer */
+		--q_nb;
+		if (++q_rd == Q_SIZE)
+			q_rd = 0;
+	}
+
+	/* reset queue */
+	q_rd = 0;
+	q_wr = Q_SIZE - 1;
+	q_nb = 0;
 }

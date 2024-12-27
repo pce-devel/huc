@@ -4,7 +4,6 @@
 #define INCLUDE_DEFS_H
 
 #define ULI_NORECURSE 1
-// #define DEBUG_OPTIMIZER
 
 /*
  * i-code pseudo instructions
@@ -13,13 +12,13 @@
  * as the table of i-code flag information in optimize.c
  */
 enum ICODE {
-	/* i-code to mark an instrucion as retired */
+	/* i-code to mark an instruction as retired */
 
 	I_RETIRED = 0,
 
-	/* i-code for debug information */
+	/* i-code for internal compiler information */
 
-	I_DEBUG,
+	I_INFO,
 
 	/* i-code that retires the primary register contents */
 
@@ -97,6 +96,7 @@ enum ICODE {
 	X_NOT_UM,
 	X_NOT_US,
 	X_NOT_UAR,
+	X_NOT_UAX,
 	X_NOT_UAY,
 
 	I_TST_WR,
@@ -108,6 +108,7 @@ enum ICODE {
 	X_TST_UM,
 	X_TST_US,
 	X_TST_UAR,
+	X_TST_UAX,
 	X_TST_UAY,
 
 	X_NAND_WI,
@@ -125,6 +126,7 @@ enum ICODE {
 	X_BOOLNOT_UM,
 	X_BOOLNOT_US,
 	X_BOOLNOT_UAR,
+	X_BOOLNOT_UAX,
 	X_BOOLNOT_UAY,
 
 	/* i-codes for loading the primary register */
@@ -141,6 +143,10 @@ enum ICODE {
 	I_LD_BMQ,
 	I_LD_UMQ,
 
+	I_LDX_WMQ,
+	I_LDX_BMQ,
+	I_LDX_UMQ,
+
 	I_LDY_WMQ,
 	I_LDY_BMQ,
 	I_LDY_UMQ,
@@ -153,6 +159,9 @@ enum ICODE {
 	X_LD_BAR,
 	X_LD_UAR,
 
+	X_LD_BAX,
+	X_LD_UAX,
+
 	X_LD_BAY,
 	X_LD_UAY,
 
@@ -164,6 +173,10 @@ enum ICODE {
 	X_LD_BSQ,
 	X_LD_USQ,
 
+	X_LDX_WSQ,
+	X_LDX_BSQ,
+	X_LDX_USQ,
+
 	X_LDY_WSQ,
 	X_LDY_BSQ,
 	X_LDY_USQ,
@@ -171,6 +184,9 @@ enum ICODE {
 	X_LDP_WAR,
 	X_LDP_BAR,
 	X_LDP_UAR,
+
+	X_LDP_BAX,
+	X_LDP_UAX,
 
 	X_LDP_BAY,
 	X_LDP_UAY,
@@ -235,6 +251,15 @@ enum ICODE {
 	X_LDDEC_BAR,
 	X_LDDEC_UAR,
 
+	X_INCLD_BAX,
+	X_INCLD_UAX,
+	X_LDINC_BAX,
+	X_LDINC_UAX,
+	X_DECLD_BAX,
+	X_DECLD_UAX,
+	X_LDDEC_BAX,
+	X_LDDEC_UAX,
+
 	X_INCLD_BAY,
 	X_INCLD_UAY,
 	X_LDINC_BAY,
@@ -246,10 +271,12 @@ enum ICODE {
 
 	X_INC_WARQ,
 	X_INC_UARQ,
+	X_INC_UAXQ,
 	X_INC_UAYQ,
 
 	X_DEC_WARQ,
 	X_DEC_UARQ,
+	X_DEC_UAXQ,
 	X_DEC_UAYQ,
 
 	/* i-codes for saving the primary register */
@@ -296,24 +323,37 @@ enum ICODE {
 	I_SUB_WI,
 	I_SUB_WM,
 	I_SUB_UM,
+	X_SUB_WS,
+	X_SUB_US,
 
-	I_ISUB_WI,
+	X_ISUB_WT,
+	X_ISUB_WI,
+	X_ISUB_WM,
+	X_ISUB_UM,
+	X_ISUB_WS,
+	X_ISUB_US,
 
 	I_AND_WT,
 	I_AND_WI,
 	I_AND_UIQ,
 	I_AND_WM,
 	I_AND_UM,
+	X_AND_WS,
+	X_AND_US,
 
 	I_EOR_WT,
 	I_EOR_WI,
 	I_EOR_WM,
 	I_EOR_UM,
+	X_EOR_WS,
+	X_EOR_US,
 
 	I_OR_WT,
 	I_OR_WI,
 	I_OR_WM,
 	I_OR_UM,
+	X_OR_WS,
+	X_OR_US,
 
 	I_ASL_WT,
 	I_ASL_WI,
@@ -343,7 +383,7 @@ enum ICODE {
 	I_UMOD_WI,
 	I_UMOD_UI,
 
-	I_DOUBLE,
+	I_DOUBLE_WT,
 
 	/* i-codes for 32-bit longs */
 
@@ -395,8 +435,10 @@ enum ICOMPARE {
 #define T_VRAM           9
 #define T_PAL           10
 #define T_LITERAL       11
+/* pseudo instruction arg types for compiler I_INFO */
 #define T_SOURCE_LINE   12
 #define T_CLEAR_LINE    13
+#define T_MARKER        14
 
 #define FOREVER for (;;)
 #define FALSE   0

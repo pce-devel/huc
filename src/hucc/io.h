@@ -35,7 +35,6 @@ int nch (void);
 int ch (void);
 
 void pl (char *str);
-void glabel (char *lab);
 void gnlabel (int nlab);
 void olprfix (void);
 void col (void);
