@@ -139,17 +139,25 @@ enum ICODE {
 	I_LD_BM,
 	I_LD_UM,
 
-	I_LD_WMQ,
-	I_LD_BMQ,
-	I_LD_UMQ,
+	X_LD_WMQ,
+	X_LD_BMQ,
+	X_LD_UMQ,
 
-	I_LDX_WMQ,
-	I_LDX_BMQ,
-	I_LDX_UMQ,
+	X_LDX_WMQ,
+	X_LDX_BMQ,
+	X_LDX_UMQ,
 
-	I_LDY_WMQ,
-	I_LDY_BMQ,
-	I_LDY_UMQ,
+	X_LD2X_WMQ,
+	X_LD2X_BMQ,
+	X_LD2X_UMQ,
+
+	X_LD2X_WM,
+	X_LD2X_BM,
+	X_LD2X_UM,
+
+	X_LDY_WMQ,
+	X_LDY_BMQ,
+	X_LDY_UMQ,
 
 	I_LD_WP,
 	I_LD_BP,
@@ -159,6 +167,7 @@ enum ICODE {
 	X_LD_BAR,
 	X_LD_UAR,
 
+	X_LD_WAX,
 	X_LD_BAX,
 	X_LD_UAX,
 
@@ -177,6 +186,14 @@ enum ICODE {
 	X_LDX_BSQ,
 	X_LDX_USQ,
 
+	X_LD2X_WSQ,
+	X_LD2X_BSQ,
+	X_LD2X_USQ,
+
+	X_LD2X_WS,
+	X_LD2X_BS,
+	X_LD2X_US,
+
 	X_LDY_WSQ,
 	X_LDY_BSQ,
 	X_LDY_USQ,
@@ -185,6 +202,7 @@ enum ICODE {
 	X_LDP_BAR,
 	X_LDP_UAR,
 
+	X_LDP_WAX,
 	X_LDP_BAX,
 	X_LDP_UAX,
 

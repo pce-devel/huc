@@ -926,55 +926,91 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case I_LD_WMQ:
+	case X_LD_WMQ:
 		ot("__ld.wmq\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case I_LD_BMQ:
+	case X_LD_BMQ:
 		ot("__ld.bmq\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case I_LD_UMQ:
+	case X_LD_UMQ:
 		ot("__ld.umq\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case I_LDX_WMQ:
+	case X_LDX_WMQ:
 		ot("__ldx.wmq\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case I_LDX_BMQ:
+	case X_LDX_BMQ:
 		ot("__ldx.bmq\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case I_LDX_UMQ:
+	case X_LDX_UMQ:
 		ot("__ldx.umq\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case I_LDY_WMQ:
+	case X_LD2X_WMQ:
+		ot("__ld2x.wmq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_LD2X_BMQ:
+		ot("__ld2x.bmq\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_LD2X_UMQ:
+		ot("__ld2x.umq\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_LD2X_WM:
+		ot("__ld2x.wm\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_LD2X_BM:
+		ot("__ld2x.bm\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_LD2X_UM:
+		ot("__ld2x.um\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_LDY_WMQ:
 		ot("__ldy.wmq\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case I_LDY_BMQ:
+	case X_LDY_BMQ:
 		ot("__ldy.bmq\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case I_LDY_UMQ:
+	case X_LDY_UMQ:
 		ot("__ldy.umq\t");
 		out_type(type, data);
 		nl();
@@ -1012,6 +1048,12 @@ void gen_code (INS *tmp)
 
 	case X_LD_UAR:
 		ot("__ld.uar\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_LD_WAX:
+		ot("__ld.wax\t");
 		out_type(type, data);
 		nl();
 		break;
@@ -1082,8 +1124,8 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_LDY_WSQ:
-		ot("__ldy.wsq\t");
+	case X_LDX_WSQ:
+		ot("__ldx.wsq\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
@@ -1103,8 +1145,50 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_LDX_WSQ:
-		ot("__ldx.wsq\t");
+	case X_LD2X_WSQ:
+		ot("__ld2x.wsq\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_LD2X_BSQ:
+		ot("__ld2x.bsq\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_LD2X_USQ:
+		ot("__ld2x.usq\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_LD2X_WS:
+		ot("__ld2x.ws\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_LD2X_BS:
+		ot("__ld2x.bs\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_LD2X_US:
+		ot("__ld2x.us\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_LDY_WSQ:
+		ot("__ldy.wsq\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
@@ -1138,6 +1222,12 @@ void gen_code (INS *tmp)
 
 	case X_LDP_UAR:
 		ot("__ldp.uar\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_LDP_WAX:
+		ot("__ldp.wax\t");
 		out_type(type, data);
 		nl();
 		break;

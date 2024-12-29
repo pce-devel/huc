@@ -175,17 +175,25 @@ unsigned char icode_flags[] = {
 	/* I_LD_BM              */	IS_SBYTE,
 	/* I_LD_UM              */	IS_UBYTE,
 
-	/* I_LD_WMQ             */	0,
-	/* I_LD_BMQ             */	IS_SBYTE,
-	/* I_LD_UMQ             */	IS_UBYTE,
+	/* X_LD_WMQ             */	0,
+	/* X_LD_BMQ             */	IS_SBYTE,
+	/* X_LD_UMQ             */	IS_UBYTE,
 
-	/* I_LDX_WMQ            */	0,
-	/* I_LDX_BMQ            */	IS_SBYTE,
-	/* I_LDX_UMQ            */	IS_UBYTE,
+	/* X_LDX_WMQ            */	0,
+	/* X_LDX_BMQ            */	IS_SBYTE,
+	/* X_LDX_UMQ            */	IS_UBYTE,
 
-	/* I_LDY_WMQ            */	0,
-	/* I_LDY_BMQ            */	IS_SBYTE,
-	/* I_LDY_UMQ            */	IS_UBYTE,
+	/* X_LD2X_WMQ           */	0,
+	/* X_LD2X_BMQ           */	IS_SBYTE,
+	/* X_LD2X_UMQ           */	IS_UBYTE,
+
+	/* X_LD2X_WM            */	0,
+	/* X_LD2X_BM            */	IS_SBYTE,
+	/* X_LD2X_UM            */	IS_UBYTE,
+
+	/* X_LDY_WMQ            */	0,
+	/* X_LDY_BMQ            */	IS_SBYTE,
+	/* X_LDY_UMQ            */	IS_UBYTE,
 
 	/* I_LD_WP              */	0,
 	/* I_LD_BP              */	IS_SBYTE,
@@ -195,6 +203,7 @@ unsigned char icode_flags[] = {
 	/* X_LD_BAR             */	IS_SBYTE,
 	/* X_LD_UAR             */	IS_UBYTE,
 
+	/* X_LD_WAX             */	0,
 	/* X_LD_BAX             */	IS_SBYTE,
 	/* X_LD_UAX             */	IS_UBYTE,
 
@@ -213,6 +222,14 @@ unsigned char icode_flags[] = {
 	/* X_LDX_BSQ            */	IS_SBYTE + IS_SPREL,
 	/* X_LDX_USQ            */	IS_UBYTE + IS_SPREL,
 
+	/* X_LD2X_WSQ           */	IS_SPREL,
+	/* X_LD2X_BSQ           */	IS_SBYTE + IS_SPREL,
+	/* X_LD2X_USQ           */	IS_UBYTE + IS_SPREL,
+
+	/* X_LD2X_WS            */	IS_SPREL,
+	/* X_LD2X_BS            */	IS_SBYTE + IS_SPREL,
+	/* X_LD2X_US            */	IS_UBYTE + IS_SPREL,
+
 	/* X_LDY_WSQ            */	IS_SPREL,
 	/* X_LDY_BSQ            */	IS_SBYTE + IS_SPREL,
 	/* X_LDY_USQ            */	IS_UBYTE + IS_SPREL,
@@ -221,6 +238,7 @@ unsigned char icode_flags[] = {
 	/* X_LDP_BAR            */	IS_SBYTE,
 	/* X_LDP_UAR            */	IS_UBYTE,
 
+	/* X_LDP_WAX            */	0,
 	/* X_LDP_BAX            */	IS_SBYTE,
 	/* X_LDP_UAX            */	IS_UBYTE,
 
@@ -823,9 +841,9 @@ lv1_loop:
 			) {
 				switch (p[1]->ins_code) {
 				case I_LD_WI: p[1]->ins_code = X_LD_UIQ; break;
-				case I_LD_WM: p[1]->ins_code = I_LD_WMQ; break;
-				case I_LD_BM: p[1]->ins_code = I_LD_BMQ; break;
-				case I_LD_UM: p[1]->ins_code = I_LD_UMQ; break;
+				case I_LD_WM: p[1]->ins_code = X_LD_WMQ; break;
+				case I_LD_BM: p[1]->ins_code = X_LD_BMQ; break;
+				case I_LD_UM: p[1]->ins_code = X_LD_UMQ; break;
 				case X_LD_WS: p[1]->ins_code = X_LD_WSQ; break;
 				case X_LD_BS: p[1]->ins_code = X_LD_BSQ; break;
 				case X_LD_US: p[1]->ins_code = X_LD_USQ; break;
@@ -2992,25 +3010,17 @@ lv1_loop:
 			 *  __ld.{w/b/u}m	symbol	-->	__ld.{w/b/u}mq	symbol
 			 *  __index.ur		array		__index.ur	array
 			 *
-			 *  __ld.{w/b/u}m	symbol	-->	__ld.{w/b/u}mq	symbol
-			 *  __ld.war		array		__ld.war	array
-			 *
-			 *
 			 *  __ld.{w/b/u}s	n	-->	__ld.{w/b/u}sq	n
 			 *  __index.wr		array		__index.wr	array
 			 *
 			 *  __ld.{w/b/u}s	n	-->	__ld.{w/b/u}sq	n
 			 *  __index.ur		array		__index.ur	array
 			 *
-			 *  __ld.{w/b/u}s	n	-->	__ld.{w/b/u}sq	n
-			 *  __ld.war		array		__ld.war	array
-			 *
 			 *  Index optimizations for base+offset array access.
 			 */
 			else if
 			((p[0]->ins_code == X_INDEX_WR ||
-			  p[0]->ins_code == X_INDEX_UR ||
-			  p[0]->ins_code == X_LD_WAR) &&
+			  p[0]->ins_code == X_INDEX_UR) &&
 			 (p[1]->ins_code == I_LD_WM ||
 			  p[1]->ins_code == I_LD_BM ||
 			  p[1]->ins_code == I_LD_UM ||
@@ -3020,9 +3030,9 @@ lv1_loop:
 			) {
 				/* replace code */
 				switch (p[1]->ins_code) {
-				case I_LD_WM: p[1]->ins_code = I_LD_WMQ; break;
-				case I_LD_BM: p[1]->ins_code = I_LD_BMQ; break;
-				case I_LD_UM: p[1]->ins_code = I_LD_UMQ; break;
+				case I_LD_WM: p[1]->ins_code = X_LD_WMQ; break;
+				case I_LD_BM: p[1]->ins_code = X_LD_BMQ; break;
+				case I_LD_UM: p[1]->ins_code = X_LD_UMQ; break;
 				case X_LD_WS: p[1]->ins_code = X_LD_WSQ; break;
 				case X_LD_BS: p[1]->ins_code = X_LD_BSQ; break;
 				case X_LD_US: p[1]->ins_code = X_LD_USQ; break;
@@ -3032,6 +3042,12 @@ lv1_loop:
 			}
 
 			/*
+			 *  __ld.{w/b/u}m	symbol	-->	__ld2x.{w/b/u}mq
+			 *  __ld.war		array		__ld.wax	array
+			 *
+			 *  __ld.{w/b/u}s	n	-->	__ld2x.{w/b/u}sq n
+			 *  __ld.war		array		__ld.wax	array
+			 *
 			 *  __ld.{w/b/u}m	symbol	-->	__ldx.{w/b/u}mq
 			 *  __ld.{b/u}ar	array		__ld.{b/u}ax	array
 			 *
@@ -3041,7 +3057,8 @@ lv1_loop:
 			 *  Index optimizations for base+offset array access.
 			 */
 			else if
-			((p[0]->ins_code == X_LD_BAR ||
+			((p[0]->ins_code == X_LD_WAR ||
+			  p[0]->ins_code == X_LD_BAR ||
 			  p[0]->ins_code == X_LD_UAR) &&
 			 (p[1]->ins_code == I_LD_WM ||
 			  p[1]->ins_code == I_LD_BM ||
@@ -3051,26 +3068,43 @@ lv1_loop:
 			  p[1]->ins_code == X_LD_US)
 			) {
 				/* replace code */
-				switch (p[1]->ins_code) {
-				case I_LD_WM: p[1]->ins_code = I_LDX_WMQ; break;
-				case I_LD_BM: p[1]->ins_code = I_LDX_BMQ; break;
-				case I_LD_UM: p[1]->ins_code = I_LDX_UMQ; break;
-				case X_LD_WS: p[1]->ins_code = X_LDX_WSQ; break;
-				case X_LD_BS: p[1]->ins_code = X_LDX_BSQ; break;
-				case X_LD_US: p[1]->ins_code = X_LDX_USQ; break;
-				default:	break;
+				if (p[0]->ins_code == X_LD_WAR) {
+					switch (p[1]->ins_code) {
+					case I_LD_WM: p[1]->ins_code = X_LD2X_WMQ; break;
+					case I_LD_BM: p[1]->ins_code = X_LD2X_BMQ; break;
+					case I_LD_UM: p[1]->ins_code = X_LD2X_UMQ; break;
+					case X_LD_WS: p[1]->ins_code = X_LD2X_WSQ; break;
+					case X_LD_BS: p[1]->ins_code = X_LD2X_BSQ; break;
+					case X_LD_US: p[1]->ins_code = X_LD2X_USQ; break;
+					default:	break;
+					}
+					p[0]->ins_code = X_LD_WAX;
+					remove = 0;
+				} else {
+					switch (p[1]->ins_code) {
+					case I_LD_WM: p[1]->ins_code = X_LDX_WMQ; break;
+					case I_LD_BM: p[1]->ins_code = X_LDX_BMQ; break;
+					case I_LD_UM: p[1]->ins_code = X_LDX_UMQ; break;
+					case X_LD_WS: p[1]->ins_code = X_LDX_WSQ; break;
+					case X_LD_BS: p[1]->ins_code = X_LDX_BSQ; break;
+					case X_LD_US: p[1]->ins_code = X_LDX_USQ; break;
+					default:	break;
+					}
+					if (p[0]->ins_code == X_LD_BAR)
+						p[0]->ins_code = X_LD_BAX;
+					else
+						p[0]->ins_code = X_LD_UAX;
+					remove = 0;
 				}
-				switch (p[0]->ins_code) {
-				case X_LD_BAR: p[0]->ins_code = X_LD_BAX; break;
-				case X_LD_UAR: p[0]->ins_code = X_LD_UAX; break;
-				case X_LDP_BAR: p[0]->ins_code = X_LDP_BAX; break;
-				case X_LDP_UAR: p[0]->ins_code = X_LDP_UAX; break;
-				default:	break;
-				}
-				remove = 0;
 			}
 
 			/*
+			 *  __ld.{w/b/u}mq	symbol	-->	__ld2x.{w/b/u}mq
+			 *  __ldp.war		array		__ldp.wax	array
+			 *
+			 *  __ld.{w/b/u}sq	n	-->	__ld2x.{w/b/u}sq n
+			 *  __ldp.war		array		__ldp.wax	array
+			 *
 			 *  __ld.{w/b/u}mq	symbol	-->	__ldx.{w/b/u}mq
 			 *  __ldp.{b/u}ar	array		__ldp.{b/u}ax	array
 			 *
@@ -3083,33 +3117,45 @@ lv1_loop:
 			 *  to __ld.{w/b/u}mq!
 			 */
 			else if
-			((p[0]->ins_code == X_LDP_BAR ||
+			((p[0]->ins_code == X_LDP_WAR ||
+			  p[0]->ins_code == X_LDP_BAR ||
 			  p[0]->ins_code == X_LDP_UAR) &&
-			 (p[1]->ins_code == I_LD_WMQ ||
-			  p[1]->ins_code == I_LD_BMQ ||
-			  p[1]->ins_code == I_LD_UMQ ||
+			 (p[1]->ins_code == X_LD_WMQ ||
+			  p[1]->ins_code == X_LD_BMQ ||
+			  p[1]->ins_code == X_LD_UMQ ||
 			  p[1]->ins_code == X_LD_WSQ ||
 			  p[1]->ins_code == X_LD_BSQ ||
 			  p[1]->ins_code == X_LD_USQ)
 			) {
 				/* replace code */
-				switch (p[1]->ins_code) {
-				case I_LD_WMQ: p[1]->ins_code = I_LDX_WMQ; break;
-				case I_LD_BMQ: p[1]->ins_code = I_LDX_BMQ; break;
-				case I_LD_UMQ: p[1]->ins_code = I_LDX_UMQ; break;
-				case X_LD_WSQ: p[1]->ins_code = X_LDX_WSQ; break;
-				case X_LD_BSQ: p[1]->ins_code = X_LDX_BSQ; break;
-				case X_LD_USQ: p[1]->ins_code = X_LDX_USQ; break;
-				default:	break;
+				if (p[0]->ins_code == X_LD_WAR) {
+					switch (p[1]->ins_code) {
+					case X_LD_WMQ: p[1]->ins_code = X_LD2X_WMQ; break;
+					case X_LD_BMQ: p[1]->ins_code = X_LD2X_BMQ; break;
+					case X_LD_UMQ: p[1]->ins_code = X_LD2X_UMQ; break;
+					case X_LD_WSQ: p[1]->ins_code = X_LD2X_WSQ; break;
+					case X_LD_BSQ: p[1]->ins_code = X_LD2X_BSQ; break;
+					case X_LD_USQ: p[1]->ins_code = X_LD2X_USQ; break;
+					default:	break;
+					}
+					p[0]->ins_code = X_LDP_WAX;
+					remove = 0;
+				} else {
+					switch (p[1]->ins_code) {
+					case X_LD_WMQ: p[1]->ins_code = X_LDX_WMQ; break;
+					case X_LD_BMQ: p[1]->ins_code = X_LDX_BMQ; break;
+					case X_LD_UMQ: p[1]->ins_code = X_LDX_UMQ; break;
+					case X_LD_WSQ: p[1]->ins_code = X_LDX_WSQ; break;
+					case X_LD_BSQ: p[1]->ins_code = X_LDX_BSQ; break;
+					case X_LD_USQ: p[1]->ins_code = X_LDX_USQ; break;
+					default:	break;
+					}
+					if (p[0]->ins_code == X_LDP_BAR)
+						p[0]->ins_code = X_LDP_BAX;
+					else
+						p[0]->ins_code = X_LDP_UAX;
+					remove = 0;
 				}
-				switch (p[0]->ins_code) {
-				case X_LD_BAR: p[0]->ins_code = X_LD_BAX; break;
-				case X_LD_UAR: p[0]->ins_code = X_LD_UAX; break;
-				case X_LDP_BAR: p[0]->ins_code = X_LDP_BAX; break;
-				case X_LDP_UAR: p[0]->ins_code = X_LDP_UAX; break;
-				default:	break;
-				}
-				remove = 0;
 			}
 
 #if 0
