@@ -589,7 +589,8 @@ void callfunction (SYMBOL *ptr)
 	int uses_acc = 0;	/* does callee use acc? */
 	static bool using_funcptr = false;
 
-	is_leaf_function = 0;
+//	/* fastcall functions should not count against C is_leaf_function status */
+//	is_leaf_function = 0;
 
 	call_stack_ref = ++func_call_stack;
 
@@ -622,9 +623,12 @@ void callfunction (SYMBOL *ptr)
 		out_ins(I_FUNCP_WR, 0, 0);
 	}
 
-	/* calling regular functions in fastcall arguments is OK */
-	if (!is_fc)
+	if (!is_fc) {
+		/* fastcall functions should not count against C is_leaf_function status */
+		is_leaf_function = 0;
+		/* calling regular functions in fastcall arguments is OK */
 		--func_call_stack;
+	}
 
 	/* get args */
 	while (!streq(line + lptr, ")")) {
