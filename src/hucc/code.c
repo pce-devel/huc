@@ -1830,13 +1830,13 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case I_ADD_WM:
+	case X_ADD_WM:
 		ot("__add.wm\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case I_ADD_UM:
+	case X_ADD_UM:
 		ot("__add.um\t");
 		out_addr(type, data);
 		nl();
@@ -1856,6 +1856,18 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_ADD_WAX:
+		ot("__add.wax\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ADD_UAX:
+		ot("__add.uax\t");
+		out_addr(type, data);
+		nl();
+		break;
+
 	case I_SUB_WT:
 		ol("__sub.wt");
 		break;
@@ -1866,13 +1878,13 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case I_SUB_WM:
+	case X_SUB_WM:
 		ot("__sub.wm\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case I_SUB_UM:
+	case X_SUB_UM:
 		ot("__sub.um\t");
 		out_addr(type, data);
 		nl();
@@ -1889,6 +1901,18 @@ void gen_code (INS *tmp)
 		ot("__sub.us\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_SUB_WAX:
+		ot("__sub.wax\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_SUB_UAX:
+		ot("__sub.uax\t");
+		out_addr(type, data);
 		nl();
 		break;
 
@@ -1928,6 +1952,18 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_ISUB_WAX:
+		ot("__isub.wax\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ISUB_UAX:
+		ot("__isub.uax\t");
+		out_addr(type, data);
+		nl();
+		break;
+
 	case I_AND_WT:
 		ol("__and.wt");
 		break;
@@ -1944,13 +1980,13 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case I_AND_WM:
+	case X_AND_WM:
 		ot("__and.wm\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case I_AND_UM:
+	case X_AND_UM:
 		ot("__and.um\t");
 		out_addr(type, data);
 		nl();
@@ -1970,6 +2006,18 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_AND_WAX:
+		ot("__and.wax\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_AND_UAX:
+		ot("__and.uax\t");
+		out_addr(type, data);
+		nl();
+		break;
+
 	case I_EOR_WT:
 		ol("__eor.wt");
 		break;
@@ -1980,13 +2028,13 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case I_EOR_WM:
+	case X_EOR_WM:
 		ot("__eor.wm\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case I_EOR_UM:
+	case X_EOR_UM:
 		ot("__eor.um\t");
 		out_addr(type, data);
 		nl();
@@ -2006,6 +2054,18 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_EOR_WAX:
+		ot("__eor.wax\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_EOR_UAX:
+		ot("__eor.uax\t");
+		out_addr(type, data);
+		nl();
+		break;
+
 	case I_OR_WT:
 		ol("__or.wt");
 		break;
@@ -2016,13 +2076,13 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case I_OR_WM:
+	case X_OR_WM:
 		ot("__or.wm\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case I_OR_UM:
+	case X_OR_UM:
 		ot("__or.um\t");
 		out_addr(type, data);
 		nl();
@@ -2039,6 +2099,18 @@ void gen_code (INS *tmp)
 		ot("__or.us\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_OR_WAX:
+		ot("__or.wax\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_OR_UAX:
+		ot("__or.uax\t");
+		out_addr(type, data);
 		nl();
 		break;
 

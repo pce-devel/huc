@@ -368,17 +368,21 @@ unsigned char icode_flags[] = {
 
 	/* I_ADD_WT             */	IS_USEPR,
 	/* I_ADD_WI             */	IS_USEPR,
-	/* I_ADD_WM             */	IS_USEPR,
-	/* I_ADD_UM             */	IS_USEPR,
+	/* X_ADD_WM             */	IS_USEPR,
+	/* X_ADD_UM             */	IS_USEPR,
 	/* X_ADD_WS             */	IS_USEPR + IS_SPREL,
 	/* X_ADD_US             */	IS_USEPR + IS_SPREL,
+	/* X_ADD_WAX            */	IS_USEPR,
+	/* X_ADD_UAX            */	IS_USEPR,
 
 	/* I_SUB_WT             */	IS_USEPR,
 	/* I_SUB_WI             */	IS_USEPR,
-	/* I_SUB_WM             */	IS_USEPR,
-	/* I_SUB_UM             */	IS_USEPR,
+	/* X_SUB_WM             */	IS_USEPR,
+	/* X_SUB_UM             */	IS_USEPR,
 	/* X_SUB_WS             */	IS_USEPR + IS_SPREL,
 	/* X_SUB_US             */	IS_USEPR + IS_SPREL,
+	/* X_SUB_WAX            */	IS_USEPR,
+	/* X_SUB_UAX            */	IS_USEPR,
 
 	/* X_ISUB_WT            */	IS_USEPR,
 	/* X_ISUB_WI            */	IS_USEPR,
@@ -386,28 +390,36 @@ unsigned char icode_flags[] = {
 	/* X_ISUB_UM            */	IS_USEPR,
 	/* X_ISUB_WS            */	IS_USEPR + IS_SPREL,
 	/* X_ISUB_US            */	IS_USEPR + IS_SPREL,
+	/* X_ISUB_WAX           */	IS_USEPR,
+	/* X_ISUB_UAX           */	IS_USEPR,
 
 	/* I_AND_WT             */	IS_USEPR,
 	/* I_AND_WI             */	IS_USEPR,
 	/* I_AND_UIQ            */	IS_USEPR + IS_UBYTE,
-	/* I_AND_WM             */	IS_USEPR,
-	/* I_AND_UM             */	IS_USEPR,
+	/* X_AND_WM             */	IS_USEPR,
+	/* X_AND_UM             */	IS_USEPR,
 	/* X_AND_WS             */	IS_USEPR + IS_SPREL,
 	/* X_AND_US             */	IS_USEPR + IS_SPREL,
+	/* X_AND_WAX            */	IS_USEPR,
+	/* X_AND_UAX            */	IS_USEPR,
 
 	/* I_EOR_WT             */	IS_USEPR,
 	/* I_EOR_WI             */	IS_USEPR,
-	/* I_EOR_WM             */	IS_USEPR,
-	/* I_EOR_UM             */	IS_USEPR,
+	/* X_EOR_WM             */	IS_USEPR,
+	/* X_EOR_UM             */	IS_USEPR,
 	/* X_EOR_WS             */	IS_USEPR + IS_SPREL,
 	/* X_EOR_US             */	IS_USEPR + IS_SPREL,
+	/* X_EOR_WAX            */	IS_USEPR,
+	/* X_EOR_UAX            */	IS_USEPR,
 
 	/* I_OR_WT              */	IS_USEPR,
 	/* I_OR_WI              */	IS_USEPR,
-	/* I_OR_WM              */	IS_USEPR,
-	/* I_OR_UM              */	IS_USEPR,
+	/* X_OR_WM              */	IS_USEPR,
+	/* X_OR_UM              */	IS_USEPR,
 	/* X_OR_WS              */	IS_USEPR + IS_SPREL,
 	/* X_OR_US              */	IS_USEPR + IS_SPREL,
+	/* X_OR_WAX             */	IS_USEPR,
+	/* X_OR_UAX             */	IS_USEPR,
 
 	/* I_ASL_WT             */	IS_USEPR,
 	/* I_ASL_WI             */	IS_USEPR,
@@ -2186,6 +2198,118 @@ lv1_loop:
 			}
 #endif
 
+			/*
+			 *  __push.wr			-->	__ld2x.{w/b/u}m	index
+			 *  __ld2x.{w/b/u}mq	index		__isub.wax	symbol
+			 *  __ld.wax		symbol
+			 *  __isub.wt
+			 *
+			 *  __push.wr			-->	__ld2x.{w/b/u}m	index
+			 *  __ld2x.{w/b/u}mq	index		__add.wax	symbol
+			 *  __ld.wax		symbol
+			 *  __add.wt
+			 *
+			 *  etc/etc
+			 *
+			 *  __push.wr			-->	__ldx.{w/b/u}mq	index
+			 *  __ldx.{w/b/u}mq	index		__isub.uax	symbol
+			 *  __ld.uax		symbol
+			 *  __isub.wt
+			 *
+			 *  __push.wr			-->	__ldx.{w/b/u}mq	index
+			 *  __ldx.{w/b/u}mq	index		__add.uax	symbol
+			 *  __ld.uax		symbol
+			 *  __add.wt
+			 *
+			 *  etc/etc
+			 *
+			 *  __push.wr			-->	__ld2x.{w/b/u}s	index
+			 *  __ld2x.{w/b/u}sq	index		__isub.wax	symbol
+			 *  __ld.wax		symbol
+			 *  __isub.wt
+			 *
+			 *  __push.wr			-->	__ld2x.{w/b/u}s	index
+			 *  __ld2x.{w/b/u}sq	index		__add.wax	symbol
+			 *  __ld.wax		symbol
+			 *  __add.wt
+			 *
+			 *  etc/etc
+			 *
+			 *  __push.wr			-->	__ldx.{w/b/u}sq	index
+			 *  __ldx.{w/b/u}sq	index		__isub.uax	symbol
+			 *  __ld.uax		symbol
+			 *  __isub.wt
+			 *
+			 *  __push.wr			-->	__ldx.{w/b/u}sq	index
+			 *  __ldx.{w/b/u}sq	index		__add.uax	symbol
+			 *  __ld.uax		symbol
+			 *  __add.wt
+			 *
+			 *  etc/etc
+			 */
+			else if
+			((p[0]->ins_code == X_ISUB_WT ||
+			  p[0]->ins_code == I_ADD_WT ||
+			  p[0]->ins_code == I_SUB_WT ||
+			  p[0]->ins_code == I_AND_WT ||
+			  p[0]->ins_code == I_EOR_WT ||
+			  p[0]->ins_code == I_OR_WT) &&
+			 (p[1]->ins_code == X_LD_WAX ||
+			  p[1]->ins_code == X_LD_UAX) &&
+			 (p[2]->ins_code == X_LD2X_WMQ ||
+			  p[2]->ins_code == X_LD2X_BMQ ||
+			  p[2]->ins_code == X_LD2X_UMQ ||
+			  p[2]->ins_code == X_LD2X_WSQ ||
+			  p[2]->ins_code == X_LD2X_BSQ ||
+			  p[2]->ins_code == X_LD2X_USQ ||
+			  p[2]->ins_code == X_LDX_WMQ ||
+			  p[2]->ins_code == X_LDX_BMQ ||
+			  p[2]->ins_code == X_LDX_UMQ ||
+			  p[2]->ins_code == X_LDX_WSQ ||
+			  p[2]->ins_code == X_LDX_BSQ ||
+			  p[2]->ins_code == X_LDX_USQ) &&
+			 (p[3]->ins_code == I_PUSH_WR)
+			) {
+				/* replace code */
+				*p[3] = *p[2];
+				*p[2] = *p[1];
+				switch (p[1]->ins_code) {
+				case X_LD_WAX:
+					switch (p[3]->ins_code) {
+					case X_LD2X_WMQ: p[3]->ins_code = X_LD2X_WM; break;
+					case X_LD2X_BMQ: p[3]->ins_code = X_LD2X_BM; break;
+					case X_LD2X_UMQ: p[3]->ins_code = X_LD2X_UM; break;
+					case X_LD2X_WSQ: p[3]->ins_code = X_LD2X_WS; break;
+					case X_LD2X_BSQ: p[3]->ins_code = X_LD2X_BS; break;
+					case X_LD2X_USQ: p[3]->ins_code = X_LD2X_US; break;
+					default: break;
+					}
+					switch (p[0]->ins_code) {
+					case X_ISUB_WT: p[2]->ins_code = X_ISUB_WAX; break;
+					case I_ADD_WT:  p[2]->ins_code = X_ADD_WAX; break;
+					case I_SUB_WT:  p[2]->ins_code = X_SUB_WAX; break;
+					case I_AND_WT:  p[2]->ins_code = X_AND_WAX; break;
+					case I_EOR_WT:  p[2]->ins_code = X_EOR_WAX; break;
+					case I_OR_WT:   p[2]->ins_code = X_OR_WAX; break;
+					default: break;
+					}
+					break;
+				case X_LD_UAX:
+					switch (p[0]->ins_code) {
+					case X_ISUB_WT: p[2]->ins_code = X_ISUB_UAX; break;
+					case I_ADD_WT:  p[2]->ins_code = X_ADD_UAX; break;
+					case I_SUB_WT:  p[2]->ins_code = X_SUB_UAX; break;
+					case I_AND_WT:  p[2]->ins_code = X_AND_UAX; break;
+					case I_EOR_WT:  p[2]->ins_code = X_EOR_UAX; break;
+					case I_OR_WT:   p[2]->ins_code = X_OR_UAX; break;
+					default: break;
+					}
+					break;
+				default: break;
+				}
+				remove = 2;
+			}
+
 			/* remove instructions from queue and begin again */
 			if (remove)
 				goto lv1_loop;
@@ -2323,23 +2447,23 @@ lv1_loop:
 				case I_LD_WM:
 					switch (p[0]->ins_code) {
 					case X_ISUB_WT: p[2]->ins_code = X_ISUB_WM; break;
-					case I_ADD_WT:  p[2]->ins_code = I_ADD_WM; break;
-					case I_SUB_WT:  p[2]->ins_code = I_SUB_WM; break;
-					case I_AND_WT:  p[2]->ins_code = I_AND_WM; break;
-					case I_EOR_WT:  p[2]->ins_code = I_EOR_WM; break;
-					case I_OR_WT:   p[2]->ins_code = I_OR_WM; break;
-					default:;
+					case I_ADD_WT:  p[2]->ins_code = X_ADD_WM; break;
+					case I_SUB_WT:  p[2]->ins_code = X_SUB_WM; break;
+					case I_AND_WT:  p[2]->ins_code = X_AND_WM; break;
+					case I_EOR_WT:  p[2]->ins_code = X_EOR_WM; break;
+					case I_OR_WT:   p[2]->ins_code = X_OR_WM; break;
+					default: break;
 					}
 					break;
 				case I_LD_UM:
 					switch (p[0]->ins_code) {
 					case X_ISUB_WT: p[2]->ins_code = X_ISUB_UM; break;
-					case I_ADD_WT:  p[2]->ins_code = I_ADD_UM; break;
-					case I_SUB_WT:  p[2]->ins_code = I_SUB_UM; break;
-					case I_AND_WT:  p[2]->ins_code = I_AND_UM; break;
-					case I_EOR_WT:  p[2]->ins_code = I_EOR_UM; break;
-					case I_OR_WT:   p[2]->ins_code = I_OR_UM; break;
-					default:;
+					case I_ADD_WT:  p[2]->ins_code = X_ADD_UM; break;
+					case I_SUB_WT:  p[2]->ins_code = X_SUB_UM; break;
+					case I_AND_WT:  p[2]->ins_code = X_AND_UM; break;
+					case I_EOR_WT:  p[2]->ins_code = X_EOR_UM; break;
+					case I_OR_WT:   p[2]->ins_code = X_OR_UM; break;
+					default: break;
 					}
 					break;
 
@@ -2351,7 +2475,7 @@ lv1_loop:
 					case I_AND_WT:  p[2]->ins_code = X_AND_WS; break;
 					case I_EOR_WT:  p[2]->ins_code = X_EOR_WS; break;
 					case I_OR_WT:   p[2]->ins_code = X_OR_WS; break;
-					default:;
+					default: break;
 					}
 					break;
 				case X_LD_US:
@@ -2362,10 +2486,10 @@ lv1_loop:
 					case I_AND_WT:  p[2]->ins_code = X_AND_US; break;
 					case I_EOR_WT:  p[2]->ins_code = X_EOR_US; break;
 					case I_OR_WT:   p[2]->ins_code = X_OR_US; break;
-					default:;
+					default: break;
 					}
 					break;
-				default:;
+				default: break;
 				}
 				remove = 2;
 			}

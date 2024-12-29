@@ -3901,6 +3901,26 @@ __add.us	.macro	; __STACK
 		.endm
 
 ; **************
+
+__add.wax	.macro
+		clc
+		adc.l	\1, x
+		say
+		adc.h	\1, x
+		say
+		.endm
+
+; **************
+
+__add.uax	.macro
+		clc
+		adc	\1, x
+		bcc	!+
+		iny
+!:
+		.endm
+
+; **************
 ; Y:A = stack - Y:A
 
 __sub.wt	.macro	; __STACK
@@ -3983,6 +4003,28 @@ __sub.us	.macro
 		.endm
 
 ; **************
+; Y:A = Y:A - memory
+
+__sub.wax	.macro
+		sec
+		sbc.l	\1, x
+		say
+		sbc.h	\1, x
+		say
+		.endm
+
+; **************
+; Y:A = Y:A - memory
+
+__sub.uax	.macro
+		sec
+		sbc	\1, x
+		bcs	!+
+		dey
+!:
+		.endm
+
+; **************
 ; Y:A = Y:A - stack
 
 __isub.wt	.macro	; __STACK
@@ -4000,7 +4042,7 @@ __isub.wt	.macro	; __STACK
 ; **************
 ; Y:A = immediate - Y:A
 
-__isub.wi	.macro	; __STACK
+__isub.wi	.macro
 		sec
 		eor	#$FF
 		adc.l	#\1
@@ -4013,7 +4055,7 @@ __isub.wi	.macro	; __STACK
 ; **************
 ; Y:A = memory - Y:A
 
-__isub.wm	.macro	; __STACK
+__isub.wm	.macro
 		sec
 		eor	#$FF
 		adc.l	\1
@@ -4026,7 +4068,7 @@ __isub.wm	.macro	; __STACK
 ; **************
 ; Y:A = memory - Y:A
 
-__isub.um	.macro	; __STACK
+__isub.um	.macro
 		sec
 		eor	#$FF
 		adc	\1
@@ -4058,6 +4100,32 @@ __isub.us	.macro	; __STACK
 		sec
 		eor	#$FF
 		adc	<__stack + \1, x
+		say
+		eor	#$FF
+		adc	#0
+		say
+		.endm
+
+; **************
+; Y:A = memory - Y:A
+
+__isub.wax	.macro
+		sec
+		eor	#$FF
+		adc.l	\1, x
+		say
+		eor	#$FF
+		adc.h	\1, x
+		say
+		.endm
+
+; **************
+; Y:A = memory - Y:A
+
+__isub.uax	.macro
+		sec
+		eor	#$FF
+		adc	\1, x
 		say
 		eor	#$FF
 		adc	#0
@@ -4147,6 +4215,22 @@ __and.us	.macro
 
 ; **************
 
+__and.wax	.macro
+		and.l	\1, x
+		say
+		and.h	\1, x
+		say
+		.endm
+
+; **************
+
+__and.uax	.macro
+		and	\1, x
+		cly
+		.endm
+
+; **************
+
 __eor.wt	.macro	; __STACK
 		tsx
 		eor.l	__tos, x
@@ -4211,6 +4295,21 @@ __eor.us	.macro
 
 ; **************
 
+__eor.wax	.macro
+		eor.l	\1, x
+		say
+		eor.h	\1, x
+		say
+		.endm
+
+; **************
+
+__eor.uax	.macro
+		eor	\1, x
+		.endm
+
+; **************
+
 __or.wt		.macro	; __STACK
 		tsx
 		ora.l	__tos, x
@@ -4271,6 +4370,21 @@ __or.ws		.macro
 __or.us		.macro
 		ldx	<__sp
 		ora	<__stack + \1, x
+		.endm
+
+; **************
+
+__or.wax	.macro
+		ora.l	\1, x
+		say
+		ora.h	\1, x
+		say
+		.endm
+
+; **************
+
+__or.uax	.macro
+		ora	\1, x
 		.endm
 
 ; **************
