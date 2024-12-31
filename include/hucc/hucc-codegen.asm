@@ -1821,6 +1821,399 @@ __uge_b.usq	.macro
 		.endm
 
 ; **************
+; optimized boolean test
+; C is true (1) if Y:A != memory-value, else false (0)
+; this MUST set the C flag for the subsequent branches!
+
+__neq_w.wax	.macro
+		sec
+		eor.l	\1, x
+		bne	!+
+		tya
+		eor.h	\1, x
+		bne	!+
+		clc
+!:
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; C is true (1) if Y:A < memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__slt_w.wax	.macro
+		cmp.l	\1, x		; Subtract memory from Y:A.
+		tya
+		sbc.h	\1, x
+		bvc	!+
+		eor	#$80		; -ve if Y:A < memory (signed).
+!:		asl	a
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; C is true (1) if Y:A <= memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__sle_w.wax	.macro
+		clc			; Subtract memory+1 from Y:A.
+		sbc.l	\1, x
+		tya
+		sbc.h	\1, x
+		bvc	!+
+		eor	#$80		; -ve if Y:A <= memory (signed).
+!:		asl	a
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; C is true (1) if Y:A > memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__sgt_w.wax	.macro
+		clc			; Subtract memory+1 from Y:A.
+		sbc.l	\1, x
+		tya
+		sbc.h	\1, x
+		bvc	!+
+		eor	#$80		; +ve if Y:A > memory (signed).
+!:		eor	#$80
+		asl	a
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; C is true (1) if Y:A >= memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__sge_w.wax	.macro
+		cmp.l	\1, x		; Subtract memory from Y:A.
+		tya
+		sbc.h	\1, x
+		bvc	!+
+		eor	#$80		; +ve if Y:A >= memory (signed).
+!:		eor	#$80
+		asl	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; C is true (1) if Y:A < memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__ult_w.wax	.macro
+		cmp.l	\1, x		; Subtract memory from Y:A.
+		tya
+		sbc.h	\1, x		; CC if Y:A < memory.
+		ror	a
+		eor	#$80
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; C is true (1) if Y:A <= memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__ule_w.wax	.macro
+		clc			; Subtract memory+1 from Y:A.
+		sbc.l	\1, x
+		tya
+		sbc.h	\1, x		; CC if Y:A <= memory.
+		ror	a
+		eor	#$80
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; C is true (1) if Y:A > memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__ugt_w.wax	.macro
+		clc			; Subtract memory+1 from Y:A.
+		sbc.l	\1, x
+		tya
+		sbc.h	\1, x		; CS if Y:A > memory.
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; C is true (1) if Y:A >= memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__uge_w.wax	.macro
+		cmp.l	\1, x		; Subtract memory from Y:A.
+		tya
+		sbc.h	\1, x		; CS if Y:A >= memory.
+		.endm
+
+; **************
+; optimized boolean test
+; C is true (1) if Y:A == memory-value, else false (0)
+; this MUST set the C flag for the subsequent branches!
+
+__equ_w.uax	.macro
+		cmp	\1, x
+		bne	!false+
+		tya
+		beq	!+
+!false:		clc
+!:
+		.endm
+
+; **************
+; optimized boolean test
+; C is true (1) if Y:A != memory-value, else false (0)
+; this MUST set the C flag for the subsequent branches!
+
+__neq_w.uax	.macro
+		sec
+		eor	\1, x
+		bne	!+
+		tya
+		bne	!+
+		clc
+!:
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; C is true (1) if Y:A < memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__slt_w.uax	.macro
+		cmp	\1, x		; Subtract memory from Y:A.
+		tya
+		sbc	#0
+		bvc	!+
+		eor	#$80		; -ve if Y:A < memory (signed).
+!:		asl	a
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; C is true (1) if Y:A <= memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__sle_w.uax	.macro
+		clc			; Subtract memory+1 from Y:A.
+		sbc	\1, x
+		tya
+		sbc	#0
+		bvc	!+
+		eor	#$80		; -ve if Y:A <= memory (signed).
+!:		asl	a
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; C is true (1) if Y:A > memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__sgt_w.uax	.macro
+		clc			; Subtract memory+1 from Y:A.
+		sbc	\1, x
+		tya
+		sbc	#0
+		bvc	!+
+		eor	#$80		; +ve if Y:A > memory (signed).
+!:		eor	#$80
+		asl	a
+		.endm
+
+; **************
+; optimized boolean test (signed word)
+; C is true (1) if Y:A >= memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__sge_w.uax	.macro
+		cmp	\1, x		; Subtract memory from Y:A.
+		tya
+		sbc	#0
+		bvc	!+
+		eor	#$80		; +ve if Y:A >= memory (signed).
+!:		eor	#$80
+		asl	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; C is true (1) if Y:A < memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__ult_w.uax	.macro
+		cmp	\1, x		; Subtract memory from Y:A.
+		tya
+		sbc	#0		; CC if Y:A < memory.
+		ror	a
+		eor	#$80
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; C is true (1) if Y:A <= memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__ule_w.uax	.macro
+		clc			; Subtract memory+1 from Y:A.
+		sbc	\1, x
+		tya
+		sbc	#0		; CC if Y:A <= memory.
+		ror	a
+		eor	#$80
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; C is true (1) if Y:A > memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__ugt_w.uax	.macro
+		clc			; Subtract memory+1 from Y:A.
+		sbc	\1, x
+		tya
+		sbc	#0		; CS if Y:A > memory.
+		.endm
+
+; **************
+; optimized boolean test (unsigned word)
+; C is true (1) if Y:A >= memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__uge_w.uax	.macro
+		cmp	\1, x		; Subtract memory from Y:A.
+		tya
+		sbc	#0		; CS if Y:A >= memory.
+		.endm
+
+; **************
+; optimized boolean test
+; C is true (1) if A == memory-value, else false (0)
+; this MUST set the C flag for the subsequent branches!
+
+__equ_b.uaxq	.macro
+		cmp	\1, x
+		beq	!+
+		clc
+!:
+		.endm
+
+; **************
+; optimized boolean test
+; C is true (1) if A != memory-value, else false (0)
+; this MUST set the C flag for the subsequent branches!
+
+__neq_b.uaxq	.macro
+		sec
+		eor	\1, x
+		bne	!+
+		clc
+!:
+		.endm
+
+; **************
+; optimized boolean test (signed byte)
+; C is true (1) if A < memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__slt_b.baxq	.macro
+		sec			; Subtract memory from A.
+		sbc	\1, x
+		bvc	!+
+		eor	#$80		; -ve if A < memory (signed).
+!:		asl	a
+		.endm
+
+; **************
+; optimized boolean test (signed byte)
+; C is true (1) if A <= memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__sle_b.baxq	.macro
+		clc			; Subtract memory+1 from A.
+		sbc	\1, x
+		bvc	!+
+		eor	#$80		; -ve if A <= memory (signed).
+!:		asl	a
+		.endm
+
+; **************
+; optimized boolean test (signed byte)
+; C is true (1) if A > memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__sgt_b.baxq	.macro
+		clc			; Subtract memory+1 from A.
+		sbc.l	\1, x
+		bvc	!+
+		eor	#$80		; +ve if A > memory (signed).
+!:		eor	#$80
+		asl	a
+		.endm
+
+; **************
+; optimized boolean test (signed byte)
+; C is true (1) if A >= memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__sge_b.baxq	.macro
+		sec			; Subtract memory from A.
+		sbc	\1, x
+		bvc	!+
+		eor	#$80		; +ve if A >= memory (signed).
+!:		eor	#$80
+		asl	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned byte)
+; C is true (1) if A < memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__ult_b.uaxq	.macro
+		cmp	\1, x		; Subtract memory from A.
+		ror	a		; CC if A < memory.
+		eor	#$80
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned byte)
+; C is true (1) if A <= memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__ule_b.uaxq	.macro
+		clc			; Subtract memory+1 from A.
+		sbc	\1, x
+		ror	a		; CC if A <= memory.
+		eor	#$80
+		rol	a
+		.endm
+
+; **************
+; optimized boolean test (unsigned byte)
+; C is true (1) if A > memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__ugt_b.uaxq	.macro
+		clc			; Subtract memory+1 from A.
+		sbc	\1, x		; CS if A > memory.
+		.endm
+
+; **************
+; optimized boolean test (unsigned byte)
+; C is true (1) if A >= memory-value, else false (0)
+; this MUST set the C flag for the susequent branches!
+
+__uge_b.uaxq	.macro
+		cmp	\1, x		; Subtract memory from A.
+					; CS if A >= memory.
+		.endm
+
+; **************
 ; boolean test, optimized into __not.wr if used before a __tst.wr
 ; C is true (1) if Y:A == 0, else false (0)
 ; this MUST set the C flag for the subsequent branches!
@@ -1899,6 +2292,20 @@ __not.war	.macro
 ; C is true (1) if memory-value == 0, else false (0)
 ; this MUST set the C flag for the subsequent branches!
 
+__not.wax	.macro
+		lda.l	\1, x
+		ora.h	\1, x
+		clc
+		bne	!+
+		sec
+!:
+		.endm
+
+; **************
+; optimized boolean test
+; C is true (1) if memory-value == 0, else false (0)
+; this MUST set the C flag for the subsequent branches!
+
 __not.up	.macro
 		lda	[\1]
 		clc
@@ -1954,7 +2361,7 @@ __not.uar	.macro
 ; this MUST set the C flag for the subsequent branches!
 
 __not.uax	.macro
-		lda	\1, y
+		lda	\1, x
 		clc
 		bne	!+
 		sec
@@ -2030,6 +2437,17 @@ __tst.war	.macro
 		tay
 		lda.l	\1, y
 		ora.h	\1, y
+		cmp	#1
+		.endm
+
+; **************
+; optimized boolean test
+; C is true (1) if memory-value != 0, else false (0)
+; this MUST set the C flag for the subsequent branches!
+
+__tst.wax	.macro
+		lda.l	\1, x
+		ora.h	\1, x
 		cmp	#1
 		.endm
 
@@ -2224,6 +2642,19 @@ __boolnot.war	.macro
 		tay
 		lda.l	\1, y
 		ora.h	\1, y
+		cla
+		bne	!+
+		inc	a
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test used before a store, not a branch
+; Y:A is true (1) if memory-value == 0, else false (0)
+
+__boolnot.wax	.macro
+		lda.l	\1, x
+		ora.h	\1, x
 		cla
 		bne	!+
 		inc	a
@@ -2871,21 +3302,13 @@ __incld.wm	.macro
 
 ; **************
 
-__incld.bm	.macro
-		inc	\1
-		lda	\1
-		cly
-		bpl	!+
-		dey
+__ldinc.wm	.macro
+		lda.l	\1
+		ldy.h	\1
+		inc.l	\1
+		bne	!+
+		inc.h	\1
 !:
-		.endm
-
-; **************
-
-__incld.um	.macro
-		inc	\1
-		lda	\1
-		cly
 		.endm
 
 ; **************
@@ -2901,31 +3324,22 @@ __decld.wm	.macro
 
 ; **************
 
-__decld.bm	.macro
-		dec	\1
+__lddec.wm	.macro
+		ldy.h	\1
+		lda.l	\1
+		bne	!+
+		dec.h	\1
+!:		dec.l	\1
+		.endm
+
+; **************
+
+__incld.bm	.macro
+		inc	\1
 		lda	\1
 		cly
 		bpl	!+
 		dey
-!:
-		.endm
-
-; **************
-
-__decld.um	.macro
-		dec	\1
-		lda	\1
-		cly
-		.endm
-
-; **************
-
-__ldinc.wm	.macro
-		lda.l	\1
-		ldy.h	\1
-		inc.l	\1
-		bne	!+
-		inc.h	\1
 !:
 		.endm
 
@@ -2941,20 +3355,13 @@ __ldinc.bm	.macro
 
 ; **************
 
-__ldinc.um	.macro
+__decld.bm	.macro
+		dec	\1
 		lda	\1
 		cly
-		inc	\1
-		.endm
-
-; **************
-
-__lddec.wm	.macro
-		ldy.h	\1
-		lda.l	\1
-		bne	!+
-		dec.h	\1
-!:		dec.l	\1
+		bpl	!+
+		dey
+!:
 		.endm
 
 ; **************
@@ -2965,6 +3372,30 @@ __lddec.bm	.macro
 		bpl	!+
 		dey
 !:		dec	\1
+		.endm
+
+; **************
+
+__incld.um	.macro
+		inc	\1
+		lda	\1
+		cly
+		.endm
+
+; **************
+
+__ldinc.um	.macro
+		lda	\1
+		cly
+		inc	\1
+		.endm
+
+; **************
+
+__decld.um	.macro
+		dec	\1
+		lda	\1
+		cly
 		.endm
 
 ; **************
@@ -3022,23 +3453,14 @@ __incld.ws	.macro
 
 ; **************
 
-__incld.bs	.macro
+__ldinc.ws	.macro
 		ldx	<__sp
-		inc	<__stack + \1, x
-		lda	<__stack + \1, x
-		cly
-		bpl	!+
-		dey
+		lda.l	<__stack + \1, x
+		ldy.h	<__stack + \1, x
+		inc.l	<__stack + \1, x
+		bne	!+
+		inc.h	<__stack + \1, x
 !:
-		.endm
-
-; **************
-
-__incld.us	.macro
-		ldx	<__sp
-		inc	<__stack + \1, x
-		lda	<__stack + \1, x
-		cly
 		.endm
 
 ; **************
@@ -3055,34 +3477,24 @@ __decld.ws	.macro
 
 ; **************
 
-__decld.bs	.macro
+__lddec.ws	.macro
 		ldx	<__sp
-		dec	<__stack + \1, x
+		ldy.h	<__stack + \1, x
+		lda.l	<__stack + \1, x
+		bne	!+
+		dec.h	<__stack + \1, x
+!:		dec.l	<__stack + \1, x
+		.endm
+
+; **************
+
+__incld.bs	.macro
+		ldx	<__sp
+		inc	<__stack + \1, x
 		lda	<__stack + \1, x
 		cly
 		bpl	!+
 		dey
-!:
-		.endm
-
-; **************
-
-__decld.us	.macro
-		ldx	<__sp
-		dec	<__stack + \1, x
-		lda	<__stack + \1, x
-		cly
-		.endm
-
-; **************
-
-__ldinc.ws	.macro
-		ldx	<__sp
-		lda.l	<__stack + \1, x
-		ldy.h	<__stack + \1, x
-		inc.l	<__stack + \1, x
-		bne	!+
-		inc.h	<__stack + \1, x
 !:
 		.endm
 
@@ -3099,22 +3511,14 @@ __ldinc.bs	.macro
 
 ; **************
 
-__ldinc.us	.macro
+__decld.bs	.macro
 		ldx	<__sp
+		dec	<__stack + \1, x
 		lda	<__stack + \1, x
 		cly
-		inc	<__stack + \1, x
-		.endm
-
-; **************
-
-__lddec.ws	.macro
-		ldx	<__sp
-		ldy.h	<__stack + \1, x
-		lda.l	<__stack + \1, x
-		bne	!+
-		dec.h	<__stack + \1, x
-!:		dec.l	<__stack + \1, x
+		bpl	!+
+		dey
+!:
 		.endm
 
 ; **************
@@ -3126,6 +3530,33 @@ __lddec.bs	.macro
 		bpl	!+
 		dey
 !:		dec	<__stack + \1, x
+		.endm
+
+; **************
+
+__incld.us	.macro
+		ldx	<__sp
+		inc	<__stack + \1, x
+		lda	<__stack + \1, x
+		cly
+		.endm
+
+; **************
+
+__ldinc.us	.macro
+		ldx	<__sp
+		lda	<__stack + \1, x
+		cly
+		inc	<__stack + \1, x
+		.endm
+
+; **************
+
+__decld.us	.macro
+		ldx	<__sp
+		dec	<__stack + \1, x
+		lda	<__stack + \1, x
+		cly
 		.endm
 
 ; **************
@@ -3228,121 +3659,19 @@ __lddec.war	.macro
 ; **************
 
 __incld.bar	.macro
-		tay
-		lda	\1, y
-		inc	a
-		sta	\1, y
+		tax
+		inc	\1, x
+		lda	\1, x
 		cly
 		bpl	!+
 		dey
 !:
-		.endm
-
-; **************
-
-__incld.uar	.macro
-		tay
-		lda	\1, y
-		inc	a
-		sta	\1, y
-		cly
 		.endm
 
 ; **************
 
 __ldinc.bar	.macro
-		tay
-		lda.l	\1, y
-		inc	a
-		sta.l	\1, y
-		dec	a
-		cly
-		bpl	!+
-		dey
-!:
-		.endm
-
-; **************
-
-__ldinc.uar	.macro
-		tay
-		lda.l	\1, y
-		inc	a
-		sta.l	\1, y
-		dec	a
-		cly
-		.endm
-
-; **************
-
-__decld.bar	.macro
-		tay
-		lda	\1, y
-		dec	a
-		sta	\1, y
-		cly
-		bpl	!+
-		dey
-!:
-		.endm
-
-; **************
-
-__decld.uar	.macro
-		tay
-		lda	\1, y
-		dec	a
-		sta	\1, y
-		cly
-		.endm
-
-; **************
-
-__lddec.bar	.macro
-		tay
-		lda.l	\1, y
-		dec	a
-		sta.l	\1, y
-		inc	a
-		cly
-		bpl	!+
-		dey
-!:
-		.endm
-
-; **************
-
-__lddec.uar	.macro
-		tay
-		lda.l	\1, y
-		dec	a
-		sta.l	\1, y
-		inc	a
-		cly
-		.endm
-
-; **************
-
-__incld.bax	.macro
-		inc	\1, x
-		lda	\1, x
-		cly
-		bpl	!+
-		dey
-!:
-		.endm
-
-; **************
-
-__incld.uax	.macro
-		inc	\1, x
-		lda	\1, x
-		cly
-		.endm
-
-; **************
-
-__ldinc.bax	.macro
+		tax
 		lda	\1, x
 		cly
 		bpl	!+
@@ -3352,15 +3681,8 @@ __ldinc.bax	.macro
 
 ; **************
 
-__ldinc.uax	.macro
-		lda	\1, x
-		cly
-		inc	\1, x
-		.endm
-
-; **************
-
-__decld.bax	.macro
+__decld.bar	.macro
+		tax
 		dec	\1, x
 		lda	\1, x
 		cly
@@ -3371,15 +3693,8 @@ __decld.bax	.macro
 
 ; **************
 
-__decld.uax	.macro
-		dec	\1, x
-		lda	\1, x
-		cly
-		.endm
-
-; **************
-
-__lddec.bax	.macro
+__lddec.bar	.macro
+		tax
 		lda	\1, x
 		cly
 		bpl	!+
@@ -3389,98 +3704,38 @@ __lddec.bax	.macro
 
 ; **************
 
-__lddec.uax	.macro
+__incld.uar	.macro
+		tax
+		inc	\1, x
+		lda	\1, x
+		cly
+		.endm
+
+; **************
+
+__ldinc.uar	.macro
+		tax
+		lda	\1, x
+		cly
+		inc	\1, x
+		.endm
+
+; **************
+
+__decld.uar	.macro
+		tax
+		dec	\1, x
+		lda	\1, x
+		cly
+		.endm
+
+; **************
+
+__lddec.uar	.macro
+		tax
 		lda	\1, x
 		cly
 		dec	\1, x
-		.endm
-
-; **************
-
-__incld.bay	.macro
-		lda	\1, y
-		inc	a
-		sta	\1, y
-		cly
-		bpl	!+
-		dey
-!:
-		.endm
-
-; **************
-
-__incld.uay	.macro
-		lda	\1, y
-		inc	a
-		sta	\1, y
-		cly
-		.endm
-
-; **************
-
-__ldinc.bay	.macro
-		lda.l	\1, y
-		inc	a
-		sta.l	\1, y
-		dec	a
-		cly
-		bpl	!+
-		dey
-!:
-		.endm
-
-; **************
-
-__ldinc.uay	.macro
-		lda.l	\1, y
-		inc	a
-		sta.l	\1, y
-		dec	a
-		cly
-		.endm
-
-; **************
-
-__decld.bay	.macro
-		lda	\1, y
-		dec	a
-		sta	\1, y
-		cly
-		bpl	!+
-		dey
-!:
-		.endm
-
-; **************
-
-__decld.uay	.macro
-		lda	\1, y
-		dec	a
-		sta	\1, y
-		cly
-		.endm
-
-; **************
-
-__lddec.bay	.macro
-		lda.l	\1, y
-		dec	a
-		sta.l	\1, y
-		inc	a
-		cly
-		bpl	!+
-		dey
-!:
-		.endm
-
-; **************
-
-__lddec.uay	.macro
-		lda.l	\1, y
-		dec	a
-		sta.l	\1, y
-		inc	a
-		cly
 		.endm
 
 ; **************
@@ -3503,20 +3758,6 @@ __inc.uarq	.macro
 		inc	\1, x
 		.endm
 
-; **************
-; optimized macro used when the value isn't needed in the primary register
-
-__inc.uaxq	.macro
-		inc	\1, x
-		.endm
-
-; **************
-; optimized macro used when the value isn't needed in the primary register
-
-__inc.uayq	.macro
-		sxy
-		inc	\1, x
-		.endm
 
 ; **************
 ; optimized macro used when the value isn't needed in the primary register
@@ -3524,7 +3765,7 @@ __inc.uayq	.macro
 __dec.warq	.macro
 		asl	a
 		tax
-		ldy.l	\1, x
+		lda.l	\1, x
 		bne	!+
 		dec.h	\1, x
 !:		dec.l	\1, x
@@ -3539,10 +3780,250 @@ __dec.uarq	.macro
 		.endm
 
 ; **************
+
+__incld.wax	.macro
+		inc.l	\1, x
+		bne	!+
+		inc.h	\1, x
+!:		lda.l	\1, x
+		ldy.h	\1, x
+		.endm
+
+; **************
+
+__ldinc.wax	.macro
+		lda.l	\1, x
+		ldy.h	\1, x
+		inc.l	\1, x
+		bne	!+
+		inc.h	\1, x
+!:
+		.endm
+
+; **************
+
+__decld.wax	.macro
+		lda.l	\1, x
+		bne	!+
+		dec.h	\1, x
+!:		dec	a
+		sta.l	\1, x
+		ldy.h	\1, x
+		.endm
+
+; **************
+
+__lddec.wax	.macro
+		ldy.h	\1, x
+		lda.l	\1, x
+		bne	!+
+		dec.h	\1, x
+!:		dec.l	\1, x
+		.endm
+
+; **************
+
+__incld.bax	.macro
+		inc	\1, x
+		lda	\1, x
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+
+__ldinc.bax	.macro
+		lda	\1, x
+		cly
+		bpl	!+
+		dey
+!:		inc	\1, x
+		.endm
+
+; **************
+
+__decld.bax	.macro
+		dec	\1, x
+		lda	\1, x
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+
+__lddec.bax	.macro
+		lda	\1, x
+		cly
+		bpl	!+
+		dey
+!:		dec	\1, x
+		.endm
+
+; **************
+
+__incld.uax	.macro
+		inc	\1, x
+		lda	\1, x
+		cly
+		.endm
+
+; **************
+
+__ldinc.uax	.macro
+		lda	\1, x
+		cly
+		inc	\1, x
+		.endm
+
+; **************
+
+__decld.uax	.macro
+		dec	\1, x
+		lda	\1, x
+		cly
+		.endm
+
+; **************
+
+__lddec.uax	.macro
+		lda	\1, x
+		cly
+		dec	\1, x
+		.endm
+
+; **************
+; optimized macro used when the value isn't needed in the primary register
+
+__inc.waxq	.macro
+		inc.l	\1, x
+		bne	!+
+		inc.h	\1, x
+!:
+		.endm
+
+; **************
+; optimized macro used when the value isn't needed in the primary register
+
+__inc.uaxq	.macro
+		inc	\1, x
+		.endm
+
+
+; **************
+; optimized macro used when the value isn't needed in the primary register
+
+__dec.waxq	.macro
+		lda.l	\1, x
+		bne	!+
+		dec.h	\1, x
+!:		dec.l	\1, x
+		.endm
+
+; **************
 ; optimized macro used when the value isn't needed in the primary register
 
 __dec.uaxq	.macro
 		dec	\1, x
+		.endm
+
+; **************
+
+__incld.bay	.macro
+		lda	\1, y
+		inc	a
+		sta	\1, y
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+
+__ldinc.bay	.macro
+		lda.l	\1, y
+		inc	a
+		sta.l	\1, y
+		dec	a
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+
+__decld.bay	.macro
+		lda	\1, y
+		dec	a
+		sta	\1, y
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+
+__lddec.bay	.macro
+		lda.l	\1, y
+		dec	a
+		sta.l	\1, y
+		inc	a
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+
+__incld.uay	.macro
+		lda	\1, y
+		inc	a
+		sta	\1, y
+		cly
+		.endm
+
+; **************
+
+__ldinc.uay	.macro
+		lda.l	\1, y
+		inc	a
+		sta.l	\1, y
+		dec	a
+		cly
+		.endm
+
+; **************
+
+__decld.uay	.macro
+		lda	\1, y
+		dec	a
+		sta	\1, y
+		cly
+		.endm
+
+; **************
+
+__lddec.uay	.macro
+		lda.l	\1, y
+		dec	a
+		sta.l	\1, y
+		inc	a
+		cly
+		.endm
+
+; **************
+; optimized macro used when the value isn't needed in the primary register
+
+__inc.uayq	.macro
+		sxy
+		inc	\1, x
 		.endm
 
 ; **************
