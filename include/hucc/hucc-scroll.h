@@ -74,7 +74,7 @@ extern void __fastcall __macro sgx_disable_all_splits( void );
 		.macro	_sgx_disable_all_splits
 		ldy	#HUCC_SGX_SPLITS - 1
 !loop:		tya
-		call	_disable_split.1
+		call	_sgx_disable_split.1
 		dey
 		bpl	!loop-
 		.endm
