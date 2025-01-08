@@ -30,6 +30,12 @@ This directory contains a number of example programs and utilities for developin
   - A HuCARD ROM to compare a PC Engine emulator's ADPCM playback flags and ADPCM write speed with real PC Engine console hardware.
 
 
+## Getting started with a HuCARD
+
+* rom-bare-hello
+  - A simple example of creating a HuCARD ROM.
+
+
 ## Using the System Card BIOS
 
 * scd-bios-hello

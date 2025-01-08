@@ -2,7 +2,7 @@
 #
 
 PREREQS = ipl-scd
-SUBDIRS = rom-bare-buftest rom-bare-mwrtest rom-bare-rcrtest rom-bare-tiatest \
+SUBDIRS = rom-bare-hello rom-bare-buftest rom-bare-mwrtest rom-bare-rcrtest rom-bare-tiatest \
           rom-core-hello rom-core-hugerom rom-core-okitest \
           scd-bios-hello scd-bios-hello-error \
           cd-core-1stage cd-core-2stage cd-core-scsitest \
