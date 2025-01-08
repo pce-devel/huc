@@ -42,12 +42,12 @@
 ;
 ;      MPR0 = bank $FF : PCE hardware
 ;      MPR1 = bank $F8 : PCE RAM with Stack & ZP
-;      MPR2 = bank $00 : HuCard ROM
-;      MPR3 = bank $01 : HuCard ROM
-;      MPR4 = bank $02 : HuCard ROM
-;      MPR5 = bank $03 : HuCard ROM
-;      MPR6 = bank $04 : HuCard ROM
-;      MPR7 = bank $00 : HuCard ROM
+;      MPR2 = bank $00 : HuCARD ROM
+;      MPR3 = bank $01 : HuCARD ROM
+;      MPR4 = bank $02 : HuCARD ROM
+;      MPR5 = bank $03 : HuCARD ROM
+;      MPR6 = bank $04 : HuCARD ROM
+;      MPR7 = bank $00 : HuCARD ROM
 ;
 ; ***************************************************************************
 ; ***************************************************************************
@@ -241,7 +241,7 @@ bare_nmi_irq:	rti				; No NMI on the PC Engine!
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; bare_clr_hooks - Reset default "CORE(not TM)" interrupt-handling hooks.
+; bare_clr_hooks - Reset default interrupt-handling hooks.
 ;
 
 bare_clr_hooks:	php				; Preserve interrupt state.
@@ -280,7 +280,7 @@ bare_sw_reset:	sei				; Disable interrupts.
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; irq1_handler - Basic "CORE(not TM)" IRQ1 handler to use as the "irq1_hook".
+; irq1_handler - Basic IRQ1 handler to use as the "irq1_hook".
 ;
 ; Doing the IRQ1 handler processing in this hook means that things operate
 ; the same whether the System Card or an Overlay is paged into MPR7.
@@ -346,7 +346,7 @@ irq1_handler:	pha				; Save all registers.
 ; code is able to put data in there before the total overall size of the code
 ; is known.
 ;
-; By default, DATA_BANK is the next bank after the CORE_BANK.
+; By default, DATA_BANK is the next bank after the BASE_BANK.
 ;
 ; RESERVE_BANKS allows developers to reserve some banks between the BASE_BANK
 ; and the DATA_BANK that they can use however they wish.
@@ -356,7 +356,8 @@ irq1_handler:	pha				; Save all registers.
 ; together at the start of memory, and leave the maximum number of banks for
 ; loading dynamic data from CD-ROM.
 ;
-; RESERVE_BANKS is normally defined in each project's "core-config.inc".
+; RESERVE_BANKS is normally defined in each project's "core-config.inc" when
+; the project is using the "CORE(not TM)" library.
 ;
 
 	.ifndef	RESERVE_BANKS
