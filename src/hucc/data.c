@@ -61,7 +61,7 @@ int nxtlab,
      indflg,
      ctext,
      cmode,
-     lastst,
+     last_statement,
      overlayflag,
      optimize,
      globals_h_in_process;
