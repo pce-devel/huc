@@ -319,26 +319,41 @@ enum ICODE {
 
 	/* i-codes for saving the primary register */
 
-	I_ST_WMIQ,
-	I_ST_UMIQ,
-	I_ST_WPI,
-	I_ST_UPI,
-	I_ST_WM,
-	I_ST_UM,
-	I_ST_WP,
-	I_ST_UP,
 	I_ST_WPT,
 	I_ST_UPT,
-	X_ST_WSIQ,
-	X_ST_USIQ,
+	X_ST_WPTQ,
+	X_ST_UPTQ,
+
+	I_ST_WM,
+	I_ST_UM,
+	X_ST_WMQ,
+	X_ST_UMQ,
+	I_ST_WMIQ,
+	I_ST_UMIQ,
+	X_ST_WP,
+	X_ST_UP,
+	X_ST_WPQ,
+	X_ST_UPQ,
+	X_ST_WPI,
+	X_ST_UPI,
 	X_ST_WS,
 	X_ST_US,
+	X_ST_WSQ,
+	X_ST_USQ,
+	I_ST_WSIQ,
+	I_ST_USIQ,
 
 	X_INDEX_WR,
 	X_INDEX_UR,
 
 	X_ST_WAT,
 	X_ST_UAT,
+	X_ST_WATQ,
+	X_ST_UATQ,
+	X_ST_WAX,
+	X_ST_UAX,
+	X_ST_WAXQ,
+	X_ST_UAXQ,
 
 	/* i-codes for extending the primary register */
 
@@ -354,8 +369,12 @@ enum ICODE {
 	I_ADD_WI,
 	X_ADD_WM,
 	X_ADD_UM,
+	X_ADD_WP,
+	X_ADD_UP,
 	X_ADD_WS,
 	X_ADD_US,
+	X_ADD_WAT,
+	X_ADD_UAT,
 	X_ADD_WAX,
 	X_ADD_UAX,
 
@@ -363,8 +382,12 @@ enum ICODE {
 	I_SUB_WI,
 	X_SUB_WM,
 	X_SUB_UM,
+	X_SUB_WP,
+	X_SUB_UP,
 	X_SUB_WS,
 	X_SUB_US,
+	X_SUB_WAT,
+	X_SUB_UAT,
 	X_SUB_WAX,
 	X_SUB_UAX,
 
@@ -372,36 +395,52 @@ enum ICODE {
 	X_ISUB_WI,
 	X_ISUB_WM,
 	X_ISUB_UM,
+	X_ISUB_WP,
+	X_ISUB_UP,
 	X_ISUB_WS,
 	X_ISUB_US,
+	X_ISUB_WAT,
+	X_ISUB_UAT,
 	X_ISUB_WAX,
 	X_ISUB_UAX,
 
 	I_AND_WT,
-	I_AND_WI,
-	I_AND_UIQ,
+	X_AND_WI,
+	X_AND_UIQ,
 	X_AND_WM,
 	X_AND_UM,
+	X_AND_WP,
+	X_AND_UP,
 	X_AND_WS,
 	X_AND_US,
+	X_AND_WAT,
+	X_AND_UAT,
 	X_AND_WAX,
 	X_AND_UAX,
 
 	I_EOR_WT,
-	I_EOR_WI,
+	X_EOR_WI,
 	X_EOR_WM,
 	X_EOR_UM,
+	X_EOR_WP,
+	X_EOR_UP,
 	X_EOR_WS,
 	X_EOR_US,
+	X_EOR_WAT,
+	X_EOR_UAT,
 	X_EOR_WAX,
 	X_EOR_UAX,
 
 	I_OR_WT,
-	I_OR_WI,
+	X_OR_WI,
 	X_OR_WM,
 	X_OR_UM,
+	X_OR_WP,
+	X_OR_UP,
 	X_OR_WS,
 	X_OR_US,
+	X_OR_WAT,
+	X_OR_UAT,
 	X_OR_WAX,
 	X_OR_UAX,
 
@@ -488,7 +527,7 @@ enum ICOMPARE {
 /* pseudo instruction arg types for compiler I_INFO */
 #define T_SOURCE_LINE   12
 #define T_CLEAR_LINE    13
-#define T_MARKER        14
+#define T_EXPRESSION    14
 
 #define FOREVER for (;;)
 #define FALSE   0

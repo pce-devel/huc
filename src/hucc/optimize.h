@@ -13,6 +13,8 @@
 #define IS_USEPR	8
 #define IS_STORE	16
 #define IS_SHORT	32
+#define IS_PUSHWT	64
+#define IS_POPWT	128
 
 /* flag information for each of the i-code instructions */
 extern unsigned char icode_flags[];

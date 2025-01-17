@@ -183,6 +183,8 @@ void stst (void)
 			last_statement = statement(NO);
 		}
 		else {
+			/* mark the start of an expression */
+			out_ins(I_INFO, T_EXPRESSION, 0);
 			lptr = slptr;
 			expression(YES);
 			needsemicolon();

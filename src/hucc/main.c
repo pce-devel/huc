@@ -360,7 +360,7 @@ unknown_option:
 			stkp =
 			errcnt =
 			ncmp =
-			lastst =
+			last_statement =
 			quote[1] =
 			const_nb =
 			line_number = 0;
