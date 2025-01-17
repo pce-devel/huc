@@ -124,13 +124,11 @@ clear_vram_x:	bsr	clear_bat_x		; Clear the BAT.
 		lsr	a
 
 ;		cly				; Clear the rest of VRAM.
-.clr_loop:	pha
 		stz	VDC_DL, x
-.clr_pair:	stz	VDC_DH, x		; Seperate writes to minimize
+.clr_loop:	stz	VDC_DH, x		; Seperate writes to minimize
 		dey				; VDC MWR penalty.
 		stz	VDC_DH, x
-		bne	.clr_pair
-		pla
+		bne	.clr_loop
 		dec	a
 		bne	.clr_loop
 
