@@ -498,7 +498,7 @@ void gen_code (INS *tmp)
 	case I_MODSP:
 		ot("__modsp");
 		if (type == T_LITERAL) {
-			outstr("_sym\t");
+			outstr("_goto\t");
 			outstr((const char *)data);
 		}
 		else {
@@ -597,7 +597,7 @@ void gen_code (INS *tmp)
 
 	case I_DEF:
 		outstr((const char *)data);
-		outstr(" .equ ");
+		outstr("\t=\t");
 		outdec((int)imm_data);
 		nl();
 		break;
@@ -1171,6 +1171,27 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_LDX_WS:
+		ot("__ldx.ws\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_LDX_BS:
+		ot("__ldx.bs\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_LDX_US:
+		ot("__ldx.us\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
 	case X_LDX_WSQ:
 		ot("__ldx.wsq\t");
 		outdec((int)data);
@@ -1192,27 +1213,6 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_LD2X_WSQ:
-		ot("__ld2x.wsq\t");
-		outdec((int)data);
-		outlocal(tmp->sym);
-		nl();
-		break;
-
-	case X_LD2X_BSQ:
-		ot("__ld2x.bsq\t");
-		outdec((int)data);
-		outlocal(tmp->sym);
-		nl();
-		break;
-
-	case X_LD2X_USQ:
-		ot("__ld2x.usq\t");
-		outdec((int)data);
-		outlocal(tmp->sym);
-		nl();
-		break;
-
 	case X_LD2X_WS:
 		ot("__ld2x.ws\t");
 		outdec((int)data);
@@ -1229,6 +1229,27 @@ void gen_code (INS *tmp)
 
 	case X_LD2X_US:
 		ot("__ld2x.us\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_LD2X_WSQ:
+		ot("__ld2x.wsq\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_LD2X_BSQ:
+		ot("__ld2x.bsq\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_LD2X_USQ:
+		ot("__ld2x.usq\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
