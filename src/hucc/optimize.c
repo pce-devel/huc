@@ -188,13 +188,13 @@ unsigned char icode_flags[] = {
 	/* X_LDX_BMQ            */	IS_SBYTE,
 	/* X_LDX_UMQ            */	IS_UBYTE,
 
-	/* X_LD2X_WMQ           */	0,
-	/* X_LD2X_BMQ           */	IS_SBYTE,
-	/* X_LD2X_UMQ           */	IS_UBYTE,
-
 	/* X_LD2X_WM            */	0,
 	/* X_LD2X_BM            */	IS_SBYTE,
 	/* X_LD2X_UM            */	IS_UBYTE,
+
+	/* X_LD2X_WMQ           */	0,
+	/* X_LD2X_BMQ           */	IS_SBYTE,
+	/* X_LD2X_UMQ           */	IS_UBYTE,
 
 	/* X_LDY_WMQ            */	0,
 	/* X_LDY_BMQ            */	IS_SBYTE,
@@ -223,17 +223,21 @@ unsigned char icode_flags[] = {
 	/* X_LD_BSQ             */	IS_SBYTE + IS_SPREL,
 	/* X_LD_USQ             */	IS_UBYTE + IS_SPREL,
 
+	/* X_LDX_WS             */	IS_SPREL,
+	/* X_LDX_BS             */	IS_SBYTE + IS_SPREL,
+	/* X_LDX_US             */	IS_UBYTE + IS_SPREL,
+
 	/* X_LDX_WSQ            */	IS_SPREL,
 	/* X_LDX_BSQ            */	IS_SBYTE + IS_SPREL,
 	/* X_LDX_USQ            */	IS_UBYTE + IS_SPREL,
 
-	/* X_LD2X_WSQ           */	IS_SPREL,
-	/* X_LD2X_BSQ           */	IS_SBYTE + IS_SPREL,
-	/* X_LD2X_USQ           */	IS_UBYTE + IS_SPREL,
-
 	/* X_LD2X_WS            */	IS_SPREL,
 	/* X_LD2X_BS            */	IS_SBYTE + IS_SPREL,
 	/* X_LD2X_US            */	IS_UBYTE + IS_SPREL,
+
+	/* X_LD2X_WSQ           */	IS_SPREL,
+	/* X_LD2X_BSQ           */	IS_SBYTE + IS_SPREL,
+	/* X_LD2X_USQ           */	IS_UBYTE + IS_SPREL,
 
 	/* X_LDY_WSQ            */	IS_SPREL,
 	/* X_LDY_BSQ            */	IS_SBYTE + IS_SPREL,
@@ -1546,7 +1550,7 @@ lv1_loop:
 			 *  __ld.uax		symbol
 			 *  __cmp_w.wt		type
 			 *
-			 *  __push.wr			-->	__ldx.{w/b/u}sq	index
+			 *  __push.wr			-->	__ldx.{w/b/u}s	index
 			 *  __ldx.{w/b/u}sq	index		__cmp_w.uax	type, symbol
 			 *  __ld.uax		symbol
 			 *  __cmp_w.wt		type
@@ -1586,6 +1590,15 @@ lv1_loop:
 					p[2]->ins_code = X_CMP_WAX;
 					break;
 				case X_LD_UAX:
+					switch (p[3]->ins_code) {
+					case X_LDX_WMQ: p[3]->ins_code = X_LDX_WMQ; break;
+					case X_LDX_BMQ: p[3]->ins_code = X_LDX_BMQ; break;
+					case X_LDX_UMQ: p[3]->ins_code = X_LDX_UMQ; break;
+					case X_LDX_WSQ: p[3]->ins_code = X_LDX_WS; break;
+					case X_LDX_BSQ: p[3]->ins_code = X_LDX_BS; break;
+					case X_LDX_USQ: p[3]->ins_code = X_LDX_US; break;
+					default: break;
+					}
 					p[2]->ins_code = X_CMP_UAX;
 					break;
 				default: break;
@@ -2552,6 +2565,15 @@ lv1_loop:
 					}
 					break;
 				case X_LD_UAX:
+					switch (p[3]->ins_code) {
+					case X_LDX_WMQ: p[3]->ins_code = X_LDX_WMQ; break;
+					case X_LDX_BMQ: p[3]->ins_code = X_LDX_BMQ; break;
+					case X_LDX_UMQ: p[3]->ins_code = X_LDX_UMQ; break;
+					case X_LDX_WSQ: p[3]->ins_code = X_LDX_WS; break;
+					case X_LDX_BSQ: p[3]->ins_code = X_LDX_BS; break;
+					case X_LDX_USQ: p[3]->ins_code = X_LDX_US; break;
+					default: break;
+					}
 					switch (p[0]->ins_code) {
 					case X_ISUB_WT: p[2]->ins_code = X_ISUB_UAX; break;
 					case I_ADD_WT:  p[2]->ins_code = X_ADD_UAX; break;
@@ -4254,9 +4276,9 @@ lv1_loop:
 					case X_LD_WMQ: index = X_LDX_WMQ; break;
 					case X_LD_BMQ: index = X_LDX_BMQ; break;
 					case X_LD_UMQ: index = X_LDX_UMQ; break;
-					case X_LD_WSQ: index = X_LDX_WSQ; break;
-					case X_LD_BSQ: index = X_LDX_BSQ; break;
-					case X_LD_USQ: index = X_LDX_USQ; break;
+					case X_LD_WSQ: index = X_LDX_WS; break;
+					case X_LD_BSQ: index = X_LDX_BS; break;
+					case X_LD_USQ: index = X_LDX_US; break;
 					default: index = 0; break;
 					}
 					if (index == 0)
@@ -4379,9 +4401,9 @@ lv1_loop:
 					case X_LDX_WMQ: index = X_LDX_WMQ; break;
 					case X_LDX_BMQ: index = X_LDX_BMQ; break;
 					case X_LDX_UMQ: index = X_LDX_UMQ; break;
-					case X_LDX_WSQ: index = X_LDX_WSQ; break;
-					case X_LDX_BSQ: index = X_LDX_BSQ; break;
-					case X_LDX_USQ: index = X_LDX_USQ; break;
+					case X_LDX_WSQ: index = X_LDX_WS; break;
+					case X_LDX_BSQ: index = X_LDX_BS; break;
+					case X_LDX_USQ: index = X_LDX_US; break;
 					default: index = 0; break;
 					}
 					if (index == 0)
