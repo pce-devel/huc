@@ -43,3 +43,4 @@ src/tools/sym2inc/sym2inc.exe
 src/tools/wav2vox/wav2vox
 src/tools/wav2vox/wav2vox.exe
 tgemu/tgemu*
+/wiki/
