@@ -5381,6 +5381,35 @@ __asl.wi	.macro
 
 ; **************
 
+__asl.uiq	.macro
+	.if (\1 == 8)
+		asl	a
+	.endif
+	.if (\1 >= 7)
+		asl	a
+	.endif
+	.if (\1 >= 6)
+		asl	a
+	.endif
+	.if (\1 >= 5)
+		asl	a
+	.endif
+	.if (\1 >= 4)
+		asl	a
+	.endif
+	.if (\1 >= 3)
+		asl	a
+	.endif
+	.if (\1 >= 2)
+		asl	a
+	.endif
+	.if (\1 >= 1)
+		asl	a
+	.endif
+		.endm
+
+; **************
+
 __asl.wr	.macro
 		asl	a
 		say
@@ -5615,6 +5644,115 @@ __mul.wi	.macro
 	.endif
 	.endif
 	.endif
+	.endif
+		.endm
+
+; **************
+
+__mul.uiq	.macro
+	.if (\1 == 2)
+		asl	a
+	.endif
+	.if (\1 == 3)
+		sta	__temp
+		asl	a
+		adc	__temp
+	.endif
+	.if (\1 == 4)
+		asl	a
+		asl	a
+	.endif
+	.if (\1 == 5)
+		sta	__temp
+		asl	a
+		asl	a
+		adc	__temp
+	.endif
+	.if (\1 == 6)
+		asl	a
+		sta	__temp
+		asl	a
+		adc	__temp
+	.endif
+	.if (\1 == 7)
+		sta	__temp
+		asl	a
+		asl	a
+		asl	a
+		sec
+		sbc	__temp
+	.endif
+	.if (\1 == 8)
+		asl	a
+		asl	a
+		asl	a
+	.endif
+	.if (\1 == 9)
+		sta	__temp
+		asl	a
+		asl	a
+		asl	a
+		adc	__temp
+	.endif
+	.if (\1 == 10)
+		asl	a
+		sta	__temp
+		asl	a
+		asl	a
+		adc	__temp
+	.endif
+	.if (\1 == 11)
+		sta.l	__temp
+		asl	a
+		sta.h	__temp
+		asl	a
+		asl	a
+		adc.l	__temp
+		adc.h	__temp
+	.endif
+	.if (\1 == 12)
+		asl	a
+		asl	a
+		sta	__temp
+		asl	a
+		adc	__temp
+	.endif
+	.if (\1 == 13)
+		sta.l	__temp
+		asl	a
+		asl	a
+		sta.h	__temp
+		asl	a
+		adc.l	__temp
+		adc.h	__temp
+	.endif
+	.if (\1 == 14)
+		asl	a
+		sta	__temp
+		asl	a
+		asl	a
+		asl	a
+		sec
+		sbc	__temp
+	.endif
+	.if (\1 == 15)
+		sta	__temp
+		asl	a
+		asl	a
+		asl	a
+		asl	a
+		sec
+		sbc	__temp
+	.endif
+	.if (\1 == 16)
+		asl	a
+		asl	a
+		asl	a
+		asl	a
+	.endif
+	.if (\1 >= 17)
+		ldy	#\1
+		jsr	__muluchar
 	.endif
 		.endm
 
