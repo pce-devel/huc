@@ -20,8 +20,6 @@
 #include "sym.h"
 #include "optimize.h"
 
-#define INFORM_POTENTIAL_REORDER 1
-
 /* invert comparison operation */
 int compare2swap [] = {
 	CMP_EQU,	// CMP_EQU
@@ -135,8 +133,6 @@ int heir1 (LVALUE *lval, int comma)
 	int k;
 	LVALUE lval2[1] = {{0}};
 	char fc;
-	INS variable;
-	variable.ins_code = 0;
 
 	k = heir1a(lval, comma);
 	if (match("=")) {
@@ -145,103 +141,91 @@ int heir1 (LVALUE *lval, int comma)
 			return (0);
 		}
 		if (lval->indirect) {
-#if 0
-			/* peek at the output to see the variable's address type */
-			if (q_nb) {
-				if
-				((q_ins[q_wr].ins_code == I_LEA_S) ||
-				 (q_ins[q_wr].ins_code == I_LD_WI) ||
-				 (q_ins[q_wr].ins_code == I_ADD_WI &&
-				  q_ins[q_wr].ins_type == T_SYMBOL &&
-				  is_small_array((SYMBOL *)q_ins[q_wr].ins_data))
-				) {
-					variable = q_ins[q_wr];
-//					if ((--q_wr) < 0)
-//						q_wr += Q_SIZE;
-					printf("\nassignment: ");
-					dump_ins(&variable);
-				}
-			}
-#endif
 			gpush();
 		}
 		if (heir1(lval2, comma))
 			rvalue(lval2);
 		if (lval2->val_type == CVOID)
 			void_value_error(lval2);
-		if (variable.ins_code == 0)
-			store(lval);
+		store(lval);
 		return (0);
 	}
 	else {
 		fc = ch();
 		if (match("-=") ||
 		    match("+=") ||
+		    match("&=") ||
+		    match("^=") ||
+		    match("|=") ||
 		    match("*=") ||
 		    match("/=") ||
 		    match("%=") ||
 		    match(">>=") ||
-		    match("<<=") ||
-		    match("&=") ||
-		    match("^=") ||
-		    match("|=")) {
+		    match("<<=")) {
+			bool can_reorder;
 			if (k == 0) {
 				needlval();
 				return (0);
 			}
+			can_reorder = !lval->indirect;
 			if (lval->indirect) {
-#if 0
 				/* peek at the output to see the variable's address type */
-				if (q_nb) {
+				if (optimize && q_nb) {
 					if
-					((q_ins[q_wr].ins_code == I_LEA_S) ||
-					 (q_ins[q_wr].ins_code == I_LD_WI) ||
+					((q_ins[q_wr].ins_code == I_LD_WI) ||
+					 (q_ins[q_wr].ins_code == I_LEA_S) ||
 					 (q_ins[q_wr].ins_code == I_ADD_WI &&
 					  q_ins[q_wr].ins_type == T_SYMBOL &&
 					  is_small_array((SYMBOL *)q_ins[q_wr].ins_data))
 					) {
-						variable = q_ins[q_wr];
-//						if ((--q_wr) < 0)
-//							q_wr += Q_SIZE;
-						printf("\nassignment: ");
-						dump_ins(&variable);
+						/* absolute, stack and small array variables are OK */
+						can_reorder = true;
 					}
 				}
-#endif
 				gpush();
 			}
 			rvalue(lval);
 			gpush();
+			/* only certain operations can be reordered */
+			if (fc == '-' || fc == '+' || fc == '&' || fc == '^' || fc == '|') {
+				/* insert a dummy i-code that will never be output just to stop the */
+				/* optimizer from removing the lval push while processing the rval, */
+				/* then the lval push will be removed when reordering the operation */
+				if (can_reorder)
+					out_ins(I_EXT_UR, T_NOP, 0);
+			}
 			if (heir1(lval2, comma))
 				rvalue(lval2);
 			if (lval2->val_type == CVOID)
 				void_value_error(lval2);
 			switch (fc) {
 			case '-':       {
+				/* will scale right if left is pointer and right is int */
 				gen_scale_right(lval, lval2);
 				out_ins(I_SUB_WT, 0, 0);
 				result(lval, lval2);
 				break;
 			}
 			case '+':       {
+				/* will scale right if left is pointer and right is int */
 				gen_scale_right(lval, lval2);
+				/* will scale left if left is int and right is pointer */
 				if (dbltest(lval2, lval))
 					out_ins(I_DOUBLE_WT, 0, 0);
 				out_ins(I_ADD_WT, 0, 0);
 				result(lval, lval2);
 				break;
 			}
+			case '&':       out_ins(I_AND_WT, 0, 0); break;
+			case '^':       out_ins(I_EOR_WT, 0, 0); break;
+			case '|':       out_ins(I_OR_WT, 0, 0); break;
 			case '*':       gmult(is_unsigned(lval) || is_unsigned(lval2)); break;
 			case '/':       gdiv(is_unsigned(lval) || is_unsigned(lval2)); break;
 			case '%':       gmod(is_unsigned(lval) || is_unsigned(lval2)); break;
 			case '>':       gasr(is_unsigned(lval)); break;
 			case '<':       gasl(); break;
-			case '&':       out_ins(I_AND_WT, 0, 0); break;
-			case '^':       out_ins(I_EOR_WT, 0, 0); break;
-			case '|':       out_ins(I_OR_WT, 0, 0); break;
 			}
-			if (variable.ins_code == 0)
-				store(lval);
+			store(lval);
 			return (0);
 		}
 		else
@@ -744,7 +728,7 @@ int heir8 (LVALUE *lval, int comma)
 				void_value_error(lval2);
 			/* will scale right if left is pointer and right is int */
 			gen_scale_right(lval, lval2);
-			/* will scale left if right is pointer and left is int */
+			/* will scale left if left is int and right is pointer */
 			if (dbltest(lval2, lval)) {
 				out_ins(I_DOUBLE_WT, 0, 0);
 				doubled = true;

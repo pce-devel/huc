@@ -41,12 +41,12 @@ int statement (int func)
 	if ((ch() == 0) & feof(input))
 		return (0);
 
-	lastst = 0;
+	last_statement = 0;
 	if (func) {
 		top_level_stkp = 1;	/* uninitialized */
 		if (match("{")) {
 			compound(YES);
-			return (lastst);
+			return (last_statement);
 		}
 		else
 			error("function requires compound statement");
@@ -55,7 +55,7 @@ int statement (int func)
 		compound(NO);
 	else
 		stst();
-	return (lastst);
+	return (last_statement);
 }
 
 /*
@@ -119,58 +119,58 @@ void stst (void)
 {
 	if (amatch("if", 2)) {
 		doif();
-		lastst = STIF;
+		last_statement = STIF;
 	}
 	else if (amatch("while", 5)) {
 		dowhile();
-		lastst = STWHILE;
+		last_statement = STWHILE;
 	}
 	else if (amatch("switch", 6)) {
 		doswitch();
-		lastst = STSWITCH;
+		last_statement = STSWITCH;
 	}
 	else if (amatch("do", 2)) {
 		dodo();
 		needsemicolon();
-		lastst = STDO;
+		last_statement = STDO;
 	}
 	else if (amatch("for", 3)) {
 		dofor();
-		lastst = STFOR;
+		last_statement = STFOR;
 	}
 	else if (amatch("return", 6)) {
 		doreturn();
 		needsemicolon();
-		lastst = STRETURN;
+		last_statement = STRETURN;
 	}
 	else if (amatch("break", 5)) {
 		dobreak();
 		needsemicolon();
-		lastst = STBREAK;
+		last_statement = STBREAK;
 	}
 	else if (amatch("continue", 8)) {
 		docont();
 		needsemicolon();
-		lastst = STCONT;
+		last_statement = STCONT;
 	}
 	else if (amatch("goto", 4)) {
 		dogoto();
 		needsemicolon();
-		lastst = STGOTO;
+		last_statement = STGOTO;
 	}
 	else if (match(";"))
 		;
 	else if (amatch("case", 4)) {
 		docase();
-		lastst = statement(NO);
+		last_statement = statement(NO);
 	}
 	else if (amatch("default", 7)) {
 		dodefault();
-		lastst = statement(NO);
+		last_statement = statement(NO);
 	}
 	else if (match("#asm")) {
 		doasm();
-		lastst = STASM;
+		last_statement = STASM;
 	}
 	else if (match("{"))
 		compound(NO);
@@ -180,13 +180,15 @@ void stst (void)
 		if (symname(lbl) && ch() == ':') {
 			gch();
 			dolabel(lbl);
-			lastst = statement(NO);
+			last_statement = statement(NO);
 		}
 		else {
+			/* mark the start of an expression */
+			out_ins(I_INFO, T_EXPRESSION, 0);
 			lptr = slptr;
 			expression(YES);
 			needsemicolon();
-			lastst = STEXP;
+			last_statement = STEXP;
 		}
 	}
 	gfence();

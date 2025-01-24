@@ -498,7 +498,7 @@ void declloc (char typ, char stclass, int otag)
 					}
 					else
 #endif
-						out_ins_ex(X_ST_USIQ, T_VALUE, 0, T_VALUE, num);
+						out_ins_ex(I_ST_USIQ, T_VALUE, 0, T_VALUE, num);
 				}
 				else if (k == 2) {
 #if ULI_NORECURSE
@@ -516,7 +516,7 @@ void declloc (char typ, char stclass, int otag)
 					}
 					else
 #endif
-						out_ins_ex(X_ST_WSIQ, T_VALUE, 0, T_VALUE, num);
+						out_ins_ex(I_ST_WSIQ, T_VALUE, 0, T_VALUE, num);
 				}
 				else
 					error("complex type initialization not implemented");

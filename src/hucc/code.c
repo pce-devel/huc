@@ -341,6 +341,11 @@ void gen_code (INS *tmp)
 			nl();
 			ol(".dbg\tclear");
 			break;
+#if 1
+		case T_EXPRESSION:
+			ol("; EXPRESSION");
+			break;
+#endif
 		}
 		break;
 
@@ -493,7 +498,7 @@ void gen_code (INS *tmp)
 	case I_MODSP:
 		ot("__modsp");
 		if (type == T_LITERAL) {
-			outstr("_sym\t");
+			outstr("_goto\t");
 			outstr((const char *)data);
 		}
 		else {
@@ -592,7 +597,7 @@ void gen_code (INS *tmp)
 
 	case I_DEF:
 		outstr((const char *)data);
-		outstr(" .equ ");
+		outstr("\t=\t");
 		outdec((int)imm_data);
 		nl();
 		break;
@@ -1166,6 +1171,27 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_LDX_WS:
+		ot("__ldx.ws\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_LDX_BS:
+		ot("__ldx.bs\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_LDX_US:
+		ot("__ldx.us\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
 	case X_LDX_WSQ:
 		ot("__ldx.wsq\t");
 		outdec((int)data);
@@ -1187,27 +1213,6 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_LD2X_WSQ:
-		ot("__ld2x.wsq\t");
-		outdec((int)data);
-		outlocal(tmp->sym);
-		nl();
-		break;
-
-	case X_LD2X_BSQ:
-		ot("__ld2x.bsq\t");
-		outdec((int)data);
-		outlocal(tmp->sym);
-		nl();
-		break;
-
-	case X_LD2X_USQ:
-		ot("__ld2x.usq\t");
-		outdec((int)data);
-		outlocal(tmp->sym);
-		nl();
-		break;
-
 	case X_LD2X_WS:
 		ot("__ld2x.ws\t");
 		outdec((int)data);
@@ -1224,6 +1229,27 @@ void gen_code (INS *tmp)
 
 	case X_LD2X_US:
 		ot("__ld2x.us\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_LD2X_WSQ:
+		ot("__ld2x.wsq\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_LD2X_BSQ:
+		ot("__ld2x.bsq\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_LD2X_USQ:
+		ot("__ld2x.usq\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
@@ -1763,6 +1789,46 @@ void gen_code (INS *tmp)
 
 	/* i-codes for saving the primary register */
 
+	case I_ST_WPT:
+		ol("__st.wpt");
+		break;
+
+	case I_ST_UPT:
+		ol("__st.upt");
+		break;
+
+	case X_ST_WPTQ:
+		ol("__st.wptq");
+		break;
+
+	case X_ST_UPTQ:
+		ol("__st.uptq");
+		break;
+
+	case I_ST_WM:
+		ot("__st.wm\t\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case I_ST_UM:
+		ot("__st.um\t\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ST_WMQ:
+		ot("__st.wmq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ST_UMQ:
+		ot("__st.umq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
 	case I_ST_WMIQ:
 		ot("__st.wmiq\t");
 		out_type(imm_type, imm_data);
@@ -1779,65 +1845,39 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case I_ST_WPI:
-		ot("__st.wpi\t\t");
-		outdec((int)data);
-		nl();
-		break;
-
-	case I_ST_UPI:
-		ot("__st.upi\t\t");
-		outdec((int)data);
-		nl();
-		break;
-
-	case I_ST_WM:
-		ot("__st.wm\t\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case I_ST_UM:
-		ot("__st.um\t\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case I_ST_WP:
+	case X_ST_WP:
 		ot("__st.wp\t\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case I_ST_UP:
+	case X_ST_UP:
 		ot("__st.up\t\t");
 		out_addr(type, data);
 		nl();
 		break;
 
-	case I_ST_WPT:
-		ol("__st.wpt");
-		break;
-
-	case I_ST_UPT:
-		ol("__st.upt");
-		break;
-
-	case X_ST_WSIQ:
-		ot("__st.wsiq\t");
-		outdec((int)imm_data);
-		outstr(", ");
-		outdec((int)data);
-		outlocal(tmp->sym);
+	case X_ST_WPQ:
+		ot("__st.wpq\t\t");
+		out_addr(type, data);
 		nl();
 		break;
 
-	case X_ST_USIQ:
-		ot("__st.usiq\t");
-		outdec((int)imm_data);
-		outstr(", ");
+	case X_ST_UPQ:
+		ot("__st.upq\t\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ST_WPI:
+		ot("__st.wpi\t\t");
 		outdec((int)data);
-		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_ST_UPI:
+		ot("__st.upi\t\t");
+		outdec((int)data);
 		nl();
 		break;
 
@@ -1850,6 +1890,38 @@ void gen_code (INS *tmp)
 
 	case X_ST_US:
 		ot("__st.us\t\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_ST_WSQ:
+		ot("__st.wsq\t\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_ST_USQ:
+		ot("__st.usq\t\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case I_ST_WSIQ:
+		ot("__st.wsiq\t");
+		outdec((int)imm_data);
+		outstr(", ");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case I_ST_USIQ:
+		ot("__st.usiq\t");
+		outdec((int)imm_data);
+		outstr(", ");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
@@ -1875,6 +1947,42 @@ void gen_code (INS *tmp)
 
 	case X_ST_UAT:
 		ot("__st.uat\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_ST_WATQ:
+		ot("__st.watq\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_ST_UATQ:
+		ot("__st.uatq\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_ST_WAX:
+		ot("__st.wax\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_ST_UAX:
+		ot("__st.uax\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_ST_WAXQ:
+		ot("__st.waxq\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_ST_UAXQ:
+		ot("__st.uaxq\t");
 		out_type(type, data);
 		nl();
 		break;
@@ -1921,6 +2029,18 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_ADD_WP:
+		ot("__add.wp\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ADD_UP:
+		ot("__add.up\t");
+		out_addr(type, data);
+		nl();
+		break;
+
 	case X_ADD_WS:
 		ot("__add.ws\t");
 		outdec((int)data);
@@ -1932,6 +2052,18 @@ void gen_code (INS *tmp)
 		ot("__add.us\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_ADD_WAT:
+		ot("__add.wat\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ADD_UAT:
+		ot("__add.uat\t");
+		out_addr(type, data);
 		nl();
 		break;
 
@@ -1969,6 +2101,18 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_SUB_WP:
+		ot("__sub.wp\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_SUB_UP:
+		ot("__sub.up\t");
+		out_addr(type, data);
+		nl();
+		break;
+
 	case X_SUB_WS:
 		ot("__sub.ws\t");
 		outdec((int)data);
@@ -1980,6 +2124,18 @@ void gen_code (INS *tmp)
 		ot("__sub.us\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_SUB_WAT:
+		ot("__sub.wat\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_SUB_UAT:
+		ot("__sub.uat\t");
+		out_addr(type, data);
 		nl();
 		break;
 
@@ -2017,6 +2173,18 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_ISUB_WP:
+		ot("__isub.wp\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ISUB_UP:
+		ot("__isub.up\t");
+		out_addr(type, data);
+		nl();
+		break;
+
 	case X_ISUB_WS:
 		ot("__isub.ws\t");
 		outdec((int)data);
@@ -2028,6 +2196,18 @@ void gen_code (INS *tmp)
 		ot("__isub.us\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_ISUB_WAT:
+		ot("__isub.wat\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ISUB_UAT:
+		ot("__isub.uat\t");
+		out_addr(type, data);
 		nl();
 		break;
 
@@ -2047,13 +2227,13 @@ void gen_code (INS *tmp)
 		ol("__and.wt");
 		break;
 
-	case I_AND_WI:
+	case X_AND_WI:
 		ot("__and.wi\t");
 		out_type(type, data);
 		nl();
 		break;
 
-	case I_AND_UIQ:
+	case X_AND_UIQ:
 		ot("__and.uiq\t");
 		out_type(type, data);
 		nl();
@@ -2071,6 +2251,18 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_AND_WP:
+		ot("__and.wp\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_AND_UP:
+		ot("__and.up\t");
+		out_addr(type, data);
+		nl();
+		break;
+
 	case X_AND_WS:
 		ot("__and.ws\t");
 		outdec((int)data);
@@ -2082,6 +2274,18 @@ void gen_code (INS *tmp)
 		ot("__and.us\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_AND_WAT:
+		ot("__and.wat\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_AND_UAT:
+		ot("__and.uat\t");
+		out_addr(type, data);
 		nl();
 		break;
 
@@ -2101,7 +2305,7 @@ void gen_code (INS *tmp)
 		ol("__eor.wt");
 		break;
 
-	case I_EOR_WI:
+	case X_EOR_WI:
 		ot("__eor.wi\t");
 		out_type(type, data);
 		nl();
@@ -2119,6 +2323,18 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_EOR_WP:
+		ot("__eor.wp\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_EOR_UP:
+		ot("__eor.up\t");
+		out_addr(type, data);
+		nl();
+		break;
+
 	case X_EOR_WS:
 		ot("__eor.ws\t");
 		outdec((int)data);
@@ -2130,6 +2346,18 @@ void gen_code (INS *tmp)
 		ot("__eor.us\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_EOR_WAT:
+		ot("__eor.wat\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_EOR_UAT:
+		ot("__eor.uat\t");
+		out_addr(type, data);
 		nl();
 		break;
 
@@ -2149,35 +2377,59 @@ void gen_code (INS *tmp)
 		ol("__or.wt");
 		break;
 
-	case I_OR_WI:
+	case X_OR_WI:
 		ot("__or.wi\t\t");
 		out_type(type, data);
 		nl();
 		break;
 
 	case X_OR_WM:
-		ot("__or.wm\t");
+		ot("__or.wm\t\t");
 		out_addr(type, data);
 		nl();
 		break;
 
 	case X_OR_UM:
-		ot("__or.um\t");
+		ot("__or.um\t\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_OR_WP:
+		ot("__or.wp\t\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_OR_UP:
+		ot("__or.up\t\t");
 		out_addr(type, data);
 		nl();
 		break;
 
 	case X_OR_WS:
-		ot("__or.ws\t");
+		ot("__or.ws\t\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
 		break;
 
 	case X_OR_US:
-		ot("__or.us\t");
+		ot("__or.us\t\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_OR_WAT:
+		ot("__or.wat\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_OR_UAT:
+		ot("__or.uat\t");
+		out_addr(type, data);
 		nl();
 		break;
 
@@ -2199,6 +2451,12 @@ void gen_code (INS *tmp)
 
 	case I_ASL_WI:
 		ot("__asl.wi\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case I_ASL_UIQ:
+		ot("__asl.uiq\t");
 		out_type(type, data);
 		nl();
 		break;
@@ -2239,6 +2497,12 @@ void gen_code (INS *tmp)
 
 	case I_MUL_WI:
 		ot("__mul.wi\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case I_MUL_UIQ:
+		ot("__mul.uiq\t");
 		out_type(type, data);
 		nl();
 		break;
