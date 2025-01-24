@@ -3429,38 +3429,6 @@ lv1_loop:
 			}
 
 			/*
-			 *  __mul.wi		n	-->	__mul.uiq	n
-			 *  __index.{w/u}r	array		__index.{w/u}r	array
-			 *
-			 *  __asl.wi		n	-->	__asl.uiq	n
-			 *  __index.{w/u}r	array		__index.{w/u}r	array
-			 *
-			 *  Index optimizations for access to an array of structs.
-			 */
-			else if
-			((p[0]->ins_code == X_INDEX_WR ||
-			  p[0]->ins_code == X_INDEX_UR) &&
-			 (p[1]->ins_code == I_ASL_WI ||
-			  p[1]->ins_code == I_MUL_WI)
-			) {
-				/* replace code */
-				if (p[1]->ins_code == I_ASL_WI)
-					p[1]->ins_code = I_ASL_UIQ;
-				else
-					p[1]->ins_code = I_MUL_UIQ;
-				switch (p[2]->ins_code) {
-				case I_LD_WM: p[2]->ins_code = X_LD_WMQ; break;
-				case I_LD_BM: p[2]->ins_code = X_LD_BMQ; break;
-				case I_LD_UM: p[2]->ins_code = X_LD_UMQ; break;
-				case X_LD_WS: p[2]->ins_code = X_LD_WSQ; break;
-				case X_LD_BS: p[2]->ins_code = X_LD_BSQ; break;
-				case X_LD_US: p[2]->ins_code = X_LD_USQ; break;
-				default:	break;
-				}
-				remove = 0;
-			}
-
-			/*
 			 *  __ld.{w/b/u}m	symbol	-->	__ld2x.{w/b/u}mq
 			 *  __ld.war		array		__ld.wax	array
 			 *
@@ -3537,6 +3505,56 @@ lv1_loop:
 					}
 					remove = 0;
 				}
+			}
+
+			/*
+			 *  __mul.wi		n	-->	__mul.uiq	n
+			 *  __index.{w/u}r	array		__index.{w/u}r	array
+			 *
+			 *  __asl.wi		n	-->	__asl.uiq	n
+			 *  __index.{w/u}r	array		__index.{w/u}r	array
+			 *
+			 *  __mul.wi		n	-->	__mul.uiq	n
+			 *  __ld.{w/b/u}ar	array		__ld.{w/b/u}ar	array
+			 *
+			 *  __asl.wi		n	-->	__asl.uiq	n
+			 *  __ld.{w/b/u}ar	array		__ld.{w/b/u}ar	array
+			 *
+			 *  __mul.wi		n	-->	__mul.uiq	n
+			 *  __ldp.{w/b/u}ar	array		__ldp.{w/b/u}ar	array
+			 *
+			 *  __asl.wi		n	-->	__asl.uiq	n
+			 *  __ldp.{w/b/u}ar	array		__ldp.{w/b/u}ar	array
+			 *
+			 *  Index optimizations for access to an array of structs.
+			 */
+			else if
+			((p[0]->ins_code == X_INDEX_WR ||
+			  p[0]->ins_code == X_INDEX_UR ||
+			  p[0]->ins_code == X_LD_WAR ||
+			  p[0]->ins_code == X_LD_BAR ||
+			  p[0]->ins_code == X_LD_UAR ||
+			  p[0]->ins_code == X_LDP_WAR ||
+			  p[0]->ins_code == X_LDP_BAR ||
+			  p[0]->ins_code == X_LDP_UAR) &&
+			 (p[1]->ins_code == I_ASL_WI ||
+			  p[1]->ins_code == I_MUL_WI)
+			) {
+				/* replace code */
+				if (p[1]->ins_code == I_ASL_WI)
+					p[1]->ins_code = I_ASL_UIQ;
+				else
+					p[1]->ins_code = I_MUL_UIQ;
+				switch (p[2]->ins_code) {
+				case I_LD_WM: p[2]->ins_code = X_LD_WMQ; break;
+				case I_LD_BM: p[2]->ins_code = X_LD_BMQ; break;
+				case I_LD_UM: p[2]->ins_code = X_LD_UMQ; break;
+				case X_LD_WS: p[2]->ins_code = X_LD_WSQ; break;
+				case X_LD_BS: p[2]->ins_code = X_LD_BSQ; break;
+				case X_LD_US: p[2]->ins_code = X_LD_USQ; break;
+				default:	break;
+				}
+				remove = 0;
 			}
 
 #if 0
