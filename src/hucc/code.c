@@ -2455,6 +2455,12 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case I_ASL_UIQ:
+		ot("__asl.uiq\t");
+		out_type(type, data);
+		nl();
+		break;
+
 	case I_ASL_WR:
 		ol("__asl.wr");
 		break;
@@ -2491,6 +2497,12 @@ void gen_code (INS *tmp)
 
 	case I_MUL_WI:
 		ot("__mul.wi\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case I_MUL_UIQ:
+		ot("__mul.uiq\t");
 		out_type(type, data);
 		nl();
 		break;

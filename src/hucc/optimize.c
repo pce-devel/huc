@@ -481,9 +481,10 @@ unsigned char icode_flags[] = {
 	/* X_OR_WAX             */	IS_USEPR,
 	/* X_OR_UAX             */	IS_USEPR,
 
+	/* I_ASL_WR             */	IS_USEPR,
 	/* I_ASL_WT             */	IS_USEPR + IS_POPWT,
 	/* I_ASL_WI             */	IS_USEPR,
-	/* I_ASL_WR             */	IS_USEPR,
+	/* I_ASL_UIQ            */	IS_USEPR,
 
 	/* I_ASR_WT             */	IS_USEPR + IS_POPWT,
 	/* I_ASR_WI             */	IS_USEPR,
@@ -494,6 +495,7 @@ unsigned char icode_flags[] = {
 
 	/* I_MUL_WT             */	IS_USEPR + IS_POPWT,
 	/* I_MUL_WI             */	IS_USEPR,
+	/* I_MUL_UIQ            */	IS_USEPR,
 
 	/* I_SDIV_WT            */	IS_USEPR + IS_POPWT,
 	/* I_SDIV_WI            */	IS_USEPR,
@@ -3421,6 +3423,38 @@ lv1_loop:
 				case X_LD_WS: p[1]->ins_code = X_LD_WSQ; break;
 				case X_LD_BS: p[1]->ins_code = X_LD_BSQ; break;
 				case X_LD_US: p[1]->ins_code = X_LD_USQ; break;
+				default:	break;
+				}
+				remove = 0;
+			}
+
+			/*
+			 *  __mul.wi		n	-->	__mul.uiq	n
+			 *  __index.{w/u}r	array		__index.{w/u}r	array
+			 *
+			 *  __asl.wi		n	-->	__asl.uiq	n
+			 *  __index.{w/u}r	array		__index.{w/u}r	array
+			 *
+			 *  Index optimizations for access to an array of structs.
+			 */
+			else if
+			((p[0]->ins_code == X_INDEX_WR ||
+			  p[0]->ins_code == X_INDEX_UR) &&
+			 (p[1]->ins_code == I_ASL_WI ||
+			  p[1]->ins_code == I_MUL_WI)
+			) {
+				/* replace code */
+				if (p[1]->ins_code == I_ASL_WI)
+					p[1]->ins_code = I_ASL_UIQ;
+				else
+					p[1]->ins_code = I_MUL_UIQ;
+				switch (p[2]->ins_code) {
+				case I_LD_WM: p[2]->ins_code = X_LD_WMQ; break;
+				case I_LD_BM: p[2]->ins_code = X_LD_BMQ; break;
+				case I_LD_UM: p[2]->ins_code = X_LD_UMQ; break;
+				case X_LD_WS: p[2]->ins_code = X_LD_WSQ; break;
+				case X_LD_BS: p[2]->ins_code = X_LD_BSQ; break;
+				case X_LD_US: p[2]->ins_code = X_LD_USQ; break;
 				default:	break;
 				}
 				remove = 0;

@@ -448,9 +448,10 @@ enum ICODE {
 	X_OR_WAX,
 	X_OR_UAX,
 
+	I_ASL_WR,
 	I_ASL_WT,
 	I_ASL_WI,
-	I_ASL_WR,
+	I_ASL_UIQ,
 
 	I_ASR_WT,
 	I_ASR_WI,
@@ -461,6 +462,7 @@ enum ICODE {
 
 	I_MUL_WT,
 	I_MUL_WI,
+	I_MUL_UIQ,
 
 	I_SDIV_WT,
 	I_SDIV_WI,
