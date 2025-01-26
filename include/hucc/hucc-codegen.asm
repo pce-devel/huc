@@ -4237,7 +4237,7 @@ __st.wpiq	.macro
 __st.upiq	.macro
 		sta.l	__ptr
 		sty.h	__ptr
-		lda	#\1
+		lda.l	#\1
 		sta	[__ptr]
 		.endm
 
@@ -4300,6 +4300,43 @@ __st.uatq	.macro
 		.endm
 
 ; **************
+
+__st.watiq	.macro
+		plx
+	.if	(\?1 != ARG_ABS)
+		lda.l	#\1
+		sta.l	\2, x
+		lda.h	#\1
+		sta.h	\2, x
+	.else
+	.if	(\1 & $00FF)
+		lda.l	#\1
+		sta.l	\2, x
+	.else
+		stz.l	\2, x
+	.endif
+	.if	(\1 & $FF00)
+		lda.h	#\1
+		sta.h	\2, x
+	.else
+		stz.h	\2, x
+	.endif
+	.endif
+		.endm
+
+; **************
+
+__st.uatiq	.macro
+		plx
+	.if	(\1 != 0)
+		lda.l	#\1
+		sta	\2, x
+	.else
+		stz	\2, x
+	.endif
+		.endm
+
+; **************
 ; special store for when array writes are optimized
 ; this balances the cpu stack after an __index.wr or __ldp.war
 
@@ -4334,6 +4371,41 @@ __st.waxq	.macro
 
 __st.uaxq	.macro
 		sta	\1, x
+		.endm
+
+; **************
+
+__st.waxiq	.macro
+	.if	(\?1 != ARG_ABS)
+		lda.l	#\1
+		sta.l	\2, x
+		lda.h	#\1
+		sta.h	\2, x
+	.else
+	.if	(\1 & $00FF)
+		lda.l	#\1
+		sta.l	\2, x
+	.else
+		stz.l	\2, x
+	.endif
+	.if	(\1 & $FF00)
+		lda.h	#\1
+		sta.h	\2, x
+	.else
+		stz.h	\2, x
+	.endif
+	.endif
+		.endm
+
+; **************
+
+__st.uaxiq	.macro
+	.if	(\1 != 0)
+		lda.l	#\1
+		sta	\2, x
+	.else
+		stz	\2, x
+	.endif
 		.endm
 
 ; **************
@@ -5883,6 +5955,26 @@ __add_st.umq	.macro
 
 ; **************
 
+__add_st.wpq	.macro
+		clc
+		adc	[\1]
+		sta	[\1]
+		tya
+		ldy	#1
+		adc	[\1], y
+		sta	[\1], y
+		.endm
+
+; **************
+
+__add_st.upq	.macro
+		clc
+		adc	[\1]
+		sta	[\1]
+		.endm
+
+; **************
+
 __add_st.wsq	.macro	; __STACK
 		ldx	<__sp
 		clc
@@ -5964,6 +6056,29 @@ __isub_st.umq	.macro
 		eor	#$FF
 		adc	\1
 		sta	\1
+		.endm
+
+; **************
+
+__isub_st.wpq	.macro
+		sec
+		eor	#$FF
+		adc	[\1]
+		sta	[\1]
+		tya
+		ldy	#1
+		eor	#$FF
+		adc	[\1], y
+		sta	[\1], y
+		.endm
+
+; **************
+
+__isub_st.upq	.macro
+		sec
+		eor	#$FF
+		adc	[\1]
+		sta	[\1]
 		.endm
 
 ; **************
@@ -6061,6 +6176,24 @@ __and_st.umq	.macro
 
 ; **************
 
+__and_st.wpq	.macro
+		and	[\1]
+		sta	[\1]
+		tya
+		ldy	#1
+		and	[\1], y
+		sta	[\1], y
+		.endm
+
+; **************
+
+__and_st.upq	.macro
+		and	[\1]
+		sta	[\1]
+		.endm
+
+; **************
+
 __and_st.wsq	.macro
 		ldx	<__sp
 		and.l	<__stack + \1, x
@@ -6129,6 +6262,24 @@ __eor_st.wmq	.macro
 __eor_st.umq	.macro
 		eor	\1
 		sta	\1
+		.endm
+
+; **************
+
+__eor_st.wpq	.macro
+		eor	[\1]
+		sta	[\1]
+		tya
+		ldy	#1
+		eor	[\1], y
+		sta	[\1], y
+		.endm
+
+; **************
+
+__eor_st.upq	.macro
+		eor	[\1]
+		sta	[\1]
 		.endm
 
 ; **************
@@ -6205,6 +6356,24 @@ __or_st.umq	.macro
 
 ; **************
 
+__or_st.wpq	.macro
+		or	[\1]
+		sta	[\1]
+		tya
+		ldy	#1
+		or	[\1], y
+		sta	[\1], y
+		.endm
+
+; **************
+
+__or_st.upq	.macro
+		or	[\1]
+		sta	[\1]
+		.endm
+
+; **************
+
 __or_st.wsq	.macro
 		ldx	<__sp
 		ora.l	<__stack + \1, x
@@ -6256,6 +6425,394 @@ __or_st.waxq	.macro
 __or_st.uaxq	.macro
 		ora	\1, x
 		sta	\1, x
+		.endm
+
+; **************
+
+__add_st.wmiq	.macro
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		inc.l	\2
+		bne	!+
+		inc.h	\2
+!:
+	.else
+	.if	((\?1 == ARG_ABS) && ((\1) >= 0) && ((\1) < 256))
+		clc
+		lda.l	\2
+		adc.l	#\1
+		sta.l	\2
+		bcc	!+
+		inc.h	\2
+!:
+	.else
+		clc
+		lda.l	\2
+		adc.l	#\1
+		sta.l	\2
+		lda.h	\2
+		adc.h	#\1
+		sta.h	\2
+	.endif
+	.endif
+		.endm
+
+; **************
+
+__add_st.umiq	.macro
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		inc	\2
+	.else
+		clc
+		lda	\2
+		adc	#\1
+		sta	\2
+	.endif
+		.endm
+
+; **************
+
+__add_st.wpiq	.macro
+		clc
+		lda	[\2]
+		adc.l	#\1
+		sta	[\2]
+		ldy	#1
+		lda	[\2], y
+		adc.h	#\1
+		sta	[\2], y
+		.endm
+
+; **************
+
+__add_st.upiq	.macro
+		clc
+		lda	[\2]
+		adc	#\1
+		sta	[\2]
+		.endm
+
+; **************
+
+__add_st.wsiq	.macro	; __STACK
+		ldx	<__sp
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		inc.l	<__stack + \2, x
+		bne	!+
+		inc.h	<__stack + \2, x
+!:
+	.else
+	.if	((\?1 == ARG_ABS) && ((\1) >= 0) && ((\1) < 256))
+		clc
+		lda.l	<__stack + \2, x
+		adc.l	#\1
+		sta.l	<__stack + \2, x
+		bcc	!+
+		inc.h	<__stack + \2, x
+!:
+	.else
+		clc
+		lda.l	<__stack + \2, x
+		adc.l	#\1
+		sta.l	<__stack + \2, x
+		lda.h	<__stack + \2, x
+		adc.h	#\1
+		sta.h	<__stack + \2, x
+	.endif
+	.endif
+		.endm
+
+; **************
+
+__add_st.usiq	.macro	; __STACK
+		ldx	<__sp
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		inc	<__stack + \2, x
+	.else
+		clc
+		lda	<__stack + \2, x
+		adc	#\1
+		sta	<__stack + \2, x
+	.endif
+		.endm
+
+; **************
+
+__add_st.watiq	.macro	; __STACK
+		plx
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		inc.l	\2, x
+		bne	!+
+		inc.h	\2, x
+!:
+	.else
+	.if	((\?1 == ARG_ABS) && ((\1) >= 0) && ((\1) < 256))
+		clc
+		lda.l	\2, x
+		adc.l	#\1
+		sta.l	\2, x
+		bcc	!+
+		inc.h	\2, x
+!:
+	.else
+		clc
+		lda.l	\2, x
+		adc.l	#\1
+		sta.l	\2, x
+		lda.h	\2, x
+		adc.h	#\1
+		sta.h	\2, x
+	.endif
+	.endif
+		.endm
+
+; **************
+
+__add_st.uatiq	.macro	; __STACK
+		plx
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		inc	\2, x
+	.else
+		clc
+		lda	\2, x
+		adc	#\1
+		sta	\2, x
+	.endif
+		.endm
+
+; **************
+
+__add_st.waxiq	.macro	; __STACK
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		inc.l	\2, x
+		bne	!+
+		inc.h	\2, x
+!:
+	.else
+	.if	((\?1 == ARG_ABS) && ((\1) >= 0) && ((\1) < 256))
+		clc
+		lda.l	\2, x
+		adc.l	#\1
+		sta.l	\2, x
+		bcc	!+
+		inc.h	\2, x
+!:
+	.else
+		clc
+		lda.l	\2, x
+		adc.l	#\1
+		sta.l	\2, x
+		lda.h	\2, x
+		adc.h	#\1
+		sta.h	\2, x
+	.endif
+	.endif
+		.endm
+
+; **************
+
+__add_st.uaxiq	.macro	; __STACK
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		inc	\2, x
+	.else
+		clc
+		lda	\2, x
+		adc	#\1
+		sta	\2, x
+	.endif
+		.endm
+
+; **************
+
+__sub_st.wmiq	.macro
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		lda.l	\2
+		bne	!+
+		dec.h	\2
+!:		dec.l	\2
+	.else
+	.if	((\?1 == ARG_ABS) && ((\1) >= 0) && ((\1) < 256))
+		sec
+		lda.l	\2
+		sbc.l	#\1
+		sta.l	\2
+		bcs	!+
+		dec.h	\2
+!:
+	.else
+		sec
+		lda.l	\2
+		sbc.l	#\1
+		sta.l	\2
+		lda.h	\2
+		sbc.h	#\1
+		sta.h	\2
+	.endif
+	.endif
+		.endm
+
+; **************
+
+__sub_st.umiq	.macro
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		dec	\2
+	.else
+		sec
+		lda	\2
+		sbc	#\1
+		sta	\2
+	.endif
+		.endm
+
+; **************
+
+__sub_st.wpiq	.macro
+		sec
+		lda	[\2]
+		sbc.l	#\1
+		sta	[\2]
+		ldy	#1
+		lda	[\2], y
+		sbc.h	#\1
+		sta	[\2], y
+		.endm
+
+; **************
+
+__sub_st.upiq	.macro
+		sec
+		lda	[\2]
+		sbc	#\1
+		sta	[\2]
+		.endm
+
+; **************
+
+__sub_st.wsiq	.macro	; __STACK
+		ldx	<__sp
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		lda.l	<__stack + \2, x
+		bne	!+
+		dec.h	<__stack + \2, x
+!:		dec.l	<__stack + \2, x
+	.else
+	.if	((\?1 == ARG_ABS) && ((\1) >= 0) && ((\1) < 256))
+		sec
+		lda.l	<__stack + \2, x
+		sbc.l	#\1
+		sta.l	<__stack + \2, x
+		bcs	!+
+		dec.h	<__stack + \2, x
+!:
+	.else
+		sec
+		lda.l	<__stack + \2, x
+		sbc.l	#\1
+		sta.l	<__stack + \2, x
+		lda.h	<__stack + \2, x
+		sbc.h	#\1
+		sta.h	<__stack + \2, x
+	.endif
+	.endif
+		.endm
+
+; **************
+
+__sub_st.usiq	.macro	; __STACK
+		ldx	<__sp
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		dec	<__stack + \2, x
+	.else
+		sec
+		lda	<__stack + \2, x
+		sbc	#\1
+		sta	<__stack + \2, x
+	.endif
+		.endm
+
+; **************
+
+__sub_st.watiq	.macro	; __STACK
+		plx
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		lda.l	\2, x
+		bne	!+
+		dec.h	\2, x
+!:		dec.l	\2, x
+	.else
+	.if	((\?1 == ARG_ABS) && ((\1) >= 0) && ((\1) < 256))
+		sec
+		lda.l	\2, x
+		sbc.l	#\1
+		sta.l	\2, x
+		bcs	!+
+		dec.h	\2, x
+!:
+	.else
+		sec
+		lda.l	\2, x
+		sbc.l	#\1
+		sta.l	\2, x
+		lda.h	\2, x
+		sbc.h	#\1
+		sta.h	\2, x
+	.endif
+	.endif
+		.endm
+
+; **************
+
+__sub_st.uatiq	.macro	; __STACK
+		plx
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		dec	\2, x
+	.else
+		sec
+		lda	\2, x
+		sbc	#\1
+		sta	\2, x
+	.endif
+		.endm
+
+; **************
+
+__sub_st.waxiq	.macro	; __STACK
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		lda.l	\2, x
+		bne	!+
+		dec.h	\2, x
+!:		dec.l	\2, x
+	.else
+	.if	((\?1 == ARG_ABS) && ((\1) >= 0) && ((\1) < 256))
+		sec
+		lda.l	\2, x
+		sbc.l	#\1
+		sta.l	\2, x
+		bcs	!+
+		dec.h	\2, x
+!:
+	.else
+		sec
+		lda.l	\2, x
+		sbc.l	#\1
+		sta.l	\2, x
+		lda.h	\2, x
+		sbc.h	#\1
+		sta.h	\2, x
+	.endif
+	.endif
+		.endm
+
+; **************
+
+__sub_st.uaxiq	.macro	; __STACK
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		dec	\2, x
+	.else
+		sec
+		lda	\2, x
+		sbc	#\1
+		sta	\2, x
+	.endif
 		.endm
 
 

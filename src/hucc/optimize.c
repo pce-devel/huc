@@ -383,14 +383,19 @@ unsigned char icode_flags[] = {
 	/* X_INDEX_WR           */	IS_USEPR + IS_PUSHWT,
 	/* X_INDEX_UR           */	IS_USEPR + IS_PUSHWT,
 
-	/* X_ST_WAT             */	IS_USEPR + IS_POPWT + IS_STORE,
-	/* X_ST_UAT             */	IS_USEPR + IS_POPWT + IS_STORE,
-	/* X_ST_WATQ            */	IS_USEPR + IS_POPWT + IS_SHORT + IS_STORE,
-	/* X_ST_UATQ            */	IS_USEPR + IS_POPWT + IS_SHORT + IS_STORE,
+	/* X_ST_WAT             */	IS_USEPR + IS_STORE + IS_POPWT,
+	/* X_ST_UAT             */	IS_USEPR + IS_STORE + IS_POPWT,
+	/* X_ST_WATQ            */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
+	/* X_ST_UATQ            */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
+	/* X_ST_WATIQ           */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
+	/* X_ST_UATIQ           */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
+
 	/* X_ST_WAX             */	IS_USEPR + IS_STORE,
 	/* X_ST_UAX             */	IS_USEPR + IS_STORE,
 	/* X_ST_WAXQ            */	IS_USEPR + IS_STORE + IS_SHORT,
 	/* X_ST_UAXQ            */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_ST_WAXIQ           */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_ST_UAXIQ           */	IS_USEPR + IS_STORE + IS_SHORT,
 
 	// i-codes for extending the primary register
 
@@ -404,6 +409,7 @@ unsigned char icode_flags[] = {
 
 	/* I_ADD_WT             */	IS_USEPR + IS_POPWT,
 	/* I_ADD_WI             */	IS_USEPR,
+
 	/* X_ADD_WM             */	IS_USEPR,
 	/* X_ADD_UM             */	IS_USEPR,
 	/* X_ADD_WP             */	IS_USEPR,
@@ -415,8 +421,31 @@ unsigned char icode_flags[] = {
 	/* X_ADD_WAX            */	IS_USEPR,
 	/* X_ADD_UAX            */	IS_USEPR,
 
+	/* X_ADD_ST_WMQ         */	IS_USEPR + IS_STORE,
+	/* X_ADD_ST_UMQ         */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_ADD_ST_WPQ         */	IS_USEPR + IS_STORE,
+	/* X_ADD_ST_UPQ         */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_ADD_ST_WSQ         */	IS_USEPR + IS_STORE + IS_SPREL,
+	/* X_ADD_ST_USQ         */	IS_USEPR + IS_STORE + IS_SPREL + IS_SHORT,
+	/* X_ADD_ST_WATQ        */	IS_USEPR + IS_STORE + IS_POPWT,
+	/* X_ADD_ST_UATQ        */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
+	/* X_ADD_ST_WAXQ        */	IS_USEPR + IS_STORE,
+	/* X_ADD_ST_UAXQ        */	IS_USEPR + IS_STORE + IS_SHORT,
+
+	/* X_ADD_ST_WMIQ        */	IS_USEPR + IS_STORE,
+	/* X_ADD_ST_UMIQ        */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_ADD_ST_WPIQ        */	IS_USEPR + IS_STORE,
+	/* X_ADD_ST_UPIQ        */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_ADD_ST_WSIQ        */	IS_USEPR + IS_STORE + IS_SPREL,
+	/* X_ADD_ST_USIQ        */	IS_USEPR + IS_STORE + IS_SPREL + IS_SHORT,
+	/* X_ADD_ST_WATIQ       */	IS_USEPR + IS_STORE + IS_POPWT,
+	/* X_ADD_ST_UATIQ       */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
+	/* X_ADD_ST_WAXIQ       */	IS_USEPR + IS_STORE,
+	/* X_ADD_ST_UAXIQ       */	IS_USEPR + IS_STORE + IS_SHORT,
+
 	/* I_SUB_WT             */	IS_USEPR + IS_POPWT,
 	/* I_SUB_WI             */	IS_USEPR,
+
 	/* X_SUB_WM             */	IS_USEPR,
 	/* X_SUB_UM             */	IS_USEPR,
 	/* X_SUB_WP             */	IS_USEPR,
@@ -428,8 +457,20 @@ unsigned char icode_flags[] = {
 	/* X_SUB_WAX            */	IS_USEPR,
 	/* X_SUB_UAX            */	IS_USEPR,
 
+	/* X_SUB_ST_WMIQ        */	IS_USEPR + IS_STORE,
+	/* X_SUB_ST_UMIQ        */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_SUB_ST_WPIQ        */	IS_USEPR + IS_STORE,
+	/* X_SUB_ST_UPIQ        */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_SUB_ST_WSIQ        */	IS_USEPR + IS_STORE + IS_SPREL,
+	/* X_SUB_ST_USIQ        */	IS_USEPR + IS_STORE + IS_SPREL + IS_SHORT,
+	/* X_SUB_ST_WATIQ       */	IS_USEPR + IS_STORE + IS_POPWT,
+	/* X_SUB_ST_UATIQ       */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
+	/* X_SUB_ST_WAXIQ       */	IS_USEPR + IS_STORE,
+	/* X_SUB_ST_UAXIQ       */	IS_USEPR + IS_STORE + IS_SHORT,
+
 	/* X_ISUB_WT            */	IS_USEPR + IS_POPWT,
 	/* X_ISUB_WI            */	IS_USEPR,
+
 	/* X_ISUB_WM            */	IS_USEPR,
 	/* X_ISUB_UM            */	IS_USEPR,
 	/* X_ISUB_WP            */	IS_USEPR,
@@ -441,9 +482,21 @@ unsigned char icode_flags[] = {
 	/* X_ISUB_WAX           */	IS_USEPR,
 	/* X_ISUB_UAX           */	IS_USEPR,
 
+	/* X_ISUB_ST_WMQ        */	IS_USEPR + IS_STORE,
+	/* X_ISUB_ST_UMQ        */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_ISUB_ST_WPQ        */	IS_USEPR + IS_STORE,
+	/* X_ISUB_ST_UPQ        */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_ISUB_ST_WSQ        */	IS_USEPR + IS_STORE + IS_SPREL,
+	/* X_ISUB_ST_USQ        */	IS_USEPR + IS_STORE + IS_SPREL + IS_SHORT,
+	/* X_ISUB_ST_WATQ       */	IS_USEPR + IS_STORE + IS_POPWT,
+	/* X_ISUB_ST_UATQ       */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
+	/* X_ISUB_ST_WAXQ       */	IS_USEPR + IS_STORE,
+	/* X_ISUB_ST_UAXQ       */	IS_USEPR + IS_STORE + IS_SHORT,
+
 	/* I_AND_WT             */	IS_USEPR + IS_POPWT,
 	/* X_AND_WI             */	IS_USEPR,
 	/* X_AND_UIQ            */	IS_USEPR + IS_UBYTE,
+
 	/* X_AND_WM             */	IS_USEPR,
 	/* X_AND_UM             */	IS_USEPR,
 	/* X_AND_WP             */	IS_USEPR,
@@ -455,8 +508,20 @@ unsigned char icode_flags[] = {
 	/* X_AND_WAX            */	IS_USEPR,
 	/* X_AND_UAX            */	IS_USEPR,
 
+	/* X_AND_ST_WMQ         */	IS_USEPR + IS_STORE,
+	/* X_AND_ST_UMQ         */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_AND_ST_WPQ         */	IS_USEPR + IS_STORE,
+	/* X_AND_ST_UPQ         */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_AND_ST_WSQ         */	IS_USEPR + IS_STORE + IS_SPREL,
+	/* X_AND_ST_USQ         */	IS_USEPR + IS_STORE + IS_SPREL + IS_SHORT,
+	/* X_AND_ST_WATQ        */	IS_USEPR + IS_STORE + IS_POPWT,
+	/* X_AND_ST_UATQ        */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
+	/* X_AND_ST_WAXQ        */	IS_USEPR + IS_STORE,
+	/* X_AND_ST_UAXQ        */	IS_USEPR + IS_STORE + IS_SHORT,
+
 	/* I_EOR_WT             */	IS_USEPR + IS_POPWT,
 	/* X_EOR_WI             */	IS_USEPR,
+
 	/* X_EOR_WM             */	IS_USEPR,
 	/* X_EOR_UM             */	IS_USEPR,
 	/* X_EOR_WP             */	IS_USEPR,
@@ -468,8 +533,20 @@ unsigned char icode_flags[] = {
 	/* X_EOR_WAX            */	IS_USEPR,
 	/* X_EOR_UAX            */	IS_USEPR,
 
+	/* X_EOR_ST_WMQ         */	IS_USEPR + IS_STORE,
+	/* X_EOR_ST_UMQ         */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_EOR_ST_WPQ         */	IS_USEPR + IS_STORE,
+	/* X_EOR_ST_UPQ         */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_EOR_ST_WSQ         */	IS_USEPR + IS_STORE + IS_SPREL,
+	/* X_EOR_ST_USQ         */	IS_USEPR + IS_STORE + IS_SPREL + IS_SHORT,
+	/* X_EOR_ST_WATQ        */	IS_USEPR + IS_STORE + IS_POPWT,
+	/* X_EOR_ST_UATQ        */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
+	/* X_EOR_ST_WAXQ        */	IS_USEPR + IS_STORE,
+	/* X_EOR_ST_UAXQ        */	IS_USEPR + IS_STORE + IS_SHORT,
+
 	/* I_OR_WT              */	IS_USEPR + IS_POPWT,
 	/* X_OR_WI              */	IS_USEPR,
+
 	/* X_OR_WM              */	IS_USEPR,
 	/* X_OR_UM              */	IS_USEPR,
 	/* X_OR_WP              */	IS_USEPR,
@@ -480,6 +557,17 @@ unsigned char icode_flags[] = {
 	/* X_OR_UAT             */	IS_USEPR + IS_POPWT,
 	/* X_OR_WAX             */	IS_USEPR,
 	/* X_OR_UAX             */	IS_USEPR,
+
+	/* X_OR_ST_WMQ          */	IS_USEPR + IS_STORE,
+	/* X_OR_ST_UMQ          */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_OR_ST_WPQ          */	IS_USEPR + IS_STORE,
+	/* X_OR_ST_UPQ          */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_OR_ST_WSQ          */	IS_USEPR + IS_STORE + IS_SPREL,
+	/* X_OR_ST_USQ          */	IS_USEPR + IS_STORE + IS_SPREL + IS_SHORT,
+	/* X_OR_ST_WATQ         */	IS_USEPR + IS_STORE + IS_POPWT,
+	/* X_OR_ST_UATQ         */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
+	/* X_OR_ST_WAXQ         */	IS_USEPR + IS_STORE,
+	/* X_OR_ST_UAXQ         */	IS_USEPR + IS_STORE + IS_SHORT,
 
 	/* I_ASL_WR             */	IS_USEPR,
 	/* I_ASL_WT             */	IS_USEPR + IS_POPWT,
@@ -561,23 +649,23 @@ int q_nb;
 /* externs */
 extern int arg_stack_flag;
 
-int cmp_operands (INS *p1, INS *p2)
+bool cmp_operands (INS *p1, INS *p2)
 {
 #ifdef DEBUG_OPTIMIZER
 	printf("cmp"); dump_ins(p1); dump_ins(p2);
 #endif
 	if (p1->ins_type != p2->ins_type)
-		return (0);
+		return (false);
 
 	if (p1->ins_type == T_SYMBOL) {
 		if (strcmp(((SYMBOL *)p1->ins_data)->name, ((SYMBOL *)p2->ins_data)->name) != 0)
-			return (0);
+			return (false);
 	}
 	else {
 		if (p1->ins_data != p2->ins_data)
-			return (0);
+			return (false);
 	}
-	return (1);
+	return (true);
 }
 
 inline bool is_sprel (INS *i)
@@ -712,12 +800,20 @@ lv1_loop:
 			remove = 1;
 
 			/*
-			 *  __ld.wi		i	-->	__st.{w/u}miq	symbol, i
+			 *  __ld.wi		i	-->	__st.{w/u}miq	i, symbol
 			 *  __st.{w/u}m		symbol
 			 *  __fence
 			 *
-			 *  __ld.wi		i	-->	__st.{w/u}siq	n, 1
+			 *  __ld.wi		i	-->	__st.{w/u}siq	i, n
 			 *  __st.{w/u}s		n
+			 *  __fence
+			 *
+			 *  __ld.wi		i	-->	__st.{w/u}atiq	i, array
+			 *  __st.{w/u}at	array
+			 *  __fence
+			 *
+			 *  __ld.wi		i	-->	__st.{w/u}axiq	i, array
+			 *  __st.{w/u}ax	array
 			 *  __fence
 			 */
 			if
@@ -725,7 +821,11 @@ lv1_loop:
 			 (p[1]->ins_code == I_ST_WM ||
 			  p[1]->ins_code == I_ST_UM ||
 			  p[1]->ins_code == X_ST_WS ||
-			  p[1]->ins_code == X_ST_US) &&
+			  p[1]->ins_code == X_ST_US ||
+			  p[1]->ins_code == X_ST_WAT ||
+			  p[1]->ins_code == X_ST_UAT ||
+			  p[1]->ins_code == X_ST_WAX ||
+			  p[1]->ins_code == X_ST_UAX) &&
 			 (p[2]->ins_code == I_LD_WI) &&
 			 (p[2]->ins_type == T_VALUE)
 			) {
@@ -737,7 +837,11 @@ lv1_loop:
 				case I_ST_UM: p[2]->ins_code = I_ST_UMIQ; break;
 				case X_ST_WS: p[2]->ins_code = I_ST_WSIQ; break;
 				case X_ST_US: p[2]->ins_code = I_ST_USIQ; break;
-				default: abort();
+				case X_ST_WAT: p[2]->ins_code = X_ST_WATIQ; break;
+				case X_ST_UAT: p[2]->ins_code = X_ST_UATIQ; break;
+				case X_ST_WAX: p[2]->ins_code = X_ST_WAXIQ; break;
+				case X_ST_UAX: p[2]->ins_code = X_ST_UAXIQ; break;
+				default: break;
 				}
 				p[2]->imm_type = T_VALUE;
 				p[2]->imm_data = data;
@@ -754,6 +858,285 @@ lv1_loop:
 			  p[1]->ins_code == I_SUB_WI)
 			) {
 				remove = 2;
+			}
+
+			/*
+			 *  __add.wm		symbol	-->	__add_st.wmq	symbol
+			 *  __st.wm		symbol
+			 *  __fence
+			 *
+			 *  __add.um		symbol	-->	__add_st.umq	symbol
+			 *  __st.um		symbol
+			 *  __fence
+			 *
+			 *  __isub.wm		symbol	-->	__isub_st.wmq	symbol
+			 *  __st.wm		symbol
+			 *  __fence
+			 *
+			 *  __isub.um		symbol	-->	__isub_st.umq	symbol
+			 *  __st.um		symbol
+			 *  __fence
+			 *
+			 *  etc, etc
+			 *
+			 *  this optimizes the store for a "+=", "-=", "&=", "^=", "|=".
+			 */
+			else if
+			((p_nb >= 3) &&
+			 (p[1]->ins_code == I_ST_WM ||
+			  p[1]->ins_code == I_ST_UM) &&
+			 (p[2]->ins_code == X_ADD_WM ||
+			  p[2]->ins_code == X_ADD_UM ||
+			  p[2]->ins_code == X_ISUB_WM ||
+			  p[2]->ins_code == X_ISUB_UM ||
+			  p[2]->ins_code == X_AND_WM ||
+			  p[2]->ins_code == X_AND_UM ||
+			  p[2]->ins_code == X_EOR_WM ||
+			  p[2]->ins_code == X_EOR_UM ||
+			  p[2]->ins_code == X_OR_WM ||
+			  p[2]->ins_code == X_OR_UM) &&
+			 (cmp_operands(p[1], p[2]))
+			) {
+				/* replace code */
+				remove = 2;
+				if (p[1]->ins_code == I_ST_WM) {
+					switch (p[2]->ins_code) {
+					case  X_ADD_WM: p[2]->ins_code =  X_ADD_ST_WMQ; break;
+					case X_ISUB_WM: p[2]->ins_code = X_ISUB_ST_WMQ; break;
+					case  X_AND_WM: p[2]->ins_code =  X_AND_ST_WMQ; break;
+					case  X_EOR_WM: p[2]->ins_code =  X_EOR_ST_WMQ; break;
+					case   X_OR_WM: p[2]->ins_code =   X_OR_ST_WMQ; break;
+					default: remove = 1; break; /* this should never happen! */
+					}
+				} else {
+					switch (p[2]->ins_code) {
+					case  X_ADD_UM: p[2]->ins_code =  X_ADD_ST_UMQ; break;
+					case X_ISUB_UM: p[2]->ins_code = X_ISUB_ST_UMQ; break;
+					case  X_AND_UM: p[2]->ins_code =  X_AND_ST_UMQ; break;
+					case  X_EOR_UM: p[2]->ins_code =  X_EOR_ST_UMQ; break;
+					case   X_OR_UM: p[2]->ins_code =   X_OR_ST_UMQ; break;
+					default: remove = 1; break; /* this should never happen! */
+					}
+				}
+			}
+
+			/*
+			 *  __add.ws		n	-->	__add_st.wsq	n
+			 *  __st.ws		n
+			 *  __fence
+			 *
+			 *  __add.us		n	-->	__add_st.usq	n
+			 *  __st.us		n
+			 *  __fence
+			 *
+			 *  __isub.ws		n	-->	__isub_st.wsq	n
+			 *  __st.ws		n
+			 *  __fence
+			 *
+			 *  __isub.us		n	-->	__isub_st.usq	n
+			 *  __st.us		n
+			 *  __fence
+			 *
+			 *  etc, etc
+			 *
+			 *  this optimizes the store for a "+=", "-=", "&=", "^=", "|=".
+			 */
+			else if
+			((p_nb >= 3) &&
+			 (p[1]->ins_code == X_ST_WS ||
+			  p[1]->ins_code == X_ST_US) &&
+			 (p[2]->ins_code == X_ADD_WS ||
+			  p[2]->ins_code == X_ADD_US ||
+			  p[2]->ins_code == X_ISUB_WS ||
+			  p[2]->ins_code == X_ISUB_US ||
+			  p[2]->ins_code == X_AND_WS ||
+			  p[2]->ins_code == X_AND_US ||
+			  p[2]->ins_code == X_EOR_WS ||
+			  p[2]->ins_code == X_EOR_US ||
+			  p[2]->ins_code == X_OR_WS ||
+			  p[2]->ins_code == X_OR_US) &&
+			 (cmp_operands(p[1], p[2]))
+			) {
+				/* replace code */
+				remove = 2;
+				if (p[1]->ins_code == X_ST_WS) {
+					switch (p[2]->ins_code) {
+					case  X_ADD_WS: p[2]->ins_code =  X_ADD_ST_WSQ; break;
+					case X_ISUB_WS: p[2]->ins_code = X_ISUB_ST_WSQ; break;
+					case  X_AND_WS: p[2]->ins_code =  X_AND_ST_WSQ; break;
+					case  X_EOR_WS: p[2]->ins_code =  X_EOR_ST_WSQ; break;
+					case   X_OR_WS: p[2]->ins_code =   X_OR_ST_WSQ; break;
+					default: remove = 1; break; /* this should never happen! */
+					}
+				} else {
+					switch (p[2]->ins_code) {
+					case  X_ADD_US: p[2]->ins_code =  X_ADD_ST_USQ; break;
+					case X_ISUB_US: p[2]->ins_code = X_ISUB_ST_USQ; break;
+					case  X_AND_US: p[2]->ins_code =  X_AND_ST_USQ; break;
+					case  X_EOR_US: p[2]->ins_code =  X_EOR_ST_USQ; break;
+					case   X_OR_US: p[2]->ins_code =   X_OR_ST_USQ; break;
+					default: remove = 1; break; /* this should never happen! */
+					}
+				}
+			}
+
+			/*
+			 *  __add.wat		array	-->	__add_st.watq	array
+			 *  __st.wax		array
+			 *  __fence
+			 *
+			 *  __add.uat		array	-->	__add_st.uatq	array
+			 *  __st.uax		array
+			 *  __fence
+			 *
+			 *  __isub.wat		array	-->	__isub_st.watq	array
+			 *  __st.wax		array
+			 *  __fence
+			 *
+			 *  __isub.uat		array	-->	__isub_st.uatq	array
+			 *  __st.uax		array
+			 *  __fence
+			 *
+			 *  etc, etc
+			 *
+			 *  this optimizes the store for a "+=", "-=", "&=", "^=", "|=".
+			 */
+			else if
+			((p_nb >= 3) &&
+			 (p[1]->ins_code == X_ST_WAX ||
+			  p[1]->ins_code == X_ST_UAX) &&
+			 (p[2]->ins_code == X_ADD_WAT ||
+			  p[2]->ins_code == X_ADD_UAT ||
+			  p[2]->ins_code == X_ISUB_WAT ||
+			  p[2]->ins_code == X_ISUB_UAT ||
+			  p[2]->ins_code == X_AND_WAT ||
+			  p[2]->ins_code == X_AND_UAT ||
+			  p[2]->ins_code == X_EOR_WAT ||
+			  p[2]->ins_code == X_EOR_UAT ||
+			  p[2]->ins_code == X_OR_WAT ||
+			  p[2]->ins_code == X_OR_UAT) &&
+			 (cmp_operands(p[1], p[2]))
+			) {
+				/* replace code */
+				remove = 2;
+				if (p[1]->ins_code == X_ST_WAX) {
+					switch (p[2]->ins_code) {
+					case  X_ADD_WAT: p[2]->ins_code =  X_ADD_ST_WATQ; break;
+					case X_ISUB_WAT: p[2]->ins_code = X_ISUB_ST_WATQ; break;
+					case  X_AND_WAT: p[2]->ins_code =  X_AND_ST_WATQ; break;
+					case  X_EOR_WAT: p[2]->ins_code =  X_EOR_ST_WATQ; break;
+					case   X_OR_WAT: p[2]->ins_code =   X_OR_ST_WATQ; break;
+					default: remove = 1; break; /* this should never happen! */
+					}
+				} else {
+					switch (p[2]->ins_code) {
+					case  X_ADD_UAT: p[2]->ins_code =  X_ADD_ST_UATQ; break;
+					case X_ISUB_UAT: p[2]->ins_code = X_ISUB_ST_UATQ; break;
+					case  X_AND_UAT: p[2]->ins_code =  X_AND_ST_UATQ; break;
+					case  X_EOR_UAT: p[2]->ins_code =  X_EOR_ST_UATQ; break;
+					case   X_OR_UAT: p[2]->ins_code =   X_OR_ST_UATQ; break;
+					default: remove = 1; break; /* this should never happen! */
+					}
+				}
+			}
+
+			/*
+			 *  __add.wax		array	-->	__add_st.waxq	array
+			 *  __st.wax		array
+			 *  __fence
+			 *
+			 *  __add.uax		array	-->	__add_st.uaxq	array
+			 *  __st.uax		array
+			 *  __fence
+			 *
+			 *  __isub.wax		array	-->	__isub_st.waxq	array
+			 *  __st.wax		array
+			 *  __fence
+			 *
+			 *  __isub.uax		array	-->	__isub_st.uaxq	array
+			 *  __st.uax		array
+			 *  __fence
+			 *
+			 *  etc, etc
+			 *
+			 *  this optimizes the store for a "+=", "-=", "&=", "^=", "|=".
+			 */
+			else if
+			((p_nb >= 3) &&
+			 (p[1]->ins_code == X_ST_WAX ||
+			  p[1]->ins_code == X_ST_UAX) &&
+			 (p[2]->ins_code == X_ADD_WAX ||
+			  p[2]->ins_code == X_ADD_UAX ||
+			  p[2]->ins_code == X_ISUB_WAX ||
+			  p[2]->ins_code == X_ISUB_UAX ||
+			  p[2]->ins_code == X_AND_WAX ||
+			  p[2]->ins_code == X_AND_UAX ||
+			  p[2]->ins_code == X_EOR_WAX ||
+			  p[2]->ins_code == X_EOR_UAX ||
+			  p[2]->ins_code == X_OR_WAX ||
+			  p[2]->ins_code == X_OR_UAX) &&
+			 (cmp_operands(p[1], p[2]))
+			) {
+				/* replace code */
+				remove = 2;
+				if (p[1]->ins_code == X_ST_WAX) {
+					switch (p[2]->ins_code) {
+					case  X_ADD_WAX: p[2]->ins_code =  X_ADD_ST_WAXQ; break;
+					case X_ISUB_WAX: p[2]->ins_code = X_ISUB_ST_WAXQ; break;
+					case  X_AND_WAX: p[2]->ins_code =  X_AND_ST_WAXQ; break;
+					case  X_EOR_WAX: p[2]->ins_code =  X_EOR_ST_WAXQ; break;
+					case   X_OR_WAX: p[2]->ins_code =   X_OR_ST_WAXQ; break;
+					default: remove = 1; break; /* this should never happen! */
+					}
+				} else {
+					switch (p[2]->ins_code) {
+					case  X_ADD_UAX: p[2]->ins_code =  X_ADD_ST_UAXQ; break;
+					case X_ISUB_UAX: p[2]->ins_code = X_ISUB_ST_UAXQ; break;
+					case  X_AND_UAX: p[2]->ins_code =  X_AND_ST_UAXQ; break;
+					case  X_EOR_UAX: p[2]->ins_code =  X_EOR_ST_UAXQ; break;
+					case   X_OR_UAX: p[2]->ins_code =   X_OR_ST_UAXQ; break;
+					default: remove = 1; break; /* this should never happen! */
+					}
+				}
+			}
+
+			/*
+			 *  __st.{w/u}m		symbol	-->	__st.{w/u}mq	symbol
+			 *  __fence
+			 *
+			 *  __st.{w/u}p		symbol	-->	__st.{w/u}pq	symbol
+			 *  __fence
+			 *
+			 *  __st.{w/u}s		n	-->	__st.{w/u}sq	n
+			 *  __fence
+			 *
+			 *  __st.{w/u}at	array	-->	__st.{w/u}atq	array
+			 *  __fence
+			 *
+			 *  __st.{w/u}ax	array	-->	__st.{w/u}axq	array
+			 *  __fence
+			 */
+			else if
+			((p_nb >= 2) &&
+			 (icode_flags[p[1]->ins_code] & IS_STORE)
+			) {
+				/* replace code */
+				switch (p[1]->ins_code) {
+				case I_ST_WPT: p[1]->ins_code = X_ST_WPTQ; break;
+				case I_ST_UPT: p[1]->ins_code = X_ST_UPTQ; break;
+				case  I_ST_WM: p[1]->ins_code =  X_ST_WMQ; break;
+				case  I_ST_UM: p[1]->ins_code =  X_ST_UMQ; break;
+				case  X_ST_WP: p[1]->ins_code =  X_ST_WPQ; break;
+				case  X_ST_UP: p[1]->ins_code =  X_ST_UPQ; break;
+				case  X_ST_WS: p[1]->ins_code =  X_ST_WSQ; break;
+				case  X_ST_US: p[1]->ins_code =  X_ST_USQ; break;
+				case X_ST_WAT: p[1]->ins_code = X_ST_WATQ; break;
+				case X_ST_UAT: p[1]->ins_code = X_ST_UATQ; break;
+				case X_ST_WAX: p[1]->ins_code = X_ST_WAXQ; break;
+				case X_ST_UAX: p[1]->ins_code = X_ST_UAXQ; break;
+				default: break;
+				}
+				remove = 1;
 			}
 
 			/*
@@ -2799,7 +3182,7 @@ lv1_loop:
 			  p[2]->ins_code == I_LD_UM) &&
 			 (p[0]->ins_type == p[2]->ins_type) &&
 			 (p[0]->ins_data == p[2]->ins_data)
-//			 (cmp_operands(p[0], p[2]) == 1)
+//			 (cmp_operands(p[0], p[2]))
 			) {
 				/* replace code */
 				switch (p[2]->ins_code) {
@@ -2890,7 +3273,7 @@ lv1_loop:
 			  p[2]->ins_code == X_LDP_UAY) &&
 			 (p[0]->ins_type == p[2]->ins_type) &&
 			 (p[0]->ins_data == p[2]->ins_data)
-//			 (cmp_operands(p[0], p[2]) == 1)
+//			 (cmp_operands(p[0], p[2]))
 			) {
 				/* replace code */
 				switch (p[2]->ins_code) {
@@ -3206,7 +3589,7 @@ lv1_loop:
 			else if
 			((p[0]->ins_code == I_LD_WM) &&
 			 (p[1]->ins_code == I_ST_WM) &&
-			 (cmp_operands(p[0], p[1]) == 1)
+			 (cmp_operands(p[0], p[1]))
 			) {
 				/* remove code */
 				remove = 1;
@@ -3713,6 +4096,159 @@ lv1_loop:
 				p[0]->ins_code = X_AND_UIQ;
 				/* no instructions removed, just loop */
 				goto lv1_loop;
+			}
+
+			/*
+			 *  __ld.wi		i	-->	__ldx.{w/b/u}mq	index
+			 *  __ldx.{w/b/u}mq	index		__ld.wi		i
+			 *
+			 *  __ld.wi		i	-->	__ldx.{w/b/u}sq index
+			 *  __ldx.{w/b/u}s	index		__ld.wi		i
+			 *
+			 *  __ld.wi		i	-->	__ld2x.{w/b/u}mq index
+			 *  __ld2x.{w/b/u}m	index		__ld.wi		i
+			 *
+			 *  __ld.wi		i	-->	__ld2x.{w/b/u}sq index
+			 *  __ld2x.{w/b/u}s	index		__ld.wi		i
+			 *
+			 *  __ld.{w/b/u}m	symbol	-->	__ldx.{w/b/u}mq	index
+			 *  __ldx.{w/b/u}mq	index		__ld.{w/b/u}m	symbol
+			 *
+			 *  __ld.{w/b/u}m	symbol	-->	__ldx.{w/b/u}sq index
+			 *  __ldx.{w/b/u}s	index		__ld.{w/b/u}m	symbol
+			 *
+			 *  __ld.{w/b/u}m	symbol	-->	__ld2x.{w/b/u}mq index
+			 *  __ld2x.{w/b/u}m	index		__ld.{w/b/u}m	symbol
+			 *
+			 *  __ld.{w/b/u}m	symbol	-->	__ld2x.{w/b/u}sq index
+			 *  __ld2x.{w/b/u}s	index		__ld.{w/b/u}m	symbol
+			 *
+			 *  swap the LDX so that it doesn't have to preserve the primary register
+			 */
+			else if
+			((p[0]->ins_code == X_LDX_WMQ ||
+			  p[0]->ins_code == X_LDX_BMQ ||
+			  p[0]->ins_code == X_LDX_UMQ ||
+			  p[0]->ins_code == X_LDX_WS  ||
+			  p[0]->ins_code == X_LDX_BS  ||
+			  p[0]->ins_code == X_LDX_US  ||
+			  p[0]->ins_code == X_LD2X_WM ||
+			  p[0]->ins_code == X_LD2X_BM ||
+			  p[0]->ins_code == X_LD2X_UM ||
+			  p[0]->ins_code == X_LD2X_WS ||
+			  p[0]->ins_code == X_LD2X_BS ||
+			  p[0]->ins_code == X_LD2X_US) &&
+			 (p[1]->ins_code == I_LD_WI ||
+			  p[1]->ins_code == I_LD_WM ||
+			  p[1]->ins_code == I_LD_BM ||
+			  p[1]->ins_code == I_LD_UM)
+			) {
+				/* replace code */
+				INS parked = *p[1];
+				*p[1] = *p[0];
+				*p[0] = parked;
+				switch (p[1]->ins_code) {
+				case X_LDX_WMQ: p[1]->ins_code = X_LDX_WMQ; break;
+				case X_LDX_BMQ: p[1]->ins_code = X_LDX_BMQ; break;
+				case X_LDX_UMQ: p[1]->ins_code = X_LDX_UMQ; break;
+				case X_LDX_WS : p[1]->ins_code = X_LDX_WSQ; break;
+				case X_LDX_BS : p[1]->ins_code = X_LDX_BSQ; break;
+				case X_LDX_US : p[1]->ins_code = X_LDX_USQ; break;
+				case X_LD2X_WM: p[1]->ins_code = X_LD2X_WMQ; break;
+				case X_LD2X_BM: p[1]->ins_code = X_LD2X_BMQ; break;
+				case X_LD2X_UM: p[1]->ins_code = X_LD2X_UMQ; break;
+				case X_LD2X_WS: p[1]->ins_code = X_LD2X_WSQ; break;
+				case X_LD2X_BS: p[1]->ins_code = X_LD2X_BSQ; break;
+				case X_LD2X_US: p[1]->ins_code = X_LD2X_USQ; break;
+				default: break;
+				}
+				/* no instructions removed, just loop */
+				goto lv1_loop;
+			}
+
+			/*
+			 *  __ld.wi		i	-->	__add_st.{w/u}miq  i, symbol
+			 *  __add_st.{w/u}mq	symbol
+			 *
+			 *  __ld.wi		i	-->	__sub_st.{w/u}miq  i, symbol
+			 *  __isub_st.{w/u}mq	symbol
+			 *
+			 *  __ld.wi		i	-->	__add_st.{w/u}piq  i, symbol
+			 *  __add_st.{w/u}pq	symbol
+			 *
+			 *  __ld.wi		i	-->	__sub_st.{w/u}piq  i, symbol
+			 *  __isub_st.{w/u}pq	symbol
+			 *
+			 *  __ld.wi		i	-->	__add_st.{w/u}siq  i, n
+			 *  __add_st.{w/u}sq	n
+			 *
+			 *  __ld.wi		i	-->	__sub_st.{w/u}siq  i, n
+			 *  __isub_st.{w/u}sq	n
+			 *
+			 *  __ld.wi		i	-->	__add_st.{w/u}atiq  i, symbol
+			 *  __add_st.{w/u}atq	symbol
+			 *
+			 *  __ld.wi		i	-->	__sub_st.{w/u}atiq  i, symbol
+			 *  __isub_st.{w/u}atq	symbol
+			 *
+			 *  __ld.wi		i	-->	__add_st.{w/u}axiq  i, symbol
+			 *  __add_st.{w/u}axq	symbol
+			 *
+			 *  __ld.wi		i	-->	__sub_st.{w/u}axiq  i, symbol
+			 *  __isub_st.{w/u}axq	symbol
+			 */
+			else if
+			((p[1]->ins_code == I_LD_WI) &&
+			 (p[0]->ins_code == X_ADD_ST_WMQ ||
+			  p[0]->ins_code == X_ADD_ST_UMQ ||
+			  p[0]->ins_code == X_ADD_ST_WPQ ||
+			  p[0]->ins_code == X_ADD_ST_UPQ ||
+			  p[0]->ins_code == X_ADD_ST_WSQ ||
+			  p[0]->ins_code == X_ADD_ST_USQ ||
+			  p[0]->ins_code == X_ADD_ST_WATQ ||
+			  p[0]->ins_code == X_ADD_ST_UATQ ||
+			  p[0]->ins_code == X_ADD_ST_WAXQ ||
+			  p[0]->ins_code == X_ADD_ST_UAXQ ||
+			  p[0]->ins_code == X_ISUB_ST_WMQ ||
+			  p[0]->ins_code == X_ISUB_ST_UMQ ||
+			  p[0]->ins_code == X_ISUB_ST_WPQ ||
+			  p[0]->ins_code == X_ISUB_ST_UPQ ||
+			  p[0]->ins_code == X_ISUB_ST_WSQ ||
+			  p[0]->ins_code == X_ISUB_ST_USQ ||
+			  p[0]->ins_code == X_ISUB_ST_WATQ ||
+			  p[0]->ins_code == X_ISUB_ST_UATQ ||
+			  p[0]->ins_code == X_ISUB_ST_WAXQ ||
+			  p[0]->ins_code == X_ISUB_ST_UAXQ)
+			) {
+				/* replace code */
+				intptr_t data = p[1]->ins_data;
+				*p[1] = *p[0];
+				switch (p[1]->ins_code) {
+				case X_ADD_ST_WMQ:   p[1]->ins_code = X_ADD_ST_WMIQ; break;
+				case X_ADD_ST_UMQ:   p[1]->ins_code = X_ADD_ST_UMIQ; break;
+				case X_ADD_ST_WPQ:   p[1]->ins_code = X_ADD_ST_WPIQ; break;
+				case X_ADD_ST_UPQ:   p[1]->ins_code = X_ADD_ST_UPIQ; break;
+				case X_ADD_ST_WSQ:   p[1]->ins_code = X_ADD_ST_WSIQ; break;
+				case X_ADD_ST_USQ:   p[1]->ins_code = X_ADD_ST_USIQ; break;
+				case X_ADD_ST_WATQ:  p[1]->ins_code = X_ADD_ST_WATIQ; break;
+				case X_ADD_ST_UATQ:  p[1]->ins_code = X_ADD_ST_UATIQ; break;
+				case X_ADD_ST_WAXQ:  p[1]->ins_code = X_ADD_ST_WAXIQ; break;
+				case X_ADD_ST_UAXQ:  p[1]->ins_code = X_ADD_ST_UAXQ; break;
+				case X_ISUB_ST_WMQ:  p[1]->ins_code = X_SUB_ST_WMIQ; break;
+				case X_ISUB_ST_UMQ:  p[1]->ins_code = X_SUB_ST_UMIQ; break;
+				case X_ISUB_ST_WPQ:  p[1]->ins_code = X_SUB_ST_WPIQ; break;
+				case X_ISUB_ST_UPQ:  p[1]->ins_code = X_SUB_ST_UPIQ; break;
+				case X_ISUB_ST_WSQ:  p[1]->ins_code = X_SUB_ST_WSIQ; break;
+				case X_ISUB_ST_USQ:  p[1]->ins_code = X_SUB_ST_USIQ; break;
+				case X_ISUB_ST_WATQ: p[1]->ins_code = X_SUB_ST_WATIQ; break;
+				case X_ISUB_ST_UATQ: p[1]->ins_code = X_SUB_ST_UATIQ; break;
+				case X_ISUB_ST_WAXQ: p[1]->ins_code = X_SUB_ST_WAXIQ; break;
+				case X_ISUB_ST_UAXQ: p[1]->ins_code = X_SUB_ST_UAXIQ; break;
+				default: break;
+				}
+				p[1]->imm_type = T_VALUE;
+				p[1]->imm_data = data;
+				remove = 1;
 			}
 
 			/* remove instructions from queue and begin again */
