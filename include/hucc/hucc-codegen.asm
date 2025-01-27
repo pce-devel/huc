@@ -57,6 +57,8 @@
 
 
 
+		.nolist
+
 ; ***************************************************************************
 ; ***************************************************************************
 ; i-code that retires the primary register contents
@@ -292,25 +294,6 @@ __fgetub	.macro
 ; ***************************************************************************
 
 ; **************
-; the compiler can generate this to aid debugging C data-stack
-; balance problems before/after a function call
-
-__calling	.macro
-		ldx	<__sp
-		phx
-		.endm
-
-; **************
-; the compiler can generate this to aid debugging C data-stack
-; balance problems before/after a function call
-
-__called	.macro
-		plx
-		cpx	<__sp
-!hang:		bne	!hang-
-		.endm
-
-; **************
 
 __call		.macro
 		call	\1
@@ -360,30 +343,30 @@ __return	.macro
 ; main C stack for local variables and arguments
 
 __modsp		.macro	; __STACK
-	.if (\1 < 0)
-	.if (\1 == -2)
-		dec	<__sp
-		dec	<__sp
-	.else
-		lda.l	<__sp
-		clc
-		adc.l	#\1
-		sta.l	<__sp
-	.endif
-	.if	HUCC_DEBUG_SP
-!overflow:	bmi	!overflow-
-	.endif
-	.else
-	.if (\1 == 2)
+	.if	((\1 >= 0) && (\1 < 65536))
+	.if	(\1 == 2)
 		inc	<__sp
 		inc	<__sp
 	.else
 		tax
-		lda.l	<__sp
+		lda	<__sp
 		clc
-		adc.l	#\1
-		sta.l	<__sp
+		adc	#\1
+		sta	<__sp
 		txa
+	.endif
+	.else
+	.if	(\1 == -2)
+		dec	<__sp
+		dec	<__sp
+	.else
+		lda	<__sp
+		clc
+		adc	#\1
+		sta	<__sp
+	.endif
+	.if	HUCC_DEBUG_SP
+!overflow:	bmi	!overflow-
 	.endif
 	.endif
 		.endm
@@ -392,11 +375,13 @@ __modsp		.macro	; __STACK
 ; main C stack for local variables and arguments
 ; this is used to adjust the stack in a C "goto"
 
-__modsp_sym	.macro	; __STACK
+__modsp_goto	.macro	; __STACK
+	.if	(\1 != 0)
 		lda.l	<__sp
 		clc
-		adc.l	#\1
+		adc	#\1
 		sta.l	<__sp
+	.endif
 		.endm
 
 ; **************
@@ -1387,7 +1372,7 @@ __uge_b.umq	.macro
 ; C is true (1) if Y:A == memory-value, else false (0)
 ; this MUST set the C flag for the subsequent branches!
 
-__equ_w.ws	.macro
+__equ_w.ws	.macro	; __STACK
 		ldx	<__sp
 		cmp.l	<__stack + \1, x
 		bne	!false+
@@ -1403,7 +1388,7 @@ __equ_w.ws	.macro
 ; C is true (1) if Y:A != memory-value, else false (0)
 ; this MUST set the C flag for the subsequent branches!
 
-__neq_w.ws	.macro
+__neq_w.ws	.macro	; __STACK
 		ldx	<__sp
 		sec
 		eor.l	<__stack + \1, x
@@ -1420,7 +1405,7 @@ __neq_w.ws	.macro
 ; C is true (1) if Y:A < memory-value, else false (0)
 ; this MUST set the C flag for the susequent branches!
 
-__slt_w.ws	.macro
+__slt_w.ws	.macro	; __STACK
 		ldx	<__sp
 		cmp.l	<__stack + \1, x; Subtract memory from Y:A.
 		tya
@@ -1435,7 +1420,7 @@ __slt_w.ws	.macro
 ; C is true (1) if Y:A <= memory-value, else false (0)
 ; this MUST set the C flag for the susequent branches!
 
-__sle_w.ws	.macro
+__sle_w.ws	.macro	; __STACK
 		ldx	<__sp
 		clc			; Subtract memory+1 from Y:A.
 		sbc.l	<__stack + \1, x
@@ -1451,7 +1436,7 @@ __sle_w.ws	.macro
 ; C is true (1) if Y:A > memory-value, else false (0)
 ; this MUST set the C flag for the susequent branches!
 
-__sgt_w.ws	.macro
+__sgt_w.ws	.macro	; __STACK
 		ldx	<__sp
 		clc			; Subtract memory+1 from Y:A.
 		sbc.l	<__stack + \1, x
@@ -1468,7 +1453,7 @@ __sgt_w.ws	.macro
 ; C is true (1) if Y:A >= memory-value, else false (0)
 ; this MUST set the C flag for the susequent branches!
 
-__sge_w.ws	.macro
+__sge_w.ws	.macro	; __STACK
 		ldx	<__sp
 		cmp.l	<__stack + \1, x; Subtract memory from Y:A.
 		tya
@@ -1484,7 +1469,7 @@ __sge_w.ws	.macro
 ; C is true (1) if Y:A < memory-value, else false (0)
 ; this MUST set the C flag for the susequent branches!
 
-__ult_w.ws	.macro
+__ult_w.ws	.macro	; __STACK
 		ldx	<__sp
 		cmp.l	<__stack + \1, x; Subtract memory from Y:A.
 		tya
@@ -1499,7 +1484,7 @@ __ult_w.ws	.macro
 ; C is true (1) if Y:A <= memory-value, else false (0)
 ; this MUST set the C flag for the susequent branches!
 
-__ule_w.ws	.macro
+__ule_w.ws	.macro	; __STACK
 		ldx	<__sp
 		clc			; Subtract memory+1 from Y:A.
 		sbc.l	<__stack + \1, x
@@ -1515,7 +1500,7 @@ __ule_w.ws	.macro
 ; C is true (1) if Y:A > memory-value, else false (0)
 ; this MUST set the C flag for the susequent branches!
 
-__ugt_w.ws	.macro
+__ugt_w.ws	.macro	; __STACK
 		ldx	<__sp
 		clc			; Subtract memory+1 from Y:A.
 		sbc.l	<__stack + \1, x
@@ -1528,7 +1513,7 @@ __ugt_w.ws	.macro
 ; C is true (1) if Y:A >= memory-value, else false (0)
 ; this MUST set the C flag for the susequent branches!
 
-__uge_w.ws	.macro
+__uge_w.ws	.macro	; __STACK
 		ldx	<__sp
 		cmp.l	<__stack + \1, x; Subtract memory from Y:A.
 		tya
@@ -1540,7 +1525,7 @@ __uge_w.ws	.macro
 ; C is true (1) if Y:A == memory-value, else false (0)
 ; this MUST set the C flag for the subsequent branches!
 
-__equ_w.us	.macro
+__equ_w.us	.macro	; __STACK
 		ldx	<__sp
 		cmp	<__stack + \1, x
 		bne	!false+
@@ -1555,7 +1540,7 @@ __equ_w.us	.macro
 ; C is true (1) if Y:A != memory-value, else false (0)
 ; this MUST set the C flag for the subsequent branches!
 
-__neq_w.us	.macro
+__neq_w.us	.macro	; __STACK
 		ldx	<__sp
 		sec
 		eor	<__stack + \1, x
@@ -1571,7 +1556,7 @@ __neq_w.us	.macro
 ; C is true (1) if Y:A < memory-value, else false (0)
 ; this MUST set the C flag for the susequent branches!
 
-__slt_w.us	.macro
+__slt_w.us	.macro	; __STACK
 		ldx	<__sp
 		cmp	<__stack + \1, x; Subtract memory from Y:A.
 		tya
@@ -1586,7 +1571,7 @@ __slt_w.us	.macro
 ; C is true (1) if Y:A <= memory-value, else false (0)
 ; this MUST set the C flag for the susequent branches!
 
-__sle_w.us	.macro
+__sle_w.us	.macro	; __STACK
 		ldx	<__sp
 		clc			; Subtract memory+1 from Y:A.
 		sbc	<__stack + \1, x
@@ -1602,7 +1587,7 @@ __sle_w.us	.macro
 ; C is true (1) if Y:A > memory-value, else false (0)
 ; this MUST set the C flag for the susequent branches!
 
-__sgt_w.us	.macro
+__sgt_w.us	.macro	; __STACK
 		ldx	<__sp
 		clc			; Subtract memory+1 from Y:A.
 		sbc	<__stack + \1, x
@@ -1619,7 +1604,7 @@ __sgt_w.us	.macro
 ; C is true (1) if Y:A >= memory-value, else false (0)
 ; this MUST set the C flag for the susequent branches!
 
-__sge_w.us	.macro
+__sge_w.us	.macro	; __STACK
 		ldx	<__sp
 		cmp	<__stack + \1, x; Subtract memory from Y:A.
 		tya
@@ -1635,7 +1620,7 @@ __sge_w.us	.macro
 ; C is true (1) if Y:A < memory-value, else false (0)
 ; this MUST set the C flag for the susequent branches!
 
-__ult_w.us	.macro
+__ult_w.us	.macro	; __STACK
 		ldx	<__sp
 		cmp	<__stack + \1, x; Subtract memory from Y:A.
 		tya
@@ -1650,7 +1635,7 @@ __ult_w.us	.macro
 ; C is true (1) if Y:A <= memory-value, else false (0)
 ; this MUST set the C flag for the susequent branches!
 
-__ule_w.us	.macro
+__ule_w.us	.macro	; __STACK
 		ldx	<__sp
 		clc			; Subtract memory+1 from Y:A.
 		sbc	<__stack + \1, x
@@ -1666,7 +1651,7 @@ __ule_w.us	.macro
 ; C is true (1) if Y:A > memory-value, else false (0)
 ; this MUST set the C flag for the susequent branches!
 
-__ugt_w.us	.macro
+__ugt_w.us	.macro	; __STACK
 		ldx	<__sp
 		clc			; Subtract memory+1 from Y:A.
 		sbc	<__stack + \1, x
@@ -1679,7 +1664,7 @@ __ugt_w.us	.macro
 ; C is true (1) if Y:A >= memory-value, else false (0)
 ; this MUST set the C flag for the susequent branches!
 
-__uge_w.us	.macro
+__uge_w.us	.macro	; __STACK
 		ldx	<__sp
 		cmp	<__stack + \1, x; Subtract memory from Y:A.
 		tya
@@ -1691,7 +1676,7 @@ __uge_w.us	.macro
 ; C is true (1) if A == memory-value, else false (0)
 ; this MUST set the C flag for the subsequent branches!
 
-__equ_b.usq	.macro
+__equ_b.usq	.macro	; __STACK
 		ldx	<__sp
 		cmp	<__stack + \1, x
 		beq	!+
@@ -1704,7 +1689,7 @@ __equ_b.usq	.macro
 ; C is true (1) if A != memory-value, else false (0)
 ; this MUST set the C flag for the subsequent branches!
 
-__neq_b.usq	.macro
+__neq_b.usq	.macro	; __STACK
 		ldx	<__sp
 		sec
 		eor	<__stack + \1, x
@@ -1718,7 +1703,7 @@ __neq_b.usq	.macro
 ; C is true (1) if A < memory-value, else false (0)
 ; this MUST set the C flag for the susequent branches!
 
-__slt_b.bsq	.macro
+__slt_b.bsq	.macro	; __STACK
 		ldx	<__sp
 		sec			; Subtract memory from A.
 		sbc	<__stack + \1, x
@@ -1732,7 +1717,7 @@ __slt_b.bsq	.macro
 ; C is true (1) if A <= memory-value, else false (0)
 ; this MUST set the C flag for the susequent branches!
 
-__sle_b.bsq	.macro
+__sle_b.bsq	.macro	; __STACK
 		ldx	<__sp
 		clc			; Subtract memory+1 from A.
 		sbc	<__stack + \1, x
@@ -1746,7 +1731,7 @@ __sle_b.bsq	.macro
 ; C is true (1) if A > memory-value, else false (0)
 ; this MUST set the C flag for the susequent branches!
 
-__sgt_b.bsq	.macro
+__sgt_b.bsq	.macro	; __STACK
 		ldx	<__sp
 		clc			; Subtract memory+1 from A.
 		sbc.l	<__stack + \1, x
@@ -1761,7 +1746,7 @@ __sgt_b.bsq	.macro
 ; C is true (1) if A >= memory-value, else false (0)
 ; this MUST set the C flag for the susequent branches!
 
-__sge_b.bsq	.macro
+__sge_b.bsq	.macro	; __STACK
 		ldx	<__sp
 		sec			; Subtract memory from A.
 		sbc	<__stack + \1, x
@@ -1776,7 +1761,7 @@ __sge_b.bsq	.macro
 ; C is true (1) if A < memory-value, else false (0)
 ; this MUST set the C flag for the susequent branches!
 
-__ult_b.usq	.macro
+__ult_b.usq	.macro	; __STACK
 		ldx	<__sp
 		cmp	<__stack + \1, x; Subtract memory from A.
 		ror	a		; CC if A < memory.
@@ -1789,7 +1774,7 @@ __ult_b.usq	.macro
 ; C is true (1) if A <= memory-value, else false (0)
 ; this MUST set the C flag for the susequent branches!
 
-__ule_b.usq	.macro
+__ule_b.usq	.macro	; __STACK
 		ldx	<__sp
 		clc			; Subtract memory+1 from A.
 		sbc	<__stack + \1, x
@@ -1803,7 +1788,7 @@ __ule_b.usq	.macro
 ; C is true (1) if A > memory-value, else false (0)
 ; this MUST set the C flag for the susequent branches!
 
-__ugt_b.usq	.macro
+__ugt_b.usq	.macro	; __STACK
 		ldx	<__sp
 		clc			; Subtract memory+1 from A.
 		sbc	<__stack + \1, x; CS if A > memory.
@@ -1814,7 +1799,7 @@ __ugt_b.usq	.macro
 ; C is true (1) if A >= memory-value, else false (0)
 ; this MUST set the C flag for the susequent branches!
 
-__uge_b.usq	.macro
+__uge_b.usq	.macro	; __STACK
 		ldx	<__sp
 		cmp	<__stack + \1, x; Subtract memory from A.
 					; CS if A >= memory.
@@ -2780,7 +2765,7 @@ __ld.uiq	.macro
 ; **************
 
 __lea.s		.macro	; __STACK
-		lda.l	<__sp
+		lda	<__sp
 		clc
 		adc.l	#__stack + (\1)
 		ldy.h	#__stack
@@ -2848,30 +2833,6 @@ __ldx.umq	.macro
 
 ; **************
 
-__ld2x.wmq	.macro
-		lda.l	\1
-		asl	a
-		tax
-		.endm
-
-; **************
-
-__ld2x.bmq	.macro
-		lda	\1
-		asl	a
-		tax
-		.endm
-
-; **************
-
-__ld2x.umq	.macro
-		lda	\1
-		asl	a
-		tax
-		.endm
-
-; **************
-
 __ld2x.wm	.macro
 		tax
 		lda.l	\1
@@ -2895,6 +2856,30 @@ __ld2x.um	.macro
 		lda	\1
 		asl	a
 		sax
+		.endm
+
+; **************
+
+__ld2x.wmq	.macro
+		lda.l	\1
+		asl	a
+		tax
+		.endm
+
+; **************
+
+__ld2x.bmq	.macro
+		lda	\1
+		asl	a
+		tax
+		.endm
+
+; **************
+
+__ld2x.umq	.macro
+		lda	\1
+		asl	a
+		tax
 		.endm
 
 ; **************
@@ -3182,56 +3167,56 @@ __ld.usq	.macro	; __STACK
 
 ; **************
 
+__ldx.ws	.macro	; __STACK
+		phy
+		ldy	<__sp
+		ldx.l	<__stack + \1, y
+		ply
+		.endm
+
+; **************
+
+__ldx.bs	.macro	; __STACK
+		phy
+		ldy	<__sp
+		ldx	<__stack + \1, y
+		ply
+		.endm
+
+; **************
+
+__ldx.us	.macro	; __STACK
+		phy
+		ldy	<__sp
+		ldx	<__stack + \1, y
+		ply
+		.endm
+
+; **************
+
 __ldx.wsq	.macro	; __STACK
-		ldy.l	<__sp
+		ldy	<__sp
 		ldx.l	<__stack + \1, y
 		.endm
 
 ; **************
 
 __ldx.bsq	.macro	; __STACK
-		ldy.l	<__sp
+		ldy	<__sp
 		ldx	<__stack + \1, y
 		.endm
 
 ; **************
 
 __ldx.usq	.macro	; __STACK
-		ldy.l	<__sp
+		ldy	<__sp
 		ldx	<__stack + \1, y
 		.endm
 
 ; **************
 
-__ld2x.wsq	.macro	; __STACK
-		ldx.l	<__sp
-		lda.l	<__stack + \1, x
-		asl	a
-		tax
-		.endm
-
-; **************
-
-__ld2x.bsq	.macro	; __STACK
-		ldx.l	<__sp
-		lda	<__stack + \1, x
-		asl	a
-		tax
-		.endm
-
-; **************
-
-__ld2x.usq	.macro	; __STACK
-		ldx.l	<__sp
-		lda	<__stack + \1, x
-		asl	a
-		tax
-		.endm
-
-; **************
-
 __ld2x.ws	.macro	; __STACK
-		ldx.l	<__sp
+		ldx	<__sp
 		pha
 		lda.l	<__stack + \1, x
 		asl	a
@@ -3242,7 +3227,7 @@ __ld2x.ws	.macro	; __STACK
 ; **************
 
 __ld2x.bs	.macro	; __STACK
-		ldx.l	<__sp
+		ldx	<__sp
 		pha
 		lda	<__stack + \1, x
 		asl	a
@@ -3253,12 +3238,39 @@ __ld2x.bs	.macro	; __STACK
 ; **************
 
 __ld2x.us	.macro	; __STACK
-		ldx.l	<__sp
+		ldx	<__sp
 		pha
 		lda	<__stack + \1, x
 		asl	a
 		tax
 		pla
+		.endm
+
+; **************
+
+__ld2x.wsq	.macro	; __STACK
+		ldx	<__sp
+		lda.l	<__stack + \1, x
+		asl	a
+		tax
+		.endm
+
+; **************
+
+__ld2x.bsq	.macro	; __STACK
+		ldx	<__sp
+		lda	<__stack + \1, x
+		asl	a
+		tax
+		.endm
+
+; **************
+
+__ld2x.usq	.macro	; __STACK
+		ldx	<__sp
+		lda	<__stack + \1, x
+		asl	a
+		tax
 		.endm
 
 ; **************
@@ -4225,7 +4237,7 @@ __st.wpiq	.macro
 __st.upiq	.macro
 		sta.l	__ptr
 		sty.h	__ptr
-		lda	#\1
+		lda.l	#\1
 		sta	[__ptr]
 		.endm
 
@@ -4288,6 +4300,43 @@ __st.uatq	.macro
 		.endm
 
 ; **************
+
+__st.watiq	.macro
+		plx
+	.if	(\?1 != ARG_ABS)
+		lda.l	#\1
+		sta.l	\2, x
+		lda.h	#\1
+		sta.h	\2, x
+	.else
+	.if	(\1 & $00FF)
+		lda.l	#\1
+		sta.l	\2, x
+	.else
+		stz.l	\2, x
+	.endif
+	.if	(\1 & $FF00)
+		lda.h	#\1
+		sta.h	\2, x
+	.else
+		stz.h	\2, x
+	.endif
+	.endif
+		.endm
+
+; **************
+
+__st.uatiq	.macro
+		plx
+	.if	(\1 != 0)
+		lda.l	#\1
+		sta	\2, x
+	.else
+		stz	\2, x
+	.endif
+		.endm
+
+; **************
 ; special store for when array writes are optimized
 ; this balances the cpu stack after an __index.wr or __ldp.war
 
@@ -4322,6 +4371,41 @@ __st.waxq	.macro
 
 __st.uaxq	.macro
 		sta	\1, x
+		.endm
+
+; **************
+
+__st.waxiq	.macro
+	.if	(\?1 != ARG_ABS)
+		lda.l	#\1
+		sta.l	\2, x
+		lda.h	#\1
+		sta.h	\2, x
+	.else
+	.if	(\1 & $00FF)
+		lda.l	#\1
+		sta.l	\2, x
+	.else
+		stz.l	\2, x
+	.endif
+	.if	(\1 & $FF00)
+		lda.h	#\1
+		sta.h	\2, x
+	.else
+		stz.h	\2, x
+	.endif
+	.endif
+		.endm
+
+; **************
+
+__st.uaxiq	.macro
+	.if	(\1 != 0)
+		lda.l	#\1
+		sta	\2, x
+	.else
+		stz	\2, x
+	.endif
 		.endm
 
 ; **************
@@ -5369,6 +5453,35 @@ __asl.wi	.macro
 
 ; **************
 
+__asl.uiq	.macro
+	.if (\1 == 8)
+		asl	a
+	.endif
+	.if (\1 >= 7)
+		asl	a
+	.endif
+	.if (\1 >= 6)
+		asl	a
+	.endif
+	.if (\1 >= 5)
+		asl	a
+	.endif
+	.if (\1 >= 4)
+		asl	a
+	.endif
+	.if (\1 >= 3)
+		asl	a
+	.endif
+	.if (\1 >= 2)
+		asl	a
+	.endif
+	.if (\1 >= 1)
+		asl	a
+	.endif
+		.endm
+
+; **************
+
 __asl.wr	.macro
 		asl	a
 		say
@@ -5607,6 +5720,115 @@ __mul.wi	.macro
 		.endm
 
 ; **************
+
+__mul.uiq	.macro
+	.if (\1 == 2)
+		asl	a
+	.endif
+	.if (\1 == 3)
+		sta	__temp
+		asl	a
+		adc	__temp
+	.endif
+	.if (\1 == 4)
+		asl	a
+		asl	a
+	.endif
+	.if (\1 == 5)
+		sta	__temp
+		asl	a
+		asl	a
+		adc	__temp
+	.endif
+	.if (\1 == 6)
+		asl	a
+		sta	__temp
+		asl	a
+		adc	__temp
+	.endif
+	.if (\1 == 7)
+		sta	__temp
+		asl	a
+		asl	a
+		asl	a
+		sec
+		sbc	__temp
+	.endif
+	.if (\1 == 8)
+		asl	a
+		asl	a
+		asl	a
+	.endif
+	.if (\1 == 9)
+		sta	__temp
+		asl	a
+		asl	a
+		asl	a
+		adc	__temp
+	.endif
+	.if (\1 == 10)
+		asl	a
+		sta	__temp
+		asl	a
+		asl	a
+		adc	__temp
+	.endif
+	.if (\1 == 11)
+		sta.l	__temp
+		asl	a
+		sta.h	__temp
+		asl	a
+		asl	a
+		adc.l	__temp
+		adc.h	__temp
+	.endif
+	.if (\1 == 12)
+		asl	a
+		asl	a
+		sta	__temp
+		asl	a
+		adc	__temp
+	.endif
+	.if (\1 == 13)
+		sta.l	__temp
+		asl	a
+		asl	a
+		sta.h	__temp
+		asl	a
+		adc.l	__temp
+		adc.h	__temp
+	.endif
+	.if (\1 == 14)
+		asl	a
+		sta	__temp
+		asl	a
+		asl	a
+		asl	a
+		sec
+		sbc	__temp
+	.endif
+	.if (\1 == 15)
+		sta	__temp
+		asl	a
+		asl	a
+		asl	a
+		asl	a
+		sec
+		sbc	__temp
+	.endif
+	.if (\1 == 16)
+		asl	a
+		asl	a
+		asl	a
+		asl	a
+	.endif
+	.if (\1 >= 17)
+		ldy	#\1
+		jsr	__muluchar
+	.endif
+		.endm
+
+; **************
 ; Y:A = stacked-value / Y:A
 
 __sdiv.wt	.macro
@@ -5733,6 +5955,26 @@ __add_st.umq	.macro
 
 ; **************
 
+__add_st.wpq	.macro
+		clc
+		adc	[\1]
+		sta	[\1]
+		tya
+		ldy	#1
+		adc	[\1], y
+		sta	[\1], y
+		.endm
+
+; **************
+
+__add_st.upq	.macro
+		clc
+		adc	[\1]
+		sta	[\1]
+		.endm
+
+; **************
+
 __add_st.wsq	.macro	; __STACK
 		ldx	<__sp
 		clc
@@ -5814,6 +6056,29 @@ __isub_st.umq	.macro
 		eor	#$FF
 		adc	\1
 		sta	\1
+		.endm
+
+; **************
+
+__isub_st.wpq	.macro
+		sec
+		eor	#$FF
+		adc	[\1]
+		sta	[\1]
+		tya
+		ldy	#1
+		eor	#$FF
+		adc	[\1], y
+		sta	[\1], y
+		.endm
+
+; **************
+
+__isub_st.upq	.macro
+		sec
+		eor	#$FF
+		adc	[\1]
+		sta	[\1]
 		.endm
 
 ; **************
@@ -5911,6 +6176,24 @@ __and_st.umq	.macro
 
 ; **************
 
+__and_st.wpq	.macro
+		and	[\1]
+		sta	[\1]
+		tya
+		ldy	#1
+		and	[\1], y
+		sta	[\1], y
+		.endm
+
+; **************
+
+__and_st.upq	.macro
+		and	[\1]
+		sta	[\1]
+		.endm
+
+; **************
+
 __and_st.wsq	.macro
 		ldx	<__sp
 		and.l	<__stack + \1, x
@@ -5979,6 +6262,24 @@ __eor_st.wmq	.macro
 __eor_st.umq	.macro
 		eor	\1
 		sta	\1
+		.endm
+
+; **************
+
+__eor_st.wpq	.macro
+		eor	[\1]
+		sta	[\1]
+		tya
+		ldy	#1
+		eor	[\1], y
+		sta	[\1], y
+		.endm
+
+; **************
+
+__eor_st.upq	.macro
+		eor	[\1]
+		sta	[\1]
 		.endm
 
 ; **************
@@ -6055,6 +6356,24 @@ __or_st.umq	.macro
 
 ; **************
 
+__or_st.wpq	.macro
+		or	[\1]
+		sta	[\1]
+		tya
+		ldy	#1
+		or	[\1], y
+		sta	[\1], y
+		.endm
+
+; **************
+
+__or_st.upq	.macro
+		or	[\1]
+		sta	[\1]
+		.endm
+
+; **************
+
 __or_st.wsq	.macro
 		ldx	<__sp
 		ora.l	<__stack + \1, x
@@ -6106,6 +6425,394 @@ __or_st.waxq	.macro
 __or_st.uaxq	.macro
 		ora	\1, x
 		sta	\1, x
+		.endm
+
+; **************
+
+__add_st.wmiq	.macro
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		inc.l	\2
+		bne	!+
+		inc.h	\2
+!:
+	.else
+	.if	((\?1 == ARG_ABS) && ((\1) >= 0) && ((\1) < 256))
+		clc
+		lda.l	\2
+		adc.l	#\1
+		sta.l	\2
+		bcc	!+
+		inc.h	\2
+!:
+	.else
+		clc
+		lda.l	\2
+		adc.l	#\1
+		sta.l	\2
+		lda.h	\2
+		adc.h	#\1
+		sta.h	\2
+	.endif
+	.endif
+		.endm
+
+; **************
+
+__add_st.umiq	.macro
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		inc	\2
+	.else
+		clc
+		lda	\2
+		adc	#\1
+		sta	\2
+	.endif
+		.endm
+
+; **************
+
+__add_st.wpiq	.macro
+		clc
+		lda	[\2]
+		adc.l	#\1
+		sta	[\2]
+		ldy	#1
+		lda	[\2], y
+		adc.h	#\1
+		sta	[\2], y
+		.endm
+
+; **************
+
+__add_st.upiq	.macro
+		clc
+		lda	[\2]
+		adc	#\1
+		sta	[\2]
+		.endm
+
+; **************
+
+__add_st.wsiq	.macro	; __STACK
+		ldx	<__sp
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		inc.l	<__stack + \2, x
+		bne	!+
+		inc.h	<__stack + \2, x
+!:
+	.else
+	.if	((\?1 == ARG_ABS) && ((\1) >= 0) && ((\1) < 256))
+		clc
+		lda.l	<__stack + \2, x
+		adc.l	#\1
+		sta.l	<__stack + \2, x
+		bcc	!+
+		inc.h	<__stack + \2, x
+!:
+	.else
+		clc
+		lda.l	<__stack + \2, x
+		adc.l	#\1
+		sta.l	<__stack + \2, x
+		lda.h	<__stack + \2, x
+		adc.h	#\1
+		sta.h	<__stack + \2, x
+	.endif
+	.endif
+		.endm
+
+; **************
+
+__add_st.usiq	.macro	; __STACK
+		ldx	<__sp
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		inc	<__stack + \2, x
+	.else
+		clc
+		lda	<__stack + \2, x
+		adc	#\1
+		sta	<__stack + \2, x
+	.endif
+		.endm
+
+; **************
+
+__add_st.watiq	.macro	; __STACK
+		plx
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		inc.l	\2, x
+		bne	!+
+		inc.h	\2, x
+!:
+	.else
+	.if	((\?1 == ARG_ABS) && ((\1) >= 0) && ((\1) < 256))
+		clc
+		lda.l	\2, x
+		adc.l	#\1
+		sta.l	\2, x
+		bcc	!+
+		inc.h	\2, x
+!:
+	.else
+		clc
+		lda.l	\2, x
+		adc.l	#\1
+		sta.l	\2, x
+		lda.h	\2, x
+		adc.h	#\1
+		sta.h	\2, x
+	.endif
+	.endif
+		.endm
+
+; **************
+
+__add_st.uatiq	.macro	; __STACK
+		plx
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		inc	\2, x
+	.else
+		clc
+		lda	\2, x
+		adc	#\1
+		sta	\2, x
+	.endif
+		.endm
+
+; **************
+
+__add_st.waxiq	.macro	; __STACK
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		inc.l	\2, x
+		bne	!+
+		inc.h	\2, x
+!:
+	.else
+	.if	((\?1 == ARG_ABS) && ((\1) >= 0) && ((\1) < 256))
+		clc
+		lda.l	\2, x
+		adc.l	#\1
+		sta.l	\2, x
+		bcc	!+
+		inc.h	\2, x
+!:
+	.else
+		clc
+		lda.l	\2, x
+		adc.l	#\1
+		sta.l	\2, x
+		lda.h	\2, x
+		adc.h	#\1
+		sta.h	\2, x
+	.endif
+	.endif
+		.endm
+
+; **************
+
+__add_st.uaxiq	.macro	; __STACK
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		inc	\2, x
+	.else
+		clc
+		lda	\2, x
+		adc	#\1
+		sta	\2, x
+	.endif
+		.endm
+
+; **************
+
+__sub_st.wmiq	.macro
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		lda.l	\2
+		bne	!+
+		dec.h	\2
+!:		dec.l	\2
+	.else
+	.if	((\?1 == ARG_ABS) && ((\1) >= 0) && ((\1) < 256))
+		sec
+		lda.l	\2
+		sbc.l	#\1
+		sta.l	\2
+		bcs	!+
+		dec.h	\2
+!:
+	.else
+		sec
+		lda.l	\2
+		sbc.l	#\1
+		sta.l	\2
+		lda.h	\2
+		sbc.h	#\1
+		sta.h	\2
+	.endif
+	.endif
+		.endm
+
+; **************
+
+__sub_st.umiq	.macro
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		dec	\2
+	.else
+		sec
+		lda	\2
+		sbc	#\1
+		sta	\2
+	.endif
+		.endm
+
+; **************
+
+__sub_st.wpiq	.macro
+		sec
+		lda	[\2]
+		sbc.l	#\1
+		sta	[\2]
+		ldy	#1
+		lda	[\2], y
+		sbc.h	#\1
+		sta	[\2], y
+		.endm
+
+; **************
+
+__sub_st.upiq	.macro
+		sec
+		lda	[\2]
+		sbc	#\1
+		sta	[\2]
+		.endm
+
+; **************
+
+__sub_st.wsiq	.macro	; __STACK
+		ldx	<__sp
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		lda.l	<__stack + \2, x
+		bne	!+
+		dec.h	<__stack + \2, x
+!:		dec.l	<__stack + \2, x
+	.else
+	.if	((\?1 == ARG_ABS) && ((\1) >= 0) && ((\1) < 256))
+		sec
+		lda.l	<__stack + \2, x
+		sbc.l	#\1
+		sta.l	<__stack + \2, x
+		bcs	!+
+		dec.h	<__stack + \2, x
+!:
+	.else
+		sec
+		lda.l	<__stack + \2, x
+		sbc.l	#\1
+		sta.l	<__stack + \2, x
+		lda.h	<__stack + \2, x
+		sbc.h	#\1
+		sta.h	<__stack + \2, x
+	.endif
+	.endif
+		.endm
+
+; **************
+
+__sub_st.usiq	.macro	; __STACK
+		ldx	<__sp
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		dec	<__stack + \2, x
+	.else
+		sec
+		lda	<__stack + \2, x
+		sbc	#\1
+		sta	<__stack + \2, x
+	.endif
+		.endm
+
+; **************
+
+__sub_st.watiq	.macro	; __STACK
+		plx
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		lda.l	\2, x
+		bne	!+
+		dec.h	\2, x
+!:		dec.l	\2, x
+	.else
+	.if	((\?1 == ARG_ABS) && ((\1) >= 0) && ((\1) < 256))
+		sec
+		lda.l	\2, x
+		sbc.l	#\1
+		sta.l	\2, x
+		bcs	!+
+		dec.h	\2, x
+!:
+	.else
+		sec
+		lda.l	\2, x
+		sbc.l	#\1
+		sta.l	\2, x
+		lda.h	\2, x
+		sbc.h	#\1
+		sta.h	\2, x
+	.endif
+	.endif
+		.endm
+
+; **************
+
+__sub_st.uatiq	.macro	; __STACK
+		plx
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		dec	\2, x
+	.else
+		sec
+		lda	\2, x
+		sbc	#\1
+		sta	\2, x
+	.endif
+		.endm
+
+; **************
+
+__sub_st.waxiq	.macro	; __STACK
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		lda.l	\2, x
+		bne	!+
+		dec.h	\2, x
+!:		dec.l	\2, x
+	.else
+	.if	((\?1 == ARG_ABS) && ((\1) >= 0) && ((\1) < 256))
+		sec
+		lda.l	\2, x
+		sbc.l	#\1
+		sta.l	\2, x
+		bcs	!+
+		dec.h	\2, x
+!:
+	.else
+		sec
+		lda.l	\2, x
+		sbc.l	#\1
+		sta.l	\2, x
+		lda.h	\2, x
+		sbc.h	#\1
+		sta.h	\2, x
+	.endif
+	.endif
+		.endm
+
+; **************
+
+__sub_st.uaxiq	.macro	; __STACK
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		dec	\2, x
+	.else
+		sec
+		lda	\2, x
+		sbc	#\1
+		sta	\2, x
+	.endif
 		.endm
 
 
@@ -6175,6 +6882,7 @@ __ldd_s_b	.macro	; __STACK
 		.endm
 
 
+		.list
 
 ; ***************************************************************************
 ; ***************************************************************************

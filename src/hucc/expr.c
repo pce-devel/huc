@@ -73,7 +73,6 @@ int expression_ex (LVALUE *lval, int comma, int norval)
  * ubyte | sword   sword   ubyte   uword
  * uword | uword   uword   uword   uword
  */
-
 static int is_unsigned (LVALUE *lval)
 {
 	/* C promotes operations on an unsigned char
