@@ -1081,6 +1081,12 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_LD_UPQ:
+		ot("__ld.upq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
 	case X_LD_WAR:
 		ot("__ld.war\t");
 		out_type(type, data);
@@ -1099,6 +1105,12 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_LD_UARQ:
+		ot("__ld.uarq\t");
+		out_type(type, data);
+		nl();
+		break;
+
 	case X_LD_WAX:
 		ot("__ld.wax\t");
 		out_type(type, data);
@@ -1113,6 +1125,12 @@ void gen_code (INS *tmp)
 
 	case X_LD_UAX:
 		ot("__ld.uax\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_LD_UAXQ:
+		ot("__ld.uaxq\t");
 		out_type(type, data);
 		nl();
 		break;

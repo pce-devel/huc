@@ -2928,6 +2928,12 @@ __ld.up		.macro
 
 ; **************
 
+__ld.upq	.macro
+		lda	[\1]
+		.endm
+
+; **************
+
 __ld.war	.macro
 		asl	a
 		tax
@@ -2956,6 +2962,13 @@ __ld.uar	.macro
 
 ; **************
 
+__ld.uarq	.macro
+		tay
+		lda	\1, y
+		.endm
+
+; **************
+
 __ld.wax	.macro
 		lda.l	\1, x
 		ldy.h	\1, x
@@ -2976,6 +2989,12 @@ __ld.bax	.macro
 __ld.uax	.macro
 		lda	\1, x
 		cly
+		.endm
+
+; **************
+
+__ld.uaxq	.macro
+		lda	\1, x
 		.endm
 
 ; **************

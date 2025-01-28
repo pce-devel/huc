@@ -171,13 +171,19 @@ enum ICODE {
 	I_LD_BP,
 	I_LD_UP,
 
+	X_LD_UPQ,
+
 	X_LD_WAR,
 	X_LD_BAR,
 	X_LD_UAR,
 
+	X_LD_UARQ,
+
 	X_LD_WAX,
 	X_LD_BAX,
 	X_LD_UAX,
+
+	X_LD_UAXQ,
 
 	X_LD_BAY,
 	X_LD_UAY,

@@ -204,13 +204,19 @@ unsigned char icode_flags[] = {
 	/* I_LD_BP              */	IS_SBYTE,
 	/* I_LD_UP              */	IS_UBYTE,
 
+	/* I_LD_UPQ              */	IS_UBYTE + IS_SHORT,
+
 	/* X_LD_WAR             */	0,
 	/* X_LD_BAR             */	IS_SBYTE,
 	/* X_LD_UAR             */	IS_UBYTE,
 
+	/* X_LD_UARQ             */	IS_UBYTE + IS_SHORT,
+
 	/* X_LD_WAX             */	0,
 	/* X_LD_BAX             */	IS_SBYTE,
 	/* X_LD_UAX             */	IS_UBYTE,
+
+	/* X_LD_UAXQ            */	IS_UBYTE + IS_SHORT,
 
 	/* X_LD_BAY             */	IS_SBYTE,
 	/* X_LD_UAY             */	IS_UBYTE,
@@ -1881,6 +1887,14 @@ lv1_loop:
 				*p[2] = *p[1];
 				p[2]->ins_code = X_CMP_UAXQ;
 				p[2]->cmp_type = compare2uchar[p[0]->cmp_type];
+				switch (p[4]->ins_code) {
+				case I_LD_UM:  p[4]->ins_code = X_LD_UMQ; break;
+				case I_LD_UP:  p[4]->ins_code = X_LD_UPQ; break;
+				case X_LD_US:  p[4]->ins_code = X_LD_USQ; break;
+				case X_LD_UAR: p[4]->ins_code = X_LD_UARQ; break;
+				case X_LD_UAX: p[4]->ins_code = X_LD_UAXQ; break;
+				default: break;
+				}
 				remove = 2;
 			}
 
@@ -1916,6 +1930,14 @@ lv1_loop:
 				default:	break;
 				}
 				p[2]->cmp_type = compare2uchar[p[0]->cmp_type];
+				switch (p[3]->ins_code) {
+				case I_LD_UM:  p[3]->ins_code = X_LD_UMQ; break;
+				case I_LD_UP:  p[3]->ins_code = X_LD_UPQ; break;
+				case X_LD_US:  p[3]->ins_code = X_LD_USQ; break;
+				case X_LD_UAR: p[3]->ins_code = X_LD_UARQ; break;
+				case X_LD_UAX: p[3]->ins_code = X_LD_UAXQ; break;
+				default: break;
+				}
 				remove = 2;
 			}
 
@@ -2619,7 +2641,7 @@ lv1_loop:
 			}
 
 			/*
-			 *  __ld.u{p/m/s/ar/ax}	symbol	-->	__ld.u{p/m/s/ar/ax}  symbol
+			 *  __ld.u{m/p/s/ar/ax}	symbol	-->	__ld.u{m/p/s/ar/ax}q  symbol
 			 *  __cmp_w.wi		j		__cmp_b.uiq	j
 			 *
 			 *  __and.uiq		i	-->	__and.uiq	i
@@ -2638,6 +2660,14 @@ lv1_loop:
 				/* replace code */
 				p[0]->ins_code = X_CMP_UIQ;
 				p[0]->cmp_type = compare2uchar[p[0]->cmp_type];
+				switch (p[1]->ins_code) {
+				case I_LD_UM:  p[1]->ins_code = X_LD_UMQ; break;
+				case I_LD_UP:  p[1]->ins_code = X_LD_UPQ; break;
+				case X_LD_US:  p[1]->ins_code = X_LD_USQ; break;
+				case X_LD_UAR: p[1]->ins_code = X_LD_UARQ; break;
+				case X_LD_UAX: p[1]->ins_code = X_LD_UAXQ; break;
+				default: break;
+				}
 				/* no instructions removed, just loop */
 				goto lv1_loop;
 			}
