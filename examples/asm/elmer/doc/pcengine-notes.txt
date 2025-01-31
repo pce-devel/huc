@@ -222,3 +222,48 @@ These basically correspond to VCE line 260, which is the start of the VSYNC
 pulse.
 
 (N.B. Add +64 for the RCR line.)
+
+
+
+; ***************************************************************************
+; PC ENGINE VDC DMA TIMINGS
+; ***************************************************************************
+
+Resolution ............................................... 256x222 .. 256x224
+
+LINE-220-RCR-to-VBLANK CPU cycles ........................... 1010 ..... 1920
+LINE-220-RCR-to-SATB-DMA-END CPU cycles ..................... 2398 ..... 3308
+LINE-220-RCR-to-128-WORD-VRAM-DMA-END CPU cycles ............ 1702 ..... 2612
+LINE-220-RCR-to-256-WORD-VRAM-DMA-END CPU cycles ............ 2396 ..... 3306
+LINE-220-RCR-to-512-WORD-VRAM-DMA-END CPU cycles ............ 3782 ..... 4692
+LINE-220-RCR-to-SATB-AND-256-WORD-VRAM-DMA-END CPU cycles ... 3790 ..... 4700
+
+
+Resolution ............................................... 352x222 .. 352x224
+
+LINE-220-RCR-to-VBLANK CPU cycles ........................... 1002 ..... 1912
+LINE-220-RCR-to-SATB-DMA-END CPU cycles ..................... 2042 ..... 2952
+LINE-220-RCR-to-128-WORD-VRAM-DMA-END CPU cycles ............ 1522 ..... 2432
+LINE-220-RCR-to-256-WORD-VRAM-DMA-END CPU cycles ............ 2042 ..... 2952
+LINE-220-RCR-to-512-WORD-VRAM-DMA-END CPU cycles ............ 3080 ..... 3990
+LINE-220-RCR-to-SATB-AND-256-WORD-VRAM-DMA-END CPU cycles ... 3084 ..... 3994
+
+
+Resolution ............................................... 512x222 .. 512x224
+
+LINE-220-RCR-to-VBLANK CPU cycles ........................... 1016 ..... 1926
+LINE-220-RCR-to-SATB-DMA-END CPU cycles ..................... 1700 ..... 2610
+LINE-220-RCR-to-128-WORD-VRAM-DMA-END CPU cycles ............ 1358 ..... 2268
+LINE-220-RCR-to-256-WORD-VRAM-DMA-END CPU cycles ............ 1700 ..... 2610
+LINE-220-RCR-to-512-WORD-VRAM-DMA-END CPU cycles ............ 2386 ..... 3296
+LINE-220-RCR-to-SATB-AND-256-WORD-VRAM-DMA-END CPU cycles ... 2390 ..... 3300
+
+
+Resolution (TV Sports Football: VSW=0, VDS=20 22-lines) .. 352x240 .. 352x242
+
+LINE-220-RCR-to-VBLANK CPU cycles ........................... 9192 ..... 9646
+LINE-220-RCR-to-SATB-DMA-END CPU cycles .................... 10232 .... 10686
+LINE-220-RCR-to-128-WORD-VRAM-DMA-END CPU cycles ............ 9712 .... 10168
+LINE-220-RCR-to-256-WORD-VRAM-DMA-END CPU cycles ........... 10232 .... 10686
+LINE-220-RCR-to-512-WORD-VRAM-DMA-END CPU cycles ........... 11270 .... 11724
+LINE-220-RCR-to-SATB-AND-256-WORD-VRAM-DMA-END CPU cycles .. 11274 .... 11728
