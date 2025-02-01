@@ -2047,7 +2047,7 @@ void gen_code (INS *tmp)
 		ol("__ext.ur");
 		break;
 
-	/* i-codes for math with the primary register  */
+	/* i-codes for 16-bit math with the primary register */
 
 	case I_COM_WR:
 		ol("__com.wr");
@@ -2129,6 +2129,710 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
+	case I_SUB_WT:
+		ol("__sub.wt");
+		break;
+
+	case I_SUB_WI:
+		ot("__sub.wi\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_SUB_WM:
+		ot("__sub.wm\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_SUB_UM:
+		ot("__sub.um\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_SUB_WP:
+		ot("__sub.wp\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_SUB_UP:
+		ot("__sub.up\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_SUB_WS:
+		ot("__sub.ws\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_SUB_US:
+		ot("__sub.us\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_SUB_WAT:
+		ot("__sub.wat\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_SUB_UAT:
+		ot("__sub.uat\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_SUB_WAX:
+		ot("__sub.wax\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_SUB_UAX:
+		ot("__sub.uax\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ISUB_WT:
+		ol("__isub.wt");
+		break;
+
+	case X_ISUB_WI:
+		ot("__isub.wi\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_ISUB_WM:
+		ot("__isub.wm\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ISUB_UM:
+		ot("__isub.um\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ISUB_WP:
+		ot("__isub.wp\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ISUB_UP:
+		ot("__isub.up\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ISUB_WS:
+		ot("__isub.ws\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_ISUB_US:
+		ot("__isub.us\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_ISUB_WAT:
+		ot("__isub.wat\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ISUB_UAT:
+		ot("__isub.uat\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ISUB_WAX:
+		ot("__isub.wax\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ISUB_UAX:
+		ot("__isub.uax\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case I_AND_WT:
+		ol("__and.wt");
+		break;
+
+	case X_AND_WI:
+		ot("__and.wi\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_AND_WM:
+		ot("__and.wm\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_AND_UM:
+		ot("__and.um\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_AND_WP:
+		ot("__and.wp\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_AND_UP:
+		ot("__and.up\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_AND_WS:
+		ot("__and.ws\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_AND_US:
+		ot("__and.us\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_AND_WAT:
+		ot("__and.wat\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_AND_UAT:
+		ot("__and.uat\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_AND_WAX:
+		ot("__and.wax\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_AND_UAX:
+		ot("__and.uax\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case I_EOR_WT:
+		ol("__eor.wt");
+		break;
+
+	case X_EOR_WI:
+		ot("__eor.wi\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_EOR_WM:
+		ot("__eor.wm\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_EOR_UM:
+		ot("__eor.um\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_EOR_WP:
+		ot("__eor.wp\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_EOR_UP:
+		ot("__eor.up\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_EOR_WS:
+		ot("__eor.ws\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_EOR_US:
+		ot("__eor.us\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_EOR_WAT:
+		ot("__eor.wat\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_EOR_UAT:
+		ot("__eor.uat\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_EOR_WAX:
+		ot("__eor.wax\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_EOR_UAX:
+		ot("__eor.uax\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case I_OR_WT:
+		ol("__or.wt");
+		break;
+
+	case X_OR_WI:
+		ot("__or.wi\t\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_OR_WM:
+		ot("__or.wm\t\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_OR_UM:
+		ot("__or.um\t\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_OR_WP:
+		ot("__or.wp\t\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_OR_UP:
+		ot("__or.up\t\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_OR_WS:
+		ot("__or.ws\t\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_OR_US:
+		ot("__or.us\t\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_OR_WAT:
+		ot("__or.wat\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_OR_UAT:
+		ot("__or.uat\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_OR_WAX:
+		ot("__or.wax\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_OR_UAX:
+		ot("__or.uax\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case I_ASL_WT:
+		ol("__asl.wt");
+		break;
+
+	case I_ASL_WI:
+		ot("__asl.wi\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case I_ASL_WR:
+		ol("__asl.wr");
+		break;
+
+	case I_ASR_WT:
+		ol("__asr.wt");
+		break;
+
+	case I_ASR_WI:
+		ot("__asr.wi\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case I_LSR_WT:
+		ol("__lsr.wt");
+		break;
+
+	case I_LSR_WI:
+		ot("__lsr.wi\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case I_MUL_WT:
+		ol("__mul.wt");
+		break;
+
+	case I_MUL_WI:
+		ot("__mul.wi\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case I_SDIV_WT:
+		ol("__sdiv.wt");
+		break;
+
+	case I_SDIV_WI:
+		ot("__sdiv.wi\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case I_UDIV_WT:
+		ol("__udiv.wt");
+		break;
+
+	case I_UDIV_WI:
+		ot("__udiv.wi\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case I_UDIV_UI:
+		ot("__udiv.ui\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case I_SMOD_WT:
+		ol("__smod.wt");
+		break;
+
+	case I_SMOD_WI:
+		ot("__smod.wi\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case I_UMOD_WT:
+		ol("__umod.wt");
+		break;
+
+	case I_UMOD_WI:
+		ot("__umod.wi\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case I_UMOD_UI:
+		ot("__umod.ui\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case I_DOUBLE_WT:
+		ol("__double");
+		break;
+
+	/* i-codes for 8-bit math with lo-byte of the primary register */
+
+	case X_ADD_UIQ:
+		ot("__add.uiq\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_ADD_UMQ:
+		ot("__add.umq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ADD_UPQ:
+		ot("__add.upq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ADD_USQ:
+		ot("__add.usq\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_ADD_UATQ:
+		ot("__add.uatq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ADD_UAXQ:
+		ot("__add.uaxq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_SUB_UIQ:
+		ot("__sub.uiq\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_SUB_UMQ:
+		ot("__sub.umq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_SUB_UPQ:
+		ot("__sub.upq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_SUB_USQ:
+		ot("__sub.usq\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_SUB_UATQ:
+		ot("__sub.uatq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_SUB_UAXQ:
+		ot("__sub.uaxq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ISUB_UIQ:
+		ot("__isub.uiq\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_ISUB_UMQ:
+		ot("__isub.umq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ISUB_UPQ:
+		ot("__isub.upq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ISUB_USQ:
+		ot("__isub.usq\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_ISUB_UATQ:
+		ot("__isub.uatq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ISUB_UAXQ:
+		ot("__isub.uaxq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_AND_UIQ:
+		ot("__and.uiq\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_AND_UMQ:
+		ot("__and.umq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_AND_UPQ:
+		ot("__and.upq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_AND_USQ:
+		ot("__and.usq\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_AND_UATQ:
+		ot("__and.uatq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_AND_UAXQ:
+		ot("__and.uaxq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_EOR_UIQ:
+		ot("__eor.uiq\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_EOR_UMQ:
+		ot("__eor.umq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_EOR_UPQ:
+		ot("__eor.upq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_EOR_USQ:
+		ot("__eor.usq\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_EOR_UATQ:
+		ot("__eor.uatq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_EOR_UAXQ:
+		ot("__eor.uaxq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_OR_UIQ:
+		ot("__or.uiq\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_OR_UMQ:
+		ot("__or.umq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_OR_UPQ:
+		ot("__or.upq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_OR_USQ:
+		ot("__or.usq\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_OR_UATQ:
+		ot("__or.uatq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_OR_UAXQ:
+		ot("__or.uaxq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case I_ASL_UIQ:
+		ot("__asl.uiq\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case I_LSR_UIQ:
+		ot("__lsr.uiq\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case I_MUL_UIQ:
+		ot("__mul.uiq\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	/* i-codes for modifying a variable with "+=", "-=", "&=", "^=", "|=" */
+
 	case X_ADD_ST_WMQ:
 		ot("__add_st.wmq\t");
 		out_addr(type, data);
@@ -2187,6 +2891,254 @@ void gen_code (INS *tmp)
 
 	case X_ADD_ST_UAXQ:
 		ot("__add_st.uaxq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ISUB_ST_WMQ:
+		ot("__isub_st.wmq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ISUB_ST_UMQ:
+		ot("__isub_st.umq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ISUB_ST_WPQ:
+		ot("__isub_st.wpq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ISUB_ST_UPQ:
+		ot("__isub_st.upq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ISUB_ST_WSQ:
+		ot("__isub_st.wsq\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_ISUB_ST_USQ:
+		ot("__isub_st.usq\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_ISUB_ST_WATQ:
+		ot("__isub_st.watq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ISUB_ST_UATQ:
+		ot("__isub_st.uatq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ISUB_ST_WAXQ:
+		ot("__isub_st.waxq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_ISUB_ST_UAXQ:
+		ot("__isub_st.uaxq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_AND_ST_WMQ:
+		ot("__and_st.wmq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_AND_ST_UMQ:
+		ot("__and_st.umq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_AND_ST_WPQ:
+		ot("__and_st.wpq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_AND_ST_UPQ:
+		ot("__and_st.upq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_AND_ST_WSQ:
+		ot("__and_st.wsq\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_AND_ST_USQ:
+		ot("__and_st.usq\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_AND_ST_WATQ:
+		ot("__and_st.watq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_AND_ST_UATQ:
+		ot("__and_st.uatq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_AND_ST_WAXQ:
+		ot("__and_st.waxq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_AND_ST_UAXQ:
+		ot("__and_st.uaxq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_EOR_ST_WMQ:
+		ot("__eor_st.wmq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_EOR_ST_UMQ:
+		ot("__eor_st.umq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_EOR_ST_WPQ:
+		ot("__eor_st.wpq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_EOR_ST_UPQ:
+		ot("__eor_st.upq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_EOR_ST_WSQ:
+		ot("__eor_st.wsq\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_EOR_ST_USQ:
+		ot("__eor_st.usq\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_EOR_ST_WATQ:
+		ot("__eor_st.watq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_EOR_ST_UATQ:
+		ot("__eor_st.uatq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_EOR_ST_WAXQ:
+		ot("__eor_st.waxq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_EOR_ST_UAXQ:
+		ot("__eor_st.uaxq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_OR_ST_WMQ:
+		ot("__or_st.wmq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_OR_ST_UMQ:
+		ot("__or_st.umq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_OR_ST_WPQ:
+		ot("__or_st.wpq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_OR_ST_UPQ:
+		ot("__or_st.upq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_OR_ST_WSQ:
+		ot("__or_st.wsq\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_OR_ST_USQ:
+		ot("__or_st.usq\t");
+		outdec((int)data);
+		outlocal(tmp->sym);
+		nl();
+		break;
+
+	case X_OR_ST_WATQ:
+		ot("__or_st.watq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_OR_ST_UATQ:
+		ot("__or_st.uatq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_OR_ST_WAXQ:
+		ot("__or_st.waxq\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_OR_ST_UAXQ:
+		ot("__or_st.uaxq\t");
 		out_addr(type, data);
 		nl();
 		break;
@@ -2273,78 +3225,6 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case I_SUB_WT:
-		ol("__sub.wt");
-		break;
-
-	case I_SUB_WI:
-		ot("__sub.wi\t");
-		out_type(type, data);
-		nl();
-		break;
-
-	case X_SUB_WM:
-		ot("__sub.wm\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_SUB_UM:
-		ot("__sub.um\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_SUB_WP:
-		ot("__sub.wp\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_SUB_UP:
-		ot("__sub.up\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_SUB_WS:
-		ot("__sub.ws\t");
-		outdec((int)data);
-		outlocal(tmp->sym);
-		nl();
-		break;
-
-	case X_SUB_US:
-		ot("__sub.us\t");
-		outdec((int)data);
-		outlocal(tmp->sym);
-		nl();
-		break;
-
-	case X_SUB_WAT:
-		ot("__sub.wat\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_SUB_UAT:
-		ot("__sub.uat\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_SUB_WAX:
-		ot("__sub.wax\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_SUB_UAX:
-		ot("__sub.uax\t");
-		out_addr(type, data);
-		nl();
-		break;
-
 	case X_SUB_ST_WMIQ:
 		ot("__sub_st.wmiq\t");
 		out_type(imm_type, imm_data);
@@ -2425,666 +3305,6 @@ void gen_code (INS *tmp)
 		outstr(", ");
 		out_addr(type, data);
 		nl();
-		break;
-
-	case X_ISUB_WT:
-		ol("__isub.wt");
-		break;
-
-	case X_ISUB_WI:
-		ot("__isub.wi\t");
-		out_type(type, data);
-		nl();
-		break;
-
-	case X_ISUB_WM:
-		ot("__isub.wm\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_ISUB_UM:
-		ot("__isub.um\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_ISUB_WP:
-		ot("__isub.wp\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_ISUB_UP:
-		ot("__isub.up\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_ISUB_WS:
-		ot("__isub.ws\t");
-		outdec((int)data);
-		outlocal(tmp->sym);
-		nl();
-		break;
-
-	case X_ISUB_US:
-		ot("__isub.us\t");
-		outdec((int)data);
-		outlocal(tmp->sym);
-		nl();
-		break;
-
-	case X_ISUB_WAT:
-		ot("__isub.wat\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_ISUB_UAT:
-		ot("__isub.uat\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_ISUB_WAX:
-		ot("__isub.wax\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_ISUB_UAX:
-		ot("__isub.uax\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_ISUB_ST_WMQ:
-		ot("__isub_st.wmq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_ISUB_ST_UMQ:
-		ot("__isub_st.umq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_ISUB_ST_WPQ:
-		ot("__isub_st.wpq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_ISUB_ST_UPQ:
-		ot("__isub_st.upq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_ISUB_ST_WSQ:
-		ot("__isub_st.wsq\t");
-		outdec((int)data);
-		outlocal(tmp->sym);
-		nl();
-		break;
-
-	case X_ISUB_ST_USQ:
-		ot("__isub_st.usq\t");
-		outdec((int)data);
-		outlocal(tmp->sym);
-		nl();
-		break;
-
-	case X_ISUB_ST_WATQ:
-		ot("__isub_st.watq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_ISUB_ST_UATQ:
-		ot("__isub_st.uatq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_ISUB_ST_WAXQ:
-		ot("__isub_st.waxq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_ISUB_ST_UAXQ:
-		ot("__isub_st.uaxq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case I_AND_WT:
-		ol("__and.wt");
-		break;
-
-	case X_AND_WI:
-		ot("__and.wi\t");
-		out_type(type, data);
-		nl();
-		break;
-
-	case X_AND_UIQ:
-		ot("__and.uiq\t");
-		out_type(type, data);
-		nl();
-		break;
-
-	case X_AND_WM:
-		ot("__and.wm\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_AND_UM:
-		ot("__and.um\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_AND_WP:
-		ot("__and.wp\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_AND_UP:
-		ot("__and.up\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_AND_WS:
-		ot("__and.ws\t");
-		outdec((int)data);
-		outlocal(tmp->sym);
-		nl();
-		break;
-
-	case X_AND_US:
-		ot("__and.us\t");
-		outdec((int)data);
-		outlocal(tmp->sym);
-		nl();
-		break;
-
-	case X_AND_WAT:
-		ot("__and.wat\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_AND_UAT:
-		ot("__and.uat\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_AND_WAX:
-		ot("__and.wax\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_AND_UAX:
-		ot("__and.uax\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_AND_ST_WMQ:
-		ot("__and_st.wmq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_AND_ST_UMQ:
-		ot("__and_st.umq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_AND_ST_WPQ:
-		ot("__and_st.wpq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_AND_ST_UPQ:
-		ot("__and_st.upq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_AND_ST_WSQ:
-		ot("__and_st.wsq\t");
-		outdec((int)data);
-		outlocal(tmp->sym);
-		nl();
-		break;
-
-	case X_AND_ST_USQ:
-		ot("__and_st.usq\t");
-		outdec((int)data);
-		outlocal(tmp->sym);
-		nl();
-		break;
-
-	case X_AND_ST_WATQ:
-		ot("__and_st.watq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_AND_ST_UATQ:
-		ot("__and_st.uatq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_AND_ST_WAXQ:
-		ot("__and_st.waxq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_AND_ST_UAXQ:
-		ot("__and_st.uaxq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case I_EOR_WT:
-		ol("__eor.wt");
-		break;
-
-	case X_EOR_WI:
-		ot("__eor.wi\t");
-		out_type(type, data);
-		nl();
-		break;
-
-	case X_EOR_WM:
-		ot("__eor.wm\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_EOR_UM:
-		ot("__eor.um\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_EOR_WP:
-		ot("__eor.wp\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_EOR_UP:
-		ot("__eor.up\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_EOR_WS:
-		ot("__eor.ws\t");
-		outdec((int)data);
-		outlocal(tmp->sym);
-		nl();
-		break;
-
-	case X_EOR_US:
-		ot("__eor.us\t");
-		outdec((int)data);
-		outlocal(tmp->sym);
-		nl();
-		break;
-
-	case X_EOR_WAT:
-		ot("__eor.wat\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_EOR_UAT:
-		ot("__eor.uat\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_EOR_WAX:
-		ot("__eor.wax\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_EOR_UAX:
-		ot("__eor.uax\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_EOR_ST_WMQ:
-		ot("__eor_st.wmq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_EOR_ST_UMQ:
-		ot("__eor_st.umq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_EOR_ST_WPQ:
-		ot("__eor_st.wpq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_EOR_ST_UPQ:
-		ot("__eor_st.upq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_EOR_ST_WSQ:
-		ot("__eor_st.wsq\t");
-		outdec((int)data);
-		outlocal(tmp->sym);
-		nl();
-		break;
-
-	case X_EOR_ST_USQ:
-		ot("__eor_st.usq\t");
-		outdec((int)data);
-		outlocal(tmp->sym);
-		nl();
-		break;
-
-	case X_EOR_ST_WATQ:
-		ot("__eor_st.watq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_EOR_ST_UATQ:
-		ot("__eor_st.uatq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_EOR_ST_WAXQ:
-		ot("__eor_st.waxq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_EOR_ST_UAXQ:
-		ot("__eor_st.uaxq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case I_OR_WT:
-		ol("__or.wt");
-		break;
-
-	case X_OR_WI:
-		ot("__or.wi\t\t");
-		out_type(type, data);
-		nl();
-		break;
-
-	case X_OR_WM:
-		ot("__or.wm\t\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_OR_UM:
-		ot("__or.um\t\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_OR_WP:
-		ot("__or.wp\t\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_OR_UP:
-		ot("__or.up\t\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_OR_WS:
-		ot("__or.ws\t\t");
-		outdec((int)data);
-		outlocal(tmp->sym);
-		nl();
-		break;
-
-	case X_OR_US:
-		ot("__or.us\t\t");
-		outdec((int)data);
-		outlocal(tmp->sym);
-		nl();
-		break;
-
-	case X_OR_WAT:
-		ot("__or.wat\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_OR_UAT:
-		ot("__or.uat\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_OR_WAX:
-		ot("__or.wax\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_OR_UAX:
-		ot("__or.uax\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_OR_ST_WMQ:
-		ot("__or_st.wmq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_OR_ST_UMQ:
-		ot("__or_st.umq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_OR_ST_WPQ:
-		ot("__or_st.wpq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_OR_ST_UPQ:
-		ot("__or_st.upq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_OR_ST_WSQ:
-		ot("__or_st.wsq\t");
-		outdec((int)data);
-		outlocal(tmp->sym);
-		nl();
-		break;
-
-	case X_OR_ST_USQ:
-		ot("__or_st.usq\t");
-		outdec((int)data);
-		outlocal(tmp->sym);
-		nl();
-		break;
-
-	case X_OR_ST_WATQ:
-		ot("__or_st.watq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_OR_ST_UATQ:
-		ot("__or_st.uatq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_OR_ST_WAXQ:
-		ot("__or_st.waxq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case X_OR_ST_UAXQ:
-		ot("__or_st.uaxq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
-	case I_ASL_WT:
-		ol("__asl.wt");
-		break;
-
-	case I_ASL_WI:
-		ot("__asl.wi\t");
-		out_type(type, data);
-		nl();
-		break;
-
-	case I_ASL_UIQ:
-		ot("__asl.uiq\t");
-		out_type(type, data);
-		nl();
-		break;
-
-	case I_ASL_WR:
-		ol("__asl.wr");
-		break;
-
-	case I_ASR_WT:
-		ol("__asr.wt");
-		break;
-
-	case I_ASR_WI:
-		ot("__asr.wi\t");
-		out_type(type, data);
-		nl();
-		break;
-
-	case I_LSR_WT:
-		ol("__lsr.wt");
-		break;
-
-	case I_LSR_WI:
-		ot("__lsr.wi\t");
-		out_type(type, data);
-		nl();
-		break;
-
-	case I_LSR_UIQ:
-		ot("__lsr.uiq\t");
-		out_type(type, data);
-		nl();
-		break;
-
-	case I_MUL_WT:
-		ol("__mul.wt");
-		break;
-
-	case I_MUL_WI:
-		ot("__mul.wi\t");
-		out_type(type, data);
-		nl();
-		break;
-
-	case I_MUL_UIQ:
-		ot("__mul.uiq\t");
-		out_type(type, data);
-		nl();
-		break;
-
-	case I_SDIV_WT:
-		ol("__sdiv.wt");
-		break;
-
-	case I_SDIV_WI:
-		ot("__sdiv.wi\t");
-		out_type(type, data);
-		nl();
-		break;
-
-	case I_UDIV_WT:
-		ol("__udiv.wt");
-		break;
-
-	case I_UDIV_WI:
-		ot("__udiv.wi\t");
-		out_type(type, data);
-		nl();
-		break;
-
-	case I_UDIV_UI:
-		ot("__udiv.ui\t");
-		out_type(type, data);
-		nl();
-		break;
-
-	case I_SMOD_WT:
-		ol("__smod.wt");
-		break;
-
-	case I_SMOD_WI:
-		ot("__smod.wi\t");
-		out_type(type, data);
-		nl();
-		break;
-
-	case I_UMOD_WT:
-		ol("__umod.wt");
-		break;
-
-	case I_UMOD_WI:
-		ot("__umod.wi\t");
-		out_type(type, data);
-		nl();
-		break;
-
-	case I_UMOD_UI:
-		ot("__umod.ui\t");
-		out_type(type, data);
-		nl();
-		break;
-
-	case I_DOUBLE_WT:
-		ol("__double");
 		break;
 
 	default:

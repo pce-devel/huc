@@ -4522,7 +4522,7 @@ __ext.ur	.macro
 
 ; ***************************************************************************
 ; ***************************************************************************
-; i-codes for math with the primary register
+; i-codes for 16-bit math with the primary register
 ; ***************************************************************************
 ; ***************************************************************************
 
@@ -4616,7 +4616,7 @@ __add.wp	.macro
 		ldy	#1
 		adc	[\1], y
 		tay
-		tax
+		txa
 		.endm
 
 ; **************
@@ -4765,17 +4765,17 @@ __sub.wp	.macro
 		ldy	#1
 		sbc	[\1], y
 		tay
-		tax
+		txa
 		.endm
 
 ; **************
 ; Y:A = Y:A - memory
 
 __sub.up	.macro
-		clc
-		adc	[\1]
-		bcc	!+
-		iny
+		sec
+		sbc	[\1]
+		bcs	!+
+		dey
 !:
 		.endm
 
@@ -4919,7 +4919,7 @@ __isub.wp	.macro
 		ldy	#1
 		adc	[\1], y
 		tay
-		tax
+		txa
 		.endm
 
 ; **************
@@ -5059,12 +5059,6 @@ __and.wi	.macro
 	.endif
 	.endif
 	.endif
-		.endm
-
-; **************
-
-__and.uiq	.macro
-		and	#\1
 		.endm
 
 ; **************
@@ -5472,35 +5466,6 @@ __asl.wi	.macro
 
 ; **************
 
-__asl.uiq	.macro
-	.if (\1 == 8)
-		asl	a
-	.endif
-	.if (\1 >= 7)
-		asl	a
-	.endif
-	.if (\1 >= 6)
-		asl	a
-	.endif
-	.if (\1 >= 5)
-		asl	a
-	.endif
-	.if (\1 >= 4)
-		asl	a
-	.endif
-	.if (\1 >= 3)
-		asl	a
-	.endif
-	.if (\1 >= 2)
-		asl	a
-	.endif
-	.if (\1 >= 1)
-		asl	a
-	.endif
-		.endm
-
-; **************
-
 __asl.wr	.macro
 		asl	a
 		say
@@ -5621,36 +5586,6 @@ __lsr.wi	.macro
 		.endm
 
 ; **************
-
-__lsr.uiq	.macro
-	.if (\1 < 8)
-	.if (\1 >= 1)
-		lsr	a
-	.endif
-	.if (\1 >= 2)
-		lsr	a
-	.endif
-	.if (\1 >= 3)
-		lsr	a
-	.endif
-	.if (\1 >= 4)
-		lsr	a
-	.endif
-	.if (\1 >= 5)
-		lsr	a
-	.endif
-	.if (\1 >= 6)
-		lsr	a
-	.endif
-	.if (\1 >= 7)
-		lsr	a
-	.endif
-	.else
-		cla
-	.endif
-		.endm
-
-; **************
 ; Y:A = stacked-value * Y:A
 ;
 ; N.B. signed and unsigned multiply only differ in the top 16 of the 32bits!
@@ -5735,6 +5670,453 @@ __mul.wi	.macro
 	.endif
 	.endif
 	.endif
+	.endif
+		.endm
+
+; **************
+; Y:A = stacked-value / Y:A
+
+__sdiv.wt	.macro
+		sta.l	<divisor
+		sty.h	<divisor
+		pla
+		ply
+		jsr	__divsint
+		.endm
+
+; **************
+
+__sdiv.wi	.macro
+		ldx.l	#\1
+		stx.l	<divisor
+		ldx.h	#\1
+		stx.h	<divisor
+		jsr	__divsint
+		.endm
+
+; **************
+; Y:A = stacked-value / Y:A
+
+__udiv.wt	.macro
+		sta.l	<divisor
+		sty.h	<divisor
+		pla
+		ply
+		jsr	__divuint
+		.endm
+
+; **************
+
+__udiv.wi	.macro
+		ldx.l	#\1
+		stx.l	<divisor
+		ldx.h	#\1
+		stx.h	<divisor
+		jsr	__divuint
+		.endm
+
+; **************
+
+__udiv.ui	.macro
+		ldy	#\1
+		jsr	__divuchar
+		.endm
+
+; **************
+; Y:A = stacked-value % Y:A
+
+__smod.wt	.macro
+		sta.l	<divisor
+		sty.h	<divisor
+		pla
+		ply
+		jsr	__modsint
+		.endm
+
+; **************
+
+__smod.wi	.macro
+		ldx.l	#\1
+		stx.l	<divisor
+		ldx.h	#\1
+		stx.h	<divisor
+		jsr	__modsint
+		.endm
+
+; **************
+; Y:A = stacked-value % Y:A
+
+__umod.wt	.macro
+		sta.l	<divisor
+		sty.h	<divisor
+		pla
+		ply
+		jsr	__moduint
+		.endm
+
+; **************
+
+__umod.wi	.macro
+		ldx.l	#\1
+		stx.l	<divisor
+		ldx.h	#\1
+		stx.h	<divisor
+		jsr	__moduint
+		.endm
+
+; **************
+
+__umod.ui	.macro
+		ldy	#\1
+		jsr	__moduchar
+		.endm
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+; i-codes for 8-bit math with lo-byte of the primary register
+; ***************************************************************************
+; ***************************************************************************
+
+; **************
+
+__add.uiq	.macro
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		inc	a
+	.else
+		clc
+		adc.l	#\1
+	.endif
+		.endm
+
+; **************
+
+__add.umq	.macro
+		clc
+		adc	\1
+		.endm
+
+; **************
+
+__add.upq	.macro
+		clc
+		adc	[\1]
+		.endm
+
+; **************
+
+__add.usq	.macro	; __STACK
+		ldx	<__sp
+		clc
+		adc	<__stack + \1, x
+		.endm
+
+; **************
+; special math for when array math is optimized
+; this balances the cpu stack after an __index.ur
+
+__add.uatq	.macro
+		plx
+		clc
+		adc	\1, x
+		.endm
+
+; **************
+
+__add.uaxq	.macro
+		clc
+		adc	\1, x
+		.endm
+
+; **************
+; Y:A = Y:A - immediate
+
+__sub.uiq	.macro
+	.if	((\?1 == ARG_ABS) && ((\1) >= 0) && ((\1) < 256))
+		sec
+		sbc.l	#\1
+	.endif
+		.endm
+
+; **************
+; Y:A = Y:A - memory
+
+__sub.umq	.macro
+		sec
+		sbc	\1
+		.endm
+
+; **************
+; Y:A = Y:A - memory
+
+__sub.upq	.macro
+		sec
+		sbc	[\1]
+		.endm
+
+; **************
+; Y:A = Y:A - memory
+
+__sub.usq	.macro
+		ldx	<__sp
+		sec
+		sbc	<__stack + \1, x
+		.endm
+
+; **************
+; special math for when array math is optimized
+; this balances the cpu stack after an __index.ur
+; Y:A = Y:A - memory
+
+__sub.uatq	.macro
+		plx
+		sec
+		sbc	\1, x
+		.endm
+
+; **************
+; Y:A = Y:A - memory
+
+__sub.uaxq	.macro
+		sec
+		sbc	\1, x
+		.endm
+
+; **************
+; Y:A = immediate - Y:A
+
+__isub.uiq	.macro
+		sec
+		eor	#$FF
+		adc.l	#\1
+		.endm
+
+; **************
+; Y:A = memory - Y:A
+
+__isub.umq	.macro
+		sec
+		eor	#$FF
+		adc	\1
+		.endm
+
+; **************
+; Y:A = memory - Y:A
+
+__isub.upq	.macro
+		sec
+		eor	#$FF
+		adc	[\1]
+		.endm
+
+; **************
+; Y:A = memory - Y:A
+
+__isub.usq	.macro	; __STACK
+		ldx	<__sp
+		sec
+		eor	#$FF
+		adc	<__stack + \1, x
+		.endm
+
+; **************
+; special math for when array math is optimized
+; this balances the cpu stack after an __index.ur
+; Y:A = memory - Y:A
+
+__isub.uatq	.macro
+		plx
+		sec
+		eor	#$FF
+		adc	\1, x
+		.endm
+
+; **************
+; Y:A = memory - Y:A
+
+__isub.uaxq	.macro
+		sec
+		eor	#$FF
+		adc	\1, x
+		.endm
+
+; **************
+
+__and.uiq	.macro
+		and	#\1
+		.endm
+
+; **************
+
+__and.umq	.macro
+		and	\1
+		.endm
+
+; **************
+
+__and.upq	.macro
+		and	[\1]
+		.endm
+
+; **************
+
+__and.usq	.macro
+		ldx	<__sp
+		and	<__stack + \1, x
+		.endm
+
+; **************
+; special math for when array math is optimized
+; this balances the cpu stack after an __index.ur
+
+__and.uatq	.macro
+		plx
+		and	\1, x
+		.endm
+
+; **************
+
+__and.uaxq	.macro
+		and	\1, x
+		.endm
+
+; **************
+
+__eor.uiq	.macro
+		eor	#\1
+		.endm
+
+; **************
+
+__eor.umq	.macro
+		eor	\1
+		.endm
+
+; **************
+
+__eor.upq	.macro
+		eor	[\1]
+		.endm
+
+; **************
+
+__eor.usq	.macro
+		ldx	<__sp
+		eor	<__stack + \1, x
+		.endm
+
+; **************
+; special math for when array math is optimized
+; this balances the cpu stack after an __index.ur
+
+__eor.uatq	.macro
+		plx
+		eor	\1, x
+		.endm
+
+; **************
+
+__eor.uaxq	.macro
+		eor	\1, x
+		.endm
+
+; **************
+
+__or.uiq	.macro
+		ora	#\1
+		.endm
+
+; **************
+
+__or.umq	.macro
+		ora	\1
+		.endm
+
+; **************
+
+__or.upq	.macro
+		ora	[\1]
+		.endm
+
+; **************
+
+__or.usq	.macro
+		ldx	<__sp
+		ora	<__stack + \1, x
+		.endm
+
+; **************
+; special math for when array math is optimized
+; this balances the cpu stack after an __index.ur
+
+__or.uatq	.macro
+		plx
+		ora	\1, x
+		.endm
+
+; **************
+
+__or.uaxq	.macro
+		ora	\1, x
+		.endm
+
+; **************
+
+__asl.uiq	.macro
+	.if (\1 == 8)
+		asl	a
+	.endif
+	.if (\1 >= 7)
+		asl	a
+	.endif
+	.if (\1 >= 6)
+		asl	a
+	.endif
+	.if (\1 >= 5)
+		asl	a
+	.endif
+	.if (\1 >= 4)
+		asl	a
+	.endif
+	.if (\1 >= 3)
+		asl	a
+	.endif
+	.if (\1 >= 2)
+		asl	a
+	.endif
+	.if (\1 >= 1)
+		asl	a
+	.endif
+		.endm
+
+; **************
+
+__lsr.uiq	.macro
+	.if (\1 < 8)
+	.if (\1 >= 1)
+		lsr	a
+	.endif
+	.if (\1 >= 2)
+		lsr	a
+	.endif
+	.if (\1 >= 3)
+		lsr	a
+	.endif
+	.if (\1 >= 4)
+		lsr	a
+	.endif
+	.if (\1 >= 5)
+		lsr	a
+	.endif
+	.if (\1 >= 6)
+		lsr	a
+	.endif
+	.if (\1 >= 7)
+		lsr	a
+	.endif
+	.else
+		cla
 	.endif
 		.endm
 
@@ -5845,104 +6227,6 @@ __mul.uiq	.macro
 		ldy	#\1
 		jsr	__muluchar
 	.endif
-		.endm
-
-; **************
-; Y:A = stacked-value / Y:A
-
-__sdiv.wt	.macro
-		sta.l	<divisor
-		sty.h	<divisor
-		pla
-		ply
-		jsr	__divsint
-		.endm
-
-; **************
-
-__sdiv.wi	.macro
-		ldx.l	#\1
-		stx.l	<divisor
-		ldx.h	#\1
-		stx.h	<divisor
-		jsr	__divsint
-		.endm
-
-; **************
-; Y:A = stacked-value / Y:A
-
-__udiv.wt	.macro
-		sta.l	<divisor
-		sty.h	<divisor
-		pla
-		ply
-		jsr	__divuint
-		.endm
-
-; **************
-
-__udiv.wi	.macro
-		ldx.l	#\1
-		stx.l	<divisor
-		ldx.h	#\1
-		stx.h	<divisor
-		jsr	__divuint
-		.endm
-
-; **************
-
-__udiv.ui	.macro
-		ldy	#\1
-		jsr	__divuchar
-		.endm
-
-; **************
-; Y:A = stacked-value % Y:A
-
-__smod.wt	.macro
-		sta.l	<divisor
-		sty.h	<divisor
-		pla
-		ply
-		jsr	__modsint
-		.endm
-
-; **************
-
-__smod.wi	.macro
-		ldx.l	#\1
-		stx.l	<divisor
-		ldx.h	#\1
-		stx.h	<divisor
-		jsr	__modsint
-		.endm
-
-; **************
-; Y:A = stacked-value % Y:A
-
-__umod.wt	.macro
-		sta.l	<divisor
-		sty.h	<divisor
-		pla
-		ply
-		jsr	__moduint
-		.endm
-
-; **************
-
-__umod.wi	.macro
-		ldx.l	#\1
-		stx.l	<divisor
-		ldx.h	#\1
-		stx.h	<divisor
-		jsr	__moduint
-		.endm
-
-; **************
-
-__umod.ui	.macro
-		ldy	#\1
-		jsr	__moduchar
 		.endm
 
 
@@ -6899,6 +7183,7 @@ __ldd_s_b	.macro	; __STACK
 		stz.l	<\3
 		stz.h	<\3
 		.endm
+
 
 
 		.list

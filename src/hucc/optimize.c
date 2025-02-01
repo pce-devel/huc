@@ -85,7 +85,7 @@ unsigned char icode_flags[] = {
 	// i-codes for C functions and the C parameter stack
 
 	/* I_ENTER              */	0,
-	/* I_RETURN              */	0,
+	/* I_RETURN             */	0,
 	/* I_MODSP              */	0,
 	/* I_PUSHARG_WR         */	IS_USEPR,
 	/* I_PUSH_WR            */	IS_USEPR + IS_PUSHWT,
@@ -204,13 +204,13 @@ unsigned char icode_flags[] = {
 	/* I_LD_BP              */	IS_SBYTE,
 	/* I_LD_UP              */	IS_UBYTE,
 
-	/* I_LD_UPQ              */	IS_UBYTE + IS_SHORT,
+	/* X_LD_UPQ             */	IS_UBYTE + IS_SHORT,
 
 	/* X_LD_WAR             */	0,
 	/* X_LD_BAR             */	IS_SBYTE,
 	/* X_LD_UAR             */	IS_UBYTE,
 
-	/* X_LD_UARQ             */	IS_UBYTE + IS_SHORT,
+	/* X_LD_UARQ            */	IS_UBYTE + IS_SHORT,
 
 	/* X_LD_WAX             */	0,
 	/* X_LD_BAX             */	IS_SBYTE,
@@ -364,8 +364,8 @@ unsigned char icode_flags[] = {
 
 	/* I_ST_WPT             */	IS_USEPR + IS_STORE + IS_POPWT,
 	/* I_ST_UPT             */	IS_USEPR + IS_STORE + IS_POPWT,
-	/* X_ST_WPTQ            */	IS_USEPR + IS_STORE + IS_SHORT + IS_POPWT,
-	/* X_ST_UPTQ            */	IS_USEPR + IS_STORE + IS_SHORT + IS_POPWT,
+	/* X_ST_WPTQ            */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
+	/* X_ST_UPTQ            */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
 
 	/* I_ST_WM              */	IS_USEPR + IS_STORE,
 	/* I_ST_UM              */	IS_USEPR + IS_STORE,
@@ -381,10 +381,10 @@ unsigned char icode_flags[] = {
 	/* X_ST_UPI             */	IS_USEPR + IS_STORE,
 	/* X_ST_WS              */	IS_USEPR + IS_STORE + IS_SPREL,
 	/* X_ST_US              */	IS_USEPR + IS_STORE + IS_SPREL,
-	/* X_ST_WSQ             */	IS_USEPR + IS_STORE + IS_SHORT + IS_SPREL,
-	/* X_ST_USQ             */	IS_USEPR + IS_STORE + IS_SHORT + IS_SPREL,
-	/* I_ST_WSIQ            */	IS_USEPR + IS_STORE + IS_SHORT + IS_SPREL,
-	/* I_ST_USIQ            */	IS_USEPR + IS_STORE + IS_SHORT + IS_SPREL,
+	/* X_ST_WSQ             */	IS_USEPR + IS_STORE + IS_SPREL + IS_SHORT,
+	/* X_ST_USQ             */	IS_USEPR + IS_STORE + IS_SPREL + IS_SHORT,
+	/* I_ST_WSIQ            */	IS_USEPR + IS_STORE + IS_SPREL + IS_SHORT,
+	/* I_ST_USIQ            */	IS_USEPR + IS_STORE + IS_SPREL + IS_SHORT,
 
 	/* X_INDEX_WR           */	IS_USEPR + IS_PUSHWT,
 	/* X_INDEX_UR           */	IS_USEPR + IS_PUSHWT,
@@ -408,7 +408,7 @@ unsigned char icode_flags[] = {
 	/* I_EXT_BR             */	IS_USEPR,
 	/* I_EXT_UR             */	IS_USEPR,
 
-	// i-codes for math with the primary register
+	// i-codes for 16-bit math with the primary register
 
 	/* I_COM_WR             */	IS_USEPR,
 	/* I_NEG_WR             */	IS_USEPR,
@@ -427,28 +427,6 @@ unsigned char icode_flags[] = {
 	/* X_ADD_WAX            */	IS_USEPR,
 	/* X_ADD_UAX            */	IS_USEPR,
 
-	/* X_ADD_ST_WMQ         */	IS_USEPR + IS_STORE,
-	/* X_ADD_ST_UMQ         */	IS_USEPR + IS_STORE + IS_SHORT,
-	/* X_ADD_ST_WPQ         */	IS_USEPR + IS_STORE,
-	/* X_ADD_ST_UPQ         */	IS_USEPR + IS_STORE + IS_SHORT,
-	/* X_ADD_ST_WSQ         */	IS_USEPR + IS_STORE + IS_SPREL,
-	/* X_ADD_ST_USQ         */	IS_USEPR + IS_STORE + IS_SPREL + IS_SHORT,
-	/* X_ADD_ST_WATQ        */	IS_USEPR + IS_STORE + IS_POPWT,
-	/* X_ADD_ST_UATQ        */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
-	/* X_ADD_ST_WAXQ        */	IS_USEPR + IS_STORE,
-	/* X_ADD_ST_UAXQ        */	IS_USEPR + IS_STORE + IS_SHORT,
-
-	/* X_ADD_ST_WMIQ        */	IS_USEPR + IS_STORE,
-	/* X_ADD_ST_UMIQ        */	IS_USEPR + IS_STORE + IS_SHORT,
-	/* X_ADD_ST_WPIQ        */	IS_USEPR + IS_STORE,
-	/* X_ADD_ST_UPIQ        */	IS_USEPR + IS_STORE + IS_SHORT,
-	/* X_ADD_ST_WSIQ        */	IS_USEPR + IS_STORE + IS_SPREL,
-	/* X_ADD_ST_USIQ        */	IS_USEPR + IS_STORE + IS_SPREL + IS_SHORT,
-	/* X_ADD_ST_WATIQ       */	IS_USEPR + IS_STORE + IS_POPWT,
-	/* X_ADD_ST_UATIQ       */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
-	/* X_ADD_ST_WAXIQ       */	IS_USEPR + IS_STORE,
-	/* X_ADD_ST_UAXIQ       */	IS_USEPR + IS_STORE + IS_SHORT,
-
 	/* I_SUB_WT             */	IS_USEPR + IS_POPWT,
 	/* I_SUB_WI             */	IS_USEPR,
 
@@ -462,17 +440,6 @@ unsigned char icode_flags[] = {
 	/* X_SUB_UAT            */	IS_USEPR + IS_POPWT,
 	/* X_SUB_WAX            */	IS_USEPR,
 	/* X_SUB_UAX            */	IS_USEPR,
-
-	/* X_SUB_ST_WMIQ        */	IS_USEPR + IS_STORE,
-	/* X_SUB_ST_UMIQ        */	IS_USEPR + IS_STORE + IS_SHORT,
-	/* X_SUB_ST_WPIQ        */	IS_USEPR + IS_STORE,
-	/* X_SUB_ST_UPIQ        */	IS_USEPR + IS_STORE + IS_SHORT,
-	/* X_SUB_ST_WSIQ        */	IS_USEPR + IS_STORE + IS_SPREL,
-	/* X_SUB_ST_USIQ        */	IS_USEPR + IS_STORE + IS_SPREL + IS_SHORT,
-	/* X_SUB_ST_WATIQ       */	IS_USEPR + IS_STORE + IS_POPWT,
-	/* X_SUB_ST_UATIQ       */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
-	/* X_SUB_ST_WAXIQ       */	IS_USEPR + IS_STORE,
-	/* X_SUB_ST_UAXIQ       */	IS_USEPR + IS_STORE + IS_SHORT,
 
 	/* X_ISUB_WT            */	IS_USEPR + IS_POPWT,
 	/* X_ISUB_WI            */	IS_USEPR,
@@ -488,20 +455,8 @@ unsigned char icode_flags[] = {
 	/* X_ISUB_WAX           */	IS_USEPR,
 	/* X_ISUB_UAX           */	IS_USEPR,
 
-	/* X_ISUB_ST_WMQ        */	IS_USEPR + IS_STORE,
-	/* X_ISUB_ST_UMQ        */	IS_USEPR + IS_STORE + IS_SHORT,
-	/* X_ISUB_ST_WPQ        */	IS_USEPR + IS_STORE,
-	/* X_ISUB_ST_UPQ        */	IS_USEPR + IS_STORE + IS_SHORT,
-	/* X_ISUB_ST_WSQ        */	IS_USEPR + IS_STORE + IS_SPREL,
-	/* X_ISUB_ST_USQ        */	IS_USEPR + IS_STORE + IS_SPREL + IS_SHORT,
-	/* X_ISUB_ST_WATQ       */	IS_USEPR + IS_STORE + IS_POPWT,
-	/* X_ISUB_ST_UATQ       */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
-	/* X_ISUB_ST_WAXQ       */	IS_USEPR + IS_STORE,
-	/* X_ISUB_ST_UAXQ       */	IS_USEPR + IS_STORE + IS_SHORT,
-
 	/* I_AND_WT             */	IS_USEPR + IS_POPWT,
 	/* X_AND_WI             */	IS_USEPR,
-	/* X_AND_UIQ            */	IS_USEPR + IS_UBYTE,
 
 	/* X_AND_WM             */	IS_USEPR,
 	/* X_AND_UM             */	IS_USEPR,
@@ -513,17 +468,6 @@ unsigned char icode_flags[] = {
 	/* X_AND_UAT            */	IS_USEPR + IS_POPWT,
 	/* X_AND_WAX            */	IS_USEPR,
 	/* X_AND_UAX            */	IS_USEPR,
-
-	/* X_AND_ST_WMQ         */	IS_USEPR + IS_STORE,
-	/* X_AND_ST_UMQ         */	IS_USEPR + IS_STORE + IS_SHORT,
-	/* X_AND_ST_WPQ         */	IS_USEPR + IS_STORE,
-	/* X_AND_ST_UPQ         */	IS_USEPR + IS_STORE + IS_SHORT,
-	/* X_AND_ST_WSQ         */	IS_USEPR + IS_STORE + IS_SPREL,
-	/* X_AND_ST_USQ         */	IS_USEPR + IS_STORE + IS_SPREL + IS_SHORT,
-	/* X_AND_ST_WATQ        */	IS_USEPR + IS_STORE + IS_POPWT,
-	/* X_AND_ST_UATQ        */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
-	/* X_AND_ST_WAXQ        */	IS_USEPR + IS_STORE,
-	/* X_AND_ST_UAXQ        */	IS_USEPR + IS_STORE + IS_SHORT,
 
 	/* I_EOR_WT             */	IS_USEPR + IS_POPWT,
 	/* X_EOR_WI             */	IS_USEPR,
@@ -539,17 +483,6 @@ unsigned char icode_flags[] = {
 	/* X_EOR_WAX            */	IS_USEPR,
 	/* X_EOR_UAX            */	IS_USEPR,
 
-	/* X_EOR_ST_WMQ         */	IS_USEPR + IS_STORE,
-	/* X_EOR_ST_UMQ         */	IS_USEPR + IS_STORE + IS_SHORT,
-	/* X_EOR_ST_WPQ         */	IS_USEPR + IS_STORE,
-	/* X_EOR_ST_UPQ         */	IS_USEPR + IS_STORE + IS_SHORT,
-	/* X_EOR_ST_WSQ         */	IS_USEPR + IS_STORE + IS_SPREL,
-	/* X_EOR_ST_USQ         */	IS_USEPR + IS_STORE + IS_SPREL + IS_SHORT,
-	/* X_EOR_ST_WATQ        */	IS_USEPR + IS_STORE + IS_POPWT,
-	/* X_EOR_ST_UATQ        */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
-	/* X_EOR_ST_WAXQ        */	IS_USEPR + IS_STORE,
-	/* X_EOR_ST_UAXQ        */	IS_USEPR + IS_STORE + IS_SHORT,
-
 	/* I_OR_WT              */	IS_USEPR + IS_POPWT,
 	/* X_OR_WI              */	IS_USEPR,
 
@@ -564,32 +497,18 @@ unsigned char icode_flags[] = {
 	/* X_OR_WAX             */	IS_USEPR,
 	/* X_OR_UAX             */	IS_USEPR,
 
-	/* X_OR_ST_WMQ          */	IS_USEPR + IS_STORE,
-	/* X_OR_ST_UMQ          */	IS_USEPR + IS_STORE + IS_SHORT,
-	/* X_OR_ST_WPQ          */	IS_USEPR + IS_STORE,
-	/* X_OR_ST_UPQ          */	IS_USEPR + IS_STORE + IS_SHORT,
-	/* X_OR_ST_WSQ          */	IS_USEPR + IS_STORE + IS_SPREL,
-	/* X_OR_ST_USQ          */	IS_USEPR + IS_STORE + IS_SPREL + IS_SHORT,
-	/* X_OR_ST_WATQ         */	IS_USEPR + IS_STORE + IS_POPWT,
-	/* X_OR_ST_UATQ         */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
-	/* X_OR_ST_WAXQ         */	IS_USEPR + IS_STORE,
-	/* X_OR_ST_UAXQ         */	IS_USEPR + IS_STORE + IS_SHORT,
-
 	/* I_ASL_WR             */	IS_USEPR,
 	/* I_ASL_WT             */	IS_USEPR + IS_POPWT,
 	/* I_ASL_WI             */	IS_USEPR,
-	/* I_ASL_UIQ            */	IS_USEPR,
 
 	/* I_ASR_WT             */	IS_USEPR + IS_POPWT,
 	/* I_ASR_WI             */	IS_USEPR,
 
 	/* I_LSR_WT             */	IS_USEPR + IS_POPWT,
 	/* I_LSR_WI             */	IS_USEPR,
-	/* I_LSR_UIQ            */	IS_USEPR + IS_UBYTE + IS_SHORT,
 
 	/* I_MUL_WT             */	IS_USEPR + IS_POPWT,
 	/* I_MUL_WI             */	IS_USEPR,
-	/* I_MUL_UIQ            */	IS_USEPR,
 
 	/* I_SDIV_WT            */	IS_USEPR + IS_POPWT,
 	/* I_SDIV_WI            */	IS_USEPR,
@@ -607,6 +526,135 @@ unsigned char icode_flags[] = {
 
 	/* I_DOUBLE_WT          */	0,
 
+	// i-codes for 8-bit math with lo-byte of the primary register
+
+	/* X_ADD_UIQ            */	IS_USEPR + IS_UBYTE + IS_SHORT,
+	/* X_ADD_UMQ            */	IS_USEPR + IS_UBYTE + IS_SHORT,
+	/* X_ADD_UPQ            */	IS_USEPR + IS_UBYTE + IS_SHORT,
+	/* X_ADD_USQ            */	IS_USEPR + IS_UBYTE + IS_SPREL + IS_SHORT,
+	/* X_ADD_UATQ           */	IS_USEPR + IS_UBYTE + IS_POPWT + IS_SHORT,
+	/* X_ADD_UAXQ           */	IS_USEPR + IS_UBYTE + IS_SHORT,
+
+	/* X_SUB_UIQ            */	IS_USEPR + IS_UBYTE + IS_SHORT,
+	/* X_SUB_UMQ            */	IS_USEPR + IS_UBYTE + IS_SHORT,
+	/* X_SUB_UPQ            */	IS_USEPR + IS_UBYTE + IS_SHORT,
+	/* X_SUB_USQ            */	IS_USEPR + IS_UBYTE + IS_SPREL + IS_SHORT,
+	/* X_SUB_UATQ           */	IS_USEPR + IS_UBYTE + IS_POPWT + IS_SHORT,
+	/* X_SUB_UAXQ           */	IS_USEPR + IS_UBYTE + IS_SHORT,
+
+	/* X_ISUB_UIQ           */	IS_USEPR + IS_UBYTE + IS_SHORT,
+	/* X_ISUB_UMQ           */	IS_USEPR + IS_UBYTE + IS_SHORT,
+	/* X_ISUB_UPQ           */	IS_USEPR + IS_UBYTE + IS_SHORT,
+	/* X_ISUB_USQ           */	IS_USEPR + IS_UBYTE + IS_SPREL + IS_SHORT,
+	/* X_ISUB_UATQ          */	IS_USEPR + IS_UBYTE + IS_POPWT + IS_SHORT,
+	/* X_ISUB_UAXQ          */	IS_USEPR + IS_UBYTE + IS_SHORT,
+
+	/* X_AND_UIQ            */	IS_USEPR + IS_UBYTE + IS_SHORT,
+	/* X_AND_UMQ            */	IS_USEPR + IS_UBYTE + IS_SHORT,
+	/* X_AND_UPQ            */	IS_USEPR + IS_UBYTE + IS_SHORT,
+	/* X_AND_USQ            */	IS_USEPR + IS_UBYTE + IS_SPREL + IS_SHORT,
+	/* X_AND_UATQ           */	IS_USEPR + IS_UBYTE + IS_POPWT + IS_SHORT,
+	/* X_AND_UAXQ           */	IS_USEPR + IS_UBYTE + IS_SHORT,
+
+	/* X_EOR_UIQ            */	IS_USEPR + IS_UBYTE + IS_SHORT,
+	/* X_EOR_UMQ            */	IS_USEPR + IS_UBYTE + IS_SHORT,
+	/* X_EOR_UPQ            */	IS_USEPR + IS_UBYTE + IS_SHORT,
+	/* X_EOR_USQ            */	IS_USEPR + IS_UBYTE + IS_SPREL + IS_SHORT,
+	/* X_EOR_UATQ           */	IS_USEPR + IS_UBYTE + IS_POPWT + IS_SHORT,
+	/* X_EOR_UAXQ           */	IS_USEPR + IS_UBYTE + IS_SHORT,
+
+	/* X_OR_UIQ             */	IS_USEPR + IS_UBYTE + IS_SHORT,
+	/* X_OR_UMQ             */	IS_USEPR + IS_UBYTE + IS_SHORT,
+	/* X_OR_UPQ             */	IS_USEPR + IS_UBYTE + IS_SHORT,
+	/* X_OR_USQ             */	IS_USEPR + IS_UBYTE + IS_SPREL + IS_SHORT,
+	/* X_OR_UATQ            */	IS_USEPR + IS_UBYTE + IS_POPWT + IS_SHORT,
+	/* X_OR_UAXQ            */	IS_USEPR + IS_UBYTE + IS_SHORT,
+
+	/* I_ASL_UIQ            */	IS_USEPR + IS_UBYTE,
+
+	/* I_LSR_UIQ            */	IS_USEPR + IS_UBYTE + IS_SHORT,
+
+	/* I_MUL_UIQ            */	IS_USEPR + IS_UBYTE,
+
+	// i-codes for modifying a variable with "+=", "-=", "&=", "^=", "|="
+
+	/* X_ADD_ST_WMQ         */	IS_USEPR + IS_STORE,
+	/* X_ADD_ST_UMQ         */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_ADD_ST_WPQ         */	IS_USEPR + IS_STORE,
+	/* X_ADD_ST_UPQ         */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_ADD_ST_WSQ         */	IS_USEPR + IS_STORE + IS_SPREL,
+	/* X_ADD_ST_USQ         */	IS_USEPR + IS_STORE + IS_SPREL + IS_SHORT,
+	/* X_ADD_ST_WATQ        */	IS_USEPR + IS_STORE + IS_POPWT,
+	/* X_ADD_ST_UATQ        */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
+	/* X_ADD_ST_WAXQ        */	IS_USEPR + IS_STORE,
+	/* X_ADD_ST_UAXQ        */	IS_USEPR + IS_STORE + IS_SHORT,
+
+	/* X_ISUB_ST_WMQ        */	IS_USEPR + IS_STORE,
+	/* X_ISUB_ST_UMQ        */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_ISUB_ST_WPQ        */	IS_USEPR + IS_STORE,
+	/* X_ISUB_ST_UPQ        */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_ISUB_ST_WSQ        */	IS_USEPR + IS_STORE + IS_SPREL,
+	/* X_ISUB_ST_USQ        */	IS_USEPR + IS_STORE + IS_SPREL + IS_SHORT,
+	/* X_ISUB_ST_WATQ       */	IS_USEPR + IS_STORE + IS_POPWT,
+	/* X_ISUB_ST_UATQ       */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
+	/* X_ISUB_ST_WAXQ       */	IS_USEPR + IS_STORE,
+	/* X_ISUB_ST_UAXQ       */	IS_USEPR + IS_STORE + IS_SHORT,
+
+	/* X_AND_ST_WMQ         */	IS_USEPR + IS_STORE,
+	/* X_AND_ST_UMQ         */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_AND_ST_WPQ         */	IS_USEPR + IS_STORE,
+	/* X_AND_ST_UPQ         */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_AND_ST_WSQ         */	IS_USEPR + IS_STORE + IS_SPREL,
+	/* X_AND_ST_USQ         */	IS_USEPR + IS_STORE + IS_SPREL + IS_SHORT,
+	/* X_AND_ST_WATQ        */	IS_USEPR + IS_STORE + IS_POPWT,
+	/* X_AND_ST_UATQ        */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
+	/* X_AND_ST_WAXQ        */	IS_USEPR + IS_STORE,
+	/* X_AND_ST_UAXQ        */	IS_USEPR + IS_STORE + IS_SHORT,
+
+	/* X_EOR_ST_WMQ         */	IS_USEPR + IS_STORE,
+	/* X_EOR_ST_UMQ         */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_EOR_ST_WPQ         */	IS_USEPR + IS_STORE,
+	/* X_EOR_ST_UPQ         */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_EOR_ST_WSQ         */	IS_USEPR + IS_STORE + IS_SPREL,
+	/* X_EOR_ST_USQ         */	IS_USEPR + IS_STORE + IS_SPREL + IS_SHORT,
+	/* X_EOR_ST_WATQ        */	IS_USEPR + IS_STORE + IS_POPWT,
+	/* X_EOR_ST_UATQ        */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
+	/* X_EOR_ST_WAXQ        */	IS_USEPR + IS_STORE,
+	/* X_EOR_ST_UAXQ        */	IS_USEPR + IS_STORE + IS_SHORT,
+
+	/* X_OR_ST_WMQ          */	IS_USEPR + IS_STORE,
+	/* X_OR_ST_UMQ          */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_OR_ST_WPQ          */	IS_USEPR + IS_STORE,
+	/* X_OR_ST_UPQ          */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_OR_ST_WSQ          */	IS_USEPR + IS_STORE + IS_SPREL,
+	/* X_OR_ST_USQ          */	IS_USEPR + IS_STORE + IS_SPREL + IS_SHORT,
+	/* X_OR_ST_WATQ         */	IS_USEPR + IS_STORE + IS_POPWT,
+	/* X_OR_ST_UATQ         */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
+	/* X_OR_ST_WAXQ         */	IS_USEPR + IS_STORE,
+	/* X_OR_ST_UAXQ         */	IS_USEPR + IS_STORE + IS_SHORT,
+
+	/* X_ADD_ST_WMIQ        */	IS_USEPR + IS_STORE,
+	/* X_ADD_ST_UMIQ        */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_ADD_ST_WPIQ        */	IS_USEPR + IS_STORE,
+	/* X_ADD_ST_UPIQ        */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_ADD_ST_WSIQ        */	IS_USEPR + IS_STORE + IS_SPREL,
+	/* X_ADD_ST_USIQ        */	IS_USEPR + IS_STORE + IS_SPREL + IS_SHORT,
+	/* X_ADD_ST_WATIQ       */	IS_USEPR + IS_STORE + IS_POPWT,
+	/* X_ADD_ST_UATIQ       */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
+	/* X_ADD_ST_WAXIQ       */	IS_USEPR + IS_STORE,
+	/* X_ADD_ST_UAXIQ       */	IS_USEPR + IS_STORE + IS_SHORT,
+
+	/* X_SUB_ST_WMIQ        */	IS_USEPR + IS_STORE,
+	/* X_SUB_ST_UMIQ        */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_SUB_ST_WPIQ        */	IS_USEPR + IS_STORE,
+	/* X_SUB_ST_UPIQ        */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_SUB_ST_WSIQ        */	IS_USEPR + IS_STORE + IS_SPREL,
+	/* X_SUB_ST_USIQ        */	IS_USEPR + IS_STORE + IS_SPREL + IS_SHORT,
+	/* X_SUB_ST_WATIQ       */	IS_USEPR + IS_STORE + IS_POPWT,
+	/* X_SUB_ST_UATIQ       */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
+	/* X_SUB_ST_WAXIQ       */	IS_USEPR + IS_STORE,
+	/* X_SUB_ST_UAXIQ       */	IS_USEPR + IS_STORE + IS_SHORT,
+
 	// i-codes for 32-bit longs
 
 	/* X_LDD_I              */	0,
@@ -614,6 +662,631 @@ unsigned char icode_flags[] = {
 	/* X_LDD_B              */	0,
 	/* X_LDD_S_W            */	IS_SPREL,
 	/* X_LDD_S_B            */	IS_SPREL
+};
+
+/* short version mapping for each of the i-code instructions */
+/*
+ * N.B. this table MUST be kept updated and in the same order as the i-code
+ * enum list in defs.h
+ */
+enum ICODE short_icode[] = {
+	// i-code to mark an instruction as retired */
+
+	/* I_RETIRED            */	0,
+
+	// i-code for internal compiler information
+
+	/* I_INFO               */	0,
+
+	// i-code that retires the primary register contents
+
+	/* I_FENCE              */	0,
+
+	// i-code that declares a byte sized primary register
+
+	/* I_SHORT              */	0,
+
+	// i-codes for handling farptr
+
+	/* I_FARPTR             */	0,
+	/* I_FARPTR_I           */	0,
+	/* I_FARPTR_GET         */	0,
+	/* I_FGETW              */	0,
+	/* I_FGETB              */	0,
+	/* I_FGETUB             */	0,
+
+	// i-codes for interrupts
+
+	/* I_SEI                */	0,
+	/* I_CLI                */	0,
+
+	// i-codes for calling functions
+
+	/* I_MACRO              */	0,
+	/* I_CALL               */	0,
+	/* I_FUNCP_WR           */	0,
+	/* I_CALLP              */	0,
+
+	// i-codes for C functions and the C parameter stack
+
+	/* I_ENTER              */	0,
+	/* I_RETURN             */	0,
+	/* I_MODSP              */	0,
+	/* I_PUSHARG_WR         */	0,
+	/* I_PUSH_WR            */	0,
+	/* I_POP_WR             */	0,
+	/* I_SPUSH_WR           */	0,
+	/* I_SPUSH_UR           */	0,
+	/* I_SPOP_WR            */	0,
+	/* I_SPOP_UR            */	0,
+
+	// i-codes for handling boolean tests and branching
+
+	/* I_SWITCH_WR          */	0,
+	/* I_SWITCH_UR          */	0,
+	/* I_DEFAULT            */	0,
+	/* I_CASE               */	0,
+	/* I_ENDCASE            */	0,
+	/* I_LABEL              */	0,
+	/* I_ALIAS              */	0,
+	/* I_BRA                */	0,
+	/* I_BFALSE             */	0,
+	/* I_BTRUE              */	0,
+	/* I_DEF                */	0,
+
+	/* I_CMP_WT             */	0,
+	/* X_CMP_WI             */	0,
+	/* X_CMP_WM             */	0,
+	/* X_CMP_UM             */	0,
+	/* X_CMP_WS             */	0,
+	/* X_CMP_US             */	0,
+	/* X_CMP_WAX            */	0,
+	/* X_CMP_UAX            */	0,
+
+	/* X_CMP_UIQ            */	0,
+	/* X_CMP_UMQ            */	0,
+	/* X_CMP_USQ            */	0,
+	/* X_CMP_UAXQ           */	0,
+
+	/* I_NOT_WR             */	0,
+	/* X_NOT_WP             */	0,
+	/* X_NOT_WM             */	0,
+	/* X_NOT_WS             */	0,
+	/* X_NOT_WAR            */	0,
+	/* X_NOT_WAX            */	0,
+	/* X_NOT_UP             */	0,
+	/* X_NOT_UM             */	0,
+	/* X_NOT_US             */	0,
+	/* X_NOT_UAR            */	0,
+	/* X_NOT_UAX            */	0,
+	/* X_NOT_UAY            */	0,
+
+	/* I_TST_WR             */	0,
+	/* X_TST_WP             */	0,
+	/* X_TST_WM             */	0,
+	/* X_TST_WS             */	0,
+	/* X_TST_WAR            */	0,
+	/* X_TST_WAX            */	0,
+	/* X_TST_UP             */	0,
+	/* X_TST_UM             */	0,
+	/* X_TST_US             */	0,
+	/* X_TST_UAR            */	0,
+	/* X_TST_UAX            */	0,
+	/* X_TST_UAY            */	0,
+
+	/* X_NAND_WI            */	0,
+	/* X_TAND_WI            */	0,
+
+	/* X_NOT_CF             */	0,
+
+	/* I_BOOLEAN            */	0,
+
+	/* X_BOOLNOT_WR         */	0,
+	/* X_BOOLNOT_WP         */	0,
+	/* X_BOOLNOT_WM         */	0,
+	/* X_BOOLNOT_WS         */	0,
+	/* X_BOOLNOT_WAR        */	0,
+	/* X_BOOLNOT_WAX        */	0,
+
+	/* X_BOOLNOT_UP         */	0,
+	/* X_BOOLNOT_UM         */	0,
+	/* X_BOOLNOT_US         */	0,
+	/* X_BOOLNOT_UAR        */	0,
+	/* X_BOOLNOT_UAX        */	0,
+	/* X_BOOLNOT_UAY        */	0,
+
+	// i-codes for loading the primary register
+
+	/* I_LD_WI              */	0,
+	/* X_LD_UIQ             */	0,
+	/* I_LEA_S              */	0,
+
+	/* I_LD_WM              */	0,
+	/* I_LD_BM              */	0,
+	/* I_LD_UM              */	0,
+
+	/* X_LD_WMQ             */	0,
+	/* X_LD_BMQ             */	0,
+	/* X_LD_UMQ             */	0,
+
+	/* X_LDX_WMQ            */	0,
+	/* X_LDX_BMQ            */	0,
+	/* X_LDX_UMQ            */	0,
+
+	/* X_LD2X_WM            */	0,
+	/* X_LD2X_BM            */	0,
+	/* X_LD2X_UM            */	0,
+
+	/* X_LD2X_WMQ           */	0,
+	/* X_LD2X_BMQ           */	0,
+	/* X_LD2X_UMQ           */	0,
+
+	/* X_LDY_WMQ            */	0,
+	/* X_LDY_BMQ            */	0,
+	/* X_LDY_UMQ            */	0,
+
+	/* I_LD_WP              */	0,
+	/* I_LD_BP              */	0,
+	/* I_LD_UP              */	0,
+
+	/* I_LD_UPQ             */	0,
+
+	/* X_LD_WAR             */	0,
+	/* X_LD_BAR             */	0,
+	/* X_LD_UAR             */	0,
+
+	/* X_LD_UARQ            */	0,
+
+	/* X_LD_WAX             */	0,
+	/* X_LD_BAX             */	0,
+	/* X_LD_UAX             */	0,
+
+	/* X_LD_UAXQ            */	0,
+
+	/* X_LD_BAY             */	0,
+	/* X_LD_UAY             */	0,
+
+	/* X_LD_WS              */	0,
+	/* X_LD_BS              */	0,
+	/* X_LD_US              */	0,
+
+	/* X_LD_WSQ             */	0,
+	/* X_LD_BSQ             */	0,
+	/* X_LD_USQ             */	0,
+
+	/* X_LDX_WS             */	0,
+	/* X_LDX_BS             */	0,
+	/* X_LDX_US             */	0,
+
+	/* X_LDX_WSQ            */	0,
+	/* X_LDX_BSQ            */	0,
+	/* X_LDX_USQ            */	0,
+
+	/* X_LD2X_WS            */	0,
+	/* X_LD2X_BS            */	0,
+	/* X_LD2X_US            */	0,
+
+	/* X_LD2X_WSQ           */	0,
+	/* X_LD2X_BSQ           */	0,
+	/* X_LD2X_USQ           */	0,
+
+	/* X_LDY_WSQ            */	0,
+	/* X_LDY_BSQ            */	0,
+	/* X_LDY_USQ            */	0,
+
+	/* X_LDP_WAR            */	0,
+	/* X_LDP_BAR            */	0,
+	/* X_LDP_UAR            */	0,
+
+	/* X_LDP_WAX            */	0,
+	/* X_LDP_BAX            */	0,
+	/* X_LDP_UAX            */	0,
+
+	/* X_LDP_BAY            */	0,
+	/* X_LDP_UAY            */	0,
+
+	// i-codes for pre- and post- increment and decrement
+
+	/* X_INCLD_WM           */	0,
+	/* X_LDINC_WM           */	0,
+	/* X_DECLD_WM           */	0,
+	/* X_LDDEC_WM           */	0,
+
+	/* X_INCLD_BM           */	0,
+	/* X_LDINC_BM           */	0,
+	/* X_DECLD_BM           */	0,
+	/* X_LDDEC_BM           */	0,
+
+	/* X_INCLD_UM           */	0,
+	/* X_LDINC_UM           */	0,
+	/* X_DECLD_UM           */	0,
+	/* X_LDDEC_UM           */	0,
+
+	/* X_INC_WMQ            */	0,
+	/* X_INC_UMQ            */	0,
+
+	/* X_DEC_WMQ            */	0,
+	/* X_DEC_UMQ            */	0,
+
+	/* X_INCLD_WS           */	0,
+	/* X_LDINC_WS           */	0,
+	/* X_DECLD_WS           */	0,
+	/* X_LDDEC_WS           */	0,
+
+	/* X_INCLD_BS           */	0,
+	/* X_LDINC_BS           */	0,
+	/* X_DECLD_BS           */	0,
+	/* X_LDDEC_BS           */	0,
+
+	/* X_INCLD_US           */	0,
+	/* X_LDINC_US           */	0,
+	/* X_DECLD_US           */	0,
+	/* X_LDDEC_US           */	0,
+
+	/* X_INC_WSQ            */	0,
+	/* X_INC_USQ            */	0,
+
+	/* X_DEC_WSQ            */	0,
+	/* X_DEC_USQ            */	0,
+
+	/* X_INCLD_WAR          */	0,
+	/* X_LDINC_WAR          */	0,
+	/* X_DECLD_WAR          */	0,
+	/* X_LDDEC_WAR          */	0,
+
+	/* X_INCLD_BAR          */	0,
+	/* X_LDINC_BAR          */	0,
+	/* X_DECLD_BAR          */	0,
+	/* X_LDDEC_BAR          */	0,
+
+	/* X_INCLD_UAR          */	0,
+	/* X_LDINC_UAR          */	0,
+	/* X_DECLD_UAR          */	0,
+	/* X_LDDEC_UAR          */	0,
+
+	/* X_INC_WARQ           */	0,
+	/* X_INC_UARQ           */	0,
+
+	/* X_DEC_WARQ           */	0,
+	/* X_DEC_UARQ           */	0,
+
+	/* X_INCLD_WAX          */	0,
+	/* X_LDINC_WAX          */	0,
+	/* X_DECLD_WAX          */	0,
+	/* X_LDDEC_WAX          */	0,
+
+	/* X_INCLD_BAX          */	0,
+	/* X_LDINC_BAX          */	0,
+	/* X_DECLD_BAX          */	0,
+	/* X_LDDEC_BAX          */	0,
+
+	/* X_INCLD_UAX          */	0,
+	/* X_LDINC_UAX          */	0,
+	/* X_DECLD_UAX          */	0,
+	/* X_LDDEC_UAX          */	0,
+
+	/* X_INC_WAXQ           */	0,
+	/* X_INC_UAXQ           */	0,
+
+	/* X_DEC_WAXQ           */	0,
+	/* X_DEC_UAXQ           */	0,
+
+	/* X_INCLD_BAY          */	0,
+	/* X_LDINC_BAY          */	0,
+	/* X_DECLD_BAY          */	0,
+	/* X_LDDEC_BAY          */	0,
+
+	/* X_INCLD_UAY          */	0,
+	/* X_LDINC_UAY          */	0,
+	/* X_DECLD_UAY          */	0,
+	/* X_LDDEC_UAY          */	0,
+
+	/* X_INC_UAYQ           */	0,
+
+	/* X_DEC_UAYQ           */	0,
+
+	// i-codes for saving the primary register
+
+	/* I_ST_WPT             */	0,
+	/* I_ST_UPT             */	0,
+	/* X_ST_WPTQ            */	0,
+	/* X_ST_UPTQ            */	0,
+
+	/* I_ST_WM              */	0,
+	/* I_ST_UM              */	0,
+	/* X_ST_WMQ             */	0,
+	/* X_ST_UMQ             */	0,
+	/* I_ST_WMIQ            */	0,
+	/* I_ST_UMIQ            */	0,
+	/* X_ST_WP              */	0,
+	/* X_ST_UP              */	0,
+	/* X_ST_WPQ             */	0,
+	/* X_ST_UPQ             */	0,
+	/* X_ST_WPI             */	0,
+	/* X_ST_UPI             */	0,
+	/* X_ST_WS              */	0,
+	/* X_ST_US              */	0,
+	/* X_ST_WSQ             */	0,
+	/* X_ST_USQ             */	0,
+	/* I_ST_WSIQ            */	0,
+	/* I_ST_USIQ            */	0,
+
+	/* X_INDEX_WR           */	0,
+	/* X_INDEX_UR           */	0,
+
+	/* X_ST_WAT             */	0,
+	/* X_ST_UAT             */	0,
+	/* X_ST_WATQ            */	0,
+	/* X_ST_UATQ            */	0,
+	/* X_ST_WATIQ           */	0,
+	/* X_ST_UATIQ           */	0,
+
+	/* X_ST_WAX             */	0,
+	/* X_ST_UAX             */	0,
+	/* X_ST_WAXQ            */	0,
+	/* X_ST_UAXQ            */	0,
+	/* X_ST_WAXIQ           */	0,
+	/* X_ST_UAXIQ           */	0,
+
+	// i-codes for extending the primary register
+
+	/* I_EXT_BR             */	0,
+	/* I_EXT_UR             */	0,
+
+	// i-codes for 16-bit math with the primary register
+
+	/* I_COM_WR             */	0,
+	/* I_NEG_WR             */	0,
+
+	/* I_ADD_WT             */	0,
+	/* I_ADD_WI             */	0,
+
+	/* X_ADD_WM             */	0,
+	/* X_ADD_UM             */	0,
+	/* X_ADD_WP             */	0,
+	/* X_ADD_UP             */	0,
+	/* X_ADD_WS             */	0,
+	/* X_ADD_US             */	0,
+	/* X_ADD_WAT            */	0,
+	/* X_ADD_UAT            */	0,
+	/* X_ADD_WAX            */	0,
+	/* X_ADD_UAX            */	0,
+
+	/* I_SUB_WT             */	0,
+	/* I_SUB_WI             */	0,
+
+	/* X_SUB_WM             */	0,
+	/* X_SUB_UM             */	0,
+	/* X_SUB_WP             */	0,
+	/* X_SUB_UP             */	0,
+	/* X_SUB_WS             */	0,
+	/* X_SUB_US             */	0,
+	/* X_SUB_WAT            */	0,
+	/* X_SUB_UAT            */	0,
+	/* X_SUB_WAX            */	0,
+	/* X_SUB_UAX            */	0,
+
+	/* X_ISUB_WT            */	0,
+	/* X_ISUB_WI            */	0,
+
+	/* X_ISUB_WM            */	0,
+	/* X_ISUB_UM            */	0,
+	/* X_ISUB_WP            */	0,
+	/* X_ISUB_UP            */	0,
+	/* X_ISUB_WS            */	0,
+	/* X_ISUB_US            */	0,
+	/* X_ISUB_WAT           */	0,
+	/* X_ISUB_UAT           */	0,
+	/* X_ISUB_WAX           */	0,
+	/* X_ISUB_UAX           */	0,
+
+	/* I_AND_WT             */	0,
+	/* X_AND_WI             */	0,
+
+	/* X_AND_WM             */	0,
+	/* X_AND_UM             */	0,
+	/* X_AND_WP             */	0,
+	/* X_AND_UP             */	0,
+	/* X_AND_WS             */	0,
+	/* X_AND_US             */	0,
+	/* X_AND_WAT            */	0,
+	/* X_AND_UAT            */	0,
+	/* X_AND_WAX            */	0,
+	/* X_AND_UAX            */	0,
+
+	/* I_EOR_WT             */	0,
+	/* X_EOR_WI             */	0,
+
+	/* X_EOR_WM             */	0,
+	/* X_EOR_UM             */	0,
+	/* X_EOR_WP             */	0,
+	/* X_EOR_UP             */	0,
+	/* X_EOR_WS             */	0,
+	/* X_EOR_US             */	0,
+	/* X_EOR_WAT            */	0,
+	/* X_EOR_UAT            */	0,
+	/* X_EOR_WAX            */	0,
+	/* X_EOR_UAX            */	0,
+
+	/* I_OR_WT              */	0,
+	/* X_OR_WI              */	0,
+
+	/* X_OR_WM              */	0,
+	/* X_OR_UM              */	0,
+	/* X_OR_WP              */	0,
+	/* X_OR_UP              */	0,
+	/* X_OR_WS              */	0,
+	/* X_OR_US              */	0,
+	/* X_OR_WAT             */	0,
+	/* X_OR_UAT             */	0,
+	/* X_OR_WAX             */	0,
+	/* X_OR_UAX             */	0,
+
+	/* I_ASL_WR             */	0,
+	/* I_ASL_WT             */	0,
+	/* I_ASL_WI             */	0,
+
+	/* I_ASR_WT             */	0,
+	/* I_ASR_WI             */	0,
+
+	/* I_LSR_WT             */	0,
+	/* I_LSR_WI             */	0,
+
+	/* I_MUL_WT             */	0,
+	/* I_MUL_WI             */	0,
+
+	/* I_SDIV_WT            */	0,
+	/* I_SDIV_WI            */	0,
+
+	/* I_UDIV_WT            */	0,
+	/* I_UDIV_WI            */	0,
+	/* I_UDIV_UI            */	0,
+
+	/* I_SMOD_WT            */	0,
+	/* I_SMOD_WI            */	0,
+
+	/* I_UMOD_WT            */	0,
+	/* I_UMOD_WI            */	0,
+	/* I_UMOD_UI            */	0,
+
+	/* I_DOUBLE_WT          */	0,
+
+	// i-codes for 8-bit math with lo-byte of the primary register
+
+	/* X_ADD_UIQ            */	0,
+	/* X_ADD_UMQ            */	0,
+	/* X_ADD_UPQ            */	0,
+	/* X_ADD_USQ            */	0,
+	/* X_ADD_UATQ           */	0,
+	/* X_ADD_UAXQ           */	0,
+
+	/* X_SUB_UIQ            */	0,
+	/* X_SUB_UMQ            */	0,
+	/* X_SUB_UPQ            */	0,
+	/* X_SUB_USQ            */	0,
+	/* X_SUB_UATQ           */	0,
+	/* X_SUB_UAXQ           */	0,
+
+	/* X_ISUB_UIQ           */	0,
+	/* X_ISUB_UMQ           */	0,
+	/* X_ISUB_UPQ           */	0,
+	/* X_ISUB_USQ           */	0,
+	/* X_ISUB_UATQ          */	0,
+	/* X_ISUB_UAXQ          */	0,
+
+	/* X_AND_UIQ            */	0,
+	/* X_AND_UMQ            */	0,
+	/* X_AND_UPQ            */	0,
+	/* X_AND_USQ            */	0,
+	/* X_AND_UATQ           */	0,
+	/* X_AND_UAXQ           */	0,
+
+	/* X_EOR_UIQ            */	0,
+	/* X_EOR_UMQ            */	0,
+	/* X_EOR_UPQ            */	0,
+	/* X_EOR_USQ            */	0,
+	/* X_EOR_UATQ           */	0,
+	/* X_EOR_UAXQ           */	0,
+
+	/* X_OR_UIQ             */	0,
+	/* X_OR_UMQ             */	0,
+	/* X_OR_UPQ             */	0,
+	/* X_OR_USQ             */	0,
+	/* X_OR_UATQ            */	0,
+	/* X_OR_UAXQ            */	0,
+
+	/* I_ASL_UIQ            */	0,
+
+	/* I_LSR_UIQ            */	0,
+
+	/* I_MUL_UIQ            */	0,
+
+	// i-codes for modifying a variable with "+=", "-=", "&=", "^=", "|="
+
+	/* X_ADD_ST_WMQ         */	0,
+	/* X_ADD_ST_UMQ         */	0,
+	/* X_ADD_ST_WPQ         */	0,
+	/* X_ADD_ST_UPQ         */	0,
+	/* X_ADD_ST_WSQ         */	0,
+	/* X_ADD_ST_USQ         */	0,
+	/* X_ADD_ST_WATQ        */	0,
+	/* X_ADD_ST_UATQ        */	0,
+	/* X_ADD_ST_WAXQ        */	0,
+	/* X_ADD_ST_UAXQ        */	0,
+
+	/* X_ISUB_ST_WMQ        */	0,
+	/* X_ISUB_ST_UMQ        */	0,
+	/* X_ISUB_ST_WPQ        */	0,
+	/* X_ISUB_ST_UPQ        */	0,
+	/* X_ISUB_ST_WSQ        */	0,
+	/* X_ISUB_ST_USQ        */	0,
+	/* X_ISUB_ST_WATQ       */	0,
+	/* X_ISUB_ST_UATQ       */	0,
+	/* X_ISUB_ST_WAXQ       */	0,
+	/* X_ISUB_ST_UAXQ       */	0,
+
+	/* X_AND_ST_WMQ         */	0,
+	/* X_AND_ST_UMQ         */	0,
+	/* X_AND_ST_WPQ         */	0,
+	/* X_AND_ST_UPQ         */	0,
+	/* X_AND_ST_WSQ         */	0,
+	/* X_AND_ST_USQ         */	0,
+	/* X_AND_ST_WATQ        */	0,
+	/* X_AND_ST_UATQ        */	0,
+	/* X_AND_ST_WAXQ        */	0,
+	/* X_AND_ST_UAXQ        */	0,
+
+	/* X_EOR_ST_WMQ         */	0,
+	/* X_EOR_ST_UMQ         */	0,
+	/* X_EOR_ST_WPQ         */	0,
+	/* X_EOR_ST_UPQ         */	0,
+	/* X_EOR_ST_WSQ         */	0,
+	/* X_EOR_ST_USQ         */	0,
+	/* X_EOR_ST_WATQ        */	0,
+	/* X_EOR_ST_UATQ        */	0,
+	/* X_EOR_ST_WAXQ        */	0,
+	/* X_EOR_ST_UAXQ        */	0,
+
+	/* X_OR_ST_WMQ          */	0,
+	/* X_OR_ST_UMQ          */	0,
+	/* X_OR_ST_WPQ          */	0,
+	/* X_OR_ST_UPQ          */	0,
+	/* X_OR_ST_WSQ          */	0,
+	/* X_OR_ST_USQ          */	0,
+	/* X_OR_ST_WATQ         */	0,
+	/* X_OR_ST_UATQ         */	0,
+	/* X_OR_ST_WAXQ         */	0,
+	/* X_OR_ST_UAXQ         */	0,
+
+	/* X_ADD_ST_WMIQ        */	0,
+	/* X_ADD_ST_UMIQ        */	0,
+	/* X_ADD_ST_WPIQ        */	0,
+	/* X_ADD_ST_UPIQ        */	0,
+	/* X_ADD_ST_WSIQ        */	0,
+	/* X_ADD_ST_USIQ        */	0,
+	/* X_ADD_ST_WATIQ       */	0,
+	/* X_ADD_ST_UATIQ       */	0,
+	/* X_ADD_ST_WAXIQ       */	0,
+	/* X_ADD_ST_UAXIQ       */	0,
+
+	/* X_SUB_ST_WMIQ        */	0,
+	/* X_SUB_ST_UMIQ        */	0,
+	/* X_SUB_ST_WPIQ        */	0,
+	/* X_SUB_ST_UPIQ        */	0,
+	/* X_SUB_ST_WSIQ        */	0,
+	/* X_SUB_ST_USIQ        */	0,
+	/* X_SUB_ST_WATIQ       */	0,
+	/* X_SUB_ST_UATIQ       */	0,
+	/* X_SUB_ST_WAXIQ       */	0,
+	/* X_SUB_ST_UAXIQ       */	0,
+
+	// i-codes for 32-bit longs
+
+	/* X_LDD_I              */	0,
+	/* X_LDD_W              */	0,
+	/* X_LDD_B              */	0,
+	/* X_LDD_S_W            */	0,
+	/* X_LDD_S_B            */	0,
 };
 
 /* invert comparison operation */
