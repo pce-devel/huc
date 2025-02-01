@@ -238,6 +238,8 @@ LINE-220-RCR-to-256-WORD-VRAM-DMA-END CPU cycles ............ 2396 ..... 3306
 LINE-220-RCR-to-512-WORD-VRAM-DMA-END CPU cycles ............ 3782 ..... 4692
 LINE-220-RCR-to-SATB-AND-256-WORD-VRAM-DMA-END CPU cycles ... 3790 ..... 4700
 
+1388 CPU cycles = 1040 VDC cycles for 256-word SATB-DMA
+
 
 Resolution ............................................... 352x222 .. 352x224
 
@@ -248,6 +250,8 @@ LINE-220-RCR-to-256-WORD-VRAM-DMA-END CPU cycles ............ 2042 ..... 2952
 LINE-220-RCR-to-512-WORD-VRAM-DMA-END CPU cycles ............ 3080 ..... 3990
 LINE-220-RCR-to-SATB-AND-256-WORD-VRAM-DMA-END CPU cycles ... 3084 ..... 3994
 
+1040 CPU cycles = 1040 VDC cycles for 256-word SATB-DMA
+
 
 Resolution ............................................... 512x222 .. 512x224
 
@@ -257,6 +261,8 @@ LINE-220-RCR-to-128-WORD-VRAM-DMA-END CPU cycles ............ 1358 ..... 2268
 LINE-220-RCR-to-256-WORD-VRAM-DMA-END CPU cycles ............ 1700 ..... 2610
 LINE-220-RCR-to-512-WORD-VRAM-DMA-END CPU cycles ............ 2386 ..... 3296
 LINE-220-RCR-to-SATB-AND-256-WORD-VRAM-DMA-END CPU cycles ... 2390 ..... 3300
+
+684 CPU cycles = 1026 VDC cycles for 256-word SATB-DMA
 
 
 Resolution (TV Sports Football: VSW=0, VDS=20 22-lines) .. 352x240 .. 352x242
