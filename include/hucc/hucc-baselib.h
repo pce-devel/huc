@@ -132,6 +132,12 @@ extern unsigned char __fastcall random8( unsigned char limit<acc> );
 // Note: "limit" is 0..128, 129..255 is treated as 128!
 extern unsigned char __fastcall random( unsigned char limit<acc> );
 
+// Functions that are only optionally available if configured in your hucc-config.inc
+
+extern unsigned int __fastcall __macro joybuf( unsigned char which<acc> );
+extern unsigned int __fastcall __macro get_joy_events( unsigned char which<acc> );
+extern void __fastcall __macro clear_joy_events( unsigned char mask<acc> );
+
 // Functions that are only implemented in the TGEMU emulator for unit-testing
 // the compiler and which should never be used in normal HuCC projects ...
 

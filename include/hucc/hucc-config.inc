@@ -200,6 +200,33 @@ MAX_PADS	=	5	; (1..5)
 	.endif
 
 ;
+; Implement a HuC-compatible seperate array for accumulating joypad presses?
+;
+; This is only really needed if your game is not expected to run at 60Hz and
+; so you will sometimes miss joypad presses.
+;
+; Alternatively you can set ACCUMULATE_JOY so that joypad presses are always
+; accumulated in the normal joytrg array, which is how asm programmers would
+; normally deal with this situation.
+;
+
+	.ifndef HUC_JOY_EVENTS
+HUC_JOY_EVENTS	=	0
+	.endif
+
+;
+; Should "joytrg" accumulate presses, and so need to be explicitely cleared
+; after reading, or should it just be the result of the last read?
+;
+; This option has no effect if HUC_JOY_EVENTS is non-zero since that option
+; takes precedence over this one!
+;
+
+	.ifndef ACCUMULATE_JOY
+ACCUMULATE_JOY	=	0
+	.endif
+
+;
 ; Choose how much zero-page memory to allocate for the HuCC stack.
 ;
 ; This should normally be 128 bytes, but if compiling with "-fno-recursive"
