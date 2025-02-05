@@ -186,32 +186,32 @@ read_joypads:
 
 .calc_pressed:	bsr	.read_devices		; Read all devices normally.
 
-		ldy	#MAX_PADS - 1
+		ldx	#MAX_PADS - 1
 
-.pressed_loop:	lda	joynow, y		; Calc which buttons have just
-		tax                             ; been pressed (2-button).
-		eor	joyold, y
-		and	joynow, y
+.pressed_loop:	lda	joynow, x		; Calc which buttons have just
+		tay                             ; been pressed (2-button).
+		eor	joyold, x
+		and	joynow, x
 	.if	HUC_JOY_EVENTS
-		sta	joytrg, y
-		ora	joybuf, y		; HuC/HuCC accumulates presses
-		sta	joybuf, y		; in a seperate array.
+		sta	joytrg, x
+		ora	joybuf, x		; HuC/HuCC accumulates presses
+		sta	joybuf, x		; in a seperate array.
 	.else
 	.if	ACCUMULATE_JOY
-		ora	joytrg, y
+		ora	joytrg, x
 	.endif
-		sta	joytrg, y
+		sta	joytrg, x
 	.endif
 
 		cmp	#$04			; Detect the soft-reset combo,
 		bne	.not_reset		; hold RUN then press SELECT.
-		cpx	#$0C
+		cpy	#$0C
 		bne	.not_reset
-		lda	bit_mask, y
+		lda	bit_mask, x
 		bit	joyena
 		bne	.soft_reset
 
-.not_reset:	dey				; Check the next pad from the
+.not_reset:	dex				; Check the next pad from the
 		bpl	.pressed_loop		; multitap.
 
 		stz	port_mutex		; Release port mutex.
@@ -355,14 +355,14 @@ read_joypads:
 		eor	joy6old, x		; been pressed (6-button).
 		and	joy6now, x
 	.if	HUC_JOY_EVENTS
-		sta	joy6trg, y
-		ora	joy6buf, y		; HuC/HuCC accumulates presses
-		sta	joy6buf, y		; in a seperate array.
+		sta	joy6trg, x
+		ora	joy6buf, x		; HuC/HuCC accumulates presses
+		sta	joy6buf, x		; in a seperate array.
 	.else
 	.if	ACCUMULATE_JOY
-		ora	joy6trg, y
+		ora	joy6trg, x
 	.endif
-		sta	joy6trg, y
+		sta	joy6trg, x
 	.endif
 
 		lda	joynow, x		; Calc which buttons have just
@@ -370,14 +370,14 @@ read_joypads:
 		eor	joyold, x
 		and	joynow, x
 	.if	HUC_JOY_EVENTS
-		sta	joytrg, y
-		ora	joybuf, y		; HuC/HuCC accumulates presses
-		sta	joybuf, y		; in a seperate array.
+		sta	joytrg, x
+		ora	joybuf, x		; HuC/HuCC accumulates presses
+		sta	joybuf, x		; in a seperate array.
 	.else
 	.if	ACCUMULATE_JOY
-		ora	joytrg, y
+		ora	joytrg, x
 	.endif
-		sta	joytrg, y
+		sta	joytrg, x
 	.endif
 
 		cmp	#$04			; Detect the soft-reset combo,
@@ -654,14 +654,14 @@ read_joypads:
 		eor	joyold, x
 		and	joynow, x
 	.if	HUC_JOY_EVENTS
-		sta	joytrg, y
-		ora	joybuf, y		; HuC/HuCC accumulates presses
-		sta	joybuf, y		; in a seperate array.
+		sta	joytrg, x
+		ora	joybuf, x		; HuC/HuCC accumulates presses
+		sta	joybuf, x		; in a seperate array.
 	.else
 	.if	ACCUMULATE_JOY
-		ora	joytrg, y
+		ora	joytrg, x
 	.endif
-		sta	joytrg, y
+		sta	joytrg, x
 	.endif
 
 		cmp	#$04			; Detect the soft-reset combo,
@@ -950,14 +950,14 @@ read_joypads:
 		eor	joy6old, x		; been pressed (6-button).
 		and	joy6now, x
 	.if	HUC_JOY_EVENTS
-		sta	joy6trg, y
-		ora	joy6buf, y		; HuC/HuCC accumulates presses
-		sta	joy6buf, y		; in a seperate array.
+		sta	joy6trg, x
+		ora	joy6buf, x		; HuC/HuCC accumulates presses
+		sta	joy6buf, x		; in a seperate array.
 	.else
 	.if	ACCUMULATE_JOY
-		ora	joy6trg, y
+		ora	joy6trg, x
 	.endif
-		sta	joy6trg, y
+		sta	joy6trg, x
 	.endif
 
 		lda	joynow, x		; Calc which buttons have just
@@ -965,14 +965,14 @@ read_joypads:
 		eor	joyold, x
 		and	joynow, x
 	.if	HUC_JOY_EVENTS
-		sta	joytrg, y
-		ora	joybuf, y		; HuC/HuCC accumulates presses
-		sta	joybuf, y		; in a seperate array.
+		sta	joytrg, x
+		ora	joybuf, x		; HuC/HuCC accumulates presses
+		sta	joybuf, x		; in a seperate array.
 	.else
 	.if	ACCUMULATE_JOY
-		ora	joytrg, y
+		ora	joytrg, x
 	.endif
-		sta	joytrg, y
+		sta	joytrg, x
 	.endif
 
 		cmp	#$04			; Detect the soft-reset combo,

@@ -337,6 +337,7 @@ _joybuf.1	.macro
 	.else
 		cly
 	.endif
+	.else
 	.if	ACCUMULATE_JOY
 		tax
 		lda	joytrg, x
@@ -346,8 +347,10 @@ _joybuf.1	.macro
 		stz	joy6trg, x
 	.else
 		cly
+	.endif
 	.else
 		.fail	You must enable HUC_JOY_EVENTS or ACCUMULATE_JOY in your hucc-config.inc!
+	.endif
 	.endif
 		.endm
 
@@ -379,6 +382,7 @@ _joybuf.1	.macro
 	.endif
 	.else
 		.fail	You must enable HUC_JOY_EVENTS or ACCUMULATE_JOY in your hucc-config.inc!
+	.endif
 	.endif
 .next:		bne	.loop
 		plp
