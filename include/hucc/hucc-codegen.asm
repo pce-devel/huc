@@ -455,24 +455,130 @@ __spop.ur	.macro
 
 ; **************
 ; Y:A is the value to check for.
+; \1 is the number of numeric cases to test for (3 in this example)
 
-__switch.wr	.macro
-		sty.h	__temp
-		ldy.l	#\1
-		sty.l	__ptr
-		ldy.h	#\1
-		jmp	do_switchw
+__switch_c.wr	.macro
+		ldx	#<(\1 * 2 + 2)
+!loop:		dex
+		dex
+		beq	!found+
+		cmp.l	!table+ - 2, x
+		bne	!loop-
+		say
+		cmp.h	!table+ - 2, x
+		say
+		bne	!loop-
+!found:		jmp	[!table+ + \1 * 2, x]
 		.endm
+
+; !table:	dw	val3		; +01 x=2
+;		dw	val2		; +23 x=4
+;		dw	val1		; +45 x=6
+;		dw	jmpdefault	; +67 x=0
+;		dw	jmp3		; +89 x=2
+;		dw	jmp2		; +AB x=4
+;		dw	jmp1		; +CD x=6
 
 ; **************
 ; Y:A is the value to check for.
+; \1 is the number of numeric cases to test for (3 in this example)
 
-__switch.ur	.macro
-		ldy.l	#\1
-		sty.l	__ptr
-		ldy.h	#\1
-		jmp	do_switchb
+__switch_c.ur	.macro
+		ldx	#\1 + 1
+!loop:		dex
+		beq	!found+
+		cmp	!table+ - 1, x
+		bne	!loop-
+!found:		txa
+		asl	a
+		tax
+		jmp	[!table+ + \1, x]
 		.endm
+
+; !table:	db	val3		; +0  x=1
+;		db	val2            ; +1  x=2
+;		db	val1            ; +2  x=3
+;		dw	jmpdefault      ; +34 x=0
+;		dw	jmp3            ; +56 x=1
+;		dw	jmp2            ; +78 x=2
+;		dw	jmp1            ; +9A x=3
+
+; **************
+; Y:A is the value to check for.
+; \1 is the min case value in the table (must be >= 0)
+; \2 is the max case value in the table (must be <= min+126)
+
+__switch_r.wr	.macro
+	.if	(\1 >= 0) && (\1 <= 65535)
+	.if	(\1 != 0)
+		sec
+		sbc.l	#\1
+		say
+		sbc.h	#\1
+		bcc	!default+
+		bne	!default+
+		tya
+	.else
+		cpy	#0
+		bne	!default+
+	.endif
+	.else
+		sec
+		sbc.l	#\1
+		say
+		sbc.h	#\1
+		bvc	!+
+		eor	#$80
+!:		bmi	!default+
+		bne	!default+
+		tya
+	.endif
+		cmp	#(\2 - \1) + 1
+		bcc	!found+
+!default:	lda	#(\2 - \1) + 1
+!found:		asl	a
+		tax
+		jmp	[!table+, x]
+		.endm
+
+; !table:	dw	jmp1		; +01 x=\1
+;		dw	jmp2		; +23 x=\1+1
+;		dw	jmp3		; +45 x=\1+2
+;		dw	jmp4		; +67 x=\2
+;		dw	jmpdefault	; +89 x=\2+1
+
+; **************
+; Y:A is the value to check for.
+; \1 is the min case value in the table (must be >= 0)
+; \2 is the max case value in the table (must be <= min+126)
+
+__switch_r.ur	.macro
+	.if	(\1 >= 0) && (\1 <= 255)
+	.if	(\1 != 0)
+		sec
+		sbc	#\1
+		bcc	!default+
+	.endif
+	.else
+		sec
+		sbc.l	#\1
+		bvc	!+
+		eor	#$80
+!:		bmi	!default+
+	.endif
+		cmp	#(\2 - \1) + 1
+		bcc	!found+
+!default:	lda	#(\2 - \1) + 1
+!found:		asl	a
+		tax
+		jmp	[!table+, x]
+		.endm
+
+; !table:	dw	jmp1		; +01 x=\1
+;		dw	jmp2		; +23 x=\1+1
+;		dw	jmp3		; +45 x=\1+2
+;		dw	jmp4		; +67 x=\2
+;		dw	jmpdefault	; +89 x=\2+1
 
 ; **************
 ; the start of a "default" statement
@@ -7375,77 +7481,6 @@ lsr.wx:		sty	<__temp
 !zero:		cla
 		cly
 		rts
-
-
-
-; ***************************************************************************
-; ***************************************************************************
-; subroutine for implementing a switch() statement
-;
-; case_table:
-; +  0		db	6		; #bytes of case values.
-; + 12		db	>val3, <val3
-; + 34		db	>val2, <val2
-; + 56		db	>val1, <val1
-; + 78		dw	jmpdefault
-; + 9A		dw	jmp3
-; + BC		dw	jmp2
-; + DE		dw	jmp1
-; ***************************************************************************
-; ***************************************************************************
-
-; **************
-
-do_switchw:	sty.h	<__ptr		; Save hi-byte of the table address.
-		sta.l	<__temp		; Save lo-byte of the value to find.
-
-		lda	[__ptr]		; Read #bytes of case values to check.
-		tay
-		beq	zero_cases
-
-test_case_lo:	lda.l	<__temp		; Fast test loop for the lo-byte, which
-.loop:		cmp	[__ptr], y	; is the most-likely to fail the match.
-		beq	test_case_hi
-		dey
-		dey
-		bne	.loop
-
-default_case:	clc			; Need to CC for default or do_switchb!
-case_found:	tya			; Add the offset to the label address.
-		adc	[__ptr]
-		tay
-zero_cases:	iny
-
-		lda	[__ptr], y	; Read label address lo-byte.
-		sta.l	<__temp
-		iny
-		lda	[__ptr], y	; Read label address hi-byte.
-		sta.h	<__temp
-		jmp	[__temp]
-
-test_case_hi:	lda.h	<__temp		; Slow test loop for the hi-byte, which
-		dey			; should rarely be checked.
-		cmp	[__ptr], y
-		beq	case_found	; CS if case_found.
-		dey
-		bne	test_case_lo
-		bra	default_case
-
-; **************
-
-do_switchb:	sty.h	<__ptr		; Save hi-byte of the table address.
-		tay			; Save lo-byte of the value to find.
-
-		lda	[__ptr]		; Read #bytes of case values to check.
-		say
-		beq	zero_cases
-
-.loop:		cmp	[__ptr], y
-		beq	default_case	; Need to CC if case_found!
-		dey
-		dey
-		bne	.loop
-		bra	default_case
 
 
 

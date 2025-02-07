@@ -108,7 +108,7 @@ void inc_startup (void)
  */
 void defbyte (void)
 {
-	ot(".db\t\t");
+	ot("\tdb\t");
 }
 
 /*
@@ -117,7 +117,7 @@ void defbyte (void)
  */
 void defstorage (void)
 {
-	ot(".ds\t\t");
+	ot("\tds\t");
 }
 
 /*
@@ -126,7 +126,7 @@ void defstorage (void)
  */
 void defword (void)
 {
-	ot(".dw\t\t");
+	ot("\tdw\t");
 }
 
 /*
@@ -341,7 +341,7 @@ void gen_code (INS *tmp)
 			nl();
 			ol(".dbg\tclear");
 			break;
-#if 1
+#if 0
 		case T_EXPRESSION:
 			ol("; EXPRESSION");
 			break;
@@ -538,15 +538,31 @@ void gen_code (INS *tmp)
 
 	/* i-codes for handling boolean tests and branching */
 
-	case I_SWITCH_WR:
-		ot("__switch.wr\t");
-		outlabel((int)data);
+	case I_SWITCH_C_WR:
+		ot("__switch_c.wr\t");
+		outdec((int)data);
 		nl();
 		break;
 
-	case I_SWITCH_UR:
-		ot("__switch.ur\t");
-		outlabel((int)data);
+	case I_SWITCH_C_UR:
+		ot("__switch_c.ur\t");
+		outdec((int)data);
+		nl();
+		break;
+
+	case I_SWITCH_R_WR:
+		ot("__switch_r.wr\t");
+		outdec((int)data);
+		outstr(", ");
+		outdec((int)imm_data);
+		nl();
+		break;
+
+	case I_SWITCH_R_UR:
+		ot("__switch_r.ur\t");
+		outdec((int)data);
+		outstr(", ");
+		outdec((int)imm_data);
 		nl();
 		break;
 
@@ -1876,25 +1892,25 @@ void gen_code (INS *tmp)
 		break;
 
 	case X_ST_WPQ:
-		ot("__st.wpq\t\t");
+		ot("__st.wpq\t");
 		out_addr(type, data);
 		nl();
 		break;
 
 	case X_ST_UPQ:
-		ot("__st.upq\t\t");
+		ot("__st.upq\t");
 		out_addr(type, data);
 		nl();
 		break;
 
 	case X_ST_WPI:
-		ot("__st.wpi\t\t");
+		ot("__st.wpi\t");
 		outdec((int)data);
 		nl();
 		break;
 
 	case X_ST_UPI:
-		ot("__st.upi\t\t");
+		ot("__st.upi\t");
 		outdec((int)data);
 		nl();
 		break;
@@ -1914,14 +1930,14 @@ void gen_code (INS *tmp)
 		break;
 
 	case X_ST_WSQ:
-		ot("__st.wsq\t\t");
+		ot("__st.wsq\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();
 		break;
 
 	case X_ST_USQ:
-		ot("__st.usq\t\t");
+		ot("__st.usq\t");
 		outdec((int)data);
 		outlocal(tmp->sym);
 		nl();

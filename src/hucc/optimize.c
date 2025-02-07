@@ -97,8 +97,10 @@ unsigned char icode_flags[] = {
 
 	// i-codes for handling boolean tests and branching
 
-	/* I_SWITCH_WR          */	IS_USEPR,
-	/* I_SWITCH_UR          */	IS_USEPR,
+	/* I_SWITCH_C_WR        */	IS_USEPR,
+	/* I_SWITCH_C_UR        */	IS_USEPR,
+	/* I_SWITCH_R_WR        */	IS_USEPR,
+	/* I_SWITCH_R_UR        */	IS_USEPR,
 	/* I_DEFAULT            */	0,
 	/* I_CASE               */	0,
 	/* I_ENDCASE            */	0,
@@ -180,25 +182,25 @@ unsigned char icode_flags[] = {
 	/* I_LD_BM              */	IS_SBYTE,
 	/* I_LD_UM              */	IS_UBYTE,
 
-	/* X_LD_WMQ             */	0,
-	/* X_LD_BMQ             */	IS_SBYTE,
-	/* X_LD_UMQ             */	IS_UBYTE,
+	/* X_LD_WMQ             */	IS_SHORT,
+	/* X_LD_BMQ             */	IS_SBYTE + IS_SHORT,
+	/* X_LD_UMQ             */	IS_UBYTE + IS_SHORT,
 
 	/* X_LDX_WMQ            */	0,
-	/* X_LDX_BMQ            */	IS_SBYTE,
-	/* X_LDX_UMQ            */	IS_UBYTE,
+	/* X_LDX_BMQ            */	0,
+	/* X_LDX_UMQ            */	0,
 
 	/* X_LD2X_WM            */	0,
-	/* X_LD2X_BM            */	IS_SBYTE,
-	/* X_LD2X_UM            */	IS_UBYTE,
+	/* X_LD2X_BM            */	0,
+	/* X_LD2X_UM            */	0,
 
 	/* X_LD2X_WMQ           */	0,
-	/* X_LD2X_BMQ           */	IS_SBYTE,
-	/* X_LD2X_UMQ           */	IS_UBYTE,
+	/* X_LD2X_BMQ           */	0,
+	/* X_LD2X_UMQ           */	0,
 
 	/* X_LDY_WMQ            */	0,
-	/* X_LDY_BMQ            */	IS_SBYTE,
-	/* X_LDY_UMQ            */	IS_UBYTE,
+	/* X_LDY_BMQ            */	0,
+	/* X_LDY_UMQ            */	0,
 
 	/* I_LD_WP              */	0,
 	/* I_LD_BP              */	IS_SBYTE,
@@ -225,29 +227,29 @@ unsigned char icode_flags[] = {
 	/* X_LD_BS              */	IS_SBYTE + IS_SPREL,
 	/* X_LD_US              */	IS_UBYTE + IS_SPREL,
 
-	/* X_LD_WSQ             */	IS_SPREL,
-	/* X_LD_BSQ             */	IS_SBYTE + IS_SPREL,
-	/* X_LD_USQ             */	IS_UBYTE + IS_SPREL,
+	/* X_LD_WSQ             */	IS_SPREL + IS_SHORT,
+	/* X_LD_BSQ             */	IS_SBYTE + IS_SPREL + IS_SHORT,
+	/* X_LD_USQ             */	IS_UBYTE + IS_SPREL + IS_SHORT,
 
 	/* X_LDX_WS             */	IS_SPREL,
-	/* X_LDX_BS             */	IS_SBYTE + IS_SPREL,
-	/* X_LDX_US             */	IS_UBYTE + IS_SPREL,
+	/* X_LDX_BS             */	IS_SPREL,
+	/* X_LDX_US             */	IS_SPREL,
 
 	/* X_LDX_WSQ            */	IS_SPREL,
-	/* X_LDX_BSQ            */	IS_SBYTE + IS_SPREL,
-	/* X_LDX_USQ            */	IS_UBYTE + IS_SPREL,
+	/* X_LDX_BSQ            */	IS_SPREL,
+	/* X_LDX_USQ            */	IS_SPREL,
 
 	/* X_LD2X_WS            */	IS_SPREL,
-	/* X_LD2X_BS            */	IS_SBYTE + IS_SPREL,
-	/* X_LD2X_US            */	IS_UBYTE + IS_SPREL,
+	/* X_LD2X_BS            */	IS_SPREL,
+	/* X_LD2X_US            */	IS_SPREL,
 
 	/* X_LD2X_WSQ           */	IS_SPREL,
-	/* X_LD2X_BSQ           */	IS_SBYTE + IS_SPREL,
-	/* X_LD2X_USQ           */	IS_UBYTE + IS_SPREL,
+	/* X_LD2X_BSQ           */	IS_SPREL,
+	/* X_LD2X_USQ           */	IS_SPREL,
 
 	/* X_LDY_WSQ            */	IS_SPREL,
-	/* X_LDY_BSQ            */	IS_SBYTE + IS_SPREL,
-	/* X_LDY_USQ            */	IS_UBYTE + IS_SPREL,
+	/* X_LDY_BSQ            */	IS_SPREL,
+	/* X_LDY_USQ            */	IS_SPREL,
 
 	/* X_LDP_WAR            */	IS_PUSHWT,
 	/* X_LDP_BAR            */	IS_SBYTE + IS_PUSHWT,
@@ -722,8 +724,10 @@ enum ICODE short_icode[] = {
 
 	// i-codes for handling boolean tests and branching
 
-	/* I_SWITCH_WR          */	0,
-	/* I_SWITCH_UR          */	0,
+	/* I_SWITCH_C_WR        */	0,
+	/* I_SWITCH_C_UR        */	0,
+	/* I_SWITCH_R_WR        */	0,
+	/* I_SWITCH_R_UR        */	0,
 	/* I_DEFAULT            */	0,
 	/* I_CASE               */	0,
 	/* I_ENDCASE            */	0,
@@ -3424,7 +3428,7 @@ lv1_loop:
 					if (q_ins[j].ins_code == I_LABEL) {
 						if (q_ins[j].ins_data != p[0]->ins_data) {
 							q_ins[j].ins_code = I_ALIAS;
-							q_ins[j].imm_type = T_VALUE;
+							q_ins[j].imm_type = T_LABEL;
 							q_ins[j].imm_data = p[0]->ins_data;
 						}
 					}
@@ -4096,38 +4100,6 @@ lv1_loop:
 
 		if (p_nb >= 2) {
 			/*
-			 *  __ld.{b/u}p		__ptr	-->	__ld.{b/u}p	__ptr
-			 *  __switch.wr				__switch.ur
-			 *
-			 *  __ld.{b/u}m		symbol	-->	__ld.{b/u}m	symbol
-			 *  __switch.wr				__switch.ur
-			 *
-			 *  __ld.{b/u}s		n	-->	__ld.{b/u}s	n
-			 *  __switch.wr				__switch.ur
-			 *
-			 *  __ld.{b/u}ar	array	-->	__ld.{b/u}ar	array
-			 *  __switch.wr				__switch.ur
-			 */
-			if
-			((p[0]->ins_code == I_SWITCH_WR) &&
-			 (p[1]->ins_code == I_LD_BP ||
-			  p[1]->ins_code == I_LD_UP ||
-			  p[1]->ins_code == I_LD_BM ||
-			  p[1]->ins_code == I_LD_UM ||
-			  p[1]->ins_code == X_LD_BS ||
-			  p[1]->ins_code == X_LD_US ||
-			  p[1]->ins_code == X_LD_BAR ||
-			  p[1]->ins_code == X_LD_UAR)
-			) {
-				/* optimize code */
-				p[0]->ins_code = I_SWITCH_UR;
-				remove = 0;
-			}
-
-			/*
-			 *  __switch.{w/u}r		-->	__switch.{w/u}rw
-			 *  __endcase
-			 *
 			 *  __bra LLnn			-->	__bra LLnn
 			 *  __endcase
 			 *
@@ -4138,11 +4110,9 @@ lv1_loop:
 			 *
 			 *  This removes obviously-redundant I_ENDCASE i-codes.
 			 */
-			else if
+			if
 			((p[0]->ins_code == I_ENDCASE) &&
-			 (p[1]->ins_code == I_SWITCH_WR ||
-			  p[1]->ins_code == I_SWITCH_UR ||
-			  p[1]->ins_code == I_BRA)
+			 (p[1]->ins_code == I_BRA)
 			) {
 				/* remove code */
 				remove = 1;

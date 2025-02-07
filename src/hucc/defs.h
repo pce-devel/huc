@@ -64,8 +64,10 @@ enum ICODE {
 
 	/* i-codes for handling boolean tests and branching */
 
-	I_SWITCH_WR,
-	I_SWITCH_UR,
+	I_SWITCH_C_WR,
+	I_SWITCH_C_UR,
+	I_SWITCH_R_WR,
+	I_SWITCH_R_UR,
 	I_DEFAULT,
 	I_CASE,
 	I_ENDCASE,
@@ -784,7 +786,7 @@ struct tag_symbol {
 
 /* "do"/"for"/"while"/"switch" statement stack */
 
-#define WS_COUNT 7 /* number of ints per "while" entry */
+#define WS_COUNT 8 /* number of ints per "while" entry */
 #define WS_TOTAL (20 * WS_COUNT)
 #define WS_LIMIT (ws + WS_TOTAL - WS_COUNT)
 
@@ -800,6 +802,7 @@ struct tag_symbol {
 #define WS_BODY_LABEL     5
 #define WS_SWITCH_LABEL   5
 #define WS_EXIT_LABEL     6
+#define WS_SWITCH_TYPE    7
 
 /* possible entries for "WS_TYPE" */
 
