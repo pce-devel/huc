@@ -270,14 +270,6 @@ void gasrint (void)
 }
 
 /*
- *	execute optimized "switch" library routine
- */
-void gswitch (int nlab)
-{
-	out_ins(I_SWITCH_WR, T_LABEL, nlab);
-}
-
-/*
  *	mark the start of a case statement
  */
 void gcase (int nlab, int value)

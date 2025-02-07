@@ -455,24 +455,130 @@ __spop.ur	.macro
 
 ; **************
 ; Y:A is the value to check for.
+; \1 is the number of numeric cases to test for (3 in this example)
 
-__switch.wr	.macro
-		sty.h	__temp
-		ldy.l	#\1
-		sty.l	__ptr
-		ldy.h	#\1
-		jmp	do_switchw
+__switch_c.wr	.macro
+		ldx	#<(\1 * 2 + 2)
+!loop:		dex
+		dex
+		beq	!found+
+		cmp.l	!table+ - 2, x
+		bne	!loop-
+		say
+		cmp.h	!table+ - 2, x
+		say
+		bne	!loop-
+!found:		jmp	[!table+ + \1 * 2, x]
 		.endm
+
+; !table:	dw	val3		; +01 x=2
+;		dw	val2		; +23 x=4
+;		dw	val1		; +45 x=6
+;		dw	jmpdefault	; +67 x=0
+;		dw	jmp3		; +89 x=2
+;		dw	jmp2		; +AB x=4
+;		dw	jmp1		; +CD x=6
 
 ; **************
 ; Y:A is the value to check for.
+; \1 is the number of numeric cases to test for (3 in this example)
 
-__switch.ur	.macro
-		ldy.l	#\1
-		sty.l	__ptr
-		ldy.h	#\1
-		jmp	do_switchb
+__switch_c.ur	.macro
+		ldx	#\1 + 1
+!loop:		dex
+		beq	!found+
+		cmp	!table+ - 1, x
+		bne	!loop-
+!found:		txa
+		asl	a
+		tax
+		jmp	[!table+ + \1, x]
 		.endm
+
+; !table:	db	val3		; +0  x=1
+;		db	val2            ; +1  x=2
+;		db	val1            ; +2  x=3
+;		dw	jmpdefault      ; +34 x=0
+;		dw	jmp3            ; +56 x=1
+;		dw	jmp2            ; +78 x=2
+;		dw	jmp1            ; +9A x=3
+
+; **************
+; Y:A is the value to check for.
+; \1 is the min case value in the table (must be >= 0)
+; \2 is the max case value in the table (must be <= min+126)
+
+__switch_r.wr	.macro
+	.if	(\1 >= 0) && (\1 <= 65535)
+	.if	(\1 != 0)
+		sec
+		sbc.l	#\1
+		say
+		sbc.h	#\1
+		bcc	!default+
+		bne	!default+
+		tya
+	.else
+		cpy	#0
+		bne	!default+
+	.endif
+	.else
+		sec
+		sbc.l	#\1
+		say
+		sbc.h	#\1
+		bvc	!+
+		eor	#$80
+!:		bmi	!default+
+		bne	!default+
+		tya
+	.endif
+		cmp	#(\2 - \1) + 1
+		bcc	!found+
+!default:	lda	#(\2 - \1) + 1
+!found:		asl	a
+		tax
+		jmp	[!table+, x]
+		.endm
+
+; !table:	dw	jmp1		; +01 x=\1
+;		dw	jmp2		; +23 x=\1+1
+;		dw	jmp3		; +45 x=\1+2
+;		dw	jmp4		; +67 x=\2
+;		dw	jmpdefault	; +89 x=\2+1
+
+; **************
+; Y:A is the value to check for.
+; \1 is the min case value in the table (must be >= 0)
+; \2 is the max case value in the table (must be <= min+126)
+
+__switch_r.ur	.macro
+	.if	(\1 >= 0) && (\1 <= 255)
+	.if	(\1 != 0)
+		sec
+		sbc	#\1
+		bcc	!default+
+	.endif
+	.else
+		sec
+		sbc.l	#\1
+		bvc	!+
+		eor	#$80
+!:		bmi	!default+
+	.endif
+		cmp	#(\2 - \1) + 1
+		bcc	!found+
+!default:	lda	#(\2 - \1) + 1
+!found:		asl	a
+		tax
+		jmp	[!table+, x]
+		.endm
+
+; !table:	dw	jmp1		; +01 x=\1
+;		dw	jmp2		; +23 x=\1+1
+;		dw	jmp3		; +45 x=\1+2
+;		dw	jmp4		; +67 x=\2
+;		dw	jmpdefault	; +89 x=\2+1
 
 ; **************
 ; the start of a "default" statement
@@ -2928,6 +3034,12 @@ __ld.up		.macro
 
 ; **************
 
+__ld.upq	.macro
+		lda	[\1]
+		.endm
+
+; **************
+
 __ld.war	.macro
 		asl	a
 		tax
@@ -2956,6 +3068,13 @@ __ld.uar	.macro
 
 ; **************
 
+__ld.uarq	.macro
+		tay
+		lda	\1, y
+		.endm
+
+; **************
+
 __ld.wax	.macro
 		lda.l	\1, x
 		ldy.h	\1, x
@@ -2976,6 +3095,12 @@ __ld.bax	.macro
 __ld.uax	.macro
 		lda	\1, x
 		cly
+		.endm
+
+; **************
+
+__ld.uaxq	.macro
+		lda	\1, x
 		.endm
 
 ; **************
@@ -4503,7 +4628,7 @@ __ext.ur	.macro
 
 ; ***************************************************************************
 ; ***************************************************************************
-; i-codes for math with the primary register
+; i-codes for 16-bit math with the primary register
 ; ***************************************************************************
 ; ***************************************************************************
 
@@ -4597,7 +4722,7 @@ __add.wp	.macro
 		ldy	#1
 		adc	[\1], y
 		tay
-		tax
+		txa
 		.endm
 
 ; **************
@@ -4746,17 +4871,17 @@ __sub.wp	.macro
 		ldy	#1
 		sbc	[\1], y
 		tay
-		tax
+		txa
 		.endm
 
 ; **************
 ; Y:A = Y:A - memory
 
 __sub.up	.macro
-		clc
-		adc	[\1]
-		bcc	!+
-		iny
+		sec
+		sbc	[\1]
+		bcs	!+
+		dey
 !:
 		.endm
 
@@ -4900,7 +5025,7 @@ __isub.wp	.macro
 		ldy	#1
 		adc	[\1], y
 		tay
-		tax
+		txa
 		.endm
 
 ; **************
@@ -5040,12 +5165,6 @@ __and.wi	.macro
 	.endif
 	.endif
 	.endif
-		.endm
-
-; **************
-
-__and.uiq	.macro
-		and	#\1
 		.endm
 
 ; **************
@@ -5453,35 +5572,6 @@ __asl.wi	.macro
 
 ; **************
 
-__asl.uiq	.macro
-	.if (\1 == 8)
-		asl	a
-	.endif
-	.if (\1 >= 7)
-		asl	a
-	.endif
-	.if (\1 >= 6)
-		asl	a
-	.endif
-	.if (\1 >= 5)
-		asl	a
-	.endif
-	.if (\1 >= 4)
-		asl	a
-	.endif
-	.if (\1 >= 3)
-		asl	a
-	.endif
-	.if (\1 >= 2)
-		asl	a
-	.endif
-	.if (\1 >= 1)
-		asl	a
-	.endif
-		.endm
-
-; **************
-
 __asl.wr	.macro
 		asl	a
 		say
@@ -5602,36 +5692,6 @@ __lsr.wi	.macro
 		.endm
 
 ; **************
-
-__lsr.uiq	.macro
-	.if (\1 < 8)
-	.if (\1 >= 1)
-		lsr	a
-	.endif
-	.if (\1 >= 2)
-		lsr	a
-	.endif
-	.if (\1 >= 3)
-		lsr	a
-	.endif
-	.if (\1 >= 4)
-		lsr	a
-	.endif
-	.if (\1 >= 5)
-		lsr	a
-	.endif
-	.if (\1 >= 6)
-		lsr	a
-	.endif
-	.if (\1 >= 7)
-		lsr	a
-	.endif
-	.else
-		cla
-	.endif
-		.endm
-
-; **************
 ; Y:A = stacked-value * Y:A
 ;
 ; N.B. signed and unsigned multiply only differ in the top 16 of the 32bits!
@@ -5716,6 +5776,453 @@ __mul.wi	.macro
 	.endif
 	.endif
 	.endif
+	.endif
+		.endm
+
+; **************
+; Y:A = stacked-value / Y:A
+
+__sdiv.wt	.macro
+		sta.l	<divisor
+		sty.h	<divisor
+		pla
+		ply
+		jsr	__divsint
+		.endm
+
+; **************
+
+__sdiv.wi	.macro
+		ldx.l	#\1
+		stx.l	<divisor
+		ldx.h	#\1
+		stx.h	<divisor
+		jsr	__divsint
+		.endm
+
+; **************
+; Y:A = stacked-value / Y:A
+
+__udiv.wt	.macro
+		sta.l	<divisor
+		sty.h	<divisor
+		pla
+		ply
+		jsr	__divuint
+		.endm
+
+; **************
+
+__udiv.wi	.macro
+		ldx.l	#\1
+		stx.l	<divisor
+		ldx.h	#\1
+		stx.h	<divisor
+		jsr	__divuint
+		.endm
+
+; **************
+
+__udiv.ui	.macro
+		ldy	#\1
+		jsr	__divuchar
+		.endm
+
+; **************
+; Y:A = stacked-value % Y:A
+
+__smod.wt	.macro
+		sta.l	<divisor
+		sty.h	<divisor
+		pla
+		ply
+		jsr	__modsint
+		.endm
+
+; **************
+
+__smod.wi	.macro
+		ldx.l	#\1
+		stx.l	<divisor
+		ldx.h	#\1
+		stx.h	<divisor
+		jsr	__modsint
+		.endm
+
+; **************
+; Y:A = stacked-value % Y:A
+
+__umod.wt	.macro
+		sta.l	<divisor
+		sty.h	<divisor
+		pla
+		ply
+		jsr	__moduint
+		.endm
+
+; **************
+
+__umod.wi	.macro
+		ldx.l	#\1
+		stx.l	<divisor
+		ldx.h	#\1
+		stx.h	<divisor
+		jsr	__moduint
+		.endm
+
+; **************
+
+__umod.ui	.macro
+		ldy	#\1
+		jsr	__moduchar
+		.endm
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+; i-codes for 8-bit math with lo-byte of the primary register
+; ***************************************************************************
+; ***************************************************************************
+
+; **************
+
+__add.uiq	.macro
+	.if	((\?1 == ARG_ABS) && ((\1) == 1))
+		inc	a
+	.else
+		clc
+		adc.l	#\1
+	.endif
+		.endm
+
+; **************
+
+__add.umq	.macro
+		clc
+		adc	\1
+		.endm
+
+; **************
+
+__add.upq	.macro
+		clc
+		adc	[\1]
+		.endm
+
+; **************
+
+__add.usq	.macro	; __STACK
+		ldx	<__sp
+		clc
+		adc	<__stack + \1, x
+		.endm
+
+; **************
+; special math for when array math is optimized
+; this balances the cpu stack after an __index.ur
+
+__add.uatq	.macro
+		plx
+		clc
+		adc	\1, x
+		.endm
+
+; **************
+
+__add.uaxq	.macro
+		clc
+		adc	\1, x
+		.endm
+
+; **************
+; Y:A = Y:A - immediate
+
+__sub.uiq	.macro
+	.if	((\?1 == ARG_ABS) && ((\1) >= 0) && ((\1) < 256))
+		sec
+		sbc.l	#\1
+	.endif
+		.endm
+
+; **************
+; Y:A = Y:A - memory
+
+__sub.umq	.macro
+		sec
+		sbc	\1
+		.endm
+
+; **************
+; Y:A = Y:A - memory
+
+__sub.upq	.macro
+		sec
+		sbc	[\1]
+		.endm
+
+; **************
+; Y:A = Y:A - memory
+
+__sub.usq	.macro
+		ldx	<__sp
+		sec
+		sbc	<__stack + \1, x
+		.endm
+
+; **************
+; special math for when array math is optimized
+; this balances the cpu stack after an __index.ur
+; Y:A = Y:A - memory
+
+__sub.uatq	.macro
+		plx
+		sec
+		sbc	\1, x
+		.endm
+
+; **************
+; Y:A = Y:A - memory
+
+__sub.uaxq	.macro
+		sec
+		sbc	\1, x
+		.endm
+
+; **************
+; Y:A = immediate - Y:A
+
+__isub.uiq	.macro
+		sec
+		eor	#$FF
+		adc.l	#\1
+		.endm
+
+; **************
+; Y:A = memory - Y:A
+
+__isub.umq	.macro
+		sec
+		eor	#$FF
+		adc	\1
+		.endm
+
+; **************
+; Y:A = memory - Y:A
+
+__isub.upq	.macro
+		sec
+		eor	#$FF
+		adc	[\1]
+		.endm
+
+; **************
+; Y:A = memory - Y:A
+
+__isub.usq	.macro	; __STACK
+		ldx	<__sp
+		sec
+		eor	#$FF
+		adc	<__stack + \1, x
+		.endm
+
+; **************
+; special math for when array math is optimized
+; this balances the cpu stack after an __index.ur
+; Y:A = memory - Y:A
+
+__isub.uatq	.macro
+		plx
+		sec
+		eor	#$FF
+		adc	\1, x
+		.endm
+
+; **************
+; Y:A = memory - Y:A
+
+__isub.uaxq	.macro
+		sec
+		eor	#$FF
+		adc	\1, x
+		.endm
+
+; **************
+
+__and.uiq	.macro
+		and	#\1
+		.endm
+
+; **************
+
+__and.umq	.macro
+		and	\1
+		.endm
+
+; **************
+
+__and.upq	.macro
+		and	[\1]
+		.endm
+
+; **************
+
+__and.usq	.macro
+		ldx	<__sp
+		and	<__stack + \1, x
+		.endm
+
+; **************
+; special math for when array math is optimized
+; this balances the cpu stack after an __index.ur
+
+__and.uatq	.macro
+		plx
+		and	\1, x
+		.endm
+
+; **************
+
+__and.uaxq	.macro
+		and	\1, x
+		.endm
+
+; **************
+
+__eor.uiq	.macro
+		eor	#\1
+		.endm
+
+; **************
+
+__eor.umq	.macro
+		eor	\1
+		.endm
+
+; **************
+
+__eor.upq	.macro
+		eor	[\1]
+		.endm
+
+; **************
+
+__eor.usq	.macro
+		ldx	<__sp
+		eor	<__stack + \1, x
+		.endm
+
+; **************
+; special math for when array math is optimized
+; this balances the cpu stack after an __index.ur
+
+__eor.uatq	.macro
+		plx
+		eor	\1, x
+		.endm
+
+; **************
+
+__eor.uaxq	.macro
+		eor	\1, x
+		.endm
+
+; **************
+
+__or.uiq	.macro
+		ora	#\1
+		.endm
+
+; **************
+
+__or.umq	.macro
+		ora	\1
+		.endm
+
+; **************
+
+__or.upq	.macro
+		ora	[\1]
+		.endm
+
+; **************
+
+__or.usq	.macro
+		ldx	<__sp
+		ora	<__stack + \1, x
+		.endm
+
+; **************
+; special math for when array math is optimized
+; this balances the cpu stack after an __index.ur
+
+__or.uatq	.macro
+		plx
+		ora	\1, x
+		.endm
+
+; **************
+
+__or.uaxq	.macro
+		ora	\1, x
+		.endm
+
+; **************
+
+__asl.uiq	.macro
+	.if (\1 == 8)
+		asl	a
+	.endif
+	.if (\1 >= 7)
+		asl	a
+	.endif
+	.if (\1 >= 6)
+		asl	a
+	.endif
+	.if (\1 >= 5)
+		asl	a
+	.endif
+	.if (\1 >= 4)
+		asl	a
+	.endif
+	.if (\1 >= 3)
+		asl	a
+	.endif
+	.if (\1 >= 2)
+		asl	a
+	.endif
+	.if (\1 >= 1)
+		asl	a
+	.endif
+		.endm
+
+; **************
+
+__lsr.uiq	.macro
+	.if (\1 < 8)
+	.if (\1 >= 1)
+		lsr	a
+	.endif
+	.if (\1 >= 2)
+		lsr	a
+	.endif
+	.if (\1 >= 3)
+		lsr	a
+	.endif
+	.if (\1 >= 4)
+		lsr	a
+	.endif
+	.if (\1 >= 5)
+		lsr	a
+	.endif
+	.if (\1 >= 6)
+		lsr	a
+	.endif
+	.if (\1 >= 7)
+		lsr	a
+	.endif
+	.else
+		cla
 	.endif
 		.endm
 
@@ -5826,104 +6333,6 @@ __mul.uiq	.macro
 		ldy	#\1
 		jsr	__muluchar
 	.endif
-		.endm
-
-; **************
-; Y:A = stacked-value / Y:A
-
-__sdiv.wt	.macro
-		sta.l	<divisor
-		sty.h	<divisor
-		pla
-		ply
-		jsr	__divsint
-		.endm
-
-; **************
-
-__sdiv.wi	.macro
-		ldx.l	#\1
-		stx.l	<divisor
-		ldx.h	#\1
-		stx.h	<divisor
-		jsr	__divsint
-		.endm
-
-; **************
-; Y:A = stacked-value / Y:A
-
-__udiv.wt	.macro
-		sta.l	<divisor
-		sty.h	<divisor
-		pla
-		ply
-		jsr	__divuint
-		.endm
-
-; **************
-
-__udiv.wi	.macro
-		ldx.l	#\1
-		stx.l	<divisor
-		ldx.h	#\1
-		stx.h	<divisor
-		jsr	__divuint
-		.endm
-
-; **************
-
-__udiv.ui	.macro
-		ldy	#\1
-		jsr	__divuchar
-		.endm
-
-; **************
-; Y:A = stacked-value % Y:A
-
-__smod.wt	.macro
-		sta.l	<divisor
-		sty.h	<divisor
-		pla
-		ply
-		jsr	__modsint
-		.endm
-
-; **************
-
-__smod.wi	.macro
-		ldx.l	#\1
-		stx.l	<divisor
-		ldx.h	#\1
-		stx.h	<divisor
-		jsr	__modsint
-		.endm
-
-; **************
-; Y:A = stacked-value % Y:A
-
-__umod.wt	.macro
-		sta.l	<divisor
-		sty.h	<divisor
-		pla
-		ply
-		jsr	__moduint
-		.endm
-
-; **************
-
-__umod.wi	.macro
-		ldx.l	#\1
-		stx.l	<divisor
-		ldx.h	#\1
-		stx.h	<divisor
-		jsr	__moduint
-		.endm
-
-; **************
-
-__umod.ui	.macro
-		ldy	#\1
-		jsr	__moduchar
 		.endm
 
 
@@ -6882,6 +7291,7 @@ __ldd_s_b	.macro	; __STACK
 		.endm
 
 
+
 		.list
 
 ; ***************************************************************************
@@ -7071,77 +7481,6 @@ lsr.wx:		sty	<__temp
 !zero:		cla
 		cly
 		rts
-
-
-
-; ***************************************************************************
-; ***************************************************************************
-; subroutine for implementing a switch() statement
-;
-; case_table:
-; +  0		db	6		; #bytes of case values.
-; + 12		db	>val3, <val3
-; + 34		db	>val2, <val2
-; + 56		db	>val1, <val1
-; + 78		dw	jmpdefault
-; + 9A		dw	jmp3
-; + BC		dw	jmp2
-; + DE		dw	jmp1
-; ***************************************************************************
-; ***************************************************************************
-
-; **************
-
-do_switchw:	sty.h	<__ptr		; Save hi-byte of the table address.
-		sta.l	<__temp		; Save lo-byte of the value to find.
-
-		lda	[__ptr]		; Read #bytes of case values to check.
-		tay
-		beq	zero_cases
-
-test_case_lo:	lda.l	<__temp		; Fast test loop for the lo-byte, which
-.loop:		cmp	[__ptr], y	; is the most-likely to fail the match.
-		beq	test_case_hi
-		dey
-		dey
-		bne	.loop
-
-default_case:	clc			; Need to CC for default or do_switchb!
-case_found:	tya			; Add the offset to the label address.
-		adc	[__ptr]
-		tay
-zero_cases:	iny
-
-		lda	[__ptr], y	; Read label address lo-byte.
-		sta.l	<__temp
-		iny
-		lda	[__ptr], y	; Read label address hi-byte.
-		sta.h	<__temp
-		jmp	[__temp]
-
-test_case_hi:	lda.h	<__temp		; Slow test loop for the hi-byte, which
-		dey			; should rarely be checked.
-		cmp	[__ptr], y
-		beq	case_found	; CS if case_found.
-		dey
-		bne	test_case_lo
-		bra	default_case
-
-; **************
-
-do_switchb:	sty.h	<__ptr		; Save hi-byte of the table address.
-		tay			; Save lo-byte of the value to find.
-
-		lda	[__ptr]		; Read #bytes of case values to check.
-		say
-		beq	zero_cases
-
-.loop:		cmp	[__ptr], y
-		beq	default_case	; Need to CC if case_found!
-		dey
-		dey
-		bne	.loop
-		bra	default_case
 
 
 

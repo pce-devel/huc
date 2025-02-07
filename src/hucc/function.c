@@ -435,7 +435,7 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 		else {
 			ot(".data"); nl();
 			ot(".bss"); nl();
-			outstr("__"); outstr(current_fn); outstr("_loc:\n\t.ds\t\t");
+			outstr("__"); outstr(current_fn); outstr("_loc:\n\t\tds\t");
 			outdec(-local_offset); nl();
 			outstr("__"); outstr(current_fn); outstr("_end:"); nl();
 			ot(".code"); nl();

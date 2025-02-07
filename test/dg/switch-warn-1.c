@@ -11,10 +11,12 @@ foo1 (unsigned char i)
 {
   switch (i)
     {
+#ifndef __HUCC__ /* these are an error, and not a warning in HuCC! */
     case -1:   /* { dg-warning "case label value is less than minimum value for type" } */
       return 1;
     case 256:  /* { dg-warning "case label value exceeds maximum value for type" } */
       return 2;
+#endif
     default:
       return 3;
     }

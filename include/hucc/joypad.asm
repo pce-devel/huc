@@ -5,7 +5,7 @@
 ;
 ; Read 2-button & 6-button joypads & PCE mouse, with or without a MultiTap.
 ;
-; Copyright John Brandwood 2019-2022.
+; Copyright John Brandwood 2019-2025.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -109,6 +109,33 @@ MAX_PADS	=	5
 DETECT_PHANTOMS	=	1
 	.endif
 
+;
+; Implement a HuC-compatible seperate array for accumulating joypad presses?
+;
+; This is only really needed if your game is not expected to run at 60Hz and
+; so you will sometimes miss joypad presses.
+;
+; Alternatively you can set ACCUMULATE_JOY so that joypad presses are always
+; accumulated in the normal joytrg array, which is how asm programmers would
+; normally deal with this situation.
+;
+
+	.ifndef HUC_JOY_EVENTS
+HUC_JOY_EVENTS	=	0
+	.endif
+
+;
+; Should "joytrg" accumulate presses, and so need to be explicitely cleared
+; after reading, or should it just be the result of the last read?
+;
+; This option has no effect if HUC_JOY_EVENTS is non-zero since that option
+; takes precedence over this one!
+;
+
+	.ifndef ACCUMULATE_JOY
+ACCUMULATE_JOY	=	0
+	.endif
+
 
 
 		.list
@@ -159,23 +186,32 @@ read_joypads:
 
 .calc_pressed:	bsr	.read_devices		; Read all devices normally.
 
-		ldy	#MAX_PADS - 1
+		ldx	#MAX_PADS - 1
 
-.pressed_loop:	lda	joynow, y		; Calc which buttons have just
-		tax                             ; been pressed (2-button).
-		eor	joyold, y
-		and	joynow, y
-		sta	joytrg, y
+.pressed_loop:	lda	joynow, x		; Calc which buttons have just
+		tay                             ; been pressed (2-button).
+		eor	joyold, x
+		and	joynow, x
+	.if	HUC_JOY_EVENTS
+		sta	joytrg, x
+		ora	joybuf, x		; HuC/HuCC accumulates presses
+		sta	joybuf, x		; in a seperate array.
+	.else
+	.if	ACCUMULATE_JOY
+		ora	joytrg, x
+	.endif
+		sta	joytrg, x
+	.endif
 
 		cmp	#$04			; Detect the soft-reset combo,
 		bne	.not_reset		; hold RUN then press SELECT.
-		cpx	#$0C
+		cpy	#$0C
 		bne	.not_reset
-		lda	bit_mask, y
+		lda	bit_mask, x
 		bit	joyena
 		bne	.soft_reset
 
-.not_reset:	dey				; Check the next pad from the
+.not_reset:	dex				; Check the next pad from the
 		bpl	.pressed_loop		; multitap.
 
 		stz	port_mutex		; Release port mutex.
@@ -233,6 +269,9 @@ read_joypads:
 	.endif
 
 port_mutex:	ds	1			; NZ when controller port busy.
+	.if	HUC_JOY_EVENTS
+joybuf:		ds	MAX_PADS
+	.endif
 
 		.code
 
@@ -315,13 +354,31 @@ read_joypads:
 .pressed_loop:	lda	joy6now, x		; Calc which buttons have just
 		eor	joy6old, x		; been pressed (6-button).
 		and	joy6now, x
+	.if	HUC_JOY_EVENTS
 		sta	joy6trg, x
+		ora	joy6buf, x		; HuC/HuCC accumulates presses
+		sta	joy6buf, x		; in a seperate array.
+	.else
+	.if	ACCUMULATE_JOY
+		ora	joy6trg, x
+	.endif
+		sta	joy6trg, x
+	.endif
 
 		lda	joynow, x		; Calc which buttons have just
 		tay                             ; been pressed (2-button).
 		eor	joyold, x
 		and	joynow, x
+	.if	HUC_JOY_EVENTS
 		sta	joytrg, x
+		ora	joybuf, x		; HuC/HuCC accumulates presses
+		sta	joybuf, x		; in a seperate array.
+	.else
+	.if	ACCUMULATE_JOY
+		ora	joytrg, x
+	.endif
+		sta	joytrg, x
+	.endif
 
 		cmp	#$04			; Detect the soft-reset combo,
 		bne	.not_reset		; hold RUN then press SELECT.
@@ -527,6 +584,10 @@ port_mutex:	ds	1			; NZ when controller port busy.
 num_ports:	ds	1			; Set to 1 if no multitap.
 mouse_flg:	ds	1			; Which ports are mice?
 port6:		ds	1			; Contents of port6.
+	.if	HUC_JOY_EVENTS
+joybuf:		ds	MAX_PADS
+joy6buf:	ds	MAX_PADS
+	.endif
 joy6now:	ds	MAX_PADS
 joy6old:	ds	MAX_PADS
 joy6trg:	ds	MAX_PADS
@@ -592,7 +653,16 @@ read_joypads:
 		tay                             ; been pressed (2-button).
 		eor	joyold, x
 		and	joynow, x
+	.if	HUC_JOY_EVENTS
 		sta	joytrg, x
+		ora	joybuf, x		; HuC/HuCC accumulates presses
+		sta	joybuf, x		; in a seperate array.
+	.else
+	.if	ACCUMULATE_JOY
+		ora	joytrg, x
+	.endif
+		sta	joytrg, x
+	.endif
 
 		cmp	#$04			; Detect the soft-reset combo,
 		bne	.not_reset		; hold RUN then press SELECT.
@@ -762,6 +832,9 @@ read_joypads:
 port_mutex:	ds	1			; NZ when controller port busy.
 num_ports:	ds	1			; Set to 1 if no multitap.
 mouse_flg:	ds	1			; Which ports are mice?
+	.if	HUC_JOY_EVENTS
+joybuf:		ds	MAX_PADS
+	.endif
 mouse_x:	ds	MAX_PADS
 mouse_y:	ds	MAX_PADS
 
@@ -876,13 +949,31 @@ read_joypads:
 .pressed_loop:	lda	joy6now, x		; Calc which buttons have just
 		eor	joy6old, x		; been pressed (6-button).
 		and	joy6now, x
+	.if	HUC_JOY_EVENTS
 		sta	joy6trg, x
+		ora	joy6buf, x		; HuC/HuCC accumulates presses
+		sta	joy6buf, x		; in a seperate array.
+	.else
+	.if	ACCUMULATE_JOY
+		ora	joy6trg, x
+	.endif
+		sta	joy6trg, x
+	.endif
 
 		lda	joynow, x		; Calc which buttons have just
 		tay                             ; been pressed (2-button).
 		eor	joyold, x
 		and	joynow, x
+	.if	HUC_JOY_EVENTS
 		sta	joytrg, x
+		ora	joybuf, x		; HuC/HuCC accumulates presses
+		sta	joybuf, x		; in a seperate array.
+	.else
+	.if	ACCUMULATE_JOY
+		ora	joytrg, x
+	.endif
+		sta	joytrg, x
+	.endif
 
 		cmp	#$04			; Detect the soft-reset combo,
 		bne	.not_reset		; hold RUN then press SELECT.
@@ -996,10 +1087,14 @@ read_joypads:
 port_mutex:	ds	1			; NZ when controller port busy.
 num_ports:	ds	1			; Set to 1 if no multitap.
 mouse_flg:	ds	1			; Which ports are mice?
+	.if	HUC_JOY_EVENTS
+joybuf:		ds	MAX_PADS
+joy6buf:	ds	MAX_PADS
+	.endif
 joy6now:	ds	MAX_PADS
 joy6old:	ds	MAX_PADS
 joy6trg:	ds	MAX_PADS
-mouse_x:	=	joy6trg			; Overload to save memory.
+mouse_x:	ds	MAX_PADS
 
 		.code
 

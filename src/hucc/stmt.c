@@ -366,7 +366,6 @@ void doswitch (void)
 {
 	int ws[WS_COUNT];
 	int *ptr;
-	bool auto_default = false;
 
 	ws[WS_LOCSYM_INDEX] = locsym_index;
 	ws[WS_STACK_OFFSET] = stkp;
@@ -374,28 +373,49 @@ void doswitch (void)
 	ws[WS_CASE_INDEX] = swstp;
 	ws[WS_SWITCH_LABEL] = getlabel();
 	ws[WS_DEFAULT_LABEL] = ws[WS_EXIT_LABEL] = getlabel();
+	ws[WS_SWITCH_TYPE] = CINT;
 	addwhile(ws);
 	needbracket("(");
 	expression(YES);
 	needbracket(")");
-	jump(ws[WS_SWITCH_LABEL]);
-	statement(NO);
+
+	/* peek at the output to see the switch variable's type */
 	ptr = readswitch();
-	jump(ptr[WS_EXIT_LABEL]);
-
-	if (ptr[WS_DEFAULT_LABEL] == ptr[WS_EXIT_LABEL]) {
-		ptr[WS_DEFAULT_LABEL] = getlabel();
-		auto_default = true;
+	if (optimize && q_nb) {
+		/* these are all only optimizations, the generated code will work without them */
+		switch (q_ins[q_wr].ins_code) {
+		case I_LD_UM:  q_ins[q_wr].ins_code = X_LD_UMQ;  break;
+		case I_LD_UP:  q_ins[q_wr].ins_code = X_LD_UPQ;  break;
+		case X_LD_US:  q_ins[q_wr].ins_code = X_LD_USQ;  break;
+		case X_LD_UAR: q_ins[q_wr].ins_code = X_LD_UARQ; break;
+		case X_LD_UAX: q_ins[q_wr].ins_code = X_LD_UAXQ; break;
+		default: break;
+		}
+		if (icode_flags[(q_ins[q_wr].ins_code)] & IS_SBYTE)
+			ptr[WS_SWITCH_TYPE] = CCHAR;
+		else
+		if (icode_flags[(q_ins[q_wr].ins_code)] & IS_UBYTE)
+			ptr[WS_SWITCH_TYPE] = CUCHAR;
 	}
-	gnlabel(ptr[WS_SWITCH_LABEL]);
 
-	dumpswitch(ptr);
+	jump(ws[WS_SWITCH_LABEL]);
 
-	if (auto_default) {
-		gnlabel((int)ptr[WS_DEFAULT_LABEL]);
-		out_ins(I_DEFAULT, 0, 0);
+	statement(NO);
+
+	ptr = readswitch();
+	if (swstp != ptr[WS_CASE_INDEX]) {
+		/* there is at-least one case */
+		jump(ptr[WS_EXIT_LABEL]);
+		gnlabel(ptr[WS_SWITCH_LABEL]);
+		dumpswitch(ptr);
 	}
 	gnlabel(ptr[WS_EXIT_LABEL]);
+	if (swstp == ptr[WS_CASE_INDEX]) {
+		/* there are no cases, so alias the switch label */
+		/* done after writing the exit label so the optimizer can remove */
+		/* the "jump(ptr[WS_EXIT_LABEL])" created by the final "break;" */
+		out_ins_ex(I_ALIAS, T_LABEL, ptr[WS_SWITCH_LABEL], T_LABEL, ptr[WS_DEFAULT_LABEL]);
+	}
 
 	locsym_index = ptr[WS_LOCSYM_INDEX];
 	stkp = modstk(ptr[WS_STACK_OFFSET]);
@@ -408,10 +428,30 @@ void doswitch (void)
  */
 void docase (void)
 {
+	int *ptr;
 	int val = 0;
-	if (readswitch()) {
+
+	ptr = readswitch();
+	if (ptr) {
 		if (!const_expr(&val, ":", NULL)) {
 			error("case label must be constant");
+		}
+		if (ptr[WS_SWITCH_TYPE] == CCHAR) {
+			if (val < -128)
+				error("case label value is less than minimum value for signed char");
+			if (val >  127)
+				error("case label value exceeds maximum value for signed char");
+		} else
+		if (ptr[WS_SWITCH_TYPE] == CUCHAR) {
+			if (val < 0)
+				error("case label value is less than minimum value for unsigned char");
+			if (val > 255)
+				error("case label value exceeds maximum value for unsigned char");
+		} else {
+			if (val < -32768)
+				error("case label value is less than minimum value for signed int");
+			if (val >  65535)
+				error("case label value exceeds maximum value for unsigned int");
 		}
 		addcase(val);
 		if (!match(":"))
@@ -489,6 +529,9 @@ void docont (void)
 		jump(ptr[WS_TEST_LABEL]);
 }
 
+/*
+ *
+ */
 void dolabel (char *name)
 {
 	int i;
@@ -561,76 +604,154 @@ void dogoto (void)
 }
 
 /*
- *	dump switch table
+ *	dump switch table (only if at least one case)
  *
- *	case_table:
- *	+  0		db	6		; #bytes of case values.
- *	+ 12		dw	val1
- *	+ 34		dw	val2
- *	+ 56		dw	val3
- *	+ 78		dw	jmpdefault
- *	+ 9A		dw	jmp1
- *	+ BC		dw	jmp2
- *	+ DE		dw	jmp3
+ * Table format for 16-bit comparisons:
+ *
+ * !table:	dw	val3		; +01 x=2
+ *		dw	val2		; +23 x=4
+ *		dw	val1		; +45 x=6
+ *		dw	jmpdefault	; +67 x=0
+ *		dw	jmp3		; +89 x=2
+ *		dw	jmp2		; +AB x=4
+ *		dw	jmp1		; +CD x=6
+ *
+ * Table format for 8-bit comparisons:
+ *
+ * !table:	db	val3		; +0  x=1
+ *		db	val2            ; +1  x=2
+ *		db	val1            ; +2  x=3
+ *		dw	jmpdefault      ; +34 x=0
+ *		dw	jmp3            ; +56 x=1
+ *		dw	jmp2            ; +78 x=2
+ *		dw	jmp1            ; +9A x=3
+ *
+ * Table format for min-max ranges:
+ *
+ * !table:	dw	jmp1		; +01 x=\1
+ *		dw	jmp2		; +23 x=\1+1
+ *		dw	jmp3		; +45 x=\1+2
+ *		dw	jmp4		; +67 x=\2
+ *		dw	jmpdefault	; +89 x=\2+1
  */
 void dumpswitch (int *ws)
 {
 	int i, j, column;
+	int mincase = 131072;
+	int maxcase = -65536;
+	int numcases;
+	bool do_range;
+	bool is_byte;
+	int label[128];
 
-	i = getlabel();
-	gswitch(i);
-	gnlabel(i);
-	flush_ins();
+	is_byte = (ws[WS_SWITCH_TYPE] == CCHAR || ws[WS_SWITCH_TYPE] == CUCHAR);
 
 	i = ws[WS_CASE_INDEX];
-
-	if ((swstp - i) > 63) {
-		error("too many case statements in switch(), there must be less than 64");
+	j = swstp;
+	numcases = j - i;
+	while (j-- > i) {
+		if (mincase > swstcase[j])
+			mincase = swstcase[j];
+		if (maxcase < swstcase[j])
+			maxcase = swstcase[j];
+	}
+	if (numcases == 0) {
+		error("no case statements in switch()!");
+		return;
+	}
+	if (numcases > 127) {
+		error("too many case statements in switch(), there must be less than 127");
 		return;
 	}
 
-	defbyte();
-	outdec((swstp - i) << 1);
-	nl();
+	/* is it beneficial to encode this switch() as a range? */
+	do_range = (maxcase + 1 - mincase) <= (numcases * 2);
 
-	j = swstp;
-	while (j > i) {
-		defbyte();
-		column = 8;
-		while (column--) {
-			outbyte('>');
-			outdec(swstcase[--j]);
-			outbyte(',');
-			outbyte('<');
-			outdec(swstcase[j]);
-			if ((column == 0) | (j == i)) {
-				nl();
-				break;
-			}
-			outbyte(',');
+	/* create the array of labels for each entry in the range */
+	if (do_range) {
+		numcases = (maxcase - mincase) + 1;
+		if ((mincase == 2) && (numcases < 126)) {
+			/* this makes the code a bit smaller and faster */
+			mincase = 0; numcases += 2;
 		}
-	}
+		if ((mincase == 1) && (numcases < 127)) {
+			/* this makes the code a bit smaller and faster */
+			mincase = 0; numcases += 1;
+		}
 
-	defword();
-	outlabel(ws[WS_DEFAULT_LABEL]);
-	nl();
+		out_ins_ex(is_byte ? I_SWITCH_R_UR : I_SWITCH_R_WR, T_VALUE, mincase, T_VALUE, maxcase);
+		flush_ins();
+		outstr("\n!table:");
 
-	j = swstp;
-	while (j > i) {
+		for (j = 0; j < numcases; ++j)
+			label[j] = ws[WS_DEFAULT_LABEL];
+		j = swstp;
+		while (j-- > ws[WS_CASE_INDEX])
+			label[(swstcase[j] - mincase)] = swstlabel[j];
+
+		j = 0;
+		while (j < numcases) {
+			defword();
+			column = 8;
+			while (column--) {
+				outlabel(label[j++]);
+				if ((column == 0) || (j == numcases)) {
+					nl();
+					break;
+				}
+				outstr(", ");
+			}
+		}
+
 		defword();
-		column = 8;
-		while (column--) {
-			outlabel(swstlabel[--j]);
-			if ((column == 0) | (j == i)) {
-				nl();
-				break;
+		outlabel(ws[WS_DEFAULT_LABEL]);
+		nl();
+	} else {
+		out_ins(is_byte ? I_SWITCH_C_UR : I_SWITCH_C_WR, T_VALUE, numcases);
+		flush_ins();
+		outstr("\n!table:");
+
+		j = swstp;
+		while (j > ws[WS_CASE_INDEX]) {
+			if (is_byte)
+				defbyte();
+			else
+				defword();
+			column = 8;
+			while (column--) {
+				outdec(swstcase[--j]);
+				if ((column == 0) || (j == ws[WS_CASE_INDEX])) {
+					nl();
+					break;
+				}
+				outstr(", ");
 			}
-			outbyte(',');
 		}
+
+		defword();
+		outlabel(ws[WS_DEFAULT_LABEL]);
+		nl();
+
+		j = swstp;
+		while (j > ws[WS_CASE_INDEX]) {
+			defword();
+			column = 8;
+			while (column--) {
+				outlabel(swstlabel[--j]);
+				if ((column == 0) | (j == ws[WS_CASE_INDEX])) {
+					nl();
+					break;
+				}
+				outstr(", ");
+			}
+		}
+		nl();
 	}
-	nl();
 }
 
+/*
+ *
+ */
 void test (int label, int ft)
 {
 	needbracket("(");

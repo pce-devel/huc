@@ -990,7 +990,7 @@ static void dumpfinal (void)
 	int i;
 
 	if (leaf_cnt) {
-		outstr("leaf_loc:\n\t.ds\t\t");
+		outstr("leaf_loc:\n\t\tds\t");
 		outdec(leaf_size);
 		nl();
 		for (i = 0; i < leaf_cnt; i++) {

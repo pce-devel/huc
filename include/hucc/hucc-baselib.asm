@@ -267,16 +267,14 @@ _vsync.1	.macro
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __macro joy( unsigned char which<acc> );
+; unsigned int __fastcall __macro joy( unsigned char which<acc> );
 
 _joy.1		.macro
-	.if	SUPPORT_6BUTTON
 		tax
 		lda	joynow, x
+	.if	SUPPORT_6BUTTON
 		ldy	joy6now, x
 	.else
-		tay
-		lda	joynow, y
 		cly
 	.endif
 		.endm
@@ -286,18 +284,108 @@ _joy.1		.macro
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __macro joytrg( unsigned char which<acc> );
+; unsigned int __fastcall __macro joytrg( unsigned char which<acc> );
 
 _joytrg.1	.macro
-	.if	SUPPORT_6BUTTON
 		tax
 		lda	joytrg, x
+	.if	SUPPORT_6BUTTON
 		ldy	joy6trg, x
 	.else
-		tay
-		lda	joytrg, y
 		cly
 	.endif
+		.endm
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; unsigned int __fastcall __macro joybuf( unsigned char which<acc> );
+
+_joybuf.1	.macro
+	.if	HUC_JOY_EVENTS
+		tax
+		lda	joybuf, x
+	.if	SUPPORT_6BUTTON
+		ldy	joy6buf, x
+	.else
+		cly
+	.endif
+	.else
+		.fail	You must enable HUC_JOY_EVENTS in your hucc-config.inc!
+	.endif
+		.endm
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; unsigned int __fastcall __macro get_joy_events( unsigned char which<acc> );
+;
+; N.B. This is just a version of joybuf() that clears the accumulated events.
+
+		.macro	_get_joy_events.1
+	.if	HUC_JOY_EVENTS
+		tax
+		lda	joybuf, x
+		stz	joybuf, x
+	.if	SUPPORT_6BUTTON
+		ldy	joy6buf, x
+		stz	joy6buf, x
+	.else
+		cly
+	.endif
+	.else
+	.if	ACCUMULATE_JOY
+		tax
+		lda	joytrg, x
+		stz	joytrg, x
+	.if	SUPPORT_6BUTTON
+		ldy	joy6trg, x
+		stz	joy6trg, x
+	.else
+		cly
+	.endif
+	.else
+		.fail	You must enable HUC_JOY_EVENTS or ACCUMULATE_JOY in your hucc-config.inc!
+	.endif
+	.endif
+		.endm
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; void __fastcall __macro clear_joy_events( unsigned char mask<acc> );
+
+		.macro	_clear_joy_events.1
+		php
+		sei
+		and	#(1 << MAX_PADS) - 1
+		ldx	#$FF
+.loop:		inx
+		lsr	a
+		bcc	.next
+	.if	HUC_JOY_EVENTS
+		stz	joybuf, x
+	.if	SUPPORT_6BUTTON
+		stz	joy6buf, x
+	.endif
+	.else
+	.if	ACCUMULATE_JOY
+		stz	joytrg, x
+	.if	SUPPORT_6BUTTON
+		stz	joy6trg, x
+	.endif
+	.else
+		.fail	You must enable HUC_JOY_EVENTS or ACCUMULATE_JOY in your hucc-config.inc!
+	.endif
+	.endif
+.next:		bne	.loop
+		plp
 		.endm
 
 

@@ -64,8 +64,10 @@ enum ICODE {
 
 	/* i-codes for handling boolean tests and branching */
 
-	I_SWITCH_WR,
-	I_SWITCH_UR,
+	I_SWITCH_C_WR,
+	I_SWITCH_C_UR,
+	I_SWITCH_R_WR,
+	I_SWITCH_R_UR,
 	I_DEFAULT,
 	I_CASE,
 	I_ENDCASE,
@@ -171,13 +173,19 @@ enum ICODE {
 	I_LD_BP,
 	I_LD_UP,
 
+	X_LD_UPQ,
+
 	X_LD_WAR,
 	X_LD_BAR,
 	X_LD_UAR,
 
+	X_LD_UARQ,
+
 	X_LD_WAX,
 	X_LD_BAX,
 	X_LD_UAX,
+
+	X_LD_UAXQ,
 
 	X_LD_BAY,
 	X_LD_UAY,
@@ -369,7 +377,7 @@ enum ICODE {
 	I_EXT_BR,
 	I_EXT_UR,
 
-	/* i-codes for math with the primary register  */
+	/* i-codes for 16-bit math with the primary register */
 
 	I_COM_WR,
 	I_NEG_WR,
@@ -388,28 +396,6 @@ enum ICODE {
 	X_ADD_WAX,
 	X_ADD_UAX,
 
-	X_ADD_ST_WMQ,
-	X_ADD_ST_UMQ,
-	X_ADD_ST_WPQ,
-	X_ADD_ST_UPQ,
-	X_ADD_ST_WSQ,
-	X_ADD_ST_USQ,
-	X_ADD_ST_WATQ,
-	X_ADD_ST_UATQ,
-	X_ADD_ST_WAXQ,
-	X_ADD_ST_UAXQ,
-
-	X_ADD_ST_WMIQ,
-	X_ADD_ST_UMIQ,
-	X_ADD_ST_WPIQ,
-	X_ADD_ST_UPIQ,
-	X_ADD_ST_WSIQ,
-	X_ADD_ST_USIQ,
-	X_ADD_ST_WATIQ,
-	X_ADD_ST_UATIQ,
-	X_ADD_ST_WAXIQ,
-	X_ADD_ST_UAXIQ,
-
 	I_SUB_WT,
 	I_SUB_WI,
 
@@ -423,17 +409,6 @@ enum ICODE {
 	X_SUB_UAT,
 	X_SUB_WAX,
 	X_SUB_UAX,
-
-	X_SUB_ST_WMIQ,
-	X_SUB_ST_UMIQ,
-	X_SUB_ST_WPIQ,
-	X_SUB_ST_UPIQ,
-	X_SUB_ST_WSIQ,
-	X_SUB_ST_USIQ,
-	X_SUB_ST_WATIQ,
-	X_SUB_ST_UATIQ,
-	X_SUB_ST_WAXIQ,
-	X_SUB_ST_UAXIQ,
 
 	X_ISUB_WT,
 	X_ISUB_WI,
@@ -449,20 +424,8 @@ enum ICODE {
 	X_ISUB_WAX,
 	X_ISUB_UAX,
 
-	X_ISUB_ST_WMQ,
-	X_ISUB_ST_UMQ,
-	X_ISUB_ST_WPQ,
-	X_ISUB_ST_UPQ,
-	X_ISUB_ST_WSQ,
-	X_ISUB_ST_USQ,
-	X_ISUB_ST_WATQ,
-	X_ISUB_ST_UATQ,
-	X_ISUB_ST_WAXQ,
-	X_ISUB_ST_UAXQ,
-
 	I_AND_WT,
 	X_AND_WI,
-	X_AND_UIQ,
 
 	X_AND_WM,
 	X_AND_UM,
@@ -474,17 +437,6 @@ enum ICODE {
 	X_AND_UAT,
 	X_AND_WAX,
 	X_AND_UAX,
-
-	X_AND_ST_WMQ,
-	X_AND_ST_UMQ,
-	X_AND_ST_WPQ,
-	X_AND_ST_UPQ,
-	X_AND_ST_WSQ,
-	X_AND_ST_USQ,
-	X_AND_ST_WATQ,
-	X_AND_ST_UATQ,
-	X_AND_ST_WAXQ,
-	X_AND_ST_UAXQ,
 
 	I_EOR_WT,
 	X_EOR_WI,
@@ -500,17 +452,6 @@ enum ICODE {
 	X_EOR_WAX,
 	X_EOR_UAX,
 
-	X_EOR_ST_WMQ,
-	X_EOR_ST_UMQ,
-	X_EOR_ST_WPQ,
-	X_EOR_ST_UPQ,
-	X_EOR_ST_WSQ,
-	X_EOR_ST_USQ,
-	X_EOR_ST_WATQ,
-	X_EOR_ST_UATQ,
-	X_EOR_ST_WAXQ,
-	X_EOR_ST_UAXQ,
-
 	I_OR_WT,
 	X_OR_WI,
 
@@ -525,32 +466,18 @@ enum ICODE {
 	X_OR_WAX,
 	X_OR_UAX,
 
-	X_OR_ST_WMQ,
-	X_OR_ST_UMQ,
-	X_OR_ST_WPQ,
-	X_OR_ST_UPQ,
-	X_OR_ST_WSQ,
-	X_OR_ST_USQ,
-	X_OR_ST_WATQ,
-	X_OR_ST_UATQ,
-	X_OR_ST_WAXQ,
-	X_OR_ST_UAXQ,
-
 	I_ASL_WR,
 	I_ASL_WT,
 	I_ASL_WI,
-	I_ASL_UIQ,
 
 	I_ASR_WT,
 	I_ASR_WI,
 
 	I_LSR_WT,
 	I_LSR_WI,
-	I_LSR_UIQ,
 
 	I_MUL_WT,
 	I_MUL_WI,
-	I_MUL_UIQ,
 
 	I_SDIV_WT,
 	I_SDIV_WI,
@@ -567,6 +494,135 @@ enum ICODE {
 	I_UMOD_UI,
 
 	I_DOUBLE_WT,
+
+	/* i-codes for 8-bit math with lo-byte of the primary register */
+
+	X_ADD_UIQ,
+	X_ADD_UMQ,
+	X_ADD_UPQ,
+	X_ADD_USQ,
+	X_ADD_UATQ,
+	X_ADD_UAXQ,
+
+	X_SUB_UIQ,
+	X_SUB_UMQ,
+	X_SUB_UPQ,
+	X_SUB_USQ,
+	X_SUB_UATQ,
+	X_SUB_UAXQ,
+
+	X_ISUB_UIQ,
+	X_ISUB_UMQ,
+	X_ISUB_UPQ,
+	X_ISUB_USQ,
+	X_ISUB_UATQ,
+	X_ISUB_UAXQ,
+
+	X_AND_UIQ,
+	X_AND_UMQ,
+	X_AND_UPQ,
+	X_AND_USQ,
+	X_AND_UATQ,
+	X_AND_UAXQ,
+
+	X_EOR_UIQ,
+	X_EOR_UMQ,
+	X_EOR_UPQ,
+	X_EOR_USQ,
+	X_EOR_UATQ,
+	X_EOR_UAXQ,
+
+	X_OR_UIQ,
+	X_OR_UMQ,
+	X_OR_UPQ,
+	X_OR_USQ,
+	X_OR_UATQ,
+	X_OR_UAXQ,
+
+	I_ASL_UIQ,
+
+	I_LSR_UIQ,
+
+	I_MUL_UIQ,
+
+	/* i-codes for modifying a variable with "+=", "-=", "&=", "^=", "|=" */
+
+	X_ADD_ST_WMQ,
+	X_ADD_ST_UMQ,
+	X_ADD_ST_WPQ,
+	X_ADD_ST_UPQ,
+	X_ADD_ST_WSQ,
+	X_ADD_ST_USQ,
+	X_ADD_ST_WATQ,
+	X_ADD_ST_UATQ,
+	X_ADD_ST_WAXQ,
+	X_ADD_ST_UAXQ,
+
+	X_ISUB_ST_WMQ,
+	X_ISUB_ST_UMQ,
+	X_ISUB_ST_WPQ,
+	X_ISUB_ST_UPQ,
+	X_ISUB_ST_WSQ,
+	X_ISUB_ST_USQ,
+	X_ISUB_ST_WATQ,
+	X_ISUB_ST_UATQ,
+	X_ISUB_ST_WAXQ,
+	X_ISUB_ST_UAXQ,
+
+	X_AND_ST_WMQ,
+	X_AND_ST_UMQ,
+	X_AND_ST_WPQ,
+	X_AND_ST_UPQ,
+	X_AND_ST_WSQ,
+	X_AND_ST_USQ,
+	X_AND_ST_WATQ,
+	X_AND_ST_UATQ,
+	X_AND_ST_WAXQ,
+	X_AND_ST_UAXQ,
+
+	X_EOR_ST_WMQ,
+	X_EOR_ST_UMQ,
+	X_EOR_ST_WPQ,
+	X_EOR_ST_UPQ,
+	X_EOR_ST_WSQ,
+	X_EOR_ST_USQ,
+	X_EOR_ST_WATQ,
+	X_EOR_ST_UATQ,
+	X_EOR_ST_WAXQ,
+	X_EOR_ST_UAXQ,
+
+	X_OR_ST_WMQ,
+	X_OR_ST_UMQ,
+	X_OR_ST_WPQ,
+	X_OR_ST_UPQ,
+	X_OR_ST_WSQ,
+	X_OR_ST_USQ,
+	X_OR_ST_WATQ,
+	X_OR_ST_UATQ,
+	X_OR_ST_WAXQ,
+	X_OR_ST_UAXQ,
+
+	X_ADD_ST_WMIQ,
+	X_ADD_ST_UMIQ,
+	X_ADD_ST_WPIQ,
+	X_ADD_ST_UPIQ,
+	X_ADD_ST_WSIQ,
+	X_ADD_ST_USIQ,
+	X_ADD_ST_WATIQ,
+	X_ADD_ST_UATIQ,
+	X_ADD_ST_WAXIQ,
+	X_ADD_ST_UAXIQ,
+
+	X_SUB_ST_WMIQ,
+	X_SUB_ST_UMIQ,
+	X_SUB_ST_WPIQ,
+	X_SUB_ST_UPIQ,
+	X_SUB_ST_WSIQ,
+	X_SUB_ST_USIQ,
+	X_SUB_ST_WATIQ,
+	X_SUB_ST_UATIQ,
+	X_SUB_ST_WAXIQ,
+	X_SUB_ST_UAXIQ,
 
 	/* i-codes for 32-bit longs */
 
@@ -730,7 +786,7 @@ struct tag_symbol {
 
 /* "do"/"for"/"while"/"switch" statement stack */
 
-#define WS_COUNT 7 /* number of ints per "while" entry */
+#define WS_COUNT 8 /* number of ints per "while" entry */
 #define WS_TOTAL (20 * WS_COUNT)
 #define WS_LIMIT (ws + WS_TOTAL - WS_COUNT)
 
@@ -746,6 +802,7 @@ struct tag_symbol {
 #define WS_BODY_LABEL     5
 #define WS_SWITCH_LABEL   5
 #define WS_EXIT_LABEL     6
+#define WS_SWITCH_TYPE    7
 
 /* possible entries for "WS_TYPE" */
 
