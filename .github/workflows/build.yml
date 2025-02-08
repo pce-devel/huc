@@ -40,7 +40,7 @@ jobs:
       - name: Build on Windows
         if: startsWith(matrix.os, 'windows')
         run: |
-          ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -c "pacman -S binutils make mingw-w64-x86_64-gcc git --noconfirm"
+          ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -c "pacman -S binutils make mingw-w64-x86_64-gcc mingw-w64-x86_64-make git --noconfirm"
           ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -where %CD% -c "make"
           echo Build Complete
       - name: Build on MacOs-13
