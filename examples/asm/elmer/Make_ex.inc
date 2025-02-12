@@ -59,7 +59,7 @@ TARGETS = *.pce *.sgx *.iso *.ovl *.out *.lst *.sym *.s
 
 clean::
 ifeq ($(RM),del)
-	for %i in ( $(subst /,\,$(TARGETS)) ) do del "%i"
+	for %%i in ( $(subst /,\,$(TARGETS)) ) do del "%%i"
 else
 	$(RM) $(TARGETS)
 endif

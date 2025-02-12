@@ -51,7 +51,10 @@ package:
 	find examples/asm -type f -name '*.bin' -delete
 	mv tmp/* bin/
 	rm -d tmp
+ifeq ($(OS),Windows_NT)
+	cp /mingw64/bin/mingw32-make bin/
+endif
 	rm -f huc-$(DATE)-$(PLATFORMSUFFIX).zip
-	zip -r huc-$(DATE)-$(PLATFORMSUFFIX).zip * -x *.zip -x .*
+	cd .. ; zip -r huc/huc-$(DATE)-$(PLATFORMSUFFIX).zip huc/* -x *.zip -x .*
 
 examples: src

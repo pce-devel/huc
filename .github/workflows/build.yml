@@ -130,7 +130,7 @@ jobs:
       - name: Package ${{ matrix.os }}
         if: startsWith(matrix.os, 'windows')
         run: |
-          ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -c "pacman -S  binutils make git zip --noconfirm"
+          ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -c "pacman -S  binutils make mingw-w64-x86_64-make git zip --noconfirm"
           ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -where %CD% -c "make package"
           echo Package Complete
       - name: Package ${{ matrix.os }}
