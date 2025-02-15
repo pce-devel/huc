@@ -241,6 +241,8 @@ __trampolineptr =	$5FFF			; are in MPR2, tell PCEAS to
 
 CORE_BANK	=	bank(*) - _bank_base	; It isn't always zero! ;-)
 
+		.bank	CORE_BANK, "CORE_BANK"	; Give it a label.
+
 	.if	USING_MPR7
 CORE_PAGE	=	7			; User code runs in MPR7.
 	.else
@@ -600,7 +602,11 @@ CONST_BANK	.rs	2
 
 DATA_BANK	.rs	0
 		.data
+	.if	BUILDING_STAGE1
+		.bank	DATA_BANK
+	.else
 		.bank	DATA_BANK, ".data"
+	.endif
 		.org	$6000
 
 		.code
