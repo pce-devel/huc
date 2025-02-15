@@ -32,7 +32,7 @@ const unsigned char aSpriteDataBank[] = {
 
 struct bullet {
     int x, y;
-    char active;
+    signed char active;
 };
 
 struct bullet bullets[MAX_BULLETS];
@@ -147,7 +147,7 @@ void main(void)
 	unsigned int tic;
 	unsigned char i, j;
 	unsigned char bullet_wait;
-	char bonk_dir;
+	signed char bonk_dir;
 	char r;
 	unsigned char dead;
 	struct ship *sp;
