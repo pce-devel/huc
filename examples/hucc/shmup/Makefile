@@ -2,7 +2,7 @@ all: shmup.sgx shmup.iso
 
 include ../Make_ex.inc
 
-CFLAGS = --sgx -fno-recursive -fsigned-char -gC
+CFLAGS = -O2 --sgx -fno-recursive -gC -v
 CDFLAGS = --scd
 LIBS =
 
