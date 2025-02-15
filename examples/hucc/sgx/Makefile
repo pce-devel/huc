@@ -4,7 +4,7 @@ include ../Make_ex.inc
 
 SRC = sgx_test.c
 
-CFLAGS ?= --sgx -fno-recursive -gA
+CFLAGS ?= -O2 --sgx -fno-recursive -gA -v
 CDFLAGS = --scd
 LIBS =
 
