@@ -682,6 +682,48 @@ _set_sprpal.3	.macro
 
 ; ***************************************************************************
 ; ***************************************************************************
+;
+; N.B. Declared in hucc-gfx.h, but defined here because they're macros!
+;
+; void __fastcall __macro load_sprites( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned int num_groups<acc> );
+; void __fastcall __macro sgx_load_sprites( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned int num_groups<acc> );
+; void __fastcall __macro far_load_sprites( unsigned int vram<_di>, unsigned int num_groups<acc> );
+; void __fastcall __macro sgx_far_load_sprites( unsigned int vram<_di>, unsigned int num_groups<acc> );
+
+	.if	SUPPORT_SGX
+		.macro	_sgx_load_sprites.3
+		stz.l	<_ax
+		asl	a
+		sta.h	<_ax
+		call	_sgx_load_vram.3
+		.endm
+
+		.macro	_sgx_far_load_sprites.2
+		stz.l	<_ax
+		asl	a
+		sta.h	<_ax
+		call	_sgx_load_vram.3
+		.endm
+	.endif
+
+		.macro	_load_sprites.3
+		stz.l	<_ax
+		asl	a
+		sta.h	<_ax
+		call	_load_vram.3
+		.endm
+
+		.macro	_far_load_sprites.2
+		stz.l	<_ax
+		asl	a
+		sta.h	<_ax
+		call	_load_vram.3
+		.endm
+
+
+
+; ***************************************************************************
+; ***************************************************************************
 
 	.if	0
 __lbltsbi	.macro

@@ -97,6 +97,9 @@ extern void __fastcall sgx_load_bat( unsigned int vram<_di>, unsigned char __far
 
 extern void __fastcall load_palette( unsigned char palette<_al>, unsigned char __far *data<_bp_bank:_bp>, unsigned char num_palettes<_ah> );
 
+extern void __fastcall __macro load_sprites( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned int num_groups<acc> );
+extern void __fastcall __macro sgx_load_sprites( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned int num_groups<acc> );
+
 extern void __fastcall set_font_addr( unsigned int vram<acc> );
 extern void __fastcall set_font_pal( unsigned char palette<acc> );
 
@@ -130,6 +133,9 @@ extern void __fastcall sgx_far_load_bat( unsigned int vram<_di>, unsigned char t
 
 extern void __fastcall far_load_palette( unsigned char palette<_al>, unsigned char num_palettes<_ah> );
 extern void __fastcall far_load_font( unsigned char count<_al>, unsigned int vram<acc> );
+
+extern void __fastcall __macro far_load_sprites( unsigned int vram<_di>, unsigned int num_groups<acc> );
+extern void __fastcall __macro sgx_far_load_sprites( unsigned int vram<_di>, unsigned int num_groups<acc> );
 
 // Deprecated functions ...
 
