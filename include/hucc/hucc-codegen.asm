@@ -541,11 +541,11 @@ __switch_r.wr	.macro
 		jmp	[!table+, x]
 		.endm
 
-; !table:	dw	jmp1		; +01 x=\1
-;		dw	jmp2		; +23 x=\1+1
-;		dw	jmp3		; +45 x=\1+2
-;		dw	jmp4		; +67 x=\2
-;		dw	jmpdefault	; +89 x=\2+1
+; !table:	dw	jmp1		; +01 x=(\1 - \1)
+;		dw	jmp2		; +23 x=(\1 - \1)+1
+;		dw	jmp3		; +45 x=(\1 - \1)+2
+;		dw	jmp4		; +67 x=(\2 - \1)
+;		dw	jmpdefault	; +89 x=(\2 - \1)+1
 
 ; **************
 ; Y:A is the value to check for.
@@ -561,7 +561,7 @@ __switch_r.ur	.macro
 	.endif
 	.else
 		sec
-		sbc.l	#\1
+		sbc	#\1
 		bvc	!+
 		eor	#$80
 !:		bmi	!default+
@@ -574,11 +574,11 @@ __switch_r.ur	.macro
 		jmp	[!table+, x]
 		.endm
 
-; !table:	dw	jmp1		; +01 x=\1
-;		dw	jmp2		; +23 x=\1+1
-;		dw	jmp3		; +45 x=\1+2
-;		dw	jmp4		; +67 x=\2
-;		dw	jmpdefault	; +89 x=\2+1
+; !table:	dw	jmp1		; +01 x=(\1 - \1)
+;		dw	jmp2		; +23 x=(\1 - \1)+1
+;		dw	jmp3		; +45 x=(\1 - \1)+2
+;		dw	jmp4		; +67 x=(\2 - \1)
+;		dw	jmpdefault	; +89 x=(\2 - \1)+1
 
 ; **************
 ; the start of a "default" statement
