@@ -6,7 +6,7 @@
 ; Based on the original HuC and MagicKit functions by David Michel and the
 ; other original HuC developers.
 ;
-; Modifications copyright John Brandwood 2024.
+; Modifications copyright John Brandwood 2024-2025.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -31,12 +31,11 @@ _gfx_init.1	.proc
 		stz.h	<_di
 		jsr	vdc_di_to_mawr
 
-		lda	vdc_bat_limit		; Size of BAT determines
-		inc	a			; how many bitmapped BAT
-		sta	<__temp			; entries to write.
+		lda	vdc_bat_height		; Size of BAT determines
+		sta	<__temp			; how many to write.
 
-		lda.h	<_ax
-		lsr	a
+		lda.h	<_ax			; Convert VRAM address into a
+		lsr	a			; tile number.
 		ror.l	<_ax
 		lsr	a
 		ror.l	<_ax
@@ -45,20 +44,31 @@ _gfx_init.1	.proc
 		lsr	a
 		ror.l	<_ax
 		ora	#0			; Palette 0.
-		ldy.l	<_ax
+		tay
+		lda.l	<_ax
 
 		clx
-.loop:		sty	VDC_DL
-		sta	VDC_DH
-		iny
-		bne	!+
-		inc	a
-!:		dex
-		bne	.loop
-		dec	<__temp
-		bne	.loop
 
-		leave
+.line_loop:	pha
+		phy
+		ldx	vdc_bat_width
+.tile_loop:	sta	VDC_DL
+		sty	VDC_DH
+		clc
+		adc	vdc_bat_height
+		bcc	!+
+		iny
+!:		dex
+		bne	.tile_loop
+.next_line:	ply
+		pla
+		inc	a
+		bne	!+
+		iny
+!:		dec	<__temp
+		bne	.line_loop
+
+.done:		leave
 
 		.endp
 
