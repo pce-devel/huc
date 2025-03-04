@@ -333,7 +333,7 @@ _gfx_xdir	=	__fptr + 1
 		tay
 
 		lda	bit_mask, y
-		bbr0	<_si, .clr_bit0
+		bbr0	<_gfx_color, .clr_bit0
 .set_bit0:	ora	VDC_DL, x
 		bra	!+
 .clr_bit0:	eor	#$FF
@@ -341,7 +341,7 @@ _gfx_xdir	=	__fptr + 1
 !:		sta	VDC_DL, x
 
 		lda	bit_mask, y
-		bbr1	<_si, .clr_bit1
+		bbr1	<_gfx_color, .clr_bit1
 .set_bit1:	ora	VDC_DH, x
 		bra	!+
 .clr_bit1:	eor	#$FF
@@ -353,7 +353,7 @@ _gfx_xdir	=	__fptr + 1
 		jsr	set_di_to_mawr
 
 		lda	bit_mask, y
-		bbr2	<_si, .clr_bit2
+		bbr2	<_gfx_color, .clr_bit2
 .set_bit2:	ora	VDC_DL, x
 		bra	!+
 .clr_bit2:	eor	#$FF
@@ -361,7 +361,7 @@ _gfx_xdir	=	__fptr + 1
 !:		sta	VDC_DL, x
 
 		lda	bit_mask, y
-		bbr3	<_si, .clr_bit3
+		bbr3	<_gfx_color, .clr_bit3
 .set_bit3:	ora	VDC_DH, x
 		bra	!+
 .clr_bit3:	eor	#$FF
@@ -411,13 +411,13 @@ _gfx_xdir	=	__fptr + 1
 		sta.l	<_di			; and calc its address.
 		lda	VDC_DH, x
 		asl.l	<_di
-		asl	a
+		rol	a
 		asl.l	<_di
-		asl	a
+		rol	a
 		asl.l	<_di
-		asl	a
+		rol	a
 		asl.l	<_di
-		asl	a
+		rol	a
 		sta.h	<_di
 
 		lda.l	<_gfx_y1		; Add row within tile.
@@ -439,7 +439,9 @@ _gfx_xdir	=	__fptr + 1
 _gfx_plot.3:	.proc
 
 		clx				; Offset to PCE VDC.
+
 		jsr	!plot_pixel-
+
 		leave
 
 		.endp
