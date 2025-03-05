@@ -5,7 +5,7 @@
 ;
 ; Wrapper for using HuCC with the "CORE(not TM)" PC Engine library code.
 ;
-; Copyright John Brandwood 2024.
+; Copyright John Brandwood 2024-2025.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -23,7 +23,7 @@
 ;      MPR2 = bank $87 : SGX RAM or CD RAM
 ;      MPR3 = bank $xx : HuCC const data, init to $02 (DATA segment)
 ;      MPR4 = bank $xx : HuCC const data, init to $03
-;      MPR5 = bank $01 : HuCC permanent code & data (CODE segment)
+;      MPR5 = bank $01 : HuCC permanent code & data (HOME segment)
 ;      MPR6 = bank $xx : Banked ASM library & HuCC procedures
 ;      MPR7 = bank $00 : CORE(not TM) base code & call-trampolines
 ;
@@ -38,7 +38,7 @@
 ;      MPR2 = bank $01 : TED2 RAM
 ;      MPR3 = bank $xx : HuCC const data, init to $04 (DATA segment)
 ;      MPR4 = bank $xx : HuCC const data, init to $05
-;      MPR5 = bank $03 : HuCC permanent code & data (CODE segment)
+;      MPR5 = bank $03 : HuCC permanent code & data (HOME segment)
 ;      MPR6 = bank $xx : Banked ASM library & HuCC procedures
 ;      MPR7 = bank $02 : CORE(not TM) base code & call-trampolines
 ;
@@ -53,7 +53,7 @@
 ;      MPR2 = bank $87 : SGX RAM or CD RAM
 ;      MPR3 = bank $xx : HuCC const data, init to $82 (DATA segment)
 ;      MPR4 = bank $xx : HuCC const data, init to $83
-;      MPR5 = bank $81 : HuCC permanent code & data (CODE segment)
+;      MPR5 = bank $81 : HuCC permanent code & data (HOME segment)
 ;      MPR6 = bank $xx : Banked ASM library & HuCC procedures
 ;      MPR7 = bank $80 : CORE(not TM) base code & call-trampolines
 ;
@@ -68,7 +68,7 @@
 ;      MPR2 = bank $87 : SGX RAM or CD RAM
 ;      MPR3 = bank $xx : HuCC const data, init to $6A (DATA segment)
 ;      MPR4 = bank $xx : HuCC const data, init to $6B
-;      MPR5 = bank $69 : HuCC permanent code & data (CODE segment)
+;      MPR5 = bank $69 : HuCC permanent code & data (HOME segment)
 ;      MPR6 = bank $xx : Banked ASM library & HuCC procedures
 ;      MPR7 = bank $68 : CORE(not TM) base code & call-trampolines
 ;
@@ -94,8 +94,22 @@ HUCC		=	1
 
 		include "hucc-config.inc"	; Allow for HuCC customization.
 
+		; FAST_MULTIPLY implies that we need a bank to put the data.
+		;
+		; This is undefined if someone has an old "hucc-config.inc".
+
+	.ifndef	FAST_MULTIPLY
+FAST_MULTIPLY	=	0
+	.else
+	.if	FAST_MULTIPLY
+	.ifndef	NEED_HOME_BANK
+NEED_HOME_BANK	=	1
+	.endif
+	.endif
+	.endif
+
 		; This is where you can change which asm library forms the
- 		; foundation structure.
+		; foundation structure.
 
 	.ifndef	HUCC_NO_CORE
 
@@ -109,6 +123,17 @@ HUCC		=	1
 		; easy to understand and modify.
 
 		include "bare-startup.asm"	; Foundation library.
+	.endif
+
+		; Allocate this as early as possible to ensure bank-aligned.
+
+	.if	FAST_MULTIPLY
+	.ifndef	HOME_BANK
+		.fail	FAST_MULTIPLY is set but there is no HOME_BANK!
+	.endif
+		.home
+		include	"squares.asm"
+		.code
 	.endif
 
 		;
@@ -168,10 +193,10 @@ ___SDCC_m6502_ret7:	.ds	1
 		; a CDROM game when loading different overlays.
 
 		.bss
-clock_hh	.ds	1			; System Clock, hours   (0-11)
+clock_hh	.ds	1			; System Clock, hours	(0-11)
 clock_mm	.ds	1			; System Clock, minutes (0-59)
 clock_ss	.ds	1			; System Clock, seconds (0-59)
-clock_tt	.ds	1			; System Clock, ticks   (0-59)
+clock_tt	.ds	1			; System Clock, ticks	(0-59)
 		.code
 
 		; Critical HuCC libraries that the compiler depends upon.
@@ -207,20 +232,8 @@ clock_tt	.ds	1			; System Clock, ticks   (0-59)
 ; in the CORE_BANK, usually ".bank 0"; and because this is assembled with the
 ; default configuration from "include/core-config.inc", which sets the option
 ; "USING_MPR7", then we're running in MPR7 ($E000-$FFFF).
-;
 
-		.code
-
-core_main:	tma7				; Get the CORE_BANK.
-
-		inc	a			; MPR0 = $FF
-		tam6                            ; MPR1 = PCE_RAM
-;		inc	a                       ; MPR2 = SGX_RAM or CD_RAM
-		tam5                            ; MPR3 = CONST_BANK + 0
-		lda	#CONST_BANK + _bank_base; MPR4 = CONST_BANK + 1
-		tam3                            ; MPR5 = CORE_BANK + 1
-		inc	a                       ; MPR6 = CORE_BANK + 1
-		tam4                            ; MPR7 = CORE_BANK + 0
+core_main	.proc
 
 	.if	SUPPORT_SGX
 		lda	#$F9			; Map the 2nd SGX RAM bank.
@@ -228,6 +241,18 @@ core_main:	tma7				; Get the CORE_BANK.
 		lda	#$87			; Map the last CD RAM bank.
 	.endif
 		tam2
+
+		lda	#CONST_BANK + _bank_base; Map HuCC's constant data.
+		tam3
+		inc	a
+		tam4
+
+	.ifdef	HOME_BANK
+		lda	#HOME_BANK + _bank_base	; Map HuCC's .HOME bank.
+	.else
+		inc	a
+	.endif
+		tam5
 
 		php				; Disable interrupts while
 		sei				; clearing overlay's BSS.
@@ -306,6 +331,23 @@ core_main:	tma7				; Get the CORE_BANK.
 
 .stack_fill:	db	$EA,$EA			; To make it easier to see.
 
+	.if	!CDROM
+
+.rom_tia:	tia	$1234, VDC_DL, 32
+		rts
+
+.rom_tii:	tii	$1234, $5678, $9ABC
+		rts
+
+		.bss
+ram_tia		ds	8
+ram_tii		ds	8
+		.code
+
+	.endif	!CDROM
+
+		.endp
+
 		;
 		; Self-Modifying TIA and TII instruction subroutines.
 		;
@@ -321,20 +363,7 @@ ram_tia:	tia	$1234, VDC_DL, 32
 ram_tii:	tii	$1234, $5678, $9ABC
 		rts
 
-	.else
-
-.rom_tia:	tia	$1234, VDC_DL, 32
-		rts
-
-.rom_tii:	tii	$1234, $5678, $9ABC
-		rts
-
-		.bss
-ram_tia		ds	8
-ram_tii		ds	8
-		.code
-
-	.endif
+	.endif	CDROM
 
 		rsset	ram_tia
 ram_tia_opc	rs	1
@@ -395,16 +424,3 @@ hucc_vbl:	call	vbl_init_scroll		; Prepare for the next frame.
 		cld
 
 		jmp	xfer_palettes		; Upload any palette changes.
-
-
-
-; ***************************************************************************
-; ***************************************************************************
-;
-; core_main - This is executed after "CORE(not TM)" library initialization.
-;
-; This is the first code assembled after the library includes, so we're still
-; in the CORE_BANK, usually ".bank 0"; and because this is assembled with the
-; default configuration from "include/core-config.inc", which sets the option
-; "USING_MPR7", then we're running in MPR7 ($E000-$FFFF).
-;
