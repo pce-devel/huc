@@ -1913,6 +1913,21 @@ __uge_b.usq	.macro	; __STACK
 
 ; **************
 ; optimized boolean test
+; C is true (1) if Y:A == memory-value, else false (0)
+; this MUST set the C flag for the subsequent branches!
+
+__equ_w.wax	.macro
+		cmp.l	\1, x
+		bne	!false+
+		tya
+		cmp.h	\1, x
+		beq	!+
+!false:		clc
+!:
+		.endm
+
+; **************
+; optimized boolean test
 ; C is true (1) if Y:A != memory-value, else false (0)
 ; this MUST set the C flag for the subsequent branches!
 

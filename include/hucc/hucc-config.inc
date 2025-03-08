@@ -51,7 +51,7 @@ HUCC_DEBUG_SP	=	0	; (0 or 1)
 ;
 ; Most CD games put two copies of the same ISO track on the CD, so that data
 ; can be read from the secondary track if the drive has a problem reading it
-; it from the primary location.
+; from the primary location.
 ;
 ; If set, the secondary track will be enabled when the library first starts.
 ;
@@ -81,9 +81,23 @@ USING_PSGDRIVER	=	0	; (0 or 1)
 	.endif
 
 ;
+; Include a 2KByte data table to support super-fast multiplication?
+;
+; This data table is also needed by sound drivers that can play DefleMask or
+; Furnace tunes, because those trackers use multiplies quite extensively.
+;
+; Note that enabling this option also implies creating a HOME_BANK that HuCC
+; will map into MPR5 ($A000..$BFFF).
+;
+
+	.ifndef FAST_MULTIPLY
+FAST_MULTIPLY	=	0	; (0 or 1)
+	.endif
+
+;
 ; Support development for the Turbo EverDrive v2?
 ;
-; This only applies to HuCard programs, but when chosen, the "CORE(not TM)"
+; This only applies to HuCARD programs, but when chosen, the "CORE(not TM)"
 ; kernel is moved from bank 0 to bank 2, and a minimal set of startup code
 ; is put in bank 0.
 ;
@@ -299,10 +313,10 @@ ZX0_WINMSK	=	($0800 - 1)
 ;
 ; By default, DATA_BANK is the next bank after the CORE_BANK.
 ;
-; RESERVE_BANKS allows developers to reserve some banks between the CORE_BANK
+; HUC_RESERVE_BANKS allows developers to reserve space between the CORE_BANK
 ; and the DATA_BANK that they can use however they wish.
 ;
-; One use for RESERVE_BANKS is to create empty space that PCEAS can use when
+; One use for HUC_RESERVE_BANKS is to allocate space that PCEAS can use when
 ; it relocates procedures. This provides a way for a developer to group code
 ; together at the start of memory, and leave the maximum number of banks for
 ; loading dynamic data from CD-ROM.

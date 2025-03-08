@@ -23,10 +23,6 @@
 		include "vce.asm"		; Useful VCE routines.
 		include "vdc.asm"		; Useful VCE routines.
 
-		.bss
-_font_base	.ds	2
-		.code
-
 
 
 ; ***************************************************************************
@@ -224,7 +220,7 @@ screen_size_vdc	.proc
 		.bss
 
 ; **************
-; 16-bytes of VDC HuC BAT and TILE info.
+; 16-bytes of VDC HuC BAT information.
 ;
 ; N.B. MUST be 16-bytes before the SGX versions to use PCE_VDC_OFFSET.
 ;
@@ -237,21 +233,18 @@ vdc_bat_x_mask:	ds	1	; $1F, $3F, $7F
 vdc_bat_y_mask:	ds	1	; $1F, $3F
 vdc_bat_limit:	ds	1	; (>$03FF), (>$07FF), (>$0FFF), (>$1FFF)
 
-; Initialized by set_tile_data()
-vdc_tile_type	ds	1	; HuC sets 8 or 16
-vdc_num_tiles	ds	2	; HuC sets 0..255, 0==256.
-vdc_tile_addr	ds	2	; Where the TILE data is in ROM.
-vdc_tile_bank	ds	1
-vdc_attr_bank	ds	1	; Where the ATTR data is in ROM.
-vdc_attr_addr	ds	2
+; From hucc-old-spr.asm just to save space. This NEEDS to be changed!
+spr_max:	ds	1
+spr_clr:	ds	1
 
-; Initialized by load_tile() or set_tile_address()
-vdc_tile_base	ds	2	; Where the TILE data is in VRAM / 16.
+_font_base	ds	2
+
+		ds	7	; UNUSED, needed for padding.
 
 	.if	SUPPORT_SGX
 
 ; **************
-; 16-bytes of SGX HuC BAT and TILE info.
+; 16-bytes of SGX HuC BAT information.
 ;
 ; N.B. MUST be 16-bytes after the VDC versions to use SGX_VDC_OFFSET.
 ;
@@ -264,16 +257,9 @@ sgx_bat_x_mask:	ds	1	; $1F, $3F, $7F
 sgx_bat_y_mask:	ds	1	; $1F, $3F
 sgx_bat_limit:	ds	1	; (>$03FF), (>$07FF), (>$0FFF), (>$1FFF)
 
-; Initialized by sgx_set_tile_data()
-sgx_tile_type	ds	1	; HuC sets 8 or 16
-sgx_num_tiles	ds	2	; HuC sets 0..255, 0==256.
-sgx_tile_addr	ds	2	; Where the TILE data is in ROM.
-sgx_tile_bank	ds	1
-sgx_attr_bank	ds	1	; Where the ATTR data is in ROM.
-sgx_attr_addr	ds	2
-
-; Initialized by sgx_load_tile() or sgx_set_tile_address()
-sgx_tile_base	ds	2	; Where the TILE data is in VRAM / 16.
+; From hucc-old-spr.asm just to save space. This NEEDS to be changed!
+sgx_spr_max:	ds	1
+sgx_spr_clr:	ds	1
 
 	.endif
 
@@ -402,86 +388,6 @@ _set_xres.2	.proc
 
 
 
-; ***************************************************************************
-; ***************************************************************************
-;
-; void __fastcall set_tile_address( unsigned int vram<acc> );
-; void __fastcall sgx_set_tile_address( unsigned int vram<acc> );
-
-	.if	SUPPORT_SGX
-set_tiles_sgx:	ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$F0		        ; Turn "clx" into a "beq".
-	.endif
-
-set_tiles_vdc:	clx				; Offset to PCE VDC.
-
-set_tile_base:	sty	<__temp			; Set TILE base = (VRAM / 16).
-		lsr	<__temp
-		ror	a
-		lsr	<__temp
-		ror	a
-		lsr	<__temp
-		ror	a
-		lsr	<__temp
-		ror	a
-		sta.l	vdc_tile_base, x
-		lda	<__temp
-		sta.h	vdc_tile_base, x
-		rts
-
-		.alias	_set_tile_address.1	= set_tiles_vdc
-		.alias	_sgx_set_tile_address.1	= set_tiles_sgx
-
-		.alias	_set_map_tile_base.1	= set_tiles_vdc
-		.alias	_sgx_set_map_tile_base.1= set_tiles_sgx
-
-
-
-; ***************************************************************************
-; ***************************************************************************
-;
-; void __fastcall set_tile_data( unsigned char *tile_ex<_di> );
-;
-; void __fastcall __nop set_tile_data( unsigned char far *map<vdc_tile_bank:vdc_tile_addr>, unsigned char nb_tile<vdc_num_tiles>, unsigned char far *ptable<vdc_attr_bank:vdc_attr_addr>, unsigned char type<vdc_tile_type> );
-; void __fastcall __nop sgx_set_tile_data( unsigned char far *map<vdc_tile_bank:vdc_tile_addr>, unsigned char nb_tile<vdc_num_tiles>, unsigned char far *ptable<vdc_attr_bank:vdc_attr_addr>, unsigned char type<vdc_tile_type> );
-;
-; void __fastcall __nop set_far_tile_data( unsigned char tile_bank<vdc_tile_bank>, unsigned char *tile_addr<vdc_tile_addr>, unsigned char num_tiles<vdc_num_tiles>, unsigned char palette_table_bank<vdc_attr_bank>, unsigned char *palette_table_addr<vdc_attr_addr>, unsigned char tile_type<vdc_tile_type> );
-; void __fastcall __nop sgx_set_far_tile_data( unsigned char tile_bank<vdc_tile_bank>, unsigned char *tile_addr<vdc_tile_addr>, unsigned char num_tiles<vdc_num_tiles>, unsigned char palette_table_bank<vdc_attr_bank>, unsigned char *palette_table_addr<vdc_attr_addr>, unsigned char tile_type<vdc_tile_type> );
-;
-; tile,	tile base index
-; nb_tile, number of tile
-; ptable,	tile palette table address
-; type, tile type (8 or 16)
-
-_set_tile_data.1:
-		cly
-		lda	[_di], y
-		sta.l	vdc_num_tiles
-		iny
-		iny
-		lda	[_di], y
-		sta	vdc_tile_type
-		iny
-		iny
-		lda	[_di], y
-		sta	vdc_tile_bank
-		iny
-		iny
-		lda	[_di], y
-		sta.l	vdc_tile_addr
-		iny
-		lda	[_di], y
-		sta.h	vdc_tile_addr
-		iny
-		lda	[_di], y
-		sta.l	vdc_attr_addr
-		iny
-		lda	[_di], y
-		sta.h	vdc_attr_addr
-		lda	#CONST_BANK + _bank_base
-		sta	vdc_attr_bank
-		rts
-
 
 
 ; ***************************************************************************
@@ -494,62 +400,6 @@ _set_tile_data.1:
 
 
 load_vram_group	.procgroup			; These routines share code!
-
-; ***************************************************************************
-; ***************************************************************************
-;
-; void __fastcall load_tile( unsigned int vram<_di> );
-; void __fastcall sgx_load_tile( unsigned int vram<_di> );
-
-	.if	SUPPORT_SGX
-		.proc	_sgx_load_tile.1
-
-		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$F0		        ; Turn "clx" into a "beq".
-
-		.ref	_load_tile.1
-		.endp
-	.endif
-
-		.proc	_load_tile.1
-
-		clx				; Offset to PCE VDC.
-
-		lda.l	<_di			; Set VRAM address.
-		ldy.h	<_di
-		jsr	set_tile_base		; Set TILE number (VRAM / 16).
-
-		lda.l	vdc_tile_addr, x
-		sta.l	<_bp
-		lda.h	vdc_tile_addr, x
-		sta.h	<_bp
-		lda	vdc_tile_bank, x
-		sta	<_bp_bank
-
-		lda.l	vdc_num_tiles, x	; #tiles lo-byte (0 == 256).
-		stz.l	<_ax
-		cmp	#1			; CC if 0, CS if NZ.
-!:		ror	a
-		eor	#$80			; Invert top bit.
-		ror.l	<_ax
-		lsr	a
-		ror.l	<_ax
-
-		ldy	vdc_tile_type, x	; Set C if using 8x8.
-		cpy	#16
-		beq	!+
-		lsr	a
-		ror.l	<_ax
-		lsr	a
-		ror.l	<_ax
-
-!:		sta.h	<_ax
-		bra	huc_load_vram
-
-		.ref	_load_vram.3
-		.endp
-
-
 
 ; ***************************************************************************
 ; ***************************************************************************
@@ -1163,6 +1013,7 @@ put_char_sgx	.proc
 		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
 		db	$F0			; Turn "clx" into a "beq".
 
+		.ref	put_char_vdc		; Need put_char_vdc
 		.endp
 	.endif
 
@@ -1180,7 +1031,6 @@ put_char_vdc	.proc
 		bra	!output+
 
 		.ref	put_hex_vdc		; Need put_number_vdc
-
 		.endp
 
 		.alias	_put_char.3		= put_char_vdc
@@ -1198,6 +1048,7 @@ put_digit_sgx	.proc
 		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
 		db	$F0			; Turn "clx" into a "beq".
 
+		.ref	put_digit_vdc		; Need put_digit_vdc
 		.endp
 	.endif
 
@@ -1220,7 +1071,6 @@ put_digit_vdc	.proc
 		bra	!output+
 
 		.ref	put_hex_vdc		; Need put_number_vdc
-
 		.endp
 
 		.alias	_put_digit.3		= put_digit_vdc

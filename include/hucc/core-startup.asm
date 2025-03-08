@@ -267,7 +267,7 @@ core_boot:	jmp	* + 6			; Allow someone to patch this.
 	.endif	BUILDING_STAGE1
 	.else
 	.if	CDROM
-	.if	CDROM == 2
+	.if	CDROM == SUPER_CD
 	.if	BUILDING_STAGE1
 		db	"SC1"			; PCE SuperCD Stage1 loader.
 	.else
@@ -275,7 +275,7 @@ core_boot:	jmp	* + 6			; Allow someone to patch this.
 	.endif	BUILDING_STAGE1
 	.else
 		db	" CD"			; PCE CD.
-	.endif	CDROM == 2
+	.endif	CDROM == SUPER_CD
 	.else
 		db	"PCE"			; PCE HuCARD.
 	.endif	CDROM
