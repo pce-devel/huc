@@ -20,4 +20,7 @@ $(SUBDIRS):
 	@echo " -----> make $(COMMAND) in $@"
 	$(MAKE) --directory=$@ $(COMMAND)
 
+else
+all clean:
+
 endif
