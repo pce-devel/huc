@@ -16,3 +16,5 @@ endif
 	$(CC) $(CDEFS) $(CFLAGS) -c $< -o $@
 %.o: %.cc
 	$(CXX) $(CDEFS) $(CXXFLAGS) -c $< -o $@
+%.o: %.rc
+	windres $< -o $@

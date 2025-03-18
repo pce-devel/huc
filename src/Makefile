@@ -2,7 +2,7 @@
 # Makefile for HuC sources
 #
 
-SUBDIRS = huc hucc mkit isolink tools
+SUBDIRS = huc hucc mkit isolink tools plugins
 
 all clean:
 	@$(MAKE) $(SUBDIRS) "COMMAND=$@"

@@ -40,7 +40,7 @@ endif
 
 package:
 	mkdir -p tmp
-	strip bin/*
+	cd bin ; find . -type f -exec strip {} +
 	mv bin/* tmp/
 	$(MAKE) --directory=src   clean > /dev/null
 	$(MAKE) --directory=tgemu clean > /dev/null
