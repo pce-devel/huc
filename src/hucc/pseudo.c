@@ -45,7 +45,7 @@ void dopsdinc (void)
 		readstr();	/* read the label name */
 		prefix();
 		outstr(litq2);
-		outstr(":\n");
+		outstr(":");
 		addglb_far(litq2, CINT);
 
 		if (!match(",")) {
@@ -58,7 +58,7 @@ void dopsdinc (void)
 
 		if (readqstr() == 0) {
 			/* read the filename */
-			error("bad filename in incpal");
+			error("bad filename in #incpal()");
 			kill();
 			return;
 		}
@@ -84,7 +84,7 @@ void dopsdinc (void)
 		ol(".code");
 
 		if (numericarg > 2)
-			error("Maximum 2 numeric arg for incpal(name,\"filename\" [,start_pal] [,nb_pal])");
+			error("Incorrect arguments for #incpal(label, \"filename\" [,start_pal [,nb_pal]])");
 
 		kill();
 	}
@@ -98,7 +98,7 @@ void dopsdinc (void)
 		readstr();	/* read the label name */
 		prefix();
 		outstr(litq2);
-		outstr(":\n");
+		outstr(":");
 		addglb_far(litq2, CUCHAR);
 
 		if (!match(",")) {
@@ -110,49 +110,12 @@ void dopsdinc (void)
 		ot(".incbin\t\t\"");
 		if (readqstr() == 0) {
 			/* read the filename */
-			error("bad filename in incbin");
+			error("bad filename in #incbin()");
 			kill();
 			return;
 		}
 		outstr(litq2);
 		outstr("\"\n");
-
-		if (!match(")"))
-			error("missing )");
-
-		nl();
-		ol(".code");
-		kill();
-	}
-	else
-	if (amatch("bat", 3)) {
-		if (!match("("))
-			error("missing (");
-
-		ol(".data");
-
-		readstr();	/* read the label name */
-		prefix();
-		outstr(litq2);
-		outstr(":\n");
-		addglb_far(litq2, CINT);
-
-		if (!match(",")) {
-			error("missing ,");
-			kill();
-			return;
-		}
-
-		ot(".incbat\t\t\"");
-
-		if (readqstr() == 0) {
-			error("bad filename in incbat");
-			kill();
-			return;
-		}
-
-		outstr(litq2);
-		outstr("\"");
 
 		if (match(","))
 			outstr(", ");
@@ -171,10 +134,132 @@ void dopsdinc (void)
 		nl();
 		ol(".code");
 
-		if ((numericarg != 1) &&
-		    (numericarg != 3) &&
-		    (numericarg != 5))
-			error("Either 1,3 or 5 numeric arguments are needed for incbat statement");
+		if (numericarg > 2)
+			error("Incorrect arguments for #incbin(label, \"filename\" [,offset [,length]])");
+
+		kill();
+	}
+	else
+	if (amatch("bat", 3)) {
+		if (!match("("))
+			error("missing (");
+
+		ol(".data");
+
+		readstr();	/* read the label name */
+		prefix();
+		outstr(litq2);
+		outstr(":");
+		addglb_far(litq2, CINT);
+
+		if (!match(",")) {
+			error("missing ,");
+			kill();
+			return;
+		}
+
+		ot(".incbat\t\t\"");
+
+		if (readqstr() == 0) {
+			error("bad filename in #incbat()");
+			kill();
+			return;
+		}
+
+		outstr(litq2);
+		outstr("\"");
+
+		if (match(","))
+			outstr(", ");
+
+		numericarg = 0;
+
+		while (!match(")")) {
+			numericarg++;
+
+			if (number(&dummy))
+				outdec(dummy);
+			else {
+				readstr();
+				prefix();
+				outstr(litq2);
+				if (!match(")"))
+					error("A #incchr() label can only be the final #incbat() argument!");
+				break;
+			}
+
+			if (match(","))
+				outstr(", ");
+		}
+
+		nl();
+		ol(".code");
+
+		if ((numericarg == 0) ||
+		    (numericarg >= 7))
+			error("Incorrect arguments for #incbat(label, \"filename\", addr, [[,x ,y] ,w ,h] [,chrset])");
+
+		kill();
+	}
+	else
+	if (amatch("map", 3)) {
+		if (!match("("))
+			error("missing (");
+
+		ol(".data");
+
+		readstr();	/* read the label name */
+		prefix();
+		outstr(litq2);
+		outstr(":");
+		addglb_far(litq2, CINT);
+
+		if (!match(",")) {
+			error("missing ,");
+			kill();
+			return;
+		}
+
+		ot(".incmap\t\t\"");
+
+		if (readqstr() == 0) {
+			error("bad filename in #incmap()");
+			kill();
+			return;
+		}
+
+		outstr(litq2);
+		outstr("\"");
+
+		if (match(","))
+			outstr(", ");
+
+		numericarg = 0;
+
+		while (!match(")")) {
+			numericarg++;
+
+			if (number(&dummy))
+				outdec(dummy);
+			else {
+				readstr();
+				prefix();
+				outstr(litq2);
+				if (!match(")"))
+					error("A #inctile()/#incchr() label can only be the final #incmap() argument!");
+				break;
+			}
+
+			if (match(","))
+				outstr(", ");
+		}
+
+		nl();
+		ol(".code");
+
+		if ((numericarg == 0) ||
+		    (numericarg >= 6))
+			error("Incorrect arguments for #incmap(label, \"filename\", [[,x ,y] ,w ,h] ,tileset)");
 
 		kill();
 	}
@@ -188,7 +273,7 @@ void dopsdinc (void)
 		readstr();	/* read the label name */
 		prefix();
 		outstr(litq2);
-		outstr(":\n");
+		outstr(":");
 		addglb_far(litq2, CINT);
 
 		if (!match(",")) {
@@ -200,7 +285,7 @@ void dopsdinc (void)
 		ot(".incspr\t\t\"");
 
 		if (readqstr() == 0) {
-			error("bad filename in incspr");
+			error("bad filename in #incspr()");
 			kill();
 			return;
 		}
@@ -228,7 +313,7 @@ void dopsdinc (void)
 		if ((numericarg != 0) &&
 		    (numericarg != 2) &&
 		    (numericarg != 4))
-			error("Either 0,2 or 4 numeric arguments are needed for incspr statement");
+			error("Incorrect arguments for #incspr(label, \"filename\", [[,x ,y] ,w ,h])");
 
 		kill();
 	}
@@ -242,7 +327,7 @@ void dopsdinc (void)
 		readstr();	/* read the label name */
 		prefix();
 		outstr(litq2);
-		outstr(":\n");
+		outstr(":");
 		addglb_far(litq2, CINT);
 
 		if (!match(",")) {
@@ -254,7 +339,7 @@ void dopsdinc (void)
 		ot(".incsprpal\t\"");
 
 		if (readqstr() == 0) {
-			error("bad filename in incsprpal");
+			error("bad filename in #incsprpal()");
 			kill();
 			return;
 		}
@@ -282,7 +367,7 @@ void dopsdinc (void)
 		if ((numericarg != 0) &&
 		    (numericarg != 2) &&
 		    (numericarg != 4))
-			error("Either 0,2 or 4 numeric arguments are needed for incsprpal statement");
+			error("Incorrect arguments for #incsprpal(label, \"filename\", [[,x ,y] ,w ,h])");
 
 		kill();
 	}
@@ -296,7 +381,7 @@ void dopsdinc (void)
 		readstr();	/* read the label name */
 		prefix();
 		outstr(litq2);
-		outstr(":\n");
+		outstr(": ");
 		addglb_far(litq2, CINT);
 
 		if (!match(",")) {
@@ -308,7 +393,7 @@ void dopsdinc (void)
 		ot(".incchr\t\t\"");
 
 		if (readqstr() == 0) {
-			error("bad filename in incchr");
+			error("bad filename in #incchr()");
 			kill();
 			return;
 		}
@@ -333,10 +418,8 @@ void dopsdinc (void)
 		nl();
 		ol(".code");
 
-		if ((numericarg != 0) &&
-		    (numericarg != 2) &&
-		    (numericarg != 4))
-			error("Either 0,2 or 4 numeric arguments are needed for incchr statement");
+		if (numericarg > 5)
+			error("Incorrect arguments for #incchr(label, \"filename\" [[,x ,y] ,w ,h] [,_OPTIMIZE])");
 
 		kill();
 	}
@@ -350,7 +433,7 @@ void dopsdinc (void)
 		readstr();	/* read the label name */
 		prefix();
 		outstr(litq2);
-		outstr(":\n");
+		outstr(":");
 		addglb_far(litq2, CINT);
 
 		if (!match(",")) {
@@ -362,7 +445,7 @@ void dopsdinc (void)
 		ot(".incchrpal\t\"");
 
 		if (readqstr() == 0) {
-			error("bad filename in incchrpal");
+			error("bad filename in #incchrpal()");
 			kill();
 			return;
 		}
@@ -390,7 +473,7 @@ void dopsdinc (void)
 		if ((numericarg != 0) &&
 		    (numericarg != 2) &&
 		    (numericarg != 4))
-			error("Either 0,2 or 4 numeric arguments are needed for incchrpal statement");
+			error("Incorrect arguments for #incchrpal(label, \"filename\", [[,x ,y] ,w ,h])");
 
 		kill();
 	}
@@ -407,7 +490,7 @@ void dopsdinc (void)
 		readstr();	/* read the label name */
 		prefix();
 		outstr(litq2);
-		outstr(":\n");
+		outstr(":");
 		addglb_far(litq2, CINT);
 
 		if (!match(",")) {
@@ -419,7 +502,7 @@ void dopsdinc (void)
 		ot(".inctile\t\"");
 
 		if (readqstr() == 0) {
-			error("bad filename in inctile");
+			error("bad filename in #inctile()");
 			kill();
 			return;
 		}
@@ -447,7 +530,7 @@ void dopsdinc (void)
 		if ((numericarg != 0) &&
 		    (numericarg != 2) &&
 		    (numericarg != 4))
-			error("Either 0,2 or 4 numeric arguments are needed for inctile statement");
+			error("Incorrect arguments for #inctile(label, \"filename\", [[,x ,y] ,w ,h])");
 
 		kill();
 	}
@@ -464,7 +547,7 @@ void dopsdinc (void)
 		readstr();	/* read the label name */
 		prefix();
 		outstr(litq2);
-		outstr(":\n");
+		outstr(":");
 		addglb_far(litq2, CINT);
 
 		if (!match(",")) {
@@ -476,7 +559,7 @@ void dopsdinc (void)
 		ot(".inctilepal\t\"");
 
 		if (readqstr() == 0) {
-			error("bad filename in inctilepal");
+			error("bad filename in #inctilepal()");
 			kill();
 			return;
 		}
@@ -504,7 +587,7 @@ void dopsdinc (void)
 		if ((numericarg != 0) &&
 		    (numericarg != 2) &&
 		    (numericarg != 4))
-			error("Either 0,2 or 4 numeric arguments are needed for inctilepal statement");
+			error("Incorrect arguments for #inctilepal(label, \"filename\", [[,x ,y] ,w ,h])");
 
 		kill();
 	}
@@ -533,7 +616,7 @@ void dopsdinc (void)
 
 		// Get the file name
 		if (readqstr() == 0) {
-			error("bad filename in incasm");
+			error("bad filename in #incasmlabel()");
 			kill();
 			return;
 		}
@@ -561,7 +644,7 @@ void dopsdinc (void)
 		// Output the label name:
 		prefix();
 		outstr(str_buf);
-		outstr(":\n");
+		outstr(":");
 
 		ot(".include\t\"");
 		outstr(litq2);
@@ -583,7 +666,7 @@ void dopsdinc (void)
 		ol(".data");
 
 		if (readqstr() == 0) {
-			error("bad filename in incasm");
+			error("bad filename in #incasm()");
 			kill();
 			return;
 		}
@@ -986,7 +1069,7 @@ void do_inc_ex (int type)
 	ol(".data");
 	prefix();
 	outstr(label2);
-	outstr(":\n");
+	outstr(":");
 	for (i = 0; i < num; i++) {
 		if (type == 8)
 			ot(".incchr\t\t\"");

@@ -85,6 +85,8 @@ extern unsigned char dh;
 
 #asmdef	HUCC_USES_BASELIB 1
 
+#define	_OPTIMIZE 1
+
 extern void __fastcall __nop set_far_base( unsigned char data_bank<_bp_bank>, unsigned char *data_addr<_bp> );
 extern void __fastcall set_far_offset( unsigned int offset<_bp>, unsigned char data_bank<_bp_bank>, unsigned char *data_addr<acc> );
 
