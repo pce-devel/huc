@@ -1776,17 +1776,24 @@ do_section(int *ip)
  * do_incchr()
  * ----
  * .inchr pseudo - convert a PCX to 8x8 character tiles
+ *
+ * .incchr "filename" [, x, y [, w, h ]] [, optimize]
  */
 
 void
 do_incchr(int *ip)
 {
-	unsigned char buffer[32];
 	int i, j;
 	int x, y, w, h;
 	int tx, ty;
+	int nb_tile = 0;
+	unsigned char * buffer = workspace;
 	int total = 0;
 	int size;
+	unsigned char optimize;
+	unsigned int crc;
+	unsigned int hash;
+	struct t_tile *tst_tile;
 
 	/* define label */
 	labldef(LOCATION);
@@ -1798,8 +1805,31 @@ do_incchr(int *ip)
 	/* get args */
 	if (!pcx_get_args(ip))
 		return;
+
+	/* odd number of args after filename if there is an "optimize" flag */
+	optimize = 0;
+	if ((pcx_nb_args & 1) != 0) {
+		optimize = (pcx_arg[pcx_nb_args - 1] != 0);
+		--pcx_nb_args;
+	}
+
+	/* set up x, y, w, h from the args */
 	if (!pcx_parse_args(0, pcx_nb_args, &x, &y, &w, &h, 8))
 		return;
+
+	/* shortcut if we already know how much data is produced */
+	if (pass == EXTRA_PASS && lablptr) {
+		putbuffer(workspace, lablptr->data_size);
+		return;
+	}
+
+	/* reset tile hash table, it's going to be invalid when we're done */
+	if (optimize) {
+		tile_lablptr = NULL;
+		tile_offset = 0;
+		for (i = 0; i < HASH_COUNT; i++)
+			tile_tbl[i] = NULL;
+	}
 
 	/* pack data */
 	for (i = 0; i < h; i++) {
@@ -1809,14 +1839,50 @@ do_incchr(int *ip)
 			ty = y + (i << 3);
 
 			/* get tile */
-			pcx_pack_8x8_tile(buffer, tx, ty);
+			if (pass == LAST_PASS || optimize)
+				pcx_pack_8x8_tile(buffer, tx, ty);
+
 			size = (machine->type == MACHINE_PCE) ? 32 : 16;
-			total += size;
+
+			if (optimize) {
+				/* calculate tile crc */
+				crc = crc_calc(buffer, size);
+				hash = crc & (HASH_COUNT - 1);
+
+				/* search tile */
+				tst_tile = tile_tbl[hash];
+				while (tst_tile) {
+					if (tst_tile->crc == crc &&
+					    memcmp(tst_tile->data, buffer, size) == 0)
+						break;
+					tst_tile = tst_tile->next;
+				}
+
+				if (tst_tile) {
+					/* ignore the repeated tile */
+					continue;
+				} else {
+					/* insert the new tile in the tile table */
+					if (nb_tile == (sizeof(tile) / sizeof(struct t_tile)))
+						continue;
+
+					tile[nb_tile].next = tile_tbl[hash];
+					tile[nb_tile].index = nb_tile;
+					tile[nb_tile].data = buffer;
+					tile[nb_tile].crc = crc;
+					tile_tbl[hash] = &tile[nb_tile];
+				}
+			}
 
 			/* store tile */
-			putbuffer(buffer, size);
+			nb_tile += 1;
+			total += size;
+			buffer += size;
 		}
 	}
+
+	if (total)
+		putbuffer(workspace, total);
 
 	/* size */
 	if (lablptr) {
@@ -1828,6 +1894,13 @@ do_incchr(int *ip)
 			if (lastlabl->data_type == P_INCCHR)
 				lastlabl->data_size += total;
 		}
+	}
+
+	/* attach the number of loaded tiles to the label */
+	if (lastlabl) {
+		lastlabl->nb = nb_tile;
+		if (pass == LAST_PASS)
+			lastlabl->size = (machine->type == MACHINE_PCE) ? 32 : 16;;
 	}
 
 	/* output */

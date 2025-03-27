@@ -8,8 +8,7 @@
 #include "pce.h"
 
 /* locals */
-static unsigned char buffer[128 * 256];	/* buffer for .inc and .def directives */
-static unsigned char header[512];	/* rom header */
+unsigned char workspace[65536];	/* buffer for .inc and .def directives */
 
 
 /* ----
@@ -22,11 +21,11 @@ void
 pce_write_header(FILE *f, int banks)
 {
 	/* setup header */
-	memset(header, 0, 512);
-	header[0] = banks;
+	memset(workspace, 0, 512);
+	workspace[0] = banks;
 
 	/* write */
-	fwrite(header, 512, 1, f);
+	fwrite(workspace, 512, 1, f);
 }
 
 
@@ -112,10 +111,6 @@ pce_pack_8x8_tile(unsigned char *buffer, void *data, int line_offset, int format
 	unsigned int pixel, mask;
 	unsigned char *ptr;
 	unsigned int *packed;
-
-	/* pack the tile only in the last pass */
-	if (pass != LAST_PASS)
-		return (0);
 
 	/* clear buffer */
 	memset(buffer, 0, 32);
@@ -453,10 +448,11 @@ pce_defchr(int *ip)
 	}
 
 	/* encode tile */
-	pce_pack_8x8_tile(buffer, data, 0, PACKED_TILE);
+	if (pass == LAST_PASS)
+		pce_pack_8x8_tile(workspace, data, 0, PACKED_TILE);
 
 	/* store tile */
-	putbuffer(buffer, 32);
+	putbuffer(workspace, 32);
 
 	/* output line */
 	if (pass == LAST_PASS)
@@ -575,10 +571,10 @@ pce_defspr(int *ip)
 	}
 
 	/* encode sprite */
-	pce_pack_16x16_sprite(buffer, data, 0, PACKED_TILE);
+	pce_pack_16x16_sprite(workspace, data, 0, PACKED_TILE);
 
 	/* store sprite */
-	putbuffer(buffer, 128);
+	putbuffer(workspace, 128);
 
 	/* output line */
 	if (pass == LAST_PASS)
@@ -590,15 +586,18 @@ pce_defspr(int *ip)
  * do_incbat()
  * ----
  * build a BAT
+ *
+ * .incbat "filename", vram [[,x ,y] ,w ,h] [,tileref_label]
  */
 
 void
 pce_incbat(int *ip)
 {
-	unsigned char *ptr, ref;
-	int i, j, k, l, x, y, w, h;
+	unsigned char *ptr;
+	int i, j, k, l, x, y, w, h, ref;
 	unsigned int base, index, flag;
-	unsigned int temp;
+	int tile_number;
+	unsigned char tile_data[32];
 
 	/* define label */
 	labldef(LOCATION);
@@ -607,9 +606,23 @@ pce_incbat(int *ip)
 	if (pass == LAST_PASS)
 		loadlc(loccnt, 0);
 
+	/* assume no optional tile reference */
+	tile_lablptr = NULL;
+
 	/* get args */
 	if (!pcx_get_args(ip))
 		return;
+
+	/* check for a tile reference */
+	if (tile_lablptr) {
+		if (tile_lablptr->data_type != P_INCCHR) {
+			error("Tile table reference is not a .INCCHR!");
+			return;
+		}
+		--pcx_nb_args;
+	}
+
+	/* set up x, y, w, h from the args */
 	if (!pcx_parse_args(1, pcx_nb_args - 1, &x, &y, &w, &h, 8))
 		return;
 
@@ -621,33 +634,55 @@ pce_incbat(int *ip)
 
 		for (i = 0; i < h; i++) {
 			for (j = 0; j < w; j++) {
-				ptr = pcx_buf + (x + (j * 8)) + ((y + (i * 8)) * pcx_w);
-				ref = ptr[0] & 0xF0;
+				ptr = pcx_buf + (x + (j << 3)) + ((y + (i << 3)) * pcx_w);
 
 				/* check colors */
+				ref = -1;
 				for (k = 0; k < 8; k++) {
 					for (l = 0; l < 8; l++) {
-						if ((ptr[l] & 0xF0) != ref)
-							flag = 1;
+						if ((ptr[l] & 0x0F) != 0) {
+							if (ref < 0)
+								ref = ptr[l] & 0xF0;
+							else
+							if ((ptr[l] & 0xF0) != ref)
+								flag |= 1;
+						}
 					}
 					ptr += pcx_w;
 				}
-				temp = (base & 0xFFF) | ((ref & 0xF0) << 8);
-				buffer[2 * index] = temp & 0xff;
-				buffer[2 * index + 1] = temp >> 8;
 
+				if (tile_lablptr == NULL) {
+					/* Traditional conversion as a bitmap with no repeats */
+					tile_number = (base & 0xFFF);
+					base++;
+				} else {
+					/* Sensible conversion with repeats removed */
+					pcx_pack_8x8_tile(tile_data, x + (j << 3), y + (i << 3));
+					tile_number = pcx_search_tile(tile_data, 32);
+					if (tile_number == -1) {
+						/* didn't find the tile */
+						tile_number = 0;
+						flag |= 2;
+					}
+					tile_number += (base & 0xFFF);
+				}
+
+				tile_number |= ((ref & 0xF0) << 8);
+				workspace[2 * index + 0] = tile_number & 0xFF;
+				workspace[2 * index + 1] = tile_number >> 8;
 				index++;
-				base++;
 			}
 		}
 
 		/* errors */
-		if (flag)
+		if (flag & 1)
 			error("Invalid color index found!");
+		if (flag & 2)
+			error("One or more tiles didn't match!");
 	}
 
 	/* store data */
-	putbuffer(buffer, 2 * w * h);
+	putbuffer(workspace, 2 * w * h);
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -659,6 +694,8 @@ pce_incbat(int *ip)
  * do_incpal()
  * ----
  * extract the palette of a PCX file
+ *
+ * .incpal "filename" [,which-palette [,number-of-palettes]]
  */
 
 void
@@ -705,13 +742,13 @@ pce_incpal(int *ip)
 			g = pcx_pal[start + i][1];
 			b = pcx_pal[start + i][2];
 			temp = ((r & 0xE0) >> 2) | ((g & 0xE0) << 1) | ((b & 0xE0) >> 5);
-			buffer[2 * i] = temp & 0xff;
-			buffer[2 * i + 1] = temp >> 8;
+			workspace[2 * i] = temp & 0xff;
+			workspace[2 * i + 1] = temp >> 8;
 		}
 	}
 
 	/* store data */
-	putbuffer(buffer, nb << 1);
+	putbuffer(workspace, nb << 1);
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -723,6 +760,8 @@ pce_incpal(int *ip)
  * do_incspr()
  * ----
  * PCX to sprites
+ *
+ * .incspr "filename", [[,x ,y] ,w ,h]
  */
 
 void
@@ -743,6 +782,8 @@ pce_incspr(int *ip)
 	/* get args */
 	if (!pcx_get_args(ip))
 		return;
+
+	/* set up x, y, w, h from the args */
 	if (!pcx_parse_args(0, pcx_nb_args, &x, &y, &w, &h, 16))
 		return;
 
@@ -754,7 +795,7 @@ pce_incspr(int *ip)
 			sy = y + (i << 4);
 
 			/* encode sprite */
-			pcx_pack_16x16_sprite(buffer + 128 * (nb_sprite % 256), sx, sy);
+			pcx_pack_16x16_sprite(workspace + 128 * (nb_sprite % 256), sx, sy);
 			nb_sprite++;
 
 			/* max 256 sprites */
@@ -768,7 +809,7 @@ pce_incspr(int *ip)
 	/* store a maximum of 256 sprites (32KB) */
 	if (nb_sprite > 256) nb_sprite = 256;
 	if (nb_sprite)
-		putbuffer(buffer, 128 * nb_sprite);
+		putbuffer(workspace, 128 * nb_sprite);
 
 	/* size */
 	if (lablptr) {
@@ -801,6 +842,8 @@ pce_incspr(int *ip)
  * do_inctile()
  * ----
  * PCX to 16x16 tiles (max 256 tiles per inctile, wraps around if 257)
+ *
+ * .inctile "filename", [[,x ,y] ,w ,h]
  */
 
 void
@@ -821,6 +864,8 @@ pce_inctile(int *ip)
 	/* get args */
 	if (!pcx_get_args(ip))
 		return;
+
+	/* set up x, y, w, h from the args */
 	if (!pcx_parse_args(0, pcx_nb_args, &x, &y, &w, &h, 16))
 		return;
 
@@ -832,7 +877,7 @@ pce_inctile(int *ip)
 			ty = y + (i << 4);
 
 			/* encode tile */
-			pcx_pack_16x16_tile(buffer + 128 * (nb_tile % 256), tx, ty);
+			pcx_pack_16x16_tile(workspace + 128 * (nb_tile % 256), tx, ty);
 			nb_tile++;
 
 			/* max 256 tiles, with number 257 wrapping around to */
@@ -851,7 +896,7 @@ pce_inctile(int *ip)
 	/* store a maximum of 256 tiles (32KB) */
 	if (nb_tile > 256) nb_tile = 256;
 	if (nb_tile)
-		putbuffer(buffer, 128 * nb_tile);
+		putbuffer(workspace, 128 * nb_tile);
 
 	/* size */
 	if (lablptr) {
@@ -884,6 +929,8 @@ pce_inctile(int *ip)
  * do_incchrpal()
  * ----
  * PCX to palette array for 8x8 tiles
+ *
+ * .incchrpal "filename", [[,x ,y] ,w ,h]
  */
 
 void
@@ -904,6 +951,8 @@ pce_incchrpal(int *ip)
 	/* get args */
 	if (!pcx_get_args(ip))
 		return;
+
+	/* set up x, y, w, h from the args */
 	if (!pcx_parse_args(0, pcx_nb_args, &x, &y, &w, &h, 8))
 		return;
 
@@ -915,9 +964,9 @@ pce_incchrpal(int *ip)
 			ty = y + (i << 3);
 
 			/* get chr palette */
-			buffer[0] = pce_scan_8x8_tile(tx, ty) << 4;
+			workspace[0] = pce_scan_8x8_tile(tx, ty) << 4;
 			/* store palette number */
-			putbuffer(buffer, 1);
+			putbuffer(workspace, 1);
 			nb_chr++;
 		}
 	}
@@ -953,6 +1002,8 @@ pce_incchrpal(int *ip)
  * do_incsprpal()
  * ----
  * PCX to palette array for 16x16 sprites
+ *
+ * .incsprpal "filename", [[,x ,y] ,w ,h]
  */
 
 void
@@ -962,6 +1013,7 @@ pce_incsprpal(int *ip)
 	int x, y, w, h;
 	int tx, ty;
 	int nb_sprite = 0;
+	unsigned char palette;
 
 	/* define label */
 	labldef(LOCATION);
@@ -973,6 +1025,8 @@ pce_incsprpal(int *ip)
 	/* get args */
 	if (!pcx_get_args(ip))
 		return;
+
+	/* set up x, y, w, h from the args */
 	if (!pcx_parse_args(0, pcx_nb_args, &x, &y, &w, &h, 16))
 		return;
 
@@ -984,10 +1038,10 @@ pce_incsprpal(int *ip)
 			ty = y + (i << 4);
 
 			/* get sprite palette */
-			buffer[0] = pce_scan_16x16_tile(tx, ty);
+			palette = pce_scan_16x16_tile(tx, ty);
 
 			/* store palette number */
-			putbuffer(buffer, 1);
+			putbuffer(&palette, 1);
 			nb_sprite++;
 		}
 	}
@@ -1023,6 +1077,8 @@ pce_incsprpal(int *ip)
  * do_inctilepal()
  * ----
  * PCX to palette array for 16x16 tiles
+ *
+ * .inctilepal "filename", [[,x ,y] ,w ,h]
  */
 
 void
@@ -1043,6 +1099,8 @@ pce_inctilepal(int *ip)
 	/* get args */
 	if (!pcx_get_args(ip))
 		return;
+
+	/* set up x, y, w, h from the args */
 	if (!pcx_parse_args(0, pcx_nb_args, &x, &y, &w, &h, 16))
 		return;
 
@@ -1060,7 +1118,7 @@ pce_inctilepal(int *ip)
 			ty = y + (i << 4);
 
 			/* get tile palette */
-			buffer[(nb_tile % 256)] = pce_scan_16x16_tile(tx, ty) << 4;
+			workspace[(nb_tile % 256)] = pce_scan_16x16_tile(tx, ty) << 4;
 			nb_tile++;
 
 			/* max 256 tiles, with number 257 wrapping around to */
@@ -1079,7 +1137,7 @@ pce_inctilepal(int *ip)
 	/* store a maximum of 256 tile palettes */
 	if (nb_tile > 256) nb_tile = 256;
 	if (nb_tile)
-		putbuffer(buffer, nb_tile);
+		putbuffer(workspace, nb_tile);
 
 	/* size */
 	if (lablptr) {
@@ -1111,7 +1169,9 @@ pce_inctilepal(int *ip)
 /* ----
  * do_incmap()
  * ----
- * .incmap pseudo - convert a tiled PCX into a map
+ * .incmap pseudo - convert a 16x16 tiled PCX into a map
+ *
+ * .incmap "filename", [[,x ,y] ,w ,h] ,tileref_label
  */
 
 void
@@ -1133,6 +1193,8 @@ pce_incmap(int *ip)
 	/* get args */
 	if (!pcx_get_args(ip))
 		return;
+
+	/* set up x, y, w, h from the args */
 	if (!pcx_parse_args(0, pcx_nb_args - 1, &x, &y, &w, &h, 16))
 		return;
 
@@ -1144,10 +1206,10 @@ pce_incmap(int *ip)
 			ty = y + (i << 4);
 
 			/* get tile */
-			pcx_pack_16x16_tile(buffer, tx, ty);
+			pcx_pack_16x16_tile(workspace, tx, ty);
 
 			/* search tile */
-			tile = pcx_search_tile(buffer, 128);
+			tile = pcx_search_tile(workspace, 128);
 
 			if (tile == -1) {
 				/* didn't find the tile */
@@ -1196,7 +1258,7 @@ pce_mml(int *ip)
 
 	/* start */
 	bufsize = 8192;
-	offset = mml_start(buffer);
+	offset = mml_start(workspace);
 	bufsize -= offset;
 
 	/* extract and parse mml string(s) */
@@ -1206,7 +1268,7 @@ pce_mml(int *ip)
 			return;
 
 		/* parse string */
-		size = mml_parse(buffer + offset, bufsize, mml);
+		size = mml_parse(workspace + offset, bufsize, mml);
 
 		if (size == -1)
 			return;
@@ -1260,13 +1322,12 @@ pce_mml(int *ip)
 	}
 
 	/* stop */
-	offset += mml_stop(buffer + offset);
+	offset += mml_stop(workspace + offset);
 
 	/* store data */
-	putbuffer(buffer, offset);
+	putbuffer(workspace, offset);
 
 	/* output */
 	if (pass == LAST_PASS)
 		println();
 }
-

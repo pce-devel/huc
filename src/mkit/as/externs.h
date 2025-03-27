@@ -8,6 +8,8 @@ extern int bank_loccnt[MAX_S][MAX_BANKS];
 extern int bank_page[MAX_S][MAX_BANKS];
 extern int bank_maxloc[MAX_BANKS];              /* record max location in bank */
 
+extern unsigned char workspace[65536];          /* buffer for .inc and .def directives */
+
 extern int discontiguous;                       /* NZ signals a warp in loccnt */
 extern int max_zp;                              /* higher used address in zero page */
 extern int max_bss;                             /* higher used address in ram */
@@ -43,6 +45,10 @@ extern int pcx_nb_args;                         /* number of argument */
 extern unsigned int pcx_arg[8];                 /* PCX args array */
 extern unsigned char *pcx_buf;                  /* pointer to the PCX buffer */
 extern unsigned char pcx_pal[256][3];           /* palette */
+extern unsigned int tile_offset;                /* offset in the tile reference table */
+extern struct t_tile tile[65536 / 32];          /* tile info table */
+extern struct t_tile *tile_tbl[HASH_COUNT];     /* tile hash table */
+extern struct t_symbol *tile_lablptr;           /* tile symbol reference */
 extern char *expr;                              /* expression string pointer */
 extern struct t_symbol *expr_toplabl;           /* pointer to the innermost scope-label */
 extern struct t_symbol *expr_lablptr;           /* pointer to the last-referenced label */

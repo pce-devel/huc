@@ -197,6 +197,8 @@ struct t_opcode w65c02_inst[3] = {
 	{NULL, NULL, NULL, 0, 0, 0}
 };
 
+#define NARGS_0_1_2_3_5 0b11000000
+
 /* pseudo instruction table */
 struct t_opcode base_pseudo[] = {
 	{NULL,  "*",            do_star,        PSEUDO, P_ORG,     1},
@@ -231,7 +233,7 @@ struct t_opcode base_pseudo[] = {
 	{NULL,  "IFNDEF",       do_ifdef,       PSEUDO, P_IFNDEF,  0},
 	{NULL,  "INCBIN",       do_incbin,      PSEUDO, P_INCBIN,  0},
 	{NULL,  "INCLUDE",      do_include,     PSEUDO, P_INCLUDE, 0},
-	{NULL,  "INCCHR",       do_incchr,      PSEUDO, P_INCCHR,  0xEA},
+	{NULL,  "INCCHR",       do_incchr,      PSEUDO, P_INCCHR,  NARGS_0_1_2_3_5},
 	{NULL,  "LIST",         do_list,        PSEUDO, P_LIST,    0},
 	{NULL,  "MAC",          do_macro,       PSEUDO, P_MACRO,   0},
 	{NULL,  "MACRO",        do_macro,       PSEUDO, P_MACRO,   0},
@@ -277,7 +279,7 @@ struct t_opcode base_pseudo[] = {
 	{NULL, ".IFNDEF",       do_ifdef,       PSEUDO, P_IFNDEF,  0},
 	{NULL, ".INCBIN",       do_incbin,      PSEUDO, P_INCBIN,  0},
 	{NULL, ".INCLUDE",      do_include,     PSEUDO, P_INCLUDE, 0},
-	{NULL, ".INCCHR",       do_incchr,      PSEUDO, P_INCCHR,  0xEA},
+	{NULL, ".INCCHR",       do_incchr,      PSEUDO, P_INCCHR,  NARGS_0_1_2_3_5},
 	{NULL, ".LIST",         do_list,        PSEUDO, P_LIST,    0},
 	{NULL, ".MAC",          do_macro,       PSEUDO, P_MACRO,   0},
 	{NULL, ".MACRO",        do_macro,       PSEUDO, P_MACRO,   0},

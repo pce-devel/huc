@@ -59,10 +59,6 @@ nes_pack_8x8_tile(unsigned char *buffer, void *data, int line_offset, int format
 	unsigned char *ptr;
 	unsigned int *packed;
 
-	/* pack the tile only in the last pass */
-	if (pass != LAST_PASS)
-		return (0);
-
 	/* clear buffer */
 	memset(buffer, 0, 16);
 
@@ -154,7 +150,8 @@ nes_defchr(int *ip)
 	}
 
 	/* encode tile */
-	nes_pack_8x8_tile(buffer, data, 0, PACKED_TILE);
+	if (pass == LAST_PASS)
+		nes_pack_8x8_tile(buffer, data, 0, PACKED_TILE);
 
 	/* store tile */
 	putbuffer(buffer, 16);

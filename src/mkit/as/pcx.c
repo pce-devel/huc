@@ -17,8 +17,8 @@ unsigned char *pcx_buf;			/* pointer to the pcx buffer */
 unsigned char pcx_pal[256][3];		/* palette */
 unsigned char pcx_plane[2048][4];	/* plane buffer */
 unsigned int tile_offset;		/* offset in the tile reference table */
-struct t_tile tile[256];		/* tile info table */
-struct t_tile *tile_tbl[256];		/* tile hash table */
+struct t_tile tile[65536 / 32];		/* tile info table */
+struct t_tile *tile_tbl[HASH_COUNT];	/* tile hash table */
 struct t_symbol *tile_lablptr;		/* tile symbol reference */
 struct PCX_HEADER {			/* pcx file header */
 	unsigned char manufacturer, version;
@@ -112,10 +112,6 @@ pcx_set_tile(struct t_symbol *ref, unsigned int offset)
 	unsigned char *data;
 	int nb;
 
-	/* do nothing in first passes */
-	if (pass != LAST_PASS)
-		return (1);
-
 	/* same tile set? */
 	if (ref == NULL)
 		return (1);
@@ -133,8 +129,14 @@ pcx_set_tile(struct t_symbol *ref, unsigned int offset)
 		tile_lablptr = NULL;
 		return (1);
 	}
-	if (ref->size == 0) {
+	if (ref->size == 0 && pass == LAST_PASS) {
 		error("Tile table has not been compiled yet!");
+		tile_lablptr = NULL;
+		return (1);
+	}
+
+	if (((section_flags[ref->section] & S_IS_ROM) == 0) || (ref->rombank > bank_limit)) {
+		error("Tile table cannot be in RAM!");
 		tile_lablptr = NULL;
 		return (1);
 	}
@@ -144,45 +146,45 @@ pcx_set_tile(struct t_symbol *ref, unsigned int offset)
 
 	if ((start < 0))
 		goto err;
-	if ((start % ref->size) != 0)
-		goto err;
-	if ((start / ref->size) >= ref->nb)
-		goto err;
-
-	/* reset tile hash table */
-	for (i = 0; i < 256; i++)
-		tile_tbl[i] = NULL;
-
-	/* get infos */
-	nb = ref->nb - (start / ref->size);
-	size = ref->size;
-
-	if (((section_flags[ref->section] & S_IS_ROM) == 0) || (ref->rombank > bank_limit)) {
-//	if (((section_flags[ref->section] & S_IS_ROM) == 0) || (ref->mprbank >= UNDEFINED_BANK)) {
-		goto err;
+	if (ref->size) {
+		if ((start % ref->size) != 0)
+			goto err;
+		if ((start / ref->size) >= ref->nb)
+			goto err;
 	}
 
-	data = &rom[ref->rombank][ref->value & 0x1FFF] + start;
+	/* always reset tile hash table */
+	for (i = 0; i < HASH_COUNT; i++)
+		tile_tbl[i] = NULL;
 
-	/* 256 tiles max */
-	if (nb > 256)
-		nb = 256;
+	/* do nothing in first passes */
+	if (pass == LAST_PASS) {
+		/* get infos */
+		nb = ref->nb - (start / ref->size);
+		size = ref->size;
 
-	/* parse tiles */
-	for (i = 0; i < nb; i++) {
-		/* calculate tile crc */
-		crc = crc_calc(data, size);
-		hash = (crc & 0xFF);
+		/* 2048 tiles max (65536 / 32) */
+		if (nb > (sizeof(tile) / sizeof(struct t_tile)))
+			nb = (sizeof(tile) / sizeof(struct t_tile));
 
-		/* insert the tile in the tile table */
-		tile[i].next = tile_tbl[hash];
-		tile[i].index = i;
-		tile[i].data = data;
-		tile[i].crc = crc;
-		tile_tbl[hash] = &tile[i];
+		data = &rom[ref->rombank][ref->value & 0x1FFF] + start;
 
-		/* next */
-		data += size;
+		/* parse tiles */
+		for (i = 0; i < nb; i++) {
+			/* calculate tile crc */
+			crc = crc_calc(data, size);
+			hash = (crc & (HASH_COUNT - 1));
+
+			/* insert the tile in the tile table */
+			tile[i].next = tile_tbl[hash];
+			tile[i].index = i;
+			tile[i].data = data;
+			tile[i].crc = crc;
+			tile_tbl[hash] = &tile[i];
+
+			/* next */
+			data += size;
+		}
 	}
 
 	/* ok */
@@ -291,8 +293,10 @@ pcx_get_args(int *ip)
 	if (!pcx_load(name))
 		return (0);
 
-	/* parse tiles */
-	if (opval == P_INCMAP) {
+	/* are we getting args for a .incmap or .incbat */
+	if ((opval == P_INCMAP) ||
+	   ((opval == P_INCBAT) && ((pcx_nb_args & 1) == 0))) {
+		/* check that last arg is a tile reference */
 		if (expr_lablcnt == 0)
 			error("No tile table reference!");
 		if (expr_lablcnt > 1) {
@@ -331,7 +335,7 @@ pcx_parse_args(int i, int nb, int *a, int *b, int *c, int *d, int size)
 		w = pcx_arg[i];
 		h = pcx_arg[i + 1];
 	}
-	else {					/* 4 args */
+	else {				/* 4 args */
 		x = pcx_arg[i];
 		y = pcx_arg[i + 1];
 		w = pcx_arg[i + 2];
@@ -698,7 +702,7 @@ bmp_load(char *name)
 			}
 		}
 	}
-	else 
+	else
 	{
 //					uint8_t *src = &buffer[bmp_header->bitmapDataOffset];
 		fseek(pFile,header.bitmapDataOffset,SEEK_SET);

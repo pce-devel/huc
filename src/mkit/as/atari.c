@@ -154,10 +154,6 @@ fuji_pack_8x8_tile(unsigned char *buffer, void *data, int line_offset, int forma
 	unsigned char *ptr;
 	unsigned int *packed;
 
-	/* pack the tile only in the last pass */
-	if (pass != LAST_PASS)
-		return (0);
-
 	/* clear buffer */
 	memset(buffer, 0, 16);
 

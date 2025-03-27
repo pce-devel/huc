@@ -69,34 +69,39 @@ struct t_opcode huc6280_inst[38] = {
 	{NULL, NULL, NULL, 0, 0, 0}
 };
 
+#define NARGS_0_1_2 0b11111000
+#define NARGS_0_2_4 0b11101010
+#define NARGS_1_3_5 0b11010101
+#define NARGS_1_2_3_4_5_6 0b10000001
+
 /* PCE specific pseudos */
 struct t_opcode pce_pseudo[29] = {
-	{NULL,  "DEFCHR",    pce_defchr,    PSEUDO, P_DEFCHR,    0},
-	{NULL,  "DEFPAL",    pce_defpal,    PSEUDO, P_DEFPAL,    0},
-	{NULL,  "DEFSPR",    pce_defspr,    PSEUDO, P_DEFSPR,    0},
-	{NULL,  "INCBAT",    pce_incbat,    PSEUDO, P_INCBAT,    0xD5},
-	{NULL,  "INCSPR",    pce_incspr,    PSEUDO, P_INCSPR,    0xEA},
-	{NULL,  "INCPAL",    pce_incpal,    PSEUDO, P_INCPAL,    0xF8},
-	{NULL,  "INCTILE",   pce_inctile,   PSEUDO, P_INCTILE,   0xEA},
-	{NULL,  "INCMAP",    pce_incmap,    PSEUDO, P_INCMAP,    0xD5},
-	{NULL,  "INCCHRPAL", pce_incchrpal, PSEUDO, P_INCCHRPAL, 0xEA},
-	{NULL, ".INCSPRPAL", pce_incsprpal, PSEUDO, P_INCSPRPAL, 0xEA},
-	{NULL,  "INCTILEPAL",pce_inctilepal,PSEUDO, P_INCTILEPAL,0xEA},
-	{NULL,  "MML",       pce_mml,       PSEUDO, P_MML,       0},
-	{NULL,  "PAL",       pce_pal,       PSEUDO, P_PAL,       0},
-	{NULL,  "VRAM",      pce_vram,      PSEUDO, P_VRAM,      0},
+	{NULL, "DEFCHR",     pce_defchr,    PSEUDO, P_DEFCHR,    0},
+	{NULL, "DEFPAL",     pce_defpal,    PSEUDO, P_DEFPAL,    0},
+	{NULL, "DEFSPR",     pce_defspr,    PSEUDO, P_DEFSPR,    0},
+	{NULL, "INCBAT",     pce_incbat,    PSEUDO, P_INCBAT,    NARGS_1_2_3_4_5_6},
+	{NULL, "INCSPR",     pce_incspr,    PSEUDO, P_INCSPR,    NARGS_0_2_4},
+	{NULL, "INCPAL",     pce_incpal,    PSEUDO, P_INCPAL,    NARGS_0_1_2},
+	{NULL, "INCTILE",    pce_inctile,   PSEUDO, P_INCTILE,   NARGS_0_2_4},
+	{NULL, "INCMAP",     pce_incmap,    PSEUDO, P_INCMAP,    NARGS_1_3_5},
+	{NULL, "INCCHRPAL",  pce_incchrpal, PSEUDO, P_INCCHRPAL, NARGS_0_2_4},
+	{NULL, "INCSPRPAL",  pce_incsprpal, PSEUDO, P_INCSPRPAL, NARGS_0_2_4},
+	{NULL, "INCTILEPAL", pce_inctilepal,PSEUDO, P_INCTILEPAL,NARGS_0_2_4},
+	{NULL, "MML",        pce_mml,       PSEUDO, P_MML,       0},
+	{NULL, "PAL",        pce_pal,       PSEUDO, P_PAL,       0},
+	{NULL, "VRAM",       pce_vram,      PSEUDO, P_VRAM,      0},
 
 	{NULL, ".DEFCHR",    pce_defchr,    PSEUDO, P_DEFCHR,    0},
 	{NULL, ".DEFPAL",    pce_defpal,    PSEUDO, P_DEFPAL,    0},
 	{NULL, ".DEFSPR",    pce_defspr,    PSEUDO, P_DEFSPR,    0},
-	{NULL, ".INCBAT",    pce_incbat,    PSEUDO, P_INCBAT,    0xD5},
-	{NULL, ".INCSPR",    pce_incspr,    PSEUDO, P_INCSPR,    0xEA},
-	{NULL, ".INCPAL",    pce_incpal,    PSEUDO, P_INCPAL,    0xF8},
-	{NULL, ".INCTILE",   pce_inctile,   PSEUDO, P_INCTILE,   0xEA},
-	{NULL, ".INCMAP",    pce_incmap,    PSEUDO, P_INCMAP,    0xD5},
-	{NULL, ".INCCHRPAL", pce_incchrpal, PSEUDO, P_INCCHRPAL, 0xEA},
-	{NULL, ".INCSPRPAL", pce_incsprpal, PSEUDO, P_INCSPRPAL, 0xEA},
-	{NULL, ".INCTILEPAL",pce_inctilepal,PSEUDO, P_INCTILEPAL,0xEA},
+	{NULL, ".INCBAT",    pce_incbat,    PSEUDO, P_INCBAT,    NARGS_1_2_3_4_5_6},
+	{NULL, ".INCSPR",    pce_incspr,    PSEUDO, P_INCSPR,    NARGS_0_2_4},
+	{NULL, ".INCPAL",    pce_incpal,    PSEUDO, P_INCPAL,    NARGS_0_1_2},
+	{NULL, ".INCTILE",   pce_inctile,   PSEUDO, P_INCTILE,   NARGS_0_2_4},
+	{NULL, ".INCMAP",    pce_incmap,    PSEUDO, P_INCMAP,    NARGS_1_3_5},
+	{NULL, ".INCCHRPAL", pce_incchrpal, PSEUDO, P_INCCHRPAL, NARGS_0_2_4},
+	{NULL, ".INCSPRPAL", pce_incsprpal, PSEUDO, P_INCSPRPAL, NARGS_0_2_4},
+	{NULL, ".INCTILEPAL",pce_inctilepal,PSEUDO, P_INCTILEPAL,NARGS_0_2_4},
 	{NULL, ".MML",       pce_mml,       PSEUDO, P_MML,       0},
 	{NULL, ".PAL",       pce_pal,       PSEUDO, P_PAL,       0},
 	{NULL, ".VRAM",      pce_vram,      PSEUDO, P_VRAM,      0},
