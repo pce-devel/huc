@@ -1825,10 +1825,9 @@ do_incchr(int *ip)
 
 	/* reset tile hash table, it's going to be invalid when we're done */
 	if (optimize) {
+		memset(tile_tbl, 0, sizeof(tile_tbl));
 		tile_lablptr = NULL;
 		tile_offset = 0;
-		for (i = 0; i < HASH_COUNT; i++)
-			tile_tbl[i] = NULL;
 	}
 
 	/* pack data */

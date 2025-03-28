@@ -1198,6 +1198,12 @@ pce_incmap(int *ip)
 	if (!pcx_parse_args(0, pcx_nb_args - 1, &x, &y, &w, &h, 16))
 		return;
 
+	/* shortcut until we need to generate the final data */
+	if (pass != LAST_PASS) {
+		putbuffer(workspace, w * h);
+		return;
+	}
+
 	/* pack map */
 	for (i = 0; i < h; i++) {
 		for (j = 0; j < w; j++) {
