@@ -153,10 +153,6 @@ pcx_set_tile(struct t_symbol *ref, unsigned int offset)
 			goto err;
 	}
 
-	/* always reset tile hash table */
-	for (i = 0; i < HASH_COUNT; i++)
-		tile_tbl[i] = NULL;
-
 	/* do nothing in first passes */
 	if (pass == LAST_PASS) {
 		/* get infos */
@@ -168,6 +164,9 @@ pcx_set_tile(struct t_symbol *ref, unsigned int offset)
 			nb = (sizeof(tile) / sizeof(struct t_tile));
 
 		data = &rom[ref->rombank][ref->value & 0x1FFF] + start;
+
+		/* reset tile hash table */
+		memset(tile_tbl, 0, sizeof(tile_tbl));
 
 		/* parse tiles */
 		for (i = 0; i < nb; i++) {

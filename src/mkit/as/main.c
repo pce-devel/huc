@@ -760,6 +760,7 @@ main(int argc, char **argv)
 		xlist = 0;
 		glablptr = NULL;
 		scopeptr = NULL;
+		tile_lablptr = NULL;
 		branchptr = branchlst;
 		branches_changed = 0;
 		need_another_pass = 0;
