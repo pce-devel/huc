@@ -7,7 +7,7 @@
 ;
 ; This could be used by emulator authors to compare a real PCE vs emulation.
 ;
-; Copyright John Brandwood 2024.
+; Copyright John Brandwood 2024-2025.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -249,6 +249,8 @@ core_main:	; Turn the display off and initialize the screen mode.
 		jsr	test_number9
 		jsr	test_number10
 		jsr	test_number11
+		jsr	test_number12
+		jsr	test_number13
 
 		PRINTF	"\fAll tests completed!\n\nExecuting CD_RESET to stop the CD.\n\n"
 		call	cdr_reset
@@ -1117,6 +1119,106 @@ test_number11:	stz	lba_top			; Reset back to 0.
 ; ***************************************************************************
 ; ***************************************************************************
 ;
+; test_number12 - Play 5s audio, return immediately.
+;
+
+test_number12:	PRINTF	"\f\eP1SCSI TEST #12: Play 5s audio, return immediately.\eP0\n\n"
+
+		jsr	clear_timer
+
+		stz	scsi_send_buf + 0	; Reset scsi_opcode.
+
+		lda	#$00			; Play RecH/Min/Trk
+		sta	<_al
+		lda	#$03			; Play RecM/Sec/---
+		sta	<_ah
+		lda	#$00			; Play RecL/Frm/---
+		sta	<_bl
+
+		lda	#$40			; Play address type.
+		sta	<_bh
+
+		lda	#$00			; Stop RecH/Min/Trk
+		sta	<_cl
+		lda	#$08			; Stop RecM/Sec/---
+		sta	<_ch
+		lda	#$00			; Stop RecL/Frm/---
+		sta	<_dl
+
+		lda	#$43			; Stop address type/mode.
+		sta	<_dh
+
+		jsr	test_initiate		; Acquire the SCSI bus.
+
+		call	clear_log		; Hide early states.
+
+		jsr	test_cd_play		; Issue search command.
+
+;		call	print_log		; Display the states.
+
+		jsr	test_initiate		; Acquire the SCSI bus.
+
+;		call	clear_log		; Hide early states.
+
+		jsr	test_cd_play		; Issue play command.
+
+		call	print_log		; Display the states.
+
+		jmp	test_finished
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; test_number13 - Play 5s audio, keep BSY.
+;
+
+test_number13:	PRINTF	"\f\eP1SCSI TEST #13: Play 5s audio, keep BSY.\eP0\n\n"
+
+		jsr	clear_timer
+
+		stz	scsi_send_buf + 0	; Reset scsi_opcode.
+
+		lda	#$00			; Play RecH/Min/Trk
+		sta	<_al
+		lda	#$03			; Play RecM/Sec/---
+		sta	<_ah
+		lda	#$00			; Play RecL/Frm/---
+		sta	<_bl
+
+		lda	#$40			; Play address type.
+		sta	<_bh
+
+		lda	#$00			; Stop RecH/Min/Trk
+		sta	<_cl
+		lda	#$08			; Stop RecM/Sec/---
+		sta	<_ch
+		lda	#$00			; Stop RecL/Frm/---
+		sta	<_dl
+
+		lda	#$42			; Stop address type/mode.
+		sta	<_dh
+
+		jsr	test_initiate		; Acquire the SCSI bus.
+
+		call	clear_log		; Hide early states.
+
+		jsr	test_cd_play		; Issue search command.
+
+		jsr	test_initiate		; Acquire the SCSI bus.
+
+		jsr	test_cd_play		; Issue play command.
+
+		call	print_log		; Display the states.
+
+		jmp	test_finished
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
 ; test_init_disc - Initialize the CD drive and scan the CD TOC.
 ;
 ; Returns: Y,Z-flag,N-flag = $00 or an error code.
@@ -1204,7 +1306,7 @@ test_init_disc	.proc
 
 		; Initiate CD-ROM command.
 
-test_cd_retry:	jsr	test_initiate		; Acquire the SCSI bus.
+!cd_retry:	jsr	test_initiate		; Acquire the SCSI bus.
 
 
 		; Test cd_read, assume already initiated.
@@ -1264,7 +1366,7 @@ test_cd_read:
 .read_error:	TAG_FLG	"cd_read: Read error!"
 
 ;		jsr	scsi_req_sense		; Clear error, get code in Y.
-		bra	test_cd_retry
+		bra	!cd_retry-
 
 		; Get SCSI post-command status.
 
@@ -1595,6 +1697,171 @@ test_get_status:ldy	IFU_SCSI_DAT		; Read status code.
 		bmi	.wait_exit		; release SCSI_BSY.
 
 		tya				; Return status & set flags.
+		rts
+
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; test_cd_play - with CPU memory as destination (like CD_READ to RAM).
+;
+; Returns: Y,Z-flag,N-flag = $00 or an error code.
+;
+
+		; Initiate CD-ROM command.
+
+!cd_retry:	jsr	test_initiate		; Acquire the SCSI bus.
+
+		; Test cd_play, assume already initiated.
+
+test_cd_play:
+
+		; Process SCSI phases.
+
+.proc_scsi_loop:jsr	test_get_phase
+		cmp	#PHASE_COMMAND		; 1st phase.
+		beq	.send_command
+		cmp	#PHASE_DATA_IN		; 2nd phase.
+		beq	.get_data
+		cmp	#PHASE_STAT_IN		; 3rd phase.
+		beq	.get_status
+		cmp	#PHASE_MESG_IN		; End phase.
+		bne	.proc_scsi_loop
+
+		; SCSI command done.
+
+.read_mesg:	phy
+		TAG_FLG	"cd_play: Got PHASE_MESG_IN"
+		ply
+
+		bit	IFU_SCSI_DAT		; Flush message byte.
+		jsr	test_handshake
+
+.wait_exit:	bit	IFU_SCSI_FLG		; Wait for the CD-ROM to
+		bmi	.wait_exit		; release SCSI_BSY.
+
+		cpy	#CDSTS_CHECK
+		beq	.read_error
+
+		phy
+		TAG_FLG	"cd_play: Finished"
+		ply
+
+;		lda	scsi_send_buf + 0
+;		cmp	#CDROM_SEARCH
+;		bne	.finished
+
+;		call	print_log
+;
+;		jsr	test_initiate		; Send the PLAY command.
+;		jmp	.proc_scsi_loop
+
+.finished:	tya				; Returns code in Y & A.
+		rts
+
+.read_error:	TAG_FLG	"cd_play: Read error!"
+
+;		jsr	scsi_req_sense		; Clear error, get code in Y.
+		bra	!cd_retry-
+
+		; Get SCSI post-command status.
+
+.get_status:	TAG_FLG	"cd_play: Got PHASE_STAT_IN"
+
+		ldy	IFU_SCSI_DAT		; Read status code.
+		jsr	test_handshake
+
+		jmp	.proc_scsi_loop
+
+		; Send SCSI command.
+
+.send_command:	TAG_FLG	"cd_play: Got PHASE_COMMAND"
+
+		jsr	test_play_cmd
+
+.sent_command:	jmp	.proc_scsi_loop
+
+		; Flush unexpected SCSI data bytes.
+
+.get_data:	TAG_FLG	"Flushing data byte from bus."
+
+		jsr	test_handshake		; Flush out stale data byte.
+
+		jmp	.proc_scsi_loop
+
+		;
+		;	********
+		;
+
+test_init_cmd:	ldx	#10 - 1
+.loop:		stz	scsi_send_buf, x
+		dex
+		bne	.loop
+		sta	scsi_send_buf
+		rts
+
+		;
+		;	********
+		;
+
+test_play_cmd:	lda	scsi_send_buf + 0	; scsi_opcode
+		cmp	#CDROM_SEARCH
+		beq	.play
+
+		;
+
+.search:	jsr	test_init_cmd
+
+		lda	#CDROM_SEARCH		; scsi_opcode
+		sta	scsi_send_buf + 0
+
+		stz	scsi_send_buf + 1
+
+		tii	_al, scsi_send_buf+2, 3	; Play Rec/MSF/Trk.
+
+		lda	<_bh			; Play address type.
+		and	#$C0
+		sta	scsi_send_buf + 9
+
+		bra	.send_scsi
+
+		;
+
+.play:		jsr	test_init_cmd
+
+		lda	#CDROM_PLAY		; scsi_opcode
+		sta	scsi_send_buf + 0
+
+		lda	<_dh			; Stop address mode.
+		and	#$07
+		sta	scsi_send_buf + 1
+
+		tii	_cl, scsi_send_buf+2, 3	; Stop Rec/MSF/Trk.
+
+		lda	<_dh			; Stop address type.
+		and	#$C0
+		sta	scsi_send_buf + 9
+
+		bra	.send_scsi
+
+		;
+
+.send_scsi:	clx
+.send_byte:	lda	IFU_SCSI_FLG
+		and	#SCSI_MSK
+		cmp	#PHASE_COMMAND
+		bne	.send_byte
+
+		lda	scsi_send_buf, x
+		sta	IFU_SCSI_DAT
+		jsr	test_handshake
+
+		inx
+		cpx	#10			; 10-byte SCSI command.
+		bne	.send_byte
+
 		rts
 
 
