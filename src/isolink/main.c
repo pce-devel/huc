@@ -456,9 +456,12 @@ file_write(FILE *outfile, FILE *infile, char *filename, int curr_filenum)
 void
 set_ipl_date(char * string)
 {
+   char temp[24];
    SYSTEMTIME t;
    GetSystemTime(&t);
-   snprintf(string, 8+1, "%4d%02d%02d", t.wYear, t.wMonth, t.wDay);
+   snprintf(temp, 23+1, "%4d%02d%02d", t.wYear, t.wMonth, t.wDay);
+   temp[8] = '\0';
+   strcpy(string, temp);
 }
 #else
 #include <time.h>
@@ -466,10 +469,13 @@ set_ipl_date(char * string)
 void
 set_ipl_date(char * string)
 {
+   char temp[24];
    time_t rawtime;
    time ( &rawtime );
    struct tm *timeinfo = gmtime ( &rawtime );
-   strftime(string, 8+1, "%Y%m%d", timeinfo);
+   strftime(temp, 23+1, "%Y%m%d", timeinfo);
+   temp[8] = '\0';
+   strcpy(string, temp);
 }
 #endif
 
