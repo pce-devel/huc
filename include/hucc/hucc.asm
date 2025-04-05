@@ -186,6 +186,15 @@ ___SDCC_m6502_ret6:	.ds	1
 ___SDCC_m6502_ret7:	.ds	1
 	.endif
 
+		; Permanent pointers for fast table-of-squares multiplication.
+
+	.if	FAST_MULTIPLY
+mul_sqrplus_lo:	ds	2
+mul_sqrplus_hi:	ds	2
+mul_sqrminus_lo:ds	2
+mul_sqrminus_hi:ds	2
+	.endif
+
 		; HuCC keeps a realtime clock, updated in hucc_vbl.
 		;
 		; Defining this here means that it will go before any HuCC
@@ -290,6 +299,17 @@ core_main	.proc
 	.endif	HAVE_INIT
 
 		tai	.stack_fill, __stack, HUCC_STACK_SZ
+
+	.if	FAST_MULTIPLY
+		lda.h	#square_plus_lo		; Initialize the fast multiply
+		sta.h	<mul_sqrplus_lo		; pointers.
+		lda.h	#square_plus_hi
+		sta.h	<mul_sqrplus_hi
+		lda.h	#square_minus_lo
+		sta.h	<mul_sqrminus_lo
+		lda.h	#square_minus_hi
+		sta.h	<mul_sqrminus_hi
+	.endif
 
 		lda	#$10			; Enable HuCC's vblank IRQ
 		tsb	<irq_vec		; handler.
