@@ -75,9 +75,17 @@
 		include	"hucc-old-spr.asm"
 	.endif
 
+	.ifdef	HUCC_USES_METAMAP		; Set in hucc_metamap.h
+		include	"metamap.asm"
+	.else
 	.ifdef	HUCC_USES_OLD_MAP		; Set in hucc_old_map.h
 		include	"hucc-old-map.asm"
 	.endif
+	.endif	HUCC_USES_METAMAP
+
+	.ifdef	HUCC_USES_CHARMAP		; Set in hucc_charmap.h
+		include	"charmap.asm"
+	.endif	HUCC_USES_CHARMAP
 
 	.ifdef	HUCC_USES_OLD_LINE		; Set in hucc_old_line.h
 		include	"hucc-old-line.asm"
