@@ -55,15 +55,11 @@
 
 #asmdef	HUCC_USES_GFX 1
 
+extern void __fastcall set_240x208( void );
 extern void __fastcall set_256x224( void );
-//extern void __fastcall set_352x224( void );
-//extern void __fastcall set_496x224( void );
 
 extern void __fastcall set_screen_size( unsigned char value<_al> );
 extern void __fastcall sgx_set_screen_size( unsigned char value<_al> );
-
-extern void __fastcall __macro set_xres( unsigned int x_pixels<_ax> );
-extern void __fastcall __macro sgx_set_xres( unsigned int x_pixels<_ax> );
 
 extern void __fastcall set_xres( unsigned int x_pixels<_ax>, unsigned char blur_flag<_bl> );
 extern void __fastcall sgx_set_xres( unsigned int x_pixels<_ax>, unsigned char blur_flag<_bl> );
@@ -125,9 +121,15 @@ extern void __fastcall far_load_font( unsigned char count<_al>, unsigned int vra
 extern void __fastcall __macro far_load_sprites( unsigned int vram<_di>, unsigned int num_groups<acc> );
 extern void __fastcall __macro sgx_far_load_sprites( unsigned int vram<_di>, unsigned int num_groups<acc> );
 
+// *************
 // Deprecated functions ...
+// *************
+
+extern void __fastcall __macro set_xres( unsigned int x_pixels<_ax> );
+extern void __fastcall __macro sgx_set_xres( unsigned int x_pixels<_ax> );
 
 extern void __fastcall load_background( unsigned char __far *tiles<_bp_bank:_bp>, unsigned char __far *palettes<__fbank:__fptr>, unsigned char __far *bat<_cl:_bx>, unsigned char w<_dl>, unsigned char h<_dh> );
+
 extern void __fastcall __macro set_bgpal( unsigned char palette<_al>, unsigned char __far *data<_bp_bank:_bp> );
 extern void __fastcall __macro set_bgpal( unsigned char palette<_al>, unsigned char __far *data<_bp_bank:_bp>, unsigned int num_palettes<_ah> );
 extern void __fastcall __macro set_sprpal( unsigned char palette<_al>, unsigned char __far *data<_bp_bank:_bp> );
