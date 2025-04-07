@@ -57,10 +57,9 @@ extern unsigned char *vdc_blk_addr;
 extern unsigned char  vdc_flg_bank;
 extern unsigned char *vdc_flg_addr;
 
-extern void __fastcall __macro set_metamap( unsigned char __far *metamap<vdc_map_bank:vdc_map_addr>, unsigned char __far *tiledef<vdc_blk_bank:vdc_blk_addr>, unsigned char __far *flagdef<vdc_flg_bank:vdc_flg_addr>, unsigned char tiles_w<vdc_map_line_w> );
+extern void __fastcall set_metatiles( unsigned char __far *tiledef<vdc_blk_bank:vdc_blk_addr>, unsigned char __far *flagdef<vdc_flg_bank:vdc_flg_addr>, unsigned char number_of_tiles<_al> );
+extern void __fastcall __macro set_metamap( unsigned char __far *metamap<vdc_map_bank:vdc_map_addr>, unsigned char tiles_w<vdc_map_line_w> );
 extern void __fastcall __macro set_multimap( unsigned char __far *multimap<vdc_scr_bank:vdc_scr_addr>, unsigned char screens_w<vdc_map_scrn_w> );
-
-extern void __fastcall init_metatiles( unsigned char number_of_tiles<_al> );
 
 extern void __fastcall draw_map( void );
 extern void __fastcall scroll_map( void );
@@ -68,9 +67,7 @@ extern void __fastcall scroll_map( void );
 extern void __fastcall blit_map( unsigned char tile_x<map_bat_x>, unsigned char tile_y<map_bat_y>, unsigned char tile_w<map_draw_x>, unsigned char tile_h<map_draw_y> );
 
 #asm
-		.macro	_set_metamap.4
-		lda	#$20			; Remap from MPR3 to MPR2.
-		trb.h	vdc_blk_addr
+		.macro	_set_metamap.2
 		stz	vdc_scr_bank
 		.endm
 
@@ -100,7 +97,8 @@ extern unsigned char *sgx_blk_addr;
 extern unsigned char  sgx_flg_bank;
 extern unsigned char *sgx_flg_addr;
 
-extern void __fastcall __macro sgx_set_metamap( unsigned char __far *metamap<sgx_map_bank:sgx_map_addr>, unsigned char __far *tiledef<sgx_blk_bank:sgx_blk_addr>, unsigned char __far *flagdef<sgx_flg_bank:sgx_flg_addr>, unsigned char tiles_w<sgx_map_line_w> );
+extern void __fastcall sgx_set_metatiles( unsigned char __far *tiledef<sgx_blk_bank:sgx_blk_addr>, unsigned char __far *flagdef<sgx_flg_bank:sgx_flg_addr>, unsigned char number_of_tiles<_al> );
+extern void __fastcall __macro sgx_set_metamap( unsigned char __far *metamap<sgx_map_bank:sgx_map_addr>, unsigned char tiles_w<sgx_map_line_w> );
 extern void __fastcall __macro sgx_set_multimap( unsigned char __far *multimap<sgx_scr_bank:sgx_scr_addr>, unsigned char screens_w<sgx_map_scrn_w> );
 
 extern void __fastcall sgx_init_metatiles( unsigned char number_of_tiles<_al> );
@@ -111,9 +109,7 @@ extern void __fastcall sgx_scroll_map( void );
 extern void __fastcall sgx_blit_map( unsigned char tile_x<map_bat_x>, unsigned char tile_y<map_bat_y>, unsigned char tile_w<map_draw_x>, unsigned char tile_h<map_draw_y> );
 
 #asm
-		.macro	_sgx_set_metamap.4
-		lda	#$20			; Remap from MPR3 to MPR2.
-		trb.h	sgx_blk_addr
+		.macro	_sgx_set_metamap.2
 		stz	sgx_scr_bank
 		.endm
 

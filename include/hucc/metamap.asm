@@ -73,7 +73,7 @@ METAMAP_LARGEMAP=0		; (0 or 1)
 ;
 
 	.ifndef	METAMAP_MULTISCR
-METAMAP_MULTISCR=0		; (0 or 1)
+METAMAP_MULTISCR=1		; (0 or 1)
 	.endif
 
 ;
@@ -95,7 +95,7 @@ METADEF_CHR_FLAG=1		; (0 or 1)
 
 ;
 ; Meta-tile definitions are accessed in MPR2 ($4000..$5FFF) and they cannot
-; cross the bank boundary. They must be stored 256-byte aligned!
+; cross the bank boundary.
 ;
 ; When working this way, 8 pointers in ZP are used to access the individual
 ; bytes in the meta-tile definitions. This is fine when using a regular map
@@ -117,7 +117,7 @@ METADEF_POINTERS=0
 	.endif
 
 ;
-;
+; Add a timing bar to the scroll_map() to see how long the drawing takes?
 ;
 
 	.ifndef	METAMAP_TIMETEST
@@ -130,21 +130,21 @@ METAMAP_TIMETEST=0
 
 	.if	METADEF_POINTERS
 
-	.if	METAMAP_MULTISCR
-	.fail	You cannot use METADEF_POINTERS and METAMAP_MULTISCR at the same time!
-	.endif
-
 		.zp
-blk_tl_l_ptr:	ds	2
-blk_tl_h_ptr:	ds	2
-blk_tr_l_ptr:	ds	2
-blk_tr_h_ptr:	ds	2
-blk_bl_l_ptr:	ds	2
-blk_bl_h_ptr:	ds	2
-blk_br_l_ptr:	ds	2
-blk_br_h_ptr:	ds	2
+blk_tl_l_ptr:	ds	2	; Meta-tile top left lo-byte.
+blk_tl_h_ptr:	ds	2	; Meta-tile top left hi-byte.
+blk_tr_l_ptr:	ds	2	; Meta-tile top right lo-byte.
+blk_tr_h_ptr:	ds	2	; Meta-tile top right hi-byte.
+blk_bl_l_ptr:	ds	2	; Meta-tile bottom left lo-byte.
+blk_bl_h_ptr:	ds	2	; Meta-tile bottom left hi-byte.
+blk_br_l_ptr:	ds	2	; Meta-tile bottom right lo-byte.
+blk_br_h_ptr:	ds	2	; Meta-tile bottom right hi-byte.
 		.code
+
 	.else
+
+	; If the meta-tile definititions are 2KByte aligned.
+
 BLK_4000_TL_L	=	$4000
 BLK_4000_TL_H	=	$4100
 BLK_4000_TR_L	=	$4200
@@ -180,6 +180,7 @@ BLK_5800_BL_L	=	$5C00
 BLK_5800_BL_H	=	$5D00
 BLK_5800_BR_L	=	$5E00
 BLK_5800_BR_H	=	$5F00
+
 	.endif
 
 MAP_UNALIGNED_X	=	$80
@@ -192,21 +193,22 @@ MAP_UNALIGNED_Y	=	$40
 		.bss
 
 ; **************
-; 8-byte entry for each SCREEN in the MULTI_MAP.
+; 8-byte (or 2-byte) entry for each SCREEN in the MULTI_MAP.
 
 		.rsset	0
 	.if	METADEF_POINTERS
-SCR_BLK_PAGE	.rs	1	; 2KBytes of data, 256-byte aligned.
-	.else
-SCR_BLK_PAGE	.rs	1	; >$4000, >$4800, >$5000, or >$5800.
-	.endif
-SCR_BLK_BANK	.rs	1
 SCR_MAP_PAGE	.rs	1	; 256-byte aligned.
 SCR_MAP_BANK	.rs	1
+	.else
+SCR_MAP_PAGE	.rs	1	; 256-byte aligned.
+SCR_MAP_BANK	.rs	1
+SCR_BLK_PAGE	.rs	1	; >$4000, >$4800, >$5000, or >$5800.
+SCR_BLK_BANK	.rs	1
 SCR_FLG_PAGE	.rs	1	; 256-byte aligned.
 SCR_FLG_BANK	.rs	1
 SCR_CHR_12	.rs	1	; Which CHR banks are used by the BLK, with
 SCR_CHR_34	.rs	1	; a max of 16 CHR banks per MULTI_MAP.
+	.endif
 
 ; **************
 ; 16-bytes of VDC metamap info.
@@ -228,7 +230,7 @@ vdc_map_bank:	ds	1
 vdc_scr_addr:	ds	2	; 8KByte maximum size.
 vdc_scr_bank:	ds	1
 vdc_scr_chr12:	ds	1	; Which CHR banks are used by the BLK, with
-vdc_scr_chr34:	ds	1	; a max of 16 CHR banks per MULTI_MAP.
+vdc_scr_chr34:	ds	1	; a max of 16 banks per multi-screen map.
 
 	.if	SUPPORT_SGX
 
@@ -252,7 +254,7 @@ sgx_map_bank:	ds	1
 sgx_scr_addr:	ds	2	; 8KByte maximum size.
 sgx_scr_bank:	ds	1
 sgx_scr_chr12:	ds	1	; Which CHR banks are used by the BLK, with
-sgx_scr_chr34:	ds	1	; a max of 16 CHR banks per MULTI_MAP.
+sgx_scr_chr34:	ds	1	; a max of 16 banks per multi-screen map.
 
 	.endif	SUPPORT_SGX
 
@@ -356,37 +358,47 @@ map_drawn	=	__temp + 1
 
 metamap_group	.procgroup
 
-	.if	METADEF_POINTERS
-
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; _init_metatiles - Initialize the meta-tile pointers.
-; _sgx_init_metatiles - Initialize the meta-tile pointers.
+; _set_metatiles - Initialize the meta-tile pointers.
+; _sgx_set_metatiles - Initialize the meta-tile pointers.
 ;
 
 	.if	SUPPORT_SGX
 
-		.proc	_sgx_init_metatiles
+		.proc	_sgx_set_metatiles.3
 
 		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
 		db	$F0			; Turn "clx" into a "beq".
 
-		.ref	_init_metatiles
+		.ref	_set_metatiles.3
 		.endp
 	.endif
 
-		.proc	_init_metatiles
+		.proc	_set_metatiles.3
 
 		clx				; Offset to PCE VDC.
 
+		lda.h	vdc_flg_addr, x		; Remap the address to MPR2.
+		and	#$1F
+		ora	#$40
+		sta.h	vdc_flg_addr, x
+
+		lda.h	vdc_blk_addr, x		; Remap the address to MPR2.
+		and	#$1F
+		ora	#$40
+		sta.h	vdc_blk_addr, x
+
+	.if	METADEF_POINTERS
 		dec	<_al			; Number of meta-tiles.
 
-		ldy.h	vdc_blk_addr, x		; Get the meta-tile page.
-		bne	!+			; If zero, get it from map.
+!:		lda.l	vdc_blk_addr, x		; Get the meta-tile address.
+		ldy.h	vdc_blk_addr, x		; If the page is zero, then
+		bne	!+			; retrieve it from the map.
 
-		tma3				; Set the BLK page and bank
-		pha				; from the 2 bytes *before*
+		tma3				; Set the BLK addr and bank
+		pha				; from the 3 bytes *before*
 		tma4				; the map data.
 		pha
 		lda.l	vdc_map_addr, x
@@ -405,17 +417,23 @@ metamap_group	.procgroup
 		sta	vdc_blk_bank, x
 		dey
 		lda	[_bp], y
+		and	#$1F
+		ora	#$40
 		sta.h	vdc_blk_addr, x
-		tay
+		dey
+		lda	[_bp], y
+		sta.l	vdc_blk_addr, x
 		pla
 		tam4
 		pla
 		tam3
+		bra	!-
 
-!:		cla				; Initialize the pointers.
-		clx
+!:		clx				; Initialize the pointers.
 .loop:		sta.l	blk_tl_l_ptr, x
-		sty.h	blk_tl_l_ptr, x
+		say
+		sta.h	blk_tl_l_ptr, x
+		say
 		sec				; Number of meta-tiles - 1,
 		adc	<_al			; so that 256 works!
 		bcc	!+
@@ -424,12 +442,11 @@ metamap_group	.procgroup
 		inx
 		cpx	#8 * 2			; Initialize 8 consecutive
 		bcc	.loop			; pointers.
+	.endif	METADEF_POINTERS
 
-.done:		leave
+		leave
 
 		.endp
-
-	.endif	METADEF_POINTERS
 
 
 
@@ -788,13 +805,15 @@ map_set_screen:	ldy	<map_scrn_y		; Map SCR Y coordinate.
 		bcc	!+
 		iny
 
-!:		sty.h	<__temp			; 8 bytes per screen entry, max
+!:		sty.h	<__temp			; 2 bytes per screen entry, max
 		asl	a			; 8KByte screen table.
 		rol.h	<__temp
+	.if	METADEF_POINTERS == 0
+		asl	a			; 8 bytes per screen entry when
+		rol.h	<__temp			; not using meta-tile pointers.
 		asl	a
 		rol.h	<__temp
-		asl	a
-		rol.h	<__temp
+	.endif
 
 		adc.l	vdc_scr_addr, x		; Calc screen data pointer.
 		sta.l	<_bp			; Maximum data size is 8KBytes
@@ -808,27 +827,38 @@ map_set_screen:	ldy	<map_scrn_y		; Map SCR Y coordinate.
 		tam4
 
 		cly
+		lda	[_bp], y		; Get SCR_MAP_BANK.
+		sta	vdc_map_bank, x
+		iny
+		lda	[_bp], y		; Get SCR_MAP_PAGE.
+		sta.h	vdc_map_addr, x
+
+	.if	METADEF_POINTERS == 0
+		iny
 		lda	[_bp], y		; Get SCR_BLK_PAGE.
 		sta.h	vdc_blk_addr, x
 		iny
 		lda	[_bp], y		; Get SCR_BLK_BANK.
 		sta	vdc_blk_bank, x
 		iny
-		lda	[_bp], y		; Get SCR_MAP_PAGE.
-		sta.h	vdc_map_addr, x
-		iny
-		lda	[_bp], y		; Get SCR_MAP_BANK.
-		sta	vdc_map_bank, x
-		iny
-		lda	[_bp], y		; Get SCR_FLG_PAGE.
-		sta.h	vdc_flg_page, x
-		iny
 		lda	[_bp], y		; Get SCR_FLG_BANK.
 		sta	vdc_flg_bank, x
+		iny
+		lda	[_bp], y		; Get SCR_FLG_PAGE.
+		sta.h	vdc_flg_addr, x
+	.if	0				; These are not currently used.
+		iny
+		lda	[_bp], y		; Get SCR_CHR_12.
+		sta.h	vdc_scr_chr12, x
+		iny
+		lda	[_bp], y		; Get SCR_CHR_34.
+		sta.h	vdc_scr_chr34, x
+	.endif
+	.endif
 
-		lda	vdc_bat_width, x	; Set up the map width.
-		lsr	a
-		sta	vdc_map_line_w, x
+;		lda	vdc_bat_width, x	; Set up the map width.
+;		lsr	a			; This should have been set
+;		sta	vdc_map_line_w, x	; with the multi-screen map.
 
 ;		jmp	map_set_banks		; Put BLK & MAP in MPR2-MPR5.
 
@@ -893,7 +923,7 @@ map_scroll_x:
 		beq	!no_change-		; Do nothing if no change.
 	.endif
 		sta	vdc_old_chr_x, x
-		bmi	.moved			; Test the sign of the change.
+		bmi	!+			; Test the sign of the change.
 
 		clc				; Draw RHS if chr_x >= old_x.
 		and	vdc_bat_x_mask, x
@@ -901,10 +931,10 @@ map_scroll_x:
 		dec	a
 		sta	<map_chr_x		; Update CHR X chr coordinate.
 		bit	vdc_bat_width, x
-		beq	.moved
+		beq	!+
 		inc	<map_scrn_x		; Wrapped to the next screen.
 
-.moved:		and	vdc_bat_x_mask, x
+!:		and	vdc_bat_x_mask, x
 		sta	<map_bat_x		; Save BAT X chr coordinate.
 
 		lda	<map_chr_y		; Save BAT Y chr coordinate.
@@ -949,14 +979,14 @@ map_scroll_x:
 		beq	!no_change-		; Do nothing if no change.
 	.endif
 		sta	vdc_old_chr_x, x
-		bmi	.moved			; Test the sign of the change.
+		bmi	!+			; Test the sign of the change.
 
 		clc				; Draw RHS if chr_x >= old_x.
 		adc	vdc_map_draw_w, x	; Usually (SCR_WIDTH / 8) + 1.
 		dec	a
 		sta	<map_chr_x		; Update CHR X chr coordinate.
 
-.moved:		bit	vdc_map_option, x	; Set bit7 to disable aligning
+!:		bit	vdc_map_option, x	; Set bit7 to disable aligning
 		bmi	!+			; BAT X with the map X.
 		and	vdc_bat_x_mask, x
 		sta	<map_bat_x		; Save BAT X chr coordinate.
@@ -1127,7 +1157,7 @@ map_scroll_y:
 		beq	!no_change-		; Do nothing if no change.
 	.endif
 		sta	vdc_old_chr_y, x
-		bmi	.moved			; Test the sign of the change.
+		bmi	!+			; Test the sign of the change.
 
 		clc				; Draw bottom if chr_y >= old_y.
 		and	vdc_bat_y_mask, x
@@ -1135,10 +1165,10 @@ map_scroll_y:
 		dec	a
 		sta	<map_chr_y		; Update CHR Y chr coordinate.
 		bit	vdc_bat_height, x
-		beq	.moved
+		beq	!+
 		inc	<map_scrn_y		; Wrapped to the next screen.
 
-.moved:		and	vdc_bat_y_mask, x
+!:		and	vdc_bat_y_mask, x
 		sta	<map_bat_y		; Save BAT Y chr coordinate.
 
 		lsr	a			; Map BLK Y coordinate.
@@ -1186,14 +1216,14 @@ map_scroll_y:
 		beq	!no_change-		; Do nothing if no change.
 	.endif
 		sta	vdc_old_chr_y, x
-		bmi	.moved			; Test the sign of the change.
+		bmi	!+			; Test the sign of the change.
 
 		clc				; Draw bottom if chr_y >= old_y.
 		adc	vdc_map_draw_h, x	; Usually (SCR_HEIGHT / 8) + 1.
 		dec	a
 		sta	<map_chr_y		; Update CHR Y chr coordinate.
 
-.moved:		tay				; A = map CHR Y coordinate.
+!:		tay				; A = map CHR Y coordinate.
 		lsr	a
 		say				; Y = map BLK Y coordinate.
 
@@ -1369,51 +1399,6 @@ map_scroll_y:
 
 
 	.if	METADEF_POINTERS
-
-; ***************************************************************************
-; ***************************************************************************
-;
-; _init_metatiles - Initialize the meta-tile pointers.
-; _sgx_init_metatiles - Initialize the meta-tile pointers.
-;
-
-	.if	SUPPORT_SGX
-
-		.proc	_sgx_init_metatiles
-
-		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$F0			; Turn "clx" into a "beq".
-
-		.ref	_init_metatiles
-		.endp
-	.endif
-
-		.proc	_init_metatiles
-
-		clx				; Offset to PCE VDC.
-
-		dec	<_al			; Number of meta-tiles.
-
-		ldy.h	vdc_blk_addr, x		; Get the meta-tile page.
-
-		cla				; Initialize the pointers.
-		clx
-.loop:		sta.l	blk_tl_l_ptr, x
-		sty.h	blk_tl_l_ptr, x
-		sec				; Number of meta-tiles - 1,
-		adc	<_al			; so that 256 works!
-		bcc	!+
-		iny
-!:		inx
-		inx
-		cpx	#8 * 2			; Initialize 8 consecutive
-		bcc	.loop			; pointers.
-
-.done:		leave
-
-		.endp
-
-
 
 ; ***************************************************************************
 ; ***************************************************************************
