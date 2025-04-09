@@ -40,16 +40,25 @@
 
 #asmdef	HUCC_USES_METAMAP 1
 
+// Current top-left of drawn map in pixels.
 extern unsigned int   vdc_map_pxl_x;
 extern unsigned int   vdc_map_pxl_y;
 
+// Width and height to draw/scroll in characters (not tiles).
+extern unsigned char  vdc_map_draw_w;
+extern unsigned char  vdc_map_draw_h;
+
+// Width of map (or multi-screen BAT) in tiles.
+extern unsigned char  vdc_map_line_w;
+
+// Width of map in screens (if multi-screen map).
+extern unsigned char  vdc_map_scrn_w;
+
 extern unsigned char  vdc_scr_bank;
 extern unsigned char *vdc_scr_addr;
-extern unsigned char  vdc_map_scrn_w;
 
 extern unsigned char  vdc_map_bank;
 extern unsigned char *vdc_map_addr;
-extern unsigned char  vdc_map_line_w;
 
 extern unsigned char  vdc_blk_bank;
 extern unsigned char *vdc_blk_addr;
@@ -80,16 +89,25 @@ extern void __fastcall blit_map( unsigned char tile_x<map_bat_x>, unsigned char 
 
 #ifdef _SGX
 
+// Current top-left of drawn map in pixels.
 extern unsigned int   sgx_map_pxl_x;
 extern unsigned int   sgx_map_pxl_y;
 
+// Width and height to draw/scroll in characters (not tiles).
+extern unsigned char  sgx_map_draw_w;
+extern unsigned char  sgx_map_draw_h;
+
+// Width of map (or multi-screen BAT) in tiles.
+extern unsigned char  sgx_map_line_w;
+
+// Width of map in screens (if multi-screen map).
+extern unsigned char  sgx_map_scrn_w;
+
 extern unsigned char  sgx_scr_bank;
 extern unsigned char *sgx_scr_addr;
-extern unsigned char  sgx_map_scrn_w;
 
 extern unsigned char  sgx_map_bank;
 extern unsigned char *sgx_map_addr;
-extern unsigned char  sgx_map_line_w;
 
 extern unsigned char  sgx_blk_bank;
 extern unsigned char *sgx_blk_addr;

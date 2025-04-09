@@ -59,6 +59,9 @@ charmap_group	.procgroup
 ; _draw_bat - Draw the entire screen at the current coordinates.
 ; _sgx_draw_bat - Draw the entire screen at the current coordinates.
 ;
+; void __fastcall draw_bat( void );
+; void __fastcall sgx_draw_bat( void );
+;
 
 	.if	SUPPORT_SGX
 
@@ -116,6 +119,9 @@ _draw_bat	.proc
 ;
 ; _scroll_bat - Draw a single row of CHR into the BAT to update the edge.
 ; _sgx_scroll_bat - Draw a single row of CHR into the BAT to update the edge.
+;
+; void __fastcall scroll_bat( void );
+; void __fastcall sgx_scroll_bat( void );
 ;
 
 	.if	SUPPORT_SGX
@@ -175,6 +181,9 @@ _scroll_bat	.proc
 ;
 ; _blit_bat - Draw a map rectangle to specific BAT coordinates.
 ; _sgx_blit_bat - Draw a map rectangle to specific BAT coordinates.
+;
+; void __fastcall blit_bat( unsigned char tile_x<map_bat_x>, unsigned char tile_y<map_bat_y>, unsigned char tile_w<map_draw_x>, unsigned char tile_h<map_draw_y> );
+; void __fastcall sgx_blit_bat( unsigned char tile_x<map_bat_x>, unsigned char tile_y<map_bat_y>, unsigned char tile_w<map_draw_x>, unsigned char tile_h<map_draw_y> );
 ;
 ; Normally you'd just use _draw_bat() and _scroll_bat(), but for those folks
 ; who really wish to take manual control, you can use this.

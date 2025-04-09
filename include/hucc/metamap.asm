@@ -258,37 +258,49 @@ sgx_scr_chr34:	ds	1	; a max of 16 banks per multi-screen map.
 
 	.endif	SUPPORT_SGX
 
-	.ifndef	HUCC
+	.if	0
 
 ; **************
-; 16-bytes of VDC metamap info (moved to hucc-gfx.asm to save .bss memory).
+; 16-bytes of VDC metamap info (moved to vdc.asm to save .bss memory).
 ;
 ; N.B. MUST be 16-bytes before the SGX versions to use PCE_VDC_OFFSET.
 
-vdc_map_line_w:	ds	1	; Line width of map data in tiles.
-vdc_map_scrn_w:	ds	1	; Line width of map data in screens.
-vdc_map_pxl_x:	ds	2	; Current top-left X in pixels.
-vdc_map_pxl_y:	ds	2	; Current top-left Y in pixels.
+vdc_map_draw_w:	ds	1	; (SCR_WIDTH / 8) + 1
+vdc_map_draw_h:	ds	1	; (SCR_HEIGHT / 8) + 1
+vdc_map_line_w:	ds	1	; Width of map (or multi-screen BAT) in tiles.
+vdc_map_scrn_w:	ds	1	; Width of map in screens (if multi-screen).
+vdc_map_pxl_x:	ds	2	; Top-left X of drawn map in pixels.
+vdc_map_pxl_y:	ds	2	; Top-left Y of drawn map in pixels.
 vdc_map_option:	ds	1	; Flags to disable BAT alignment.
 
 	.if	SUPPORT_SGX
-		ds	9	; UNUSED, needed for padding.
+		ds	7	; UNUSED, needed for padding.
 
 ; **************
-; 16-bytes of SGX metamap info (moved to hucc-gfx.asm to save .bss memory).
+; 16-bytes of SGX metamap info (moved to vdc.asm to save .bss memory).
 ;
 ; N.B. MUST be 16-bytes after the VDC versions to use SGX_VDC_OFFSET.
 
-sgx_map_line_w:	ds	1	; Line width of map data in tiles.
-sgx_map_scrn_w:	ds	1	; Line width of map data in screens.
-sgx_map_pxl_x:	ds	2	; Current top-left X in pixels.
-sgx_map_pxl_y:	ds	2	; Current top-left Y in pixels.
+sgx_map_draw_w:	ds	1	; (SCR_WIDTH / 8) + 1
+sgx_map_draw_h:	ds	1	; (SCR_HEIGHT / 8) + 1
+sgx_map_line_w:	ds	1	; Width of map (or multi-screen BAT) in tiles.
+sgx_map_scrn_w:	ds	1	; Width of map in screens (if multi-screen).
+sgx_map_pxl_x:	ds	2	; Top-left X of drawn map in pixels.
+sgx_map_pxl_y:	ds	2	; Top-left Y of drawn map in pixels.
 sgx_map_option:	ds	1	; Flags to disable BAT alignment.
 
 	.endif	SUPPORT_SGX
 
-	.else	HUCC
+	.endif	0
 
+; **************
+; Aliases for the asm variable names in HuCC.
+;
+
+	.ifdef	HUCC
+
+_vdc_map_draw_w	.alias	vdc_map_draw_w
+_vdc_map_draw_h	.alias	vdc_map_draw_h
 _vdc_map_pxl_x	.alias	vdc_map_pxl_x
 _vdc_map_pxl_y	.alias	vdc_map_pxl_y
 _vdc_old_chr_x	.alias	vdc_old_chr_x
@@ -307,6 +319,8 @@ _vdc_scr_chr12	.alias	vdc_scr_chr12
 _vdc_scr_chr34	.alias	vdc_scr_chr34
 
 	.if	SUPPORT_SGX
+_sgx_map_draw_w	.alias	sgx_map_draw_w
+_sgx_map_draw_h	.alias	sgx_map_draw_h
 _sgx_map_pxl_x	.alias	sgx_map_pxl_x
 _sgx_map_pxl_y	.alias	sgx_map_pxl_y
 _sgx_old_chr_x	.alias	sgx_old_chr_x
@@ -326,8 +340,6 @@ _sgx_scr_chr34	.alias	sgx_scr_chr34
 	.endif	SUPPORT_SGX
 
 	.endif	HUCC
-
-
 
 ; **************
 ; Temporary variables for drawing, using common zero-page locations.
@@ -363,6 +375,9 @@ metamap_group	.procgroup
 ;
 ; _set_metatiles - Initialize the meta-tile pointers.
 ; _sgx_set_metatiles - Initialize the meta-tile pointers.
+;
+; void __fastcall set_metatiles( unsigned char __far *tiledef<vdc_blk_bank:vdc_blk_addr>, unsigned char __far *flagdef<vdc_flg_bank:vdc_flg_addr>, unsigned char number_of_tiles<_al> );
+; void __fastcall sgx_set_metatiles( unsigned char __far *tiledef<sgx_blk_bank:sgx_blk_addr>, unsigned char __far *flagdef<sgx_flg_bank:sgx_flg_addr>, unsigned char number_of_tiles<_al> );
 ;
 
 	.if	SUPPORT_SGX
@@ -456,6 +471,9 @@ metamap_group	.procgroup
 ; _draw_map - Draw the entire screen at the current coordinates.
 ; _sgx_draw_map - Draw the entire screen at the current coordinates.
 ;
+; void __fastcall draw_map( void );
+; void __fastcall sgx_draw_map( void );
+;
 
 	.if	SUPPORT_SGX
 
@@ -521,6 +539,9 @@ _draw_map	.proc
 ;
 ; _scroll_map - Draw a single row of CHR into the BAT to update the edge.
 ; _sgx_scroll_map - Draw a single row of CHR into the BAT to update the edge.
+;
+; void __fastcall scroll_map( void );
+; void __fastcall sgx_scroll_map( void );
 ;
 
 	.if	SUPPORT_SGX
@@ -610,6 +631,9 @@ _scroll_map	.proc
 ;
 ; _blit_map - Draw a map rectangle to specific BAT coordinates.
 ; _sgx_blit_map - Draw a map rectangle to specific BAT coordinates.
+;
+; void __fastcall blit_map( unsigned char tile_x<map_bat_x>, unsigned char tile_y<map_bat_y>, unsigned char tile_w<map_draw_x>, unsigned char tile_h<map_draw_y> );
+; void __fastcall sgx_blit_map( unsigned char tile_x<map_bat_x>, unsigned char tile_y<map_bat_y>, unsigned char tile_w<map_draw_x>, unsigned char tile_h<map_draw_y> );
 ;
 ; Normally you'd just use _draw_map() and _scroll_map(), but for those folks
 ; who really wish to take manual control, you can use this.
