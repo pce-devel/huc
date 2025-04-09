@@ -6,7 +6,7 @@
 ; Based on the original HuC and MagicKit functions by David Michel and the
 ; other original HuC developers.
 ;
-; Modifications copyright John Brandwood 2024.
+; Modifications copyright John Brandwood 2024-2025.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -33,6 +33,18 @@
 
 		.alias	_disp_on		= set_dspon
 		.alias	_disp_off		= set_dspoff
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; void __fastcall set_screen_size( unsigned char value<_al> );
+; void __fastcall sgx_set_screen_size( unsigned char value<_al> );
+;
+
+		.alias	_set_screen_size.1	= set_bat_vdc
+		.alias	_sgx_set_screen_size.1	= set_bat_sgx
 
 
 
@@ -75,26 +87,9 @@ _set_256x224	.proc
 		bcc	!+
 		ldy	#^.mode_256x224		; Set SGX 1st, with no VBL.
 		call	set_mode_sgx
-
-		ldy	#VDC_MWR_64x32 >> 4	; HuCC sets up various vars
-		call	screen_size_sgx		; related to the BAT size.
-
-		lda	#(256 >> 8) + 1		; Initialize the draw size for
-		sta	sgx_map_draw_w		; bidirection scrolling, 1 chr
-		lda	#(224 >> 8) + 1		; larger than the display size.
-		sta	sgx_map_draw_h
 	.endif
 !:		ldy	#^.mode_256x224		; Set VDC 2nd, VBL allowed.
 		call	set_mode_vdc
-
-		lda	#VDC_MWR_64x32 >> 4	; HuCC sets up various vars
-		sta	<_al			; related to the BAT size.
-		call	screen_size_vdc
-
-		lda	#(256 / 8) + 1		; Initialize the draw size for
-		sta	vdc_map_draw_w		; bidirection scrolling, 1 chr
-		lda	#(224 / 8) + 1		; larger than the display size.
-		sta	vdc_map_draw_h
 
 	.if	SUPPORT_SGX
 		bit	SGX_SR			; Purge any overdue RCR.
@@ -180,26 +175,9 @@ _set_240x208	.proc
 		bcc	!+
 		ldy	#^.mode_240x208		; Set SGX 1st, with no VBL.
 		call	set_mode_sgx
-
-		ldy	#VDC_MWR_32x32 >> 4	; HuCC sets up various vars
-		call	screen_size_sgx		; related to the BAT size.
-
-		lda	#(240 >> 8) + 1		; Initialize the draw size for
-		sta	sgx_map_draw_w		; bidirection scrolling, 1 chr
-		lda	#(208 >> 8) + 1		; larger than the display size.
-		sta	sgx_map_draw_h
 	.endif
 !:		ldy	#^.mode_240x208		; Set VDC 2nd, VBL allowed.
 		call	set_mode_vdc
-
-		lda	#VDC_MWR_32x32 >> 4	; HuCC sets up various vars
-		sta	<_al			; related to the BAT size.
-		call	screen_size_vdc
-
-		lda	#(240 / 8) + 1		; Initialize the draw size for
-		sta	vdc_map_draw_w		; bidirection scrolling, 1 chr
-		lda	#(208 / 8) + 1		; larger than the display size.
-		sta	vdc_map_draw_h
 
 	.if	SUPPORT_SGX
 		bit	SGX_SR			; Purge any overdue RCR.
@@ -249,169 +227,6 @@ _set_240x208	.proc
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall set_screen_size( unsigned char value<_al> );
-; void __fastcall sgx_set_screen_size( unsigned char value<_al> );
-;
-; screen_size_sgx
-; screen_size_vdc
-;
-; set bg map virtual size
-;
-; IN : X:Y = new size (0-7)
-;
-; (VDC_MWR_32x32  >> 4) or in HuC, SCR_SIZE_32x32
-; (VDC_MWR_32x64  >> 4) or in HuC, SCR_SIZE_32x64
-; (VDC_MWR_64x32  >> 4) or in HuC, SCR_SIZE_64x32
-; (VDC_MWR_64x64  >> 4) or in HuC, SCR_SIZE_64x64
-; (VDC_MWR_128x32 >> 4) or in HuC, SCR_SIZE_128x32
-; (VDC_MWR_128x64 >> 4) or in HuC, SCR_SIZE_128x64
-
-huc_screen_size	.procgroup
-
-	.if	SUPPORT_SGX
-screen_size_sgx	.proc
-
-		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$F0			; Turn "clx" into a "beq".
-
-		.ref	screen_size_vdc
-		.endp
-	.endif
-
-screen_size_vdc	.proc
-
-		clx				; Offset to PCE VDC.
-
-		lda	<_al			; Get screen size value.
-		and	#7			; Sanitize screen size value.
-		tay
-		asl	a			; Put it in bits 4..6.
-		asl	a
-		asl	a
-		asl	a
-		sta	<__temp
-
-		lda	.width, y
-		sta	vdc_bat_width, x
-		dec	a
-		sta	vdc_bat_x_mask, x
-
-		lda	.height, y
-		sta	vdc_bat_height, x
-		dec	a
-		sta	vdc_bat_y_mask, x
-
-		lda	.limit, y
-		sta	vdc_bat_limit, x
-
-		lda	.increment, y		; Put the VRAM increment for a
-		sta	<vdc_crh, x		; line into vdc_crh for later.
-
-		lda	#VDC_MWR
-		sta	<vdc_reg, x
-		sta	VDC_AR, x
-
-		lda	vdc_mwr			; Get the MWR access width bits.
-		and	#$8F
-		ora	<__temp
-	.if	SUPPORT_SGX
-		cpx	#PCE_VDC_OFFSET		; This has no SGX shadow!
-		bne	!+
-	.endif
-		sta	vdc_mwr
-!:		sta	VDC_DL, x
-
-		lda	#VDC_VWR
-		sta	<vdc_reg, x
-		sta	VDC_AR, x
-
-		leave
-
-.width:		db	$20,$40,$80,$80,$20,$40,$80,$80
-.height:	db	$20,$20,$20,$20,$40,$40,$40,$40
-.limit:		db	$03,$07,$0F,$0F,$07,$0F,$1F,$1F
-.increment	db	$08,$10,$18,$18,$08,$10,$18,$18
-
-		.bss
-
-_font_base:	ds	2
-
-; **************
-; 16-bytes of VDC HuC BAT information.
-;
-; N.B. MUST be 16-bytes before the SGX versions to use PCE_VDC_OFFSET.
-;
-; N.B. Declared inside this .proc so that they can be stripped if unused.
-
-; Initialized by set_screen_size()
-vdc_bat_width:	ds	1	; $20, $40, $80
-vdc_bat_height:	ds	1	; $20, $40
-vdc_bat_x_mask:	ds	1	; $1F, $3F, $7F
-vdc_bat_y_mask:	ds	1	; $1F, $3F
-vdc_bat_limit:	ds	1	; (>$03FF), (>$07FF), (>$0FFF), (>$1FFF)
-
-; Initialized for bidirection scrolling by set256x224() and set_xres().
-vdc_map_draw_w:	ds	1	; (SCR_WIDTH / 8) + 1
-vdc_map_draw_h:	ds	1	; (SCR_HEIGHT / 8) + 1
-
-; From metamap.asm just to save .bss space.
-vdc_map_line_w:	ds	1	; Line width of map data in tiles.
-vdc_map_scrn_w:	ds	1	; Line width of map data in screens.
-vdc_map_pxl_x:	ds	2	; Current top-left X in pixels.
-vdc_map_pxl_y:	ds	2	; Current top-left Y in pixels.
-vdc_map_option:	ds	1	; Flags to disable BAT alignment.
-
-; From hucc-old-spr.asm just to save space. This NEEDS to be changed!
-spr_max:	ds	1
-spr_clr:	ds	1
-
-	.if	SUPPORT_SGX
-
-; **************
-; 16-bytes of SGX HuC BAT information.
-;
-; N.B. MUST be 16-bytes after the VDC versions to use SGX_VDC_OFFSET.
-;
-; N.B. Declared inside this .proc so that they can be stripped if unused.
-
-; Initialized by sgx_set_screen_size()
-sgx_bat_width:	ds	1	; $20, $40, $80
-sgx_bat_height:	ds	1	; $20, $40
-sgx_bat_x_mask:	ds	1	; $1F, $3F, $7F
-sgx_bat_y_mask:	ds	1	; $1F, $3F
-sgx_bat_limit:	ds	1	; (>$03FF), (>$07FF), (>$0FFF), (>$1FFF)
-
-; Initialized for bidirection scrolling by set256x224() and sgx_set_xres().
-sgx_map_draw_w:	ds	1	; (SCR_WIDTH / 8) + 1
-sgx_map_draw_h:	ds	1	; (SCR_HEIGHT / 8) + 1
-
-; From metamap.asm just to save .bss space.
-sgx_map_line_w:	ds	1	; Line width of map data in tiles.
-sgx_map_scrn_w:	ds	1	; Line width of map data in screens.
-sgx_map_pxl_x:	ds	2	; Current top-left X in pixels.
-sgx_map_pxl_y:	ds	2	; Current top-left Y in pixels.
-sgx_map_option:	ds	1	; Flags to disable BAT alignment.
-
-; From hucc-old-spr.asm just to save space. This NEEDS to be changed!
-sgx_spr_max:	ds	1
-sgx_spr_clr:	ds	1
-
-	.endif
-
-		.code
-
-		.endp
-
-		.endprocgroup	; huc_screen_size
-
-		.alias	_set_screen_size.1	= screen_size_vdc
-		.alias	_sgx_set_screen_size.1	= screen_size_sgx
-
-
-
-; ***************************************************************************
-; ***************************************************************************
-;
 ; void __fastcall _macro set_xres( unsigned int x_pixels<_ax> );
 ; void __fastcall _macro sgx_set_xres( unsigned int x_pixels<_ax> );
 ;
@@ -447,10 +262,6 @@ _set_xres.2	.proc
 		ror	a
 		lsr.h	<_ax
 		ror	a
-		tay				; Initialize the draw size for
-		inc	a			; bidirection scrolling, 1 chr
-		sta	vdc_map_draw_w, x	; larger than the display size.
-		tya
 		dec	a			; HDW = width - 1
 		sta	<.hdw
 
@@ -877,6 +688,11 @@ _gfx_load_vram:
 ;
 ; ***************************************************************************
 ; ***************************************************************************
+
+		.bss
+_font_base:	ds	2
+		.code
+
 
 ; **************
 ; void __fastcall set_font_addr( unsigned int vram<acc> );
@@ -1470,30 +1286,3 @@ put_string_vdc: ;	.proc
 ;		.endp
 
 		.alias	_put_string.3		= put_string_vdc
-
-
-
-; ***************************************************************************
-; ***************************************************************************
-;
-; Put the _di data pointer into the VDC's MARR or MAWR register.
-;
-; N.B. Library code relies on this preserving Y!
-;
-; _di + 0	= x coordinate
-; _di + 1	= y coordinate
-;
-
-set_di_xy_mawr:	cla
-		bit	vdc_bat_width, x
-		bmi	.w128
-		bvs	.w64
-.w32:		lsr.h	<_di
-		ror	a
-.w64:		lsr.h	<_di
-		ror	a
-.w128:		lsr.h	<_di
-		ror	a
-		ora.l	<_di
-		sta.l	<_di
-		jmp	set_di_to_mawr
