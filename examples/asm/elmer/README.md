@@ -91,12 +91,3 @@ The "CORE(not TM)" PC Engine library is a small and configurable set of library 
 
 * ted2-core-gulliver
   - An example of playing a HuVIDEO movie from Hudson's GulliverBoy CD-ROM game.
-
-
-## Getting started with the KickC compiler
-
-* rom-kickc-hello
-  - A simple example of creating a HuCARD ROM.
-
-* rom-kickc-shmup
-  - A simple conversion of HuC's shmup.c sample to KickC.
