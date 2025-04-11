@@ -601,7 +601,8 @@ void dopsdinc (void)
 
 		// .data first!
 		nl();
-		ol(".code");
+		ol(".data");
+		ol(".opt\t\td-");
 
 		// Get the label, but save it for later.
 		readstr();
@@ -650,8 +651,9 @@ void dopsdinc (void)
 		outstr(litq2);
 		outstr("\"");
 		nl();
-
-		ol(".page\t\t7");	/* assumes code bank is mapped at 0xE000 */
+		ol(".page\t\t3");
+		ol(".opt\t\td+");
+		ol(".code");
 
 		if (!match(")"))
 			error("missing )");
