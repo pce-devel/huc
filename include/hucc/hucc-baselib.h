@@ -124,7 +124,7 @@ extern unsigned char __fastcall __macro cd_execoverlay( unsigned char ovl_index<
 
 extern int __fastcall abs( int value<acc> );
 
-extern void __fastcall srand( unsigned char seed<acc> );
+extern void __fastcall __macro srand( unsigned char seed<acc> );
 extern unsigned int __fastcall rand( void );
 extern unsigned char __fastcall rand8( void );
 

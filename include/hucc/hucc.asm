@@ -339,7 +339,8 @@ core_main	.proc
 	.endif
 
 	.ifndef	HUCC_NO_DEFAULT_RANDOM
-		call	init_random		; Initialize random seed.
+		ldy	irq_cnt			; Initialize random seed.
+		call	init_random
 	.endif
 
 		ldx	#HUCC_STACK_SZ		; Initialize the HuCC stack.
