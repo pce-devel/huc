@@ -7,7 +7,7 @@
 ;
 ; This could be used by emulator authors to compare a real PCE vs emulation.
 ;
-; Copyright John Brandwood 2024.
+; Copyright John Brandwood 2024-2025.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -96,6 +96,14 @@ CHR_0x20	=	CHR_ZERO + 32		; ASCII ' ' CHR tile #.
 timer_val:	ds	2
 data_relative:	ds	1			; $80=DATA_IN clears timer.
 
+suppress_init:	ds	1			; Suppress initiate tags.
+abort_play:	ds	1			; Abort while playing.
+irq_occurred:	ds	1			; IFU_INT_MSG_IN or IFU_INT_DAT_IN.
+show_data_irq:	ds	1			; Check for IRQ2 during data read.
+
+;inform_stat:
+
+
 		.bss
 
 		; Display variables.
@@ -121,6 +129,8 @@ exit_on_stat:	ds	1			; Exit cd_read early?
 exit_on_mesg:	ds	1			; Exit cd_read early?
 
 delay_data:	ds	1			; Add delay after DATA_IN?
+
+flag_cmd_drop:	ds	1			; Display CMD drop.
 
 		.code
 
@@ -227,6 +237,12 @@ core_main:	; Turn the display off and initialize the screen mode.
 		sta.h	timer_hook
 		smb2	<irq_vec		; Enable timer_hook.
 
+		lda.l	#log_irq2		; Install log_irq2 vector.
+		sta.l	irq2_hook
+		lda.h	#log_irq2
+		sta.h	irq2_hook
+		smb0	<irq_vec		; Enable irq2_hook.
+
 		; Reset the TTY.
 
 		PRINTF	"\e<\eP0\eXL1\eYT1\n"
@@ -249,6 +265,11 @@ core_main:	; Turn the display off and initialize the screen mode.
 		jsr	test_number9
 		jsr	test_number10
 		jsr	test_number11
+		jsr	test_number12
+		jsr	test_number13
+		jsr	test_number14
+		jsr	test_number15
+		jsr	test_number16
 
 		PRINTF	"\fAll tests completed!\n\nExecuting CD_RESET to stop the CD.\n\n"
 		call	cdr_reset
@@ -563,6 +584,54 @@ print_log	.proc
 .invalid:	db	" = INVALID",0
 
 		.endp
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; log_irq2 - Log IRQ2 events.
+;
+
+log_irq2:	pha
+		phx
+		phy
+
+		lda	IFU_IRQ_MSK		; What caused the interrupt?
+		and	IFU_IRQ_FLG
+
+		bit	#IFU_INT_DAT_IN
+		bne	.got_int_dat
+		bit	#IFU_INT_MSG_IN
+		bne	.got_int_msg
+		bra	.irq2_done
+
+		; Data read finished (PHASE_STAT_IN or PHASE_MESG_IN).
+
+.got_int_msg:	lda	#IFU_INT_MSG_IN		; Disable IFU_INT_MSG_IN.
+		trb	IFU_IRQ_MSK
+
+		TAG_FLG	"Received IFU_INT_MSG_IN."
+
+;		tsb	<irq_occurred
+
+		bra	.irq2_done
+
+		; PHASE_DATA_IN interrupt.
+
+.got_int_dat:	lda	#IFU_INT_DAT_IN		; Disable IFU_INT_DAT_IN.
+		trb	IFU_IRQ_MSK
+
+		TAG_FLG	"Received IFU_INT_DAT_IN."
+
+;		tsb	<irq_occurred
+
+		bra	.irq2_done
+
+.irq2_done:	ply
+		plx
+		pla
+		rti
 
 
 
@@ -1117,6 +1186,238 @@ test_number11:	stz	lba_top			; Reset back to 0.
 ; ***************************************************************************
 ; ***************************************************************************
 ;
+; test_number12 - Play 5s audio, return immediately.
+;
+
+test_number12:	PRINTF	"\f\eP1SCSI TEST #12: Play 5s audio, return immediately.\eP0\n\n"
+
+		jsr	clear_timer
+
+		stz	scsi_send_buf + 0	; Reset scsi_opcode.
+
+		lda	#$00			; Play RecH/Min/Trk
+		sta	<_al
+		lda	#$03			; Play RecM/Sec/---
+		sta	<_ah
+		lda	#$00			; Play RecL/Frm/---
+		sta	<_bl
+
+		lda	#$40			; Play address type.
+		sta	<_bh
+
+		lda	#$00			; Stop RecH/Min/Trk
+		sta	<_cl
+		lda	#$08			; Stop RecM/Sec/---
+		sta	<_ch
+		lda	#$00			; Stop RecL/Frm/---
+		sta	<_dl
+
+		lda	#$43			; Stop address type/mode.
+		sta	<_dh
+
+		jsr	test_initiate		; Acquire the SCSI bus.
+
+		call	clear_log		; Hide early states.
+
+		jsr	test_cd_play		; Issue search command.
+
+;		call	print_log		; Display the states.
+
+		jsr	test_initiate		; Acquire the SCSI bus.
+
+;		call	clear_log		; Hide early states.
+
+		jsr	test_cd_play		; Issue play command.
+
+		call	print_log		; Display the states.
+
+		jmp	test_finished
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; test_number13 - Play 5s audio, keep BSY.
+;
+
+test_number13:	PRINTF	"\f\eP1SCSI TEST #13: Play 5s audio, keep BSY.\eP0\n\n"
+
+		jsr	clear_timer
+
+		stz	scsi_send_buf + 0	; Reset scsi_opcode.
+
+		lda	#$00			; Play RecH/Min/Trk
+		sta	<_al
+		lda	#$03			; Play RecM/Sec/---
+		sta	<_ah
+		lda	#$00			; Play RecL/Frm/---
+		sta	<_bl
+
+		lda	#$40			; Play address type.
+		sta	<_bh
+
+		lda	#$00			; Stop RecH/Min/Trk
+		sta	<_cl
+		lda	#$08			; Stop RecM/Sec/---
+		sta	<_ch
+		lda	#$00			; Stop RecL/Frm/---
+		sta	<_dl
+
+		lda	#$42			; Stop address type/mode.
+		sta	<_dh
+
+		jsr	test_initiate		; Acquire the SCSI bus.
+
+		call	clear_log		; Hide early states.
+
+		jsr	test_cd_play		; Issue search command.
+
+		lda	#1			; Don't log initiation
+		sta	<suppress_init		; messages.
+
+		jsr	test_initiate		; Acquire the SCSI bus.
+
+		stz	<suppress_init
+
+		jsr	test_cd_play		; Issue play command.
+
+		call	print_log		; Display the states.
+
+		jmp	test_finished
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; test_number14 - Play 7s audio, keep BSY, then abort during play.
+;
+
+test_number14:	PRINTF	"\f\eP1SCSI TEST #14: Play 7s audio, keep BSY, abort after 3s.\eP0\n\n"
+
+		jsr	clear_timer
+
+		stz	scsi_send_buf + 0	; Reset scsi_opcode.
+
+		lda	#$00			; Play RecH/Min/Trk
+		sta	<_al
+		lda	#$02			; Play RecM/Sec/---
+		sta	<_ah
+		lda	#$00			; Play RecL/Frm/---
+		sta	<_bl
+
+		lda	#$40			; Play address type.
+		sta	<_bh
+
+		lda	#$00			; Stop RecH/Min/Trk
+		sta	<_cl
+		lda	#$09			; Stop RecM/Sec/---
+		sta	<_ch
+		lda	#$00			; Stop RecL/Frm/---
+		sta	<_dl
+
+		lda	#$42			; Stop address type/mode.
+		sta	<_dh
+
+		jsr	test_initiate		; Acquire the SCSI bus.
+
+		jsr	test_cd_play		; Issue search command.
+
+		jsr	test_initiate		; Acquire the SCSI bus.
+
+		call	clear_log		; Hide early states.
+
+		jsr	clear_timer
+
+		inc	abort_play		; Return when CMD sent.
+
+		jsr	test_cd_play		; Issue play command.
+
+		stz	abort_play		; Clear this!
+
+		lda.h	#3072
+.wait:		cmp.h	timer_val
+		bne	.wait
+
+		jsr	test_abort		; Abort the command.
+
+		call	print_log		; Display the states.
+
+		jmp	test_finished
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; test_number15 - Read 1 sector, check for IFU_INT_DAT_IN.
+;
+
+test_number15:	PRINTF	"\f\eP1SCSI TEST #15: Read 1 sector, check for IFU_INT_DAT_IN.\eP0\n\n"
+
+		jsr	clear_timer
+
+		lda	#$04			; Read LBA #$000004
+		stz	<_ch
+		stz	<_cl
+		sta	<_dl
+
+		lda	#1			; Read 2 sectors.
+		sta	<_al
+
+		inc	suppress_init
+		jsr	test_initiate		; Acquire the SCSI bus.
+		stz	suppress_init
+
+		call	clear_log		; Hide early states.
+
+		inc	show_data_irq
+
+		jsr	test_cd_read		; Issue read command.
+
+		call	print_log		; Display the states.
+
+		stz	show_data_irq
+
+		jmp	test_finished
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; test_number16 - Check whether cd_stat and cd_dinfo generate IRQ2.
+;
+
+test_number16:	PRINTF	"\f\eP1SCSI TEST #16: Check cd_stat and cd_dinfo for IRQ2.\eP0\n\n"
+
+		call	clear_log
+
+		jsr	clear_timer
+
+		TAG_FLG	"Does CD_STAT generate IRQ2?"
+
+		ldy	#1			; Is the drive ready? Calling
+		call	test_stat		; this is what actually makes
+
+		jsr	clear_timer
+
+		TAG_FLG	"\nDoes CD_DINFO generate IRQ2?"
+
+		stz	<_al			; dinfo type = 0
+		stz	<_ah			; dinfo track#
+		call	test_dinfo
+
+		call	print_log
+
+		jmp	test_finished
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
 ; test_init_disc - Initialize the CD drive and scan the CD TOC.
 ;
 ; Returns: Y,Z-flag,N-flag = $00 or an error code.
@@ -1197,6 +1498,194 @@ test_init_disc	.proc
 ; ***************************************************************************
 ; ***************************************************************************
 ;
+; test_stat - Check CD drive status (BIOS CD_STAT).
+;
+; Returns: Y,Z-flag,N-flag = $00 or an error code.
+;
+
+test_stat:	cpy	#0			; Check for BUSY or READY?
+		bne	.check_ready
+
+		lda	IFU_SCSI_FLG		; $80 if drive BUSY, or $00.
+		and	#SCSI_BSY
+		tay
+		bra	.finished
+
+		; Initiate CD-ROM command.
+
+.check_ready:	lda	#1			; Don't log initiation
+		sta	<suppress_init		; messages.
+		jsr	test_initiate		; Acquire the SCSI bus.
+		stz	<suppress_init
+
+		lda	#IFU_INT_DAT_IN + IFU_INT_MSG_IN
+		tsb	IFU_IRQ_MSK
+
+		; Process SCSI phases.
+
+.proc_scsi_loop:jsr	test_get_phase
+		cmp	#PHASE_COMMAND
+		beq	.send_command
+		cmp	#PHASE_STAT_IN
+		bne	.proc_scsi_loop
+
+		; SCSI command done.
+
+.command_done:	TAG_FLG	"cd_stat: Got PHASE_STAT_IN"
+
+		jsr	test_get_status		; Returns code in Y & A.
+;		cmp	#CDSTS_GOOD
+		beq	.finished
+
+;		jsr	scsi_req_sense		; Clear error, get code in Y.
+
+.finished:	lda	#IFU_INT_DAT_IN + IFU_INT_MSG_IN
+		trb	IFU_IRQ_MSK
+
+		rts				; All Done!
+
+		; Send SCSI command.
+
+.send_command:	TAG_FLG	"cd_stat: Got PHASE_COMMAND"
+
+		lda	#CDROM_TESTRDY
+		jsr	test_init_cmd
+
+		ldy	#6
+		jsr	test_send_cmd
+		bra	.proc_scsi_loop
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; test_dinfo - Read the disc's TOC data (Table Of Contents) (BIOS CD_DINFO).
+;
+; _al = 0 returns the track numbers
+;
+;  scsi_recv_buf + 0: Min track (BCD)
+;  scsi_recv_buf + 1: Max track (BCD)
+;  scsi_recv_buf + 2: 0
+;  scsi_recv_buf + 3: 0
+;
+; _al = 1 returns the end-of-disc information
+;
+;  scsi_recv_buf + 0: Readout Minutes (BCD)
+;  scsi_recv_buf + 1: Readout Seconds (BCD)
+;  scsi_recv_buf + 2: Readout Frame   (BCD)
+;  scsi_recv_buf + 3: 0
+;
+; Returns: Y,Z-flag,N-flag = $00 or an error code.
+;
+
+test_dinfo:
+		; Initiate CD-ROM command.
+
+.retry_command:	lda	#1			; Don't log initiation
+		sta	<suppress_init		; messages.
+		jsr	test_initiate		; Acquire the SCSI bus.
+		stz	<suppress_init
+
+		lda	#IFU_INT_DAT_IN + IFU_INT_MSG_IN
+		tsb	IFU_IRQ_MSK
+
+		; Process SCSI phases.
+
+.proc_scsi_loop:jsr	test_get_phase
+		cmp	#PHASE_COMMAND
+		beq	.send_command
+		cmp	#PHASE_DATA_IN
+		beq	.get_response
+		cmp	#PHASE_STAT_IN
+		bne	.proc_scsi_loop
+
+		; SCSI command done.
+
+.command_done:	TAG_FLG	"cd_dinfo: Got PHASE_STAT_IN"
+
+		jsr	test_get_status		; Returns code in Y & A.
+;		cmp	#CDSTS_GOOD
+		beq	.finished
+
+;		jsr	scsi_req_sense		; Clear error, get code in Y.
+
+.finished:	lda	#IFU_INT_DAT_IN + IFU_INT_MSG_IN
+		trb	IFU_IRQ_MSK
+
+		rts				; All Done!
+
+		; Send SCSI command.
+
+.send_command:	TAG_FLG	"cd_dinfo: Got PHASE_COMMAND"
+
+!:		lda	#CDROM_READTOC
+		jsr	test_init_cmd
+
+		lda	<_al			; Set TOC type.
+		and	#3
+		sta	scsi_send_buf + 1
+		lda	<_ah			; Set TOC track.
+		sta	scsi_send_buf + 2
+
+		ldy	#10
+		jsr	test_send_cmd
+		bra	.proc_scsi_loop
+
+		; Read SCSI reply.
+
+.get_response:	TAG_FLG	"cd_dinfo: Got PHASE_DATA_IN"
+
+		ldy	#4			; Read 4-bytes of TOC info.
+		jsr	test_recv_reply
+		bra	.proc_scsi_loop
+
+		;
+		;	********
+		;
+
+test_send_cmd:	clx
+
+.send_byte:	lda	IFU_SCSI_FLG
+		and	#SCSI_MSK
+		cmp	#PHASE_COMMAND
+		bne	.send_byte
+
+		lda	scsi_send_buf, x
+		sta	IFU_SCSI_DAT
+		jsr	test_handshake
+
+		inx
+		dey
+		bne	.send_byte
+
+		rts
+
+		;
+		;	********
+		;
+
+test_recv_reply:clx				; Receive buffer index.
+
+.recv_byte:	lda	IFU_SCSI_FLG
+		and	#SCSI_MSK
+		cmp	#PHASE_DATA_IN
+		bne	.recv_byte
+
+		lda	IFU_SCSI_DAT
+		sta	scsi_recv_buf, x
+		jsr	test_handshake
+
+		inx
+		dey
+		bne	.recv_byte
+.finished:	rts
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
 ; test_cd_read - with CPU memory as destination (like CD_READ to RAM).
 ;
 ; Returns: Y,Z-flag,N-flag = $00 or an error code.
@@ -1204,7 +1693,7 @@ test_init_disc	.proc
 
 		; Initiate CD-ROM command.
 
-test_cd_retry:	jsr	test_initiate		; Acquire the SCSI bus.
+!cd_retry:	jsr	test_initiate		; Acquire the SCSI bus.
 
 
 		; Test cd_read, assume already initiated.
@@ -1264,7 +1753,7 @@ test_cd_read:
 .read_error:	TAG_FLG	"cd_read: Read error!"
 
 ;		jsr	scsi_req_sense		; Clear error, get code in Y.
-		bra	test_cd_retry
+		bra	!cd_retry-
 
 		; Get SCSI post-command status.
 
@@ -1340,6 +1829,20 @@ test_cd_read:
 
 		dex
 		bne	!loop-
+
+		bbr0	<show_data_irq, !loop+
+		TAG_FLG	"cd_read: Check for IFU_INT_DAT_IN after 1792 bytes."
+
+		lda	#IFU_INT_DAT_IN
+		tsb	IFU_IRQ_MSK
+		nop
+		nop
+		nop
+		lda	#IFU_INT_DAT_IN
+		trb	IFU_IRQ_MSK
+
+		TAG_FLG	"cd_read: Finished check for IFU_INT_DAT_IN."
+		cly
 
 !loop:		lda	IFU_SCSI_AUTO
 
@@ -1487,9 +1990,11 @@ test_abort:	TAG_FLG	"Writing $00 to $1800 to send abort signal to CD-ROM."
 		;	********
 		;
 
-test_initiate:	TAG_FLG	"Attempting to select CD-ROM."
+test_initiate:	bbs0	<suppress_init, .begin
 
-		lda	#$81			; Set the SCSI device ID bits
+		TAG_FLG	"Attempting to select CD-ROM."
+
+.begin:		lda	#$81			; Set the SCSI device ID bits
 		sta	IFU_SCSI_DAT		; for the PCE and the CD-ROM.
 
 		tst	#SCSI_BSY, IFU_SCSI_FLG	; Is the CD-ROM already busy
@@ -1504,6 +2009,7 @@ test_initiate:	TAG_FLG	"Attempting to select CD-ROM."
 ;		sta	IFU_SCSI_CTL		; Signal SCSI_SEL to CD-ROM.
 
 		lda	IFU_SCSI_FLG		; Read IFU_SCSI_FLG ASAP!
+		bbs0	<suppress_init, .test_scsi_bus
 		TAG_A	"CD-ROM Idle, written $00 to $1800 to select CD-ROM."
 
 .test_scsi_bus:	ldy	#18			; Wait for up to 20ms for the
@@ -1516,6 +2022,7 @@ test_initiate:	TAG_FLG	"Attempting to select CD-ROM."
 		dey
 		bne	.wait_scsi_bus
 
+		bbs0	<suppress_init, test_initiate
 		TAG_FLG	"CD-ROM selection timeout."
 
 		; Timeout, try again.
@@ -1530,9 +2037,10 @@ test_initiate:	TAG_FLG	"Attempting to select CD-ROM."
 		and	#SCSI_REQ
 		beq	.ready
 
+		bbs0	<suppress_init, .done
 		TAG_FLG	"CD-ROM selected and got REQ."
 
-		rts
+.done:		rts
 
 		;
 		;	********
@@ -1595,6 +2103,187 @@ test_get_status:ldy	IFU_SCSI_DAT		; Read status code.
 		bmi	.wait_exit		; release SCSI_BSY.
 
 		tya				; Return status & set flags.
+		rts
+
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; test_cd_play - with CPU memory as destination (like CD_READ to RAM).
+;
+; Returns: Y,Z-flag,N-flag = $00 or an error code.
+;
+
+		; Initiate CD-ROM command.
+
+!cd_retry:	jsr	test_initiate		; Acquire the SCSI bus.
+
+		; Test cd_play, assume already initiated.
+
+test_cd_play:
+
+		; Process SCSI phases.
+
+.proc_scsi_loop:jsr	test_get_phase
+		cmp	#PHASE_COMMAND		; 1st phase.
+		beq	.send_command
+		cmp	#PHASE_DATA_IN		; 2nd phase.
+		beq	.get_data
+		cmp	#PHASE_STAT_IN		; 3rd phase.
+		beq	.get_status
+		cmp	#PHASE_MESG_IN		; End phase.
+		beq	.read_mesg
+
+		BIT	#SCSI_CXD
+		bne	.proc_scsi_loop
+		lda	flag_cmd_drop
+		beq	.proc_scsi_loop
+		TAG_FLG	"cd_play: CMD signal dropped"
+		stz	flag_cmd_drop
+
+		bra	.proc_scsi_loop
+
+		; SCSI command done.
+
+.read_mesg:	phy
+		TAG_FLG	"cd_play: Got PHASE_MESG_IN"
+		ply
+
+		bit	IFU_SCSI_DAT		; Flush message byte.
+		jsr	test_handshake
+
+.wait_exit:	bit	IFU_SCSI_FLG		; Wait for the CD-ROM to
+		bmi	.wait_exit		; release SCSI_BSY.
+
+		cpy	#CDSTS_CHECK
+		beq	.read_error
+
+		phy
+		TAG_FLG	"cd_play: Finished"
+		ply
+
+;		lda	scsi_send_buf + 0
+;		cmp	#CDROM_SEARCH
+;		bne	.finished
+
+;		call	print_log
+;
+;		jsr	test_initiate		; Send the PLAY command.
+;		jmp	.proc_scsi_loop
+
+.finished:	tya				; Returns code in Y & A.
+		rts
+
+.read_error:	TAG_FLG	"cd_play: Read error!"
+
+;		jsr	scsi_req_sense		; Clear error, get code in Y.
+		bra	!cd_retry-
+
+		; Get SCSI post-command status.
+
+.get_status:	TAG_FLG	"cd_play: Got PHASE_STAT_IN"
+
+		ldy	IFU_SCSI_DAT		; Read status code.
+		jsr	test_handshake
+
+		jmp	.proc_scsi_loop
+
+		; Send SCSI command.
+
+.send_command:	TAG_FLG	"cd_play: Got PHASE_COMMAND"
+
+		jsr	test_play_cmd
+
+		lda	<_dh
+		and	#$07
+		cmp	#$02
+		bne	.proc_scsi_loop
+
+		bbs0	<abort_play, .abort_play
+
+		inc	flag_cmd_drop
+
+		jmp	.proc_scsi_loop
+
+.abort_play:	rts
+
+		; Flush unexpected SCSI data bytes.
+
+.get_data:	TAG_FLG	"Flushing data byte from bus."
+
+		jsr	test_handshake		; Flush out stale data byte.
+
+		jmp	.proc_scsi_loop
+
+		;
+		;	********
+		;
+
+test_init_cmd:	ldx	#10 - 1
+.loop:		stz	scsi_send_buf, x
+		dex
+		bne	.loop
+		sta	scsi_send_buf
+		rts
+
+		;
+		;	********
+		;
+
+test_play_cmd:	lda	scsi_send_buf + 0	; scsi_opcode
+		cmp	#CDROM_SEARCH
+		beq	.play
+
+		;
+
+.search:	lda	#CDROM_SEARCH		; scsi_opcode
+		jsr	test_init_cmd
+
+		stz	scsi_send_buf + 1
+
+		tii	_al, scsi_send_buf+2, 3	; Play Rec/MSF/Trk.
+
+		lda	<_bh			; Play address type.
+		and	#$C0
+		sta	scsi_send_buf + 9
+
+		bra	.send_scsi
+
+		;
+
+.play:		lda	#CDROM_PLAY		; scsi_opcode
+		jsr	test_init_cmd
+
+		lda	<_dh			; Stop address mode.
+		and	#$07
+		sta	scsi_send_buf + 1
+
+		tii	_cl, scsi_send_buf+2, 3	; Stop Rec/MSF/Trk.
+
+		lda	<_dh			; Stop address type.
+		and	#$C0
+		sta	scsi_send_buf + 9
+
+		bra	.send_scsi
+
+		;
+
+.send_scsi:	clx
+.send_byte:	lda	IFU_SCSI_FLG
+		and	#SCSI_MSK
+		cmp	#PHASE_COMMAND
+		bne	.send_byte
+
+		lda	scsi_send_buf, x
+		sta	IFU_SCSI_DAT
+		jsr	test_handshake
+
+		inx
+		cpx	#10			; 10-byte SCSI command.
+		bne	.send_byte
+
 		rts
 
 

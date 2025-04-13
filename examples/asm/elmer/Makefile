@@ -8,7 +8,7 @@ SUBDIRS = rom-bare-hello rom-bare-buftest rom-bare-dmatest rom-bare-mwrtest rom-
           cd-core-1stage cd-core-2stage cd-core-scsitest \
           scd-core-1stage scd-core-1stage-error \
           scd-core-2stage scd-core-2stage-error scd-core-fastcd \
-          rom-kickc-hello rom-kickc-shmup ted2-core-hwdetect ted2-core-sdcard \
+          ted2-core-hwdetect ted2-core-sdcard \
           ted2-core-gulliver
 
 all clean:

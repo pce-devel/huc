@@ -53,13 +53,13 @@ random:		.ds	4			; Seed is 3 or 4 bytes.
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; init_random - Initialize a 32-bit LFSR using the current irq_cnt.
+; init_random - Initialize a 32-bit LFSR using an 8-bit seed value in Y.
 ;
-; The seed data is the irq_cnt'th entry of a standard CRC-32 lookup-table,
+; The LFSR is initialized to n'th entry of a standard CRC-32 lookup-table,
 ; which gives it a decent distribution of bits.
 ;
-; Since irq_cnt is an 8-bit value, there are 255 (256-1) possible starting
-; seeds for the LFSR, because 0 would generate a 0 seed.
+; Since seed is an 8-bit value, there are 255 (256-1) possible starting
+; states for the LFSR, because 0 would generate a 0 state.
 ;
 ; CRC-32 code by Paul Guertin. See http://6502.org/source/integers/crc.htm
 ;
@@ -68,18 +68,16 @@ init_random	.proc
 
 		lda	#1			; Init CRC-32 table value.
 		sta	<random + 0
-		stz	<random + 1		; A contains the high byte of the CRC-32
-		stz	<random + 2		; The other three bytes are in memory
-
-		lda	irq_cnt			; Use the time to generate a seed.
-		bne	.reverse_time
+		tya				; Get and check the seed value.
+		bne	.reverse_seed
 		dec	a			; Which must be non-zero!
+.reverse_seed:	lsr	a			; Reverse the bits so that small changes
+		rol	<random + 0		; in the seed make larger differences in
+		bcc	.reverse_seed		; the initial state.
 
-.reverse_time:	lsr	a			; Reverse the bits so that small changes
-		rol	<random + 0		; in the time make larger differences in
-		bcc	.reverse_time		; the seed.
-
-		cla				; A contains the high byte of the CRC-32.
+		stz	<random + 1		; A contains the high byte of the CRC-32.
+		stz	<random + 2		; The other three bytes are in memory.
+		cla
 
 		ldy	#8			; Y counts bits in a byte.
 .bit_loop:	lsr	a			; The CRC-32 algorithm is similar to CRC-16

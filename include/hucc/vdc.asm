@@ -7,7 +7,7 @@
 ;
 ; These should be located in permanently-accessible memory!
 ;
-; Copyright John Brandwood 2021-2022.
+; Copyright John Brandwood 2021-2025.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -87,9 +87,43 @@ set_dspoff:	lda	#$C0			; Disable BG & SPR layers.
 	.endif
 		rts
 
+
+
+; ***************************************************************************
+; ***************************************************************************
 ;
+; Put the _di data pointer into the VDC's MARR or MAWR register.
 ;
+; N.B. Library code relies on this preserving Y!
 ;
+; Args: _di + 0 = BAT X coordinate.
+; Args: _di + 1 = BAT Y coordinate.
+;
+; Here because it relies on the "vdc_bat_width" that is defined in this file.
+;
+
+	.if	SUPPORT_SGX
+sgx_di_xy_marr:	ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		db	$F0			; Turn "clx" into a "beq".
+	.endif
+
+vdc_di_xy_marr:	clx				; Offset to PCE VDC.
+
+set_di_xy_mawr:	cla
+		bit	vdc_bat_width, x	; Set by set_bat_size().
+		bmi	.w128
+		bvs	.w64
+.w32:		lsr.h	<_di
+		ror	a
+.w64:		lsr.h	<_di
+		ror	a
+.w128:		lsr.h	<_di
+		ror	a
+		ora.l	<_di
+		sta.l	<_di
+		jmp	set_di_to_mawr		; In "common.asm".
+
+
 
 vdc_clear_vram	.procgroup			; These routines share code!
 
@@ -222,7 +256,9 @@ set_mode_vdc	.proc
 
 		clx				; Offset to PCE VDC.
 
-.set_mode_x:	tma3				; Preserve MPR3.
+		smb7	<_al			; Signal no set_bat_size() yet.
+
+		tma3				; Preserve MPR3.
 		pha
 		tma4				; Preserve MPR4.
 		pha
@@ -265,11 +301,17 @@ set_mode_vdc	.proc
 		eor	#VDC_MWR		; Check if this the VDC_MWR
 		bne	.skip_cc		; without changing CC.
 
-		lda	vdc_mwr			; Get MWR access speed bits.
-		db	$B0			; Use "BCS" to skip "CLA".
+		lda	[_bp], y		; Remember the BAT size so that
+		lsr	a			; set_bat_size() can be called.
+		lsr	a
+		lsr	a
+		lsr	a
+		sta	<_al
+		iny
+		iny
+		bra	.loop
 
-.skip_cc:	cla
-		ora	[_bp], y		; Get lo-byte of register.
+.skip_cc:	lda	[_bp], y		; Get lo-byte of register.
 		iny
 		bcc	.not_vdc_cr
 
@@ -294,16 +336,10 @@ set_mode_vdc	.proc
 
 		; All registers set!
 
-.done:		lda	<vdc_reg, x		; Restore previous VDC_AR from
+.done:		lda	#VDC_VWR		; Leave with VDC_VWR set.
+		sta	<vdc_reg, x
+;		lda	<vdc_reg, x		; Restore previous VDC_AR from
 		sta	VDC_AR, x		; the shadow variable.
-
-;		; I'm deliberately NOT purging any delayed IRQ in this routine
-;		; because it might legitimately be used during a frame.
-;
-;	.if	SUPPORT_SGX
-;		bit	SGX_SR			; Purge any overdue RCR.
-;	.endif
-;		bit	VDC_SR			; Purge any overdue RCR/VBL.
 
 		plp				; Restore interrupts.
 
@@ -312,7 +348,159 @@ set_mode_vdc	.proc
 		pla				; Restore MPR3.
 		tam3
 
+		bbr7	<_al, set_bat_size	; Update if BAT size changed.
+
 		leave				; All done, phew!
+
+		.ref	set_bat_vdc
+		.endp
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; set_bat_sgx - Change the SGX BAT size and initialize variables based on it.
+; set_bat_vdc - Change the PCE BAT size and initialize variables based on it.
+;
+; Args: _al = new size (0-7).
+;
+; (VDC_MWR_32x32  >> 4) or in HuCC, SCR_SIZE_32x32.
+; (VDC_MWR_32x64  >> 4) or in HuCC, SCR_SIZE_32x64.
+; (VDC_MWR_64x32  >> 4) or in HuCC, SCR_SIZE_64x32.
+; (VDC_MWR_64x64  >> 4) or in HuCC, SCR_SIZE_64x64.
+; (VDC_MWR_128x32 >> 4) or in HuCC, SCR_SIZE_128x32.
+; (VDC_MWR_128x64 >> 4) or in HuCC, SCR_SIZE_128x64.
+;
+
+	.if	SUPPORT_SGX
+set_bat_sgx	.proc
+
+		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		db	$F0			; Turn "clx" into a "beq".
+
+		.ref	set_bat_vdc
+		.endp
+	.endif
+
+set_bat_vdc	.proc
+
+		clx				; Offset to PCE VDC.
+
+set_bat_size:	lda	<_al			; Get BAT size value.
+		and	#7			; Sanitize screen size value.
+		tay
+		asl	a			; Put it in bits 4..6.
+		asl	a
+		asl	a
+		asl	a
+		sta	<__temp
+
+		lda	.width, y
+		sta	vdc_bat_width, x
+		dec	a
+		sta	vdc_bat_x_mask, x
+
+		lda	.height, y
+		sta	vdc_bat_height, x
+		dec	a
+		sta	vdc_bat_y_mask, x
+
+		lda	.limit, y
+		sta	vdc_bat_limit, x
+
+		lda	.increment, y		; Put the VRAM increment for a
+		sta	<vdc_crh, x		; line into vdc_crh for later.
+
+		php
+		sei
+
+		lda	#VDC_MWR
+		sta	VDC_AR, x
+
+		lda	vdc_mwr			; Get the MWR access width bits.
+		and	#%10001111
+		ora	<__temp
+	.if	SUPPORT_SGX
+		cpx	#PCE_VDC_OFFSET		; This has no SGX shadow!
+		bne	!+
+	.endif
+		sta	vdc_mwr
+!:		sta	VDC_DL, x
+
+		lda	<vdc_reg, x		; Restore previous VDC_AR from
+		sta	VDC_AR, x		; the shadow variable.
+
+		plp
+
+		leave
+
+.width:		db	$20,$40,$80,$80,$20,$40,$80,$80
+.height:	db	$20,$20,$20,$20,$40,$40,$40,$40
+.limit:		db	$03,$07,$0F,$0F,$07,$0F,$1F,$1F
+.increment	db	$08,$10,$18,$18,$08,$10,$18,$18
+
+		.bss
+
+; **************
+; 16-bytes of VDC HuC BAT information.
+;
+; N.B. MUST be 16-bytes before the SGX versions to use PCE_VDC_OFFSET.
+;
+; N.B. Declared inside this .proc so that they can be stripped if unused.
+
+; Initialized by set_screen_size()
+vdc_bat_width:	ds	1	; $20, $40, $80
+vdc_bat_height:	ds	1	; $20, $40
+vdc_bat_x_mask:	ds	1	; $1F, $3F, $7F
+vdc_bat_y_mask:	ds	1	; $1F, $3F
+vdc_bat_limit:	ds	1	; (>$03FF), (>$07FF), (>$0FFF), (>$1FFF)
+
+; From metamap.asm just to avoid wasting .bss space with padding.
+vdc_map_draw_w:	ds	1	; (SCR_WIDTH / 8) + 1
+vdc_map_draw_h:	ds	1	; (SCR_HEIGHT / 8) + 1
+vdc_map_line_w:	ds	1	; Line width of map data in tiles.
+vdc_map_scrn_w:	ds	1	; Line width of map data in screens.
+vdc_map_pxl_x:	ds	2	; Current top-left X in pixels.
+vdc_map_pxl_y:	ds	2	; Current top-left Y in pixels.
+vdc_map_option:	ds	1	; Flags to disable BAT alignment.
+
+; From hucc-old-spr.asm just to avoid wasting .bss space with padding.
+spr_max:	ds	1
+spr_clr:	ds	1
+
+	.if	SUPPORT_SGX
+
+; **************
+; 16-bytes of SGX HuC BAT information.
+;
+; N.B. MUST be 16-bytes after the VDC versions to use SGX_VDC_OFFSET.
+;
+; N.B. Declared inside this .proc so that they can be stripped if unused.
+
+; Initialized by sgx_set_screen_size()
+sgx_bat_width:	ds	1	; $20, $40, $80
+sgx_bat_height:	ds	1	; $20, $40
+sgx_bat_x_mask:	ds	1	; $1F, $3F, $7F
+sgx_bat_y_mask:	ds	1	; $1F, $3F
+sgx_bat_limit:	ds	1	; (>$03FF), (>$07FF), (>$0FFF), (>$1FFF)
+
+; From metamap.asm just to avoid wasting .bss space with padding.
+sgx_map_draw_w:	ds	1	; (SCR_WIDTH / 8) + 1
+sgx_map_draw_h:	ds	1	; (SCR_HEIGHT / 8) + 1
+sgx_map_line_w:	ds	1	; Line width of map data in tiles.
+sgx_map_scrn_w:	ds	1	; Line width of map data in screens.
+sgx_map_pxl_x:	ds	2	; Current top-left X in pixels.
+sgx_map_pxl_y:	ds	2	; Current top-left Y in pixels.
+sgx_map_option:	ds	1	; Flags to disable BAT alignment.
+
+; From hucc-old-spr.asm just to avoid wasting .bss space with padding.
+sgx_spr_max:	ds	1
+sgx_spr_clr:	ds	1
+
+	.endif
+
+		.code
 
 		.endp
 

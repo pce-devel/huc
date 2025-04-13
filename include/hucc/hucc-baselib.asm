@@ -443,12 +443,23 @@ _get_color.1	.macro
 ; ***************************************************************************
 ;
 ; void __fastcall srand( unsigned char seed<acc> );
+
+	.ifndef	HUCC_NO_DEFAULT_RANDOM
+_srand.1	.macro
+		tay
+		jsr	init_random
+		.endm
+	.endif
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
 ; unsigned int __fastcall rand( void );
 ; unsigned char __fastcall rand8( void );
 
 	.ifndef	HUCC_NO_DEFAULT_RANDOM
-		.alias	_srand.1		= init_random
-
 _rand:		jsr	get_random		; Random in A, preserve Y.
 		tay
 		jmp	get_random		; Random in A, preserve Y.
