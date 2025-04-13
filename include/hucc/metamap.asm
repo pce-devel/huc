@@ -1454,8 +1454,8 @@ block_top_even:	lda	[blk_tl_l_ptr], y	; 7
 		lda	[blk_tl_h_ptr], y	; 7
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		dec	<map_count		; 6
@@ -1466,8 +1466,8 @@ block_top_odd:	lda	[blk_tr_l_ptr], y	; 7
 		lda	[blk_tr_h_ptr], y	; 7
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		inc.l	<_bp			; 6
@@ -1491,8 +1491,8 @@ block_btm_even:	lda	[blk_bl_l_ptr], y	; 7
 		lda	[blk_bl_h_ptr], y	; 7
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		dec	<map_count		; 6
@@ -1503,8 +1503,8 @@ block_btm_odd:	lda	[blk_br_l_ptr], y	; 7
 		lda	[blk_br_h_ptr], y	; 7
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		inc.l	<_bp			; 6
@@ -1548,8 +1548,8 @@ block_lhs_even:	lda	[blk_tl_l_ptr], y	; 7
 		lda	[blk_tl_h_ptr], y	; 7
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		dec	<map_count		; 6
@@ -1560,8 +1560,8 @@ block_lhs_odd:	lda	[blk_bl_l_ptr], y	; 7
 		lda	[blk_bl_h_ptr], y	; 7
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		lda	vdc_map_line_w, x	; 5
@@ -1589,8 +1589,8 @@ block_rhs_even:	lda	[blk_tr_l_ptr], y	; 7
 		lda	[blk_tr_h_ptr], y	; 7
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		dec	<map_count		; 6
@@ -1601,8 +1601,8 @@ block_rhs_odd:	lda	[blk_br_l_ptr], y	; 7
 		lda	[blk_br_h_ptr], y	; 7
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		lda	vdc_map_line_w, x	; 5
@@ -1681,8 +1681,8 @@ b4000_top_even:	lda	BLK_4000_TL_L, y	; 5
 		lda	BLK_4000_TL_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		dec	<map_count		; 6
@@ -1693,8 +1693,8 @@ b4000_top_odd:	lda	BLK_4000_TR_L, y	; 5
 		lda	BLK_4000_TR_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		inc.l	<_bp			; 6
@@ -1718,8 +1718,8 @@ b4000_btm_even:	lda	BLK_4000_BL_L, y	; 5
 		lda	BLK_4000_BL_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		dec	<map_count		; 6
@@ -1730,8 +1730,8 @@ b4000_btm_odd:	lda	BLK_4000_BR_L, y	; 5
 		lda	BLK_4000_BR_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		inc.l	<_bp			; 6
@@ -1755,8 +1755,8 @@ b4800_top_even:	lda	BLK_4800_TL_L, y	; 5
 		lda	BLK_4800_TL_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		dec	<map_count		; 6
@@ -1767,8 +1767,8 @@ b4800_top_odd:	lda	BLK_4800_TR_L, y	; 5
 		lda	BLK_4800_TR_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		inc.l	<_bp			; 6
@@ -1792,8 +1792,8 @@ b4800_btm_even:	lda	BLK_4800_BL_L, y	; 5
 		lda	BLK_4800_BL_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		dec	<map_count		; 6
@@ -1804,8 +1804,8 @@ b4800_btm_odd:	lda	BLK_4800_BR_L, y	; 5
 		lda	BLK_4800_BR_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		inc.l	<_bp			; 6
@@ -1829,8 +1829,8 @@ b5000_top_even:	lda	BLK_5000_TL_L, y	; 5
 		lda	BLK_5000_TL_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		dec	<map_count		; 6
@@ -1841,8 +1841,8 @@ b5000_top_odd:	lda	BLK_5000_TR_L, y	; 5
 		lda	BLK_5000_TR_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		inc.l	<_bp			; 6
@@ -1866,8 +1866,8 @@ b5000_btm_even:	lda	BLK_5000_BL_L, y	; 5
 		lda	BLK_5000_BL_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		dec	<map_count		; 6
@@ -1878,8 +1878,8 @@ b5000_btm_odd:	lda	BLK_5000_BR_L, y	; 5
 		lda	BLK_5000_BR_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		inc.l	<_bp			; 6
@@ -1903,8 +1903,8 @@ b5800_top_even:	lda	BLK_5800_TL_L, y	; 5
 		lda	BLK_5800_TL_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		dec	<map_count		; 6
@@ -1915,8 +1915,8 @@ b5800_top_odd:	lda	BLK_5800_TR_L, y	; 5
 		lda	BLK_5800_TR_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		inc.l	<_bp			; 6
@@ -1940,8 +1940,8 @@ b5800_btm_even:	lda	BLK_5800_BL_L, y	; 5
 		lda	BLK_5800_BL_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		dec	<map_count		; 6
@@ -1952,8 +1952,8 @@ b5800_btm_odd:	lda	BLK_5800_BR_L, y	; 5
 		lda	BLK_5800_BR_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		inc.l	<_bp			; 6
@@ -2026,8 +2026,8 @@ b4000_lhs_even:	lda	BLK_4000_TL_L, y	; 5
 		lda	BLK_4000_TL_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		dec	<map_count		; 6
@@ -2038,8 +2038,8 @@ b4000_lhs_odd:	lda	BLK_4000_BL_L, y	; 5
 		lda	BLK_4000_BL_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		lda	vdc_map_line_w, x	; 5
@@ -2067,8 +2067,8 @@ b4000_rhs_even:	lda	BLK_4000_TR_L, y	; 5
 		lda	BLK_4000_TR_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		dec	<map_count		; 6
@@ -2079,8 +2079,8 @@ b4000_rhs_odd:	lda	BLK_4000_BR_L, y	; 5
 		lda	BLK_4000_BR_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		lda	vdc_map_line_w, x	; 5
@@ -2108,8 +2108,8 @@ b4800_lhs_even:	lda	BLK_4800_TL_L, y	; 5
 		lda	BLK_4800_TL_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		dec	<map_count		; 6
@@ -2120,8 +2120,8 @@ b4800_lhs_odd:	lda	BLK_4800_BL_L, y	; 5
 		lda	BLK_4800_BL_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		lda	vdc_map_line_w, x	; 5
@@ -2149,8 +2149,8 @@ b4800_rhs_even:	lda	BLK_4800_TR_L, y	; 5
 		lda	BLK_4800_TR_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		dec	<map_count		; 6
@@ -2161,8 +2161,8 @@ b4800_rhs_odd:	lda	BLK_4800_BR_L, y	; 5
 		lda	BLK_4800_BR_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		lda	vdc_map_line_w, x	; 5
@@ -2190,8 +2190,8 @@ b5000_lhs_even:	lda	BLK_5000_TL_L, y	; 5
 		lda	BLK_5000_TL_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		dec	<map_count		; 6
@@ -2202,8 +2202,8 @@ b5000_lhs_odd:	lda	BLK_5000_BL_L, y	; 5
 		lda	BLK_5000_BL_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		lda	vdc_map_line_w, x	; 5
@@ -2231,8 +2231,8 @@ b5000_rhs_even:	lda	BLK_5000_TR_L, y	; 5
 		lda	BLK_5000_TR_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		dec	<map_count		; 6
@@ -2243,8 +2243,8 @@ b5000_rhs_odd:	lda	BLK_5000_BR_L, y	; 5
 		lda	BLK_5000_BR_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		lda	vdc_map_line_w, x	; 5
@@ -2272,8 +2272,8 @@ b5800_lhs_even:	lda	BLK_5800_TL_L, y	; 5
 		lda	BLK_5800_TL_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		dec	<map_count		; 6
@@ -2284,8 +2284,8 @@ b5800_lhs_odd:	lda	BLK_5800_BL_L, y	; 5
 		lda	BLK_5800_BL_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		lda	vdc_map_line_w, x	; 5
@@ -2313,8 +2313,8 @@ b5800_rhs_even:	lda	BLK_5800_TR_L, y	; 5
 		lda	BLK_5800_TR_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		dec	<map_count		; 6
@@ -2325,8 +2325,8 @@ b5800_rhs_odd:	lda	BLK_5800_BR_L, y	; 5
 		lda	BLK_5800_BR_H, y	; 5
 	.if	METADEF_CHR_FLAG
 		and	#%11110011		; 2
-		inc	a			; 2
 	.endif
+		inc	a			; 2
 		sta	VDC_DH, x		; 6
 
 		lda	vdc_map_line_w, x	; 5
