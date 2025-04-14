@@ -108,6 +108,7 @@ extern char need_another_pass;                  /* NZ if another pass if require
 extern char hex[];                              /* hexadecimal character buffer */
 extern int stop_pass;                           /* stop the program; set by fatal_error() */
 extern int errcnt;                              /* error counter */
+extern int no_rom_file;                         /* NZ if only assembling data file(s) */
 extern void (*opproc)(int *);                   /* instruction gen proc */
 extern int opflg;                               /* instruction flags */
 extern int opval;                               /* instruction value */

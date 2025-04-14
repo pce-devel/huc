@@ -972,7 +972,7 @@ main(int argc, char **argv)
 	fclose(in_fp);
 
 	/* dump the rom */
-	if (errcnt == 0) {
+	if (errcnt == 0 && no_rom_file == 0) {
 		/* cd-rom */
 		if ((cd_opt || scd_opt) && !trim_opt) {
 			/* open output file */
