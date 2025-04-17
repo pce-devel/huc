@@ -1,9 +1,9 @@
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; charmap.asm
+; chrmap.asm
 ;
-; A simple map system based on 8x8 characters in VDC/BAT format.
+; A simple map system based on 8x8 characters (aka "tiles") in BAT format.
 ;
 ; Copyright John Brandwood 2025.
 ;
@@ -14,9 +14,9 @@
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; The maximum X and Y size for charmaps is 256 characters (2048 pixels).
+; The maximum X and Y size for chrmaps is 256 characters (2048 pixels).
 ;
-; The maximum total size for a charmap is 16KBytes, which allows for maps up
+; The maximum total size for a chrmap is 16KBytes, which allows for maps up
 ; to 256x32 tiles (2048x256 pixels).
 ;
 ; ***************************************************************************
@@ -26,10 +26,10 @@
 ; Include dependancies ...
 ;
 
-		include "metamap.asm"		; This defines the variables.
+		include "blkmap.asm"		; This defines the variables.
 
 ;
-; Charmaps in BAT format can either directly store the character number, or
+; Chrmaps in BAT format normally address all of VRAM from $0400..$7FFF, but
 ; they can be limited to use the 32KByte of characters in VRAM $1000..$4FFF
 ; which then frees up 2-bits for flag information for each character in the
 ; BAT entry.
@@ -41,8 +41,8 @@
 ; seperate "collision" map layer.
 ;
 
-	.ifndef	CHARDEF_CHR_FLAG
-CHARDEF_CHR_FLAG=0		; (0 or 1)
+	.ifndef	CHRMAP_BAT_FLAG
+CHRMAP_BAT_FLAG	=	0	; (0 or 1)
 	.endif
 
 ;
@@ -51,7 +51,7 @@ CHARDEF_CHR_FLAG=0		; (0 or 1)
 
 
 
-charmap_group	.procgroup
+chrmap_group	.procgroup
 
 ; ***************************************************************************
 ; ***************************************************************************
@@ -372,7 +372,7 @@ bat_scroll_x:	lda	<map_chr_x		; Compare old_x with cur_x.
 		tay				; Hi-byte of (CHR Y * width * 2).
 
 		lda	vdc_map_bank, x		; Put the MAP into MPR3-MPR5.
-		tam3				; Allow for 16KByte charmap.
+		tam3				; Allow for 16KByte chrmap.
 		inc	a
 		tam4
 		inc	a
@@ -530,7 +530,7 @@ bat_scroll_y:	lda	<map_chr_y		; Compare old_y with cur_y.
 		tay
 
 		lda	vdc_map_bank, x		; Put the MAP into MPR3-MPR5.
-		tam3				; Allow for 16KByte charmap.
+		tam3				; Allow for 16KByte chrmap.
 		inc	a
 		tam4
 		inc	a
@@ -626,7 +626,7 @@ bat_row_strip:	jsr	set_di_xy_mawr		; Set the BAT VRAM destination.
 		sta	VDC_DL, x		; 6
 		iny				; 2
 		lda	[_bp], y		; 7
-	.if	CHARDEF_CHR_FLAG
+	.if	CHRMAP_BAT_FLAG
 		and	#%11110011		; 2
 		inc	a			; 2
 ;	.else
@@ -662,7 +662,7 @@ bat_col_strip:	jsr	set_di_xy_mawr		; Set the BAT VRAM destination.
 .repeat:	lda	[_bp]			; 7
 		sta	VDC_DL, x		; 6
 		lda	[_bp], y		; 7
-	.if	CHARDEF_CHR_FLAG
+	.if	CHRMAP_BAT_FLAG
 		and	#%11110011		; 2
 		inc	a			; 2
 ;	.else
@@ -683,4 +683,4 @@ bat_col_strip:	jsr	set_di_xy_mawr		; Set the BAT VRAM destination.
 
 		rts
 
-	.endprocgroup	; charmap_group
+	.endprocgroup	; chrmap_group

@@ -1,12 +1,12 @@
-#ifndef _hucc_charmap_h
-#define _hucc_charmap_h
+#ifndef _hucc_chrmap_h
+#define _hucc_chrmap_h
 
 /****************************************************************************
 ; ***************************************************************************
 ;
-; hucc-charmap.h
+; hucc-chrmap.h
 ;
-; A simple map system based on 8x8 characters in VDC/BAT format.
+; A simple map system based on 8x8 characters (aka "tiles") in BAT format.
 ;
 ; Copyright John Brandwood 2025.
 ;
@@ -17,29 +17,29 @@
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; The maximum X and Y size for charmaps is 256 characters (2048 pixels).
+; The maximum X and Y size for chrmaps is 256 characters (2048 pixels).
 ;
-; The maximum total size for a charmap is 16KBytes, which allows for maps up
+; The maximum total size for a chrmap is 16KBytes, which allows for maps up
 ; to 256x32 tiles (2048x256 pixels).
 ;
 ; ***************************************************************************
 ; **************************************************************************/
 
 // *************
-// This code extends the metamap library ...
+// This code extends the blkmap library ...
 // *************
 
-#include "hucc-metamap.h"
+#include "hucc-blkmap.h"
 
 // *************
-// Functions in charmap.asm ...
+// Functions in chrmap.asm ...
 // *************
 
 #ifdef __HUCC__
 
-#asmdef	HUCC_USES_CHARMAP 1
+#asmdef	HUCC_USES_CHRMAP 1
 
-extern void __fastcall __nop set_charmap( unsigned char __far *charmap<vdc_map_bank:vdc_map_addr>, unsigned char tiles_w<vdc_map_line_w> );
+extern void __fastcall __nop set_chrmap( unsigned char __far *chrmap<vdc_map_bank:vdc_map_addr>, unsigned char tiles_w<vdc_map_line_w> );
 
 extern void __fastcall draw_bat( void );
 extern void __fastcall scroll_bat( void );
@@ -48,7 +48,7 @@ extern void __fastcall blit_bat( unsigned char tile_x<map_bat_x>, unsigned char 
 
 #ifdef _SGX
 
-extern void __fastcall __nop sgx_set_charmap( unsigned char __far *charmap<sgx_map_bank:sgx_map_addr>, unsigned char tiles_w<sgx_map_line_w> );
+extern void __fastcall __nop sgx_set_chrmap( unsigned char __far *chrmap<sgx_map_bank:sgx_map_addr>, unsigned char tiles_w<sgx_map_line_w> );
 
 extern void __fastcall sgx_draw_bat( void );
 extern void __fastcall sgx_scroll_bat( void );
@@ -59,4 +59,4 @@ extern void __fastcall sgx_blit_bat( unsigned char tile_x<map_bat_x>, unsigned c
 
 #endif // __HUCC__
 
-#endif // _hucc_charmap_h
+#endif // _hucc_chrmap_h
