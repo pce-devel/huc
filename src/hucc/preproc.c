@@ -695,7 +695,7 @@ int cpp (int subline)
 				cpped = 1;
 				k = 0;
 				if (haveargs) {
-					int i;
+					int i, len;
 					char *buf = malloc(1);
 					buf[0] = 0;
 					char *dp = mp->def;
@@ -703,9 +703,27 @@ int cpp (int subline)
 					for (i = 0; mp->argpos[i].arg != -1; i++) {
 						buf = realloc(buf, strlen(buf) +
 							      mp->argpos[i].pos - (dp - mp->def) +
-							      strlen(args[mp->argpos[i].arg]) + 1);
+							      strlen(args[mp->argpos[i].arg]) + 1 + 1);
 						strncat(buf, dp, mp->argpos[i].pos - (dp - mp->def));
+
+						len = strlen(buf);
+						while (len && buf[len - 1] == ' ') { --len; }
+						if (len > 1 && buf[len - 1] == '#' && buf[len - 2] == '#') {
+							/* hacky implementation of preprocessor concatenation */
+							len = len - 2;
+							while (len && buf[len - 1] == ' ') { --len; }
+							buf[len] = 0;
+						} else
+						if (len > 0 && buf[len - 1] == '#') {
+							/* hacky implementation of preprocessor stringize */
+							buf[len - 1] = '"';
+							len = -1;
+						}
+
 						strcat(buf, args[mp->argpos[i].arg]);
+						if (len == -1) {
+							strcat(buf, "\"");
+						}
 						dp = mp->def + mp->argpos[i].pos + strlen(mp->args[mp->argpos[i].arg]);
 					}
 					buf = realloc(buf, strlen(buf) + strlen(dp) + 1);
