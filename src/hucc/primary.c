@@ -336,7 +336,7 @@ int primary (LVALUE *lval, int comma, bool *deferred)
 				}
 				if (!ptr->far) {
 					/* add array base address after index calculation */
-					if (/* ptr->identity == ARRAY && */ ch() == '[')
+					if (ch() == '[')
 						*deferred = true;
 					else
 						immed(T_SYMBOL, (intptr_t)ptr);
@@ -363,6 +363,17 @@ int primary (LVALUE *lval, int comma, bool *deferred)
 				lval->indirect = 0;
 				immed(T_SYMBOL, (intptr_t)ptr);
 				return (0);
+			}
+			if ((memcmp(sname, "__bank__", 8) == 0) ||
+			    (memcmp(sname, "__sizeof__", 10) == 0) ||
+			    (memcmp(sname, "__countof__", 11) == 0) ||
+			    (memcmp(sname, "__overlay__", 11) == 0)) {
+				/* auto-declare as a void pointer in order to get the address */
+				ptr = addglb(sname, VARIABLE, CUINT, 0, EXTERN, 0);
+				indflg = 0;
+				lval->symbol = ptr;
+				lval->indirect = 0;
+				return (1);
 			}
 			error("undeclared variable");
 		}
