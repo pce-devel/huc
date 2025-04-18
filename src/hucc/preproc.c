@@ -700,7 +700,21 @@ int cpp (int subline)
 					buf[0] = 0;
 					char *dp = mp->def;
 					buf[0] = 0;
+
 					for (i = 0; mp->argpos[i].arg != -1; i++) {
+						if (i != 0) {
+							len = 0;
+							while (dp[len] == ' ') { ++len; }
+							if (dp[len + 0] == '#' && dp[len + 1] == '#') {
+								/* hacky implementation of preprocessor concatenation */
+								dp += len + 2;
+								while (*dp == ' ') { ++dp; }
+								len = strlen(buf);
+								while (len && buf[len - 1] == ' ') { --len; }
+								buf[len] = 0;
+							}
+						}
+
 						buf = realloc(buf, strlen(buf) +
 							      mp->argpos[i].pos - (dp - mp->def) +
 							      strlen(args[mp->argpos[i].arg]) + 1 + 1);
@@ -722,9 +736,21 @@ int cpp (int subline)
 
 						strcat(buf, args[mp->argpos[i].arg]);
 						if (len == -1) {
+							/* hacky implementation of preprocessor stringize */
 							strcat(buf, "\"");
 						}
 						dp = mp->def + mp->argpos[i].pos + strlen(mp->args[mp->argpos[i].arg]);
+					}
+
+					len = 0;
+					while (dp[len] == ' ') { ++len; }
+					if (dp[len + 0] == '#' && dp[len + 1] == '#') {
+						/* hacky implementation of preprocessor concatenation */
+						dp += len + 2;
+						while (*dp == ' ') { ++dp; }
+						len = strlen(buf);
+						while (len && buf[len - 1] == ' ') { --len; }
+						buf[len] = 0;
 					}
 					buf = realloc(buf, strlen(buf) + strlen(dp) + 1);
 					strcat(buf, dp);
