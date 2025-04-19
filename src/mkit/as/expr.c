@@ -667,7 +667,7 @@ push_val(int type)
 			}
 
 			/* a predefined function as a prefix? */
-			if (sdcc_mode || kickc_mode)
+			if (hucc_mode || sdcc_mode || kickc_mode)
 			{
 				op = check_prefix(symbol);
 				if (op) {
@@ -978,10 +978,12 @@ check_keyword(char * name)
 	else if (name[0] == keyword[4][0] && !strcasecmp(name, keyword[4]))
 		op = OP_BANK;
 	else if (name[0] == keyword[7][0] && !strcasecmp(name, keyword[7]))
-		op = OP_SIZEOF;
+		op = OP_COUNTOF;
 	else if (name[0] == keyword[8][0] && !strcasecmp(name, keyword[8]))
-		op = OP_LINEAR;
+		op = OP_SIZEOF;
 	else if (name[0] == keyword[9][0] && !strcasecmp(name, keyword[9]))
+		op = OP_LINEAR;
+	else if (name[0] == keyword[10][0] && !strcasecmp(name, keyword[10]))
 		op = OP_OVERLAY;
 	else {
 		if (machine->type == MACHINE_PCE) {
@@ -1000,6 +1002,7 @@ check_keyword(char * name)
 	case OP_LOW_KEYWORD:
 	case OP_PAGE:
 	case OP_BANK:
+	case OP_COUNTOF:
 	case OP_SIZEOF:
 	case OP_LINEAR:
 	case OP_OVERLAY:
@@ -1201,6 +1204,19 @@ do_op(void)
 		}
 		break;
 
+	/* COUNTOF */
+	case OP_COUNTOF:
+		if (!check_func_args("COUNTOF"))
+			return (0);
+		if (pass == LAST_PASS) {
+			if (expr_lablptr->nb == -1) {
+				error("No COUNTOF() attribute for this symbol!");
+				return (0);
+			}
+		}
+		val[0] = expr_lablptr->nb;
+		break;
+
 	/* SIZEOF */
 	case OP_SIZEOF:
 		if (!check_func_args("SIZEOF"))
@@ -1332,7 +1348,7 @@ do_op(void)
 /* ----
  * check_func_args()
  * ----
- * check OVERLAY/LINEAR/BANK/PAGE/VRAM/PAL function arguments
+ * check DEFINED/PAGE/BANK/VRAM/PAL/COUNTOF/SIZEOF/LINEAR/OVERLAY function arguments
  */
 
 int
