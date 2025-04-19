@@ -30,6 +30,7 @@ int section_bank[MAX_S];                        /* current bank for each section
 int section_phase[MAX_S];                       /* current phase offset for each section */
 int stop_pass;                                  /* stop the program; set by fatal_error() */
 int errcnt;                                     /* error counter */
+int no_rom_file;                                /* NZ if only assembling data file(s) */
 int kickc_mode;                                 /* NZ if assembling KickC code */
 int sdcc_mode;                                  /* NZ if assembling SDCC code */
 int hucc_mode;                                  /* NZ if assembling HuCC code */

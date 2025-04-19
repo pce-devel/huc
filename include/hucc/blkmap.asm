@@ -1,7 +1,7 @@
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; metamap.asm
+; blkmap.asm
 ;
 ; A map system based on 16x16 meta-tiles (aka "blocks", aka CHR/BLK/MAP).
 ;
@@ -14,12 +14,12 @@
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; The maximum X and Y size for metatile maps is 128 tiles (2048 pixels).
+; The maximum X and Y size for blkmaps is 128 blocks (2048 pixels).
 ;
-; The maximum total size for a metamap is 16KBytes, which allows for maps up
-; to 128x128 tiles (2048x2048 pixels).
+; The maximum total size for a blkmap is 16KBytes, which allows for maps up
+; to 128x128 blocks (2048x2048 pixels).
 ;
-; Huge multi-screen metatile maps are also supported (optionally).
+; Huge multi-screen blkmaps are also supported (optionally).
 ;
 ; The maximum X and Y for multi-screen maps is 128 screens (32768 pixels).
 ;
@@ -38,16 +38,16 @@
 		include "vdc.asm"		; Useful VCE routines.
 
 ;
-; Support large metamaps up to 16KBytes instead of the regular 8KBytes?
+; Support large blkmaps up to 16KBytes instead of the regular 8KBytes?
 ;
-; The maximum X and Y size for regular metamaps is 128 tiles (2048 pixels).
+; The maximum X and Y size for regular blkmaps is 128 tiles (2048 pixels).
 ;
 ; This allows for individual maps up to 128x128 tiles (2048x2048 pixels) vs
 ; default limit of 128x64 or 64x128.
 ;
 
-	.ifndef	METAMAP_LARGEMAP
-METAMAP_LARGEMAP=0		; (0 or 1)
+	.ifndef	BLKMAP_LARGEMAP
+BLKMAP_LARGEMAP	=	0	; (0 or 1)
 	.endif
 
 ;
@@ -59,28 +59,28 @@ METAMAP_LARGEMAP=0		; (0 or 1)
 ; The BAT size that is used when drawing *must* be the same as the BAT size
 ; that was chosen when creating the multi-screen map.
 ;
-; Each screen may use a unique set of meta-tile definitions, or could share
-; meta-tile definitions that are used on another screen.
+; Each screen can use a unique set of block definitions, or it might choose
+; to share the same block definitions that are used on another screen.
 ;
 ; Each screen may choose which 8KByte banks of character data to select for
-; the 4 banks (32KBytes) of VRAM that its meta-tile definitions use, with a
-; maximum of 16 banks of characters per multi-screen map.
+; the 4 banks (32KBytes) of VRAM that its block definitions use, with a max
+; of 16 banks of characters per multi-screen map.
 ;
 ; Loading those character banks dynamically is an exercise for the user!
 ;
 ; Enabling support adds extra library code, and slightly slows down the use
-; of regular metamaps.
+; of regular blkmaps.
 ;
 
-	.ifndef	METAMAP_MULTISCR
-METAMAP_MULTISCR=1		; (0 or 1)
+	.ifndef	BLKMAP_MULTISCR
+BLKMAP_MULTISCR	=	1	; (0 or 1)
 	.endif
 
 ;
-; Meta-tile definitions can either directly store the character numbers, or
+; Block definitions can either use character data from VRAM $1000..$7FFF or
 ; they can be limited to use the 32KByte of characters in VRAM $1000..$4FFF
 ; which then frees up 2-bits for flag information for each character in the
-; meta-tile.
+; block.
 ;
 ; These 2-bits are perfect for using as collision information in game maps,
 ; allowing storage of states like transparent, solid, up-slope, down-slope.
@@ -89,22 +89,22 @@ METAMAP_MULTISCR=1		; (0 or 1)
 ; seperate "collision" map layer.
 ;
 
-	.ifndef	METADEF_CHR_FLAG
-METADEF_CHR_FLAG=1		; (0 or 1)
+	.ifndef	BLKDEF_CHR_FLAG
+BLKDEF_CHR_FLAG	=	1	; (0 or 1)
 	.endif
 
 ;
-; Meta-tile definitions are accessed in MPR2 ($4000..$5FFF) and they cannot
-; cross the bank boundary.
+; Block definitions are accessed in MPR2 ($4000..$5FFF), and must not cross
+; the bank boundary.
 ;
 ; When working this way, 8 pointers in ZP are used to access the individual
-; bytes in the meta-tile definitions. This is fine when using a regular map
-; on a PC Engine, but it is awfully slow when using multi-screen maps or if
-; drawing maps on both VDC chips in a SuperGRAFX because the pointer values
-; must be constantly changed.
+; bytes in the block definition. This is fine when using a regular map on a
+; PC Engine, but it is awfully slow when using multi-screen maps or drawing
+; maps on both VDC chips in a SuperGRAFX because the pointer values must be
+; constantly changed.
 ;
 ; When using multi-screen maps, or when developing a SuperGRAFX game, or if
-; developing a CDROM game, then it is usually preferable to store meta-tile
+; developing a CDROM game, then it is usually preferable to store the block
 ; definitions with 2KByte alignment, especially if they are normally stored
 ; compressed and then decompressed into a 2KByte buffer in RAM when needed.
 ;
@@ -112,73 +112,73 @@ METADEF_CHR_FLAG=1		; (0 or 1)
 ; if pointers should be used instead.
 ;
 
-	.ifndef	METADEF_POINTERS
-METADEF_POINTERS=0
+	.ifndef	BLKDEF_POINTERS
+BLKDEF_POINTERS	=	0	; (0 or 1)
 	.endif
 
 ;
 ; Add a timing bar to the scroll_map() to see how long the drawing takes?
 ;
 
-	.ifndef	METAMAP_TIMETEST
-METAMAP_TIMETEST=0
+	.ifndef	BLKMAP_TIMETEST
+BLKMAP_TIMETEST	=	0	; (0 or 1)
 	.endif
 
 ;
 ;
 ;
 
-	.if	METADEF_POINTERS
+	.if	BLKDEF_POINTERS
 
 		.zp
-blk_tl_l_ptr:	ds	2	; Meta-tile top left lo-byte.
-blk_tl_h_ptr:	ds	2	; Meta-tile top left hi-byte.
-blk_tr_l_ptr:	ds	2	; Meta-tile top right lo-byte.
-blk_tr_h_ptr:	ds	2	; Meta-tile top right hi-byte.
-blk_bl_l_ptr:	ds	2	; Meta-tile bottom left lo-byte.
-blk_bl_h_ptr:	ds	2	; Meta-tile bottom left hi-byte.
-blk_br_l_ptr:	ds	2	; Meta-tile bottom right lo-byte.
-blk_br_h_ptr:	ds	2	; Meta-tile bottom right hi-byte.
+blk_tl_l_ptr:	ds	2	; Block definition top left lo-byte.
+blk_tr_l_ptr:	ds	2	; Block definition top right lo-byte.
+blk_bl_l_ptr:	ds	2	; Block definition bottom left lo-byte.
+blk_br_l_ptr:	ds	2	; Block definition bottom right lo-byte.
+blk_tl_h_ptr:	ds	2	; Block definition top left hi-byte.
+blk_tr_h_ptr:	ds	2	; Block definition top right hi-byte.
+blk_bl_h_ptr:	ds	2	; Block definition bottom left hi-byte.
+blk_br_h_ptr:	ds	2	; Block definition bottom right hi-byte.
 		.code
 
 	.else
 
-	; If the meta-tile definititions are 2KByte aligned.
+	; If the block definititions are 2KByte aligned.
 
 BLK_4000_TL_L	=	$4000
-BLK_4000_TL_H	=	$4100
-BLK_4000_TR_L	=	$4200
-BLK_4000_TR_H	=	$4300
-BLK_4000_BL_L	=	$4400
-BLK_4000_BL_H	=	$4500
-BLK_4000_BR_L	=	$4600
+BLK_4000_TR_L	=	$4100
+BLK_4000_BL_L	=	$4200
+BLK_4000_BR_L	=	$4300
+BLK_4000_TL_H	=	$4400
+BLK_4000_TR_H	=	$4500
+BLK_4000_BL_H	=	$4600
 BLK_4000_BR_H	=	$4700
 
 BLK_4800_TL_L	=	$4800
-BLK_4800_TL_H	=	$4900
-BLK_4800_TR_L	=	$4A00
-BLK_4800_TR_H	=	$4B00
-BLK_4800_BL_L	=	$4C00
-BLK_4800_BL_H	=	$4D00
-BLK_4800_BR_L	=	$4E00
+BLK_4800_TR_L	=	$4900
+BLK_4800_BL_L	=	$4A00
+BLK_4800_BR_L	=	$4B00
+BLK_4800_TL_H	=	$4C00
+BLK_4800_TR_H	=	$4D00
+BLK_4800_BL_H	=	$4E00
 BLK_4800_BR_H	=	$4F00
 
 BLK_5000_TL_L	=	$5000
-BLK_5000_TL_H	=	$5100
-BLK_5000_TR_L	=	$5200
-BLK_5000_TR_H	=	$5300
-BLK_5000_BL_L	=	$5400
-BLK_5000_BL_H	=	$5500
-BLK_5000_BR_L	=	$5600
+BLK_5000_TR_L	=	$5100
+BLK_5000_BL_L	=	$5200
+BLK_5000_BR_L	=	$5300
+BLK_5000_TL_H	=	$5400
+BLK_5000_TR_H	=	$5500
+BLK_5000_BL_H	=	$5600
 BLK_5000_BR_H	=	$5700
 
 BLK_5800_TL_L	=	$5800
-BLK_5800_TL_H	=	$5900
-BLK_5800_TR_L	=	$5A00
-BLK_5800_TR_H	=	$5B00
-BLK_5800_BL_L	=	$5C00
-BLK_5800_BL_H	=	$5D00
-BLK_5800_BR_L	=	$5E00
+BLK_5800_TR_L	=	$5900
+BLK_5800_BL_L	=	$5A00
+BLK_5800_BR_L	=	$5B00
+BLK_5800_TL_H	=	$5C00
+BLK_5800_TR_H	=	$5D00
+BLK_5800_BL_H	=	$5E00
 BLK_5800_BR_H	=	$5F00
 
 	.endif
@@ -196,7 +196,7 @@ MAP_UNALIGNED_Y	=	$40
 ; 8-byte (or 2-byte) entry for each SCREEN in the MULTI_MAP.
 
 		.rsset	0
-	.if	METADEF_POINTERS
+	.if	BLKDEF_POINTERS
 SCR_MAP_PAGE	.rs	1	; 256-byte aligned.
 SCR_MAP_BANK	.rs	1
 	.else
@@ -211,7 +211,7 @@ SCR_CHR_34	.rs	1	; a max of 16 CHR banks per MULTI_MAP.
 	.endif
 
 ; **************
-; 16-bytes of VDC metamap info.
+; 16-bytes of VDC blkmap info.
 ;
 ; N.B. MUST be 16-bytes before the SGX versions to use PCE_VDC_OFFSET.
 
@@ -235,7 +235,7 @@ vdc_scr_chr34:	ds	1	; a max of 16 banks per multi-screen map.
 	.if	SUPPORT_SGX
 
 ; **************
-; 16-bytes of SGX metamap info.
+; 16-bytes of SGX blkmap info.
 ;
 ; N.B. MUST be 16-bytes after the VDC versions to use SGX_VDC_OFFSET.
 
@@ -261,7 +261,7 @@ sgx_scr_chr34:	ds	1	; a max of 16 banks per multi-screen map.
 	.if	0
 
 ; **************
-; 16-bytes of VDC metamap info (moved to vdc.asm to save .bss memory).
+; 16-bytes of VDC blkmap info (moved to vdc.asm to save .bss memory).
 ;
 ; N.B. MUST be 16-bytes before the SGX versions to use PCE_VDC_OFFSET.
 
@@ -277,7 +277,7 @@ vdc_map_option:	ds	1	; Flags to disable BAT alignment.
 		ds	7	; UNUSED, needed for padding.
 
 ; **************
-; 16-bytes of SGX metamap info (moved to vdc.asm to save .bss memory).
+; 16-bytes of SGX blkmap info (moved to vdc.asm to save .bss memory).
 ;
 ; N.B. MUST be 16-bytes after the VDC versions to use SGX_VDC_OFFSET.
 
@@ -368,30 +368,30 @@ map_drawn	=	__temp + 1
 
 
 
-metamap_group	.procgroup
+blkmap_group	.procgroup
 
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; _set_metatiles - Initialize the meta-tile pointers.
-; _sgx_set_metatiles - Initialize the meta-tile pointers.
+; _set_blocks - Initialize the block definition pointers.
+; _sgx_set_blocks - Initialize the block definition pointers.
 ;
-; void __fastcall set_metatiles( unsigned char __far *tiledef<vdc_blk_bank:vdc_blk_addr>, unsigned char __far *flagdef<vdc_flg_bank:vdc_flg_addr>, unsigned char number_of_tiles<_al> );
-; void __fastcall sgx_set_metatiles( unsigned char __far *tiledef<sgx_blk_bank:sgx_blk_addr>, unsigned char __far *flagdef<sgx_flg_bank:sgx_flg_addr>, unsigned char number_of_tiles<_al> );
+; void __fastcall set_blocks( unsigned char __far *blk_def<vdc_blk_bank:vdc_blk_addr>, unsigned char __far *flg_def<vdc_flg_bank:vdc_flg_addr>, unsigned char number_of_blk<_al> );
+; void __fastcall sgx_set_blocks( unsigned char __far *blk_def<sgx_blk_bank:sgx_blk_addr>, unsigned char __far *flg_def<sgx_flg_bank:sgx_flg_addr>, unsigned char number_of_blk<_al> );
 ;
 
 	.if	SUPPORT_SGX
 
-		.proc	_sgx_set_metatiles.3
+		.proc	_sgx_set_blocks.3
 
 		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
 		db	$F0			; Turn "clx" into a "beq".
 
-		.ref	_set_metatiles.3
+		.ref	_set_blocks.3
 		.endp
 	.endif
 
-		.proc	_set_metatiles.3
+		.proc	_set_blocks.3
 
 		clx				; Offset to PCE VDC.
 
@@ -405,10 +405,10 @@ metamap_group	.procgroup
 		ora	#$40
 		sta.h	vdc_blk_addr, x
 
-	.if	METADEF_POINTERS
-		dec	<_al			; Number of meta-tiles.
+	.if	BLKDEF_POINTERS
+		dec	<_al			; Number of blocks.
 
-!:		lda.l	vdc_blk_addr, x		; Get the meta-tile address.
+!:		lda.l	vdc_blk_addr, x		; Get the BLK address.
 		ldy.h	vdc_blk_addr, x		; If the page is zero, then
 		bne	!+			; retrieve it from the map.
 
@@ -449,7 +449,7 @@ metamap_group	.procgroup
 		say
 		sta.h	blk_tl_l_ptr, x
 		say
-		sec				; Number of meta-tiles - 1,
+		sec				; Number of BLK - 1,
 		adc	<_al			; so that 256 works!
 		bcc	!+
 		iny
@@ -457,7 +457,7 @@ metamap_group	.procgroup
 		inx
 		cpx	#8 * 2			; Initialize 8 consecutive
 		bcc	.loop			; pointers.
-	.endif	METADEF_POINTERS
+	.endif	BLKDEF_POINTERS
 
 		leave
 
@@ -496,7 +496,7 @@ _draw_map	.proc
 		pha
 		tma4
 		pha
-	.if	METAMAP_LARGEMAP
+	.if	BLKMAP_LARGEMAP
 		tma5				; Preserve MPR5.
 		pha
 	.endif
@@ -517,7 +517,7 @@ _draw_map	.proc
 
 		jsr	map_scroll_y		; Draw N row of CHR to the BAT.
 
-	.if	METAMAP_LARGEMAP
+	.if	BLKMAP_LARGEMAP
 		pla				; Restore MPR5.
 		tam5
 	.endif
@@ -559,7 +559,7 @@ _scroll_map	.proc
 
 		clx				; Offset to PCE VDC.
 
-	.if	METAMAP_TIMETEST
+	.if	BLKMAP_TIMETEST
 		lda.h	#256			; Set the border color.
 		stz.l	VCE_CTA
 		sta.h	VCE_CTA
@@ -573,14 +573,14 @@ _scroll_map	.proc
 		pha
 		tma4
 		pha
-	.if	METAMAP_LARGEMAP
+	.if	BLKMAP_LARGEMAP
 		tma5				; Preserve MPR5.
 		pha
 	.endif
 
 		jsr	map_pxl_2_chr		; Set up the draw coordinates.
 
-	.if	METAMAP_MULTISCR
+	.if	BLKMAP_MULTISCR
 		lda	<map_scrn_x		; map_scroll_x can change this!
 		pha
 	.endif
@@ -594,7 +594,7 @@ _scroll_map	.proc
 		lda	vdc_old_chr_x, x	; Restore map_chr_x which could
 		sta	<map_chr_x		; be changed by map_scroll_x.
 
-	.if	METAMAP_MULTISCR
+	.if	BLKMAP_MULTISCR
 		pla				; Restore before map_scroll_y.
 		sta	<map_scrn_x
 	.endif
@@ -605,7 +605,7 @@ _scroll_map	.proc
 		sta	<map_draw_h
 		jsr	map_scroll_y
 
-	.if	METAMAP_LARGEMAP
+	.if	BLKMAP_LARGEMAP
 		pla				; Restore MPR5.
 		tam5
 	.endif
@@ -616,7 +616,7 @@ _scroll_map	.proc
 		pla
 		tam2
 
-	.if	METAMAP_TIMETEST
+	.if	BLKMAP_TIMETEST
 		stz	VCE_CTW			; Clear the border color.
 	.endif
 
@@ -655,7 +655,7 @@ _blit_map	.proc
 		clx				; Offset to PCE VDC.
 
 		lda	vdc_scr_bank, x		; Skip this if a multi-screen
-		bne	.exit			; metamap.
+		bne	.exit			; blkmap.
 
 		tma2				; Preserve MPR2..MPR4.
 		pha
@@ -663,7 +663,7 @@ _blit_map	.proc
 		pha
 		tma4
 		pha
-	.if	METAMAP_LARGEMAP
+	.if	BLKMAP_LARGEMAP
 		tma5				; Preserve MPR5.
 		pha
 	.endif
@@ -695,7 +695,7 @@ _blit_map	.proc
 .finished:	pla				; Restore previous map options.
 		sta	vdc_map_option, x
 
-	.if	METAMAP_LARGEMAP
+	.if	BLKMAP_LARGEMAP
 		pla				; Restore MPR5.
 		tam5
 	.endif
@@ -742,7 +742,7 @@ map_pxl_2_chr:	lda.l	vdc_map_pxl_y, x	; Get current map Y coordinate.
 ;		sta.h	<map_pxl_x
 
 ;		lda.h	<map_pxl_x		; Xvert map_pxl_x to map_chr_x.
-	.if	METAMAP_MULTISCR
+	.if	BLKMAP_MULTISCR
 		tay				; Xvert map_pxl_x to map_scrn_x.
 		bit	vdc_bat_width, x
 		bvs	.w64
@@ -760,7 +760,7 @@ map_pxl_2_chr:	lda.l	vdc_map_pxl_y, x	; Get current map Y coordinate.
 		ror.l	<map_pxl_x		; Max map width is 256 CHR.
 
 		lda.h	<map_pxl_y		; Xvert map_pxl_y to map_chr_y.
-	.if	METAMAP_MULTISCR
+	.if	BLKMAP_MULTISCR
 		tay				; Xvert map_pxl_y to map_scrn_y.
 		bit	vdc_bat_height, x
 		bvc	.h32
@@ -779,7 +779,7 @@ map_pxl_2_chr:	lda.l	vdc_map_pxl_y, x	; Get current map Y coordinate.
 
 
 
-	.if	METAMAP_MULTISCR
+	.if	BLKMAP_MULTISCR
 
 ; ***************************************************************************
 ; ***************************************************************************
@@ -832,9 +832,9 @@ map_set_screen:	ldy	<map_scrn_y		; Map SCR Y coordinate.
 !:		sty.h	<__temp			; 2 bytes per screen entry, max
 		asl	a			; 8KByte screen table.
 		rol.h	<__temp
-	.if	METADEF_POINTERS == 0
+	.if	BLKDEF_POINTERS == 0
 		asl	a			; 8 bytes per screen entry when
-		rol.h	<__temp			; not using meta-tile pointers.
+		rol.h	<__temp			; not using BLK pointers.
 		asl	a
 		rol.h	<__temp
 	.endif
@@ -857,7 +857,7 @@ map_set_screen:	ldy	<map_scrn_y		; Map SCR Y coordinate.
 		lda	[_bp], y		; Get SCR_MAP_PAGE.
 		sta.h	vdc_map_addr, x
 
-	.if	METADEF_POINTERS == 0
+	.if	BLKDEF_POINTERS == 0
 		iny
 		lda	[_bp], y		; Get SCR_BLK_PAGE.
 		sta.h	vdc_blk_addr, x
@@ -888,7 +888,7 @@ map_set_screen:	ldy	<map_scrn_y		; Map SCR Y coordinate.
 
 		; Fall through to map_set_banks.
 
-	.endif	METAMAP_MULTISCR
+	.endif	BLKMAP_MULTISCR
 
 
 
@@ -905,14 +905,14 @@ map_set_banks:	lda	vdc_blk_bank, x		; Put the BLK into MPR2.
 		tam3
 		inc	a
 		tam4
-	.if	METAMAP_LARGEMAP
+	.if	BLKMAP_LARGEMAP
 	.if	FAST_MULTIPLY
-	.if	METAMAP_MULTISCR
+	.if	BLKMAP_MULTISCR
 		ldy	vdc_scr_bank, x		; Multi-screen maps expect
 		bne	!+			; table-of-squares in MPR5!
 	.endif
 	.endif
-		inc	a			; Allow for 16KByte metamap.
+		inc	a			; Allow for 16KByte blkmap.
 		tam5
 	.endif
 
@@ -934,16 +934,16 @@ map_set_banks:	lda	vdc_blk_bank, x		; Put the BLK into MPR2.
 
 map_scroll_x:
 
-	.if	METAMAP_MULTISCR
+	.if	BLKMAP_MULTISCR
 
 		; Initialization for a multi-screen map.
 
-		lda	vdc_scr_bank, x		; Skip this if regular metamap.
+		lda	vdc_scr_bank, x		; Skip this if regular blkmap.
 		beq	.regular
 
 .multiscreen:	lda	<map_chr_x		; Compare old_x with cur_x.
 		cmp	vdc_old_chr_x, x
-	.if	METAMAP_TIMETEST == 0
+	.if	BLKMAP_TIMETEST == 0
 		beq	!no_change-		; Do nothing if no change.
 	.endif
 		sta	vdc_old_chr_x, x
@@ -993,13 +993,13 @@ map_scroll_x:
 
 		bra	.draw_col		; Now draw it.
 
-	.endif	METAMAP_MULTISCR
+	.endif	BLKMAP_MULTISCR
 
 		; Initialization for a regular map.
 
 .regular:	lda	<map_chr_x		; Compare old_x with cur_x.
 		cmp	vdc_old_chr_x, x
-	.if	METAMAP_TIMETEST == 0
+	.if	BLKMAP_TIMETEST == 0
 		beq	!no_change-		; Do nothing if no change.
 	.endif
 		sta	vdc_old_chr_x, x
@@ -1025,7 +1025,7 @@ map_scroll_x:
 		and	vdc_bat_y_mask, x
 		sta	<map_bat_y		; Save BAT Y chr coordinate.
 
-	.if	METAMAP_LARGEMAP
+	.if	BLKMAP_LARGEMAP
 	.if	FAST_MULTIPLY
 !:		lda	#^square_plus_lo	; Put the table-of-squares back
 		tma5				; into MPR5.
@@ -1117,8 +1117,8 @@ map_scroll_x:
 		adc	<map_drawn
 		sta	<map_chr_y
 
-	.if	METAMAP_MULTISCR
-		lda	vdc_scr_bank, x		; Skip this if regular metamap.
+	.if	BLKMAP_MULTISCR
+		lda	vdc_scr_bank, x		; Skip this if regular blkmap.
 		beq	!+
 
 		inc	<map_scrn_y		; Wrapped to the next screen.
@@ -1138,7 +1138,7 @@ map_scroll_x:
 
 		jsr	blk_col_strip		; Draw btm of vertical strip.
 
-	.if	METAMAP_MULTISCR
+	.if	BLKMAP_MULTISCR
 		dec	<map_scrn_y		; Restore, no check if should.
 	.endif
 
@@ -1168,16 +1168,16 @@ map_scroll_x:
 
 map_scroll_y:
 
-	.if	METAMAP_MULTISCR
+	.if	BLKMAP_MULTISCR
 
 		; Initialization for a multi-screen map.
 
-		lda	vdc_scr_bank, x		; Skip this if regular metamap.
+		lda	vdc_scr_bank, x		; Skip this if regular blkmap.
 		beq	.regular
 
 .multiscr:	lda	<map_chr_y		; Compare old_y with cur_y.
 		cmp	vdc_old_chr_y, x
-	.if	METAMAP_TIMETEST == 0
+	.if	BLKMAP_TIMETEST == 0
 		beq	!no_change-		; Do nothing if no change.
 	.endif
 		sta	vdc_old_chr_y, x
@@ -1230,13 +1230,13 @@ map_scroll_y:
 
 		bra	.draw_row		; Now draw it.
 
-	.endif	METAMAP_MULTISCR
+	.endif	BLKMAP_MULTISCR
 
-		; Initialization for a regular metamap.
+		; Initialization for a regular blkmap.
 
 .regular:	lda	<map_chr_y		; Compare old_y with cur_y.
 		cmp	vdc_old_chr_y, x
-	.if	METAMAP_TIMETEST == 0
+	.if	BLKMAP_TIMETEST == 0
 		beq	!no_change-		; Do nothing if no change.
 	.endif
 		sta	vdc_old_chr_y, x
@@ -1263,7 +1263,7 @@ map_scroll_y:
 		sta	<map_bat_x		; Save BAT X chr coordinate.
 !:
 
-	.if	METAMAP_LARGEMAP
+	.if	BLKMAP_LARGEMAP
 	.if	FAST_MULTIPLY
 		lda	#^square_plus_lo	; Put the table-of-squares back
 		tma5				; into MPR5.
@@ -1303,7 +1303,7 @@ map_scroll_y:
 
 		jsr	map_set_banks		; Put BLK & MAP in MPR2-MPR5.
 
-		; Loop to here if drawing multiple regular metamap rows.
+		; Loop to here if drawing multiple regular blkmap rows.
 
 .regular_row:	ldy.h	<map_line		; Hi-byte of (BLK Y * width).
 		lda	<map_chr_x		; Map CHR X coordinate.
@@ -1351,8 +1351,8 @@ map_scroll_y:
 		adc	<map_drawn
 		sta	<map_chr_x
 
-	.if	METAMAP_MULTISCR
-		lda	vdc_scr_bank, x		; Skip this if regular metamap.
+	.if	BLKMAP_MULTISCR
+		lda	vdc_scr_bank, x		; Skip this if regular blkmap.
 		beq	!+
 
 		inc	<map_scrn_x		; Wrapped to the next screen.
@@ -1373,9 +1373,9 @@ map_scroll_y:
 
 		jsr	blk_row_strip		; Draw rhs of horizontal strip.
 
-	.if	METAMAP_MULTISCR
+	.if	BLKMAP_MULTISCR
 		dec	<map_scrn_x		; Restore, no check if should.
-	.endif	METAMAP_MULTISCR
+	.endif	BLKMAP_MULTISCR
 
 		pla				; Restore CHR X coordinate, we
 		sta	<map_chr_x		; might draw another row!
@@ -1385,7 +1385,7 @@ map_scroll_y:
 
 		inc	<map_chr_y		; Move CHR Y down by 1.
 
-		lda	<map_chr_y		; If new meta-tile then ...
+		lda	<map_chr_y		; If new BLK then ...
 		lsr	a
 		bcs	!+
 		lda	vdc_map_line_w, x	; Move the map line pointer to
@@ -1399,8 +1399,8 @@ map_scroll_y:
 		and	vdc_bat_y_mask, x
 		sta	<map_bat_y
 
-	.if	METAMAP_MULTISCR
-		ldy	vdc_scr_bank, x		; Skip this if regular metamap.
+	.if	BLKMAP_MULTISCR
+		ldy	vdc_scr_bank, x		; Skip this if regular blkmap.
 		beq	.regular_row
 
 		tay				; If wrapped to the top line of
@@ -1416,13 +1416,13 @@ map_scroll_y:
 !:		jmp	.multiscr_row		; Draw next row.
 	.else
 		bra	.regular_row		; Draw next row.
-	.endif	METAMAP_MULTISCR
+	.endif	BLKMAP_MULTISCR
 
 .finished:	rts
 
 
 
-	.if	METADEF_POINTERS
+	.if	BLKDEF_POINTERS
 
 ; ***************************************************************************
 ; ***************************************************************************
@@ -1452,7 +1452,7 @@ blk_row_strip:	jsr	set_di_xy_mawr		; Set the BAT VRAM destination.
 block_top_even:	lda	[blk_tl_l_ptr], y	; 7
 		sta	VDC_DL, x		; 6
 		lda	[blk_tl_h_ptr], y	; 7
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -1464,7 +1464,7 @@ block_top_even:	lda	[blk_tl_l_ptr], y	; 7
 block_top_odd:	lda	[blk_tr_l_ptr], y	; 7
 		sta	VDC_DL, x		; 6
 		lda	[blk_tr_h_ptr], y	; 7
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -1489,7 +1489,7 @@ block_top_odd:	lda	[blk_tr_l_ptr], y	; 7
 block_btm_even:	lda	[blk_bl_l_ptr], y	; 7
 		sta	VDC_DL, x		; 6
 		lda	[blk_bl_h_ptr], y	; 7
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -1501,7 +1501,7 @@ block_btm_even:	lda	[blk_bl_l_ptr], y	; 7
 block_btm_odd:	lda	[blk_br_l_ptr], y	; 7
 		sta	VDC_DL, x		; 6
 		lda	[blk_br_h_ptr], y	; 7
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -1546,7 +1546,7 @@ blk_col_strip:	jsr	set_di_xy_mawr		; Set the BAT VRAM destination.
 block_lhs_even:	lda	[blk_tl_l_ptr], y	; 7
 		sta	VDC_DL, x		; 6
 		lda	[blk_tl_h_ptr], y	; 7
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -1558,7 +1558,7 @@ block_lhs_even:	lda	[blk_tl_l_ptr], y	; 7
 block_lhs_odd:	lda	[blk_bl_l_ptr], y	; 7
 		sta	VDC_DL, x		; 6
 		lda	[blk_bl_h_ptr], y	; 7
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -1587,7 +1587,7 @@ block_lhs_odd:	lda	[blk_bl_l_ptr], y	; 7
 block_rhs_even:	lda	[blk_tr_l_ptr], y	; 7
 		sta	VDC_DL, x		; 6
 		lda	[blk_tr_h_ptr], y	; 7
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -1599,7 +1599,7 @@ block_rhs_even:	lda	[blk_tr_l_ptr], y	; 7
 block_rhs_odd:	lda	[blk_br_l_ptr], y	; 7
 		sta	VDC_DL, x		; 6
 		lda	[blk_br_h_ptr], y	; 7
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -1618,7 +1618,7 @@ block_rhs_odd:	lda	[blk_br_l_ptr], y	; 7
 
 !end:		rts
 
-	.else	METADEF_POINTERS
+	.else	BLKDEF_POINTERS
 
 
 
@@ -1679,7 +1679,7 @@ blk_row_strip:	jsr	set_di_xy_mawr		; Set the BAT VRAM destination.
 b4000_top_even:	lda	BLK_4000_TL_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_4000_TL_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -1691,7 +1691,7 @@ b4000_top_even:	lda	BLK_4000_TL_L, y	; 5
 b4000_top_odd:	lda	BLK_4000_TR_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_4000_TR_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -1716,7 +1716,7 @@ b4000_top_odd:	lda	BLK_4000_TR_L, y	; 5
 b4000_btm_even:	lda	BLK_4000_BL_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_4000_BL_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -1728,7 +1728,7 @@ b4000_btm_even:	lda	BLK_4000_BL_L, y	; 5
 b4000_btm_odd:	lda	BLK_4000_BR_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_4000_BR_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -1753,7 +1753,7 @@ b4000_btm_odd:	lda	BLK_4000_BR_L, y	; 5
 b4800_top_even:	lda	BLK_4800_TL_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_4800_TL_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -1765,7 +1765,7 @@ b4800_top_even:	lda	BLK_4800_TL_L, y	; 5
 b4800_top_odd:	lda	BLK_4800_TR_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_4800_TR_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -1790,7 +1790,7 @@ b4800_top_odd:	lda	BLK_4800_TR_L, y	; 5
 b4800_btm_even:	lda	BLK_4800_BL_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_4800_BL_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -1802,7 +1802,7 @@ b4800_btm_even:	lda	BLK_4800_BL_L, y	; 5
 b4800_btm_odd:	lda	BLK_4800_BR_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_4800_BR_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -1827,7 +1827,7 @@ b4800_btm_odd:	lda	BLK_4800_BR_L, y	; 5
 b5000_top_even:	lda	BLK_5000_TL_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_5000_TL_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -1839,7 +1839,7 @@ b5000_top_even:	lda	BLK_5000_TL_L, y	; 5
 b5000_top_odd:	lda	BLK_5000_TR_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_5000_TR_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -1864,7 +1864,7 @@ b5000_top_odd:	lda	BLK_5000_TR_L, y	; 5
 b5000_btm_even:	lda	BLK_5000_BL_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_5000_BL_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -1876,7 +1876,7 @@ b5000_btm_even:	lda	BLK_5000_BL_L, y	; 5
 b5000_btm_odd:	lda	BLK_5000_BR_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_5000_BR_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -1901,7 +1901,7 @@ b5000_btm_odd:	lda	BLK_5000_BR_L, y	; 5
 b5800_top_even:	lda	BLK_5800_TL_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_5800_TL_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -1913,7 +1913,7 @@ b5800_top_even:	lda	BLK_5800_TL_L, y	; 5
 b5800_top_odd:	lda	BLK_5800_TR_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_5800_TR_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -1938,7 +1938,7 @@ b5800_top_odd:	lda	BLK_5800_TR_L, y	; 5
 b5800_btm_even:	lda	BLK_5800_BL_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_5800_BL_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -1950,7 +1950,7 @@ b5800_btm_even:	lda	BLK_5800_BL_L, y	; 5
 b5800_btm_odd:	lda	BLK_5800_BR_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_5800_BR_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -2024,7 +2024,7 @@ blk_col_strip:	jsr	set_di_xy_mawr		; Set the BAT VRAM destination.
 b4000_lhs_even:	lda	BLK_4000_TL_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_4000_TL_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -2036,7 +2036,7 @@ b4000_lhs_even:	lda	BLK_4000_TL_L, y	; 5
 b4000_lhs_odd:	lda	BLK_4000_BL_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_4000_BL_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -2065,7 +2065,7 @@ b4000_lhs_odd:	lda	BLK_4000_BL_L, y	; 5
 b4000_rhs_even:	lda	BLK_4000_TR_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_4000_TR_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -2077,7 +2077,7 @@ b4000_rhs_even:	lda	BLK_4000_TR_L, y	; 5
 b4000_rhs_odd:	lda	BLK_4000_BR_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_4000_BR_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -2106,7 +2106,7 @@ b4000_rhs_odd:	lda	BLK_4000_BR_L, y	; 5
 b4800_lhs_even:	lda	BLK_4800_TL_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_4800_TL_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -2118,7 +2118,7 @@ b4800_lhs_even:	lda	BLK_4800_TL_L, y	; 5
 b4800_lhs_odd:	lda	BLK_4800_BL_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_4800_BL_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -2147,7 +2147,7 @@ b4800_lhs_odd:	lda	BLK_4800_BL_L, y	; 5
 b4800_rhs_even:	lda	BLK_4800_TR_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_4800_TR_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -2159,7 +2159,7 @@ b4800_rhs_even:	lda	BLK_4800_TR_L, y	; 5
 b4800_rhs_odd:	lda	BLK_4800_BR_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_4800_BR_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -2188,7 +2188,7 @@ b4800_rhs_odd:	lda	BLK_4800_BR_L, y	; 5
 b5000_lhs_even:	lda	BLK_5000_TL_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_5000_TL_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -2200,7 +2200,7 @@ b5000_lhs_even:	lda	BLK_5000_TL_L, y	; 5
 b5000_lhs_odd:	lda	BLK_5000_BL_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_5000_BL_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -2229,7 +2229,7 @@ b5000_lhs_odd:	lda	BLK_5000_BL_L, y	; 5
 b5000_rhs_even:	lda	BLK_5000_TR_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_5000_TR_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -2241,7 +2241,7 @@ b5000_rhs_even:	lda	BLK_5000_TR_L, y	; 5
 b5000_rhs_odd:	lda	BLK_5000_BR_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_5000_BR_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -2270,7 +2270,7 @@ b5000_rhs_odd:	lda	BLK_5000_BR_L, y	; 5
 b5800_lhs_even:	lda	BLK_5800_TL_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_5800_TL_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -2282,7 +2282,7 @@ b5800_lhs_even:	lda	BLK_5800_TL_L, y	; 5
 b5800_lhs_odd:	lda	BLK_5800_BL_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_5800_BL_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -2311,7 +2311,7 @@ b5800_lhs_odd:	lda	BLK_5800_BL_L, y	; 5
 b5800_rhs_even:	lda	BLK_5800_TR_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_5800_TR_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -2323,7 +2323,7 @@ b5800_rhs_even:	lda	BLK_5800_TR_L, y	; 5
 b5800_rhs_odd:	lda	BLK_5800_BR_L, y	; 5
 		sta	VDC_DL, x		; 6
 		lda	BLK_5800_BR_H, y	; 5
-	.if	METADEF_CHR_FLAG
+	.if	BLKDEF_CHR_FLAG
 		and	#%11110011		; 2
 	.endif
 		inc	a			; 2
@@ -2342,6 +2342,6 @@ b5800_rhs_odd:	lda	BLK_5800_BR_L, y	; 5
 
 !end:		rts
 
-	.endif	METADEF_POINTERS
+	.endif	BLKDEF_POINTERS
 
-	.endprocgroup	; metamap_group
+	.endprocgroup	; blkmap_group

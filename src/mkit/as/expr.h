@@ -34,13 +34,14 @@
 #define OP_BANK		25
 #define OP_VRAM		26
 #define OP_PAL		27
-#define OP_SIZEOF	28
-#define OP_LINEAR	29
-#define OP_OVERLAY	30
-#define OP_LOW_SYMBOL	31
-#define OP_HIGH_SYMBOL	32
-#define OP_LOGICAL_OR	33
-#define OP_LOGICAL_AND	34
+#define OP_COUNTOF	28
+#define OP_SIZEOF	29
+#define OP_LINEAR	30
+#define OP_OVERLAY	31
+#define OP_LOW_SYMBOL	32
+#define OP_HIGH_SYMBOL	33
+#define OP_LOGICAL_OR	34
+#define OP_LOGICAL_AND	35
 
 /* operator priority (bigger number is higher precedence) */
 /* precedence is left-to-right if same priority */
@@ -73,6 +74,7 @@ const int op_pri[] = {
   13 /* OP_BANK         */,
   13 /* OP_VRAM         */,
   13 /* OP_PAL          */,
+  13 /* OP_COUNTOF      */,
   13 /* OP_SIZEOF       */,
   13 /* OP_LINEAR       */,
   13 /* OP_TAGOF        */,
@@ -112,6 +114,7 @@ const int op_2nd[] = {
    0 /* OP_BANK         */,
    0 /* OP_VRAM         */,
    0 /* OP_PAL          */,
+   0 /* OP_COUNTOF      */,
    0 /* OP_SIZEOF       */,
    0 /* OP_LINEAR       */,
    0 /* OP_OVERLAY      */,
@@ -135,7 +138,7 @@ int expr_lablcnt;               /* number of label seen in an expression */
 int expr_mprbank;               /* last-defined bank# in an expression */
 int expr_overlay;               /* last-defined overlay# in an expression */
 int complex_expr;               /* NZ if an expression contains operators */
-const char *keyword[10] = {     /* predefined functions */
+const char *keyword[11] = {     /* predefined functions */
   "\7DEFINED",
   "\4HIGH",
   "\3LOW",
@@ -143,6 +146,7 @@ const char *keyword[10] = {     /* predefined functions */
   "\4BANK",
   "\4VRAM",
   "\3PAL",
+  "\7COUNTOF",
   "\6SIZEOF",
   "\6LINEAR",
   "\7OVERLAY"

@@ -197,7 +197,7 @@ void dopsdinc (void)
 
 		if ((numericarg == 0) ||
 		    (numericarg >= 7))
-			error("Incorrect arguments for #incbat(label, \"filename\", addr, [[,x ,y] ,w ,h] [,chrset])");
+			error("Incorrect arguments for #incbat(label, \"filename\", vram, [[,x ,y] ,w ,h] [,chrset])");
 
 		kill();
 	}
@@ -594,6 +594,69 @@ void dopsdinc (void)
 	else
 	if (amatch("tile_ex", 7))
 		do_inc_ex(16);
+	else
+	if (amatch("blk", 4)) {
+		if (!match("("))
+			error("missing (");
+
+		ol(".data");
+
+		readstr();	/* read the label name */
+		prefix();
+		outstr(litq2);
+		outstr(":");
+		addglb_far(litq2, CINT);
+
+		if (!match(",")) {
+			error("missing ,");
+			kill();
+			return;
+		}
+
+		ot(".incblk\t\t\"");
+
+		if (readqstr() == 0) {
+			error("bad filename in #incblk()");
+			kill();
+			return;
+		}
+
+		outstr(litq2);
+		outstr("\"");
+
+		if (match(","))
+			outstr(", ");
+
+		numericarg = 0;
+
+		while (!match(")")) {
+			numericarg++;
+
+			if (number(&dummy))
+				outdec(dummy);
+			else {
+				readstr();
+				prefix();
+				outstr(litq2);
+				if (!match(")"))
+					error("A #incchr() label can only be the final #incblk() argument!");
+				break;
+			}
+
+			if (match(","))
+				outstr(", ");
+		}
+
+		nl();
+		ol(".code");
+
+		if ((numericarg != 2) &&
+		    (numericarg != 4) &&
+		    (numericarg != 6))
+			error("Incorrect arguments for #incblk(label, \"filename\", vram, [[,x ,y] ,w ,h] ,chrset)");
+
+		kill();
+	}
 	else
 	if (amatch("asmlabel", 8)) {
 		if (!match("("))

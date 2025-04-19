@@ -12,6 +12,7 @@ void pce_incbat(int *ip);
 void pce_incpal(int *ip);
 void pce_incspr(int *ip);
 void pce_inctile(int *ip);
+void pce_incblk(int *ip);
 void pce_incmap(int *ip);
 void pce_vram(int *ip);
 void pce_pal(int *ip);
@@ -72,10 +73,11 @@ struct t_opcode huc6280_inst[38] = {
 #define NARGS_0_1_2 0b11111000
 #define NARGS_0_2_4 0b11101010
 #define NARGS_1_3_5 0b11010101
+#define NARGS_2_4_6 0b10101011
 #define NARGS_1_2_3_4_5_6 0b10000001
 
 /* PCE specific pseudos */
-struct t_opcode pce_pseudo[29] = {
+struct t_opcode pce_pseudo[31] = {
 	{NULL, "DEFCHR",     pce_defchr,    PSEUDO, P_DEFCHR,    0},
 	{NULL, "DEFPAL",     pce_defpal,    PSEUDO, P_DEFPAL,    0},
 	{NULL, "DEFSPR",     pce_defspr,    PSEUDO, P_DEFSPR,    0},
@@ -83,6 +85,7 @@ struct t_opcode pce_pseudo[29] = {
 	{NULL, "INCSPR",     pce_incspr,    PSEUDO, P_INCSPR,    NARGS_0_2_4},
 	{NULL, "INCPAL",     pce_incpal,    PSEUDO, P_INCPAL,    NARGS_0_1_2},
 	{NULL, "INCTILE",    pce_inctile,   PSEUDO, P_INCTILE,   NARGS_0_2_4},
+	{NULL, "INCBLK",     pce_incblk,    PSEUDO, P_INCBLK,    NARGS_2_4_6},
 	{NULL, "INCMAP",     pce_incmap,    PSEUDO, P_INCMAP,    NARGS_1_3_5},
 	{NULL, "INCCHRPAL",  pce_incchrpal, PSEUDO, P_INCCHRPAL, NARGS_0_2_4},
 	{NULL, "INCSPRPAL",  pce_incsprpal, PSEUDO, P_INCSPRPAL, NARGS_0_2_4},
@@ -98,6 +101,7 @@ struct t_opcode pce_pseudo[29] = {
 	{NULL, ".INCSPR",    pce_incspr,    PSEUDO, P_INCSPR,    NARGS_0_2_4},
 	{NULL, ".INCPAL",    pce_incpal,    PSEUDO, P_INCPAL,    NARGS_0_1_2},
 	{NULL, ".INCTILE",   pce_inctile,   PSEUDO, P_INCTILE,   NARGS_0_2_4},
+	{NULL, ".INCBLK",    pce_incblk,    PSEUDO, P_INCBLK,    NARGS_2_4_6},
 	{NULL, ".INCMAP",    pce_incmap,    PSEUDO, P_INCMAP,    NARGS_1_3_5},
 	{NULL, ".INCCHRPAL", pce_incchrpal, PSEUDO, P_INCCHRPAL, NARGS_0_2_4},
 	{NULL, ".INCSPRPAL", pce_incsprpal, PSEUDO, P_INCSPRPAL, NARGS_0_2_4},

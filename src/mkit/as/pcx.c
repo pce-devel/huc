@@ -119,7 +119,7 @@ pcx_set_tile(struct t_symbol *ref, unsigned int offset)
 		return (1);
 
 	/* check symbol */
-	if (ref->nb == 0) {
+	if (ref->data_count == -1) {
 		if ((ref->type == IFUNDEF) || (ref->type == UNDEF))
 			error("Tile table undefined!");
 		else
@@ -149,14 +149,14 @@ pcx_set_tile(struct t_symbol *ref, unsigned int offset)
 	if (ref->size) {
 		if ((start % ref->size) != 0)
 			goto err;
-		if ((start / ref->size) >= ref->nb)
+		if ((start / ref->size) >= ref->data_count)
 			goto err;
 	}
 
 	/* do nothing in first passes */
 	if (pass == LAST_PASS) {
 		/* get infos */
-		nb = ref->nb - (start / ref->size);
+		nb = ref->data_count - (start / ref->size);
 		size = ref->size;
 
 		/* 2048 tiles max (65536 / 32) */
@@ -291,20 +291,6 @@ pcx_get_args(int *ip)
 	/* load and unpack the pcx */
 	if (!pcx_load(name))
 		return (0);
-
-	/* are we getting args for a .incmap or .incbat */
-	if ((opval == P_INCMAP) ||
-	   ((opval == P_INCBAT) && ((pcx_nb_args & 1) == 0))) {
-		/* check that last arg is a tile reference */
-		if (expr_lablcnt == 0)
-			error("No tile table reference!");
-		if (expr_lablcnt > 1) {
-			expr_lablcnt = 0;
-			error("Too many tile table references!");
-		}
-		if (!pcx_set_tile(expr_lablptr, value))
-			return (0);
-	}
 
 	/* ok */
 	return (1);

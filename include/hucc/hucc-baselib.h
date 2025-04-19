@@ -78,6 +78,15 @@ extern unsigned char dl;
 extern unsigned char dh;
 
 // *************
+// Special macros to get information from PCEAS ...
+// *************
+
+#define BANK( datasym ) ((unsigned) (&__bank__ ## datasym))
+#define SIZEOF( datasym ) ((unsigned) (&__sizeof__ ## datasym))
+#define COUNTOF( datasym ) ((unsigned) (&__countof__ ## datasym))
+#define OVERLAY( datasym ) ((unsigned) (&__overlay__ ## datasym))
+
+// *************
 // Functions in hucc-baselib.asm ...
 // *************
 

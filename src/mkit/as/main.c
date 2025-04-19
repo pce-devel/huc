@@ -761,6 +761,7 @@ main(int argc, char **argv)
 		glablptr = NULL;
 		scopeptr = NULL;
 		tile_lablptr = NULL;
+		blk_lablptr = NULL;
 		branchptr = branchlst;
 		branches_changed = 0;
 		need_another_pass = 0;
@@ -972,7 +973,7 @@ main(int argc, char **argv)
 	fclose(in_fp);
 
 	/* dump the rom */
-	if (errcnt == 0) {
+	if (errcnt == 0 && no_rom_file == 0) {
 		/* cd-rom */
 		if ((cd_opt || scd_opt) && !trim_opt) {
 			/* open output file */

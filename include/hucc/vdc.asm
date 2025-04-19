@@ -443,20 +443,20 @@ set_bat_size:	lda	<_al			; Get BAT size value.
 		.bss
 
 ; **************
-; 16-bytes of VDC HuC BAT information.
+; 16-bytes of VDC BAT information.
 ;
 ; N.B. MUST be 16-bytes before the SGX versions to use PCE_VDC_OFFSET.
 ;
 ; N.B. Declared inside this .proc so that they can be stripped if unused.
 
-; Initialized by set_screen_size()
+; Initialized by set_bat_vdc.
 vdc_bat_width:	ds	1	; $20, $40, $80
 vdc_bat_height:	ds	1	; $20, $40
 vdc_bat_x_mask:	ds	1	; $1F, $3F, $7F
 vdc_bat_y_mask:	ds	1	; $1F, $3F
 vdc_bat_limit:	ds	1	; (>$03FF), (>$07FF), (>$0FFF), (>$1FFF)
 
-; From metamap.asm just to avoid wasting .bss space with padding.
+; From blkmap.asm just to avoid wasting .bss space with padding.
 vdc_map_draw_w:	ds	1	; (SCR_WIDTH / 8) + 1
 vdc_map_draw_h:	ds	1	; (SCR_HEIGHT / 8) + 1
 vdc_map_line_w:	ds	1	; Line width of map data in tiles.
@@ -472,20 +472,20 @@ spr_clr:	ds	1
 	.if	SUPPORT_SGX
 
 ; **************
-; 16-bytes of SGX HuC BAT information.
+; 16-bytes of SGX BAT information.
 ;
 ; N.B. MUST be 16-bytes after the VDC versions to use SGX_VDC_OFFSET.
 ;
 ; N.B. Declared inside this .proc so that they can be stripped if unused.
 
-; Initialized by sgx_set_screen_size()
+; Initialized by set_bat_sgx.
 sgx_bat_width:	ds	1	; $20, $40, $80
 sgx_bat_height:	ds	1	; $20, $40
 sgx_bat_x_mask:	ds	1	; $1F, $3F, $7F
 sgx_bat_y_mask:	ds	1	; $1F, $3F
 sgx_bat_limit:	ds	1	; (>$03FF), (>$07FF), (>$0FFF), (>$1FFF)
 
-; From metamap.asm just to avoid wasting .bss space with padding.
+; From blkmap.asm just to avoid wasting .bss space with padding.
 sgx_map_draw_w:	ds	1	; (SCR_WIDTH / 8) + 1
 sgx_map_draw_h:	ds	1	; (SCR_HEIGHT / 8) + 1
 sgx_map_line_w:	ds	1	; Line width of map data in tiles.
