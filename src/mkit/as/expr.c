@@ -19,6 +19,7 @@ t_symbol pc_symbol = {
 	NULL,           /* next */
 	NULL,           /* local */
 	NULL,           /* scope */
+	NULL,           /* uses */
 	NULL,           /* proc */
 	"\1*",          /* name */
 	NULL,           /* fileinfo */
@@ -32,11 +33,11 @@ t_symbol pc_symbol = {
 	0,              /* mprbank */
 	0,              /* value */
 	0,              /* phase */
-	0,              /* nb */
 	0,              /* size */
-	0,              /* vram */
+	-1,             /* vram */
+	-1,             /* data_count */
 	0,              /* data_size */
-	0,              /* data_type */
+	-1,             /* data_type */
 	S_NONE,         /* section */
 	0,              /* overlay */
 	0,              /* page */
@@ -1209,12 +1210,12 @@ do_op(void)
 		if (!check_func_args("COUNTOF"))
 			return (0);
 		if (pass == LAST_PASS) {
-			if (expr_lablptr->nb == -1) {
+			if (expr_lablptr->data_count == -1) {
 				error("No COUNTOF() attribute for this symbol!");
 				return (0);
 			}
 		}
-		val[0] = expr_lablptr->nb;
+		val[0] = expr_lablptr->data_count;
 		break;
 
 	/* SIZEOF */

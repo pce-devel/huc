@@ -49,6 +49,7 @@ extern unsigned int tile_offset;                /* offset in the tile reference 
 extern struct t_tile tile[65536 / 32];          /* tile info table */
 extern struct t_tile *tile_tbl[HASH_COUNT];     /* tile hash table */
 extern struct t_symbol *tile_lablptr;           /* tile symbol reference */
+extern struct t_symbol *blk_lablptr;            /* meta-tile symbol reference */
 extern char *expr;                              /* expression string pointer */
 extern struct t_symbol *expr_toplabl;           /* pointer to the innermost scope-label */
 extern struct t_symbol *expr_lablptr;           /* pointer to the last-referenced label */

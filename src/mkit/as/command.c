@@ -67,6 +67,7 @@ unsigned short pseudo_allowed[] = {
 /* P_INESMIR     */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
 /* P_OPT         */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
 /* P_INCTILE     */	IN_CODE + IN_HOME + IN_DATA,
+/* P_INCBLK      */	IN_CODE + IN_HOME + IN_DATA,
 /* P_INCMAP      */	IN_CODE + IN_HOME + IN_DATA,
 /* P_MML         */	IN_CODE + IN_HOME + IN_DATA,
 /* P_PROC        */	IN_CODE + IN_HOME,
@@ -92,7 +93,7 @@ unsigned short pseudo_allowed[] = {
 /* P_ALIAS       */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
 /* P_REF         */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
 /* P_PHASE       */	IN_CODE + IN_HOME,
-/* P_LINE        */	ANYWHERE
+/* P_DEBUG       */	ANYWHERE
 };
 
 
@@ -155,6 +156,7 @@ do_pseudo(int *ip)
 			case P_INCPAL:
 			case P_INCBAT:
 			case P_INCTILE:
+			case P_INCBLK:
 			case P_INCMAP:
 				if (bank != old_bank) {
 					size = ((bank - old_bank - 1) * 8192) + loccnt;
@@ -1272,16 +1274,22 @@ do_incbin(int *ip)
 		}
 	}
 
-	/* size */
+	/* attach the size of the data the label */
 	if (lablptr) {
 		lablptr->data_type = P_INCBIN;
 		lablptr->data_size = size;
+		lablptr->data_count = 1;
 	}
-	else {
-		if (lastlabl) {
-			if (lastlabl->data_type == P_INCBIN)
-				lastlabl->data_size += size;
-		}
+	else
+	if (lastlabl && lastlabl->data_type == P_INCBIN) {
+		lastlabl->data_size += size;
+		lastlabl->data_count += 1;
+	}
+
+	/* set the size after conversion in the last pass */
+	if (lastlabl) {
+		if (pass == LAST_PASS)
+			lastlabl->size = 1;
 	}
 }
 
@@ -1660,7 +1668,7 @@ do_ds(int *ip)
 				error("Cannot fill .BSS section with non-zero data!");
 		}
 
-		if (section == S_CODE || section == S_DATA) {
+		if (section_flags[section] & S_IS_ROM) {
 			memset(&rom[bank][loccnt], filler, nbytes);
 
 			if (section == S_DATA && asm_opt[OPT_DATAPAGE] != 0)
@@ -1787,13 +1795,12 @@ do_incchr(int *ip)
 	int x, y, w, h;
 	int tx, ty;
 	int nb_tile = 0;
-	unsigned char * buffer = workspace;
 	int total = 0;
-	int size;
+	int size = (machine->type == MACHINE_PCE) ? 32 : 16;
 	unsigned char optimize;
 	unsigned int crc;
 	unsigned int hash;
-	struct t_tile *tst_tile;
+	unsigned char tile_data[32];
 
 	/* define label */
 	labldef(LOCATION);
@@ -1818,16 +1825,21 @@ do_incchr(int *ip)
 		return;
 
 	/* shortcut if we already know how much data is produced */
-	if (pass == EXTRA_PASS && lablptr) {
-		putbuffer(workspace, lablptr->data_size);
+	if (pass == EXTRA_PASS && lastlabl && lastlabl->data_type == P_INCCHR) {
+		/* output the cumulative size from the first .incchr of a set */
+		if (lastlabl && lastlabl == lablptr)
+			putbuffer(workspace, lablptr->data_size);
 		return;
 	}
 
-	/* reset tile hash table, it's going to be invalid when we're done */
-	if (optimize) {
+	/* are we expanding a set of characters that was just created? */
+	if (lablptr == NULL && lastlabl != NULL && lastlabl->data_type == P_INCCHR) {
+		nb_tile = lastlabl->data_count;
+	} else {
+		tile_lablptr = lablptr;
+		if (lablptr)
+			tile_offset = lablptr->value;
 		memset(tile_tbl, 0, sizeof(tile_tbl));
-		tile_lablptr = NULL;
-		tile_offset = 0;
 	}
 
 	/* pack data */
@@ -1838,66 +1850,65 @@ do_incchr(int *ip)
 			ty = y + (i << 3);
 
 			/* get tile */
-			if (pass == LAST_PASS || optimize)
-				pcx_pack_8x8_tile(buffer, tx, ty);
+			pcx_pack_8x8_tile(tile_data, tx, ty);
 
-			size = (machine->type == MACHINE_PCE) ? 32 : 16;
+			/* calculate tile crc */
+			crc = crc_calc(tile_data, size);
+			hash = crc & (HASH_COUNT - 1);
 
 			if (optimize) {
-				/* calculate tile crc */
-				crc = crc_calc(buffer, size);
-				hash = crc & (HASH_COUNT - 1);
-
 				/* search tile */
-				tst_tile = tile_tbl[hash];
-				while (tst_tile) {
-					if (tst_tile->crc == crc &&
-					    memcmp(tst_tile->data, buffer, size) == 0)
+				t_tile *test_tile = tile_tbl[hash];
+				while (test_tile) {
+					if (test_tile->crc == crc &&
+					    memcmp(test_tile->data, tile_data, size) == 0)
 						break;
-					tst_tile = tst_tile->next;
+					test_tile = test_tile->next;
 				}
 
-				if (tst_tile) {
-					/* ignore the repeated tile */
+				/* ignore repeated tiles */
+				if (test_tile) {
 					continue;
-				} else {
-					/* insert the new tile in the tile table */
-					if (nb_tile == (sizeof(tile) / sizeof(struct t_tile)))
-						continue;
-
-					tile[nb_tile].next = tile_tbl[hash];
-					tile[nb_tile].index = nb_tile;
-					tile[nb_tile].data = buffer;
-					tile[nb_tile].crc = crc;
-					tile_tbl[hash] = &tile[nb_tile];
 				}
 			}
+
+			/* insert the new tile in the tile table */
+			if (nb_tile == (sizeof(tile) / sizeof(struct t_tile)))
+				continue;
+
+			tile[nb_tile].next = tile_tbl[hash];
+			tile[nb_tile].index = nb_tile;
+			tile[nb_tile].data = &rom[bank][loccnt];
+			tile[nb_tile].crc = crc;
+			tile_tbl[hash] = &tile[nb_tile];
+
+			/* putbuffer only copies on the LAST_PASS and we really need it */
+			if (pass != LAST_PASS && !stop_pass) {
+				memcpy(tile[nb_tile].data, tile_data, size);
+			}
+
+			putbuffer(tile_data, size);
 
 			/* store tile */
 			nb_tile += 1;
 			total += size;
-			buffer += size;
 		}
 	}
 
-	if (total)
-		putbuffer(workspace, total);
-
-	/* size */
+	/* attach the number of loaded characters to the label */
 	if (lablptr) {
 		lablptr->data_type = P_INCCHR;
 		lablptr->data_size = total;
+		lablptr->data_count = nb_tile;
 	}
-	else {
-		if (lastlabl) {
-			if (lastlabl->data_type == P_INCCHR)
-				lastlabl->data_size += total;
-		}
+	else
+	if (lastlabl && lastlabl->data_type == P_INCCHR) {
+		lastlabl->data_size += total;
+		lastlabl->data_count = nb_tile;
 	}
 
-	/* attach the number of loaded tiles to the label */
+	/* set the size after conversion in the last pass */
 	if (lastlabl) {
-		lastlabl->nb = nb_tile;
 		if (pass == LAST_PASS)
 			lastlabl->size = (machine->type == MACHINE_PCE) ? 32 : 16;;
 	}
@@ -2059,7 +2070,7 @@ do_align(int *ip)
 			if (section != S_DATA || asm_opt[OPT_DATAPAGE] == 0)
 				page = (page + 1) & 7;
 		} else {
-			if ((section == S_CODE || section == S_DATA) && (bank < UNDEFINED_BANK)) {
+			if ((section_flags[section] & S_IS_ROM) && (bank < UNDEFINED_BANK)) {
 				uint32_t info, *fill_a;
 				uint8_t *fill_b;
 

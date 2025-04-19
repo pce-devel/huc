@@ -269,6 +269,7 @@ stinstall(int hash, int type)
 	/* init the symbol struct */
 	sym->local = NULL;
 	sym->scope = NULL;
+	sym->uses = NULL;
 	sym->proc = NULL;
 	sym->name = remember_string(symbol, (size_t)symbol[0] + 2);
 	sym->deflastpass = 0;
@@ -279,9 +280,9 @@ stinstall(int hash, int type)
 	sym->mprbank = UNDEFINED_BANK;
 	sym->value = 0;
 	sym->phase = 0;
-	sym->nb = 0;
 	sym->size = 0;
 	sym->vram = -1;
+	sym->data_count = -1;
 	sym->data_size = 0;
 	sym->data_type = -1;
 	sym->section = S_NONE;

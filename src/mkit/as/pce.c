@@ -10,6 +10,10 @@
 /* locals */
 unsigned char workspace[65536];	/* buffer for .inc and .def directives */
 
+t_blk blk_info[256];		/* meta-tile info table */
+t_blk *blk_hash[HASH_COUNT];	/* meta-tile hash table */
+t_symbol *blk_lablptr;		/* meta-tile symbol reference */
+
 
 /* ----
  * write_header()
@@ -593,10 +597,11 @@ pce_defspr(int *ip)
 void
 pce_incbat(int *ip)
 {
-	unsigned char *ptr;
-	int i, j, k, l, x, y, w, h, ref;
-	unsigned int base, index, flag;
+	int i, j, k, l;
+	int x, y, w, h;
+	unsigned basechr, index;
 	int tile_number;
+	unsigned fail = 0;
 	unsigned char tile_data[32];
 
 	/* define label */
@@ -613,14 +618,33 @@ pce_incbat(int *ip)
 	if (!pcx_get_args(ip))
 		return;
 
-	/* check for a tile reference */
-	if (tile_lablptr) {
-		if (tile_lablptr->data_type != P_INCCHR) {
+	/* check that last arg is a tile reference */
+	if ((pcx_nb_args & 1) == 0) {
+		if (expr_lablcnt == 0) {
+			error("No tile table reference!");
+			return;
+		}
+		if (expr_lablcnt > 1) {
+			expr_lablcnt = 0;
+			error("Too many tile table references!");
+			return;
+		}
+		if (expr_lablptr->data_type != P_INCCHR) {
 			error("Tile table reference is not a .INCCHR!");
+			return;
+		}
+		if (!pcx_set_tile(expr_lablptr, value)) {
 			return;
 		}
 		--pcx_nb_args;
 	}
+
+	/* check that the VRAM arg is in range */
+	if (pcx_arg[0] < 0x0400 || pcx_arg[0] > 0x7F00) {
+		error("Tileset must begin at VRAM 0x0400..0x7F00!");
+		return;
+	}
+	basechr = (pcx_arg[0] >> 4);
 
 	/* set up x, y, w, h from the args */
 	if (!pcx_parse_args(1, pcx_nb_args - 1, &x, &y, &w, &h, 8))
@@ -629,32 +653,33 @@ pce_incbat(int *ip)
 	/* build the BAT */
 	if (pass == LAST_PASS) {
 		index = 0;
-		flag = 0;
-		base = (pcx_arg[0] >> 4);
+		fail = 0;
+		basechr = (pcx_arg[0] >> 4);
 
 		for (i = 0; i < h; i++) {
 			for (j = 0; j < w; j++) {
-				ptr = pcx_buf + (x + (j << 3)) + ((y + (i << 3)) * pcx_w);
-
-				/* check colors */
-				ref = -1;
+				/* extract palette */
+				unsigned char *ppixel = pcx_buf + (x + j * 8) + pcx_w * (y + i * 8);
+				int palette = -1;
 				for (k = 0; k < 8; k++) {
 					for (l = 0; l < 8; l++) {
-						if ((ptr[l] & 0x0F) != 0) {
-							if (ref < 0)
-								ref = ptr[l] & 0xF0;
+						if ((ppixel[l] & 0x0F) != 0) {
+							if (palette < 0)
+								palette = ppixel[l] & 0xF0;
 							else
-							if ((ptr[l] & 0xF0) != ref)
-								flag |= 1;
+							if ((ppixel[l] & 0xF0) != palette)
+								fail |= 1;
 						}
 					}
-					ptr += pcx_w;
+					ppixel += pcx_w;
 				}
+				if (palette < 0) palette = 0;
 
+				/* convert 8x8 tile data */
 				if (tile_lablptr == NULL) {
-					/* Traditional conversion as a bitmap with no repeats */
-					tile_number = (base & 0xFFF);
-					base++;
+					/* Traditional conversion as a bitmap with wasted repeats */
+					tile_number = (basechr & 0xFFF);
+					basechr++;
 				} else {
 					/* Sensible conversion with repeats removed */
 					pcx_pack_8x8_tile(tile_data, x + (j << 3), y + (i << 3));
@@ -662,12 +687,12 @@ pce_incbat(int *ip)
 					if (tile_number == -1) {
 						/* didn't find the tile */
 						tile_number = 0;
-						flag |= 2;
+						fail |= 2;
 					}
-					tile_number += (base & 0xFFF);
+					tile_number += (basechr & 0x0FFF);
 				}
 
-				tile_number |= ((ref & 0xF0) << 8);
+				tile_number |= palette << 8;
 				workspace[2 * index + 0] = tile_number & 0xFF;
 				workspace[2 * index + 1] = tile_number >> 8;
 				index++;
@@ -675,14 +700,23 @@ pce_incbat(int *ip)
 		}
 
 		/* errors */
-		if (flag & 1)
-			error("Invalid color index found!");
-		if (flag & 2)
-			error("One or more tiles didn't match!");
+		if (fail & 1)
+			error("One or more 8x8 tiles contain pixels in multiple palettes!");
+		if (fail & 2)
+			error("One or more 8x8 tiles are not in the referenced tileset!");
 	}
 
 	/* store data */
 	putbuffer(workspace, 2 * w * h);
+
+	/* attach the BAT size to the label */
+	if (lablptr) {
+		lablptr->data_count = w;
+		lablptr->data_type = P_INCBAT;
+		lablptr->data_size = 2 * w * h;
+		if (pass == LAST_PASS)
+			lastlabl->size = 2;
+	}
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -750,6 +784,24 @@ pce_incpal(int *ip)
 	/* store data */
 	putbuffer(workspace, nb << 1);
 
+	/* attach the number of loaded palettes to the label */
+	if (lablptr) {
+		lablptr->data_type = P_INCPAL;
+		lablptr->data_size = 32 * nb;
+		lablptr->data_count = nb >> 4;
+	}
+	else
+	if (lastlabl && lastlabl->data_type == P_INCPAL) {
+		lastlabl->data_size += 32 * nb;
+		lastlabl->data_count += nb >> 4;
+	}
+
+	/* set the size after conversion in the last pass */
+	if (lastlabl) {
+		if (pass == LAST_PASS)
+			lastlabl->size = 32;
+	}
+
 	/* output */
 	if (pass == LAST_PASS)
 		println();
@@ -811,25 +863,22 @@ pce_incspr(int *ip)
 	if (nb_sprite)
 		putbuffer(workspace, 128 * nb_sprite);
 
-	/* size */
+	/* attach the number of loaded sprites to the label */
 	if (lablptr) {
 		lablptr->data_type = P_INCSPR;
 		lablptr->data_size = 128 * nb_sprite;
+		lablptr->data_count = nb_sprite;
 	}
-	else {
-		if (lastlabl) {
-			if (lastlabl->data_type == P_INCSPR)
-				lastlabl->data_size += 128 * nb_sprite;
-		}
+	else
+	if (lastlabl && lastlabl->data_type == P_INCSPR) {
+		lastlabl->data_size += 128 * nb_sprite;
+		lastlabl->data_count += nb_sprite;
 	}
 
-	/* attach the number of loaded sprites to the label */
+	/* set the size after conversion in the last pass */
 	if (lastlabl) {
-		if (nb_sprite) {
-			lastlabl->nb = nb_sprite;
-			if (pass == LAST_PASS)
-				lastlabl->size = 128;
-		}
+		if (pass == LAST_PASS)
+			lastlabl->size = 128;
 	}
 
 	/* output */
@@ -898,25 +947,266 @@ pce_inctile(int *ip)
 	if (nb_tile)
 		putbuffer(workspace, 128 * nb_tile);
 
-	/* size */
+	/* attach the number of loaded tiles to the label */
 	if (lablptr) {
 		lablptr->data_type = P_INCTILE;
 		lablptr->data_size = 128 * nb_tile;
+		lablptr->data_count = nb_tile;
 	}
-	else {
-		if (lastlabl) {
-			if (lastlabl->data_type == P_INCTILE)
-				lastlabl->data_size += 128 * nb_tile;
+	else
+	if (lastlabl && lastlabl->data_type == P_INCTILE) {
+		lastlabl->data_size += 128 * nb_tile;
+		lastlabl->data_count += nb_tile;
+	}
+
+	/* set the size after conversion in the last pass */
+	if (lastlabl) {
+		if (pass == LAST_PASS)
+			lastlabl->size = 128;
+	}
+
+	/* output */
+	if (pass == LAST_PASS)
+		println();
+}
+
+
+/* ----
+ * do_incblk()
+ * ----
+ * PCX to 16x16 blocks (aka 16x16 meta-tiles) (max 256 tiles per .incblk)
+ *
+ * .incblk "filename", vram [[,x ,y] ,w ,h] ,tileref_label
+ */
+
+void
+pce_incblk(int *ip)
+{
+	int i, j, k, l;
+	int x, y, w, h;
+	int tx, ty, cx, cy;
+	unsigned basechr, index;
+	int nb_blks = 0;
+	int tile_number;
+	unsigned hash;
+	unsigned fail = 0;
+	unsigned char tile_data[32];
+	uint64_t data;
+	t_blk *blk;
+
+	/* are we expanding a set of blocks that was just created? */
+	if (lablptr != NULL || lastlabl == NULL || lastlabl != blk_lablptr) {
+		lastlabl = NULL;
+		blk_lablptr = NULL;
+	}
+
+	/* align new block definitions to a 2KByte boundary */
+	if (blk_lablptr == NULL) {
+		if (loccnt >= 0x2000) {
+			loccnt &= 0x1FFF;
+			bank = (bank + 1);
+			if (section != S_DATA || asm_opt[OPT_DATAPAGE] == 0)
+				page = (page + 1) & 7;
+		}
+		if (loccnt & 0x07FF) {
+			/* update location counter */
+			int oldloc = loccnt;
+			loccnt = (loccnt + 0x0800) & 0x1800;
+
+			if (loccnt == 0) {
+				/* signal discontiguous change in loccnt */
+				discontiguous = 1;
+				bank = (bank + 1);
+				if (section != S_DATA || asm_opt[OPT_DATAPAGE] == 0)
+					page = (page + 1) & 7;
+			} else {
+				if ((section_flags[section] & S_IS_ROM) && (bank < UNDEFINED_BANK)) {
+					uint32_t info, *fill_a;
+					uint8_t *fill_b;
+					int offset;
+
+					memset(&rom[bank][oldloc], 0, loccnt - oldloc);
+					memset(&map[bank][oldloc], section + (page << 5), loccnt - oldloc);
+
+					info = debug_info(DATA_OUT);
+					fill_a = &dbg_info[bank][oldloc];
+					fill_b = &dbg_column[bank][oldloc];
+					offset = loccnt - oldloc;
+					while (offset--) {
+						*fill_a++ = info;
+						*fill_b++ = debug_column;
+					}
+				}
+			}
 		}
 	}
 
-	/* attach the number of loaded tiles to the label */
-	if (lastlabl) {
-		if (nb_tile) {
-			lastlabl->nb = nb_tile;
-			if (pass == LAST_PASS)
-				lastlabl->size = 128;
+	labldef(LOCATION);
+
+	/* output */
+	if (pass == LAST_PASS)
+		loadlc(loccnt, 0);
+
+	/* get args */
+	if (!pcx_get_args(ip))
+		return;
+
+	/* check that last arg is a tile reference */
+	if (expr_lablcnt == 0) {
+		error("No character set reference!");
+		return;
+	}
+	if (expr_lablcnt > 1) {
+		expr_lablcnt = 0;
+		error("Too many character set references!");
+		return;
+	}
+	if (expr_lablptr->data_type != P_INCCHR) {
+		error("Character set reference is not a .INCCHR!");
+		return;
+	}
+	if (!pcx_set_tile(expr_lablptr, value)) {
+		return;
+	}
+	--pcx_nb_args;
+
+	/* check that the VRAM arg is in range and then subtract 0x1000 */
+	if (pcx_arg[0] & 15) {
+		error("Character set VRAM address must 16-word aligned!");
+		return;
+	}
+	if (pcx_arg[0] < 0x1000 || pcx_arg[0] > 0x7000) {
+		error("Character set VRAM address must be 0x1000..0x7000!");
+		return;
+	}
+	basechr = (pcx_arg[0] >> 4) - 0x0100;
+
+	/* set up x, y, w, h from the args */
+	if (!pcx_parse_args(1, pcx_nb_args - 1, &x, &y, &w, &h, 16))
+		return;
+
+	if (pass == LAST_PASS) {
+		/* pack blocks */
+		unsigned char *packed;
+		if (blk_lablptr) {
+			/* expand an existing set of blocks */
+			nb_blks = blk_lablptr->data_count;
+			packed = &rom[blk_lablptr->rombank][blk_lablptr->value & 0x1FFF];
+		} else {
+			/* create a new set of blocks */
+			nb_blks = 0;
+			memset(blk_hash, 0, sizeof(blk_hash));
+			memset(workspace, 0, 2048);
+			packed = &workspace[0];
 		}
+
+		for (i = 0; i < h; i++) {
+			for (j = 0; j < w; j++) {
+				/* tile coordinates */
+				tx = x + (j << 4);
+				ty = y + (i << 4);
+
+				data = 0;
+				hash = 0;
+				index = 0;
+				for (cy = 0; cy < 16; cy += 8) {
+					for (cx = 0; cx < 16; cx += 8) {
+						/* extract palette */
+						unsigned char *ppixel = pcx_buf + (x + tx + cx) + pcx_w * (y + ty + cy);
+						int palette = -1;
+						for (k = 0; k < 8; k++) {
+							for (l = 0; l < 8; l++) {
+								if ((ppixel[l] & 0x0F) != 0) {
+									if (palette < 0)
+										palette = ppixel[l] & 0xF0;
+									else
+									if ((ppixel[l] & 0xF0) != palette)
+										fail |= 1;
+								}
+							}
+							ppixel += pcx_w;
+						}
+						if (palette < 0) palette = 0;
+
+						/* convert 8x8 tile data */
+						pcx_pack_8x8_tile(tile_data, x + tx + cx, y + ty + cy);
+						tile_number = pcx_search_tile(tile_data, 32);
+						if (tile_number == -1) {
+							fail |= 2;
+							tile_number = 0;
+						}
+						else
+						if ((tile_number + basechr) >= 0x0700) {
+							fail |= 4;
+							tile_number = 0;
+						}
+						tile_number += basechr;
+						tile_number |= palette << 8;
+
+						/* save the tile number in PCE interleaved format */
+						packed[index * 256 + nb_blks + 0x0000] = tile_number;
+						packed[index * 256 + nb_blks + 0x0400] = tile_number >> 8;
+
+						/* save the tile number in 64-bit linear format */
+						data |= ((uint64_t) tile_number) << (index * 16);
+
+						/* update a janky hash value */
+						hash += (tile_number ^ ((tile_number >> 8) & 0xFF));
+
+						index += 1;
+					}
+				}
+
+				/* has the meta-tile already been defined */
+				hash &= (HASH_COUNT - 1);
+				blk = blk_hash[hash];
+				while (blk) {
+					if (blk->data == data) break;
+					blk = blk->next;
+				}
+
+				/* add a new meta-tile */
+				if (!blk) {
+					if (nb_blks == 256) {
+						fail |= 8;
+						blk = &blk_info[0];
+					} else {
+						blk = &blk_info[0] + nb_blks++;
+						blk->data = data;
+						blk->next = blk_hash[hash];
+						blk_hash[hash] = blk;
+					}
+				}
+			}
+		}
+	}
+
+	/* write out the meta-tile definitions */
+	if (blk_lablptr == NULL)
+		putbuffer(workspace, 2048);
+
+	/* errors */
+	if (fail & 1)
+		error("One or more 8x8 tiles contain pixels in multiple palettes!");
+	if (fail & 2)
+		error("One or more 8x8 tiles are not in the referenced tileset!");
+	if (fail & 4)
+		error("One or more 8x8 tiles are located beyond 64KBytes of VRAM!");
+	if (fail & 8)
+		error("Too many meta-tiles in image! The maximum is 256.");
+	if (fail)
+		return;
+
+	/* attach the number of blocks to the label */
+	if (lastlabl) {
+		blk_lablptr = lastlabl;
+		lastlabl->uses = tile_lablptr;
+		lastlabl->vram = pcx_arg[0];
+		lastlabl->data_type = P_INCBLK;
+		lastlabl->data_size = 2048;
+		lastlabl->data_count = nb_blks;
+		if (pass == LAST_PASS)
+			lastlabl->size = 8;
 	}
 
 	/* output */
@@ -986,7 +1276,7 @@ pce_incchrpal(int *ip)
 	/* attach the number of tile palette bytes to the label */
 	if (lastlabl) {
 		if (nb_chr) {
-			lastlabl->nb = nb_chr;
+			lastlabl->data_count = nb_chr;
 			if (pass == LAST_PASS)
 				lastlabl->size = 1;
 		}
@@ -1061,7 +1351,7 @@ pce_incsprpal(int *ip)
 	/* attach the number of sprite palette bytes to the label */
 	if (lastlabl) {
 		if (nb_sprite) {
-			lastlabl->nb = nb_sprite;
+			lastlabl->data_count = nb_sprite;
 			if (pass == LAST_PASS)
 				lastlabl->size = 1;
 		}
@@ -1154,7 +1444,7 @@ pce_inctilepal(int *ip)
 	/* attach the number of tile palette bytes to the label */
 	if (lastlabl) {
 		if (nb_tile) {
-			lastlabl->nb = nb_tile;
+			lastlabl->data_count = nb_tile;
 			if (pass == LAST_PASS)
 				lastlabl->size = 1;
 		}
@@ -1177,11 +1467,16 @@ pce_inctilepal(int *ip)
 void
 pce_incmap(int *ip)
 {
-	int i, j;
+	int i, j, k, l;
 	int x, y, w, h;
-	int tx, ty;
-	int tile;
-	int err = 0;
+	int tx, ty, cx, cy;
+	unsigned basechr, index;
+	int tile_number;
+	unsigned hash;
+	unsigned fail = 0;
+	uint64_t data;
+	t_blk *this_blk;
+	unsigned char tile_data[128];
 
 	/* define label */
 	labldef(LOCATION);
@@ -1194,9 +1489,35 @@ pce_incmap(int *ip)
 	if (!pcx_get_args(ip))
 		return;
 
+	/* check that last arg is a tile reference */
+	if (expr_lablcnt == 0) {
+		error("No tile table reference!");
+		return;
+	}
+	if (expr_lablcnt > 1) {
+		expr_lablcnt = 0;
+		error("Too many tile table references!");
+		return;
+	}
+	if ((expr_lablptr->data_type != P_INCTILE) &&
+	    (expr_lablptr->data_type != P_INCBLK)) {
+		error("Tile table reference must be a .INCTILE or .INCBLK!");
+		return;
+	}
+
 	/* set up x, y, w, h from the args */
 	if (!pcx_parse_args(0, pcx_nb_args - 1, &x, &y, &w, &h, 16))
 		return;
+
+	/* attach the map size to the label */
+	if (lablptr) {
+		lastlabl->uses = expr_lablptr;
+		lablptr->data_count = w;
+		lablptr->data_type = P_INCMAP;
+		lablptr->data_size = w * h;
+		if (pass == LAST_PASS)
+			lastlabl->size = 1;
+	}
 
 	/* shortcut until we need to generate the final data */
 	if (pass != LAST_PASS) {
@@ -1205,36 +1526,169 @@ pce_incmap(int *ip)
 	}
 
 	/* pack map */
-	for (i = 0; i < h; i++) {
-		for (j = 0; j < w; j++) {
-			/* tile coordinates */
-			tx = x + (j << 4);
-			ty = y + (i << 4);
+	if (expr_lablptr->data_type == P_INCTILE) {
+		/* pack a 16x16 bitmap tile map */
 
-			/* get tile */
-			pcx_pack_16x16_tile(workspace, tx, ty);
+		if (!pcx_set_tile(expr_lablptr, value))
+			return;
 
-			/* search tile */
-			tile = pcx_search_tile(workspace, 128);
+		for (i = 0; i < h; i++) {
+			for (j = 0; j < w; j++) {
+				/* tile coordinates */
+				tx = x + (j << 4);
+				ty = y + (i << 4);
 
-			if (tile == -1) {
+				/* get tile */
+				pcx_pack_16x16_tile(tile_data, tx, ty);
+
+				/* search tile */
+				tile_number = pcx_search_tile(tile_data, 128);
+
 				/* didn't find the tile */
-				tile = 0;
-				err++;
+				if (tile_number == -1) {
+					tile_number = 0;
+					fail |= 8;
+				}
+
+				/* store tile index */
+				if (pass == LAST_PASS)
+					putbyte(loccnt, tile_number & 0xFF, DATA_OUT);
+
+				/* update location counter */
+				loccnt++;
+			}
+		}
+	} else {
+		/* pack a 16x16 meta-tile map */
+
+		if (!pcx_set_tile(expr_lablptr->uses, expr_lablptr->uses->value))
+			return;
+
+		basechr = (expr_lablptr->vram >> 4) - 0x0100;
+
+		if (blk_lablptr != expr_lablptr) {
+			/* regenerate the meta-tile hash table from the data in rom */
+			unsigned char *packed = &rom[expr_lablptr->rombank][expr_lablptr->value & 0x1FFF];
+
+			if (expr_lablptr->data_count == -1) {
+				error("Incorrect meta-tile label reference!");
+				return;
+			}
+			if (pass == LAST_PASS && expr_lablptr->size == 0) {
+				error("Meta-tiles have not been compiled yet!");
+				return;
 			}
 
-			/* store tile index */
-			if (pass == LAST_PASS)
-				putbyte(loccnt, tile & 0xFF, DATA_OUT);
+			blk_lablptr = expr_lablptr;
+			memset(blk_hash, 0, sizeof(blk_hash));
+			for (i = 0; i != blk_lablptr->data_count; i++) {
+				data = 0;
+				hash = 0;
+				for (j = 0; j != 4; j++) {
+					tile_number =
+						(packed[j * 256 + i + 0x0000] << 0) +
+						(packed[j * 256 + i + 0x0400] << 8);
+					data |= ((uint64_t) tile_number) << (j * 16);
+					hash += (tile_number ^ ((tile_number >> 8) & 0xFF));
+				}
+				hash &= (HASH_COUNT - 1);
+				this_blk = &blk_info[i];
+				this_blk->data = data;
+				this_blk->next = blk_hash[hash];
+				blk_hash[hash] = this_blk;
+			}
+		}
 
-			/* update location counter */
-			loccnt++;
+		for (i = 0; i < h; i++) {
+			for (j = 0; j < w; j++) {
+				/* tile coordinates */
+				tx = x + (j << 4);
+				ty = y + (i << 4);
+
+				data = 0;
+				hash = 0;
+				index = 0;
+				for (cy = 0; cy < 16; cy += 8) {
+					for (cx = 0; cx < 16; cx += 8) {
+						/* extract palette */
+						unsigned char *ppixel = pcx_buf + (x + tx + cx) + pcx_w * (y + ty + cy);
+						int palette = -1;
+						for (k = 0; k < 8; k++) {
+							for (l = 0; l < 8; l++) {
+								if ((ppixel[l] & 0x0F) != 0) {
+									if (palette < 0)
+										palette = ppixel[l] & 0xF0;
+									else
+									if ((ppixel[l] & 0xF0) != palette)
+										fail |= 1;
+								}
+							}
+							ppixel += pcx_w;
+						}
+						if (palette < 0) palette = 0;
+
+						/* convert 8x8 tile data */
+						pcx_pack_8x8_tile(tile_data, x + tx + cx, y + ty + cy);
+						tile_number = pcx_search_tile(tile_data, 32);
+						if (tile_number == -1) {
+							fail |= 2;
+							tile_number = 0;
+						}
+						else
+						if ((tile_number + basechr) >= 0x0700) {
+							fail |= 4;
+							tile_number = 0;
+						}
+						tile_number += basechr;
+						tile_number |= palette << 8;
+
+						/* save the tile number in 64-bit linear format */
+						data |= ((uint64_t) tile_number) << (index * 16);
+
+						/* update a janky hash value */
+						hash += (tile_number ^ ((tile_number >> 8) & 0xFF));
+
+						index += 1;
+					}
+				}
+
+				/* search tile */
+				hash &= (HASH_COUNT - 1);
+				this_blk = blk_hash[hash];
+				while (this_blk) {
+					if (this_blk->data == data) break;
+					this_blk = this_blk->next;
+				}
+
+				/* didn't find the tile */
+				if (!this_blk) {
+					fail |= 8;
+					this_blk = &blk_info[0];
+				}
+
+				tile_number = this_blk - &blk_info[0];
+
+				/* store tile index */
+				if (pass == LAST_PASS)
+					putbyte(loccnt, tile_number & 0xFF, DATA_OUT);
+
+				/* update location counter */
+				loccnt++;
+			}
 		}
 	}
 
-	/* error */
-	if (err)
-		error("One or more tiles didn't match!");
+	/* errors */
+	if (fail & 1)
+		error("One or more 8x8 tiles contain pixels in multiple palettes!");
+	if (fail & 2)
+		error("One or more 8x8 tiles are not in the referenced tileset!");
+	if (fail & 4)
+		error("One or more 8x8 tiles are located beyond 64KBytes of VRAM!");
+	if (fail & 8)
+		error("One or more 16x16 tiles are not in the referenced tileset!");
+	if (fail)
+		return;
 
 	/* output */
 	if (pass == LAST_PASS)

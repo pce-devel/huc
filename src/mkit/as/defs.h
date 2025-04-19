@@ -157,32 +157,33 @@
 #define P_INESMIR	41	// .inesmir
 #define P_OPT		42	// .opt
 #define P_INCTILE	43	// .inctile
-#define P_INCMAP	44	// .incmap
-#define P_MML		45	// .mml
-#define P_PROC		46	// .proc
-#define P_ENDP		47	// .endp
-#define P_PGROUP	48	// .procgroup
-#define P_ENDPG		49	// .endprocgroup
-#define P_CALL		50	// .call
-#define P_DWL		51	// lsb of a WORD
-#define P_DWH		52	// lsb of a WORD
-#define P_INCCHRPAL	53	// .incchrpal
-#define P_INCSPRPAL	54	// .incsprpal
-#define P_INCTILEPAL	55	// .inctilepal
-#define P_CARTRIDGE	56	// .cartridge
-#define P_ALIGN		57	// .align
-#define P_KICKC		58	// .kickc .r6502 .r65c02
-#define P_IGNORE	59	// .cpu .optsdcc .globl
-#define P_SEGMENT	60	// .segment .area
-#define P_LABEL		61	// .label .const
-#define P_ENCODING	62	// .encoding
-#define P_STRUCT	63	// .struct
-#define P_ENDS		64	// .ends
-#define P_3PASS		65	// .3pass
-#define P_ALIAS		66	// .alias
-#define P_REF		67	// .ref
-#define P_PHASE		68	// .phase
-#define P_DEBUG		69	// .dbg
+#define P_INCBLK	44	// .incblk
+#define P_INCMAP	45	// .incmap
+#define P_MML		46	// .mml
+#define P_PROC		47	// .proc
+#define P_ENDP		48	// .endp
+#define P_PGROUP	49	// .procgroup
+#define P_ENDPG		50	// .endprocgroup
+#define P_CALL		51	// .call
+#define P_DWL		52	// lsb of a WORD
+#define P_DWH		53	// lsb of a WORD
+#define P_INCCHRPAL	54	// .incchrpal
+#define P_INCSPRPAL	55	// .incsprpal
+#define P_INCTILEPAL	56	// .inctilepal
+#define P_CARTRIDGE	57	// .cartridge
+#define P_ALIGN		58	// .align
+#define P_KICKC		59	// .kickc .r6502 .r65c02
+#define P_IGNORE	60	// .cpu .optsdcc .globl
+#define P_SEGMENT	61	// .segment .area
+#define P_LABEL		62	// .label .const
+#define P_ENCODING	63	// .encoding
+#define P_STRUCT	64	// .struct
+#define P_ENDS		65	// .ends
+#define P_3PASS		66	// .3pass
+#define P_ALIAS		67	// .alias
+#define P_REF		68	// .ref
+#define P_PHASE		69	// .phase
+#define P_DEBUG		70	// .dbg
 
 /* symbol type */
 #define UNDEF	1	/* undefined - may be zero page */
@@ -299,6 +300,7 @@ typedef struct t_symbol {
 	struct t_symbol *next;
 	struct t_symbol *local;
 	struct t_symbol *scope;
+	struct t_symbol *uses;
 	struct t_proc *proc;
 	const char *name;
 	struct t_file *fileinfo;
@@ -312,9 +314,9 @@ typedef struct t_symbol {
 	int mprbank;
 	int value;
 	int phase;
-	int nb;
 	int size;
 	int vram;
+	int data_count;
 	int data_size;
 	signed char data_type;
 	unsigned char section;
@@ -357,6 +359,11 @@ typedef struct t_tile {
 	unsigned int crc;
 	int index;
 } t_tile;
+
+typedef struct t_blk {
+	struct t_blk *next;
+	uint64_t data;
+} t_blk;
 
 typedef struct t_machine {
 	int type;
