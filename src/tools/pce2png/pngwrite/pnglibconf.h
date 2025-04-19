@@ -1,8 +1,8 @@
 /* pnglibconf.h - library build configuration */
 
-/* libpng version 1.6.43 */
+/* libpng version 1.6.47 */
 
-/* Copyright (c) 2018-2024 Cosmin Truta */
+/* Copyright (c) 2018-2025 Cosmin Truta */
 /* Copyright (c) 1998-2002,2004,2006-2018 Glenn Randers-Pehrson */
 
 /* This code is released under the libpng license. */
@@ -88,11 +88,14 @@
 /*#undef PNG_READ_USER_TRANSFORM_SUPPORTED*/
 /*#undef PNG_READ_bKGD_SUPPORTED*/
 /*#undef PNG_READ_cHRM_SUPPORTED*/
+/*#undef PNG_READ_cICP_SUPPORTED*/
+/*#undef PNG_READ_cLLI_SUPPORTED*/
 /*#undef PNG_READ_eXIf_SUPPORTED*/
 /*#undef PNG_READ_gAMA_SUPPORTED*/
 /*#undef PNG_READ_hIST_SUPPORTED*/
 /*#undef PNG_READ_iCCP_SUPPORTED*/
 /*#undef PNG_READ_iTXt_SUPPORTED*/
+/*#undef PNG_READ_mDCV_SUPPORTED*/
 /*#undef PNG_READ_oFFs_SUPPORTED*/
 /*#undef PNG_READ_pCAL_SUPPORTED*/
 /*#undef PNG_READ_pHYs_SUPPORTED*/
@@ -158,11 +161,14 @@
 /*#undef PNG_WRITE_WEIGHTED_FILTER_SUPPORTED*/
 /*#undef PNG_WRITE_bKGD_SUPPORTED*/
 /*#undef PNG_WRITE_cHRM_SUPPORTED*/
+/*#undef PNG_WRITE_cICP_SUPPORTED*/
+/*#undef PNG_WRITE_cLLI_SUPPORTED*/
 /*#undef PNG_WRITE_eXIf_SUPPORTED*/
 /*#undef PNG_WRITE_gAMA_SUPPORTED*/
 /*#undef PNG_WRITE_hIST_SUPPORTED*/
 /*#undef PNG_WRITE_iCCP_SUPPORTED*/
 /*#undef PNG_WRITE_iTXt_SUPPORTED*/
+/*#undef PNG_WRITE_mDCV_SUPPORTED*/
 /*#undef PNG_WRITE_oFFs_SUPPORTED*/
 /*#undef PNG_WRITE_pCAL_SUPPORTED*/
 /*#undef PNG_WRITE_pHYs_SUPPORTED*/
@@ -176,11 +182,14 @@
 /*#undef PNG_WRITE_zTXt_SUPPORTED*/
 /*#undef PNG_bKGD_SUPPORTED*/
 /*#undef PNG_cHRM_SUPPORTED*/
+/*#undef PNG_cICP_SUPPORTED*/
+/*#undef PNG_cLLI_SUPPORTED*/
 /*#undef PNG_eXIf_SUPPORTED*/
 /*#undef PNG_gAMA_SUPPORTED*/
 /*#undef PNG_hIST_SUPPORTED*/
 /*#undef PNG_iCCP_SUPPORTED*/
 /*#undef PNG_iTXt_SUPPORTED*/
+/*#undef PNG_mDCV_SUPPORTED*/
 /*#undef PNG_oFFs_SUPPORTED*/
 /*#undef PNG_pCAL_SUPPORTED*/
 /*#undef PNG_pHYs_SUPPORTED*/
