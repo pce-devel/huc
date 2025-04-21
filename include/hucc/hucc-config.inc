@@ -302,8 +302,8 @@ HUCC_SGX_SPLITS =	8	; (4 .. 128) SGX VDC layer.
 ;
 
 	.ifndef ZX0_WINBUF
-ZX0_WINBUF	=	($3800)	; Default to a 2KB window in RAM at $3800.
-ZX0_WINMSK	=	($0800 - 1)
+ZX0_WINBUF	=	$3800	; Default to a 2KB window in RAM at $3800.
+ZX0_WINLEN	=	$0800
 	.endif
 
 ;
