@@ -58,6 +58,7 @@ FILE *in_fp;		/* file pointers, input */
 FILE *lst_fp;		/* listing */
 int lst_line = 1;	/* listing */
 t_file * lst_tfile;	/* listing */
+FILE *out_fp;		/* .outbin output */
 int debug_line;		/* .DBG info */
 int debug_column;	/* .DBG info */
 t_file *debug_file;	/* .DBG info */
@@ -959,6 +960,12 @@ main(int argc, char **argv)
 
 		/* rewind input file */
 		rewind(in_fp);
+	}
+
+	/* close .outbin file */
+	if (out_fp) {
+		fclose(out_fp);
+		out_fp = NULL;
 	}
 
 	/* close listing file */

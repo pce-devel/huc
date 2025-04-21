@@ -93,7 +93,8 @@ unsigned short pseudo_allowed[] = {
 /* P_ALIAS       */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
 /* P_REF         */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
 /* P_PHASE       */	IN_CODE + IN_HOME,
-/* P_DEBUG       */	ANYWHERE
+/* P_DEBUG       */	ANYWHERE,
+/* P_OUTBIN      */	ANYWHERE
 };
 
 
@@ -2926,5 +2927,156 @@ set_section(unsigned char new_section)
 
 		/* signal discontiguous change in loccnt */
 		discontiguous = 1;
+	}
+}
+
+
+/* ----
+ * do_outbin()
+ * ----
+ * .outbin pseudo (optype == 0)
+ * .outzx0 pseudo (optype == 1)
+ */
+
+#include "format.h"
+#include "shrink.h"
+
+void
+do_outbin(int *ip)
+{
+	unsigned char *addr = NULL;
+	unsigned offset = 0;
+	unsigned length = 0;
+	unsigned window = 0;
+	unsigned need = 0;
+	char fname[PATHSZ];
+
+	/* ignore this until the last pass */
+	if (pass != LAST_PASS)
+		return;
+
+	/* disable ROM output when using this */
+	no_rom_file = 1;
+
+	/* get the output offset (linear rom address) */
+	if (!evaluate(ip, 0, 0))
+		return;
+	if (undef != 0) {
+		error("Undefined symbol in OFFSET field!");
+		return;
+	}
+	offset = value;
+	if (offset >= (ROM_BANKS * 8192)) {
+		error("OFFSET must be >= 0 and <= 8MB!");
+		return;
+	}
+
+	/* get the output length */
+	if (prlnbuf[*ip] != ',') {
+		error("LENGTH value is missing!");
+		return;
+	}
+	++(*ip);
+
+	if (!evaluate(ip, 0, 0))
+		return;
+	if (undef != 0) {
+		error("Undefined symbol in LENGTH field!");
+		return;
+	}
+	length = value;
+	if (length >= (ROM_BANKS * 8192)) {
+		error("LENGTH must be >= 0 and <= 8MB!");
+		return;
+	}
+	if ((offset + length) >= (ROM_BANKS * 8192)) {
+		error("OFFSET+LENGTH must be >= 0 and <= 8MB!");
+		return;
+	}
+
+	/* get the window length */
+	if (optype == 1) {
+		if (prlnbuf[*ip] != ',') {
+			error("WINDOW value is missing!");
+			return;
+		}
+		++(*ip);
+
+		if (!evaluate(ip, 0, 0))
+			return;
+		if (undef != 0) {
+			error("Undefined symbol in WINDOW field!");
+			return;
+		}
+		window = value;
+		if ((window & (window - 1)) || (window > 8192)) {
+			error("WINDOW must be 0 or a power-of-2 <= 8192!");
+			return;
+		}
+	}
+
+	/* get the optional file name */
+	if (prlnbuf[*ip] == ',') {
+		++(*ip);
+
+		/* close current output file */
+		if (out_fp) {
+			fclose(out_fp);
+			out_fp = NULL;
+		}
+
+		/* get file name */
+		if (!getstring(ip, fname, PATHSZ - 1))
+			return;
+
+		/* open new output file */
+		if ((out_fp = open_file(fname, "wb")) == NULL) {
+			fatal_error("Unable to open file!");
+			return;
+		}
+	}
+
+	/* check end of line */
+	if (!check_eol(ip))
+		return;
+
+	/* check end of line */
+	if (length) {
+		/* locate the data */
+		addr = &rom[0][0] + offset;
+
+		/* compress the data */
+		if (optype == 1) {
+			need = salvador_get_max_compressed_size(length);
+			addr = calloc(need, 1);
+			length = salvador_compress(&rom[0][0] + offset, addr, length, need, 0, window, 0, NULL, NULL);
+			if (length > need) {
+				error("Error while compressing the data!");
+				free(addr);
+				return;
+			}
+		}
+
+		/* write the data */
+		if (fwrite(addr, 1, length, out_fp) != length) {
+			fatal_error("Unable to write data to the current output file!");
+		}
+
+		/* do we want to compress the data */
+		if (need) {
+			free(addr);
+		}
+	}
+
+	/* assign the output length to the label (if there is one) */
+	value = length;
+	expr_mprbank = UNDEFINED_BANK;
+	expr_overlay = 0;
+	labldef(CONSTANT);
+
+	/* output line */
+	if (pass == LAST_PASS) {
+		loadlc(value, 1);
+		println();
 	}
 }
