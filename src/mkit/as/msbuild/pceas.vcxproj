@@ -95,7 +95,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\pngread;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\pngread;..\salvador;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;WIN32;_CONSOLE;PC;_CRT_SECURE_NO_WARNINGS;NO_GZCOMPRESS;Z_SOLO;NO_GZIP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -137,7 +137,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\pngread;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\pngread;..\salvador;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;WIN32;_CONSOLE;PC;_CRT_SECURE_NO_WARNINGS;NO_GZCOMPRESS;Z_SOLO;NO_GZIP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -177,7 +177,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\pngread;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\pngread;..\salvador;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;WIN32;_CONSOLE;PC;_CRT_SECURE_NO_WARNINGS;NO_GZCOMPRESS;Z_SOLO;NO_GZIP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -219,7 +219,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\pngread;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\pngread;..\salvador;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;WIN32;_CONSOLE;PC;_CRT_SECURE_NO_WARNINGS;NO_GZCOMPRESS;Z_SOLO;NO_GZIP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -270,6 +270,12 @@
     <ClCompile Include="..\pce.c" />
     <ClCompile Include="..\pcx.c" />
     <ClCompile Include="..\proc.c" />
+    <ClCompile Include="..\salvador\divsufsort.c" />
+    <ClCompile Include="..\salvador\divsufsort_utils.c" />
+    <ClCompile Include="..\salvador\matchfinder.c" />
+    <ClCompile Include="..\salvador\shrink.c" />
+    <ClCompile Include="..\salvador\sssort.c" />
+    <ClCompile Include="..\salvador\trsort.c" />
     <ClCompile Include="..\symbol.c" />
     <ClCompile Include="..\xgetopt.c" />
     <ClCompile Include="..\pngread\adler32.c" />
@@ -299,6 +305,13 @@
     <ClInclude Include="..\overlay.h" />
     <ClInclude Include="..\pce.h" />
     <ClInclude Include="..\protos.h" />
+    <ClInclude Include="..\salvador\divsufsort.h" />
+    <ClInclude Include="..\salvador\divsufsort_config.h" />
+    <ClInclude Include="..\salvador\divsufsort_private.h" />
+    <ClInclude Include="..\salvador\format.h" />
+    <ClInclude Include="..\salvador\libsalvador.h" />
+    <ClInclude Include="..\salvador\matchfinder.h" />
+    <ClInclude Include="..\salvador\shrink.h" />
     <ClInclude Include="..\vars.h" />
     <ClInclude Include="..\version.h" />
     <ClInclude Include="..\xgetopt.h" />
