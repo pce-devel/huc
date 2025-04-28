@@ -5,7 +5,7 @@
 #
 
 ifeq ($(OS),Windows_NT)
-	SUBDIRS = husetpalette huzerozero
+	SUBDIRS = huremap husetpalette huzerozero
 
 all clean: plugins
 	@$(MAKE) $(SUBDIRS) "COMMAND=$@"
