@@ -37,6 +37,14 @@
 // VDC bits for display_flags ...
 // *************
 
+#ifndef BKG_OFF
+#define BKG_OFF 0x00
+#endif
+
+#ifndef SPR_OFF
+#define SPR_OFF 0x00
+#endif
+
 #ifndef BKG_ON
 #define BKG_ON 0x80
 #endif
