@@ -68,6 +68,24 @@
     <ClCompile Include="..\pngread\zutil.c">
       <Filter>pngread</Filter>
     </ClCompile>
+    <ClCompile Include="..\salvador\divsufsort.c">
+      <Filter>salvador</Filter>
+    </ClCompile>
+    <ClCompile Include="..\salvador\divsufsort_utils.c">
+      <Filter>salvador</Filter>
+    </ClCompile>
+    <ClCompile Include="..\salvador\matchfinder.c">
+      <Filter>salvador</Filter>
+    </ClCompile>
+    <ClCompile Include="..\salvador\shrink.c">
+      <Filter>salvador</Filter>
+    </ClCompile>
+    <ClCompile Include="..\salvador\sssort.c">
+      <Filter>salvador</Filter>
+    </ClCompile>
+    <ClCompile Include="..\salvador\trsort.c">
+      <Filter>salvador</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\atari.h" />
@@ -130,10 +148,34 @@
     <ClInclude Include="..\pngread\zutil.h">
       <Filter>pngread</Filter>
     </ClInclude>
+    <ClInclude Include="..\salvador\divsufsort.h">
+      <Filter>salvador</Filter>
+    </ClInclude>
+    <ClInclude Include="..\salvador\divsufsort_config.h">
+      <Filter>salvador</Filter>
+    </ClInclude>
+    <ClInclude Include="..\salvador\divsufsort_private.h">
+      <Filter>salvador</Filter>
+    </ClInclude>
+    <ClInclude Include="..\salvador\format.h">
+      <Filter>salvador</Filter>
+    </ClInclude>
+    <ClInclude Include="..\salvador\libsalvador.h">
+      <Filter>salvador</Filter>
+    </ClInclude>
+    <ClInclude Include="..\salvador\matchfinder.h">
+      <Filter>salvador</Filter>
+    </ClInclude>
+    <ClInclude Include="..\salvador\shrink.h">
+      <Filter>salvador</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="pngread">
       <UniqueIdentifier>{f724e509-7f12-4614-beaf-eca641c264e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="salvador">
+      <UniqueIdentifier>{2e923b64-4e4a-4104-9f28-27d5ca160801}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

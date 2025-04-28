@@ -11,9 +11,9 @@ OBJS   = main.o input.o assemble.o expr.o code.o command.o\
          macro.o func.o proc.o symbol.o pcx.o output.o crc.o\
          pce.o map.o mml.o nes.o atari.o
 
-LIBS    = pngread/pngread.a
+LIBS    = pngreadwrite/pngreadwrite.a salvador/salvador.a
 
-CFLAGS  += -Ipngread
+CFLAGS  += -Ipngreadwrite -Isalvador
 
 TARGPCE  = pceas$(EXESUFFIX)
 TARGNES  = nesasm$(EXESUFFIX)
@@ -24,12 +24,16 @@ TARGETS  = $(TARGPCE) $(TARGNES) $(TARGFUJ)
 #
 
 all::
-	$(MAKE) pngread "COMMAND=$@"
+	$(MAKE) pngreadwrite "COMMAND=$@"
+	$(MAKE) salvador "COMMAND=$@"
 	$(MAKE) $(TARGETS)
 
-.PHONY: pngread
+.PHONY: pngreadwrite salvador
 
-pngread:
+pngreadwrite:
+	$(MAKE) --directory=$@ $(COMMAND)
+
+salvador:
 	$(MAKE) --directory=$@ $(COMMAND)
 
 # ASSEMBLER
@@ -66,5 +70,6 @@ indent:	uncrustify.cfg
 include $(MAKETARG)
 
 clean::
-	$(MAKE) pngread "COMMAND=$@"
+	$(MAKE) pngreadwrite "COMMAND=$@"
+	$(MAKE) salvador "COMMAND=$@"
 	rm -f $(TARGETS) $(BINDIR)/$(TARGPCE) $(BINDIR)/$(TARGNES) $(BINDIR)/$(TARGFUJ)

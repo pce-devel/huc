@@ -45,10 +45,16 @@
 
 #asmdef	HUCC_USES_ZX0 1
 
+extern void __fastcall __macro zx0_to_ram( unsigned char *ram<_di>, char far *compressed<_bp_bank:_bp> );
 extern void __fastcall __macro zx0_to_vdc( unsigned int vaddr<_di>, char far *compressed<_bp_bank:_bp> );
 extern void __fastcall __macro zx0_to_sgx( unsigned int vaddr<_di>, char far *compressed<_bp_bank:_bp> );
 
 #asm
+_zx0_to_ram.2	.macro
+		ldy	<_bp_bank
+		call	zx0_to_ram
+		.endm
+
 _zx0_to_vdc.2	.macro
 		ldy	<_bp_bank
 		call	zx0_to_vdc

@@ -70,6 +70,7 @@ void do_phase(int *ip);
 void do_debug(int *ip);
 int  htoi(char *str, int nb);
 void set_section(unsigned char new_section);
+void do_outbin(int *ip);
 
 /* CRC.C */
 unsigned int crc_calc(const unsigned char *data, int len);

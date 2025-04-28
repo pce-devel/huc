@@ -184,6 +184,7 @@
 #define P_REF		68	// .ref
 #define P_PHASE		69	// .phase
 #define P_DEBUG		70	// .dbg
+#define P_OUTBIN	71	// .outbin
 
 /* symbol type */
 #define UNDEF	1	/* undefined - may be zero page */

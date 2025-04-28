@@ -82,6 +82,10 @@ ZX0_WINMSK	=	($0800 - 1)		; RAM, located at $3800.
 
 	.endif
 
+	.ifndef ZX0_WINMSK
+ZX0_WINMSK	=	ZX0_WINLEN - 1		; Some folks prefer a length.
+	.endif
+
 
 
 ; ***************************************************************************

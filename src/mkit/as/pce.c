@@ -787,12 +787,12 @@ pce_incpal(int *ip)
 	/* attach the number of loaded palettes to the label */
 	if (lablptr) {
 		lablptr->data_type = P_INCPAL;
-		lablptr->data_size = 32 * nb;
+		lablptr->data_size = nb * 2;
 		lablptr->data_count = nb >> 4;
 	}
 	else
 	if (lastlabl && lastlabl->data_type == P_INCPAL) {
-		lastlabl->data_size += 32 * nb;
+		lastlabl->data_size += nb * 2;
 		lastlabl->data_count += nb >> 4;
 	}
 
