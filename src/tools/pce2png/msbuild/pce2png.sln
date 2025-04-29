@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.35731.53
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pce2png", "pce2png.vcxproj", "{8CA48F4A-D52C-4D96-A626-4B2997E6AFB5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
+		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8CA48F4A-D52C-4D96-A626-4B2997E6AFB5}.Debug|Win32.ActiveCfg = Debug|Win32
+		{8CA48F4A-D52C-4D96-A626-4B2997E6AFB5}.Debug|Win32.Build.0 = Debug|Win32
+		{8CA48F4A-D52C-4D96-A626-4B2997E6AFB5}.Debug|x64.ActiveCfg = Debug|x64
+		{8CA48F4A-D52C-4D96-A626-4B2997E6AFB5}.Debug|x64.Build.0 = Debug|x64
+		{8CA48F4A-D52C-4D96-A626-4B2997E6AFB5}.Release|Win32.ActiveCfg = Release|Win32
+		{8CA48F4A-D52C-4D96-A626-4B2997E6AFB5}.Release|Win32.Build.0 = Release|Win32
+		{8CA48F4A-D52C-4D96-A626-4B2997E6AFB5}.Release|x64.ActiveCfg = Release|x64
+		{8CA48F4A-D52C-4D96-A626-4B2997E6AFB5}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {96D42DB4-6D22-40B7-BEF8-22A4AF7A5DCC}
+	EndGlobalSection
+EndGlobal

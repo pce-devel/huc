@@ -536,16 +536,17 @@ load_bat_group	.procgroup			; These routines share code!
 
 .line_loop:	jsr	set_di_to_mawr
 
-		ldx	<_al
+		lda	<_al
+		sta	<__temp
 .tile_loop:	lda	[_bp], y
-		sta	VDC_DL
+		sta	VDC_DL, x
 		iny
 		lda	[_bp], y
-		sta	VDC_DH
+		sta	VDC_DH, x
 		iny
 		bne	!+
 		jsr	inc.h_bp_mpr3
-!:		dex
+!:		dec	<__temp
 		bne	.tile_loop
 
 		lda	vdc_bat_width, x
