@@ -26,6 +26,9 @@ src/mkit/as/nesasm.exe
 src/mkit/as/pceas
 src/mkit/as/pceas.exe
 src/mkit/as/pngread/pngread.a
+src/plugins/huremap/huremap.exe
+src/plugins/husetpalette/husetpalette.exe
+src/plugins/huzerozero/huzerozero.exe
 src/tools/hulz/hulz
 src/tools/hulz/hulz.exe
 src/tools/mml/mml
