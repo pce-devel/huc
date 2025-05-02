@@ -283,7 +283,7 @@ _sgx_disable_split.1:
 
 		lda	#1			; Mark that we've changed the
 		sta	sgx_region_new, x	; selected region.
-		sta	sgx_region_sel, x	; Update last so there is no
+		sta	sgx_region_sel, x
 
 		plp				; Restore interrupts.
 		rts
@@ -323,6 +323,8 @@ _sgx_disable_split.1:
 ;  Any other RCR values that are out of range ($00-$3F, $147-$3FF) will never
 ;  result in a successful line compare.
 ;
+; Processing time:
+;
 ; Old HuC rcr_init: 2148 cycles if all 8 regions pre-sorted
 ; Old HuC rcr_init: 4346 cycles if all 8 regions need sorting
 ;
@@ -349,14 +351,14 @@ vdc_region_sel:	.ds	HUCC_PCE_SPLITS		; Use A or B region next frame?
 vdc_region_new:	.ds	HUCC_PCE_SPLITS		; 1 if vdc_region_sel modified.
 
 vdc_regionA_crl:.ds	HUCC_PCE_SPLITS		; Two copies of each setting
-vdc_regionB_crl:.ds	HUCC_PCE_SPLITS		; HUCC_PCE_SPLITS bytes apart.
-vdc_regionA_rcr:.ds	HUCC_PCE_SPLITS
-vdc_regionB_rcr:.ds	HUCC_PCE_SPLITS
-vdc_regionA_xl:	.ds	HUCC_PCE_SPLITS
-vdc_regionB_xl:	.ds	HUCC_PCE_SPLITS
-vdc_regionA_xh:	.ds	HUCC_PCE_SPLITS
-vdc_regionB_xh:	.ds	HUCC_PCE_SPLITS
-vdc_regionA_yl:	.ds	HUCC_PCE_SPLITS
+vdc_regionB_crl:.ds	HUCC_PCE_SPLITS		; HUCC_PCE_SPLITS bytes apart,
+vdc_regionA_rcr:.ds	HUCC_PCE_SPLITS		; one setting for the current
+vdc_regionB_rcr:.ds	HUCC_PCE_SPLITS		; frame, and one setting that
+vdc_regionA_xl:	.ds	HUCC_PCE_SPLITS		; gets modified and then used
+vdc_regionB_xl:	.ds	HUCC_PCE_SPLITS		; on the next frame after the
+vdc_regionA_xh:	.ds	HUCC_PCE_SPLITS		; change is made.
+vdc_regionB_xh:	.ds	HUCC_PCE_SPLITS		; Regions will have different
+vdc_regionA_yl:	.ds	HUCC_PCE_SPLITS		; A or B currently active!
 vdc_regionB_yl:	.ds	HUCC_PCE_SPLITS
 vdc_regionA_yh:	.ds	HUCC_PCE_SPLITS
 vdc_regionB_yh:	.ds	HUCC_PCE_SPLITS
@@ -371,14 +373,14 @@ sgx_region_sel:	.ds	HUCC_SGX_SPLITS		; Use A or B region next frame?
 sgx_region_new:	.ds	HUCC_SGX_SPLITS		; 1 if sgx_region_sel modified.
 
 sgx_regionA_crl:.ds	HUCC_SGX_SPLITS		; Two copies of each setting
-sgx_regionB_crl:.ds	HUCC_SGX_SPLITS		; HUCC_SGX_SPLITS bytes apart.
-sgx_regionA_rcr:.ds	HUCC_SGX_SPLITS
-sgx_regionB_rcr:.ds	HUCC_SGX_SPLITS
-sgx_regionA_xl:	.ds	HUCC_SGX_SPLITS
-sgx_regionB_xl:	.ds	HUCC_SGX_SPLITS
-sgx_regionA_xh:	.ds	HUCC_SGX_SPLITS
-sgx_regionB_xh:	.ds	HUCC_SGX_SPLITS
-sgx_regionA_yl:	.ds	HUCC_SGX_SPLITS
+sgx_regionB_crl:.ds	HUCC_SGX_SPLITS		; HUCC_SGX_SPLITS bytes apart,
+sgx_regionA_rcr:.ds	HUCC_SGX_SPLITS		; one setting for the current
+sgx_regionB_rcr:.ds	HUCC_SGX_SPLITS		; frame, and one setting that
+sgx_regionA_xl:	.ds	HUCC_SGX_SPLITS		; gets modified and then used
+sgx_regionB_xl:	.ds	HUCC_SGX_SPLITS		; on the next frame after the
+sgx_regionA_xh:	.ds	HUCC_SGX_SPLITS		; change is made.
+sgx_regionB_xh:	.ds	HUCC_SGX_SPLITS		; Regions will have different
+sgx_regionA_yl:	.ds	HUCC_SGX_SPLITS		; A or B currently active!
 sgx_regionB_yl:	.ds	HUCC_SGX_SPLITS
 sgx_regionA_yh:	.ds	HUCC_SGX_SPLITS
 sgx_regionB_yh:	.ds	HUCC_SGX_SPLITS
@@ -426,9 +428,7 @@ vbl_init_scroll	.proc
 		tya				; NZ if region 0 is active.
 		beq	!+			; If no active leave RCR=0.
 
-!init_first:	smb7	<vdc_crl		; Ensure BURST MODE is off.
-
-		lda	#VDC_RCR		; 1st RCR always happens just
+!init_first:	lda	#VDC_RCR		; 1st RCR always happens just
 		sta	VDC_AR			; before the display starts.
 		lda.l	#HUCC_1ST_RCR
 		sta	VDC_DL
@@ -470,9 +470,7 @@ vbl_init_scroll	.proc
 		tya				; NZ if region 0 is active.
 		beq	!+			; If no active leave RCR=0.
 
-!init_first:	smb7	<sgx_crl		; Ensure BURST MODE is off.
-
-		lda	#VDC_RCR		; 1st RCR always happens just
+!init_first:	lda	#VDC_RCR		; 1st RCR always happens just
 		sta	SGX_AR			; before the display starts.
 		lda.l	#HUCC_1ST_RCR
 		sta	SGX_DL
@@ -534,7 +532,7 @@ USING_RCR_MACROS	=	1		; Tell IRQ1 to use the macros.
 		ldx	vdc_next_region		; 5 X and Y can be greater than
 		ldy	vdc_regionA_nxt, x	; 5 HUCC_PCE_SPLITS if regionB!
 		clc				; 2
-		bne	!set_next_rcr+		; 4
+		bne	!set_next_rcr+		; 4 Stop RCR if next line is 0.
 
 		and	const_0000		; 5 A=$00 with the same #cycles
 		bra	!clr_next_rcr+		; 4 as if the branch were taken.
@@ -581,7 +579,7 @@ USING_RCR_MACROS	=	1		; Tell IRQ1 to use the macros.
 		ldx	sgx_next_region		; 5 X and Y can be greater than
 		ldy	sgx_regionA_nxt, x	; 5 HUCC_SGX_SPLITS if regionB!
 		clc				; 2
-		bne	!set_next_rcr+		; 4
+		bne	!set_next_rcr+		; 4 Stop RCR if next line is 0.
 
 		and	const_0000		; 5 A=$00 with the same #cycles
 		bra	!clr_next_rcr+		; 4 as if the branch were taken.
@@ -661,7 +659,7 @@ USING_RCR_MACROS	=	1		; Tell IRQ1 to use the macros.
 		ldx	vdc_next_region		; 5 X and Y can be greater than
 		ldy	vdc_regionA_nxt, x	; 5 HUCC_PCE_SPLITS if regionB!
 		clc				; 2
-		bne	!set_next_rcr+		; 4
+		bne	!set_next_rcr+		; 4 Stop RCR if next line is 0.
 
 		and	const_0000		; 5 A=$00 with the same #cycles
 		bra	!clr_next_rcr+		; 4 as if the branch were taken.
