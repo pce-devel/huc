@@ -77,6 +77,16 @@ extern unsigned char ch;
 extern unsigned char dl;
 extern unsigned char dh;
 
+extern unsigned char irq_cnt;
+extern unsigned char joynow[5];
+extern unsigned char joytrg[5];
+extern unsigned char joy6now[5];
+extern unsigned char joy6trg[5];
+extern unsigned int  bg_x1;
+extern unsigned int  bg_y1;
+extern unsigned int  bg_x2;
+extern unsigned int  bg_y2;
+
 // *************
 // Special macros to get information from PCEAS ...
 // *************
