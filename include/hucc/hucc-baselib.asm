@@ -19,6 +19,23 @@
 ; ***************************************************************************
 ; ***************************************************************************
 ;
+; Make certain System Card variables accessible to HuCC.
+
+_irq_cnt	.alias	irq_cnt
+_joynow		.alias	joynow
+_joytrg		.alias	joytrg
+_joy6now	.alias	joy6now
+_joy6trg	.alias	joy6trg
+_bg_x1		.alias	bg_x1
+_bg_y1		.alias	bg_y1
+_bg_x2		.alias	bg_x2
+_bg_y2		.alias	bg_y2
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
 ; void __fastcall dump_screen( void );
 ;
 ; THIS IS AN ILLEGAL INSTRUCTION ONLY IMPLEMENTED BY THE TGEMU EMULATOR!

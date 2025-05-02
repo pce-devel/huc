@@ -865,6 +865,25 @@ bool const_expr (int *num, char *end1, char *end2)
 	return (true);
 }
 
+bool label_or_const_expr (char *sname, int *num, char *end1, char *end2)
+{
+	int slptr = lptr;
+	if (!symname(sname) || find_enum(sname, num)) {
+		lptr = slptr;
+		sname[0] = '\0';
+		if (!parse_const14(num)) {
+			error("failed to evaluate constant expression");
+			return (false);
+		}
+	}
+	blanks();
+	if (end1 && !sstreq(end1) && !(end2 && sstreq(end2))) {
+		error("unexpected character after constant expression");
+		return (false);
+	}
+	return (true);
+}
+
 /*
  * Test if we have one char enclosed in single quotes
  * return 0 in case of failure else 1

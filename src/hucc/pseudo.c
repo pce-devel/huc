@@ -35,6 +35,7 @@ void dopsdinc (void)
 {
 	int dummy;		/* Used in the qstr function, I don't know its utility yet */
 	int numericarg = 0;	/* Number of numeric arg to test validity */
+	char sname[NAMESIZE];
 
 	if (amatch("pal", 3)) {
 		if (!match("("))
@@ -72,12 +73,17 @@ void dopsdinc (void)
 		numericarg = 0;
 
 		while (!match(")")) {
+			if (!const_expr(&dummy, ")", ",")) {
+				numericarg = 9;
+				break;
+			}
 			numericarg++;
-
-			number(&dummy);
 			outdec(dummy);
+
 			if (match(","))
 				outstr(", ");
+			if (numericarg == 9)
+				break;
 		}
 
 		nl();
@@ -123,12 +129,17 @@ void dopsdinc (void)
 		numericarg = 0;
 
 		while (!match(")")) {
+			if (!const_expr(&dummy, ")", ",")) {
+				numericarg = 9;
+				break;
+			}
 			numericarg++;
-
-			number(&dummy);
 			outdec(dummy);
+
 			if (match(","))
 				outstr(", ");
+			if (numericarg == 9)
+				break;
 		}
 
 		nl();
@@ -175,21 +186,24 @@ void dopsdinc (void)
 		numericarg = 0;
 
 		while (!match(")")) {
-			numericarg++;
-
-			if (number(&dummy))
-				outdec(dummy);
-			else {
-				readstr();
-				prefix();
-				outstr(litq2);
-				if (!match(")"))
-					error("A #incchr() label can only be the final #incbat() argument!");
+			if (!label_or_const_expr(sname, &dummy, ")", ",")) {
+				numericarg = 9;
 				break;
 			}
+			numericarg++;
+			if (sname[0]) {
+				prefix();
+				outstr(sname);
+				if (!match(")"))
+					error("A label can only be the final #incbat() argument!");
+				break;
+			}
+			outdec(dummy);
 
 			if (match(","))
 				outstr(", ");
+			if (numericarg == 9)
+				break;
 		}
 
 		nl();
@@ -237,21 +251,24 @@ void dopsdinc (void)
 		numericarg = 0;
 
 		while (!match(")")) {
+			if (!label_or_const_expr(sname, &dummy, ")", ",")) {
+				numericarg = 9;
+				break;
+			}
 			numericarg++;
-
-			if (number(&dummy))
-				outdec(dummy);
-			else {
-				readstr();
+			if (sname[0]) {
 				prefix();
-				outstr(litq2);
+				outstr(sname);
 				if (!match(")"))
 					error("A #inctile()/#incchr() label can only be the final #incmap() argument!");
 				break;
 			}
+			outdec(dummy);
 
 			if (match(","))
 				outstr(", ");
+			if (numericarg == 9)
+				break;
 		}
 
 		nl();
@@ -299,12 +316,17 @@ void dopsdinc (void)
 		numericarg = 0;
 
 		while (!match(")")) {
+			if (!const_expr(&dummy, ")", ",")) {
+				numericarg = 9;
+				break;
+			}
 			numericarg++;
-
-			number(&dummy);
 			outdec(dummy);
+
 			if (match(","))
 				outstr(", ");
+			if (numericarg == 9)
+				break;
 		}
 
 		nl();
@@ -353,12 +375,17 @@ void dopsdinc (void)
 		numericarg = 0;
 
 		while (!match(")")) {
+			if (!const_expr(&dummy, ")", ",")) {
+				numericarg = 9;
+				break;
+			}
 			numericarg++;
-
-			number(&dummy);
 			outdec(dummy);
+
 			if (match(","))
 				outstr(", ");
+			if (numericarg == 9)
+				break;
 		}
 
 		nl();
@@ -407,12 +434,17 @@ void dopsdinc (void)
 		numericarg = 0;
 
 		while (!match(")")) {
+			if (!const_expr(&dummy, ")", ",")) {
+				numericarg = 9;
+				break;
+			}
 			numericarg++;
-
-			number(&dummy);
 			outdec(dummy);
+
 			if (match(","))
 				outstr(", ");
+			if (numericarg == 9)
+				break;
 		}
 
 		nl();
@@ -459,12 +491,17 @@ void dopsdinc (void)
 		numericarg = 0;
 
 		while (!match(")")) {
+			if (!const_expr(&dummy, ")", ",")) {
+				numericarg = 9;
+				break;
+			}
 			numericarg++;
-
-			number(&dummy);
 			outdec(dummy);
+
 			if (match(","))
 				outstr(", ");
+			if (numericarg == 9)
+				break;
 		}
 
 		nl();
@@ -516,12 +553,17 @@ void dopsdinc (void)
 		numericarg = 0;
 
 		while (!match(")")) {
+			if (!const_expr(&dummy, ")", ",")) {
+				numericarg = 9;
+				break;
+			}
 			numericarg++;
-
-			number(&dummy);
 			outdec(dummy);
+
 			if (match(","))
 				outstr(", ");
+			if (numericarg == 9)
+				break;
 		}
 
 		nl();
@@ -573,12 +615,17 @@ void dopsdinc (void)
 		numericarg = 0;
 
 		while (!match(")")) {
+			if (!const_expr(&dummy, ")", ",")) {
+				numericarg = 9;
+				break;
+			}
 			numericarg++;
-
-			number(&dummy);
 			outdec(dummy);
+
 			if (match(","))
 				outstr(", ");
+			if (numericarg == 9)
+				break;
 		}
 
 		nl();
@@ -630,21 +677,24 @@ void dopsdinc (void)
 		numericarg = 0;
 
 		while (!match(")")) {
+			if (!label_or_const_expr(sname, &dummy, ")", ",")) {
+				numericarg = 9;
+				break;
+			}
 			numericarg++;
-
-			if (number(&dummy))
-				outdec(dummy);
-			else {
-				readstr();
+			if (sname[0]) {
 				prefix();
-				outstr(litq2);
+				outstr(sname);
 				if (!match(")"))
 					error("A #incchr() label can only be the final #incblk() argument!");
 				break;
 			}
+			outdec(dummy);
 
 			if (match(","))
 				outstr(", ");
+			if (numericarg == 9)
+				break;
 		}
 
 		nl();
@@ -687,7 +737,7 @@ void dopsdinc (void)
 
 		// If page argument, then get it. Else default it.
 		if (match(",")) {
-			if (number(&dummy) != 0) {
+			if (const_expr(&dummy, ")", NULL)) {
 				ot(".page\t\t");
 				if (dummy > 8)
 					outdec(dummy / 0x2000);
@@ -737,7 +787,7 @@ void dopsdinc (void)
 		}
 
 		if (match(",")) {
-			if (number(&dummy) != 0) {
+			if (const_expr(&dummy, ")", NULL)) {
 				ot(".page\t\t");
 				if (dummy > 8)
 					outdec(dummy / 0x2000);
@@ -795,7 +845,8 @@ void dopsddef (void)
 		numericarg = 0;
 
 		while (!match(")")) {
-			number(&dummy_array[numericarg]);
+			if (!const_expr(&dummy_array[numericarg], ")", ","))
+				break;
 			numericarg++;
 
 			if (numericarg > 16)
@@ -851,9 +902,9 @@ void dopsddef (void)
 		numericarg = 0;
 
 		while (!match(")")) {
+			if (!const_expr(&dummy, ")", ","))
+				break;
 			numericarg++;
-
-			number(&dummy);
 
 			switch (numericarg) {
 			case 1:
@@ -875,6 +926,8 @@ void dopsddef (void)
 			}
 
 			match(",");
+			if (numericarg == 11)
+				break;
 		}
 
 		nl();
@@ -909,9 +962,9 @@ void dopsddef (void)
 		numericarg = 0;
 
 		while (!match(")")) {
+			if (!const_expr(&dummy, ")", ","))
+				break;
 			numericarg++;
-
-			number(&dummy);
 
 			switch (numericarg) {
 			case 1:
@@ -937,6 +990,8 @@ void dopsddef (void)
 			}
 
 			match(",");
+			if (numericarg == 35)
+				break;
 		}
 
 		nl();

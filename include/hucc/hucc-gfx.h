@@ -121,6 +121,9 @@ extern void __fastcall far_load_font( unsigned char count<_al>, unsigned int vra
 extern void __fastcall __macro far_load_sprites( unsigned int vram<_di>, unsigned int num_groups<acc> );
 extern void __fastcall __macro sgx_far_load_sprites( unsigned int vram<_di>, unsigned int num_groups<acc> );
 
+extern void __fastcall vram2vram( unsigned int vram_src<_ax>, unsigned int vram_dst<_bx>, unsigned int word_len<_cx> );
+extern void __fastcall sgx_vram2vram( unsigned int vram_src<_ax>, unsigned int vram_dst<_bx>, unsigned int word_len<_cx> );
+
 // *************
 // Deprecated functions ...
 // *************

@@ -685,6 +685,63 @@ _gfx_load_vram:
 ; ***************************************************************************
 ; ***************************************************************************
 ;
+; void __fastcall vram2vram( unsigned int vram_src<_ax>, unsigned int vram_dst<_bx>, unsigned int word_len<_cx> );
+; void __fastcall sgx_vram2vram( unsigned int vram_src<_ax>, unsigned int vram_dst<_bx>, unsigned int word_len<_cx> );
+;
+
+	.if	SUPPORT_SGX
+		.proc	_sgx_vram2vram.3
+
+		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		db	$F0			; Turn "clx" into a "beq".
+
+		.ref	_vram2vram.3		; Need _vram2vram
+		.endp
+	.endif
+
+		.proc	_vram2vram.3
+
+		clx				; Offset to PCE VDC.
+
+		php
+		sei
+		lda	#VDC_SOUR
+		sta	VDC_AR, x
+		lda.l	<_ax
+		sta	VDC_DL, x
+		lda.h	<_ax
+		sta	VDC_DH, x
+
+		lda	#VDC_DESR
+		sta	VDC_AR, x
+		lda.l	<_bx
+		sta	VDC_DL, x
+		lda.h	<_bx
+		sta	VDC_DH, x
+
+		lda	#VDC_LENR
+		sta	VDC_AR, x
+		clc
+		lda.l	<_cx
+		adc	#$FF
+		sta	VDC_DL, x
+		lda.h	<_cx
+		adc	#$FF
+		sta	VDC_DH, x
+
+		lda	<vdc_reg, x
+		sta	VDC_AR
+		plp
+
+		leave
+
+		.endp
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
 ; HuC Font Functions
 ;
 ; ***************************************************************************
