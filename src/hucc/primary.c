@@ -1023,6 +1023,7 @@ char spechar (void)
 	else if (c == 't') c = TAB;
 	else if (c == 'r') c = CR;
 	else if (c == 'f') c = FFEED;
+	else if (c == 'e') c = ESC;
 	else if (c == 'b') c = BKSP;
 	else if (c == '0') c = EOS;
 	else if (numeric(c) && c < '8') {

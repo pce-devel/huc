@@ -689,6 +689,7 @@ enum ICOMPARE {
 
 #define EOS     0
 #define EOL     10
+#define ESC     27
 #define BKSP    8
 #define CR      13
 #define FFEED   12
