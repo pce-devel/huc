@@ -375,7 +375,8 @@ tty_printf_huc	.proc				; HuC entry point.
 		sta.h	<_ax
 		lda.h	#BAT_SIZE
 		sta	<_bl
-		jsr	clear_bat_vdc
+		clx
+		jsr	clear_bat_x
 
 		ply				; Restore string index.
 
@@ -460,9 +461,9 @@ tty_printf_huc	.proc				; HuC entry point.
 		; Read the output width (minimum #chrs).
 		;
 
-		cmp	'#'			; Or read the minimum from
+		cmp	#'#'			; Or read the minimum from
 		beq	.data_minimum		; current data pointer.
-		cmp	'*'			; Or read the minimum from
+		cmp	#'*'			; Or read the minimum from
 	.if	TTY_NO_DOT == 0
 		bne	.read_maximum		; a parameter pointer.
 	.else
@@ -497,16 +498,16 @@ tty_printf_huc	.proc				; HuC entry point.
 		; Uses 37 bytes of code.
 		;
 
-.read_maximum:	cmp	'.'			; Is this a precision field?
+.read_maximum:	cmp	#'.'			; Is this a precision field?
 		bne	.read_length
 
 		jsr	.read_decimal		; Read the precision value.
 		ldx	<__temp			; Set the maximum output.
 		stx	tty_outmax
 
-		cmp	'#'			; Or read the maximum from
+		cmp	#'#'			; Or read the maximum from
 		beq	.data_maximum		; current data pointer.
-		cmp	'*'			; Or read the precision from
+		cmp	#'*'			; Or read the precision from
 		bne	.read_length		; a parameter pointer.
 
 		phy				; Preserve string index.

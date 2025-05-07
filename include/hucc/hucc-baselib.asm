@@ -713,6 +713,42 @@ _set_sprpal.3	.macro
 ;
 ; N.B. Declared in hucc-gfx.h, but defined here because they're macros!
 ;
+; void __fastcall __macro load_vram( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned int num_words<_ax> );
+; void __fastcall __macro sgx_load_vram( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned int num_words<_ax> );
+;
+; void __fastcall __macro far_load_vram( unsigned int vram<_di>, unsigned int num_words<_ax> );
+; void __fastcall __macro sgx_far_load_vram( unsigned int vram<_di>, unsigned int num_words<_ax> );
+;
+
+	.if	SUPPORT_SGX
+		.macro	_sgx_load_vram.3
+		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		call	load_vram_x
+		.endm
+
+		.macro	_sgx_far_load_vram.2
+		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		call	load_vram_x
+		.endm
+	.endif
+
+		.macro	_load_vram.3
+		clx				; Offset to PCE VDC.
+		call	load_vram_x
+		.endm
+
+		.macro	_far_load_vram.2
+		clx				; Offset to PCE VDC.
+		call	load_vram_x
+		.endm
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; N.B. Declared in hucc-gfx.h, but defined here because they're macros!
+;
 ; void __fastcall __macro load_sprites( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned int num_groups<acc> );
 ; void __fastcall __macro sgx_load_sprites( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned int num_groups<acc> );
 ; void __fastcall __macro far_load_sprites( unsigned int vram<_di>, unsigned int num_groups<acc> );
@@ -723,14 +759,16 @@ _set_sprpal.3	.macro
 		stz.l	<_ax
 		asl	a
 		sta.h	<_ax
-		call	_sgx_load_vram.3
+		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		call	load_vram_x
 		.endm
 
 		.macro	_sgx_far_load_sprites.2
 		stz.l	<_ax
 		asl	a
 		sta.h	<_ax
-		call	_sgx_load_vram.3
+		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		call	load_vram_x
 		.endm
 	.endif
 
@@ -738,14 +776,39 @@ _set_sprpal.3	.macro
 		stz.l	<_ax
 		asl	a
 		sta.h	<_ax
-		call	_load_vram.3
+		clx				; Offset to PCE VDC.
+		call	load_vram_x
 		.endm
 
 		.macro	_far_load_sprites.2
 		stz.l	<_ax
 		asl	a
 		sta.h	<_ax
-		call	_load_vram.3
+		clx				; Offset to PCE VDC.
+		call	load_vram_x
+		.endm
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; N.B. Declared in hucc-gfx.h, but defined here because they're macros!
+;
+; void __fastcall load_default_font( void );
+; void __fastcall sgx_load_default_font( void );
+;
+
+	.if	SUPPORT_SGX
+		.macro	_sgx_load_default_font
+		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		call	huc_monofont_x
+		.endm
+	.endif
+
+		.macro	_load_default_font
+		clx				; Offset to PCE VDC.
+		call	huc_monofont_x
 		.endm
 
 

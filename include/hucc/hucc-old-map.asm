@@ -145,13 +145,7 @@ huc_map_funcs	.procgroup
 
 !:		sta.h	<_ax
 
-	.if	SUPPORT_SGX
-		cpx	#0			; Ugly hack to vector to the
-		beq	!+			; correct procedure!
-		jmp	_sgx_load_vram.3
-	.endif
-
-!:		jmp	_load_vram.3		; Load VRAM with the tiles.
+		jmp	load_vram_x		; Load VRAM with the tiles.
 
 		; This is a subroutine so that set_tile_address() can use it.
 

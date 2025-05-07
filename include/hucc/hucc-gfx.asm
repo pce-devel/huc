@@ -372,24 +372,9 @@ load_vram_group	.procgroup			; These routines share code!
 VRAM_XFER_SIZE	=	16
 	.endif
 
-	.if	SUPPORT_SGX
-		.proc	_sgx_load_vram.3
-		.alias	_sgx_far_load_vram.2	= _sgx_load_vram.3
+load_vram_x	.proc
 
-
-		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		db	$F0			; Turn "clx" into a "beq".
-
-		.ref	_load_vram.3
-		.endp
-	.endif
-
-		.proc	_load_vram.3
-		.alias	_far_load_vram.2	= _load_vram.3
-
-		clx				; Offset to PCE VDC.
-
-huc_load_vram:	tma3
+		tma3
 		pha
 		tma4
 		pha
@@ -747,16 +732,64 @@ _gfx_load_vram:
 ; ***************************************************************************
 ; ***************************************************************************
 
+
+
 		.bss
-_font_base:	ds	2
+
+; **************
+; 16-bytes of VDC BAT information.
+;
+; N.B. MUST be 16-bytes before the SGX versions to use PCE_VDC_OFFSET.
+
+_vdc_font_base:	ds	2	; Tile number of ASCII '\0'.
+
+; From hucc-printf.asm just to avoid wasting .bss space with padding.
+_vdc_tty_x_lhs:	ds	1	; TTY minimum X position.
+_vdc_tty_y_top:	ds	1	; TTY minimum Y position.
+_vdc_tty_x:	ds	1	; TTY current X position.
+_vdc_tty_y:	ds	1	; TTY current Y position.
+
+	.if	SUPPORT_SGX
+
+; **************
+; 16-bytes of SGX BAT information.
+;
+; N.B. MUST be 16-bytes after the VDC versions to use SGX_VDC_OFFSET.
+
+		ds	10	; Padding to ensure the 16-byte delta.
+
+_sgx_font_base:	ds	2	; Tile number of ASCII '\0'.
+
+; From hucc-printf.asm just to avoid wasting .bss space with padding.
+_sgx_tty_x_lhs:	ds	1	; TTY minimum X position.
+_sgx_tty_y_top:	ds	1	; TTY minimum Y position.
+_sgx_tty_x:	ds	1	; TTY current X position.
+_sgx_tty_y:	ds	1	; TTY current Y position.
+
+	.endif
+
+;_font_base	.alias	vdc_font_base
+
 		.code
 
 
-; **************
-; void __fastcall set_font_addr( unsigned int vram<acc> );
 
-_set_font_addr:
-		sty	<__temp
+; ***************************************************************************
+; ***************************************************************************
+;
+; void __fastcall set_font_addr( unsigned int vram<acc> );
+; void __fastcall sgx_set_font_addr( unsigned int vram<acc> );
+
+	.if	SUPPORT_SGX
+_sgx_set_font_addr.1:
+		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		db	$F0			; Turn "clx" into a "beq".
+	.endif
+
+_set_font_addr.1:
+		clx				; Offset to PCE VDC.
+
+set_font_addr:	sty	<__temp
 		lsr	<__temp
 		ror	a
 		lsr	<__temp
@@ -767,52 +800,74 @@ _set_font_addr:
 		ror	a
 		sec
 		sbc	#$20
-		sta.l	_font_base
+		sta.l	_vdc_font_base,x
 		bcs	!+
 		dec	<__temp
 
-!:		lda.h	_font_base
+!:		lda.h	_vdc_font_base, x
 		and	#$F0
 		ora	<__temp
-		sta.h	_font_base
+		sta.h	_vdc_font_base, x
 		rts
 
-		.alias	_set_font_addr.1	= _set_font_addr
 
 
-; **************
+; ***************************************************************************
+; ***************************************************************************
+;
 ; void __fastcall set_font_pal( unsigned char palette<acc> );
+; void __fastcall sgx_set_font_pal( unsigned char palette<acc> );
 
-_set_font_pal:
+	.if	SUPPORT_SGX
+_sgx_set_font_pal.1:
+		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		db	$F0			; Turn "clx" into a "beq".
+	.endif
+
+_set_font_pal.1:
+		clx				; Offset to PCE VDC.
 		asl	a
 		asl	a
 		asl	a
 		asl	a
 		sta	<__temp
 
-		lda.h	_font_base
+		lda.h	_vdc_font_base, x
 		and	#$0F
 		ora	<__temp
-		sta.h	_font_base
+		sta.h	_vdc_font_base, x
 		rts
 
-		.alias	_set_font_pal.1		= _set_font_pal
 
 
-; **************
+; ***************************************************************************
+; ***************************************************************************
+;
 ; void __fastcall load_font( char far *font<_bp_bank:_bp>, unsigned char count<_al> );
+;
 ; void __fastcall load_font( char far *font<_bp_bank:_bp>, unsigned char count<_al>, unsigned int vram<acc> );
+; void __fastcall sgx_load_font( char far *font<_bp_bank:_bp>, unsigned char count<_al>, unsigned int vram<acc> );
 ;
 ; void __fastcall far_load_font( unsigned char count<_al>, unsigned int vram<acc> );
+; void __fastcall sgx_far_load_font( unsigned char count<_al>, unsigned int vram<acc> );
 
-_load_font.2:	ldy	vdc_bat_limit		; BAT limit mask hi-byte.
-		iny
+_load_font.2:	ldy	vdc_bat_limit		; Load the font directly
+		iny				; after the BAT (stupid!).
 		cla
+		bra	_load_font.3
 
-_load_font.3:	sta.l	<_di			; Load the font directly
+	.if	SUPPORT_SGX
+_sgx_load_font.3:
+		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		db	$F0			; Turn "clx" into a "beq".
+	.endif
+
+_load_font.3:	clx				; Offset to PCE VDC.
+
+		sta.l	<_di			; Load the font directly
 		sty.h	<_di			; after the BAT (stupid!).
 
-		jsr	_set_font_addr		; Set _font_base from addr.
+		jsr	set_font_addr		; Set xxx_font_base from addr.
 
 		lda	<__al			; Convert #tiles into #words.
 		stz	<__ah
@@ -825,38 +880,58 @@ _load_font.3:	sta.l	<_di			; Load the font directly
 		asl	a
 		rol	<__ah
 		sta	<__al
-		jmp	_load_vram.3
+		jmp	load_vram_x
 
 		.alias	_far_load_font.2	= _load_font.3
+		.alias	_sgx_far_load_font.2	= _sgx_load_font.3
 
 
 
-; **************
+; ***************************************************************************
+; ***************************************************************************
+;
+; void __fastcall cls();
+; void __fastcall sgx_cls();
+;
 ; void __fastcall cls( int tile<acc> );
+; void __fastcall sgx_cls( int tile<acc> );
 
-_cls:		lda.l	_font_base
-		ldy.h	_font_base
+	.if	SUPPORT_SGX
+_sgx_cls:	ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		db	$F0			; Turn "clx" into a "beq".
+	.endif
+
+_cls:		clx				; Offset to PCE VDC.
+
+clear_tty_x:	lda.l	_vdc_font_base, x
+		ldy.h	_vdc_font_base, x
 		clc
 		adc	#' '
-		bcc	_cls.1
+		bcc	!+
 		iny
+		bra	!+
 
-_cls.1:		sta.l	<_ax			; VRAM word to write.
+	.if	SUPPORT_SGX
+_sgx_cls.1:	ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		db	$F0			; Turn "clx" into a "beq".
+	.endif
+
+_cls.1:		clx
+
+!:		sta.l	<_ax			; VRAM word to write.
 		sty.h	<_ax
-		lda	vdc_bat_limit		; BAT size hi-byte.
+		lda	vdc_bat_limit, x	; BAT size hi-byte.
 		inc	a
 		sta	<_bl
-		jmp	clear_bat_vdc
+		jmp	clear_bat_x
 
 
 
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall load_default_font( void );
-;
-; huc_font_sgx - transfer a 8x8 monochrome font into VRAM
-; huc_font_vdc - transfer a 8x8 monochrome font into VRAM
+; void __fastcall __macro load_default_font( void );
+; void __fastcall __macro sgx_load_default_font( void );
 ;
 ; Args: _bp, _bp_bank = _farptr to font data mapped into MPR3 & MPR4.
 ; Args: _di = VRAM destination address.
@@ -864,31 +939,22 @@ _cls.1:		sta.l	<_ax			; VRAM word to write.
 ; Args: monofont_bg = background color (0..15)
 ; Args: _al = number of tiles (aka characters) 0==256
 
-huc_mono_font	.procgroup
+huc_monofont_x	.proc
 
-	.if	SUPPORT_SGX
-huc_font_sgx	.proc
-
-		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-		bra	!+
-
-		.ref	huc_font_vdc		; Need huc_font_vdc
-		.endp
-	.endif
-
-		.proc	_load_default_font
-
+		.bss
+monofont_fg:	.ds	1
+monofont_bg:	.ds	1
 		.data
 font_1:		incbin	"data/font8x8-bold-short-iso646-fr.dat", 128
 		.code
 
-		ldy	vdc_bat_limit		; BAT limit mask hi-byte.
+		ldy	vdc_bat_limit, x	; BAT limit mask hi-byte.
 		iny
 		cla
 		sta.l	<_di			; Load the font directly
 		sty.h	<_di			; after the BAT (stupid!).
 
-		jsr	_set_font_addr		; Set _font_base from addr.
+		jsr	set_font_addr		; Set xxx_font_base from addr.
 
 		lda.l	#font_1
 		sta.l	<_bp
@@ -900,19 +966,7 @@ font_1:		incbin	"data/font8x8-bold-short-iso646-fr.dat", 128
 		lda	#$60			; #characters.
 		sta	<_al
 
-		.ref	huc_font_vdc		; Need huc_font_vdc
-		.endp
-
-huc_font_vdc	.proc
-
-		.bss
-monofont_fg:	.ds	1
-monofont_bg:	.ds	1
-		.code
-
-		clx				; Offset to PCE VDC.
-
-!:		tma3				; Preserve MPR3.
+		tma3				; Preserve MPR3.
 		pha
 		tma4				; Preserve MPR4.
 		pha
@@ -996,8 +1050,6 @@ monofont_bg:	.ds	1
 		leave				; All done, phew!
 
 		.endp
-
-		.endprocgroup			; huc_mono_font
 
 
 
@@ -1146,10 +1198,10 @@ put_hex_vdc	.proc
 		bra	!output+
 
 .write:		clc
-		adc.l	_font_base
+		adc.l	_vdc_font_base, x
 		sta	VDC_DL, x
 		cla
-		adc.h	_font_base
+		adc.h	_vdc_font_base, x
 		sta	VDC_DH, x
 
 !output:	pla				; Pop the digits and output.
@@ -1293,54 +1345,30 @@ put_raw_vdc	.proc
 ; that contain embedded strings, and the string aren't banked in before
 ; printing (yet).
 
-;	.if	SUPPORT_SGX
-;put_string_sgx	.proc
-;
-;		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
-;		db	$F0			; Turn "clx" into a "beq".
-;
-;		.endp
-;	.endif
+	.if	SUPPORT_SGX
+_sgx_put_string.3:
+		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		db	$F0			; Turn "clx" into a "beq".
+	.endif
 
-put_string_vdc: ;	.proc
+_put_string.3:	clx				; Offset to PCE VDC.
 
-		clx				; Offset to PCE VDC.
+		jsr	set_di_xy_mawr
 
-		tma3
-		pha
-		tma4
-		pha
-
-;		ldy	<_bp_bank		; Map memory block to MPR34.
-;		beq	!+
-;		jsr	set_bp_to_mpr34
-
-!:		jsr	set_di_xy_mawr
-
-.chr_loop:	lda	[_bp]
+		cly
+.chr_loop:	lda	[_bp], y
 		beq	.done
 
 		clc
-		adc.l	_font_base
+		adc.l	_vdc_font_base, x
 		sta	VDC_DL, x
 		cla
-		adc.h	_font_base
+		adc.h	_vdc_font_base, x
 		sta	VDC_DH, x
 
-		inc.l	<_bp
+		iny
 		bne	.chr_loop
 		inc.h	<_bp
 		bra	.chr_loop
 
-.done:		pla
-		tam4
-		pla
-		tam3
-
-		rts
-
-;		leave
-;
-;		.endp
-
-		.alias	_put_string.3		= put_string_vdc
+.done:		rts

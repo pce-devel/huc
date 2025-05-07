@@ -125,7 +125,8 @@ NEED_HOME_BANK	=	1
 		include "bare-startup.asm"	; Foundation library.
 	.endif
 
-		; Allocate this as early as possible to ensure bank-aligned.
+		; Allocate this as early as possible to ensure bank-aligned
+		; so that there is no wasted space for aligning the table.
 
 	.if	FAST_MULTIPLY
 	.ifndef	HOME_BANK
@@ -147,11 +148,18 @@ __tos		=	$F8:2101, 255
 
 		.zp
 		.align	2
-__fptr		.ds	2
-__fbank		.ds	1
-__sp		.ds	1
-__stack		.ds	HUCC_STACK_SZ
-__ptr		.ds	2
+__fptr:		ds	2
+__fbank:	ds	1
+__sp:		ds	1
+__stack:	ds	HUCC_STACK_SZ
+__ptr:		ds	2
+
+		; HuCC's non-recursive consecutive varargs for printf().
+
+__vararg1	=	__stack + 0
+__vararg2	=	__stack + 2
+__vararg3	=	__stack + 4
+__vararg4	=	__stack + 6
 
 		; Pointer used by poke() because __ptr could be overwritten.
 
@@ -165,25 +173,25 @@ __func		=	__si
 
 DPTR		=	__ptr
 
-		; REGTEMP stack for temporaries used by SDCC
-		; Keep this in sync with NUM_TEMP_REGS in mos6502/gen.c
+		; REGTEMP 8-byte stack for temporaries used by SDCC.
+		; Keep the size in sync with NUM_TEMP_REGS in mos6502/gen.c!
 
-REGTEMP:	.ds	8
+REGTEMP:	ds	8
 
 		; Values returned from SDCC functions that don't fit into XA.
 		; These are also used as workspace for SDCC library functions,
 		; including HuCC's multiplication and division functions.
 
-___SDCC_m6502_ret0:	.ds	1
-___SDCC_m6502_ret1:	.ds	1
-___SDCC_m6502_ret2:	.ds	1
-___SDCC_m6502_ret3:	.ds	1
+___SDCC_m6502_ret0:	ds	1
+___SDCC_m6502_ret1:	ds	1
+___SDCC_m6502_ret2:	ds	1
+___SDCC_m6502_ret3:	ds	1
 
 	.if	0
-___SDCC_m6502_ret4:	.ds	1
-___SDCC_m6502_ret5:	.ds	1
-___SDCC_m6502_ret6:	.ds	1
-___SDCC_m6502_ret7:	.ds	1
+___SDCC_m6502_ret4:	ds	1
+___SDCC_m6502_ret5:	ds	1
+___SDCC_m6502_ret6:	ds	1
+___SDCC_m6502_ret7:	ds	1
 	.endif
 
 		; Permanent pointers for fast table-of-squares multiplication.
@@ -202,10 +210,10 @@ mul_sqrminus_hi:ds	2
 		; a CDROM game when loading different overlays.
 
 		.bss
-clock_hh	.ds	1			; System Clock, hours	(0-11)
-clock_mm	.ds	1			; System Clock, minutes (0-59)
-clock_ss	.ds	1			; System Clock, seconds (0-59)
-clock_tt	.ds	1			; System Clock, ticks	(0-59)
+clock_hh:	ds	1			; System Clock, hours	(0-11)
+clock_mm:	ds	1			; System Clock, minutes (0-59)
+clock_ss:	ds	1			; System Clock, seconds (0-59)
+clock_tt:	ds	1			; System Clock, ticks	(0-59)
 		.code
 
 		; Critical HuCC libraries that the compiler depends upon.
@@ -329,7 +337,7 @@ core_main	.proc
 		lda	#1			; HuCC loads a default font.
 		sta	monofont_fg
 		stz	monofont_bg
-		call	_load_default_font
+		_load_default_font
 		lda	#$01			; Set the font palette entry to
 		sta.l	VCE_CTA			; cyan which is a) visible, but
 		stz.h	VCE_CTA			; b) a clear indicator that the
@@ -361,8 +369,8 @@ core_main	.proc
 		rts
 
 		.bss
-ram_tia		ds	8
-ram_tii		ds	8
+ram_tia:	ds	8
+ram_tii:	ds	8
 		.code
 
 	.endif	!CDROM
