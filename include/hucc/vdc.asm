@@ -143,6 +143,7 @@ clear_vram_sgx	.proc
 		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
 		db	$F0			; Turn "clx" into a "beq".
 
+		.ref	clear_vram_vdc		; Need clear_vram_vdc
 		.endp
 	.endif
 
@@ -150,7 +151,7 @@ clear_vram_vdc	.proc
 
 		clx				; Offset to PCE VDC.
 
-clear_vram_x:	bsr	clear_bat_x		; Clear the BAT.
+clear_vram_x:	call	clear_bat_x		; Clear the BAT.
 
 		lda	#$80			; Xvert hi-byte of # words
 		sec				; in screen to loop count.
@@ -188,6 +189,7 @@ clear_bat_sgx	.proc
 		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
 		db	$F0			; Turn "clx" into a "beq".
 
+		.ref	clear_bat_vdc		; Need clear_bat_vdc
 		.endp
 	.endif
 
@@ -195,15 +197,12 @@ clear_bat_vdc	.proc
 
 		clx				; Offset to PCE VDC.
 
-		bsr	clear_bat_x		; Clear the BAT.
-
-		leave				; All done, phew!
-
+		.ref	clear_bat_x		; Need clear_bat_x
 		.endp
 
-		; Written as a subroutine because of "leave"!
+clear_bat_x	.proc				; HuCC uses this entry point.
 
-clear_bat_x:	stz	<_di + 0		; Set VDC or SGX destination
+		stz	<_di + 0		; Set VDC or SGX destination
 		stz	<_di + 1		; address.
 		jsr	set_di_to_mawr
 
@@ -224,7 +223,9 @@ clear_bat_x:	stz	<_di + 0		; Set VDC or SGX destination
 		dec	a
 		bne	.bat_loop
 
-		rts
+		leave
+
+		.endp
 
 		.endprocgroup
 
