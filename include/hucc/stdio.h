@@ -35,7 +35,7 @@
 ;
 ;    '-' to left-justify output within the <width>
 ;    '0' to pad to <width> with zero instead of space
-;    '+' to prepend positive integers with a '+' when "%d", "%i" or "%u"
+;    '+' to prepend positive integers with a '+' when "%d" or "%i"
 ;    ' ' to prepend positive integers with a ' ' when "%d", "%i" or "%u"
 ;
 ; <width>
