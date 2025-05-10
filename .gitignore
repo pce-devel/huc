@@ -25,7 +25,8 @@ src/mkit/as/nesasm
 src/mkit/as/nesasm.exe
 src/mkit/as/pceas
 src/mkit/as/pceas.exe
-src/mkit/as/pngread/pngread.a
+src/mkit/as/pngreadwrite/pngreadwrite.a
+src/mkit/as/salvador/salvador.a
 src/plugins/huremap/huremap.exe
 src/plugins/husetpalette/husetpalette.exe
 src/plugins/huzerozero/huzerozero.exe

@@ -32,7 +32,7 @@
 ;
 ;    '-' to left-justify output within the <width>
 ;    '0' to pad to <width> with zero instead of space
-;    '+' to prepend positive integers with a '+' when "%d", "%i" or "%u"
+;    '+' to prepend positive integers with a '+' when "%d" or "%i"
 ;    ' ' to prepend positive integers with a ' ' when "%d", "%i" or "%u"
 ;
 ; <width>
@@ -267,19 +267,20 @@ _printf.1	.proc				; HuC entry point.
 		; Got a "0" flag!
 		;
 
-.flag_zero:	sta	<tty_outpad		; Set '0' for yes.
+.flag_zero:	sta	<tty_outpad		; Set '0' instead of ' '.
 		bra	.read_flag
 
 		;
 		; Got a "%" format sequence!
 		;
 
-.format:	lda	#' '			; Default to pad with space.
+.format:	lda	#' '			; Default to pad with ' '.
 		sta	<tty_outpad
 		stz	<tty_out1st		; Is there a +/- sign?
 		stz	<tty_outlhs		; Left justify, not right.
-		stz	<tty_outmin		; Clear the minimum output.
-		stz	<tty_outmax		; Clear the maximum output.
+		stz	<tty_outmin		; Clear the field width.
+		lda	#-1			; Clear the precision.
+		sta	<tty_outmax
 
 		;
 		; Read the format flags.
@@ -310,10 +311,9 @@ _printf.1	.proc				; HuC entry point.
 		bne	.get_precision		; a parameter.
 
 		jsr	.read_param		; Read next parameter.
-		bmi	!+			; Ignore -ve width.
 		sta	<tty_outmin		; Set the field width.
 
-!:		lda	[_bp], y		; Get the next character.
+		lda	[_bp], y		; Get the next character.
 		iny
 		bra	.get_precision
 
@@ -339,10 +339,9 @@ _printf.1	.proc				; HuC entry point.
 		bne	.get_length		; a parameter.
 
 		jsr	.read_param		; Read next parameter.
-		bmi	!+			; Ignore -ve <precision>.
 		sta	<tty_outmax
 
-!:		lda	[_bp], y		; Get the next character.
+		lda	[_bp], y		; Get the next character.
 		iny
 
 		;
@@ -402,16 +401,14 @@ _printf.1	.proc				; HuC entry point.
 		sta.l	<_si
 		lda.h	<0, x			; Read pointer hi-byte.
 		sta.h	<_si
-		ldy	<tty_outmax		; Get the maximum output.
-		beq	.str_done
 
-.str_loop:	lda	[_si]
+		cly
+.str_loop:	cpy	<tty_outmax		; Max string length is 255!
 		beq	.str_done
-		inc.l	<_si
-		bne	!+
-		inc.h	<_si
-!:		jsr	.write_chr
-		dey
+		lda	[_si], y
+		beq	.str_done
+		jsr	.write_chr		; Preserves Y!
+		iny
 		bne	.str_loop
 
 .str_done:	ply				; Restore string index.
@@ -503,7 +500,7 @@ _printf.1	.proc				; HuC entry point.
 		bne	.hex_byte
 
 		lda	<tty_out1st		; Test if a long hex parameter.
-		stz	<tty_out1st		; No prepend for unsigned.
+		stz	<tty_out1st		; No prepend for hexadecimal.
 		cmp	#'l'
 		beq	.hex_word
 
@@ -522,7 +519,7 @@ _printf.1	.proc				; HuC entry point.
 		sec
 		adc	<tty_outstk		; Always leaves C set.
 		sbc	<tty_outmax		; Is there a precision?
-		bcs	.do_width
+		bpl	.do_width
 
 		ldx	#'0'			; Pad to precision with '0'.
 .pad_digit:	phx
@@ -623,8 +620,7 @@ next_decimal:	sta	<__temp			; Initialize to zero.
 		asl	<__temp
 		asl	<__temp
 		adc	<__temp
-		bpl	next_decimal
-		bra	read_decimal		; Reset overflow or -ve number.
+		bra	next_decimal
 
 		;
 		; Default output vector for sprintf().

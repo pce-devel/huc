@@ -20,6 +20,12 @@ unsigned char test[16];
 // "%x", "%X", "%c" and "%s" all ignore the '+' and ' ' flags.
 
 const unsigned char *result[] = {
+	// Strings.
+
+	"=hello=\n",		// "=hello=\n"	"=%s=\n"
+	"==\n",			// "==\n"	"=%.s=\n"
+	"=h=\n",		// "=h=\n"	"=%.*s=\n"
+
 	// Simple decimal with no <width> or <precision>.
 
 	"=-33=\n",		// "=-33=\n"	"=%d=\n"
@@ -624,6 +630,15 @@ int stress_width2()
 
 int main()
 {
+	// Strings.
+
+	sprintf(test, "=%s=\n", "hello");
+	if (strcmp(test, result[which++]) != 0) abort();
+	sprintf(test, "=%.s=\n", "hello");
+	if (strcmp(test, result[which++]) != 0) abort();
+	sprintf(test, "=%.*s=\n", 1, "hello");
+	if (strcmp(test, result[which++]) != 0) abort();
+
 	// Simple decimal with no <width> or <precision>.
 
 	sprintf(test, "=%d=\n", -33);
