@@ -32,7 +32,7 @@
 ;
 ;    '-' to left-justify output within the <width>
 ;    '0' to pad to <width> with zero instead of space
-;    '+' to prepend positive integers with a '+' when "%d", "%i" or "%u"
+;    '+' to prepend positive integers with a '+' when "%d" or "%i"
 ;    ' ' to prepend positive integers with a ' ' when "%d", "%i" or "%u"
 ;
 ; <width>
@@ -267,7 +267,7 @@ _printf.1	.proc				; HuC entry point.
 		; Got a "0" flag!
 		;
 
-.flag_zero:	sta	<tty_outpad		; Set '0' for yes.
+.flag_zero:	sta	<tty_outpad		; Set '0' instead of ' '.
 		bra	.read_flag
 
 		;
@@ -311,10 +311,9 @@ _printf.1	.proc				; HuC entry point.
 		bne	.get_precision		; a parameter.
 
 		jsr	.read_param		; Read next parameter.
-		bmi	!+			; Ignore -ve width.
 		sta	<tty_outmin		; Set the field width.
 
-!:		lda	[_bp], y		; Get the next character.
+		lda	[_bp], y		; Get the next character.
 		iny
 		bra	.get_precision
 
@@ -340,10 +339,9 @@ _printf.1	.proc				; HuC entry point.
 		bne	.get_length		; a parameter.
 
 		jsr	.read_param		; Read next parameter.
-		bmi	!+			; Ignore -ve <precision>.
 		sta	<tty_outmax
 
-!:		lda	[_bp], y		; Get the next character.
+		lda	[_bp], y		; Get the next character.
 		iny
 
 		;
@@ -622,8 +620,7 @@ next_decimal:	sta	<__temp			; Initialize to zero.
 		asl	<__temp
 		asl	<__temp
 		adc	<__temp
-		bpl	next_decimal
-		bra	read_decimal		; Reset overflow or -ve number.
+		bra	next_decimal
 
 		;
 		; Default output vector for sprintf().
