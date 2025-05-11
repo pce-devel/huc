@@ -50,7 +50,7 @@
 ; <specifier>
 ;
 ;   '%' = just print a '%'
-;   'c' = print an ASCII character
+;   'c' = print an ASCII character <precision> times
 ;   'd' = print a signed integer variable in decimal
 ;   'i' = print a signed integer variable in decimal
 ;   's' = print string, stop at <precision> characters
@@ -362,7 +362,7 @@ _printf.1	.proc				; HuC entry point.
 		cmp	#'s'
 		beq	.string
 
-		clx				; Push the output terminator.
+		ldx	#'0'			; Push the output terminator.
 		phx
 		tsx				; Remember the end address of
 		stx	<tty_outstk		; characters put on the stack.
@@ -374,10 +374,10 @@ _printf.1	.proc				; HuC entry point.
 
 		cmp	#'u'			; Unsigned conversions clear
 		beq	.unsigned		; tty_out1st before output.
-		ldy	#'A' - ('9' + 1 + 1)
+		ldy	#('A' ^ '0') - 11	; Hex upper-case alphabet delta.
 		cmp	#'X'
 		beq	.hexadecimal
-		ldy	#'a' - ('9' + 1 + 1)
+		ldy	#('a' ^ '0') - 11	; Hex lower-case alphabet delta.
 		cmp	#'x'
 		beq	.hexadecimal
 		cmp	#'c'
@@ -413,17 +413,6 @@ _printf.1	.proc				; HuC entry point.
 
 .str_done:	ply				; Restore string index.
 		jmp	.next_chr
-
-		;
-		; Character.
-		;
-
-.character:	jsr	.read_param		; Read the character into A.
-		pha
-		rmb4	<tty_outpad		; Pad with ' ' not '0'.
-		stz	<tty_out1st		; Remove ' ' or '+'.
-
-		bra	.do_width		; Ignore the precision.
 
 		;
 		; Signed/Unsigned decimal integer output.
@@ -462,13 +451,29 @@ _printf.1	.proc				; HuC entry point.
 		dex
 		bne	.divide_loop
 
-		ora	#'0'			; Remainder onto the stack.
-		pha
+		pha				; Remainder onto the stack.
 		lda.l	<dividend		; Repeat while non-zero.
 		ora.h	<dividend
 		bne	.divide_by_ten
 
 		bra	.do_precision		; Justify the output.
+
+		;
+		; Character.
+		;
+
+.character:	rmb4	<tty_outpad		; Pad with ' ' not '0'.
+		stz	<tty_out1st		; Remove ' ' or '+'.
+
+		jsr	.read_param		; Read the character into A.
+		beq	.pop_digit		; Don't try to print a '\0'!
+
+		eor	#'0'			; Repeat char if the precision
+		tay				; is set to non-zero.
+		lda	<tty_outmax
+		eor	#$FF			; Default if precision unset.
+		beq	.pad_digit
+		bra	.repeat_it
 
 		;
 		; Hex (and BCD) unsigned integer output.
@@ -479,9 +484,8 @@ _printf.1	.proc				; HuC entry point.
 .hex_word:	jsr	.read_param		; Read a hexadecimal word.
 		clx
 .hex_byte:	lda	<dividend, x		; Convert 1 byte at a time.
-		and	#$0F
-		ora	#'0'			; Print a hex/bcd nibble.
-		cmp	#'9' + 1
+		and	#15
+		cmp	#10			; Process a hex/bcd nibble.
 		bcc	!+
 		adc	<__temp			; Upper or lower case hex digit.
 !:		pha				; Nibble onto the stack.
@@ -490,8 +494,7 @@ _printf.1	.proc				; HuC entry point.
 		lsr	a
 		lsr	a
 		lsr	a
-		ora	#'0'			; Print a hex/bcd nibble.
-		cmp	#'9' + 1
+		cmp	#10			; Process a hex/bcd nibble.
 		bcc	!+
 		adc	<__temp			; Upper or lower case hex digit.
 !:		pha				; Nibble onto the stack.
@@ -505,15 +508,16 @@ _printf.1	.proc				; HuC entry point.
 		beq	.hex_word
 
 .strip_zero:	pla				; Strip leading '0' characters
-		beq	!+			; from the hex string.
+		beq	.strip_zero		; from the hex string.
+		pha
 		cmp	#'0'
-		beq	.strip_zero
-!:		pha
 		bne	.do_precision
-		lda	#'0'			; If the hex number is all '0'.
+		cla				; If the hex number is all '0'.
 		pha
 
-.do_precision:	tsx				; Calc how many chrs are on
+.do_precision:	cly				; Pad to precision with '0'.
+
+		tsx				; Calc how many chrs are on
 		txa				; the stack.
 		eor	#$FF
 		sec
@@ -521,10 +525,9 @@ _printf.1	.proc				; HuC entry point.
 		sbc	<tty_outmax		; Is there a precision?
 		bpl	.do_width
 
-		ldx	#'0'			; Pad to precision with '0'.
-.pad_digit:	phx
-		inc	a
-		bne	.pad_digit
+.pad_digit:	phy
+.repeat_it:	inc	a
+		bmi	.pad_digit
 
 .do_width:	tsx				; Calc how many chrs are on
 		txa				; the stack.
@@ -561,8 +564,9 @@ _printf.1	.proc				; HuC entry point.
 		bmi	.pad_char
 
 .pop_digit:	pla				; Pop the digits and output.
+		eor	#'0'
 		beq	.chk_rhs
-.out_sign:	jsr	.write_chr		; Preserves Y!
+.out_sign:	bsr	.write_chr		; Preserves Y!
 		bra	.pop_digit
 
 .chk_rhs:	tya				; Negative if pad RHS.

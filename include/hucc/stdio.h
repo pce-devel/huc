@@ -53,7 +53,7 @@
 ; <specifier>
 ;
 ;   '%' = just print a '%'
-;   'c' = print an ASCII character
+;   'c' = print an ASCII character <precision> times
 ;   'd' = print a signed integer variable in decimal
 ;   'i' = print a signed integer variable in decimal
 ;   's' = print string, stop at <precision> characters
@@ -101,7 +101,8 @@
 #endif
 
 // *************
-// TTY-related variables ...
+// TTY-related variables which can either be set before calling printf() or
+// by using escape codes.
 // *************
 
 extern unsigned char vdc_tty_x_lhs;
@@ -134,19 +135,19 @@ extern int __fastcall sprintf( unsigned char *string<_di>, unsigned char *format
 extern int __fastcall sprintf( unsigned char *string<_di>, unsigned char *format<_bp>, unsigned int vararg1<__vararg1> );
 extern int __fastcall sprintf( unsigned char *string<_di>, unsigned char *format<_bp>, unsigned int vararg1<__vararg1>, unsigned int vararg2<__vararg2> );
 extern int __fastcall sprintf( unsigned char *string<_di>, unsigned char *format<_bp>, unsigned int vararg1<__vararg1>, unsigned int vararg2<__vararg2>, unsigned int vararg3<__vararg3> );
-extern int __fastcall sprintf( unsigned char *string<_di>, unsigned char *format<_bp>, unsigned int vararg1<__vararg1>, unsigned int vararg2<__vararg2>, unsigned int vararg3<__vararg3>, unsigned int vararg4<__vararg3> );
+extern int __fastcall sprintf( unsigned char *string<_di>, unsigned char *format<_bp>, unsigned int vararg1<__vararg1>, unsigned int vararg2<__vararg2>, unsigned int vararg3<__vararg3>, unsigned int vararg4<__vararg4> );
 
 extern int __fastcall printf( unsigned char *format<_bp> );
 extern int __fastcall printf( unsigned char *format<_bp>, unsigned int vararg1<__vararg1> );
 extern int __fastcall printf( unsigned char *format<_bp>, unsigned int vararg1<__vararg1>, unsigned int vararg2<__vararg2> );
 extern int __fastcall printf( unsigned char *format<_bp>, unsigned int vararg1<__vararg1>, unsigned int vararg2<__vararg2>, unsigned int vararg3<__vararg3> );
-extern int __fastcall printf( unsigned char *format<_bp>, unsigned int vararg1<__vararg1>, unsigned int vararg2<__vararg2>, unsigned int vararg3<__vararg3>, unsigned int vararg4<__vararg3> );
+extern int __fastcall printf( unsigned char *format<_bp>, unsigned int vararg1<__vararg1>, unsigned int vararg2<__vararg2>, unsigned int vararg3<__vararg3>, unsigned int vararg4<__vararg4> );
 
 extern int __fastcall sgx_printf( unsigned char *format<_bp> );
 extern int __fastcall sgx_printf( unsigned char *format<_bp>, unsigned int vararg1<__vararg1> );
 extern int __fastcall sgx_printf( unsigned char *format<_bp>, unsigned int vararg1<__vararg1>, unsigned int vararg2<__vararg2> );
 extern int __fastcall sgx_printf( unsigned char *format<_bp>, unsigned int vararg1<__vararg1>, unsigned int vararg2<__vararg2>, unsigned int vararg3<__vararg3> );
-extern int __fastcall sgx_printf( unsigned char *format<_bp>, unsigned int vararg1<__vararg1>, unsigned int vararg2<__vararg2>, unsigned int vararg3<__vararg3>, unsigned int vararg4<__vararg3> );
+extern int __fastcall sgx_printf( unsigned char *format<_bp>, unsigned int vararg1<__vararg1>, unsigned int vararg2<__vararg2>, unsigned int vararg3<__vararg3>, unsigned int vararg4<__vararg4> );
 
 #asm
 		include	"hucc-printf.asm"

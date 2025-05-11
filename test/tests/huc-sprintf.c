@@ -25,6 +25,7 @@ const unsigned char *result[] = {
 	"=hello=\n",		// "=hello=\n"	"=%s=\n"
 	"==\n",			// "==\n"	"=%.s=\n"
 	"=h=\n",		// "=h=\n"	"=%.*s=\n"
+	"=hello=\n",		// "=helo=\n"	"=%.2s%*.*co=\n"HuCC is different to GCC!
 
 	// Simple decimal with no <width> or <precision>.
 
@@ -86,11 +87,11 @@ const unsigned char *result[] = {
 
 	"=   A=\n",		// "=   A=\n"	"=%4c=\n"
 	"=   A=\n",		// "=   A=\n"	"=%04c=\n"
-	"=   A=\n",		// "=   A=\n"	"=%4.4c=\n"
+	"= AAA=\n",		// "=   A=\n"	"=%4.3c=\n"	HuCC is different to GCC!
 
 	"=   A=\n",		// "=   A=\n"	"=%+4c=\n"
 	"=   A=\n",		// "=   A=\n"	"=% 04c=\n"
-	"=   A=\n",		// "=   A=\n"	"=%+ 4.4c=\n"
+	"= AAA=\n",		// "=   A=\n"	"=%+ 4.3c=\n"	HuCC is different to GCC!
 
 	// Signed decimal left-justified.
 
@@ -141,11 +142,11 @@ const unsigned char *result[] = {
 
 	"=A   =\n",		// "=A   =\n"	"=%-4c=\n"
 	"=A   =\n",		// "=A   =\n"	"=%-04c=\n"
-	"=A   =\n",		// "=A   =\n"	"=%-4.4c=\n"
+	"=AAA =\n",		// "=A   =\n"	"=%-4.3c=\n"	HuCC is different to GCC!
 
 	"=A   =\n",		// "=A   =\n"	"=%-+4c=\n"
 	"=A   =\n",		// "=A   =\n"	"=%- 04c=\n"
-	"=A   =\n",		// "=A   =\n"	"=%-+ 4.4c=\n"
+	"=AAA =\n",		// "=A   =\n"	"=%-+ 4.3c=\n"	HuCC is different to GCC!
 
 	// Stress test printing +/- 123 which is <width>-1 characters.
 
@@ -329,14 +330,14 @@ int test1()
 	if (strcmp(test, result[which++]) != 0) abort();
 	sprintf(test, "=%04c=\n", 'A');
 	if (strcmp(test, result[which++]) != 0) abort();
-	sprintf(test, "=%4.4c=\n", 'A');
+	sprintf(test, "=%4.3c=\n", 'A');
 	if (strcmp(test, result[which++]) != 0) abort();
 
 	if (sprintf(test, "=%+4c=\n", 'A') != strlen(result[which])) abort();
 	if (strcmp(test, result[which++]) != 0) abort();
 	sprintf(test, "=% 04c=\n", 'A');
 	if (strcmp(test, result[which++]) != 0) abort();
-	sprintf(test, "=%+ 4.4c=\n", 'A');
+	sprintf(test, "=%+ 4.3c=\n", 'A');
 	if (strcmp(test, result[which++]) != 0) abort();
 
 	// Do more tests.
@@ -435,14 +436,14 @@ int test2()
 	if (strcmp(test, result[which++]) != 0) abort();
 	sprintf(test, "=%-04c=\n", 'A');
 	if (strcmp(test, result[which++]) != 0) abort();
-	sprintf(test, "=%-4.4c=\n", 'A');
+	sprintf(test, "=%-4.3c=\n", 'A');
 	if (strcmp(test, result[which++]) != 0) abort();
 
 	if (sprintf(test, "=%-+4c=\n", 'A') != strlen(result[which])) abort();
 	if (strcmp(test, result[which++]) != 0) abort();
 	sprintf(test, "=%- 04c=\n", 'A');
 	if (strcmp(test, result[which++]) != 0) abort();
-	sprintf(test, "=%-+ 4.4c=\n", 'A');
+	sprintf(test, "=%-+ 4.3c=\n", 'A');
 	if (strcmp(test, result[which++]) != 0) abort();
 
 	// Do more tests.
@@ -637,6 +638,8 @@ int main()
 	sprintf(test, "=%.s=\n", "hello");
 	if (strcmp(test, result[which++]) != 0) abort();
 	sprintf(test, "=%.*s=\n", 1, "hello");
+	if (strcmp(test, result[which++]) != 0) abort();
+	sprintf(test, "=%.2s%*.*co=\n", "hello", 0, 2, 'l');
 	if (strcmp(test, result[which++]) != 0) abort();
 
 	// Simple decimal with no <width> or <precision>.
