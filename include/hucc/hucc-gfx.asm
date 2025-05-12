@@ -634,7 +634,8 @@ _gfx_load_vram:
 		stz.l	<_ax
 		lda.h	#$4000
 		sta.h	<_ax
-		call	_load_vram.3
+		clx
+		call	load_vram_x
 
 		lda.l	<__fptr
 		sta.l	<_bp
