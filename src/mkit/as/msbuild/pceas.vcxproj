@@ -95,7 +95,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\pngread;..\salvador;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\pngreadwrite;..\salvador;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;WIN32;_CONSOLE;PC;_CRT_SECURE_NO_WARNINGS;NO_GZCOMPRESS;Z_SOLO;NO_GZIP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -137,7 +137,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\pngread;..\salvador;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\pngreadwrite;..\salvador;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;WIN32;_CONSOLE;PC;_CRT_SECURE_NO_WARNINGS;NO_GZCOMPRESS;Z_SOLO;NO_GZIP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -177,7 +177,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\pngread;..\salvador;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\pngreadwrite;..\salvador;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;WIN32;_CONSOLE;PC;_CRT_SECURE_NO_WARNINGS;NO_GZCOMPRESS;Z_SOLO;NO_GZIP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -219,7 +219,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\pngread;..\salvador;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\pngreadwrite;..\salvador;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;WIN32;_CONSOLE;PC;_CRT_SECURE_NO_WARNINGS;NO_GZCOMPRESS;Z_SOLO;NO_GZIP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -278,22 +278,29 @@
     <ClCompile Include="..\salvador\trsort.c" />
     <ClCompile Include="..\symbol.c" />
     <ClCompile Include="..\xgetopt.c" />
-    <ClCompile Include="..\pngread\adler32.c" />
-    <ClCompile Include="..\pngread\crc32.c" />
-    <ClCompile Include="..\pngread\inffast.c" />
-    <ClCompile Include="..\pngread\inflate.c" />
-    <ClCompile Include="..\pngread\inftrees.c" />
-    <ClCompile Include="..\pngread\png.c" />
-    <ClCompile Include="..\pngread\pngerror.c" />
-    <ClCompile Include="..\pngread\pngget.c" />
-    <ClCompile Include="..\pngread\pngmem.c" />
-    <ClCompile Include="..\pngread\pngread.c" />
-    <ClCompile Include="..\pngread\pngrio.c" />
-    <ClCompile Include="..\pngread\pngrtran.c" />
-    <ClCompile Include="..\pngread\pngrutil.c" />
-    <ClCompile Include="..\pngread\pngset.c" />
-    <ClCompile Include="..\pngread\pngtrans.c" />
-    <ClCompile Include="..\pngread\zutil.c" />
+    <ClCompile Include="..\pngreadwrite\adler32.c" />
+    <ClCompile Include="..\pngreadwrite\compress.c" />
+    <ClCompile Include="..\pngreadwrite\crc32.c" />
+    <ClCompile Include="..\pngreadwrite\deflate.c" />
+    <ClCompile Include="..\pngreadwrite\inffast.c" />
+    <ClCompile Include="..\pngreadwrite\inflate.c" />
+    <ClCompile Include="..\pngreadwrite\inftrees.c" />
+    <ClCompile Include="..\pngreadwrite\png.c" />
+    <ClCompile Include="..\pngreadwrite\pngerror.c" />
+    <ClCompile Include="..\pngreadwrite\pngget.c" />
+    <ClCompile Include="..\pngreadwrite\pngmem.c" />
+    <ClCompile Include="..\pngreadwrite\pngread.c" />
+    <ClCompile Include="..\pngreadwrite\pngrio.c" />
+    <ClCompile Include="..\pngreadwrite\pngrtran.c" />
+    <ClCompile Include="..\pngreadwrite\pngrutil.c" />
+    <ClCompile Include="..\pngreadwrite\pngset.c" />
+    <ClCompile Include="..\pngreadwrite\pngtrans.c" />
+    <ClCompile Include="..\pngreadwrite\pngwio.c" />
+    <ClCompile Include="..\pngreadwrite\pngwrite.c" />
+    <ClCompile Include="..\pngreadwrite\pngwtran.c" />
+    <ClCompile Include="..\pngreadwrite\pngwutil.c" />
+    <ClCompile Include="..\pngreadwrite\trees.c" />
+    <ClCompile Include="..\pngreadwrite\zutil.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\atari.h" />
@@ -315,22 +322,24 @@
     <ClInclude Include="..\vars.h" />
     <ClInclude Include="..\version.h" />
     <ClInclude Include="..\xgetopt.h" />
-    <ClInclude Include="..\pngread\crc32.h" />
-    <ClInclude Include="..\pngread\inffast.h" />
-    <ClInclude Include="..\pngread\inffixed.h" />
-    <ClInclude Include="..\pngread\inflate.h" />
-    <ClInclude Include="..\pngread\inftrees.h" />
-    <ClInclude Include="..\pngread\png.h" />
-    <ClInclude Include="..\pngread\pngconf.h" />
-    <ClInclude Include="..\pngread\pngdebug.h" />
-    <ClInclude Include="..\pngread\pnginfo.h" />
-    <ClInclude Include="..\pngread\pnglibconf.h" />
-    <ClInclude Include="..\pngread\pngpriv.h" />
-    <ClInclude Include="..\pngread\pngstruct.h" />
-    <ClInclude Include="..\pngread\pngusr.h" />
-    <ClInclude Include="..\pngread\zconf.h" />
-    <ClInclude Include="..\pngread\zlib.h" />
-    <ClInclude Include="..\pngread\zutil.h" />
+    <ClInclude Include="..\pngreadwrite\crc32.h" />
+    <ClInclude Include="..\pngreadwrite\deflate.h" />
+    <ClInclude Include="..\pngreadwrite\inffast.h" />
+    <ClInclude Include="..\pngreadwrite\inffixed.h" />
+    <ClInclude Include="..\pngreadwrite\inflate.h" />
+    <ClInclude Include="..\pngreadwrite\inftrees.h" />
+    <ClInclude Include="..\pngreadwrite\png.h" />
+    <ClInclude Include="..\pngreadwrite\pngconf.h" />
+    <ClInclude Include="..\pngreadwrite\pngdebug.h" />
+    <ClInclude Include="..\pngreadwrite\pnginfo.h" />
+    <ClInclude Include="..\pngreadwrite\pnglibconf.h" />
+    <ClInclude Include="..\pngreadwrite\pngpriv.h" />
+    <ClInclude Include="..\pngreadwrite\pngstruct.h" />
+    <ClInclude Include="..\pngreadwrite\pngusr.h" />
+    <ClInclude Include="..\pngreadwrite\trees.h" />
+    <ClInclude Include="..\pngreadwrite\zconf.h" />
+    <ClInclude Include="..\pngreadwrite\zlib.h" />
+    <ClInclude Include="..\pngreadwrite\zutil.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -20,53 +20,74 @@
     <ClCompile Include="..\proc.c" />
     <ClCompile Include="..\symbol.c" />
     <ClCompile Include="..\xgetopt.c" />
-    <ClCompile Include="..\pngread\adler32.c">
-      <Filter>pngread</Filter>
+    <ClCompile Include="..\pngreadwrite\adler32.c">
+      <Filter>pngreadwrite</Filter>
     </ClCompile>
-    <ClCompile Include="..\pngread\crc32.c">
-      <Filter>pngread</Filter>
+    <ClCompile Include="..\pngreadwrite\compress.c">
+      <Filter>pngreadwrite</Filter>
     </ClCompile>
-    <ClCompile Include="..\pngread\inffast.c">
-      <Filter>pngread</Filter>
+    <ClCompile Include="..\pngreadwrite\crc32.c">
+      <Filter>pngreadwrite</Filter>
     </ClCompile>
-    <ClCompile Include="..\pngread\inflate.c">
-      <Filter>pngread</Filter>
+    <ClCompile Include="..\pngreadwrite\deflate.c">
+      <Filter>pngreadwrite</Filter>
     </ClCompile>
-    <ClCompile Include="..\pngread\inftrees.c">
-      <Filter>pngread</Filter>
+    <ClCompile Include="..\pngreadwrite\inffast.c">
+      <Filter>pngreadwrite</Filter>
     </ClCompile>
-    <ClCompile Include="..\pngread\png.c">
-      <Filter>pngread</Filter>
+    <ClCompile Include="..\pngreadwrite\inflate.c">
+      <Filter>pngreadwrite</Filter>
     </ClCompile>
-    <ClCompile Include="..\pngread\pngerror.c">
-      <Filter>pngread</Filter>
+    <ClCompile Include="..\pngreadwrite\inftrees.c">
+      <Filter>pngreadwrite</Filter>
     </ClCompile>
-    <ClCompile Include="..\pngread\pngget.c">
-      <Filter>pngread</Filter>
+    <ClCompile Include="..\pngreadwrite\png.c">
+      <Filter>pngreadwrite</Filter>
     </ClCompile>
-    <ClCompile Include="..\pngread\pngmem.c">
-      <Filter>pngread</Filter>
+    <ClCompile Include="..\pngreadwrite\pngerror.c">
+      <Filter>pngreadwrite</Filter>
     </ClCompile>
-    <ClCompile Include="..\pngread\pngread.c">
-      <Filter>pngread</Filter>
+    <ClCompile Include="..\pngreadwrite\pngget.c">
+      <Filter>pngreadwrite</Filter>
     </ClCompile>
-    <ClCompile Include="..\pngread\pngrio.c">
-      <Filter>pngread</Filter>
+    <ClCompile Include="..\pngreadwrite\pngmem.c">
+      <Filter>pngreadwrite</Filter>
     </ClCompile>
-    <ClCompile Include="..\pngread\pngrtran.c">
-      <Filter>pngread</Filter>
+    <ClCompile Include="..\pngreadwrite\pngread.c">
+      <Filter>pngreadwrite</Filter>
     </ClCompile>
-    <ClCompile Include="..\pngread\pngrutil.c">
-      <Filter>pngread</Filter>
+    <ClCompile Include="..\pngreadwrite\pngrio.c">
+      <Filter>pngreadwrite</Filter>
     </ClCompile>
-    <ClCompile Include="..\pngread\pngset.c">
-      <Filter>pngread</Filter>
+    <ClCompile Include="..\pngreadwrite\pngrtran.c">
+      <Filter>pngreadwrite</Filter>
     </ClCompile>
-    <ClCompile Include="..\pngread\pngtrans.c">
-      <Filter>pngread</Filter>
+    <ClCompile Include="..\pngreadwrite\pngrutil.c">
+      <Filter>pngreadwrite</Filter>
     </ClCompile>
-    <ClCompile Include="..\pngread\zutil.c">
-      <Filter>pngread</Filter>
+    <ClCompile Include="..\pngreadwrite\pngset.c">
+      <Filter>pngreadwrite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngreadwrite\pngtrans.c">
+      <Filter>pngreadwrite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngreadwrite\pngwio.c">
+      <Filter>pngreadwrite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngreadwrite\pngwrite.c">
+      <Filter>pngreadwrite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngreadwrite\pngwtran.c">
+      <Filter>pngreadwrite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngreadwrite\pngwutil.c">
+      <Filter>pngreadwrite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngreadwrite\trees.c">
+      <Filter>pngreadwrite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pngreadwrite\zutil.c">
+      <Filter>pngreadwrite</Filter>
     </ClCompile>
     <ClCompile Include="..\salvador\divsufsort.c">
       <Filter>salvador</Filter>
@@ -100,53 +121,59 @@
     <ClInclude Include="..\vars.h" />
     <ClInclude Include="..\version.h" />
     <ClInclude Include="..\xgetopt.h" />
-    <ClInclude Include="..\pngread\crc32.h">
-      <Filter>pngread</Filter>
+    <ClInclude Include="..\pngreadwrite\crc32.h">
+      <Filter>pngreadwrite</Filter>
     </ClInclude>
-    <ClInclude Include="..\pngread\inffast.h">
-      <Filter>pngread</Filter>
+    <ClInclude Include="..\pngreadwrite\deflate.h">
+      <Filter>pngreadwrite</Filter>
     </ClInclude>
-    <ClInclude Include="..\pngread\inffixed.h">
-      <Filter>pngread</Filter>
+    <ClInclude Include="..\pngreadwrite\inffast.h">
+      <Filter>pngreadwrite</Filter>
     </ClInclude>
-    <ClInclude Include="..\pngread\inflate.h">
-      <Filter>pngread</Filter>
+    <ClInclude Include="..\pngreadwrite\inffixed.h">
+      <Filter>pngreadwrite</Filter>
     </ClInclude>
-    <ClInclude Include="..\pngread\inftrees.h">
-      <Filter>pngread</Filter>
+    <ClInclude Include="..\pngreadwrite\inflate.h">
+      <Filter>pngreadwrite</Filter>
     </ClInclude>
-    <ClInclude Include="..\pngread\png.h">
-      <Filter>pngread</Filter>
+    <ClInclude Include="..\pngreadwrite\inftrees.h">
+      <Filter>pngreadwrite</Filter>
     </ClInclude>
-    <ClInclude Include="..\pngread\pngconf.h">
-      <Filter>pngread</Filter>
+    <ClInclude Include="..\pngreadwrite\png.h">
+      <Filter>pngreadwrite</Filter>
     </ClInclude>
-    <ClInclude Include="..\pngread\pngdebug.h">
-      <Filter>pngread</Filter>
+    <ClInclude Include="..\pngreadwrite\pngconf.h">
+      <Filter>pngreadwrite</Filter>
     </ClInclude>
-    <ClInclude Include="..\pngread\pnginfo.h">
-      <Filter>pngread</Filter>
+    <ClInclude Include="..\pngreadwrite\pngdebug.h">
+      <Filter>pngreadwrite</Filter>
     </ClInclude>
-    <ClInclude Include="..\pngread\pnglibconf.h">
-      <Filter>pngread</Filter>
+    <ClInclude Include="..\pngreadwrite\pnginfo.h">
+      <Filter>pngreadwrite</Filter>
     </ClInclude>
-    <ClInclude Include="..\pngread\pngpriv.h">
-      <Filter>pngread</Filter>
+    <ClInclude Include="..\pngreadwrite\pnglibconf.h">
+      <Filter>pngreadwrite</Filter>
     </ClInclude>
-    <ClInclude Include="..\pngread\pngstruct.h">
-      <Filter>pngread</Filter>
+    <ClInclude Include="..\pngreadwrite\pngpriv.h">
+      <Filter>pngreadwrite</Filter>
     </ClInclude>
-    <ClInclude Include="..\pngread\pngusr.h">
-      <Filter>pngread</Filter>
+    <ClInclude Include="..\pngreadwrite\pngstruct.h">
+      <Filter>pngreadwrite</Filter>
     </ClInclude>
-    <ClInclude Include="..\pngread\zconf.h">
-      <Filter>pngread</Filter>
+    <ClInclude Include="..\pngreadwrite\pngusr.h">
+      <Filter>pngreadwrite</Filter>
     </ClInclude>
-    <ClInclude Include="..\pngread\zlib.h">
-      <Filter>pngread</Filter>
+    <ClInclude Include="..\pngreadwrite\trees.h">
+      <Filter>pngreadwrite</Filter>
     </ClInclude>
-    <ClInclude Include="..\pngread\zutil.h">
-      <Filter>pngread</Filter>
+    <ClInclude Include="..\pngreadwrite\zconf.h">
+      <Filter>pngreadwrite</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngreadwrite\zlib.h">
+      <Filter>pngreadwrite</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pngreadwrite\zutil.h">
+      <Filter>pngreadwrite</Filter>
     </ClInclude>
     <ClInclude Include="..\salvador\divsufsort.h">
       <Filter>salvador</Filter>
@@ -171,7 +198,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="pngread">
+    <Filter Include="pngreadwrite">
       <UniqueIdentifier>{f724e509-7f12-4614-beaf-eca641c264e0}</UniqueIdentifier>
     </Filter>
     <Filter Include="salvador">
