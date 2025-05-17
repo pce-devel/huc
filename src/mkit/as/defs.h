@@ -301,8 +301,8 @@ typedef struct t_symbol {
 	struct t_symbol *next;
 	struct t_symbol *local;
 	struct t_symbol *scope;
-	struct t_symbol *uses;
 	struct t_proc *proc;
+	struct t_tags *tags;
 	const char *name;
 	struct t_file *fileinfo;
 	int fileline;
@@ -365,6 +365,11 @@ typedef struct t_blk {
 	struct t_blk *next;
 	uint64_t data;
 } t_blk;
+
+typedef struct t_tags {
+	struct t_symbol *uses;
+	unsigned char *more;
+} t_tags;
 
 typedef struct t_machine {
 	int type;

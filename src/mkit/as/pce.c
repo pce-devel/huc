@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include "defs.h"
@@ -1043,6 +1044,14 @@ pce_incblk(int *ip)
 
 	labldef(LOCATION);
 
+	/* allocate memory for the symbol's tags */
+	if (lablptr) {
+		if ((lablptr->tags = calloc(1, sizeof(t_tags))) == NULL) {
+			error("Cannot allocate memory to tags!");
+			return;
+		}
+	}
+
 	/* output */
 	if (pass == LAST_PASS)
 		loadlc(loccnt, 0);
@@ -1200,7 +1209,7 @@ pce_incblk(int *ip)
 	/* attach the number of blocks to the label */
 	if (lastlabl) {
 		blk_lablptr = lastlabl;
-		lastlabl->uses = tile_lablptr;
+		lastlabl->tags->uses = tile_lablptr;
 		lastlabl->vram = pcx_arg[0];
 		lastlabl->data_type = P_INCBLK;
 		lastlabl->data_size = 2048;
@@ -1481,6 +1490,14 @@ pce_incmap(int *ip)
 	/* define label */
 	labldef(LOCATION);
 
+	/* allocate memory for the symbol's tags */
+	if (lablptr) {
+		if ((lablptr->tags = calloc(1, sizeof(t_tags))) == NULL) {
+			error("Cannot allocate memory for tags!");
+			return;
+		}
+	}
+
 	/* output */
 	if (pass == LAST_PASS)
 		loadlc(loccnt, 0);
@@ -1511,7 +1528,7 @@ pce_incmap(int *ip)
 
 	/* attach the map size to the label */
 	if (lablptr) {
-		lastlabl->uses = expr_lablptr;
+		lastlabl->tags->uses = expr_lablptr;
 		lablptr->data_count = w;
 		lablptr->data_type = P_INCMAP;
 		lablptr->data_size = w * h;
@@ -1561,7 +1578,9 @@ pce_incmap(int *ip)
 	} else {
 		/* pack a 16x16 meta-tile map */
 
-		if (!pcx_set_tile(expr_lablptr->uses, expr_lablptr->uses->value))
+		if (!expr_lablptr->tags)
+			return;
+		if (!pcx_set_tile(expr_lablptr->tags->uses, expr_lablptr->tags->uses->value))
 			return;
 
 		basechr = (expr_lablptr->vram >> 4) - 0x0100;
