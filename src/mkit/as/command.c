@@ -1807,6 +1807,14 @@ do_incchr(int *ip)
 	/* define label */
 	labldef(LOCATION);
 
+	/* allocate memory for the symbol's tags */
+	if (lablptr && lablptr->tags == NULL) {
+		if ((lablptr->tags = calloc(1, sizeof(t_tags))) == NULL) {
+			error("Cannot allocate memory for tags!");
+			return;
+		}
+	}
+
 	/* output */
 	if (pass == LAST_PASS)
 		loadlc(loccnt, 0);

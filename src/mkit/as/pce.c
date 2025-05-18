@@ -116,6 +116,7 @@ pce_pack_8x8_tile(unsigned char *buffer, void *data, int line_offset, int format
 	unsigned int pixel, mask;
 	unsigned char *ptr;
 	unsigned int *packed;
+	int palette = -1;
 
 	/* clear buffer */
 	memset(buffer, 0, 32);
@@ -129,12 +130,14 @@ pce_pack_8x8_tile(unsigned char *buffer, void *data, int line_offset, int format
 
 		for (i = 0; i < 8; i++) {
 			for (j = 0; j < 8; j++) {
-				pixel = ptr[j ^ 0x07];
 				mask = 1 << j;
+				pixel = ptr[j ^ 0x07];
 				buffer[cnt] |= (pixel & 0x01) ? mask : 0;
 				buffer[cnt + 1] |= (pixel & 0x02) ? mask : 0;
 				buffer[cnt + 16] |= (pixel & 0x04) ? mask : 0;
 				buffer[cnt + 17] |= (pixel & 0x08) ? mask : 0;
+				if (palette < 0 && (pixel & 0x0F) != 0)
+					palette = pixel >> 4;
 			}
 			ptr += line_offset;
 			cnt += 2;
@@ -168,7 +171,7 @@ pce_pack_8x8_tile(unsigned char *buffer, void *data, int line_offset, int format
 	}
 
 	/* ok */
-	return (0);
+	return (palette < 0) ? 0 : palette;
 }
 
 
@@ -185,6 +188,7 @@ pce_pack_16x16_tile(unsigned char *buffer, void *data, int line_offset, int form
 	int cnt;
 	unsigned int pixel, mask;
 	unsigned char *ptr;
+	int palette = -1;
 
 	/* pack the tile only in the last pass */
 	if (pass != LAST_PASS)
@@ -202,18 +206,22 @@ pce_pack_16x16_tile(unsigned char *buffer, void *data, int line_offset, int form
 
 		for (i = 0; i < 16; i++) {
 			for (j = 0; j < 8; j++) {
-				pixel = ptr[j ^ 0x07];
 				mask = 1 << j;
+				pixel = ptr[j ^ 0x07];
 				buffer[cnt] |= (pixel & 0x01) ? mask : 0;
 				buffer[cnt + 1] |= (pixel & 0x02) ? mask : 0;
 				buffer[cnt + 16] |= (pixel & 0x04) ? mask : 0;
 				buffer[cnt + 17] |= (pixel & 0x08) ? mask : 0;
+				if (palette < 0 && (pixel & 0x0F) != 0)
+					palette = pixel >> 4;
 
 				pixel = ptr[(j + 8) ^ 0x07];
 				buffer[cnt + 32] |= (pixel & 0x01) ? mask : 0;
 				buffer[cnt + 33] |= (pixel & 0x02) ? mask : 0;
 				buffer[cnt + 48] |= (pixel & 0x04) ? mask : 0;
 				buffer[cnt + 49] |= (pixel & 0x08) ? mask : 0;
+				if (palette < 0 && (pixel & 0x0F) != 0)
+					palette = pixel >> 4;
 			}
 			if (i == 7)
 				cnt += 48;
@@ -229,7 +237,7 @@ pce_pack_16x16_tile(unsigned char *buffer, void *data, int line_offset, int form
 	}
 
 	/* ok */
-	return (0);
+	return (palette < 0) ? 0 : palette;
 }
 
 
@@ -247,6 +255,7 @@ pce_pack_16x16_sprite(unsigned char *buffer, void *data, int line_offset, int fo
 	unsigned int pixel, mask;
 	unsigned char *ptr;
 	unsigned int *packed;
+	int palette = -1;
 
 	/* clear buffer */
 	memset(buffer, 0, 128);
@@ -261,22 +270,26 @@ pce_pack_16x16_sprite(unsigned char *buffer, void *data, int line_offset, int fo
 		for (i = 0; i < 16; i++) {
 			/* right column */
 			for (j = 0; j < 8; j++) {
-				pixel = ptr[j ^ 0x0F];
 				mask = 1 << j;
+				pixel = ptr[j ^ 0x0F];
 				buffer[cnt] |= (pixel & 0x01) ? mask : 0;
 				buffer[cnt + 32] |= (pixel & 0x02) ? mask : 0;
 				buffer[cnt + 64] |= (pixel & 0x04) ? mask : 0;
 				buffer[cnt + 96] |= (pixel & 0x08) ? mask : 0;
+				if (palette < 0 && (pixel & 0x0F) != 0)
+					palette = pixel >> 4;
 			}
 
 			/* left column */
 			for (j = 0; j < 8; j++) {
-				pixel = ptr[j ^ 0x07];
 				mask = 1 << j;
+				pixel = ptr[j ^ 0x07];
 				buffer[cnt + 1] |= (pixel & 0x01) ? mask : 0;
 				buffer[cnt + 33] |= (pixel & 0x02) ? mask : 0;
 				buffer[cnt + 65] |= (pixel & 0x04) ? mask : 0;
 				buffer[cnt + 97] |= (pixel & 0x08) ? mask : 0;
+				if (palette < 0 && (pixel & 0x0F) != 0)
+					palette = pixel >> 4;
 			}
 			ptr += line_offset;
 			cnt += 2;
@@ -323,7 +336,7 @@ pce_pack_16x16_sprite(unsigned char *buffer, void *data, int line_offset, int fo
 	}
 
 	/* ok */
-	return (0);
+	return (palette < 0) ? 0 : palette;
 }
 
 
@@ -604,6 +617,14 @@ pce_incbat(int *ip)
 	/* define label */
 	labldef(LOCATION);
 
+	/* allocate memory for the symbol's tags */
+	if (lablptr && lablptr->tags == NULL) {
+		if ((lablptr->tags = calloc(1, sizeof(t_tags))) == NULL) {
+			error("Cannot allocate memory for tags!");
+			return;
+		}
+	}
+
 	/* output */
 	if (pass == LAST_PASS)
 		loadlc(loccnt, 0);
@@ -828,6 +849,14 @@ pce_incspr(int *ip)
 
 	/* define label */
 	labldef(LOCATION);
+
+	/* allocate memory for the symbol's tags */
+	if (lablptr && lablptr->tags == NULL) {
+		if ((lablptr->tags = calloc(1, sizeof(t_tags))) == NULL) {
+			error("Cannot allocate memory for tags!");
+			return;
+		}
+	}
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -1104,6 +1133,14 @@ pce_inctile(int *ip)
 	/* define label */
 	labldef(LOCATION);
 
+	/* allocate memory for the symbol's tags */
+	if (lablptr && lablptr->tags == NULL) {
+		if ((lablptr->tags = calloc(1, sizeof(t_tags))) == NULL) {
+			error("Cannot allocate memory for tags!");
+			return;
+		}
+	}
+
 	/* output */
 	if (pass == LAST_PASS)
 		loadlc(loccnt, 0);
@@ -1242,7 +1279,7 @@ pce_incblk(int *ip)
 	labldef(LOCATION);
 
 	/* allocate memory for the symbol's tags */
-	if (lablptr) {
+	if (lablptr && lablptr->tags == NULL) {
 		if ((lablptr->tags = calloc(1, sizeof(t_tags))) == NULL) {
 			error("Cannot allocate memory for tags!");
 			return;
@@ -1406,7 +1443,7 @@ pce_incblk(int *ip)
 	/* attach the number of blocks to the label */
 	if (lastlabl) {
 		blk_lablptr = lastlabl;
-		lastlabl->tags->uses = tile_lablptr;
+		lastlabl->tags->uses_sym = tile_lablptr;
 		lastlabl->vram = pcx_arg[0];
 		lastlabl->data_type = P_INCBLK;
 		lastlabl->data_size = 2048;
@@ -1682,7 +1719,7 @@ pce_incmap(int *ip)
 	labldef(LOCATION);
 
 	/* allocate memory for the symbol's tags */
-	if (lablptr) {
+	if (lablptr && lablptr->tags == NULL) {
 		if ((lablptr->tags = calloc(1, sizeof(t_tags))) == NULL) {
 			error("Cannot allocate memory for tags!");
 			return;
@@ -1719,7 +1756,7 @@ pce_incmap(int *ip)
 
 	/* attach the map size to the label */
 	if (lablptr) {
-		lastlabl->tags->uses = expr_lablptr;
+		lastlabl->tags->uses_sym = expr_lablptr;
 		lablptr->data_count = w;
 		lablptr->data_type = P_INCMAP;
 		lablptr->data_size = w * h;
@@ -1771,7 +1808,7 @@ pce_incmap(int *ip)
 
 		if (!expr_lablptr->tags)
 			return;
-		if (!pcx_set_tile(expr_lablptr->tags->uses, expr_lablptr->tags->uses->value))
+		if (!pcx_set_tile(expr_lablptr->tags->uses_sym, expr_lablptr->tags->uses_sym->value))
 			return;
 
 		basechr = (expr_lablptr->vram >> 4) - 0x0100;
@@ -1949,7 +1986,7 @@ pce_haltmap(int *ip)
 		error("MAP reference has no tags structure!");
 		return;
 	}
-	blklabl = maplabl->tags->uses;
+	blklabl = maplabl->tags->uses_sym;
 	if (blklabl == NULL || blklabl->data_type != P_INCBLK) {
 		error("MAP reference must be a block (meta-tile) map!");
 		return;
@@ -1958,7 +1995,7 @@ pce_haltmap(int *ip)
 		error("BLK reference has no tags structure!");
 		return;
 	}
-	chrlabl = blklabl->tags->uses;
+	chrlabl = blklabl->tags->uses_sym;
 	if (chrlabl == NULL || chrlabl->data_type != P_INCCHR) {
 		error(".INCBLK reference does not itself reference a .INCCHR!");
 		return;
@@ -1995,18 +2032,18 @@ pce_haltmap(int *ip)
 		blklabl->flags |= FLG_HALT;
 
 		/* allocate memory for tracking the BLK's collision status */
-		if (blklabl->tags->more == NULL) {
-			if ((blklabl->tags->more = calloc(512, 1)) == NULL) {
+		if (blklabl->tags->metadata == NULL) {
+			if ((blklabl->tags->metadata = calloc(512, 1)) == NULL) {
 				error("Cannot allocate memory for .HALTMAP tracking!");
 				return;
 			}
 		}
 
 		/* table of BLK that have had their collision flags set */
-		unsigned char *blkseen = blklabl->tags->more;
+		unsigned char *blkseen = blklabl->tags->metadata;
 
 		/* links to identical BLK with different collision flags */
-		unsigned char *nextblk = blklabl->tags->more + 256;
+		unsigned char *nextblk = blklabl->tags->metadata + 256;
 
 		unsigned char *blkdata = &rom[blklabl->rombank][blklabl->value & 0x1FFF];
 		unsigned char *mapdata = &rom[maplabl->rombank][maplabl->value & 0x1FFF];
@@ -2141,6 +2178,14 @@ pce_maskmap(int *ip)
 
 	labldef(LOCATION);
 
+	/* allocate memory for the symbol's tags */
+	if (lablptr && lablptr->tags == NULL) {
+		if ((lablptr->tags = calloc(1, sizeof(t_tags))) == NULL) {
+			error("Cannot allocate memory for tags!");
+			return;
+		}
+	}
+
 	/* output */
 	if (pass == LAST_PASS)
 		loadlc(loccnt, 0);
@@ -2174,7 +2219,7 @@ pce_maskmap(int *ip)
 		error("MAP reference has no tags structure!");
 		return;
 	}
-	blklabl = maplabl->tags->uses;
+	blklabl = maplabl->tags->uses_sym;
 
 	/* set up x, y, w, h from the args */
 	if (!pcx_parse_args(0, pcx_nb_args, &x, &y, &w, &h, 16))
@@ -2326,6 +2371,14 @@ pce_flagmap(int *ip)
 
 	labldef(LOCATION);
 
+	/* allocate memory for the symbol's tags */
+	if (lablptr && lablptr->tags == NULL) {
+		if ((lablptr->tags = calloc(1, sizeof(t_tags))) == NULL) {
+			error("Cannot allocate memory for tags!");
+			return;
+		}
+	}
+
 	/* output */
 	if (pass == LAST_PASS)
 		loadlc(loccnt, 0);
@@ -2359,7 +2412,7 @@ pce_flagmap(int *ip)
 		error("MAP reference has no tags structure!");
 		return;
 	}
-	blklabl = maplabl->tags->uses;
+	blklabl = maplabl->tags->uses_sym;
 
 	/* set up x, y, w, h from the args */
 	if (!pcx_parse_args(0, pcx_nb_args, &x, &y, &w, &h, 16))

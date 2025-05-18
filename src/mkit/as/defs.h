@@ -375,8 +375,9 @@ typedef struct t_blk {
 } t_blk;
 
 typedef struct t_tags {
-	struct t_symbol *uses;
-	unsigned char *more;
+	struct t_symbol *uses_sym;
+	struct t_symbol *also_sym;
+	unsigned char *metadata;
 } t_tags;
 
 typedef struct t_machine {
