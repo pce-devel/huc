@@ -94,7 +94,12 @@ unsigned short pseudo_allowed[] = {
 /* P_REF         */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
 /* P_PHASE       */	IN_CODE + IN_HOME,
 /* P_DEBUG       */	ANYWHERE,
-/* P_OUTBIN      */	ANYWHERE
+/* P_OUTBIN      */	ANYWHERE,
+/* P_OUTPNG      */	ANYWHERE,
+/* P_INCMASK     */	IN_CODE + IN_HOME + IN_DATA,
+/* P_HALTMAP     */	IN_CODE + IN_HOME + IN_DATA,
+/* P_MASKMAP     */	IN_CODE + IN_HOME + IN_DATA,
+/* P_FLAGMAP     */	IN_CODE + IN_HOME + IN_DATA
 };
 
 
@@ -1288,7 +1293,7 @@ do_incbin(int *ip)
 	}
 
 	/* set the size after conversion in the last pass */
-	if (lastlabl) {
+	if (lastlabl && lastlabl->data_type == P_INCBIN) {
 		if (pass == LAST_PASS)
 			lastlabl->size = 1;
 	}
@@ -1428,11 +1433,9 @@ do_mx(char *fname)
 		lablptr->data_type = P_INCBIN;
 		lablptr->data_size = size;
 	}
-	else {
-		if (lastlabl) {
-			if (lastlabl->data_type == P_INCBIN)
-				lastlabl->data_size += size;
-		}
+	else
+	if (lastlabl && lastlabl->data_type == P_INCBIN) {
+		lastlabl->data_size += size;
 	}
 
 	/* output line */
@@ -1730,11 +1733,9 @@ do_ds(int *ip)
 		lablptr->data_type = P_DB;
 		lablptr->data_size = loccnt - data_loccnt;
 	}
-	else {
-		if (lastlabl) {
-			if (lastlabl->data_type == P_DB)
-				lastlabl->data_size += loccnt - data_loccnt;
-		}
+	else
+	if (lastlabl && lastlabl->data_type == P_DB) {
+		lastlabl->data_size += loccnt - data_loccnt;
 	}
 
 	/* output line */
@@ -1909,9 +1910,9 @@ do_incchr(int *ip)
 	}
 
 	/* set the size after conversion in the last pass */
-	if (lastlabl) {
+	if (lastlabl && lastlabl->data_type == P_INCCHR) {
 		if (pass == LAST_PASS)
-			lastlabl->size = (machine->type == MACHINE_PCE) ? 32 : 16;;
+			lastlabl->size = (machine->type == MACHINE_PCE) ? 32 : 16;
 	}
 
 	/* output */

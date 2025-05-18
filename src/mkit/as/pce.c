@@ -248,10 +248,6 @@ pce_pack_16x16_sprite(unsigned char *buffer, void *data, int line_offset, int fo
 	unsigned char *ptr;
 	unsigned int *packed;
 
-	/* pack the sprite only in the last pass */
-	if (pass != LAST_PASS)
-		return (0);
-
 	/* clear buffer */
 	memset(buffer, 0, 128);
 
@@ -798,7 +794,7 @@ pce_incpal(int *ip)
 	}
 
 	/* set the size after conversion in the last pass */
-	if (lastlabl) {
+	if (lastlabl && lastlabl->data_type == P_INCPAL) {
 		if (pass == LAST_PASS)
 			lastlabl->size = 32;
 	}
@@ -814,7 +810,7 @@ pce_incpal(int *ip)
  * ----
  * PCX to sprites
  *
- * .incspr "filename", [[,x ,y] ,w ,h]
+ * .incspr "filename", [[,x ,y] ,w ,h] [, optimize]
  */
 
 void
@@ -824,6 +820,11 @@ pce_incspr(int *ip)
 	int x, y, w, h;
 	int sx, sy;
 	int nb_sprite = 0;
+	int total = 0;
+	unsigned char optimize;
+	unsigned int crc;
+	unsigned int hash;
+	unsigned char spr_data[128];
 
 	/* define label */
 	labldef(LOCATION);
@@ -836,9 +837,34 @@ pce_incspr(int *ip)
 	if (!pcx_get_args(ip))
 		return;
 
+	/* odd number of args after filename if there is an "optimize" flag */
+	optimize = 0;
+	if ((pcx_nb_args & 1) != 0) {
+		optimize = (pcx_arg[pcx_nb_args - 1] != 0);
+		--pcx_nb_args;
+	}
+
 	/* set up x, y, w, h from the args */
 	if (!pcx_parse_args(0, pcx_nb_args, &x, &y, &w, &h, 16))
 		return;
+
+	/* shortcut if we already know how much data is produced */
+	if (pass == EXTRA_PASS && lastlabl && lastlabl->data_type == P_INCSPR) {
+		/* output the cumulative size from the first .incspr of a set */
+		if (lastlabl && lastlabl == lablptr)
+			putbuffer(workspace, lablptr->data_size);
+		return;
+	}
+
+	/* are we expanding a set of sprites that was just created? */
+	if (lablptr == NULL && lastlabl != NULL && lastlabl->data_type == P_INCSPR) {
+		nb_sprite = lastlabl->data_count;
+	} else {
+		tile_lablptr = lablptr;
+		if (lablptr)
+			tile_offset = lablptr->value;
+		memset(tile_tbl, 0, sizeof(tile_tbl));
+	}
 
 	/* pack sprites */
 	for (i = 0; i < h; i++) {
@@ -848,38 +874,209 @@ pce_incspr(int *ip)
 			sy = y + (i << 4);
 
 			/* encode sprite */
-			pcx_pack_16x16_sprite(workspace + 128 * (nb_sprite % 256), sx, sy);
-			nb_sprite++;
+			pcx_pack_16x16_sprite(spr_data, sx, sy);
 
-			/* max 256 sprites */
-			if (nb_sprite >= 257) {
-				error("Too many sprites in image! The maximum is 256.");
+			/* calculate tile crc */
+			crc = crc_calc(spr_data, 128);
+			hash = crc & (HASH_COUNT - 1);
+
+			if (optimize) {
+				/* search tile */
+				t_tile *test_tile = tile_tbl[hash];
+				while (test_tile) {
+					if (test_tile->crc == crc &&
+					    memcmp(test_tile->data, spr_data, 128) == 0)
+						break;
+					test_tile = test_tile->next;
+				}
+
+				/* ignore repeated tiles */
+				if (test_tile) {
+					continue;
+				}
+			}
+
+			/* insert the new tile in the tile table */
+			if (nb_sprite == (sizeof(tile) / sizeof(struct t_tile))) {
+				error("Too many sprites in image! The maximum is %d.", sizeof(tile) / sizeof(struct t_tile));
 				return;
 			}
+
+			tile[nb_sprite].next = tile_tbl[hash];
+			tile[nb_sprite].index = nb_sprite;
+			tile[nb_sprite].data = &rom[bank][loccnt];
+			tile[nb_sprite].crc = crc;
+			tile_tbl[hash] = &tile[nb_sprite];
+
+			/* putbuffer only copies on the LAST_PASS and we really need it */
+			if (pass != LAST_PASS && !stop_pass) {
+				memcpy(tile[nb_sprite].data, spr_data, 128);
+			}
+
+			putbuffer(spr_data, 128);
+
+			/* store tile */
+			nb_sprite += 1;
+			total += 128;
 		}
 	}
 
-	/* store a maximum of 256 sprites (32KB) */
-	if (nb_sprite > 256) nb_sprite = 256;
-	if (nb_sprite)
-		putbuffer(workspace, 128 * nb_sprite);
-
-	/* attach the number of loaded sprites to the label */
+	/* attach the number of loaded characters to the label */
 	if (lablptr) {
 		lablptr->data_type = P_INCSPR;
-		lablptr->data_size = 128 * nb_sprite;
+		lablptr->data_size = total;
 		lablptr->data_count = nb_sprite;
 	}
 	else
 	if (lastlabl && lastlabl->data_type == P_INCSPR) {
-		lastlabl->data_size += 128 * nb_sprite;
-		lastlabl->data_count += nb_sprite;
+		lastlabl->data_size += total;
+		lastlabl->data_count = nb_sprite;
 	}
 
 	/* set the size after conversion in the last pass */
-	if (lastlabl) {
+	if (lastlabl && lastlabl->data_type == P_INCSPR) {
 		if (pass == LAST_PASS)
 			lastlabl->size = 128;
+	}
+
+	/* output */
+	if (pass == LAST_PASS)
+		println();
+}
+
+
+/* ----
+ * do_incmask()
+ * ----
+ * PCX to 1bpp sprite masks
+ *
+ * .incmask "filename", [[,x ,y] ,w ,h] [, optimize]
+ */
+
+void
+pce_incmask(int *ip)
+{
+	int i, j;
+	int x, y, w, h;
+	int sx, sy;
+	int nb_mask = 0;
+	int total = 0;
+	unsigned char optimize;
+	unsigned int crc;
+	unsigned int hash;
+	unsigned char spr_data[128];
+
+	/* define label */
+	labldef(LOCATION);
+
+	/* output */
+	if (pass == LAST_PASS)
+		loadlc(loccnt, 0);
+
+	/* get args */
+	if (!pcx_get_args(ip))
+		return;
+
+	/* odd number of args after filename if there is an "optimize" flag */
+	optimize = 0;
+	if ((pcx_nb_args & 1) != 0) {
+		optimize = (pcx_arg[pcx_nb_args - 1] != 0);
+		--pcx_nb_args;
+	}
+
+	/* set up x, y, w, h from the args */
+	if (!pcx_parse_args(0, pcx_nb_args, &x, &y, &w, &h, 16))
+		return;
+
+	/* shortcut if we already know how much data is produced */
+	if (pass == EXTRA_PASS && lastlabl && lastlabl->data_type == P_INCMASK) {
+		/* output the cumulative size from the first .incmask of a set */
+		if (lastlabl && lastlabl == lablptr)
+			putbuffer(workspace, lablptr->data_size);
+		return;
+	}
+
+	/* are we expanding a set of sprites that was just created? */
+	if (lablptr == NULL && lastlabl != NULL && lastlabl->data_type == P_INCMASK) {
+		nb_mask = lastlabl->data_count;
+	} else {
+		tile_lablptr = lablptr;
+		if (lablptr)
+			tile_offset = lablptr->value;
+		memset(tile_tbl, 0, sizeof(tile_tbl));
+	}
+
+	/* pack sprites */
+	for (i = 0; i < h; i++) {
+		for (j = 0; j < w; j++) {
+			/* sprite coordinates */
+			sx = x + (j << 4);
+			sy = y + (i << 4);
+
+			/* encode sprite to get its 1st bitplane */
+			pcx_pack_16x16_sprite(spr_data, sx, sy);
+
+			/* calculate mask crc */
+			crc = crc_calc(spr_data, 32);
+			hash = crc & (HASH_COUNT - 1);
+
+			if (optimize) {
+				/* search tile */
+				t_tile *test_tile = tile_tbl[hash];
+				while (test_tile) {
+					if (test_tile->crc == crc &&
+					    memcmp(test_tile->data, spr_data, 32) == 0)
+						break;
+					test_tile = test_tile->next;
+				}
+
+				/* ignore repeated tiles */
+				if (test_tile) {
+					continue;
+				}
+			}
+
+			/* insert the new tile in the tile table */
+			if (nb_mask == 256) {
+				error("Too many mask sprites in image! The maximum is 256.");
+				return;
+			}
+
+			tile[nb_mask].next = tile_tbl[hash];
+			tile[nb_mask].index = nb_mask;
+			tile[nb_mask].data = &rom[bank][loccnt];
+			tile[nb_mask].crc = crc;
+			tile_tbl[hash] = &tile[nb_mask];
+
+			/* putbuffer only copies on the LAST_PASS and we really need it */
+			if (pass != LAST_PASS && !stop_pass) {
+				memcpy(tile[nb_mask].data, spr_data, 32);
+			}
+
+			putbuffer(spr_data, 32);
+
+			/* store tile */
+			nb_mask += 1;
+			total += 32;
+		}
+	}
+
+	/* attach the number of loaded masks to the label */
+	if (lablptr) {
+		lablptr->data_type = P_INCMASK;
+		lablptr->data_size = total;
+		lablptr->data_count = nb_mask;
+	}
+	else
+	if (lastlabl && lastlabl->data_type == P_INCMASK) {
+		lastlabl->data_size += total;
+		lastlabl->data_count = nb_mask;
+	}
+
+	/* set the size after conversion in the last pass */
+	if (lastlabl && lastlabl->data_type == P_INCMASK) {
+		if (pass == LAST_PASS)
+			lastlabl->size = 32;
 	}
 
 	/* output */
@@ -961,7 +1158,7 @@ pce_inctile(int *ip)
 	}
 
 	/* set the size after conversion in the last pass */
-	if (lastlabl) {
+	if (lastlabl && lastlabl->data_type == P_INCTILE) {
 		if (pass == LAST_PASS)
 			lastlabl->size = 128;
 	}
@@ -1047,7 +1244,7 @@ pce_incblk(int *ip)
 	/* allocate memory for the symbol's tags */
 	if (lablptr) {
 		if ((lablptr->tags = calloc(1, sizeof(t_tags))) == NULL) {
-			error("Cannot allocate memory to tags!");
+			error("Cannot allocate memory for tags!");
 			return;
 		}
 	}
@@ -1275,15 +1472,13 @@ pce_incchrpal(int *ip)
 		lablptr->data_type = P_INCCHRPAL;
 		lablptr->data_size = nb_chr;
 	}
-	else {
-		if (lastlabl) {
-			if (lastlabl->data_type == P_INCCHRPAL)
-				lastlabl->data_size += nb_chr;
-		}
+	else
+	if (lastlabl && lastlabl->data_type == P_INCCHRPAL) {
+		lastlabl->data_size += nb_chr;
 	}
 
 	/* attach the number of tile palette bytes to the label */
-	if (lastlabl) {
+	if (lastlabl && lastlabl->data_type == P_INCCHRPAL) {
 		if (nb_chr) {
 			lastlabl->data_count = nb_chr;
 			if (pass == LAST_PASS)
@@ -1350,15 +1545,13 @@ pce_incsprpal(int *ip)
 		lablptr->data_type = P_INCSPRPAL;
 		lablptr->data_size = nb_sprite;
 	}
-	else {
-		if (lastlabl) {
-			if (lastlabl->data_type == P_INCSPRPAL)
-				lastlabl->data_size += nb_sprite;
-		}
+	else
+	if (lastlabl && lastlabl->data_type == P_INCSPRPAL) {
+		lastlabl->data_size += nb_sprite;
 	}
 
 	/* attach the number of sprite palette bytes to the label */
-	if (lastlabl) {
+	if (lastlabl && lastlabl->data_type == P_INCSPRPAL) {
 		if (nb_sprite) {
 			lastlabl->data_count = nb_sprite;
 			if (pass == LAST_PASS)
@@ -1443,15 +1636,13 @@ pce_inctilepal(int *ip)
 		lablptr->data_type = P_INCTILEPAL;
 		lablptr->data_size = nb_tile;
 	}
-	else {
-		if (lastlabl) {
-			if (lastlabl->data_type == P_INCTILEPAL)
-				lastlabl->data_size += nb_tile;
-		}
+	else
+	if (lastlabl && lastlabl->data_type == P_INCTILEPAL) {
+		lastlabl->data_size += nb_tile;
 	}
 
 	/* attach the number of tile palette bytes to the label */
-	if (lastlabl) {
+	if (lastlabl && lastlabl->data_type == P_INCTILEPAL) {
 		if (nb_tile) {
 			lastlabl->data_count = nb_tile;
 			if (pass == LAST_PASS)
@@ -1716,6 +1907,584 @@ pce_incmap(int *ip)
 
 
 /* ----
+ * do_haltmap()
+ * ----
+ * PCX to add collision data flags to 16x16 blocks (aka 16x16 meta-tiles)
+ *
+ * .haltmap "filename" [[,x ,y] ,w ,h] ,map_label
+ */
+
+void
+pce_haltmap(int *ip)
+{
+	int i, j, k, l;
+	int x, y, w, h;
+	int tx, ty, cx, cy;
+
+	t_symbol *maplabl;
+	t_symbol *blklabl;
+	t_symbol *chrlabl;
+
+	labldef(LOCATION);
+
+	/* output */
+	if (pass == LAST_PASS)
+		loadlc(loccnt, 0);
+
+	/* get args */
+	if (!pcx_get_args(ip))
+		return;
+
+	/* verify the MAP reference */
+	if (pcx_nb_args < 1 || pcx_lbl[pcx_nb_args - 1] == NULL) {
+		error("No MAP reference!");
+		return;
+	}
+	maplabl = pcx_lbl[--pcx_nb_args];
+	if (maplabl->data_type != P_INCMAP) {
+		error("MAP reference is not a .INCMAP!");
+		return;
+	}
+	if (maplabl->tags == NULL) {
+		error("MAP reference has no tags structure!");
+		return;
+	}
+	blklabl = maplabl->tags->uses;
+	if (blklabl == NULL || blklabl->data_type != P_INCBLK) {
+		error("MAP reference must be a block (meta-tile) map!");
+		return;
+	}
+	if (blklabl->tags == NULL) {
+		error("BLK reference has no tags structure!");
+		return;
+	}
+	chrlabl = blklabl->tags->uses;
+	if (chrlabl == NULL || chrlabl->data_type != P_INCCHR) {
+		error(".INCBLK reference does not itself reference a .INCCHR!");
+		return;
+	}
+
+	/* set up x, y, w, h from the args */
+	if (!pcx_parse_args(0, pcx_nb_args, &x, &y, &w, &h, 16))
+		return;
+	if (w != (maplabl->data_count)) {
+		error(".HALTMAP image is not the same width as the .INCMAP!");
+		return;
+	}
+	if (h != (maplabl->data_size / maplabl->data_count)) {
+		error(".HALTMAP image is not the same height as the .INCMAP!");
+		return;
+	}
+
+	/* only do the time-consuming stuff on the last pass */
+	if (pass == LAST_PASS) {
+		/* sanity checks */
+		if (blklabl->size == 0) {
+			error(".INCBLK reference has not been compiled yet!");
+			return;
+		}
+		if (maplabl->size == 0) {
+			error(".INCMAP reference has not been compiled yet!");
+			return;
+		}
+		if (blklabl->flags & (FLG_MASKS | FLG_FLAGS)) {
+			warning(".HALTMAP after a .MASKMAP/.FLAGMAP may change the BLK definitions!");
+		}
+
+		/* remember that masks have been generated for this .INCBLK/.INTILE */
+		blklabl->flags |= FLG_HALT;
+
+		/* allocate memory for tracking the BLK's collision status */
+		if (blklabl->tags->more == NULL) {
+			if ((blklabl->tags->more = calloc(512, 1)) == NULL) {
+				error("Cannot allocate memory for .HALTMAP tracking!");
+				return;
+			}
+		}
+
+		/* table of BLK that have had their collision flags set */
+		unsigned char *blkseen = blklabl->tags->more;
+
+		/* links to identical BLK with different collision flags */
+		unsigned char *nextblk = blklabl->tags->more + 256;
+
+		unsigned char *blkdata = &rom[blklabl->rombank][blklabl->value & 0x1FFF];
+		unsigned char *mapdata = &rom[maplabl->rombank][maplabl->value & 0x1FFF];
+
+		unsigned char mask = (chrlabl->data_count > 1024) ? 0x08 : 0x0C;
+
+		for (i = 0; i < h; i++) {
+			for (j = 0; j < w; j++, mapdata++) {
+				/* tile coordinates */
+				tx = x + (j << 4);
+				ty = y + (i << 4);
+
+				unsigned char blkindx = *mapdata;
+				unsigned char flag[4];
+
+				unsigned index = 0;
+				for (cy = 0; cy < 16; cy += 8) {
+					for (cx = 0; cx < 16; cx += 8) {
+						/* extract color used by collision image 8x8 character */
+						unsigned char *ppixel = pcx_buf + (x + tx + cx) + pcx_w * (y + ty + cy);
+						int color = -1;
+						for (k = 0; k < 8; k++) {
+							for (l = 0; l < 8; l++) {
+								if ((ppixel[l] & 0x0F) != 0) {
+									if (color < 0)
+										color = ppixel[l] & 0x0F;
+									else
+									if ((ppixel[l] & 0x0F) != color) {
+										error("Multiple collision colors in CHR at MAP (%d, %d)!", (j * 2 + cx) * 8, (i * 2 + cy) * 8);
+									}
+								}
+							}
+							ppixel += pcx_w;
+						}
+						if (color < 0) color = 0;
+
+						/* swizzle color bits so b3=color1 and b2=color2or3 */
+						/* to allow a character set >= 32KB to use a 1 bit flag */
+						color = (((color & 1) << 3) | ((color & 2) << 1)) & mask;
+
+						/* calculate where the collision flags are stored in the BLK data */
+						unsigned char *blkflag = &blkdata[index * 256 + blkindx + 0x0400];
+
+						/* set the collision flags */
+						flag[index] = (*blkflag & ~mask) | color;
+
+						index += 1;
+					}
+				}
+
+				if (blkseen[blkindx] == 0) {
+					/* this is the 1st time that we've seen this BLK */
+					blkseen[blkindx] = 1;
+					blkdata[0x0400 + 0 * 256 + blkindx] = flag[0];
+					blkdata[0x0400 + 1 * 256 + blkindx] = flag[1];
+					blkdata[0x0400 + 2 * 256 + blkindx] = flag[2];
+					blkdata[0x0400 + 3 * 256 + blkindx] = flag[3];
+					continue;
+				}
+
+				unsigned char found = 0;
+
+				for (;;) {
+					/* have we seen this BLK with these flags before */
+					if (blkdata[0x0400 + 0 * 256 + blkindx] == flag[0] &&
+					    blkdata[0x0400 + 1 * 256 + blkindx] == flag[1] &&
+					    blkdata[0x0400 + 2 * 256 + blkindx] == flag[2] &&
+					    blkdata[0x0400 + 3 * 256 + blkindx] == flag[3]) {
+						found = 1;
+						break;
+						}
+					if (nextblk[blkindx] == 0)
+						break;
+					blkindx = nextblk[blkindx];
+				}
+
+				if (found) {
+					/* this could be different to the original BLK in the MAP! */
+					*mapdata = blkindx;
+				} else
+				if (blklabl->data_count < 256) {
+					/* add a duplicate BLK with the new collision flags */
+					blkdata[0x0000 + 0 * 256 + blklabl->data_count] = blkdata[0x0000 + 0 * 256 + blkindx];
+					blkdata[0x0000 + 1 * 256 + blklabl->data_count] = blkdata[0x0000 + 1 * 256 + blkindx];
+					blkdata[0x0000 + 2 * 256 + blklabl->data_count] = blkdata[0x0000 + 2 * 256 + blkindx];
+					blkdata[0x0000 + 3 * 256 + blklabl->data_count] = blkdata[0x0000 + 3 * 256 + blkindx];
+					blkdata[0x0400 + 0 * 256 + blklabl->data_count] = flag[0];
+					blkdata[0x0400 + 1 * 256 + blklabl->data_count] = flag[1];
+					blkdata[0x0400 + 2 * 256 + blklabl->data_count] = flag[2];
+					blkdata[0x0400 + 3 * 256 + blklabl->data_count] = flag[3];
+					nextblk[blkindx] = blklabl->data_count;
+					*mapdata = blklabl->data_count++;
+					warning("BLK duplicated for collision flags at MAP (%d, %d)!", j * 16, i * 16);
+				} else {
+					/* no room for a duplicate BLK with the new collision flags */
+					error("No room for new collision BLK at MAP (%d, %d)!", j * 16, i * 16);
+				}
+			}
+		}
+	}
+
+	/* output */
+	if (pass == LAST_PASS)
+		println();
+}
+
+
+/* ----
+ * pce_maskmap()
+ * ----
+ * PCX to add a flag lookup table to a 16x16 tile or block (meta-tile) map
+ *
+ * .maskmap "filename" [[,x ,y] ,w ,h] ,map_label, mask_label
+ */
+
+void
+pce_maskmap(int *ip)
+{
+	int i, j;
+	int x, y, w, h;
+	int sx, sy;
+	unsigned fail = 0;
+	unsigned crc;
+	unsigned hash;
+	unsigned char *masktable;
+	unsigned char base_tile;
+
+	t_symbol *maplabl;
+	t_symbol *blklabl;
+	t_symbol *msklabl;
+	unsigned char spr_data[128];
+
+	labldef(LOCATION);
+
+	/* output */
+	if (pass == LAST_PASS)
+		loadlc(loccnt, 0);
+
+	/* get args */
+	if (!pcx_get_args(ip))
+		return;
+
+	/* verify the SPR reference */
+	if (pcx_nb_args < 2 || pcx_lbl[pcx_nb_args - 1] == NULL) {
+		error("No SPR reference!");
+		return;
+	}
+	msklabl = pcx_lbl[--pcx_nb_args];
+	if (msklabl->data_type != P_INCMASK) {
+		error("MASK reference is not a .INCMASK!");
+		return;
+	}
+
+	/* verify the MAP reference */
+	if (pcx_nb_args < 1 || pcx_lbl[pcx_nb_args - 1] == NULL) {
+		error("No MAP reference!");
+		return;
+	}
+	maplabl = pcx_lbl[--pcx_nb_args];
+	if (maplabl->data_type != P_INCMAP) {
+		error("MAP reference is not a .INCMAP!");
+		return;
+	}
+	if (maplabl->tags == NULL) {
+		error("MAP reference has no tags structure!");
+		return;
+	}
+	blklabl = maplabl->tags->uses;
+
+	/* set up x, y, w, h from the args */
+	if (!pcx_parse_args(0, pcx_nb_args, &x, &y, &w, &h, 16))
+		return;
+
+	if (w != (maplabl->data_count)) {
+		error(".MASKMAP image is not the same width as the .INCMAP!");
+		return;
+	}
+	if (h != (maplabl->data_size / maplabl->data_count)) {
+		error(".MASKMAP image is not the same height as the .INCMAP!");
+		return;
+	}
+
+	/* shortcut if we already know how much data is produced */
+	if (pass == EXTRA_PASS && lastlabl && lastlabl->data_type == P_MASKMAP) {
+		/* output the cumulative size from the first .maskmap of a set */
+		if (lastlabl && lastlabl == lablptr)
+			putbuffer(workspace, lablptr->data_size);
+		return;
+	}
+
+	/* are we expanding a table of flags that was just created? */
+	if (lablptr == NULL && lastlabl != NULL && lastlabl->data_type == P_MASKMAP) {
+		masktable = &rom[lastlabl->rombank][lastlabl->value & 0x1FFF];
+	} else {
+		masktable = workspace;
+		memset(masktable, 0, 256);
+	}
+
+	/* only do the time-consuming stuff on the last pass */
+	if (pass == LAST_PASS) {
+		/* sanity checks */
+		if (maplabl->size == 0) {
+			error(".INCMAP reference has not been compiled yet!");
+			return;
+		}
+		if (msklabl->size == 0) {
+			error(".INCMASK reference has not been compiled yet!");
+			return;
+		}
+
+		/* remember that masks have been generated for this .INCBLK/.INTILE */
+		blklabl->flags |= FLG_MASKS;
+
+		/* setup the hash table for the sprites */
+		if (!pcx_set_tile(msklabl, msklabl->value))
+			return;
+
+		unsigned char *mapdata = &rom[maplabl->rombank][maplabl->value & 0x1FFF];
+
+		for (i = 0; i < h; i++) {
+			for (j = 0; j < w; j++) {
+				/* get the map layer's tile for this coordinate */
+				base_tile = *mapdata++;
+
+				/* sprite coordinates */
+				sx = x + (j << 4);
+				sy = y + (i << 4);
+
+				/* encode sprite to get its 1st bitplane */
+				pcx_pack_16x16_sprite(spr_data, sx, sy);
+
+				/* calculate mask crc */
+				crc = crc_calc(spr_data, 32);
+				hash = crc & (HASH_COUNT - 1);
+
+				/* search for the mask */
+				t_tile *test_tile = tile_tbl[hash];
+				while (test_tile) {
+					if (test_tile->crc == crc &&
+					    memcmp(test_tile->data, spr_data, 32) == 0)
+						break;
+					test_tile = test_tile->next;
+				}
+
+				/* raise an error if there's no match */
+				if (!test_tile) {
+					fail |= 1;
+					continue;
+				}
+
+				/* raise an error if the undlying tile already has a different mask */
+				if (masktable[base_tile] != 0 && masktable[base_tile] != test_tile->index) {
+					fail |= 2;
+					continue;
+				}
+
+				masktable[base_tile] = test_tile->index;
+			}
+		}
+	}
+
+	/* output the table of mask information */
+	if (masktable == workspace)
+		putbuffer(workspace, 256);
+
+	/* errors */
+	if (fail & 1)
+		error(".MASKMAP layer contains masks that are not in the .INCMASK reference!");
+	if (fail & 2)
+		error(".MASKMAP sets blocks/tiles with conflicting masks, check with a .OUTPNG!");
+	if (fail)
+		return;
+
+	/* size */
+	if (lablptr) {
+		lablptr->data_type = P_MASKMAP;
+		lablptr->data_size = 256;
+		lablptr->data_count = 256;
+	}
+
+	/* set the "size" when the mask table contains valid data */
+	if (lastlabl && lastlabl->data_type == P_MASKMAP) {
+		if (pass == LAST_PASS)
+			lastlabl->size = 1;
+	}
+
+	/* output */
+	if (pass == LAST_PASS)
+		println();
+}
+
+
+/* ----
+ * pce_flagmap()
+ * ----
+ * PCX to add a flag lookup table to a 16x16 tile or block (meta-tile) map
+ *
+ * .flagmap "filename" [[,x ,y] ,w ,h] ,map_label, spr_label
+ */
+
+void
+pce_flagmap(int *ip)
+{
+	int i, j;
+	int x, y, w, h;
+	int sx, sy;
+	unsigned fail = 0;
+	unsigned crc;
+	unsigned hash;
+	unsigned char *flagtable;
+	unsigned char base_tile;
+
+	t_symbol *maplabl;
+	t_symbol *blklabl;
+	t_symbol *sprlabl;
+	unsigned char spr_data[128];
+
+	labldef(LOCATION);
+
+	/* output */
+	if (pass == LAST_PASS)
+		loadlc(loccnt, 0);
+
+	/* get args */
+	if (!pcx_get_args(ip))
+		return;
+
+	/* verify the SPR reference */
+	if (pcx_nb_args < 2 || pcx_lbl[pcx_nb_args - 1] == NULL) {
+		error("No SPR reference!");
+		return;
+	}
+	sprlabl = pcx_lbl[--pcx_nb_args];
+	if (sprlabl->data_type != P_INCSPR) {
+		error("SPR reference is not a .INCSPR!");
+		return;
+	}
+
+	/* verify the MAP reference */
+	if (pcx_nb_args < 1 || pcx_lbl[pcx_nb_args - 1] == NULL) {
+		error("No MAP reference!");
+		return;
+	}
+	maplabl = pcx_lbl[--pcx_nb_args];
+	if (maplabl->data_type != P_INCMAP) {
+		error("MAP reference is not a .INCMAP!");
+		return;
+	}
+	if (maplabl->tags == NULL) {
+		error("MAP reference has no tags structure!");
+		return;
+	}
+	blklabl = maplabl->tags->uses;
+
+	/* set up x, y, w, h from the args */
+	if (!pcx_parse_args(0, pcx_nb_args, &x, &y, &w, &h, 16))
+		return;
+
+	if (w != (maplabl->data_count)) {
+		error(".FLAGMAP image is not the same width as the .INCMAP!");
+		return;
+	}
+	if (h != (maplabl->data_size / maplabl->data_count)) {
+		error(".FLAGMAP image is not the same height as the .INCMAP!");
+		return;
+	}
+
+	/* shortcut if we already know how much data is produced */
+	if (pass == EXTRA_PASS && lastlabl && lastlabl->data_type == P_FLAGMAP) {
+		/* output the cumulative size from the first .flagmap of a set */
+		if (lastlabl && lastlabl == lablptr)
+			putbuffer(workspace, lablptr->data_size);
+		return;
+	}
+
+	/* are we expanding a table of flags that was just created? */
+	if (lablptr == NULL && lastlabl != NULL && lastlabl->data_type == P_FLAGMAP) {
+		flagtable = &rom[lastlabl->rombank][lastlabl->value & 0x1FFF];
+	} else {
+		flagtable = workspace;
+		memset(flagtable, 0, 256);
+	}
+
+	/* only do the time-consuming stuff on the last pass */
+	if (pass == LAST_PASS) {
+		/* sanity checks */
+		if (maplabl->size == 0) {
+			error(".INCMAP reference has not been compiled yet!");
+			return;
+		}
+		if (sprlabl->size == 0) {
+			error(".INCSPR reference has not been compiled yet!");
+			return;
+		}
+
+		/* remember that flags have been generated for this .INCBLK/.INTILE */
+		blklabl->flags |= FLG_FLAGS;
+
+		/* setup the hash table for the sprites */
+		if (!pcx_set_tile(sprlabl, sprlabl->value))
+			return;
+
+		unsigned char *mapdata = &rom[maplabl->rombank][maplabl->value & 0x1FFF];
+
+		for (i = 0; i < h; i++) {
+			for (j = 0; j < w; j++) {
+				/* get the map layer's tile for this coordinate */
+				base_tile = *mapdata++;
+
+				/* sprite coordinates */
+				sx = x + (j << 4);
+				sy = y + (i << 4);
+
+				/* encode sprite */
+				pcx_pack_16x16_sprite(spr_data, sx, sy);
+
+				/* calculate sprite crc */
+				crc = crc_calc(spr_data, 128);
+				hash = crc & (HASH_COUNT - 1);
+
+				/* search for the sprite */
+				t_tile *test_tile = tile_tbl[hash];
+				while (test_tile) {
+					if (test_tile->crc == crc &&
+					    memcmp(test_tile->data, spr_data, 128) == 0)
+						break;
+					test_tile = test_tile->next;
+				}
+
+				/* raise an error if there's no match */
+				if (!test_tile) {
+					fail |= 1;
+					continue;
+				}
+
+				/* raise an error if the undlying tile already has different flags */
+				if (flagtable[base_tile] != 0 && flagtable[base_tile] != test_tile->index) {
+					fail |= 2;
+					continue;
+				}
+
+				flagtable[base_tile] = test_tile->index;
+			}
+		}
+	}
+
+	/* output the table of flag information */
+	if (flagtable == workspace)
+		putbuffer(workspace, 256);
+
+	/* errors */
+	if (fail & 1)
+		error(".FLAGMAP layer contains flags that are not in the .INCSPR reference!");
+	if (fail & 2)
+		error(".FLAGMAP sets blocks/tiles with conflicting flags, check with a .OUTPNG!");
+	if (fail)
+		return;
+
+	/* size */
+	if (lablptr) {
+		lablptr->data_type = P_FLAGMAP;
+		lablptr->data_size = 256;
+		lablptr->data_count = 256;
+	}
+
+	/* set the "size" when the flag table contains valid data */
+	if (lastlabl && lastlabl->data_type == P_FLAGMAP) {
+		if (pass == LAST_PASS)
+			lastlabl->size = 1;
+	}
+
+	/* output */
+	if (pass == LAST_PASS)
+		println();
+}
+
+
+/* ----
  * do_mml()
  * ----
  * .mml pseudo - music/sound macro language
@@ -1809,4 +2578,111 @@ pce_mml(int *ip)
 	/* output */
 	if (pass == LAST_PASS)
 		println();
+}
+
+
+/* ----
+ * pce_outpng()
+ * ----
+ * PCX to add collision data flags to 16x16 blocks (aka 16x16 meta-tiles)
+ *
+ * .outpng "filename" , palette_label ,map_label
+ */
+
+void
+pce_outpng(int *ip)
+{
+	unsigned i;
+	char c;
+	char name[PATHSZ];
+	t_symbol *arg[4];
+
+	/* ignore this until the last pass */
+	if (pass != LAST_PASS)
+		return;
+
+	/* disable ROM output when using this */
+	no_rom_file = 1;
+
+	/* get png output file name */
+	if (!getstring(ip, name, PATHSZ - 1))
+		return;
+
+	/* get args */
+	for (i = 0; i < 4; ++i) {
+		arg[i] = NULL;
+
+		/* skip spaces */
+		while (isspace(c = prlnbuf[(*ip)++])) ;
+
+		/* check syntax */
+		if ((c != ',') && (c != ';') && (c != 0)) {
+			error("Syntax error!");
+			return;
+		}
+		if (c != ',')
+			break;
+
+		/* get label reference argument */
+		if (!evaluate(ip, 0, 0))
+			return;
+		if (expr_lablcnt == 0) {
+			error("Argument is not a label name!");
+			return;
+		}
+		if (expr_lablcnt > 1) {
+			error("Argument contains more than one label name!");
+			return;
+		}
+		if (expr_lablptr->value != value) {
+			error("Argument contains more than just a label name!");
+			return;
+		}
+
+		/* store arg */
+		arg[i] = expr_lablptr;
+	}
+
+	/* check end of line */
+	if (!check_eol(ip))
+		return;
+
+	/* check the palette symbol */
+	if (arg[0] == NULL) {
+		error("Palette reference is missing!");
+		return;
+	}
+	if ((arg[0]->data_type != P_INCPAL) &&
+	    (arg[0]->data_type != P_INCBIN)) {
+		error("Palette reference must be a .INCPAL or .INCBIN!");
+		return;
+	}
+
+	/* check the data type */
+	if (arg[1] == NULL) {
+		error("Data reference is missing!");
+		return;
+	}
+
+	/* a .incmap reference outputs the "solid" layer */
+	if (arg[1]->data_type == P_INCMAP) {
+		error("Not implemented, yet!");
+		return;
+	} else
+
+	/* a .incblk reference outputs the optimized blocks */
+	if (arg[1]->data_type == P_INCBLK) {
+		error("Not implemented, yet!");
+		return;
+	} else
+
+	{
+		error("Unsupported data reference label type!");
+		return;
+	}
+
+	/* output line */
+	if (pass == LAST_PASS) {
+		println();
+	}
 }

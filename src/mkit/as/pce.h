@@ -11,9 +11,13 @@ void pce_defspr(int *ip);
 void pce_incbat(int *ip);
 void pce_incpal(int *ip);
 void pce_incspr(int *ip);
+void pce_incmask(int *ip);
 void pce_inctile(int *ip);
 void pce_incblk(int *ip);
 void pce_incmap(int *ip);
+void pce_haltmap(int *ip);
+void pce_maskmap(int *ip);
+void pce_flagmap(int *ip);
 void pce_vram(int *ip);
 void pce_pal(int *ip);
 void pce_develo(int *ip);
@@ -21,6 +25,7 @@ void pce_mml(int *ip);
 void pce_incchrpal(int *ip);
 void pce_incsprpal(int *ip);
 void pce_inctilepal(int *ip);
+void pce_outpng(int *ip);
 
 /* MML.C */
 int mml_start(unsigned char *buffer);
@@ -74,15 +79,16 @@ struct t_opcode huc6280_inst[38] = {
 #define NARGS_0_2_4 0b11101010
 #define NARGS_1_3_5 0b11010101
 #define NARGS_2_4_6 0b10101011
+#define NARGS_0_1_2_3_5 0b11000000
 #define NARGS_1_2_3_4_5_6 0b10000001
 
 /* PCE specific pseudos */
-struct t_opcode pce_pseudo[31] = {
+struct t_opcode pce_pseudo[41] = {
 	{NULL, "DEFCHR",     pce_defchr,    PSEUDO, P_DEFCHR,    0},
 	{NULL, "DEFPAL",     pce_defpal,    PSEUDO, P_DEFPAL,    0},
 	{NULL, "DEFSPR",     pce_defspr,    PSEUDO, P_DEFSPR,    0},
 	{NULL, "INCBAT",     pce_incbat,    PSEUDO, P_INCBAT,    NARGS_1_2_3_4_5_6},
-	{NULL, "INCSPR",     pce_incspr,    PSEUDO, P_INCSPR,    NARGS_0_2_4},
+	{NULL, "INCSPR",     pce_incspr,    PSEUDO, P_INCSPR,    NARGS_0_1_2_3_5},
 	{NULL, "INCPAL",     pce_incpal,    PSEUDO, P_INCPAL,    NARGS_0_1_2},
 	{NULL, "INCTILE",    pce_inctile,   PSEUDO, P_INCTILE,   NARGS_0_2_4},
 	{NULL, "INCBLK",     pce_incblk,    PSEUDO, P_INCBLK,    NARGS_2_4_6},
@@ -93,6 +99,11 @@ struct t_opcode pce_pseudo[31] = {
 	{NULL, "MML",        pce_mml,       PSEUDO, P_MML,       0},
 	{NULL, "PAL",        pce_pal,       PSEUDO, P_PAL,       0},
 	{NULL, "VRAM",       pce_vram,      PSEUDO, P_VRAM,      0},
+	{NULL, "OUTPNG",     pce_outpng,    PSEUDO, P_OUTPNG,    0},
+	{NULL, "INCMASK",    pce_incmask,   PSEUDO, P_INCMASK,   NARGS_0_1_2_3_5},
+	{NULL, "HALTMAP",    pce_haltmap,   PSEUDO, P_HALTMAP,   NARGS_1_3_5},
+	{NULL, "MASKMAP",    pce_maskmap,   PSEUDO, P_MASKMAP,   NARGS_2_4_6},
+	{NULL, "FLAGMAP",    pce_flagmap,   PSEUDO, P_FLAGMAP,   NARGS_2_4_6},
 
 	{NULL, ".DEFCHR",    pce_defchr,    PSEUDO, P_DEFCHR,    0},
 	{NULL, ".DEFPAL",    pce_defpal,    PSEUDO, P_DEFPAL,    0},
@@ -109,6 +120,11 @@ struct t_opcode pce_pseudo[31] = {
 	{NULL, ".MML",       pce_mml,       PSEUDO, P_MML,       0},
 	{NULL, ".PAL",       pce_pal,       PSEUDO, P_PAL,       0},
 	{NULL, ".VRAM",      pce_vram,      PSEUDO, P_VRAM,      0},
+	{NULL, ".OUTPNG",    pce_outpng,    PSEUDO, P_OUTPNG,    0},
+	{NULL, ".INCMASK",   pce_incmask,   PSEUDO, P_INCMASK,   NARGS_0_1_2_3_5},
+	{NULL, ".HALTMAP",   pce_haltmap,   PSEUDO, P_HALTMAP,   NARGS_1_3_5},
+	{NULL, ".MASKMAP",   pce_maskmap,   PSEUDO, P_MASKMAP,   NARGS_2_4_6},
+	{NULL, ".FLAGMAP",   pce_flagmap,   PSEUDO, P_FLAGMAP,   NARGS_2_4_6},
 	{NULL, NULL, NULL, 0, 0, 0}
 };
 /* *INDENT-ON* */

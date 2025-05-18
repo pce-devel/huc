@@ -185,6 +185,11 @@
 #define P_PHASE		69	// .phase
 #define P_DEBUG		70	// .dbg
 #define P_OUTBIN	71	// .outbin
+#define P_OUTPNG	72	// .outpng
+#define P_INCMASK	73	// .incmask
+#define P_HALTMAP	74	// .haltmap
+#define P_MASKMAP	75	// .maskmap
+#define P_FLAGMAP	76	// .flagmap
 
 /* symbol type */
 #define UNDEF	1	/* undefined - may be zero page */
@@ -199,6 +204,9 @@
 #define FLG_RESERVED 1
 #define FLG_CODE 2
 #define FLG_FUNC 4
+#define FLG_HALT 8
+#define FLG_MASKS 16
+#define FLG_FLAGS 32
 
 /* symbol lookup flags */
 #define SYM_CHK	0	/* does it exist? */
