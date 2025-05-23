@@ -1790,6 +1790,8 @@ do_section(int *ip)
  * .incchr "filename" [, x, y [, w, h ]] [, optimize]
  */
 
+#define NARGS_0_1_2_3_5 0b11000000
+
 void
 do_incchr(int *ip)
 {
@@ -1820,7 +1822,7 @@ do_incchr(int *ip)
 		loadlc(loccnt, 0);
 
 	/* get args */
-	if (!pcx_get_args(ip))
+	if (!pcx_get_args(ip, NARGS_0_1_2_3_5))
 		return;
 
 	/* odd number of args after filename if there is an "optimize" flag */

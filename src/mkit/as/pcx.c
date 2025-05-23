@@ -246,7 +246,7 @@ pcx_search_tile(unsigned char *data, int size)
  */
 
 int
-pcx_get_args(int *ip)
+pcx_get_args(int *ip, unsigned valid)
 {
 	char name[PATHSZ];
 	char c;
@@ -289,7 +289,7 @@ pcx_get_args(int *ip)
 	}
 
 	/* check number of args */
-	if (optype & (1 << pcx_nb_args)) {
+	if (valid & (1 << pcx_nb_args)) {
 		error("Invalid number of arguments!");
 		return (0);
 	}

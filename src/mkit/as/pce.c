@@ -8,6 +8,15 @@
 #include "protos.h"
 #include "pce.h"
 
+/* bitmask defines for the number of arguments */
+
+#define NARGS_0_1_2 0b11111000
+#define NARGS_0_2_4 0b11101010
+#define NARGS_1_3_5 0b11010101
+#define NARGS_2_4_6 0b10101011
+#define NARGS_0_1_2_3_5 0b11000000
+#define NARGS_1_2_3_4_5_6 0b10000001
+
 /* locals */
 unsigned char workspace[65536];	/* buffer for .inc and .def directives */
 
@@ -633,7 +642,7 @@ pce_incbat(int *ip)
 	tile_lablptr = NULL;
 
 	/* get args */
-	if (!pcx_get_args(ip))
+	if (!pcx_get_args(ip, NARGS_1_2_3_4_5_6))
 		return;
 
 	/* check that last arg is a tile reference */
@@ -765,7 +774,7 @@ pce_incpal(int *ip)
 		loadlc(loccnt, 0);
 
 	/* get args */
-	if (!pcx_get_args(ip))
+	if (!pcx_get_args(ip, NARGS_0_1_2))
 		return;
 
 	start = 0;
@@ -863,7 +872,7 @@ pce_incspr(int *ip)
 		loadlc(loccnt, 0);
 
 	/* get args */
-	if (!pcx_get_args(ip))
+	if (!pcx_get_args(ip, NARGS_0_1_2_3_5))
 		return;
 
 	/* odd number of args after filename if there is an "optimize" flag */
@@ -1003,7 +1012,7 @@ pce_incmask(int *ip)
 		loadlc(loccnt, 0);
 
 	/* get args */
-	if (!pcx_get_args(ip))
+	if (!pcx_get_args(ip, NARGS_0_1_2_3_5))
 		return;
 
 	/* odd number of args after filename if there is an "optimize" flag */
@@ -1146,7 +1155,7 @@ pce_inctile(int *ip)
 		loadlc(loccnt, 0);
 
 	/* get args */
-	if (!pcx_get_args(ip))
+	if (!pcx_get_args(ip, NARGS_0_2_4))
 		return;
 
 	/* set up x, y, w, h from the args */
@@ -1291,7 +1300,7 @@ pce_incblk(int *ip)
 		loadlc(loccnt, 0);
 
 	/* get args */
-	if (!pcx_get_args(ip))
+	if (!pcx_get_args(ip, NARGS_2_4_6))
 		return;
 
 	/* check that last arg is a tile reference */
@@ -1482,7 +1491,7 @@ pce_incchrpal(int *ip)
 		loadlc(loccnt, 0);
 
 	/* get args */
-	if (!pcx_get_args(ip))
+	if (!pcx_get_args(ip, NARGS_0_2_4))
 		return;
 
 	/* set up x, y, w, h from the args */
@@ -1554,7 +1563,7 @@ pce_incsprpal(int *ip)
 		loadlc(loccnt, 0);
 
 	/* get args */
-	if (!pcx_get_args(ip))
+	if (!pcx_get_args(ip, NARGS_0_2_4))
 		return;
 
 	/* set up x, y, w, h from the args */
@@ -1626,7 +1635,7 @@ pce_inctilepal(int *ip)
 		loadlc(loccnt, 0);
 
 	/* get args */
-	if (!pcx_get_args(ip))
+	if (!pcx_get_args(ip, NARGS_0_2_4))
 		return;
 
 	/* set up x, y, w, h from the args */
@@ -1731,7 +1740,7 @@ pce_incmap(int *ip)
 		loadlc(loccnt, 0);
 
 	/* get args */
-	if (!pcx_get_args(ip))
+	if (!pcx_get_args(ip, NARGS_1_3_5))
 		return;
 
 	/* check that last arg is a tile reference */
@@ -1969,7 +1978,7 @@ pce_haltmap(int *ip)
 		loadlc(loccnt, 0);
 
 	/* get args */
-	if (!pcx_get_args(ip))
+	if (!pcx_get_args(ip, NARGS_1_3_5))
 		return;
 
 	/* verify the MAP reference */
@@ -2072,7 +2081,9 @@ pce_haltmap(int *ip)
 										color = ppixel[l] & 0x0F;
 									else
 									if ((ppixel[l] & 0x0F) != color) {
-										error("Multiple collision colors in CHR at MAP (%d, %d)!", (j * 2 + cx) * 8, (i * 2 + cy) * 8);
+										error("Multiple collision colors in CHR at MAP (%d, %d)!", (j * 2 + cx) * 8 + 4, (i * 2 + cy) * 8 + 4);
+										k = 7;
+										break;
 									}
 								}
 							}
@@ -2136,10 +2147,10 @@ pce_haltmap(int *ip)
 					blkdata[0x0400 + 3 * 256 + blklabl->data_count] = flag[3];
 					nextblk[blkindx] = blklabl->data_count;
 					*mapdata = blklabl->data_count++;
-					warning("BLK duplicated for collision flags at MAP (%d, %d)!", j * 16, i * 16);
+					warning("BLK duplicated for collision flags at MAP (%d, %d)!", j * 16 + 8, i * 16 + 8);
 				} else {
 					/* no room for a duplicate BLK with the new collision flags */
-					error("No room for new collision BLK at MAP (%d, %d)!", j * 16, i * 16);
+					error("No room for new collision BLK at MAP (%d, %d)!", j * 16 + 8, i * 16 + 8);
 				}
 			}
 		}
@@ -2191,7 +2202,7 @@ pce_maskmap(int *ip)
 		loadlc(loccnt, 0);
 
 	/* get args */
-	if (!pcx_get_args(ip))
+	if (!pcx_get_args(ip, NARGS_2_4_6))
 		return;
 
 	/* verify the SPR reference */
@@ -2384,7 +2395,7 @@ pce_flagmap(int *ip)
 		loadlc(loccnt, 0);
 
 	/* get args */
-	if (!pcx_get_args(ip))
+	if (!pcx_get_args(ip, NARGS_2_4_6))
 		return;
 
 	/* verify the SPR reference */
