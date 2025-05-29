@@ -190,6 +190,7 @@
 #define P_HALTMAP	74	// .haltmap
 #define P_MASKMAP	75	// .maskmap
 #define P_OVERMAP	76	// .overmap
+#define P_SWIZZLE	77	// .swizzle
 
 /* symbol type */
 #define UNDEF	1	/* undefined - may be zero page */

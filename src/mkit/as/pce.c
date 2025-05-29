@@ -2031,6 +2031,10 @@ pce_haltmap(int *ip)
 		return;
 	}
 	maplabl = pcx_lbl[--pcx_nb_args];
+	if (maplabl->data_type == P_SWIZZLE) {
+		error(".HALTMAP must be used before you .SWIZZLE the MAP!");
+		return;
+	}
 	if (maplabl->data_type != P_INCMAP) {
 		error("MAP reference is not a .INCMAP!");
 		return;
@@ -2271,6 +2275,10 @@ pce_maskmap(int *ip)
 		return;
 	}
 	maplabl = pcx_lbl[--pcx_nb_args];
+	if (maplabl->data_type == P_SWIZZLE) {
+		error(".MASKMAP must be used before you .SWIZZLE the MAP!");
+		return;
+	}
 	if (maplabl->data_type != P_INCMAP) {
 		error("MAP reference is not a .INCMAP!");
 		return;
@@ -2462,6 +2470,10 @@ pce_overmap(int *ip)
 		return;
 	}
 	maplabl = pcx_lbl[--pcx_nb_args];
+	if (maplabl->data_type == P_SWIZZLE) {
+		error(".OVERMAP must be used before you .SWIZZLE the MAP!");
+		return;
+	}
 	if (maplabl->data_type != P_INCMAP) {
 		error("MAP reference is not a .INCMAP!");
 		return;
@@ -2586,6 +2598,109 @@ pce_overmap(int *ip)
 		if (pass == LAST_PASS)
 			lastlabl->size = 1;
 	}
+
+	/* output */
+	if (pass == LAST_PASS)
+		println();
+}
+
+
+/* ----
+ * pce_swizzle()
+ * ----
+ * Swizzle a MAP from linear "map[height][width]" format to BAT-sized chunks
+ *
+ * .swizzle map_label, w, h
+ */
+
+void
+pce_swizzle(int *ip)
+{
+	int map_w, map_h;
+	int bat_w, bat_h;
+
+	t_symbol *maplabl;
+
+	labldef(LOCATION);
+
+	/* output */
+	if (pass == LAST_PASS)
+		loadlc(loccnt, 0);
+
+	/* get map symbol */
+	if (!evaluate(ip, ',', 0))
+		return;
+
+	/* verify the MAP reference */
+	if (expr_lablcnt != 1 || expr_lablptr->value != value) {
+		error("MAP reference must be a simple label!");
+		return;
+	}
+	maplabl = expr_lablptr;
+	if (maplabl->data_type != P_INCMAP) {
+		error("MAP reference is not a .INCMAP!");
+		return;
+	}
+	map_w = maplabl->data_count;
+	map_h = maplabl->data_size / maplabl->data_count;
+
+	/* get chunk width */
+	if (!evaluate(ip, ',', 0))
+		return;
+	if (value == 0 || (map_w % value) != 0) {
+		error("The .INCMAP width is not an exact multiple .SWIZZLE width!");
+		return;
+	}
+	bat_w = value;
+
+	/* get chunk height */
+	if (!evaluate(ip, ';', 0))
+		return;
+	if (value == 0 || (map_h % value) != 0) {
+		error("The .INCMAP height is not an exact multiple .SWIZZLE height!");
+		return;
+	}
+	bat_h = value;
+
+	/* only do the time-consuming stuff on the last pass */
+	if (pass == LAST_PASS) {
+		/* sanity checks */
+		if (maplabl->size == 0) {
+			error(".INCMAP reference has not been compiled yet!");
+			return;
+		}
+
+		unsigned char *mapdata = &rom[maplabl->rombank][maplabl->value & 0x1FFF];
+		unsigned char *newdata = malloc(maplabl->data_size);
+		unsigned char *newline = newdata;
+
+		if (!newdata) {
+			error("Cannot allocate temporary buffer space!");
+			return;
+		}
+
+		/* swizzle the map data into chunks */
+		for (int map_y = 0; map_y < map_h; map_y += bat_h) {
+			for (int map_x = 0; map_x < map_w; map_x += bat_w) {
+				for (int bat_y = 0; bat_y < bat_h; bat_y++) {
+					unsigned char *mapline = mapdata + map_w * (map_y + bat_y) + map_x;
+					memcpy(newline, mapline, bat_w);
+					newline += bat_w;
+				}
+			}
+		}
+
+		/* copy the swizzled back into the rom */
+		memcpy(mapdata, newdata, maplabl->data_size);
+		if (newdata)
+			free(newdata);
+
+		/* mark that the map is not in linear format anymore */
+		maplabl->data_type = P_SWIZZLE;
+	}
+
+	/* mark that the map is not in linear format anymore */
+	maplabl->data_type = P_SWIZZLE;
 
 	/* output */
 	if (pass == LAST_PASS)

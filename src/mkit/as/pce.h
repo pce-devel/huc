@@ -18,6 +18,7 @@ void pce_incmap(int *ip);
 void pce_haltmap(int *ip);
 void pce_maskmap(int *ip);
 void pce_overmap(int *ip);
+void pce_swizzle(int *ip);
 void pce_vram(int *ip);
 void pce_pal(int *ip);
 void pce_develo(int *ip);
@@ -76,7 +77,7 @@ struct t_opcode huc6280_inst[38] = {
 };
 
 /* PCE specific pseudos */
-struct t_opcode pce_pseudo[41] = {
+struct t_opcode pce_pseudo[43] = {
 	{NULL, "DEFCHR",     pce_defchr,    PSEUDO, P_DEFCHR,    0},
 	{NULL, "DEFPAL",     pce_defpal,    PSEUDO, P_DEFPAL,    0},
 	{NULL, "DEFSPR",     pce_defspr,    PSEUDO, P_DEFSPR,    0},
@@ -97,6 +98,7 @@ struct t_opcode pce_pseudo[41] = {
 	{NULL, "HALTMAP",    pce_haltmap,   PSEUDO, P_HALTMAP,   0},
 	{NULL, "MASKMAP",    pce_maskmap,   PSEUDO, P_MASKMAP,   0},
 	{NULL, "OVERMAP",    pce_overmap,   PSEUDO, P_OVERMAP,   0},
+	{NULL, "SWIZZLE",    pce_swizzle,   PSEUDO, P_SWIZZLE,   0},
 
 	{NULL, ".DEFCHR",    pce_defchr,    PSEUDO, P_DEFCHR,    0},
 	{NULL, ".DEFPAL",    pce_defpal,    PSEUDO, P_DEFPAL,    0},
@@ -118,6 +120,7 @@ struct t_opcode pce_pseudo[41] = {
 	{NULL, ".HALTMAP",   pce_haltmap,   PSEUDO, P_HALTMAP,   0},
 	{NULL, ".MASKMAP",   pce_maskmap,   PSEUDO, P_MASKMAP,   0},
 	{NULL, ".OVERMAP",   pce_overmap,   PSEUDO, P_OVERMAP,   0},
+	{NULL, ".SWIZZLE",   pce_swizzle,   PSEUDO, P_SWIZZLE,   0},
 	{NULL, NULL, NULL, 0, 0, 0}
 };
 /* *INDENT-ON* */
