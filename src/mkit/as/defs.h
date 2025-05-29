@@ -189,7 +189,7 @@
 #define P_INCMASK	73	// .incmask
 #define P_HALTMAP	74	// .haltmap
 #define P_MASKMAP	75	// .maskmap
-#define P_FLAGMAP	76	// .flagmap
+#define P_OVERMAP	76	// .overmap
 
 /* symbol type */
 #define UNDEF	1	/* undefined - may be zero page */
@@ -205,8 +205,8 @@
 #define FLG_CODE 2
 #define FLG_FUNC 4
 #define FLG_HALT 8
-#define FLG_MASKS 16
-#define FLG_FLAGS 32
+#define FLG_MASK 16
+#define FLG_OVER 32
 
 /* symbol lookup flags */
 #define SYM_CHK	0	/* does it exist? */

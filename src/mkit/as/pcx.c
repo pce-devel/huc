@@ -173,17 +173,29 @@ pcx_set_tile(struct t_symbol *ref, unsigned int offset)
 		for (i = 0; i < nb; i++) {
 			/* calculate tile crc */
 			crc = crc_calc(data, size);
-			hash = (crc & (HASH_COUNT - 1));
+			hash = crc & (HASH_COUNT - 1);
 
-			/* insert the tile in the tile table */
+			/* remember the tile information */
 			tile[i].next = tile_tbl[hash];
 			tile[i].index = i;
 			tile[i].data = data;
 			tile[i].crc = crc;
-			tile_tbl[hash] = &tile[i];
+
+			/* search for the tile in the list */
+			t_tile *test_tile = tile_tbl[hash];
+			while (test_tile) {
+				if (test_tile->crc == crc &&
+				    memcmp(test_tile->data, data, size) == 0)
+					break;
+				test_tile = test_tile->next;
+			}
 
 			/* next */
 			data += size;
+
+			/* only add unique tiles to the search list */
+			if (!test_tile)
+				tile_tbl[hash] = &tile[i];
 		}
 	}
 

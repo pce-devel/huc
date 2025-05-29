@@ -115,6 +115,8 @@ pce_scan_16x16_tile(unsigned int x, unsigned int y)
  * pack_8x8_tile()
  * ----
  * encode a 8x8 tile
+ *
+ * return the tile's palette number, or -1 if multiple palettes used
  */
 
 int
@@ -126,6 +128,7 @@ pce_pack_8x8_tile(unsigned char *buffer, void *data, int line_offset, int format
 	unsigned char *ptr;
 	unsigned int *packed;
 	int palette = -1;
+	int fail = 0;
 
 	/* clear buffer */
 	memset(buffer, 0, 32);
@@ -145,8 +148,13 @@ pce_pack_8x8_tile(unsigned char *buffer, void *data, int line_offset, int format
 				buffer[cnt + 1] |= (pixel & 0x02) ? mask : 0;
 				buffer[cnt + 16] |= (pixel & 0x04) ? mask : 0;
 				buffer[cnt + 17] |= (pixel & 0x08) ? mask : 0;
-				if (palette < 0 && (pixel & 0x0F) != 0)
-					palette = pixel >> 4;
+				if (pixel & 0x0F) {
+					if (palette < 0)
+						palette = pixel >> 4;
+					else
+					if (palette != pixel >> 4)
+						fail = -1;
+				}
 			}
 			ptr += line_offset;
 			cnt += 2;
@@ -179,8 +187,12 @@ pce_pack_8x8_tile(unsigned char *buffer, void *data, int line_offset, int format
 		break;
 	}
 
-	/* ok */
-	return (palette < 0) ? 0 : palette;
+	/* default for a completely emtpy tile */
+	if (palette < 0)
+		palette = 0;
+
+	/* return palette number or -1 */
+	return (palette | fail);
 }
 
 
@@ -188,6 +200,8 @@ pce_pack_8x8_tile(unsigned char *buffer, void *data, int line_offset, int format
  * pack_16x16_tile()
  * ----
  * encode a 16x16 tile
+ *
+ * return the tile's palette number, or -1 if multiple palettes used
  */
 
 int
@@ -198,6 +212,7 @@ pce_pack_16x16_tile(unsigned char *buffer, void *data, int line_offset, int form
 	unsigned int pixel, mask;
 	unsigned char *ptr;
 	int palette = -1;
+	int fail = 0;
 
 	/* pack the tile only in the last pass */
 	if (pass != LAST_PASS)
@@ -221,16 +236,26 @@ pce_pack_16x16_tile(unsigned char *buffer, void *data, int line_offset, int form
 				buffer[cnt + 1] |= (pixel & 0x02) ? mask : 0;
 				buffer[cnt + 16] |= (pixel & 0x04) ? mask : 0;
 				buffer[cnt + 17] |= (pixel & 0x08) ? mask : 0;
-				if (palette < 0 && (pixel & 0x0F) != 0)
-					palette = pixel >> 4;
+				if (pixel & 0x0F) {
+					if (palette < 0)
+						palette = pixel >> 4;
+					else
+					if (palette != pixel >> 4)
+						fail = -1;
+				}
 
 				pixel = ptr[(j + 8) ^ 0x07];
 				buffer[cnt + 32] |= (pixel & 0x01) ? mask : 0;
 				buffer[cnt + 33] |= (pixel & 0x02) ? mask : 0;
 				buffer[cnt + 48] |= (pixel & 0x04) ? mask : 0;
 				buffer[cnt + 49] |= (pixel & 0x08) ? mask : 0;
-				if (palette < 0 && (pixel & 0x0F) != 0)
-					palette = pixel >> 4;
+				if (pixel & 0x0F) {
+					if (palette < 0)
+						palette = pixel >> 4;
+					else
+					if (palette != pixel >> 4)
+						fail = -1;
+				}
 			}
 			if (i == 7)
 				cnt += 48;
@@ -245,8 +270,12 @@ pce_pack_16x16_tile(unsigned char *buffer, void *data, int line_offset, int form
 		break;
 	}
 
-	/* ok */
-	return (palette < 0) ? 0 : palette;
+	/* default for a completely emtpy tile */
+	if (palette < 0)
+		palette = 0;
+
+	/* return palette number or -1 */
+	return (palette | fail);
 }
 
 
@@ -254,6 +283,8 @@ pce_pack_16x16_tile(unsigned char *buffer, void *data, int line_offset, int form
  * pack_16x16_sprite()
  * ----
  * encode a 16x16 sprite
+ *
+ * return the sprite's palette number, or -1 if multiple palettes used
  */
 
 int
@@ -265,6 +296,7 @@ pce_pack_16x16_sprite(unsigned char *buffer, void *data, int line_offset, int fo
 	unsigned char *ptr;
 	unsigned int *packed;
 	int palette = -1;
+	int fail = 0;
 
 	/* clear buffer */
 	memset(buffer, 0, 128);
@@ -285,8 +317,13 @@ pce_pack_16x16_sprite(unsigned char *buffer, void *data, int line_offset, int fo
 				buffer[cnt + 32] |= (pixel & 0x02) ? mask : 0;
 				buffer[cnt + 64] |= (pixel & 0x04) ? mask : 0;
 				buffer[cnt + 96] |= (pixel & 0x08) ? mask : 0;
-				if (palette < 0 && (pixel & 0x0F) != 0)
-					palette = pixel >> 4;
+				if (pixel & 0x0F) {
+					if (palette < 0)
+						palette = pixel >> 4;
+					else
+					if (palette != pixel >> 4)
+						fail = -1;
+				}
 			}
 
 			/* left column */
@@ -297,8 +334,13 @@ pce_pack_16x16_sprite(unsigned char *buffer, void *data, int line_offset, int fo
 				buffer[cnt + 33] |= (pixel & 0x02) ? mask : 0;
 				buffer[cnt + 65] |= (pixel & 0x04) ? mask : 0;
 				buffer[cnt + 97] |= (pixel & 0x08) ? mask : 0;
-				if (palette < 0 && (pixel & 0x0F) != 0)
-					palette = pixel >> 4;
+				if (pixel & 0x0F) {
+					if (palette < 0)
+						palette = pixel >> 4;
+					else
+					if (palette != pixel >> 4)
+						fail = -1;
+				}
 			}
 			ptr += line_offset;
 			cnt += 2;
@@ -344,8 +386,12 @@ pce_pack_16x16_sprite(unsigned char *buffer, void *data, int line_offset, int fo
 		break;
 	}
 
-	/* ok */
-	return (palette < 0) ? 0 : palette;
+	/* default for a completely emtpy sprite */
+	if (palette < 0)
+		palette = 0;
+
+	/* return palette number or -1 */
+	return (palette | fail);
 }
 
 
@@ -616,8 +662,9 @@ pce_defspr(int *ip)
 void
 pce_incbat(int *ip)
 {
-	int i, j, k, l;
+	int i, j;
 	int x, y, w, h;
+	int tx, ty;
 	unsigned basechr, index;
 	int tile_number;
 	unsigned fail = 0;
@@ -660,7 +707,7 @@ pce_incbat(int *ip)
 			error("Tile table reference is not a .INCCHR!");
 			return;
 		}
-		if (!pcx_set_tile(expr_lablptr, value)) {
+		if (pass == LAST_PASS && !pcx_set_tile(expr_lablptr, value)) {
 			return;
 		}
 		--pcx_nb_args;
@@ -685,52 +732,40 @@ pce_incbat(int *ip)
 
 		for (i = 0; i < h; i++) {
 			for (j = 0; j < w; j++) {
-				/* extract palette */
-				unsigned char *ppixel = pcx_buf + (x + j * 8) + pcx_w * (y + i * 8);
-				int palette = -1;
-				for (k = 0; k < 8; k++) {
-					for (l = 0; l < 8; l++) {
-						if ((ppixel[l] & 0x0F) != 0) {
-							if (palette < 0)
-								palette = ppixel[l] & 0xF0;
-							else
-							if ((ppixel[l] & 0xF0) != palette)
-								fail |= 1;
-						}
-					}
-					ppixel += pcx_w;
-				}
-				if (palette < 0) palette = 0;
+				/* tile coordinates */
+				tx = x + (j << 3);
+				ty = y + (i << 3);
 
 				/* convert 8x8 tile data */
+				int palette = pcx_pack_8x8_tile(tile_data, tx, ty);
+
+				if (palette < 0) {
+					error("Multiple palettes used in CHR at image (%d, %d)!", tx, ty);
+					fail |= 1;
+					palette = 0;
+				}
+
 				if (tile_lablptr == NULL) {
 					/* Traditional conversion as a bitmap with wasted repeats */
 					tile_number = (basechr & 0xFFF);
 					basechr++;
 				} else {
 					/* Sensible conversion with repeats removed */
-					pcx_pack_8x8_tile(tile_data, x + (j << 3), y + (i << 3));
 					tile_number = pcx_search_tile(tile_data, 32);
 					if (tile_number == -1) {
-						/* didn't find the tile */
-						tile_number = 0;
+						error("Unrecognized CHR at image (%d, %d)!", tx, ty);
 						fail |= 2;
+						tile_number = 0;
 					}
 					tile_number += (basechr & 0x0FFF);
 				}
 
-				tile_number |= palette << 8;
+				tile_number |= palette << 12;
 				workspace[2 * index + 0] = tile_number & 0xFF;
 				workspace[2 * index + 1] = tile_number >> 8;
 				index++;
 			}
 		}
-
-		/* errors */
-		if (fail & 1)
-			error("One or more 8x8 tiles contain pixels in multiple palettes!");
-		if (fail & 2)
-			error("One or more 8x8 tiles are not in the referenced tileset!");
 	}
 
 	/* store data */
@@ -865,6 +900,11 @@ pce_incspr(int *ip)
 			error("Cannot allocate memory for tags!");
 			return;
 		}
+		/* allocate memory for the sprite metadata */
+		if ((lablptr->tags->metadata = calloc(1, sizeof(tile) / sizeof(struct t_tile))) == NULL) {
+			error("Cannot allocate memory for metadata!");
+			return;
+		}
 	}
 
 	/* output */
@@ -898,7 +938,7 @@ pce_incspr(int *ip)
 	if (lablptr == NULL && lastlabl != NULL && lastlabl->data_type == P_INCSPR) {
 		nb_sprite = lastlabl->data_count;
 	} else {
-		tile_lablptr = lablptr;
+		tile_lablptr = lastlabl = lablptr;
 		if (lablptr)
 			tile_offset = lablptr->value;
 		memset(tile_tbl, 0, sizeof(tile_tbl));
@@ -912,7 +952,14 @@ pce_incspr(int *ip)
 			sy = y + (i << 4);
 
 			/* encode sprite */
-			pcx_pack_16x16_sprite(spr_data, sx, sy);
+			int palette = pcx_pack_16x16_sprite(spr_data, sx, sy);
+
+			/* warning not error because PCEAS hasn't previously cared about this */
+			if (palette < 0)
+				warning("Multiple palettes used in SPR at image (%d, %d)!", sx, sy);
+			else
+			if (lastlabl)
+				lastlabl->tags->metadata[nb_sprite] = palette;
 
 			/* calculate tile crc */
 			crc = crc_calc(spr_data, 128);
@@ -1148,6 +1195,11 @@ pce_inctile(int *ip)
 			error("Cannot allocate memory for tags!");
 			return;
 		}
+		/* allocate memory for the tile metadata */
+		if ((lablptr->tags->metadata = calloc(1, sizeof(tile) / sizeof(struct t_tile))) == NULL) {
+			error("Cannot allocate memory for metadata!");
+			return;
+		}
 	}
 
 	/* output */
@@ -1170,7 +1222,16 @@ pce_inctile(int *ip)
 			ty = y + (i << 4);
 
 			/* encode tile */
-			pcx_pack_16x16_tile(workspace + 128 * (nb_tile % 256), tx, ty);
+			int palette = pcx_pack_16x16_tile(workspace + 128 * (nb_tile % 256), tx, ty);
+
+			/* warning not error because PCEAS hasn't previously cared about this */
+			if (palette < 0)
+				warning("Multiple palettes used in TILE at image (%d, %d)!", tx, ty);
+			else
+			if (lablptr)
+				lablptr->tags->metadata[nb_tile] = palette;
+
+			/* no optimization for old MagicKit 16x16 tiles */
 			nb_tile++;
 
 			/* max 256 tiles, with number 257 wrapping around to */
@@ -1226,7 +1287,7 @@ pce_inctile(int *ip)
 void
 pce_incblk(int *ip)
 {
-	int i, j, k, l;
+	int i, j;
 	int x, y, w, h;
 	int tx, ty, cx, cy;
 	unsigned basechr, index;
@@ -1317,7 +1378,7 @@ pce_incblk(int *ip)
 		error("Character set reference is not a .INCCHR!");
 		return;
 	}
-	if (!pcx_set_tile(expr_lablptr, value)) {
+	if (pass == LAST_PASS && !pcx_set_tile(expr_lablptr, value)) {
 		return;
 	}
 	--pcx_nb_args;
@@ -1354,36 +1415,28 @@ pce_incblk(int *ip)
 
 		for (i = 0; i < h; i++) {
 			for (j = 0; j < w; j++) {
-				/* tile coordinates */
-				tx = x + (j << 4);
-				ty = y + (i << 4);
-
+				/* convert 16x16 block data */
 				data = 0;
 				hash = 0;
 				index = 0;
 				for (cy = 0; cy < 16; cy += 8) {
 					for (cx = 0; cx < 16; cx += 8) {
-						/* extract palette */
-						unsigned char *ppixel = pcx_buf + (x + tx + cx) + pcx_w * (y + ty + cy);
-						int palette = -1;
-						for (k = 0; k < 8; k++) {
-							for (l = 0; l < 8; l++) {
-								if ((ppixel[l] & 0x0F) != 0) {
-									if (palette < 0)
-										palette = ppixel[l] & 0xF0;
-									else
-									if ((ppixel[l] & 0xF0) != palette)
-										fail |= 1;
-								}
-							}
-							ppixel += pcx_w;
-						}
-						if (palette < 0) palette = 0;
+						/* tile coordinates */
+						tx = x + (j << 4) + cx;
+						ty = y + (i << 4) + cy;
 
 						/* convert 8x8 tile data */
-						pcx_pack_8x8_tile(tile_data, x + tx + cx, y + ty + cy);
+						int palette = pcx_pack_8x8_tile(tile_data, tx, ty);
+
+						if (palette < 0) {
+							error("Multiple palettes used in CHR at image (%d, %d)!", tx, ty);
+							fail |= 1;
+							palette = 0;
+						}
+
 						tile_number = pcx_search_tile(tile_data, 32);
 						if (tile_number == -1) {
+							error("Unrecognized CHR at image (%d, %d)!", tx, ty);
 							fail |= 2;
 							tile_number = 0;
 						}
@@ -1393,7 +1446,7 @@ pce_incblk(int *ip)
 							tile_number = 0;
 						}
 						tile_number += basechr;
-						tile_number |= palette << 8;
+						tile_number |= palette << 12;
 
 						/* save the tile number in PCE interleaved format */
 						packed[index * 256 + nb_blks + 0x0000] = tile_number;
@@ -1438,10 +1491,6 @@ pce_incblk(int *ip)
 		putbuffer(workspace, 2048);
 
 	/* errors */
-	if (fail & 1)
-		error("One or more 8x8 tiles contain pixels in multiple palettes!");
-	if (fail & 2)
-		error("One or more 8x8 tiles are not in the referenced tileset!");
 	if (fail & 4)
 		error("One or more 8x8 tiles are located beyond 64KBytes of VRAM!");
 	if (fail & 8)
@@ -1452,7 +1501,7 @@ pce_incblk(int *ip)
 	/* attach the number of blocks to the label */
 	if (lastlabl) {
 		blk_lablptr = lastlabl;
-		lastlabl->tags->uses_sym = tile_lablptr;
+		lastlabl->tags->uses_sym = expr_lablptr;
 		lastlabl->vram = pcx_arg[0];
 		lastlabl->data_type = P_INCBLK;
 		lastlabl->data_size = 2048;
@@ -1713,7 +1762,7 @@ pce_inctilepal(int *ip)
 void
 pce_incmap(int *ip)
 {
-	int i, j, k, l;
+	int i, j;
 	int x, y, w, h;
 	int tx, ty, cx, cy;
 	unsigned basechr, index;
@@ -1793,15 +1842,22 @@ pce_incmap(int *ip)
 				ty = y + (i << 4);
 
 				/* get tile */
-				pcx_pack_16x16_tile(tile_data, tx, ty);
+				int palette = pcx_pack_16x16_tile(tile_data, tx, ty);
+
+				if (palette < 0) {
+					error("Multiple palettes used in TILE at image (%d, %d)!", tx, ty);
+					fail |= 1;
+					palette = 0;
+				}
 
 				/* search tile */
 				tile_number = pcx_search_tile(tile_data, 128);
 
 				/* didn't find the tile */
 				if (tile_number == -1) {
-					tile_number = 0;
+					error("Unrecognized TILE at image (%d, %d)!", tx, ty);
 					fail |= 8;
+					tile_number = 0;
 				}
 
 				/* store tile index */
@@ -1857,36 +1913,28 @@ pce_incmap(int *ip)
 
 		for (i = 0; i < h; i++) {
 			for (j = 0; j < w; j++) {
-				/* tile coordinates */
-				tx = x + (j << 4);
-				ty = y + (i << 4);
-
+				/* convert 16x16 block data */
 				data = 0;
 				hash = 0;
 				index = 0;
 				for (cy = 0; cy < 16; cy += 8) {
 					for (cx = 0; cx < 16; cx += 8) {
-						/* extract palette */
-						unsigned char *ppixel = pcx_buf + (x + tx + cx) + pcx_w * (y + ty + cy);
-						int palette = -1;
-						for (k = 0; k < 8; k++) {
-							for (l = 0; l < 8; l++) {
-								if ((ppixel[l] & 0x0F) != 0) {
-									if (palette < 0)
-										palette = ppixel[l] & 0xF0;
-									else
-									if ((ppixel[l] & 0xF0) != palette)
-										fail |= 1;
-								}
-							}
-							ppixel += pcx_w;
-						}
-						if (palette < 0) palette = 0;
+						/* tile coordinates */
+						tx = x + (j << 4) + cx;
+						ty = y + (i << 4) + cy;
 
 						/* convert 8x8 tile data */
-						pcx_pack_8x8_tile(tile_data, x + tx + cx, y + ty + cy);
+						int palette = pcx_pack_8x8_tile(tile_data, tx, ty);
+
+						if (palette < 0) {
+							error("Multiple palettes used in CHR at image (%d, %d)!", tx, ty);
+							fail |= 1;
+							palette = 0;
+						}
+
 						tile_number = pcx_search_tile(tile_data, 32);
 						if (tile_number == -1) {
+							error("Unrecognized CHR at image (%d, %d)!", tx, ty);
 							fail |= 2;
 							tile_number = 0;
 						}
@@ -1896,7 +1944,7 @@ pce_incmap(int *ip)
 							tile_number = 0;
 						}
 						tile_number += basechr;
-						tile_number |= palette << 8;
+						tile_number |= palette << 12;
 
 						/* save the tile number in 64-bit linear format */
 						data |= ((uint64_t) tile_number) << (index * 16);
@@ -1918,6 +1966,7 @@ pce_incmap(int *ip)
 
 				/* didn't find the tile */
 				if (!this_blk) {
+					error("Unrecognized BLK at image (%d, %d)!", tx - 8, ty - 8);
 					fail |= 8;
 					this_blk = &blk_info[0];
 				}
@@ -1935,14 +1984,8 @@ pce_incmap(int *ip)
 	}
 
 	/* errors */
-	if (fail & 1)
-		error("One or more 8x8 tiles contain pixels in multiple palettes!");
-	if (fail & 2)
-		error("One or more 8x8 tiles are not in the referenced tileset!");
 	if (fail & 4)
 		error("One or more 8x8 tiles are located beyond 64KBytes of VRAM!");
-	if (fail & 8)
-		error("One or more 16x16 tiles are not in the referenced tileset!");
 	if (fail)
 		return;
 
@@ -1966,6 +2009,7 @@ pce_haltmap(int *ip)
 	int i, j, k, l;
 	int x, y, w, h;
 	int tx, ty, cx, cy;
+	int duplicated = 0;
 
 	t_symbol *maplabl;
 	t_symbol *blklabl;
@@ -2033,8 +2077,8 @@ pce_haltmap(int *ip)
 			error(".INCMAP reference has not been compiled yet!");
 			return;
 		}
-		if (blklabl->flags & (FLG_MASKS | FLG_FLAGS)) {
-			warning(".HALTMAP after a .MASKMAP/.FLAGMAP may change the BLK definitions!");
+		if (blklabl->flags & (FLG_MASK | FLG_OVER)) {
+			warning(".HALTMAP after a .MASKMAP/.OVERMAP may change the BLK definitions!");
 		}
 
 		/* remember that masks have been generated for this .INCBLK/.INTILE */
@@ -2061,18 +2105,18 @@ pce_haltmap(int *ip)
 
 		for (i = 0; i < h; i++) {
 			for (j = 0; j < w; j++, mapdata++) {
-				/* tile coordinates */
-				tx = x + (j << 4);
-				ty = y + (i << 4);
-
 				unsigned char blkindx = *mapdata;
 				unsigned char flag[4];
 
 				unsigned index = 0;
 				for (cy = 0; cy < 16; cy += 8) {
 					for (cx = 0; cx < 16; cx += 8) {
+						/* tile coordinates */
+						tx = x + (j << 4) + cx;
+						ty = y + (i << 4) + cy;
+
 						/* extract color used by collision image 8x8 character */
-						unsigned char *ppixel = pcx_buf + (x + tx + cx) + pcx_w * (y + ty + cy);
+						unsigned char *ppixel = pcx_buf + tx + pcx_w * ty;
 						int color = -1;
 						for (k = 0; k < 8; k++) {
 							for (l = 0; l < 8; l++) {
@@ -2081,7 +2125,7 @@ pce_haltmap(int *ip)
 										color = ppixel[l] & 0x0F;
 									else
 									if ((ppixel[l] & 0x0F) != color) {
-										error("Multiple collision colors in CHR at MAP (%d, %d)!", (j * 2 + cx) * 8 + 4, (i * 2 + cy) * 8 + 4);
+										error("Multiple collision colors in CHR at image (%d, %d)!", tx, ty);
 										k = 7;
 										break;
 									}
@@ -2147,14 +2191,19 @@ pce_haltmap(int *ip)
 					blkdata[0x0400 + 3 * 256 + blklabl->data_count] = flag[3];
 					nextblk[blkindx] = blklabl->data_count;
 					*mapdata = blklabl->data_count++;
-					warning("BLK duplicated for collision flags at MAP (%d, %d)!", j * 16 + 8, i * 16 + 8);
+					if (!duplicated++)
+						warning("Collision flag differences are causing BLK to be duplicated!");
+					fprintf(ERROUT, "       Warning: BLK duplicated for collision flags at image (%4d, %4d).\n", tx - 8, ty - 8);
 				} else {
 					/* no room for a duplicate BLK with the new collision flags */
-					error("No room for new collision BLK at MAP (%d, %d)!", j * 16 + 8, i * 16 + 8);
+					error("No room for new collision BLK at image (%4d, %4d)!", tx - 8, ty - 8);
 				}
 			}
 		}
 	}
+
+	if (duplicated)
+		fprintf(ERROUT, "       Warning: A total of %d BLK were duplicated for collision flags.\n", duplicated);
 
 	/* output */
 	if (pass == LAST_PASS)
@@ -2274,7 +2323,7 @@ pce_maskmap(int *ip)
 		}
 
 		/* remember that masks have been generated for this .INCBLK/.INTILE */
-		blklabl->flags |= FLG_MASKS;
+		blklabl->flags |= FLG_MASK;
 
 		/* setup the hash table for the sprites */
 		if (!pcx_set_tile(msklabl, msklabl->value))
@@ -2309,12 +2358,14 @@ pce_maskmap(int *ip)
 
 				/* raise an error if there's no match */
 				if (!test_tile) {
+					error("Unrecognized mask sprite at image (%d, %d)!", sx, sy);
 					fail |= 1;
 					continue;
 				}
 
 				/* raise an error if the undlying tile already has a different mask */
 				if (masktable[base_tile] != 0 && masktable[base_tile] != test_tile->index) {
+					error("BLK already using a different mask sprite at image (%d, %d)!", sx, sy);
 					fail |= 2;
 					continue;
 				}
@@ -2329,10 +2380,6 @@ pce_maskmap(int *ip)
 		putbuffer(workspace, 256);
 
 	/* errors */
-	if (fail & 1)
-		error(".MASKMAP layer contains masks that are not in the .INCMASK reference!");
-	if (fail & 2)
-		error(".MASKMAP sets blocks/tiles with conflicting masks, check with a .OUTPNG!");
 	if (fail)
 		return;
 
@@ -2356,15 +2403,15 @@ pce_maskmap(int *ip)
 
 
 /* ----
- * pce_flagmap()
+ * pce_overmap()
  * ----
- * PCX to add a flag lookup table to a 16x16 tile or block (meta-tile) map
+ * PCX to add a sprite lookup table to a 16x16 tile or block (meta-tile) map
  *
- * .flagmap "filename" [[,x ,y] ,w ,h] ,map_label, spr_label
+ * .overmap "filename" [[,x ,y] ,w ,h] ,map_label, spr_label
  */
 
 void
-pce_flagmap(int *ip)
+pce_overmap(int *ip)
 {
 	int i, j;
 	int x, y, w, h;
@@ -2430,24 +2477,24 @@ pce_flagmap(int *ip)
 		return;
 
 	if (w != (maplabl->data_count)) {
-		error(".FLAGMAP image is not the same width as the .INCMAP!");
+		error(".OVERMAP image is not the same width as the .INCMAP!");
 		return;
 	}
 	if (h != (maplabl->data_size / maplabl->data_count)) {
-		error(".FLAGMAP image is not the same height as the .INCMAP!");
+		error(".OVERMAP image is not the same height as the .INCMAP!");
 		return;
 	}
 
 	/* shortcut if we already know how much data is produced */
-	if (pass == EXTRA_PASS && lastlabl && lastlabl->data_type == P_FLAGMAP) {
+	if (pass == EXTRA_PASS && lastlabl && lastlabl->data_type == P_OVERMAP) {
 		/* output the cumulative size from the first .flagmap of a set */
 		if (lastlabl && lastlabl == lablptr)
 			putbuffer(workspace, lablptr->data_size);
 		return;
 	}
 
-	/* are we expanding a table of flags that was just created? */
-	if (lablptr == NULL && lastlabl != NULL && lastlabl->data_type == P_FLAGMAP) {
+	/* are we expanding a table of overlays that was just created? */
+	if (lablptr == NULL && lastlabl != NULL && lastlabl->data_type == P_OVERMAP) {
 		flagtable = &rom[lastlabl->rombank][lastlabl->value & 0x1FFF];
 	} else {
 		flagtable = workspace;
@@ -2466,8 +2513,8 @@ pce_flagmap(int *ip)
 			return;
 		}
 
-		/* remember that flags have been generated for this .INCBLK/.INTILE */
-		blklabl->flags |= FLG_FLAGS;
+		/* remember that overlays have been generated for this .INCBLK/.INTILE */
+		blklabl->flags |= FLG_OVER;
 
 		/* setup the hash table for the sprites */
 		if (!pcx_set_tile(sprlabl, sprlabl->value))
@@ -2502,12 +2549,14 @@ pce_flagmap(int *ip)
 
 				/* raise an error if there's no match */
 				if (!test_tile) {
+					error("Unrecognized overlay sprite at image (%d, %d)!", sx, sy);
 					fail |= 1;
 					continue;
 				}
 
 				/* raise an error if the undlying tile already has different flags */
 				if (flagtable[base_tile] != 0 && flagtable[base_tile] != test_tile->index) {
+					error("BLK already uses a different overlay sprite at image (%d, %d)!", sx, sy);
 					fail |= 2;
 					continue;
 				}
@@ -2522,22 +2571,18 @@ pce_flagmap(int *ip)
 		putbuffer(workspace, 256);
 
 	/* errors */
-	if (fail & 1)
-		error(".FLAGMAP layer contains flags that are not in the .INCSPR reference!");
-	if (fail & 2)
-		error(".FLAGMAP sets blocks/tiles with conflicting flags, check with a .OUTPNG!");
 	if (fail)
 		return;
 
 	/* size */
 	if (lablptr) {
-		lablptr->data_type = P_FLAGMAP;
+		lablptr->data_type = P_OVERMAP;
 		lablptr->data_size = 256;
 		lablptr->data_count = 256;
 	}
 
 	/* set the "size" when the flag table contains valid data */
-	if (lastlabl && lastlabl->data_type == P_FLAGMAP) {
+	if (lastlabl && lastlabl->data_type == P_OVERMAP) {
 		if (pass == LAST_PASS)
 			lastlabl->size = 1;
 	}
