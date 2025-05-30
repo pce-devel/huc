@@ -94,7 +94,13 @@ unsigned short pseudo_allowed[] = {
 /* P_REF         */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS,
 /* P_PHASE       */	IN_CODE + IN_HOME,
 /* P_DEBUG       */	ANYWHERE,
-/* P_OUTBIN      */	ANYWHERE
+/* P_OUTBIN      */	ANYWHERE,
+/* P_OUTPNG      */	ANYWHERE,
+/* P_INCMASK     */	IN_CODE + IN_HOME + IN_DATA,
+/* P_HALTMAP     */	IN_CODE + IN_HOME + IN_DATA,
+/* P_MASKMAP     */	IN_CODE + IN_HOME + IN_DATA,
+/* P_OVERMAP     */	IN_CODE + IN_HOME + IN_DATA,
+/* P_SWIZZLE     */	ANYWHERE
 };
 
 
@@ -1288,7 +1294,7 @@ do_incbin(int *ip)
 	}
 
 	/* set the size after conversion in the last pass */
-	if (lastlabl) {
+	if (lastlabl && lastlabl->data_type == P_INCBIN) {
 		if (pass == LAST_PASS)
 			lastlabl->size = 1;
 	}
@@ -1428,11 +1434,9 @@ do_mx(char *fname)
 		lablptr->data_type = P_INCBIN;
 		lablptr->data_size = size;
 	}
-	else {
-		if (lastlabl) {
-			if (lastlabl->data_type == P_INCBIN)
-				lastlabl->data_size += size;
-		}
+	else
+	if (lastlabl && lastlabl->data_type == P_INCBIN) {
+		lastlabl->data_size += size;
 	}
 
 	/* output line */
@@ -1730,11 +1734,9 @@ do_ds(int *ip)
 		lablptr->data_type = P_DB;
 		lablptr->data_size = loccnt - data_loccnt;
 	}
-	else {
-		if (lastlabl) {
-			if (lastlabl->data_type == P_DB)
-				lastlabl->data_size += loccnt - data_loccnt;
-		}
+	else
+	if (lastlabl && lastlabl->data_type == P_DB) {
+		lastlabl->data_size += loccnt - data_loccnt;
 	}
 
 	/* output line */
@@ -1786,8 +1788,13 @@ do_section(int *ip)
  * ----
  * .inchr pseudo - convert a PCX to 8x8 character tiles
  *
- * .incchr "filename" [, x, y [, w, h ]] [, optimize]
+ * .incchr "filename" [, x, y [, w, h ]] [, optimize] (optype == 0)
+ * .padchr to_count (optype == 1)
+ *
+ * these different functions share the same opval so that "lastlabl" isn't cleared
  */
+
+#define NARGS_0_1_2_3_5 0b11000000
 
 void
 do_incchr(int *ip)
@@ -1806,24 +1813,32 @@ do_incchr(int *ip)
 	/* define label */
 	labldef(LOCATION);
 
+	/* allocate memory for the symbol's tags */
+	if (lablptr && lablptr->tags == NULL) {
+		if ((lablptr->tags = calloc(1, sizeof(t_tags))) == NULL) {
+			error("Cannot allocate memory for tags!");
+			return;
+		}
+		/* allocate memory for the tileset metadata */
+		if ((lablptr->tags->metadata = calloc(1, sizeof(tile) / sizeof(struct t_tile))) == NULL) {
+			error("Cannot allocate memory for metadata!");
+			return;
+		}
+	}
+
+	/* are we expanding a set of characters that was just created? */
+	if (lablptr == NULL && lastlabl != NULL && lastlabl->data_type == P_INCCHR) {
+		nb_tile = lastlabl->data_count;
+	} else {
+		tile_lablptr = lastlabl = lablptr;
+		if (lablptr)
+			tile_offset = lablptr->value;
+		memset(tile_tbl, 0, sizeof(tile_tbl));
+	}
+
 	/* output */
 	if (pass == LAST_PASS)
 		loadlc(loccnt, 0);
-
-	/* get args */
-	if (!pcx_get_args(ip))
-		return;
-
-	/* odd number of args after filename if there is an "optimize" flag */
-	optimize = 0;
-	if ((pcx_nb_args & 1) != 0) {
-		optimize = (pcx_arg[pcx_nb_args - 1] != 0);
-		--pcx_nb_args;
-	}
-
-	/* set up x, y, w, h from the args */
-	if (!pcx_parse_args(0, pcx_nb_args, &x, &y, &w, &h, 8))
-		return;
 
 	/* shortcut if we already know how much data is produced */
 	if (pass == EXTRA_PASS && lastlabl && lastlabl->data_type == P_INCCHR) {
@@ -1833,32 +1848,44 @@ do_incchr(int *ip)
 		return;
 	}
 
-	/* are we expanding a set of characters that was just created? */
-	if (lablptr == NULL && lastlabl != NULL && lastlabl->data_type == P_INCCHR) {
-		nb_tile = lastlabl->data_count;
-	} else {
-		tile_lablptr = lablptr;
-		if (lablptr)
-			tile_offset = lablptr->value;
-		memset(tile_tbl, 0, sizeof(tile_tbl));
-	}
+	if (optype == 0) {
+		/* get args for .INCCHR */
+		if (!pcx_get_args(ip, NARGS_0_1_2_3_5))
+			return;
 
-	/* pack data */
-	for (i = 0; i < h; i++) {
-		for (j = 0; j < w; j++) {
-			/* tile coordinates */
-			tx = x + (j << 3);
-			ty = y + (i << 3);
+		/* odd number of args after filename if there is an "optimize" flag */
+		optimize = 0;
+		if ((pcx_nb_args & 1) != 0) {
+			optimize = (pcx_arg[pcx_nb_args - 1] != 0);
+			--pcx_nb_args;
+		}
 
-			/* get tile */
-			pcx_pack_8x8_tile(tile_data, tx, ty);
+		/* set up x, y, w, h from the args */
+		if (!pcx_parse_args(0, pcx_nb_args, &x, &y, &w, &h, 8))
+			return;
 
-			/* calculate tile crc */
-			crc = crc_calc(tile_data, size);
-			hash = crc & (HASH_COUNT - 1);
+		/* pack data */
+		for (i = 0; i < h; i++) {
+			for (j = 0; j < w; j++) {
+				/* tile coordinates */
+				tx = x + (j << 3);
+				ty = y + (i << 3);
 
-			if (optimize) {
-				/* search tile */
+				/* get tile */
+				int palette = pcx_pack_8x8_tile(tile_data, tx, ty);
+
+				/* warning not error because PCEAS hasn't previously cared about this */
+				if (palette < 0)
+					warning("Multiple palettes used in CHR at image (%d, %d)!", tx + 4, ty + 4);
+				else
+				if (lastlabl)
+					lastlabl->tags->metadata[nb_tile] = palette;
+
+				/* calculate tile crc */
+				crc = crc_calc(tile_data, size);
+				hash = crc & (HASH_COUNT - 1);
+
+				/* search for the tile in the list */
 				t_tile *test_tile = tile_tbl[hash];
 				while (test_tile) {
 					if (test_tile->crc == crc &&
@@ -1867,30 +1894,72 @@ do_incchr(int *ip)
 					test_tile = test_tile->next;
 				}
 
-				/* ignore repeated tiles */
-				if (test_tile) {
+				/* completely ignore repeated tiles if optimizing */
+				if (optimize && test_tile)
 					continue;
+
+				/* insert the new tile in the tile table */
+				if (nb_tile == (sizeof(tile) / sizeof(struct t_tile))) {
+					error("A character set can only contain %d tiles!", (sizeof(tile) / sizeof(struct t_tile)));
+					return;
 				}
+				tile[nb_tile].next = tile_tbl[hash];
+				tile[nb_tile].index = nb_tile;
+				tile[nb_tile].data = &rom[bank][loccnt];
+				tile[nb_tile].crc = crc;
+
+				/* only add unique tiles to the search list */
+				if (!test_tile)
+					tile_tbl[hash] = &tile[nb_tile];
+
+				/* putbuffer only copies on the LAST_PASS and we really need the data */
+				if (pass != LAST_PASS && !stop_pass) {
+					memcpy(tile[nb_tile].data, tile_data, size);
+				}
+				putbuffer(tile_data, size);
+
+				/* increment number of tiles */
+				nb_tile += 1;
+				total += size;
 			}
+		}
+	} else {
+		/* get the .PADCHR value */
+		if (!evaluate(ip, 0, 0))
+			return;
 
-			/* insert the new tile in the tile table */
-			if (nb_tile == (sizeof(tile) / sizeof(struct t_tile)))
-				continue;
+		/* check end of line */
+		if (!check_eol(ip))
+			return;
 
-			tile[nb_tile].next = tile_tbl[hash];
-			tile[nb_tile].index = nb_tile;
-			tile[nb_tile].data = &rom[bank][loccnt];
-			tile[nb_tile].crc = crc;
-			tile_tbl[hash] = &tile[nb_tile];
+		/* raise an error if already more tiles */
+		if (nb_tile > value) {
+			error("Character set already contains %d tiles!", nb_tile);
+			return;
+		}
 
-			/* putbuffer only copies on the LAST_PASS and we really need it */
+		/* raise an error if beyond what we can (currently) store */
+		if (value > (sizeof(tile) / sizeof(struct t_tile))) {
+			error("A character set can only contain %d tiles!", (sizeof(tile) / sizeof(struct t_tile)));
+			return;
+		}
+
+		/* pad with a copy of the 1st tile, or a non-blank tile */
+		/* we want a pcx_set_tile() to ignore these when it is used later on */
+		if (nb_tile)
+			memcpy(tile_data, tile[0].data, size);
+		else
+			memset(tile_data, 255, size);
+
+		/* pad the character set without adding them to the search list */
+		while (nb_tile != value) {
+			/* putbuffer only copies on the LAST_PASS and we really need the data */
 			if (pass != LAST_PASS && !stop_pass) {
-				memcpy(tile[nb_tile].data, tile_data, size);
+				memcpy(&rom[bank][loccnt], tile_data, size);
 			}
-
 			putbuffer(tile_data, size);
 
-			/* store tile */
+			/* increment number of tiles */
 			nb_tile += 1;
 			total += size;
 		}
@@ -1909,9 +1978,9 @@ do_incchr(int *ip)
 	}
 
 	/* set the size after conversion in the last pass */
-	if (lastlabl) {
+	if (lastlabl && lastlabl->data_type == P_INCCHR) {
 		if (pass == LAST_PASS)
-			lastlabl->size = (machine->type == MACHINE_PCE) ? 32 : 16;;
+			lastlabl->size = (machine->type == MACHINE_PCE) ? 32 : 16;
 	}
 
 	/* output */

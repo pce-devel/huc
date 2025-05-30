@@ -13,6 +13,7 @@ int pcx_w, pcx_h;			/* pcx dimensions */
 int pcx_nb_colors;			/* number of colors in the pcx */
 int pcx_nb_args;			/* number of argument */
 unsigned int pcx_arg[8];		/* pcx args array */
+t_symbol *pcx_lbl[8];			/* pcx args array (labels) */
 unsigned char *pcx_buf;			/* pointer to the pcx buffer */
 unsigned char pcx_pal[256][3];		/* palette */
 unsigned char pcx_plane[2048][4];	/* plane buffer */
@@ -114,7 +115,7 @@ pcx_set_tile(struct t_symbol *ref, unsigned int offset)
 
 	/* same tile set? */
 	if (ref == NULL)
-		return (1);
+		return (0);
 	if ((ref == tile_lablptr) && (offset == tile_offset))
 		return (1);
 
@@ -127,18 +128,18 @@ pcx_set_tile(struct t_symbol *ref, unsigned int offset)
 
 		/* no tile table */
 		tile_lablptr = NULL;
-		return (1);
+		return (0);
 	}
 	if (ref->size == 0 && pass == LAST_PASS) {
 		error("Tile table has not been compiled yet!");
 		tile_lablptr = NULL;
-		return (1);
+		return (0);
 	}
 
 	if (((section_flags[ref->section] & S_IS_ROM) == 0) || (ref->rombank > bank_limit)) {
 		error("Tile table cannot be in RAM!");
 		tile_lablptr = NULL;
-		return (1);
+		return (0);
 	}
 
 	/* adjust offset */
@@ -172,17 +173,29 @@ pcx_set_tile(struct t_symbol *ref, unsigned int offset)
 		for (i = 0; i < nb; i++) {
 			/* calculate tile crc */
 			crc = crc_calc(data, size);
-			hash = (crc & (HASH_COUNT - 1));
+			hash = crc & (HASH_COUNT - 1);
 
-			/* insert the tile in the tile table */
+			/* remember the tile information */
 			tile[i].next = tile_tbl[hash];
 			tile[i].index = i;
 			tile[i].data = data;
 			tile[i].crc = crc;
-			tile_tbl[hash] = &tile[i];
+
+			/* search for the tile in the list */
+			t_tile *test_tile = tile_tbl[hash];
+			while (test_tile) {
+				if (test_tile->crc == crc &&
+				    memcmp(test_tile->data, data, size) == 0)
+					break;
+				test_tile = test_tile->next;
+			}
 
 			/* next */
 			data += size;
+
+			/* only add unique tiles to the search list */
+			if (!test_tile)
+				tile_tbl[hash] = &tile[i];
 		}
 	}
 
@@ -195,7 +208,7 @@ pcx_set_tile(struct t_symbol *ref, unsigned int offset)
 err:
 	tile_lablptr = NULL;
 	error("Incorrect tile table reference!");
-	return (1);
+	return (0);
 }
 
 
@@ -245,7 +258,7 @@ pcx_search_tile(unsigned char *data, int size)
  */
 
 int
-pcx_get_args(int *ip)
+pcx_get_args(int *ip, unsigned valid)
 {
 	char name[PATHSZ];
 	char c;
@@ -275,15 +288,20 @@ pcx_get_args(int *ip)
 			return (0);
 
 		/* store arg */
-		pcx_arg[pcx_nb_args++] = value;
+		pcx_arg[pcx_nb_args] = value;
+
+		if (expr_lablcnt == 1 && expr_lablptr->value == value)
+			pcx_lbl[pcx_nb_args] = expr_lablptr;
+		else
+			pcx_lbl[pcx_nb_args] = NULL;
 
 		/* check number of args */
-		if (pcx_nb_args == 7)
+		if (++pcx_nb_args == 7)
 			break;
 	}
 
 	/* check number of args */
-	if (optype & (1 << pcx_nb_args)) {
+	if (valid & (1 << pcx_nb_args)) {
 		error("Invalid number of arguments!");
 		return (0);
 	}

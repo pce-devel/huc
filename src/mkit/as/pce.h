@@ -11,9 +11,14 @@ void pce_defspr(int *ip);
 void pce_incbat(int *ip);
 void pce_incpal(int *ip);
 void pce_incspr(int *ip);
+void pce_incmask(int *ip);
 void pce_inctile(int *ip);
 void pce_incblk(int *ip);
 void pce_incmap(int *ip);
+void pce_haltmap(int *ip);
+void pce_maskmap(int *ip);
+void pce_overmap(int *ip);
+void pce_swizzle(int *ip);
 void pce_vram(int *ip);
 void pce_pal(int *ip);
 void pce_develo(int *ip);
@@ -21,6 +26,7 @@ void pce_mml(int *ip);
 void pce_incchrpal(int *ip);
 void pce_incsprpal(int *ip);
 void pce_inctilepal(int *ip);
+void pce_outpng(int *ip);
 
 /* MML.C */
 int mml_start(unsigned char *buffer);
@@ -70,45 +76,51 @@ struct t_opcode huc6280_inst[38] = {
 	{NULL, NULL, NULL, 0, 0, 0}
 };
 
-#define NARGS_0_1_2 0b11111000
-#define NARGS_0_2_4 0b11101010
-#define NARGS_1_3_5 0b11010101
-#define NARGS_2_4_6 0b10101011
-#define NARGS_1_2_3_4_5_6 0b10000001
-
 /* PCE specific pseudos */
-struct t_opcode pce_pseudo[31] = {
+struct t_opcode pce_pseudo[43] = {
 	{NULL, "DEFCHR",     pce_defchr,    PSEUDO, P_DEFCHR,    0},
 	{NULL, "DEFPAL",     pce_defpal,    PSEUDO, P_DEFPAL,    0},
 	{NULL, "DEFSPR",     pce_defspr,    PSEUDO, P_DEFSPR,    0},
-	{NULL, "INCBAT",     pce_incbat,    PSEUDO, P_INCBAT,    NARGS_1_2_3_4_5_6},
-	{NULL, "INCSPR",     pce_incspr,    PSEUDO, P_INCSPR,    NARGS_0_2_4},
-	{NULL, "INCPAL",     pce_incpal,    PSEUDO, P_INCPAL,    NARGS_0_1_2},
-	{NULL, "INCTILE",    pce_inctile,   PSEUDO, P_INCTILE,   NARGS_0_2_4},
-	{NULL, "INCBLK",     pce_incblk,    PSEUDO, P_INCBLK,    NARGS_2_4_6},
-	{NULL, "INCMAP",     pce_incmap,    PSEUDO, P_INCMAP,    NARGS_1_3_5},
-	{NULL, "INCCHRPAL",  pce_incchrpal, PSEUDO, P_INCCHRPAL, NARGS_0_2_4},
-	{NULL, "INCSPRPAL",  pce_incsprpal, PSEUDO, P_INCSPRPAL, NARGS_0_2_4},
-	{NULL, "INCTILEPAL", pce_inctilepal,PSEUDO, P_INCTILEPAL,NARGS_0_2_4},
+	{NULL, "INCBAT",     pce_incbat,    PSEUDO, P_INCBAT,    0},
+	{NULL, "INCSPR",     pce_incspr,    PSEUDO, P_INCSPR,    0},
+	{NULL, "INCPAL",     pce_incpal,    PSEUDO, P_INCPAL,    0},
+	{NULL, "INCTILE",    pce_inctile,   PSEUDO, P_INCTILE,   0},
+	{NULL, "INCBLK",     pce_incblk,    PSEUDO, P_INCBLK,    0},
+	{NULL, "INCMAP",     pce_incmap,    PSEUDO, P_INCMAP,    0},
+	{NULL, "INCCHRPAL",  pce_incchrpal, PSEUDO, P_INCCHRPAL, 0},
+	{NULL, "INCSPRPAL",  pce_incsprpal, PSEUDO, P_INCSPRPAL, 0},
+	{NULL, "INCTILEPAL", pce_inctilepal,PSEUDO, P_INCTILEPAL,0},
 	{NULL, "MML",        pce_mml,       PSEUDO, P_MML,       0},
 	{NULL, "PAL",        pce_pal,       PSEUDO, P_PAL,       0},
 	{NULL, "VRAM",       pce_vram,      PSEUDO, P_VRAM,      0},
+	{NULL, "OUTPNG",     pce_outpng,    PSEUDO, P_OUTPNG,    0},
+	{NULL, "INCMASK",    pce_incmask,   PSEUDO, P_INCMASK,   0},
+	{NULL, "HALTMAP",    pce_haltmap,   PSEUDO, P_HALTMAP,   0},
+	{NULL, "MASKMAP",    pce_maskmap,   PSEUDO, P_MASKMAP,   0},
+	{NULL, "OVERMAP",    pce_overmap,   PSEUDO, P_OVERMAP,   0},
+	{NULL, "SWIZZLE",    pce_swizzle,   PSEUDO, P_SWIZZLE,   0},
 
 	{NULL, ".DEFCHR",    pce_defchr,    PSEUDO, P_DEFCHR,    0},
 	{NULL, ".DEFPAL",    pce_defpal,    PSEUDO, P_DEFPAL,    0},
 	{NULL, ".DEFSPR",    pce_defspr,    PSEUDO, P_DEFSPR,    0},
-	{NULL, ".INCBAT",    pce_incbat,    PSEUDO, P_INCBAT,    NARGS_1_2_3_4_5_6},
-	{NULL, ".INCSPR",    pce_incspr,    PSEUDO, P_INCSPR,    NARGS_0_2_4},
-	{NULL, ".INCPAL",    pce_incpal,    PSEUDO, P_INCPAL,    NARGS_0_1_2},
-	{NULL, ".INCTILE",   pce_inctile,   PSEUDO, P_INCTILE,   NARGS_0_2_4},
-	{NULL, ".INCBLK",    pce_incblk,    PSEUDO, P_INCBLK,    NARGS_2_4_6},
-	{NULL, ".INCMAP",    pce_incmap,    PSEUDO, P_INCMAP,    NARGS_1_3_5},
-	{NULL, ".INCCHRPAL", pce_incchrpal, PSEUDO, P_INCCHRPAL, NARGS_0_2_4},
-	{NULL, ".INCSPRPAL", pce_incsprpal, PSEUDO, P_INCSPRPAL, NARGS_0_2_4},
-	{NULL, ".INCTILEPAL",pce_inctilepal,PSEUDO, P_INCTILEPAL,NARGS_0_2_4},
+	{NULL, ".INCBAT",    pce_incbat,    PSEUDO, P_INCBAT,    0},
+	{NULL, ".INCSPR",    pce_incspr,    PSEUDO, P_INCSPR,    0},
+	{NULL, ".INCPAL",    pce_incpal,    PSEUDO, P_INCPAL,    0},
+	{NULL, ".INCTILE",   pce_inctile,   PSEUDO, P_INCTILE,   0},
+	{NULL, ".INCBLK",    pce_incblk,    PSEUDO, P_INCBLK,    0},
+	{NULL, ".INCMAP",    pce_incmap,    PSEUDO, P_INCMAP,    0},
+	{NULL, ".INCCHRPAL", pce_incchrpal, PSEUDO, P_INCCHRPAL, 0},
+	{NULL, ".INCSPRPAL", pce_incsprpal, PSEUDO, P_INCSPRPAL, 0},
+	{NULL, ".INCTILEPAL",pce_inctilepal,PSEUDO, P_INCTILEPAL,0},
 	{NULL, ".MML",       pce_mml,       PSEUDO, P_MML,       0},
 	{NULL, ".PAL",       pce_pal,       PSEUDO, P_PAL,       0},
 	{NULL, ".VRAM",      pce_vram,      PSEUDO, P_VRAM,      0},
+	{NULL, ".OUTPNG",    pce_outpng,    PSEUDO, P_OUTPNG,    0},
+	{NULL, ".INCMASK",   pce_incmask,   PSEUDO, P_INCMASK,   0},
+	{NULL, ".HALTMAP",   pce_haltmap,   PSEUDO, P_HALTMAP,   0},
+	{NULL, ".MASKMAP",   pce_maskmap,   PSEUDO, P_MASKMAP,   0},
+	{NULL, ".OVERMAP",   pce_overmap,   PSEUDO, P_OVERMAP,   0},
+	{NULL, ".SWIZZLE",   pce_swizzle,   PSEUDO, P_SWIZZLE,   0},
 	{NULL, NULL, NULL, 0, 0, 0}
 };
 /* *INDENT-ON* */

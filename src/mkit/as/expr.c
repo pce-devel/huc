@@ -19,8 +19,8 @@ t_symbol pc_symbol = {
 	NULL,           /* next */
 	NULL,           /* local */
 	NULL,           /* scope */
-	NULL,           /* uses */
 	NULL,           /* proc */
+	NULL,           /* tags */
 	"\1*",          /* name */
 	NULL,           /* fileinfo */
 	0,              /* fileline */

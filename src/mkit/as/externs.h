@@ -43,6 +43,7 @@ extern int pcx_w, pcx_h;                        /* PCX dimensions */
 extern int pcx_nb_colors;                       /* number of colors (16/256) in the PCX */
 extern int pcx_nb_args;                         /* number of argument */
 extern unsigned int pcx_arg[8];                 /* PCX args array */
+extern t_symbol *pcx_lbl[8];                    /* PCX args array (labels) */
 extern unsigned char *pcx_buf;                  /* pointer to the PCX buffer */
 extern unsigned char pcx_pal[256][3];           /* palette */
 extern unsigned int tile_offset;                /* offset in the tile reference table */

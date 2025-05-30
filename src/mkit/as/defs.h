@@ -185,6 +185,12 @@
 #define P_PHASE		69	// .phase
 #define P_DEBUG		70	// .dbg
 #define P_OUTBIN	71	// .outbin
+#define P_OUTPNG	72	// .outpng
+#define P_INCMASK	73	// .incmask
+#define P_HALTMAP	74	// .haltmap
+#define P_MASKMAP	75	// .maskmap
+#define P_OVERMAP	76	// .overmap
+#define P_SWIZZLE	77	// .swizzle
 
 /* symbol type */
 #define UNDEF	1	/* undefined - may be zero page */
@@ -199,6 +205,9 @@
 #define FLG_RESERVED 1
 #define FLG_CODE 2
 #define FLG_FUNC 4
+#define FLG_HALT 8
+#define FLG_MASK 16
+#define FLG_OVER 32
 
 /* symbol lookup flags */
 #define SYM_CHK	0	/* does it exist? */
@@ -301,8 +310,8 @@ typedef struct t_symbol {
 	struct t_symbol *next;
 	struct t_symbol *local;
 	struct t_symbol *scope;
-	struct t_symbol *uses;
 	struct t_proc *proc;
+	struct t_tags *tags;
 	const char *name;
 	struct t_file *fileinfo;
 	int fileline;
@@ -365,6 +374,12 @@ typedef struct t_blk {
 	struct t_blk *next;
 	uint64_t data;
 } t_blk;
+
+typedef struct t_tags {
+	struct t_symbol *uses_sym;
+	struct t_symbol *also_sym;
+	unsigned char *metadata;
+} t_tags;
 
 typedef struct t_machine {
 	int type;

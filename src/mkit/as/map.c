@@ -118,11 +118,9 @@ pce_load_map(char *fname, int mode)
 		lablptr->data_type = P_INCBIN;
 		lablptr->data_size = cnt;
 	}
-	else {
-		if (lastlabl) {
-			if (lastlabl->data_type == P_INCBIN)
-				lastlabl->data_size += cnt;
-		}
+	else
+	if (lastlabl && lastlabl->data_type == P_INCBIN) {
+		lastlabl->data_size += cnt;
 	}
 
 	/* output line */
@@ -220,11 +218,9 @@ pce_load_stm(char *fname, int mode)
 		lablptr->data_type = P_INCBIN;
 		lablptr->data_size = cnt;
 	}
-	else {
-		if (lastlabl) {
-			if (lastlabl->data_type == P_INCBIN)
-				lastlabl->data_size += cnt;
-		}
+	else
+	if (lastlabl && lastlabl->data_type == P_INCBIN) {
+		lastlabl->data_size += cnt;
 	}
 
 	/* output line */

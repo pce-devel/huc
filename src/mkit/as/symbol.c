@@ -269,8 +269,8 @@ stinstall(int hash, int type)
 	/* init the symbol struct */
 	sym->local = NULL;
 	sym->scope = NULL;
-	sym->uses = NULL;
 	sym->proc = NULL;
+	sym->tags = NULL;
 	sym->name = remember_string(symbol, (size_t)symbol[0] + 2);
 	sym->deflastpass = 0;
 	sym->reflastpass = 1; /* so that .ifref triggers in 1st pass */
