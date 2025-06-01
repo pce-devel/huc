@@ -210,6 +210,19 @@ SCR_CHR_12	.rs	1	; Which CHR banks are used by the BLK, with
 SCR_CHR_34	.rs	1	; a max of 16 CHR banks per MULTI_MAP.
 	.endif
 
+		; A simple macro to help build a multi-screen map.
+
+	.ifndef	SCREEN
+SCREEN		.macro
+		db	(((\1) & $1FFF) | $6000) >> 8, bank(\1)
+	.if	!BLKDEF_POINTERS
+		db	(((\2) & $1FFF) | $4000) >> 8, bank(\2)
+		db	(((\3) & $1FFF) | $6000) >> 8, bank(\3)
+		dw	(\4)
+	.endif
+		.endm
+	.endif
+
 ; **************
 ; 16-bytes of VDC blkmap info.
 ;
@@ -802,21 +815,21 @@ map_set_screen:	ldy	<map_scrn_y		; Map SCR Y coordinate.
 		sec
 		lda	[mul_sqrplus_lo], y
 		sbc	[mul_sqrminus_lo], y
-		sta.l	<__temp			; Lo-byte of (SCR Y * width).
+		sta.l	<_bp			; Lo-byte of (SCR Y * width).
 		lda	[mul_sqrplus_hi], y
 		sbc	[mul_sqrminus_hi], y
 		tay				; Hi-byte of (SCR Y * width).
 	.else
-		sty.h	<__temp			; Takes 144..176 cycles.
+		sty.h	<_bp			; Takes 144..176 cycles.
 		ldy	#8
 		lsr	a
-		sta.l	<__temp
+		sta.l	<_bp
 		cla
 		bcc	.rotate
 .add:		clc
-		adc.h	<__temp
+		adc.h	<_bp
 .rotate:	ror	a
-		ror.l	<__temp			; Lo-byte of (SCR Y * width).
+		ror.l	<_bp			; Lo-byte of (SCR Y * width).
 		dey
 		bcs	.add
 		bne	.rotate
@@ -825,23 +838,23 @@ map_set_screen:	ldy	<map_scrn_y		; Map SCR Y coordinate.
 
 		lda	<map_scrn_x		; Map SCR X coordinate.
 		clc
-		adc.l	<__temp
+		adc.l	<_bp
 		bcc	!+
 		iny
 
-!:		sty.h	<__temp			; 2 bytes per screen entry, max
+!:		sty.h	<_bp			; 2 bytes per screen entry, max
 		asl	a			; 8KByte screen table.
-		rol.h	<__temp
+		rol.h	<_bp
 	.if	BLKDEF_POINTERS == 0
 		asl	a			; 8 bytes per screen entry when
-		rol.h	<__temp			; not using BLK pointers.
+		rol.h	<_bp			; not using BLK pointers.
 		asl	a
-		rol.h	<__temp
+		rol.h	<_bp
 	.endif
 
 		adc.l	vdc_scr_addr, x		; Calc screen data pointer.
 		sta.l	<_bp			; Maximum data size is 8KBytes
-		lda.h	<__temp			; so we don't need to consider
+		lda.h	<_bp			; so we don't need to consider
 		adc.h	vdc_scr_addr, x		; bank overflow.
 		sta.h	<_bp
 
@@ -851,11 +864,11 @@ map_set_screen:	ldy	<map_scrn_y		; Map SCR Y coordinate.
 		tam4
 
 		cly
-		lda	[_bp], y		; Get SCR_MAP_BANK.
-		sta	vdc_map_bank, x
-		iny
 		lda	[_bp], y		; Get SCR_MAP_PAGE.
 		sta.h	vdc_map_addr, x
+		iny
+		lda	[_bp], y		; Get SCR_MAP_BANK.
+		sta	vdc_map_bank, x
 
 	.if	BLKDEF_POINTERS == 0
 		iny
@@ -865,11 +878,11 @@ map_set_screen:	ldy	<map_scrn_y		; Map SCR Y coordinate.
 		lda	[_bp], y		; Get SCR_BLK_BANK.
 		sta	vdc_blk_bank, x
 		iny
-		lda	[_bp], y		; Get SCR_FLG_BANK.
-		sta	vdc_flg_bank, x
-		iny
 		lda	[_bp], y		; Get SCR_FLG_PAGE.
 		sta.h	vdc_flg_addr, x
+		iny
+		lda	[_bp], y		; Get SCR_FLG_BANK.
+		sta	vdc_flg_bank, x
 	.if	0				; These are not currently used.
 		iny
 		lda	[_bp], y		; Get SCR_CHR_12.
@@ -982,12 +995,12 @@ map_scroll_x:
 
 		jsr	map_set_screen		; Put BLK & MAP in MPR2-MPR5.
 
-		clc				; Calc map data pointer.
-		lda	<map_bat_x
+		lda	<map_bat_x		; Calc map data pointer.
 		lsr	a			; Map BLK X coordinate.
 		ora.l	<map_line
 		sta.l	<_bp
 		lda.h	<map_line
+		clc
 		adc.h	vdc_map_addr, x		; N.B. 256-byte aligned!
 		sta.h	<_bp
 

@@ -85,6 +85,13 @@ extern void __fastcall blit_map( unsigned char tile_x<map_bat_x>, unsigned char 
 		lsr	a
 		sta	vdc_map_line_w
 		.endm
+
+		.macro	SCREEN
+		db	(((\1) & $1FFF) | $6000) >> 8, bank(\1)
+		db	(((\2) & $1FFF) | $4000) >> 8, bank(\2)
+		db	(((\3) & $1FFF) | $6000) >> 8, bank(\3)
+		dw	(\4)
+		.endm
 #endasm
 
 #ifdef _SGX
