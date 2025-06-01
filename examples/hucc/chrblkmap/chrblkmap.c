@@ -14,13 +14,9 @@
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; This uses the Seran Village map from Falcom's "Legend of Xanadu 2" game as
-; an example of how a master video game creator achieved their results.
+; This uses the Seran Village map from Falcom's "Legend of Xanadu 2" game.
 ;
-; Their artwork is used under the "fair use exemption" to copyright in order
-; to teach modern developers how create their own games with modern tools.
-;
-; The artwork itself may not be used in games without Falcom's permission.
+; See the README.md file in the "../seran/" directory for more information.
 ;
 ; ***************************************************************************
 ; **************************************************************************/
@@ -43,12 +39,12 @@
 
 // Extract all of the 8x8 characters for the 8 frames of 32x32 pixel water animation.
 
-#incchr( water_chr, "seran-water.png", 4, 4*8 ); /* Animated characters. */
+#incchr( water_chr, "../seran/seran-water.png", 4, 4*8 ); /* Animated characters. */
 
 
 // Extract all of the 8x8 characters for the 4 frames of 64x8 pixel shore animation.
 
-#incchr( shore_chr, "seran-shore.png", 8, 1*4 ); /* Animated characters. */
+#incchr( shore_chr, "../seran/seran-shore.png", 8, 1*4 ); /* Animated characters. */
 
 
 // Extract all of the 8x8 characters (a.k.a. tiles) that are used in the
@@ -66,9 +62,9 @@
 #asm
 OPTIMIZE	=	1
 		.data
-_seran_chr:	incchr	"seran-water.png", 4, 4 ; 1st frame of the animation.
-		incchr	"seran-shore.png", 8, 1 ; 1st frame of the animation.
-		incchr	"seran-map.png", 128, 128, OPTIMIZE
+_seran_chr:	incchr	"../seran/seran-water.png", 4, 4 ; 1st frame of the animation.
+		incchr	"../seran/seran-shore.png", 8, 1 ; 1st frame of the animation.
+		incchr	"../seran/seran-map.png", 128, 128, OPTIMIZE
 		.code
 #endasm
 
@@ -84,7 +80,7 @@ extern unsigned char seran_chr[];
 // You need to tell the converter where in VRAM you are going to upload
 // the character set.
 
-#incblk( seran_blk, "seran-map.png", 0x1000, seran_chr );
+#incblk( seran_blk, "../seran/seran-map.png", 0x1000, seran_chr );
 
 
 // Extract the map in BLK format (max size is 128x128 blocks).
@@ -92,18 +88,20 @@ extern unsigned char seran_chr[];
 // This is used for medium sized scrolling backgrounds, and is also the
 // format for the individual screens in a huge multi-screen background.
 
-#incmap( seran_map, "seran-map.png", seran_blk );
+#incmap( seran_map, "../seran/seran-map.png", seran_blk );
 
 
 // Get the full 256-color palette from the bitmap.
 
-#incpal( seran_pal, "seran-map.png" );
+#incpal( seran_pal, "../seran/seran-map.png" );
 
 
-// There is no support (yet) for extra game-specific information for each
-// of the blocks.
+// This example doesn't use the extra .MASKMAP/.OVERMAP lookup table for
+// the BLK, but the library routines expect *something* to be specified.
+//
+// This just gives the code an array of blank data to keep it happy.
 
-unsigned char seran_flg[256];
+unsigned char seran_msk[256];
 
 
 // Define where the map's original copies of the animated characters are in VRAM
@@ -144,15 +142,14 @@ unsigned int  cycle_offset;
 
 test_blkmap()
 {
-	// Disable display.
+	// Use a reduced screen size and 32x32 BAT size to save VRAM.
+	// This also clears and enables the display.
+
+	set_240x208();
+
+	// Disable the display before uploading the graphics.
 	disp_off();
 	vsync();
-
-	// Clear display.
-	cls();
-
-	// Use a reduced screen size and 32x32 BAT size to save VRAM.
-	set_240x208();
 
 	// Upload the default HuCC font.
 	set_font_color(4, 0);
@@ -171,7 +168,7 @@ test_blkmap()
 
 	// There are normally 256 blocks in a .incblk although there is a way
 	// to store fewer, but that isn't the point of this example.
-	set_blocks( seran_blk, seran_flg, 256 );
+	set_blocks( seran_blk, seran_msk, 256 );
 
 	// You can use COUNTOF() to get the width of a .incmap map.
 	set_blkmap( seran_map, COUNTOF(seran_map) );
@@ -185,6 +182,8 @@ test_blkmap()
 
 	put_string( "An animated scrolling BLK map.", 0, 0 );
 	put_string( "LRUD to scroll.  RUN for next.", 0, 1 );
+
+	scroll_split(0, 0, vdc_map_pxl_x & 511, vdc_map_pxl_y & 255, BKG_ON | SPR_ON);
 
 	vsync();
 
@@ -277,21 +276,20 @@ test_blkmap()
 // You need to tell the converter where in VRAM you are going to upload
 // the character set.
 
-#incbat( seran_bat, "seran-map.png", 0x1000, 128, 64, seran_chr );
+#incbat( seran_bat, "../seran/seran-map.png", 0x1000, 128, 64, seran_chr );
 
 //
 
 test_chrmap()
 {
-	// Disable display.
+	// Use a reduced screen size and 32x32 BAT size to save VRAM.
+	// This also clears and enables the display.
+
+	set_240x208();
+
+	// Disable the display before uploading the graphics.
 	disp_off();
 	vsync();
-
-	// Clear display.
-	cls();
-
-	// Use a reduced screen size and 32x32 BAT size to save VRAM.
-	set_240x208();
 
 	// Upload the default HuCC font.
 	set_font_color(4, 0);
@@ -321,6 +319,8 @@ test_chrmap()
 
 	put_string( "An animated scrolling CHR map.", 0, 0 );
 	put_string( "LRUD to scroll.  RUN for next.", 0, 1 );
+
+	scroll_split(0, 0, vdc_map_pxl_x & 511, vdc_map_pxl_y & 255, BKG_ON | SPR_ON);
 
 	vsync();
 
