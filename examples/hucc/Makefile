@@ -2,7 +2,7 @@
 # Makefile for examples
 #
 
-SUBDIRS = chrblkmap scroll sgx shmup
+SUBDIRS = scroll sgx shmup chrblkmap multimap
 
 all clean:
 	@$(MAKE) $(SUBDIRS) "COMMAND=$@"
