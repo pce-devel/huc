@@ -76,6 +76,7 @@ extern void __fastcall __macro sgx_put_vram( unsigned int address<_di>, unsigned
 extern void __fastcall load_palette( unsigned char palette<_al>, unsigned char __far *data<_bp_bank:_bp>, unsigned char num_palettes<_ah> );
 
 extern void __fastcall __macro load_vram( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned int num_words<_ax> );
+extern void __fastcall __macro load_vram_bank(unsigned int vram<_di>, unsigned int data<__bp>, unsigned char bank<_bp_bank>, unsigned int num_words<__cx>);
 extern void __fastcall __macro sgx_load_vram( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned int num_words<_ax> );
 
 extern void __fastcall load_bat( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned char tiles_w<_al>, unsigned char tiles_h<_ah> );

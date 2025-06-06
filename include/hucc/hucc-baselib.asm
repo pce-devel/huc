@@ -715,7 +715,8 @@ _set_sprpal.3	.macro
 ;
 ; void __fastcall __macro load_vram( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned int num_words<_ax> );
 ; void __fastcall __macro sgx_load_vram( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned int num_words<_ax> );
-;
+;; void __fastcall __macro load_vram_bank(unsigned int vram<_di>, unsigned int data<__bp>, unsigned char bank<_bp_bank>, unsigned int num_words<__cx>);
+
 ; void __fastcall __macro far_load_vram( unsigned int vram<_di>, unsigned int num_words<_ax> );
 ; void __fastcall __macro sgx_far_load_vram( unsigned int vram<_di>, unsigned int num_words<_ax> );
 ;
@@ -742,6 +743,10 @@ _set_sprpal.3	.macro
 		call	load_vram_x
 		.endm
 
+		.macro	_load_vram_bank.4
+		clx				; Offset to PCE VDC. with bank passed in. to enable dynamic upload from indirect data 
+		call	load_vram_x
+		.endm
 
 
 ; ***************************************************************************
