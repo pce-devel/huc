@@ -54,6 +54,11 @@ extern unsigned char  vdc_map_line_w;
 // Width of map in screens (if multi-screen map).
 extern unsigned char  vdc_map_scrn_w;
 
+// Extra information returned by get_map_block() and sgx_get_map_block(),
+// which are the collision flags and the mask/overlay sprite for the BLK.
+extern unsigned char  map_blk_flag;
+extern unsigned char  map_blk_mask;
+
 extern unsigned char  vdc_scr_bank;
 extern unsigned char *vdc_scr_addr;
 
@@ -63,10 +68,10 @@ extern unsigned char *vdc_map_addr;
 extern unsigned char  vdc_blk_bank;
 extern unsigned char *vdc_blk_addr;
 
-extern unsigned char  vdc_flg_bank;
-extern unsigned char *vdc_flg_addr;
+extern unsigned char  vdc_tbl_bank;
+extern unsigned char *vdc_tbl_addr;
 
-extern void __fastcall set_blocks( unsigned char __far *blk_def<vdc_blk_bank:vdc_blk_addr>, unsigned char __far *flg_def<vdc_flg_bank:vdc_flg_addr>, unsigned char number_of_blocks<_al> );
+extern void __fastcall set_blocks( unsigned char __far *blk_def<vdc_blk_bank:vdc_blk_addr>, unsigned char __far *flg_def<vdc_tbl_bank:vdc_tbl_addr>, unsigned char number_of_blocks<_al> );
 extern void __fastcall __macro set_blkmap( unsigned char __far *blk_map<vdc_map_bank:vdc_map_addr>, unsigned char blocks_w<vdc_map_line_w> );
 extern void __fastcall __macro set_multimap( unsigned char __far *multi_map<vdc_scr_bank:vdc_scr_addr>, unsigned char screens_w<vdc_map_scrn_w> );
 
@@ -74,6 +79,8 @@ extern void __fastcall draw_map( void );
 extern void __fastcall scroll_map( void );
 
 extern void __fastcall blit_map( unsigned char tile_x<map_bat_x>, unsigned char tile_y<map_bat_y>, unsigned char tile_w<map_draw_x>, unsigned char tile_h<map_draw_y> );
+
+extern unsigned char __fastcall get_map_block( unsigned int x<map_pxl_x>, unsigned int y<map_pxl_y> );
 
 #asm
 		.macro	_set_blkmap.2
@@ -119,10 +126,10 @@ extern unsigned char *sgx_map_addr;
 extern unsigned char  sgx_blk_bank;
 extern unsigned char *sgx_blk_addr;
 
-extern unsigned char  sgx_flg_bank;
-extern unsigned char *sgx_flg_addr;
+extern unsigned char  sgx_tbl_bank;
+extern unsigned char *sgx_tbl_addr;
 
-extern void __fastcall sgx_set_blocks( unsigned char __far *blk_def<sgx_blk_bank:sgx_blk_addr>, unsigned char __far *flg_def<sgx_flg_bank:sgx_flg_addr>, unsigned char number_of_blocks<_al> );
+extern void __fastcall sgx_set_blocks( unsigned char __far *blk_def<sgx_blk_bank:sgx_blk_addr>, unsigned char __far *flg_def<sgx_tbl_bank:sgx_tbl_addr>, unsigned char number_of_blocks<_al> );
 extern void __fastcall __macro sgx_set_blkmap( unsigned char __far *blk_map<sgx_map_bank:sgx_map_addr>, unsigned char blocks_w<sgx_map_line_w> );
 extern void __fastcall __macro sgx_set_multimap( unsigned char __far *multi_map<sgx_scr_bank:sgx_scr_addr>, unsigned char screens_w<sgx_map_scrn_w> );
 
@@ -130,6 +137,8 @@ extern void __fastcall sgx_draw_map( void );
 extern void __fastcall sgx_scroll_map( void );
 
 extern void __fastcall sgx_blit_map( unsigned char tile_x<map_bat_x>, unsigned char tile_y<map_bat_y>, unsigned char tile_w<map_draw_x>, unsigned char tile_h<map_draw_y> );
+
+extern unsigned char __fastcall sgx_get_map_block( unsigned int x<map_pxl_x>, unsigned int y<map_pxl_y> );
 
 #asm
 		.macro	_sgx_set_blkmap.2

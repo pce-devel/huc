@@ -1996,15 +1996,15 @@ pce_incmap(int *ip)
 
 
 /* ----
- * do_haltmap()
+ * do_flagmap()
  * ----
  * PCX to add collision data flags to 16x16 blocks (aka 16x16 meta-tiles)
  *
- * .haltmap "filename" [[,x ,y] ,w ,h] ,map_label
+ * .flagmap "filename" [[,x ,y] ,w ,h] ,map_label
  */
 
 void
-pce_haltmap(int *ip)
+pce_flagmap(int *ip)
 {
 	int i, j, k, l;
 	int x, y, w, h;
@@ -2032,7 +2032,7 @@ pce_haltmap(int *ip)
 	}
 	maplabl = pcx_lbl[--pcx_nb_args];
 	if (maplabl->data_type == P_SWIZZLE) {
-		error(".HALTMAP must be used before you .SWIZZLE the MAP!");
+		error(".FLAGMAP must be used before you .SWIZZLE the MAP!");
 		return;
 	}
 	if (maplabl->data_type != P_INCMAP) {
@@ -2062,11 +2062,11 @@ pce_haltmap(int *ip)
 	if (!pcx_parse_args(0, pcx_nb_args, &x, &y, &w, &h, 16))
 		return;
 	if (w != (maplabl->data_count)) {
-		error(".HALTMAP image is not the same width as the .INCMAP!");
+		error(".FLAGMAP image is not the same width as the .INCMAP!");
 		return;
 	}
 	if (h != (maplabl->data_size / maplabl->data_count)) {
-		error(".HALTMAP image is not the same height as the .INCMAP!");
+		error(".FLAGMAP image is not the same height as the .INCMAP!");
 		return;
 	}
 
@@ -2082,16 +2082,16 @@ pce_haltmap(int *ip)
 			return;
 		}
 		if (blklabl->flags & (FLG_MASK | FLG_OVER)) {
-			warning(".HALTMAP after a .MASKMAP/.OVERMAP may change the BLK definitions!");
+			warning(".FLAGMAP after a .MASKMAP/.OVERMAP may change the BLK definitions!");
 		}
 
 		/* remember that masks have been generated for this .INCBLK/.INTILE */
-		blklabl->flags |= FLG_HALT;
+		blklabl->flags |= FLG_FLAG;
 
 		/* allocate memory for tracking the BLK's collision status */
 		if (blklabl->tags->metadata == NULL) {
 			if ((blklabl->tags->metadata = calloc(512, 1)) == NULL) {
-				error("Cannot allocate memory for .HALTMAP tracking!");
+				error("Cannot allocate memory for .FLAGMAP tracking!");
 				return;
 			}
 		}
