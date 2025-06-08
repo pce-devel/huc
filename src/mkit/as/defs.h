@@ -187,7 +187,7 @@
 #define P_OUTBIN	71	// .outbin
 #define P_OUTPNG	72	// .outpng
 #define P_INCMASK	73	// .incmask
-#define P_HALTMAP	74	// .haltmap
+#define P_FLAGMAP	74	// .flagmap
 #define P_MASKMAP	75	// .maskmap
 #define P_OVERMAP	76	// .overmap
 #define P_SWIZZLE	77	// .swizzle
@@ -205,7 +205,7 @@
 #define FLG_RESERVED 1
 #define FLG_CODE 2
 #define FLG_FUNC 4
-#define FLG_HALT 8
+#define FLG_FLAG 8
 #define FLG_MASK 16
 #define FLG_OVER 32
 

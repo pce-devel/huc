@@ -97,7 +97,7 @@ unsigned short pseudo_allowed[] = {
 /* P_OUTBIN      */	ANYWHERE,
 /* P_OUTPNG      */	ANYWHERE,
 /* P_INCMASK     */	IN_CODE + IN_HOME + IN_DATA,
-/* P_HALTMAP     */	IN_CODE + IN_HOME + IN_DATA,
+/* P_FLAGMAP     */	IN_CODE + IN_HOME + IN_DATA,
 /* P_MASKMAP     */	IN_CODE + IN_HOME + IN_DATA,
 /* P_OVERMAP     */	IN_CODE + IN_HOME + IN_DATA,
 /* P_SWIZZLE     */	ANYWHERE

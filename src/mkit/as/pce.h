@@ -15,7 +15,7 @@ void pce_incmask(int *ip);
 void pce_inctile(int *ip);
 void pce_incblk(int *ip);
 void pce_incmap(int *ip);
-void pce_haltmap(int *ip);
+void pce_flagmap(int *ip);
 void pce_maskmap(int *ip);
 void pce_overmap(int *ip);
 void pce_swizzle(int *ip);
@@ -95,7 +95,7 @@ struct t_opcode pce_pseudo[43] = {
 	{NULL, "VRAM",       pce_vram,      PSEUDO, P_VRAM,      0},
 	{NULL, "OUTPNG",     pce_outpng,    PSEUDO, P_OUTPNG,    0},
 	{NULL, "INCMASK",    pce_incmask,   PSEUDO, P_INCMASK,   0},
-	{NULL, "HALTMAP",    pce_haltmap,   PSEUDO, P_HALTMAP,   0},
+	{NULL, "FLAGMAP",    pce_flagmap,   PSEUDO, P_FLAGMAP,   0},
 	{NULL, "MASKMAP",    pce_maskmap,   PSEUDO, P_MASKMAP,   0},
 	{NULL, "OVERMAP",    pce_overmap,   PSEUDO, P_OVERMAP,   0},
 	{NULL, "SWIZZLE",    pce_swizzle,   PSEUDO, P_SWIZZLE,   0},
@@ -117,7 +117,7 @@ struct t_opcode pce_pseudo[43] = {
 	{NULL, ".VRAM",      pce_vram,      PSEUDO, P_VRAM,      0},
 	{NULL, ".OUTPNG",    pce_outpng,    PSEUDO, P_OUTPNG,    0},
 	{NULL, ".INCMASK",   pce_incmask,   PSEUDO, P_INCMASK,   0},
-	{NULL, ".HALTMAP",   pce_haltmap,   PSEUDO, P_HALTMAP,   0},
+	{NULL, ".FLAGMAP",   pce_flagmap,   PSEUDO, P_FLAGMAP,   0},
 	{NULL, ".MASKMAP",   pce_maskmap,   PSEUDO, P_MASKMAP,   0},
 	{NULL, ".OVERMAP",   pce_overmap,   PSEUDO, P_OVERMAP,   0},
 	{NULL, ".SWIZZLE",   pce_swizzle,   PSEUDO, P_SWIZZLE,   0},
