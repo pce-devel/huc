@@ -204,8 +204,8 @@ SCR_MAP_PAGE	.rs	1	; 256-byte aligned.
 SCR_MAP_BANK	.rs	1
 SCR_BLK_PAGE	.rs	1	; >$4000, >$4800, >$5000, or >$5800.
 SCR_BLK_BANK	.rs	1
-SCR_FLG_PAGE	.rs	1	; 256-byte aligned.
-SCR_FLG_BANK	.rs	1
+SCR_TBL_PAGE	.rs	1	; 256-byte aligned.
+SCR_TBL_BANK	.rs	1
 SCR_CHR_12	.rs	1	; Which CHR banks are used by the BLK, with
 SCR_CHR_34	.rs	1	; a max of 16 CHR banks per MULTI_MAP.
 	.endif
@@ -223,6 +223,9 @@ SCREEN		.macro
 		.endm
 	.endif
 
+map_blk_flag:	ds	1	; Returned from _get_map_block().
+map_blk_mask:	ds	1	; Returned from _get_map_block().
+
 ; **************
 ; 16-bytes of VDC blkmap info.
 ;
@@ -231,8 +234,8 @@ SCREEN		.macro
 vdc_old_chr_x:	ds	1	; Previous top-left X in CHR (lo-byte only).
 vdc_old_chr_y:	ds	1	; Previous top-left Y in CHR (lo-byte only).
 
-vdc_flg_addr:	ds	2	; 256-byte aligned.
-vdc_flg_bank:	ds	1
+vdc_tbl_addr:	ds	2	; 256-byte aligned.
+vdc_tbl_bank:	ds	1
 
 vdc_blk_addr:	ds	2	; 2KBytes of data, 256-byte aligned.
 vdc_blk_bank:	ds	1
@@ -255,8 +258,8 @@ vdc_scr_chr34:	ds	1	; a max of 16 banks per multi-screen map.
 sgx_old_chr_x:	ds	1	; Previous top-left X in CHR (lo-byte only).
 sgx_old_chr_y:	ds	1	; Previous top-left Y in CHR (lo-byte only).
 
-sgx_flg_addr:	ds	2	; 256-byte aligned.
-sgx_flg_bank:	ds	1
+sgx_tbl_addr:	ds	2	; 256-byte aligned.
+sgx_tbl_bank:	ds	1
 
 sgx_blk_addr:	ds	2	; 2KBytes of data, 256-byte aligned.
 sgx_blk_bank:	ds	1
@@ -312,14 +315,17 @@ sgx_map_option:	ds	1	; Flags to disable BAT alignment.
 
 	.ifdef	HUCC
 
+_map_blk_flag	.alias	map_blk_flag
+_map_blk_mask	.alias	map_blk_mask
+
 _vdc_map_draw_w	.alias	vdc_map_draw_w
 _vdc_map_draw_h	.alias	vdc_map_draw_h
 _vdc_map_pxl_x	.alias	vdc_map_pxl_x
 _vdc_map_pxl_y	.alias	vdc_map_pxl_y
 _vdc_old_chr_x	.alias	vdc_old_chr_x
 _vdc_old_chr_y	.alias	vdc_old_chr_y
-_vdc_flg_addr	.alias	vdc_flg_addr
-_vdc_flg_bank	.alias	vdc_flg_bank
+_vdc_tbl_addr	.alias	vdc_tbl_addr
+_vdc_tbl_bank	.alias	vdc_tbl_bank
 _vdc_blk_addr	.alias	vdc_blk_addr
 _vdc_blk_bank	.alias	vdc_blk_bank
 _vdc_map_line_w	.alias	vdc_map_line_w
@@ -338,8 +344,8 @@ _sgx_map_pxl_x	.alias	sgx_map_pxl_x
 _sgx_map_pxl_y	.alias	sgx_map_pxl_y
 _sgx_old_chr_x	.alias	sgx_old_chr_x
 _sgx_old_chr_y	.alias	sgx_old_chr_y
-_sgx_flg_addr	.alias	sgx_flg_addr
-_sgx_flg_bank	.alias	sgx_flg_bank
+_sgx_tbl_addr	.alias	sgx_tbl_addr
+_sgx_tbl_bank	.alias	sgx_tbl_bank
 _sgx_blk_addr	.alias	sgx_blk_addr
 _sgx_blk_bank	.alias	sgx_blk_bank
 _sgx_map_line_w	.alias	sgx_map_line_w
@@ -389,8 +395,8 @@ blkmap_group	.procgroup
 ; _set_blocks - Initialize the block definition pointers.
 ; _sgx_set_blocks - Initialize the block definition pointers.
 ;
-; void __fastcall set_blocks( unsigned char __far *blk_def<vdc_blk_bank:vdc_blk_addr>, unsigned char __far *flg_def<vdc_flg_bank:vdc_flg_addr>, unsigned char number_of_blk<_al> );
-; void __fastcall sgx_set_blocks( unsigned char __far *blk_def<sgx_blk_bank:sgx_blk_addr>, unsigned char __far *flg_def<sgx_flg_bank:sgx_flg_addr>, unsigned char number_of_blk<_al> );
+; void __fastcall set_blocks( unsigned char __far *blk_def<vdc_blk_bank:vdc_blk_addr>, unsigned char __far *flg_def<vdc_tbl_bank:vdc_tbl_addr>, unsigned char number_of_blk<_al> );
+; void __fastcall sgx_set_blocks( unsigned char __far *blk_def<sgx_blk_bank:sgx_blk_addr>, unsigned char __far *flg_def<sgx_tbl_bank:sgx_tbl_addr>, unsigned char number_of_blk<_al> );
 ;
 
 	.if	SUPPORT_SGX
@@ -408,10 +414,10 @@ blkmap_group	.procgroup
 
 		clx				; Offset to PCE VDC.
 
-		lda.h	vdc_flg_addr, x		; Remap the address to MPR2.
+		lda.h	vdc_tbl_addr, x		; Remap the address to MPR2.
 		and	#$1F
 		ora	#$40
-		sta.h	vdc_flg_addr, x
+		sta.h	vdc_tbl_addr, x
 
 		lda.h	vdc_blk_addr, x		; Remap the address to MPR2.
 		and	#$1F
@@ -741,6 +747,99 @@ _blit_map	.proc
 ; ***************************************************************************
 ; ***************************************************************************
 ;
+; _get_map_block - Get the block number used at a map pixel coordinate.
+; _sgx_get_map_block - Get the block number used at a map pixel coordinate.
+;
+; unsigned char __fastcall _get_map_block( unsigned int x<map_pxl_x>, unsigned int y<map_pxl_y> );
+; unsigned char __fastcall _sgx_get_map_block( unsigned int x<map_pxl_x>, unsigned int y<map_pxl_y> );
+;
+
+	.if	SUPPORT_SGX
+
+		.proc	_sgx_get_map_block.2
+
+		ldx	#SGX_VDC_OFFSET		; Offset to SGX VDC.
+		db	$F0			; Turn "clx" into a "beq".
+
+		.ref	_get_map_block.2
+		.endp
+	.endif
+
+		.proc	_get_map_block.2
+
+		clx				; Offset to PCE VDC.
+
+		tma2				; Preserve MPR2..MPR4.
+		pha
+		tma3
+		pha
+		tma4
+		pha
+	.if	BLKMAP_LARGEMAP
+		tma5				; Preserve MPR5.
+		pha
+	.endif
+
+		jsr	xvt_pxl_2_chr		; Set up the query coordinates.
+
+		jsr	map_chr_2_data		; Page in the map address.
+
+		lda	[_bp]			; Read the BLK from the map.
+		tay
+
+		lda	<map_chr_x		; Calc the BLK address offset
+		lsr	a			; use depending upon even/odd
+		lda	<map_chr_y		; CHR coordinates (not BAT to
+		and	#1			; support unaligned drawing).
+		rol	a
+		ora	#4			; Offset to BLK table top byte.
+		adc.h	vdc_blk_addr, x		; What is the BLK data address?
+		sta.h	<_bp			; $4000, $4800, $5000 or $5800.
+		stz.l	<_bp
+		lda	[_bp], y		; Read the collision flags from
+		and	#%00001100		; the top byte of the CHR.
+		lsr	a
+		lsr	a
+		lsr	a			; Swizzle the bottom bit to get
+		bcc	!+			; the same bit order as used in
+		ora	#2			; .HALTMAP layer.
+!:		sta	map_blk_flag
+
+		lda	vdc_tbl_bank, x		; Is there a table of flags?
+		beq	!+
+		tam3
+;		inc	a
+;		tam4
+;		lda.l	vdc_tbl_addr, x
+;		sta.l	<_bp
+		lda.h	vdc_tbl_addr, x		; If so, it must be aligned!
+		sta.h	<_bp
+		lda	[_bp], y		; Read the .MASKMAP/.OVERMAP
+!:		sta	map_blk_mask		; flag value for this BLK.
+
+	.if	BLKMAP_LARGEMAP
+		pla				; Restore MPR5.
+		tam5
+	.endif
+		pla				; Restore MPR2..MPR4.
+		tam4
+		pla
+		tam3
+		pla
+		tam2
+
+		sxy				; Put the BLK number in X.
+		cly
+
+		leave				; All done!
+
+		.endp
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
 ; map_pxl_2_chr - Convert PXL to CHR, BLK and SCR coordinates.
 ;
 
@@ -752,9 +851,9 @@ map_pxl_2_chr:	lda.l	vdc_map_pxl_y, x	; Get current map Y coordinate.
 		lda.l	vdc_map_pxl_x, x	; Get current map X coordinate.
 		sta.l	<map_pxl_x
 		lda.h	vdc_map_pxl_x, x
-;		sta.h	<map_pxl_x
+		sta.h	<map_pxl_x
 
-;		lda.h	<map_pxl_x		; Xvert map_pxl_x to map_chr_x.
+xvt_pxl_2_chr:	lda.h	<map_pxl_x		; Xvert map_pxl_x to map_chr_x.
 	.if	BLKMAP_MULTISCR
 		tay				; Xvert map_pxl_x to map_scrn_x.
 		bit	vdc_bat_width, x
@@ -789,6 +888,133 @@ map_pxl_2_chr:	lda.l	vdc_map_pxl_y, x	; Get current map Y coordinate.
 		ror.l	<map_pxl_y		; Max map width is 256 CHR.
 
 		rts
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; map_chr_2_data - Page in the MAP address for the CHR coordinates.
+;
+
+map_chr_2_data:
+
+	.if	BLKMAP_MULTISCR
+
+		; Initialization for a multi-screen map.
+
+		lda	vdc_scr_bank, x		; Skip this if regular blkmap.
+		beq	.regular
+
+.multiscreen:	lda	<map_chr_x		; Compare old_x with cur_x.
+		and	vdc_bat_x_mask, x
+		sta	<map_bat_x		; Save BAT X chr coordinate.
+
+		lda	<map_chr_y		; Save BAT Y chr coordinate.
+		and	vdc_bat_y_mask, x
+		sta	<map_bat_y
+		lsr	a			; Map BLK Y coordinate.
+		sta.h	<map_line
+		cla
+		bit	vdc_bat_width, x
+		bmi	.w128
+		bvs	.w64
+.w32:		lsr.h	<map_line
+		ror	a
+.w64:		lsr.h	<map_line
+		ror	a
+.w128:		lsr.h	<map_line
+		ror	a
+		lsr.h	<map_line		; Hi-byte of (BLK Y * width).
+		ror	a
+		sta.l	<map_line		; Lo-byte of (BLK Y * width).
+
+		jsr	map_set_screen		; Put BLK & MAP in MPR2-MPR5.
+
+		lda	<map_bat_x		; Calc map data pointer.
+		lsr	a			; Map BLK X coordinate.
+		ora.l	<map_line
+		sta.l	<_bp
+		lda.h	<map_line
+		clc
+		adc.h	vdc_map_addr, x		; N.B. 256-byte aligned!
+		sta.h	<_bp
+
+		rts
+
+	.endif	BLKMAP_MULTISCR
+
+		; Initialization for a regular map.
+
+.regular:	lda	<map_chr_x		; Compare old_x with cur_x.
+;		bit	vdc_map_option, x	; Set bit7 to disable aligning
+;		bmi	!+			; BAT X with the map X.
+		and	vdc_bat_x_mask, x
+		sta	<map_bat_x		; Save BAT X chr coordinate.
+
+!:		lda	<map_chr_y		; A = map CHR Y coordinate.
+		tay
+		lsr	a
+		say				; Y = map BLK Y coordinate.
+
+;		bit	vdc_map_option, x	; Set bit6 to disable aligning
+;		bvs	!+			; BAT Y with the map Y.
+		and	vdc_bat_y_mask, x
+		sta	<map_bat_y		; Save BAT Y chr coordinate.
+
+	.if	BLKMAP_LARGEMAP
+	.if	FAST_MULTIPLY
+!:		lda	#^square_plus_lo	; Put the table-of-squares back
+		tma5				; into MPR5.
+	.endif
+	.endif
+
+!:		lda	vdc_map_line_w, x	; Map width in BLK.
+	.if	FAST_MULTIPLY
+		sta	<mul_sqrplus_lo		; Takes 54 cycles.
+		sta	<mul_sqrplus_hi
+		eor	#$FF
+		sta	<mul_sqrminus_lo
+		sta	<mul_sqrminus_hi
+		sec
+		lda	[mul_sqrplus_lo], y
+		sbc	[mul_sqrminus_lo], y
+		sta.l	<map_line		; Lo-byte of (BLK Y * width).
+		lda	[mul_sqrplus_hi], y
+		sbc	[mul_sqrminus_hi], y
+		tay				; Hi-byte of (BLK Y * width).
+	.else
+		sty.h	<map_line		; Takes 144..176 cycles.
+		ldy	#8
+		lsr	a
+		sta.l	<map_line
+		cla
+		bcc	.rotate
+.add:		clc
+		adc.h	<map_line
+.rotate:	ror	a
+		ror.l	<map_line		; Lo-byte of (BLK Y * width).
+		dey
+		bcs	.add
+		bne	.rotate
+		tay				; Hi-byte of (BLK Y * width).
+	.endif
+
+!:		lda	<map_chr_x		; Map CHR X coordinate.
+		lsr	a			; Map BLK X coordinate.
+		clc
+		adc.l	<map_line		; Lo-byte of (BLK Y * width).
+		bcc	!+
+		iny				; Hi-byte of (BLK Y * width).
+
+!:		clc				; Calc map data pointer.
+		adc.l	vdc_map_addr, x
+		sta.l	<_bp			; Maximum map size is 16KBytes
+		tya				; so we don't need to consider
+		adc.h	vdc_map_addr, x		; bank overflow.
+		sta.h	<_bp
+
+		bra	map_set_banks		; Put BLK & MAP in MPR2-MPR5.
 
 
 
@@ -878,11 +1104,11 @@ map_set_screen:	ldy	<map_scrn_y		; Map SCR Y coordinate.
 		lda	[_bp], y		; Get SCR_BLK_BANK.
 		sta	vdc_blk_bank, x
 		iny
-		lda	[_bp], y		; Get SCR_FLG_PAGE.
-		sta.h	vdc_flg_addr, x
+		lda	[_bp], y		; Get SCR_TBL_PAGE.
+		sta.h	vdc_tbl_addr, x
 		iny
-		lda	[_bp], y		; Get SCR_FLG_BANK.
-		sta	vdc_flg_bank, x
+		lda	[_bp], y		; Get SCR_TBL_BANK.
+		sta	vdc_tbl_bank, x
 	.if	0				; These are not currently used.
 		iny
 		lda	[_bp], y		; Get SCR_CHR_12.
