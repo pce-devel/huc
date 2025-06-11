@@ -1804,12 +1804,11 @@ block_lhs_odd:	lda	[blk_bl_l_ptr], y	; 7
 		sta	VDC_DH, x		; 6
 
 		lda	vdc_map_line_w, x	; 5
-		beq	!+			; 2/4
 		clc				; 2
 		adc.l	<_bp			; 4
 		sta.l	<_bp			; 4
-		bcc	!++			; 2/4
-!:		inc.h	<_bp			; 6
+		bcc	!+			; 2/4
+		inc.h	<_bp			; 6
 
 !:		dec	<map_count		; 6
 		bne	!repeat-		; 4
@@ -1845,12 +1844,11 @@ block_rhs_odd:	lda	[blk_br_l_ptr], y	; 7
 		sta	VDC_DH, x		; 6
 
 		lda	vdc_map_line_w, x	; 5
-		beq	!+			; 2/4
 		clc				; 2
 		adc.l	<_bp			; 4
 		sta.l	<_bp			; 4
-		bcc	!++			; 2/4
-!:		inc.h	<_bp			; 6
+		bcc	!+			; 2/4
+		inc.h	<_bp			; 6
 
 !:		dec	<map_count		; 6
 		bne	!repeat-		; 4
@@ -2219,7 +2217,7 @@ blk_col_strip:	jsr	set_di_xy_mawr		; Set the BAT VRAM destination.
 		lda	<map_chr_y		; CHR coordinates (not BAT to
 		and	#1			; support unaligned drawing).
 		rol	a
-		asl	a
+		asl	a			; N.B. Always leaves C clear.
 		ora.h	vdc_blk_addr, x		; What is the BLK data address?
 		and	#%00011110		; $4000, $4800, $5000 or $5800.
 		tay
@@ -2255,6 +2253,8 @@ blk_col_strip:	jsr	set_di_xy_mawr		; Set the BAT VRAM destination.
 
 		; lhs vertical (28+2 rept)
 		;
+		; N.B. C is always clear on entry.
+		;
 		; 100 cycles per block * 15 -> 1500 cycles
 
 !repeat:	lda	[_bp]			; 7
@@ -2282,12 +2282,11 @@ b4000_lhs_odd:	lda	BLK_4000_BL_L, y	; 5
 		sta	VDC_DH, x		; 6
 
 		lda	vdc_map_line_w, x	; 5
-		beq	!+			; 2/4
-		clc				; 2
 		adc.l	<_bp			; 4
 		sta.l	<_bp			; 4
-		bcc	!++			; 2/4
-!:		inc.h	<_bp			; 6
+		bcc	!+			; 2/4
+		inc.h	<_bp			; 6
+		clc				; 2
 
 !:		dec	<map_count		; 6
 		bne	!repeat-		; 4
@@ -2295,6 +2294,8 @@ b4000_lhs_odd:	lda	BLK_4000_BL_L, y	; 5
 !end:		rts
 
 		; rhs vertical (28+2 rept)
+		;
+		; N.B. C is always clear on entry.
 		;
 		; 100 cycles per block * 15 -> 1500 cycles
 
@@ -2323,12 +2324,11 @@ b4000_rhs_odd:	lda	BLK_4000_BR_L, y	; 5
 		sta	VDC_DH, x		; 6
 
 		lda	vdc_map_line_w, x	; 5
-		beq	!+			; 2/4
-		clc				; 2
 		adc.l	<_bp			; 4
 		sta.l	<_bp			; 4
-		bcc	!++			; 2/4
-!:		inc.h	<_bp			; 6
+		bcc	!+			; 2/4
+		inc.h	<_bp			; 6
+		clc				; 2
 
 !:		dec	<map_count		; 6
 		bne	!repeat-		; 4
@@ -2336,6 +2336,8 @@ b4000_rhs_odd:	lda	BLK_4000_BR_L, y	; 5
 !end:		rts
 
 		; lhs vertical (28+2 rept)
+		;
+		; N.B. C is always clear on entry.
 		;
 		; 100 cycles per block * 15 -> 1500 cycles
 
@@ -2364,12 +2366,11 @@ b4800_lhs_odd:	lda	BLK_4800_BL_L, y	; 5
 		sta	VDC_DH, x		; 6
 
 		lda	vdc_map_line_w, x	; 5
-		beq	!+			; 2/4
-		clc				; 2
 		adc.l	<_bp			; 4
 		sta.l	<_bp			; 4
-		bcc	!++			; 2/4
-!:		inc.h	<_bp			; 6
+		bcc	!+			; 2/4
+		inc.h	<_bp			; 6
+		clc				; 2
 
 !:		dec	<map_count		; 6
 		bne	!repeat-		; 4
@@ -2377,6 +2378,8 @@ b4800_lhs_odd:	lda	BLK_4800_BL_L, y	; 5
 !end:		rts
 
 		; rhs vertical (28+2 rept)
+		;
+		; N.B. C is always clear on entry.
 		;
 		; 100 cycles per block * 15 -> 1500 cycles
 
@@ -2405,12 +2408,11 @@ b4800_rhs_odd:	lda	BLK_4800_BR_L, y	; 5
 		sta	VDC_DH, x		; 6
 
 		lda	vdc_map_line_w, x	; 5
-		beq	!+			; 2/4
-		clc				; 2
 		adc.l	<_bp			; 4
 		sta.l	<_bp			; 4
-		bcc	!++			; 2/4
-!:		inc.h	<_bp			; 6
+		bcc	!+			; 2/4
+		inc.h	<_bp			; 6
+		clc				; 2
 
 !:		dec	<map_count		; 6
 		bne	!repeat-		; 4
@@ -2418,6 +2420,8 @@ b4800_rhs_odd:	lda	BLK_4800_BR_L, y	; 5
 !end:		rts
 
 		; lhs vertical (28+2 rept)
+		;
+		; N.B. C is always clear on entry.
 		;
 		; 100 cycles per block * 15 -> 1500 cycles
 
@@ -2446,12 +2450,11 @@ b5000_lhs_odd:	lda	BLK_5000_BL_L, y	; 5
 		sta	VDC_DH, x		; 6
 
 		lda	vdc_map_line_w, x	; 5
-		beq	!+			; 2/4
-		clc				; 2
 		adc.l	<_bp			; 4
 		sta.l	<_bp			; 4
-		bcc	!++			; 2/4
-!:		inc.h	<_bp			; 6
+		bcc	!+			; 2/4
+		inc.h	<_bp			; 6
+		clc				; 2
 
 !:		dec	<map_count		; 6
 		bne	!repeat-		; 4
@@ -2459,6 +2462,8 @@ b5000_lhs_odd:	lda	BLK_5000_BL_L, y	; 5
 !end:		rts
 
 		; rhs vertical (28+2 rept)
+		;
+		; N.B. C is always clear on entry.
 		;
 		; 100 cycles per block * 15 -> 1500 cycles
 
@@ -2487,12 +2492,11 @@ b5000_rhs_odd:	lda	BLK_5000_BR_L, y	; 5
 		sta	VDC_DH, x		; 6
 
 		lda	vdc_map_line_w, x	; 5
-		beq	!+			; 2/4
-		clc				; 2
 		adc.l	<_bp			; 4
 		sta.l	<_bp			; 4
-		bcc	!++			; 2/4
-!:		inc.h	<_bp			; 6
+		bcc	!+			; 2/4
+		inc.h	<_bp			; 6
+		clc				; 2
 
 !:		dec	<map_count		; 6
 		bne	!repeat-		; 4
@@ -2500,6 +2504,8 @@ b5000_rhs_odd:	lda	BLK_5000_BR_L, y	; 5
 !end:		rts
 
 		; lhs vertical (28+2 rept)
+		;
+		; N.B. C is always clear on entry.
 		;
 		; 100 cycles per block * 15 -> 1500 cycles
 
@@ -2528,12 +2534,11 @@ b5800_lhs_odd:	lda	BLK_5800_BL_L, y	; 5
 		sta	VDC_DH, x		; 6
 
 		lda	vdc_map_line_w, x	; 5
-		beq	!+			; 2/4
-		clc				; 2
 		adc.l	<_bp			; 4
 		sta.l	<_bp			; 4
-		bcc	!++			; 2/4
-!:		inc.h	<_bp			; 6
+		bcc	!+			; 2/4
+		inc.h	<_bp			; 6
+		clc				; 2
 
 !:		dec	<map_count		; 6
 		bne	!repeat-		; 4
@@ -2541,6 +2546,8 @@ b5800_lhs_odd:	lda	BLK_5800_BL_L, y	; 5
 !end:		rts
 
 		; rhs vertical (28+2 rept)
+		;
+		; N.B. C is always clear on entry.
 		;
 		; 100 cycles per block * 15 -> 1500 cycles
 
@@ -2569,12 +2576,11 @@ b5800_rhs_odd:	lda	BLK_5800_BR_L, y	; 5
 		sta	VDC_DH, x		; 6
 
 		lda	vdc_map_line_w, x	; 5
-		beq	!+			; 2/4
-		clc				; 2
 		adc.l	<_bp			; 4
 		sta.l	<_bp			; 4
-		bcc	!++			; 2/4
-!:		inc.h	<_bp			; 6
+		bcc	!+			; 2/4
+		inc.h	<_bp			; 6
+		clc				; 2
 
 !:		dec	<map_count		; 6
 		bne	!repeat-		; 4
