@@ -671,8 +671,8 @@ _gfx_load_vram:
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall vram2vram( unsigned int vram_src<_ax>, unsigned int vram_dst<_bx>, unsigned int word_len<_cx> );
-; void __fastcall sgx_vram2vram( unsigned int vram_src<_ax>, unsigned int vram_dst<_bx>, unsigned int word_len<_cx> );
+; void __fastcall vram2vram( unsigned int vram_dst<_ax>, unsigned int vram_src<_bx>, unsigned int word_len<_cx> );
+; void __fastcall sgx_vram2vram( unsigned int vram_dst<_ax>, unsigned int vram_src<_bx>, unsigned int word_len<_cx> );
 ;
 
 	.if	SUPPORT_SGX
@@ -691,14 +691,14 @@ _gfx_load_vram:
 
 		php
 		sei
-		lda	#VDC_SOUR
+		lda	#VDC_DESR
 		sta	VDC_AR, x
 		lda.l	<_ax
 		sta	VDC_DL, x
 		lda.h	<_ax
 		sta	VDC_DH, x
 
-		lda	#VDC_DESR
+		lda	#VDC_SOUR
 		sta	VDC_AR, x
 		lda.l	<_bx
 		sta	VDC_DL, x

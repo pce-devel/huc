@@ -14,6 +14,29 @@
 ; ***************************************************************************
 ; ***************************************************************************
 ;
+; This example shows how to use the graphics conversion tools that are built
+; into HuCC (and PCEAS) to import and use a 16x16 pixel meta-tile map in C.
+;
+; It also shows how to import and use 8x8 character (tile) animation in your
+; map in order to make the background "come alive".
+;
+; Here is one primer that explains what a meta-tile is ...
+;
+;  https://megacatstudios.com/blogs/retro-development/metatiles
+;
+; While that primer uses 32x32 pixel meta-tile and TILED, the PC Engine more
+; commonly uses a 16x16 meta-tile, and calls it a "block".
+;
+; Editing software such as Grafx2 or Cosmigo's "Pro Motion" can also be used
+; to create maps, and they provide tile-mapping capabilities that were meant
+; for developing professional paletted game art for the 16-bit generation of
+; consoles.
+;
+;  https://www.cosmigo.com/promotion/docs/onlinehelp/tileMappingPrimer.htm
+;
+; ***************************************************************************
+; ***************************************************************************
+;
 ; This uses the Seran Village map from Falcom's "Legend of Xanadu 2" game.
 ;
 ; See the README.md file in the "../seran/" directory for more information.
@@ -27,7 +50,6 @@
 #include "hucc-blkmap.h"
 
 
-
 // **************************************************************************
 // **************************************************************************
 //
@@ -35,6 +57,8 @@
 //
 // This also shows one way to animate background characters in the map.
 //
+// **************************************************************************
+// **************************************************************************
 
 
 // Extract all of the 8x8 characters for the 8 frames of 32x32 pixel water animation.
@@ -78,7 +102,7 @@ extern unsigned char seran_chr[];
 // are always 2KByte long and 2KByte aligned in memory.
 //
 // You need to tell the converter where in VRAM you are going to upload
-// the character set.
+// the character set, which is usually 0x1000 for the map graphics.
 
 #incblk( seran_blk, "../seran/seran-map.png", 0x1000, seran_chr );
 
@@ -102,6 +126,16 @@ extern unsigned char seran_chr[];
 // This just gives the code an array of blank data to keep it happy.
 
 unsigned char seran_msk[256];
+
+
+// Define the screen size that we're going to use to reduce the number of
+// unexplained "magic" numbers later on.
+
+#define VIEW_W 240
+#define VIEW_H 208
+
+#define BAT_W 256
+#define BAT_H 256
 
 
 // Define where the map's original copies of the animated characters are in VRAM
@@ -133,10 +167,11 @@ unsigned char seran_msk[256];
 
 // Variables for the animation.
 
+unsigned char water_delay;
+unsigned char water_cycle;
 unsigned char water_frame;
 unsigned char shore_frame;
-unsigned char frame_cycle;
-unsigned int  cycle_offset;
+
 
 //
 
@@ -148,66 +183,80 @@ test_blkmap()
 	set_240x208();
 
 	// Disable the display before uploading the graphics.
+
 	disp_off();
 	vsync();
 
 	// Upload the default HuCC font.
-	set_font_color(4, 0);
-	set_font_pal(15);
+
+	set_font_color( 4, 0 );
+	set_font_pal( 15 );
 	load_default_font();
 
 	// You can use COUNTOF() to get the number of palettes in a .incpal.
+
 	load_palette( 0, seran_pal, COUNTOF(seran_pal) );
 
 	// You can use SIZEOF() to get the number of bytes in a .incchr.
+
 	load_vram( 0x1000, seran_chr, SIZEOF(seran_chr) >> 1 );
 
 	// The animations need to be in VRAM to use vram2vram() DMA.
+
 	load_vram( WATER_ANIM, water_chr, SIZEOF(water_chr) >> 1 );
 	load_vram( SHORE_ANIM, shore_chr, SIZEOF(shore_chr) >> 1 );
 
 	// There are normally 256 blocks in a .incblk although there is a way
 	// to store fewer, but that isn't the point of this example.
+
 	set_blocks( seran_blk, seran_msk, 256 );
 
 	// You can use COUNTOF() to get the width of a .incmap map.
+
 	set_blkmap( seran_map, COUNTOF(seran_map) );
+
+	// The blkmap is drawn using global variables for the top-left coordinate
+	// in pixels, and the draw width and height in terms of 8x8 characters.
 
 	vdc_map_pxl_x = 0;
 	vdc_map_pxl_y = 0;
-	vdc_map_draw_w = (240 / 8) + 1;
-	vdc_map_draw_h = (208 / 8) + 1;
+	vdc_map_draw_w = (VIEW_W / 8) + 1; // + 1 to allow for scrolling.
+	vdc_map_draw_h = (VIEW_H / 8) + 1; // + 1 to allow for scrolling.
 
 	draw_map();
 
 	put_string( "An animated scrolling BLK map.", 0, 0 );
 	put_string( "LRUD to scroll.  RUN for next.", 0, 1 );
 
-	scroll_split(0, 0, vdc_map_pxl_x & 511, vdc_map_pxl_y & 255, BKG_ON | SPR_ON);
+	scroll_split( 0, 0, vdc_map_pxl_x & (BAT_W - 1), vdc_map_pxl_y & (BAT_H - 1), BKG_ON | SPR_ON );
 
 	vsync();
 
 	disp_on();
 
-	//  demo main loop
+	// Demo main loop.
+
 	for (;;)
 	{
 		// It is usually best to put vsync() at the top of the game loop.
+
 		vsync();
 
 		// Finish when START is pressed.
+
 		if (joytrg(0) & JOY_STRT) {
 			break;
 		}
 
 		// Get movement direction.
+
 		if (joy(0) & JOY_LEFT) {
 			if (vdc_map_pxl_x > 0)
 				vdc_map_pxl_x -= 2;
 		}
 		else
 		if (joy(0) & JOY_RIGHT) {
-			if (vdc_map_pxl_x < (1024 - 240))
+			if (vdc_map_pxl_x < (1024 - VIEW_W))
 				vdc_map_pxl_x += 2;
 		}
 
@@ -217,43 +266,36 @@ test_blkmap()
 		}
 		else
 		if (joy(0) & JOY_DOWN) {
-			if (vdc_map_pxl_y < (1024 - 208))
+			if (vdc_map_pxl_y < (1024 - VIEW_H))
 				vdc_map_pxl_y += 2;
 		}
 
+		// Update the newly-visible edges of the map.
+
 		scroll_map();
 
-		scroll_split(0, 0, vdc_map_pxl_x & 511, vdc_map_pxl_y & 255, BKG_ON | SPR_ON);
+		scroll_split( 0, 0, vdc_map_pxl_x & (BAT_W - 1), vdc_map_pxl_y & (BAT_H - 1), BKG_ON | SPR_ON );
 
-		// Slow the animation by only uploading on every other video frame (each 1/60th second).
-		// Note that "irq_cnt" is a system variable that the HuCC runtime increments every video frame.
-		if (irq_cnt & 1)
-		{
-			// Upload a water frame over 4/60th, then upload a shore frame over 2/60th.
-			++frame_cycle;
-			if (frame_cycle == 6) {
-				frame_cycle = 0;
-				water_frame = ++water_frame & 7;
-				shore_frame = ++shore_frame & 3;
-			}
+		// Animate the Seran water by overwriting background characters (tiles) from
+		// copies of the animation that are already in VRAM using VRAM-to-VRAM DMA.
 
-			// Each frame of animation uploads 4 characters per cycle.
-			cycle_offset = ((frame_cycle & 3) * (4 * TILE_WORDS));
+		if (++water_delay == 6) {
+			water_delay = 0;
 
 			// Use vram2vram DMA to update the background animation in the next vblank.
-			if (frame_cycle < 4) {
-				// 8 animation frames of 4x4 characters per frame,
-				// each frame split into 4 uploads of 4 characters.
-				vram2vram( WATER_ANIM + (water_frame * WATER_SIZE) + cycle_offset, WATER_CHR + cycle_offset, (4 * TILE_WORDS) );
-			} else {
+
+			if (water_cycle ^= 1) {
 				// 4 animation frames of 8x1 characters per frame,
-				// each frame split into 2 uploads of 4 characters.
-				vram2vram( SHORE_ANIM + (shore_frame * SHORE_SIZE) + cycle_offset, SHORE_CHR + cycle_offset, (4 * TILE_WORDS) );
+				vram2vram( SHORE_CHR, SHORE_ANIM + (shore_frame * SHORE_SIZE), ( 8 * TILE_WORDS) );
+				shore_frame = ++shore_frame & 3;
+			} else {
+				// 8 animation frames of 4x4 characters per frame,
+				vram2vram( WATER_CHR, WATER_ANIM + (water_frame * WATER_SIZE), (16 * TILE_WORDS) );
+				water_frame = ++water_frame & 7;
 			}
 		}
 	}
 }
-
 
 
 // **************************************************************************
@@ -261,6 +303,8 @@ test_blkmap()
 //
 // An example of scrolling a character map (in the VDC's BAT format).
 //
+// **************************************************************************
+// **************************************************************************
 
 
 // Extract the map in BAT format, max size 256x32 or 128x64 characters so
@@ -274,9 +318,10 @@ test_blkmap()
 // and reward screens, but can also be used for scrolling backgrounds.
 //
 // You need to tell the converter where in VRAM you are going to upload
-// the character set.
+// the character set, which is usually 0x1000 for the map graphics.
 
 #incbat( seran_bat, "../seran/seran-map.png", 0x1000, 128, 64, seran_chr );
+
 
 //
 
@@ -288,63 +333,76 @@ test_chrmap()
 	set_240x208();
 
 	// Disable the display before uploading the graphics.
+
 	disp_off();
 	vsync();
 
 	// Upload the default HuCC font.
-	set_font_color(4, 0);
-	set_font_pal(15);
+
+	set_font_color( 4, 0 );
+	set_font_pal( 15 );
 	load_default_font();
 
 	// You can just ignore the COUNTOF() if you already know the number of palettes.
+
 	load_palette( 0, seran_pal, 16 );
 
 	// You can use BANK() to get bank of a symbol, allowing this to work ...
+
 	set_far_base( BANK(seran_chr), seran_chr );
 	far_load_vram( 0x1000, SIZEOF(seran_chr) >> 1 );
 
 	// The animations need to be in VRAM to use vram2vram() DMA.
+
 	load_vram( WATER_ANIM, water_chr, SIZEOF(water_chr) >> 1 );
 	load_vram( SHORE_ANIM, shore_chr, SIZEOF(shore_chr) >> 1 );
 
 	// You can use COUNTOF() to get the width of a .incbat map.
+
 	set_chrmap( seran_bat, COUNTOF(seran_bat) );
+
+	// The chrmap is drawn using global variables for the top-left coordinate
+	// in pixels, and the draw width and height in terms of 8x8 characters.
 
 	vdc_map_pxl_x = 0;
 	vdc_map_pxl_y = 0;
-	vdc_map_draw_w = (240 / 8) + 1;
-	vdc_map_draw_h = (208 / 8) + 1;
+	vdc_map_draw_w = (VIEW_W / 8) + 1; // + 1 to allow for scrolling.
+	vdc_map_draw_h = (VIEW_H / 8) + 1; // + 1 to allow for scrolling.
 
 	draw_bat();
 
 	put_string( "An animated scrolling CHR map.", 0, 0 );
 	put_string( "LRUD to scroll.  RUN for next.", 0, 1 );
 
-	scroll_split(0, 0, vdc_map_pxl_x & 511, vdc_map_pxl_y & 255, BKG_ON | SPR_ON);
+	scroll_split( 0, 0, vdc_map_pxl_x & (BAT_W - 1), vdc_map_pxl_y & (BAT_H - 1), BKG_ON | SPR_ON );
 
 	vsync();
 
 	disp_on();
 
 	// Demo main loop.
+
 	for (;;)
 	{
 		// It is usually best to put vsync() at the top of the game loop.
+
 		vsync();
 
 		// Finish when START is pressed.
+
 		if (joytrg(0) & JOY_STRT) {
 			break;
 		}
 
 		// Get move direction.
+
 		if (joy(0) & JOY_LEFT) {
 			if (vdc_map_pxl_x > 0)
 				vdc_map_pxl_x -= 2;
 		}
 		else
 		if (joy(0) & JOY_RIGHT) {
-			if (vdc_map_pxl_x < (1024 - 240))
+			if (vdc_map_pxl_x < (1024 - VIEW_W))
 				vdc_map_pxl_x += 2;
 		}
 
@@ -354,43 +412,34 @@ test_chrmap()
 		}
 		else
 		if (joy(0) & JOY_DOWN) {
-			if (vdc_map_pxl_y < (512 - 208))
+			if (vdc_map_pxl_y < (512 - VIEW_H))
 				vdc_map_pxl_y += 2;
 		}
 
 		scroll_bat();
 
-		scroll_split(0, 0, vdc_map_pxl_x & 255, vdc_map_pxl_y & 255, BKG_ON | SPR_ON);
+		scroll_split( 0, 0, vdc_map_pxl_x & (BAT_W - 1), vdc_map_pxl_y & (BAT_H - 1), BKG_ON | SPR_ON );
 
-		// Slow the animation by only uploading on every other video frame (each 1/60th second).
-		// Note that "irq_cnt" is a system variable that the HuCC runtime increments every video frame.
-		if (irq_cnt & 1)
-		{
-			// Upload a water frame over 4/60th, then upload a shore frame over 2/60th.
-			++frame_cycle;
-			if (frame_cycle == 6) {
-				frame_cycle = 0;
-				water_frame = ++water_frame & 7;
-				shore_frame = ++shore_frame & 3;
-			}
+		// Animate the Seran water by overwriting background characters (tiles) from
+		// copies of the animation that are already in VRAM using VRAM-to-VRAM DMA.
 
-			// Each frame of animation uploads 4 characters per cycle.
-			cycle_offset = ((frame_cycle & 3) * (4 * TILE_WORDS));
+		if (++water_delay == 6) {
+			water_delay = 0;
 
 			// Use vram2vram DMA to update the background animation in the next vblank.
-			if (frame_cycle < 4) {
-				// 8 animation frames of 4x4 characters per frame,
-				// each frame split into 4 uploads of 4 characters.
-				vram2vram( WATER_ANIM + (water_frame * WATER_SIZE) + cycle_offset, WATER_CHR + cycle_offset, (4 * TILE_WORDS) );
-			} else {
+
+			if (water_cycle ^= 1) {
 				// 4 animation frames of 8x1 characters per frame,
-				// each frame split into 2 uploads of 4 characters.
-				vram2vram( SHORE_ANIM + (shore_frame * SHORE_SIZE) + cycle_offset, SHORE_CHR + cycle_offset, (4 * TILE_WORDS) );
+				vram2vram( SHORE_CHR, SHORE_ANIM + (shore_frame * SHORE_SIZE), ( 8 * TILE_WORDS) );
+				shore_frame = ++shore_frame & 3;
+			} else {
+				// 8 animation frames of 4x4 characters per frame,
+				vram2vram( WATER_CHR, WATER_ANIM + (water_frame * WATER_SIZE), (16 * TILE_WORDS) );
+				water_frame = ++water_frame & 7;
 			}
 		}
 	}
 }
-
 
 
 // **************************************************************************
@@ -398,6 +447,8 @@ test_chrmap()
 //
 // Switch between two different demos ...
 //
+// **************************************************************************
+// **************************************************************************
 
 main()
 {

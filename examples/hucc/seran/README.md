@@ -13,7 +13,7 @@ The artwork itself may not be used in commercial games without Nihon Falcom's
 express written permission.
 
 
-## The Techniqes Used
+## The Techniqes Originally Used
 
 Falcom split their "Legend of Xanadu 2" levels into 1024x1024 pixel sections,
 blanking the screen and loading new graphics and palette data when the player
@@ -34,11 +34,11 @@ graphics and 1 set for animated background characters.
   - A simple 16x16 blank image that can be used to import a blank tile or sprite.
 
 
-* seran-hit.png
-  - This is the Seran Village collision map.
-
 * seran-map.png
   - This is the Seran Village background map.
+
+* seran-hit.png
+  - This is the Seran Village collision map.
 
 * seran-msk.png
   - This is the Seran Village mask-sprite map.
@@ -47,18 +47,18 @@ graphics and 1 set for animated background characters.
   - This shows how the Seran Village shoreline animation is made up from 4 frames of animated characters.
 
 * seran-shore.png
-  - These are the 4 frames of the Seran Village shoreline animation as an image ready to be converted.
+  - These are the 4 frames of the Seran Village shoreline animation as an image, ready to be converted.
 
 * seran-water.gif
   - This shows how the Seran Village water animation is made up from 8 frames of animated characters.
 
 * seran-water.png
-  - These are the 4 frames the Seran Village water animation as an image ready to be converted.
+  - These are the 4 frames the Seran Village water animation as an image, ready to be converted.
 
 
 * rpg-west-map.png
   - This is the Western 3 sections of a 5 section background map.
-  - The "shore" section uses palettes 0,1 and 10,11,12,13.
+  - The "beach" section uses palettes 0,1 and 10,11,12,13.
   - The "seran" section uses palettes 0,1 and 2,3,,5,6,7,8.
   - The "cliff" section uses palettes 0,1 and 14.
 
@@ -69,11 +69,11 @@ graphics and 1 set for animated background characters.
   - This is the Western 3 sections of a 5 section mask-sprite map.
 
 * rpg-west-basic.png
-  - This is the Western 3 sections of a 5 section background map stripped down to a 256 characters that are shared.
+  - This is the Western 3 sections of a 5 section background map stripped down to 256 characters that are shared.
   - It is an example of how you might progressively strip away features from a map in order to make paritioned character sets.
 
 * rpg-west-extra.png
-  - This is the Western 3 sections of a 5 section background map stripped down to a 512 characters that are shared.
+  - This is the Western 3 sections of a 5 section background map stripped down to 512 characters that are shared.
   - It is an example of how you might progressively strip away features from a map in order to make paritioned character sets.
 
 
@@ -93,13 +93,13 @@ graphics and 1 set for animated background characters.
   - This shows how the River shoreline animation is made up from 3 frames of animated characters.
   - The shore animation is a cycle of frames 0,1,0,2.
   - It also shows how the upper and lower parts of the waterfalls are made up from 8 frames of animated characters,
-  - and the froth is made up from  frames of animated characters.
+  - and the froth is made up from parts of both 8 frames and 4 frames of animated characters.
 
 * river-shore.png
-  - These are the 3 frames of the River shoreline animation as an image ready to be converted.
+  - These are the 3 frames of the River shoreline animation as an image, ready to be converted.
 
 * river-froth.png
-  - These are the 8,8,4 frames of the River froth animation as an image ready to be converted.
+  - These are the 8,8,4 frames of the River froth animation as an image, ready to be converted.
 
 * river-falls.png
   - This is 32x32 pixel color-cycled texture used for the center of the smaller waterfalls.
@@ -108,4 +108,26 @@ graphics and 1 set for animated background characters.
   - This shows how the River water animation is made up from 8 frames of animated characters.
 
 * river-water.png
-  - These are the 8 frames the River water animation as an image ready to be converted.
+  - These are the 8 frames the River water animation as an image, ready to be converted.
+
+
+* beach-waves.gif
+  - This shows how the Beach waves animation is a 16 frame color cycle using a set of 12x16=192 static characters.
+
+* beach-waves-00.png
+* beach-waves-01.png
+* beach-waves-02.png
+* beach-waves-03.png
+* beach-waves-04.png
+* beach-waves-05.png
+* beach-waves-06.png
+* beach-waves-07.png
+* beach-waves-08.png
+* beach-waves-09.png
+* beach-waves-10.png
+* beach-waves-11.png
+* beach-waves-12.png
+* beach-waves-13.png
+* beach-waves-14.png
+* beach-waves-15.png
+  - This is the character set for the waves in each of the 16 different palettes, ready to be converted.
