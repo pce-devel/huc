@@ -5,7 +5,7 @@
 ;
 ; Basic library functions provided (mostly) as macros.
 ;
-; Copyright John Brandwood 2024.
+; Copyright John Brandwood 2024-2025.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -410,55 +410,6 @@ _joybuf.1	.macro
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall _nop set_color( unsigned int index<VCE_CTA>, unsigned int value<VCE_CTW> );
-; void __fastcall set_color_rgb( unsigned int index<VCE_CTA>, unsigned char r<_al>, unsigned char g<_ah>, unsigned char b<acc> );
-;
-; r:	red	RED:	bit 3-5
-; g:	green	GREEN:	bit 6-8
-; b:	blue	BLUE:	bit 0-2
-
-_set_color_rgb.4:
-;		lda	<_bl
-;		and	#7
-		sta	<__temp
-		lda	<_al
-;		and	#7
-		asl	a
-		asl	a
-		asl	a
-		ora	<__temp
-		asl	a
-		asl	a
-		sta	<__temp
-		lda	<_ah
-;		and	#7
-		lsr	a
-		ror	<__temp
-		lsr	a
-		ror	<__temp
-		tay
-		lda	<__temp
-		sta.l	VCE_CTW
-		sty.h	VCE_CTW
-		rts
-
-
-
-; ***************************************************************************
-; ***************************************************************************
-;
-; void __fastcall _macro get_color( unsigned int index<VCE_CTA> );
-
-_get_color.1	.macro
-		lda.l	VCE_CTR
-		ldy.h	VCE_CTR
-		.endm
-
-
-
-; ***************************************************************************
-; ***************************************************************************
-;
 ; void __fastcall srand( unsigned char seed<acc> );
 
 	.ifndef	HUCC_NO_DEFAULT_RANDOM
@@ -559,6 +510,20 @@ _random.1:	tay				; Preserve the limit.
 		leave				; Return and copy X -> A.
 
 		.endp
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; N.B. Declared in hucc-gfx.h, but defined here because they're macros!
+;
+; void __fastcall _macro get_color( unsigned int index<VCE_CTA> );
+
+_get_color.1	.macro
+		lda.l	VCE_CTR
+		ldy.h	VCE_CTR
+		.endm
 
 
 

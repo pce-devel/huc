@@ -55,14 +55,32 @@
 
 #asmdef	HUCC_USES_GFX 1
 
-extern void __fastcall set_240x208( void );
-extern void __fastcall set_256x224( void );
+// *************
+// Color and Palette Functions
+// *************
+
+extern void __fastcall __nop set_color( unsigned int index<VCE_CTA>, unsigned int value<VCE_CTW> );
+extern void __fastcall set_color_rgb( unsigned int index<VCE_CTA>, unsigned char r<_al>, unsigned char g<_ah>, unsigned char b<acc> );
+extern unsigned int __fastcall __macro get_color( unsigned int index<VCE_CTA> );
+
+extern void __fastcall load_palette( unsigned char palette<_al>, unsigned char __far *data<_bp_bank:_bp>, unsigned char num_palettes<_ah> );
+
+
+// *************
+// Video Functions
+// *************
+
+extern void __fastcall init_240x208( void );
+extern void __fastcall init_256x224( void );
 
 extern void __fastcall set_screen_size( unsigned char value<_al> );
 extern void __fastcall sgx_set_screen_size( unsigned char value<_al> );
 
 extern void __fastcall set_xres( unsigned int x_pixels<_ax>, unsigned char blur_flag<_bl> );
 extern void __fastcall sgx_set_xres( unsigned int x_pixels<_ax>, unsigned char blur_flag<_bl> );
+
+extern void __fastcall __macro vsync( void );
+extern void __fastcall __macro vsync( unsigned char count<acc> );
 
 extern unsigned int __fastcall __macro vram_addr( unsigned char bat_x<_al>, unsigned char bat_y<_ah> );
 extern unsigned int __fastcall __macro sgx_vram_addr( unsigned char bat_x<_al>, unsigned char bat_y<_ah> );
@@ -72,8 +90,6 @@ extern unsigned int __fastcall __macro sgx_get_vram( unsigned int address<_di> )
 
 extern void __fastcall __macro put_vram( unsigned int address<_di>, unsigned int data<acc> );
 extern void __fastcall __macro sgx_put_vram( unsigned int address<_di>, unsigned int data<acc> );
-
-extern void __fastcall load_palette( unsigned char palette<_al>, unsigned char __far *data<_bp_bank:_bp>, unsigned char num_palettes<_ah> );
 
 extern void __fastcall __macro load_vram( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned int num_words<_ax> );
 extern void __fastcall __macro sgx_load_vram( unsigned int vram<_di>, unsigned char __far *data<_bp_bank:_bp>, unsigned int num_words<_ax> );
@@ -126,6 +142,16 @@ extern void __fastcall sgx_far_load_font( unsigned char count<_al>, unsigned int
 
 extern void __fastcall vram2vram( unsigned int vram_dst<_ax>, unsigned int vram_src<_bx>, unsigned int word_len<_cx> );
 extern void __fastcall sgx_vram2vram( unsigned int vram_dst<_ax>, unsigned int vram_src<_bx>, unsigned int word_len<_cx> );
+
+
+// *************
+// SuperGRAFX VPC Functions
+// *************
+
+extern void __fastcall __nop vpc_set_ctl( unsigned int bits<VPC_CR> );
+extern void __fastcall __nop vpc_set_win1( unsigned int width<VPC_WINDOW1> );
+extern void __fastcall __nop vpc_set_win2( unsigned int width<VPC_WINDOW2> );
+
 
 // *************
 // Deprecated functions ...

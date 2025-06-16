@@ -130,9 +130,9 @@ test_multiblk()
 {
 //	// This is the HuCC default, so it isn't actually needed.
 //
-//	set_256x224();
+//	init_256x224();
 
-	// Disable the display before uploading the graphics.
+	// So just disable the display before uploading the graphics.
 
 	disp_off();
 	vsync();

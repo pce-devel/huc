@@ -148,11 +148,17 @@ __tos		=	$F8:2101, 255
 
 		.zp
 		.align	2
+__stack:	ds	HUCC_STACK_SZ
+
+__ptr:		ds	2
 __fptr:		ds	2
 __fbank:	ds	1
 __sp:		ds	1
-__stack:	ds	HUCC_STACK_SZ
-__ptr:		ds	2
+
+		; REGTEMP 6-byte stack for temporaries used by SDCC.
+		; Keep the size in sync with NUM_TEMP_REGS in sdcc/src/mos6502/gen.h!
+
+REGTEMP:	ds	6
 
 		; HuCC's non-recursive consecutive varargs for printf().
 
@@ -172,11 +178,6 @@ __func		=	__si
 		; Data pointer used by SDCC for indirect indexed memory access.
 
 DPTR		=	__ptr
-
-		; REGTEMP 8-byte stack for temporaries used by SDCC.
-		; Keep the size in sync with NUM_TEMP_REGS in mos6502/gen.c!
-
-REGTEMP:	ds	8
 
 		; Values returned from SDCC functions that don't fit into XA.
 		; These are also used as workspace for SDCC library functions,
@@ -330,7 +331,8 @@ core_main	.proc
 		plp				; Restore interrupts.
 
 	.ifndef	HUCC_NO_DEFAULT_SCREEN
-		call	_set_256x224		; HuCC initializes the VDC.
+		call	_init_256x224		; HuCC initializes the VDC and
+		jsr	set_dspon		; turns the display on.
 	.endif
 
 	.ifndef	HUCC_NO_DEFAULT_FONT
