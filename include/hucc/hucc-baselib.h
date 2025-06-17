@@ -119,15 +119,20 @@ extern unsigned char __fastcall __macro ac_exists( void );
 // Memory Access
 // *************
 
-extern unsigned int __fastcall __macro peek( unsigned int addr<__ptr> );
-extern unsigned int __fastcall __macro peekw( unsigned int addr<__ptr> );
+extern unsigned char __fastcall __macro peek( unsigned int addr<__ptr> );
+extern unsigned int  __fastcall __macro peekw( unsigned int addr<__ptr> );
+
 extern void __fastcall __macro poke( unsigned int addr<__poke>, unsigned char with<acc> );
 extern void __fastcall __macro pokew( unsigned int addr<__poke>, unsigned int with<acc> );
 
-extern unsigned int __fastcall __farpeekw( void __far *addr<__fbank:__fptr> );
+extern unsigned char __fastcall farpeek( void __far *addr<_bp_bank:_bp> );
+extern unsigned int  __fastcall farpeekw( void __far *addr<_bp_bank:_bp> );
 
 extern void __fastcall __nop set_far_base( unsigned char data_bank<_bp_bank>, unsigned char *data_addr<_bp> );
 extern void __fastcall set_far_offset( unsigned int offset<_bp>, unsigned char data_bank<_bp_bank>, unsigned char *data_addr<acc> );
+
+extern unsigned char __fastcall far_peek( void );
+extern unsigned int  __fastcall far_peekw( void );
 
 
 // *************

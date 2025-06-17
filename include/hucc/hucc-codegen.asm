@@ -118,26 +118,6 @@ __short		.macro
 ;		nl();
 ;		break;
 
-;	case I_FGETB:
-;		ot("__farptr_i\t");
-;		outsymbol((char *)data);
-;		nl();
-;		ol("__fgetb");
-;		break;
-
-;	case I_FGETUB:
-;		ot("__farptr_i\t");
-;		outsymbol((char *)data);
-;		nl();
-;		ol("__fgetub");
-;		break;
-
-;	case I_FGETW:
-;		ot("__farptr_i\t");
-;		outsymbol((char *)data);
-;		nl();
-;		ol("  jsr\t_farpeekw.fast");
-;		break;
 
 ; **************
 ; __farptr
@@ -154,8 +134,8 @@ __farptr	.macro
 
 ; **************
 ; adds 16-bit unsigned offset in Y:A to data address in \1
-; if 1-param then Y=bank, __fptr=addr, used for farpeekb() and farpeekw()
-; if 3-param then \2=bank, \3=addr
+; if 1-param then A=bank, __bptr=addr, only used for reading a __far array
+; if 3-param then A=\2=bank, \3=addr
 
 __farptr_i	.macro
 	.if	(\# = 3)
@@ -180,13 +160,13 @@ __farptr_i	.macro
 	.else
 		clc
 		adc.l	#(\1) & $1FFF
-		sta.l	<__fptr
+		sta.l	<__bp
 		tya
 		adc.h	#(\1) & $1FFF
 		tay
 		and	#$1F
 		ora	#$60
-		sta.h	<__fptr
+		sta.h	<__bp
 		tya
 		ror	a
 		lsr	a
@@ -195,7 +175,6 @@ __farptr_i	.macro
 		lsr	a
 		clc
 		adc	#bank(\1)
-		tay
 	.endif
 		.endm
 
@@ -215,30 +194,29 @@ __farptr_get	.macro
 	.endif
 
 ; **************
-; only executed immediately after a 1-parameter __farptr_i!
-; expects Y=bank, __fptr=addr
+; unsigned int __fastcall farpeekw( void __far *addr<_bp_bank:_bp> );
+; **************
+; Also called after a 1-parameter __farptr_i when reading a __far array.
+; **************
 ; N.B. Preserves MPR3 unlike original HuC code.
-; **************
-; unsigned int __fastcall farpeekw( void far *base<__fbank:__fptr> );
-; **************
-; _farpeekw.fast is called by HuCC after executing __farptr_i macro.
 
-_farpeekw.1:	ldy	<__fbank
-_farpeekw.fast:	tma3
+_far_peekw:	lda	<_bp_bank
+_farpeekw.1:	tay
+		tma3
 		pha
 		tya
 		tam3
-		lda	[__fptr]
+		lda	[_bp]
 		say
-		inc.l	<__fptr
+		inc.l	<_bp
 		bne	!+
-		inc.h	<__fptr
+		inc.h	<_bp
 		bpl	!+
 		inc	a
 		tam3
 		lda	#$60
-		sta.h	<__fptr
-!:		lda	[__fptr]
+		sta.h	<_bp
+!:		lda	[_bp]
 		sta	<__temp
 		pla
 		tam3
@@ -247,42 +225,36 @@ _farpeekw.fast:	tma3
 		rts
 
 ; **************
-; only executed immediately after a 1-parameter __farptr_i!
-; expects Y=bank, __fptr=addr
+; unsigned char __fastcall farpeek( void __far *addr<_bp_bank:_bp> );
+; **************
+; Also called after a 1-parameter __farptr_i when reading a __far array.
+; **************
+; N.B. Preserves MPR3 unlike original HuC code.
+
+_far_peek:	lda	<_bp_bank
+_farpeek.1:	tay
+		tma3
+		pha
+		tya
+		tam3
+		lda	[_bp]
+		tay
+		pla
+		tam3
+		tya
+		cly
+		rts
+
+; **************
+; Called after a 1-parameter __farptr_i when reading a __far array.
+; **************
 ; N.B. Preserves MPR3 unlike original HuC code.
 
 __fgetb		.macro
-		tma3
-		pha
-		tya
-		tam3
-		lda	[__fptr]
-		tay
-		pla
-		tam3
-		tya
-		cly
+		call	_farpeekb.1
 		bpl	!+
 		dey
 !:
-		.endm
-
-; **************
-; only executed immediately after a 1-parameter __farptr_i!
-; expects Y=bank, __fptr=addr
-; N.B. Preserves MPR3 unlike original HuC code.
-
-__fgetub	.macro
-		tma3
-		pha
-		tya
-		tam3
-		lda	[__fptr]
-		tay
-		pla
-		tam3
-		tya
-		cly
 		.endm
 
 

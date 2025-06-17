@@ -226,7 +226,7 @@ void dopsdinc (void)
 		prefix();
 		outstr(litq2);
 		outstr(":");
-		addglb_far(litq2, CINT);
+		addglb_far(litq2, CUCHAR);
 
 		if (!match(",")) {
 			error("missing ,");
