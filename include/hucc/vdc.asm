@@ -283,11 +283,6 @@ set_mode_vdc	.proc
 		iny
 		sta	vce_cr			; No SGX shadow for this!
 		sta	VCE_CR			; Set the VCE clock speed.
-
-		and	#2			; Is this VCE_CR_10MHz?
-		beq	.mwr_shadow		; VDC_MWR_1CYCLE when <= 7MHz.
-		lda	#VDC_MWR_2CYCLE		; VDC_MWR_2CYCLE when == 10MHz.
-.mwr_shadow:	sta	vdc_mwr			; No SGX shadow for this!
 		bra	.loop			; Do not set VDC_MWR reg bits!
 
 		; Set a VDC register.
@@ -303,7 +298,8 @@ set_mode_vdc	.proc
 		bne	.skip_cc		; without changing CC.
 
 		lda	[_bp], y		; Remember the BAT size so that
-		lsr	a			; set_bat_size() can be called.
+		sta	vdc_mwr			; set_bat_size() can be called.
+		lsr	a
 		lsr	a
 		lsr	a
 		lsr	a
