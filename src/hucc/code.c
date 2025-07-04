@@ -410,7 +410,7 @@ void gen_code (INS *tmp)
 		ot("__farptr_i\t");
 		outsymbol((SYMBOL *)data);
 		nl();
-		ol("  jsr\t_farpeekw.fast");
+		ol("\tcall\t_farpeekw.1");
 		break;
 
 	case I_FGETB:
@@ -424,7 +424,7 @@ void gen_code (INS *tmp)
 		ot("__farptr_i\t");
 		outsymbol((SYMBOL *)data);
 		nl();
-		ol("__fgetub");
+		ol("\tcall\t_farpeek.1");
 		break;
 
 	/* i-codes for interrupts */

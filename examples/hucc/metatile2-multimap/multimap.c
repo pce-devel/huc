@@ -275,14 +275,9 @@ unsigned char shore_frame;
 test_multimap()
 {
 	// Use a reduced screen size and 32x32 BAT size to save VRAM.
-	// This also clears and enables the display.
+	// This also clears the palettes and VRAM and disables the display.
 
-	set_240x208();
-
-	// Disable the display before uploading the graphics.
-
-	disp_off();
-	vsync();
+	init_240x208();
 
 	// Upload the default HuCC font.
 

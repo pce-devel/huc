@@ -51,9 +51,9 @@
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall set256x224( void );
+; void __fastcall init_256x224( void );
 
-_set_256x224	.proc
+_init_256x224	.proc
 
 .BAT_SIZE	=	64 * 32
 .CHR_0x20	=	.BAT_SIZE / 16		; 1st tile # after the BAT.
@@ -129,7 +129,7 @@ _set_256x224	.proc
 		db	VDC_RCR			; Raster Counter Register
 		dw	$0000			;   Never occurs!
 		db	VDC_CR			; Control Register
-		dw	$00CC			;   Enable VSYNC & RCR IRQ, BG & SPR
+		dw	$000C			;   Enable VSYNC & RCR IRQ
 		db	0
 
 		.endp
@@ -139,9 +139,9 @@ _set_256x224	.proc
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall set240x208( void );
+; void __fastcall init_240x208( void );
 
-_set_240x208	.proc
+_init_240x208	.proc
 
 .BAT_SIZE	=	32 * 32
 .CHR_0x20	=	.BAT_SIZE / 16		; 1st tile # after the BAT.
@@ -217,7 +217,7 @@ _set_240x208	.proc
 		db	VDC_RCR			; Raster Counter Register
 		dw	$0000			;   Never occurs!
 		db	VDC_CR			; Control Register
-		dw	$00CC			;   Enable VSYNC & RCR IRQ, BG & SPR
+		dw	$000C			;   Enable VSYNC & RCR IRQ
 		db	0
 
 		.endp
@@ -1373,3 +1373,38 @@ _put_string.3:	clx				; Offset to PCE VDC.
 		bra	.chr_loop
 
 .done:		rts
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; void __fastcall set_color_rgb( unsigned int index<VCE_CTA>, unsigned char r<_al>, unsigned char g<_ah>, unsigned char b<acc> );
+;
+; r:	red	RED:	bit 3-5
+; g:	green	GREEN:	bit 6-8
+; b:	blue	BLUE:	bit 0-2
+
+_set_color_rgb.4:
+;		and	#7
+		sta	<__temp
+		lda	<_al
+;		and	#7
+		asl	a
+		asl	a
+		asl	a
+		ora	<__temp
+		asl	a
+		asl	a
+		sta	<__temp
+		lda	<_ah
+;		and	#7
+		lsr	a
+		ror	<__temp
+		lsr	a
+		ror	<__temp
+		tay
+		lda	<__temp
+		sta.l	VCE_CTW
+		sty.h	VCE_CTW
+		rts
