@@ -4906,7 +4906,7 @@ lv1_loop:
 				case X_ADD_ST_WATQ:  p[1]->ins_code = X_ADD_ST_WATIQ; break;
 				case X_ADD_ST_UATQ:  p[1]->ins_code = X_ADD_ST_UATIQ; break;
 				case X_ADD_ST_WAXQ:  p[1]->ins_code = X_ADD_ST_WAXIQ; break;
-				case X_ADD_ST_UAXQ:  p[1]->ins_code = X_ADD_ST_UAXQ; break;
+				case X_ADD_ST_UAXQ:  p[1]->ins_code = X_ADD_ST_UAXIQ; break;
 				case X_ISUB_ST_WMQ:  p[1]->ins_code = X_SUB_ST_WMIQ; break;
 				case X_ISUB_ST_UMQ:  p[1]->ins_code = X_SUB_ST_UMIQ; break;
 				case X_ISUB_ST_WPQ:  p[1]->ins_code = X_SUB_ST_WPIQ; break;
