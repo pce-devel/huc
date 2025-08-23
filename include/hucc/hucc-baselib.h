@@ -107,6 +107,7 @@ extern unsigned int  bg_y2;
 
 #define	_OPTIMIZE 1
 
+
 // *************
 // Hardware Detection
 // *************
@@ -189,7 +190,7 @@ extern void __fastcall __macro clear_joy_events( unsigned char mask<acc> );
 
 // *************
 // Functions that are only implemented in the TGEMU emulator for unit-testing
-// the compiler and which should never be used in normal HuCC projects ...
+// the compiler, and which should never be used in normal HuCC projects ...
 // *************
 
 extern void __fastcall dump_screen( void );
