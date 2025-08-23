@@ -135,18 +135,12 @@ color_bank:	ds	8			; Ring buffer - Data Ptr (bank).
 ; load_palettes - Queue a set of palettes to upload to the VCE next VBLANK.
 ;
 ; Args: _al = Palette index (0..15 for BG, 16..31 for SPR).
-; Args: _ah = Palette count (0..32).
+; Args: _ah = Palette count (1..32).
 ; Args: _bp = Pointer to palette data.
 ; Args:   Y = Bank to map into MPR3 & MPR4, or zero to leave unchanged.
 ;
 ; N.B. Y==0 is only useful if the palette data is permanently mapped!
 ;
-
-palette_group	.procgroup
-
-;_load_palette	.proc
-;		ldy	<_bp_bank
-;		.endp
 
 load_palettes	.proc
 
@@ -176,7 +170,6 @@ load_palettes	.proc
 
 		.endp
 
-		.endprocgroup			; palette_group
 
 
 ; ***************************************************************************
@@ -203,3 +196,313 @@ clear_vce	.proc
 		leave				; All done, phew!
 
 		.endp
+
+	.ifdef	HUCC
+		.alias	_clear_palette		= clear_vce
+	.endif
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; read_palettes - Read palettes from the VCE into a buffer in RAM.
+;
+; Args: _al = Palette index (0..15 for BG, 16..31 for SPR).
+; Args: _ah = Palette count (1..32).
+; Args: _di = Pointer to palette data destination in RAM.
+;
+; The transfer is split into 32-byte chunks so that an HSYNC and/or TIMER
+; IRQ is not delayed for too long while executing.
+;
+
+read_palettes	.proc
+
+.wait:		lda	#$80			; Acquire color mutex to avoid
+		tsb	color_mutex		; conflict with xfer_palettes.
+		bmi	.wait
+
+	.if	!CDROM
+		tii	.tai_func, color_tia, 8 ; Copy TAI to RAM.
+	.endif
+
+.next_item:	lda	<_al			; Get the palette number.
+		asl	a
+		asl	a
+		asl	a
+		asl	a
+		sta	VCE_CTA + 0
+		cla
+		rol	a
+		sta	VCE_CTA + 1
+
+		ldx	<_ah			; How many palettes to xfer?
+
+		lda.h	<_di
+		sta	.ram_tai + 4
+		lda.l	<_di
+.palette_loop:	sta	.ram_tai + 3
+
+	.if	CDROM
+.ram_tai:	tai	VCE_CTR, 0, 32		; Progam code is writable!
+	.else
+		jsr	.ram_tai		; Copy 32-bytes from the VCE.
+	.endif
+
+		clc				; Increment the data ptr to
+		adc	#32			; the next 32-byte palette.
+		bcs	.next_page
+
+.next_palette:	dex				; Any palettes left to xfer?
+		bne	.palette_loop
+
+		stz	color_mutex		; Release color mutex.
+
+		leave
+
+.next_page:	inc	.ram_tai + 4
+		bra	.next_palette
+
+	.if	!CDROM
+.ram_tai	=	color_tia		; Use a TIA in RAM.
+
+.tai_func:	tai	VCE_CTR, 0, 32
+		rts
+	.endif	!CDROM
+
+		.endp
+
+	.ifdef	HUCC
+		.alias	_read_palette.3		= read_palettes
+	.endif
+
+
+
+vce_fade_funcs	.procgroup
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; fade_to_black - Create a faded palette in RAM from a reference palette.
+;
+; Args: _al = Number of colors (1..256).
+; Args: _ah = Value to add (0..7) to each RGB component.
+; Args: _di = Pointer to faded palette destination in RAM.
+; Args: _bp = Pointer to reference palette data.
+; Args:   Y = Bank to map into MPR3 & MPR4, or zero to leave unchanged.
+;
+; N.B. Y==0 is only useful if the reference palette data is already mapped!
+;
+
+fade_to_black	.proc
+
+		tma3				; Preserve MPR3.
+		pha
+		tma4				; Preserve MPR4.
+		pha
+
+		tya				; Is there a bank to map?
+		beq	!+
+
+		jsr	set_bp_to_mpr34		; Map data to MPR3 & MPR4.
+
+!:		lda	<_ah			; Value to subtract (0..7).
+		and	#7
+		tax
+
+		lda	<_al			; # of colors (1..256).
+		beq	.next_page		; Exactly 256 colors?
+!:		asl	a
+		bcc	.page_loop
+		beq	!-			; Exactly 128 colors?
+
+.next_page:	sec				; More than 128 colors.
+		inc.h	<_bp
+		inc.h	<_di
+
+.page_loop:	php				; C is set if more than 128
+		tay				; colors left to fade.
+
+.green:		dey				; Subtract value from green bits.
+		lda	[_bp], y
+		lsr	a
+		dey
+		lda	[_bp], y
+		and	#%11000000
+		ror	a
+		sec
+		sbc	fade_table_g, x
+		bcs	!+
+		cla
+!:		asl	a
+		sta	<__temp
+		cla
+		rol	a
+		iny
+		sta	[_di], y
+
+.red:		dey				; Subtract value from red bits.
+		lda	[_bp], y
+		and	#%00111000
+		sec
+		sbc	fade_table_r, x
+		bcs	!+
+		cla
+!:		tsb	<__temp
+
+.blue:		lda	[_bp], y		; Subtract value from blue bits.
+		and	#%00000111
+		sec
+		sbc	fade_table_b, x
+		bcs	!+
+		cla
+!:		ora	<__temp
+		sta	[_di], y
+
+		tya				; Last color in the page?
+		bne	.green
+		plp				; Are there another 128 colors?
+		bcc	.finished
+
+		dec.h	<_bp			; Fade the 1st 128 colors if
+		dec.h	<_di			; there were more than 128.
+		clc
+		bra	.page_loop
+
+.finished:	pla				; Restore MPR4.
+		tam4
+		pla				; Restore MPR3.
+		tam3
+
+		leave				; All done, phew!
+
+		.endp
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; fade_to_white - Create a faded palette in RAM from a reference palette.
+;
+; Args: _al = Number of colors (1..256).
+; Args: _ah = Value to add (0..7) to each RGB component.
+; Args: _di = Pointer to faded palette destination in RAM.
+; Args: _bp = Pointer to reference palette data.
+; Args:   Y = Bank to map into MPR3 & MPR4, or zero to leave unchanged.
+;
+; N.B. Y==0 is only useful if the reference palette data is already mapped!
+;
+
+fade_to_white	.proc
+
+		tma3				; Preserve MPR3.
+		pha
+		tma4				; Preserve MPR4.
+		pha
+
+		tya				; Is there a bank to map?
+		beq	!+
+
+		jsr	set_bp_to_mpr34		; Map data to MPR3 & MPR4.
+
+!:		lda	<_ah			; Value to add (0..7).
+		and	#7
+		tax
+
+		lda	<_al			; # of colors (1..256).
+		beq	.next_page		; Exactly 256 colors?
+!:		asl	a
+		bcc	.page_loop
+		beq	!-			; Exactly 128 colors?
+
+.next_page:	sec				; More than 128 colors.
+		inc.h	<_bp
+		inc.h	<_di
+
+.page_loop:	php				; C is set if more than 128
+		tay				; colors left to fade.
+
+.green:		dey				; Add value to green bits.
+		lda	[_bp], y
+		lsr	a
+		dey
+		lda	[_bp], y
+		and	#%11000000
+		ror	a			; Leaves carry clear.
+		adc	fade_table_g, x		; Carry was cleared earlier.
+		bcc	!+
+		lda	#%11100000
+!:		asl	a
+		sta	<__temp
+		cla
+		rol	a			; Leaves carry clear.
+		iny
+		sta	[_di], y
+
+.red:		dey				; Add value to red bits.
+		lda	[_bp], y
+		ora	#%11000111
+		adc	fade_table_r, x		; Carry was cleared earlier.
+		bcc	!+
+		clc				; Leaves carry clear.
+		lda	#%11111111
+!:		eor	#%11000111
+		tsb	<__temp
+
+.blue:		lda	[_bp], y		; Add value to blue bits.
+		ora	#%11111000
+		adc	fade_table_b, x		; Carry was cleared earlier.
+		bcc	!+
+		lda	#%11111111
+!:		eor	#%11111000
+		ora	<__temp
+		sta	[_di], y
+
+		tya				; Last color in the page?
+		bne	.green
+		plp				; Are there another 128 colors?
+		bcc	.finished
+
+		dec.h	<_bp			; Fade the 1st 128 colors if
+		dec.h	<_di			; there were more than 128.
+		clc
+		bra	.page_loop
+
+.finished:	pla				; Restore MPR4.
+		tam4
+		pla				; Restore MPR3.
+		tam3
+
+		leave				; All done, phew!
+
+		.endp
+
+fade_table_g:	db	%00000000
+		db	%00100000
+		db	%01000000
+		db	%01100000
+		db	%10000000
+		db	%10100000
+		db	%11000000
+		db	%11100000
+
+fade_table_r:	db	%00000000
+		db	%00001000
+		db	%00010000
+		db	%00011000
+		db	%00100000
+		db	%00101000
+		db	%00110000
+		db	%00111000
+
+fade_table_b:	db	%00000000
+		db	%00000001
+		db	%00000010
+		db	%00000011
+		db	%00000100
+		db	%00000101
+		db	%00000110
+		db	%00000111
+
+		.endprocgroup

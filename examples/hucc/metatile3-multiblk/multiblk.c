@@ -26,6 +26,9 @@
 ;
 ; Don't worry, you do not need to learn how to program in assembly-language!
 ;
+; Finally, this example adds palette fading at the start and end of the demo
+; to show how to create faded palettes from a reference palette.
+;
 ; ***************************************************************************
 ; ***************************************************************************
 ;
@@ -123,6 +126,11 @@ unsigned char shore_frame;
 unsigned char waves_delay;
 unsigned int  waves_frame;
 
+// Buffers for fading palettes.
+
+unsigned char fade_val;      // 0..7
+unsigned int  fade_pal[256]; // Buffer for 256 faded colors.
+unsigned int  base_pal[256]; // Buffer for the original un-faded colors.
 
 //
 
@@ -132,20 +140,17 @@ test_multiblk()
 //
 //	init_256x224();
 
-	// So just disable the display before uploading the graphics.
+	// So just disable the display and clear the palette before uploading the graphics.
 
 	disp_off();
 	vsync();
+	clear_palette();
 
 	// Upload the default HuCC font.
 
 	set_font_color( 4, 0 );
 	set_font_pal( 15 );
 	load_default_font();
-
-	// You can use COUNTOF() to get the number of palettes in a .incpal.
-
-	load_palette( 0, seran_pal, COUNTOF(seran_pal) );
 
 	// You can use SIZEOF() to get the number of bytes in a .incchr.
 
@@ -180,6 +185,24 @@ test_multiblk()
 	vsync();
 
 	disp_on();
+
+	// Fade in the screen before starting the main loop, ending at -1 which is 255 as unsigned.
+
+	for (fade_val = 7; fade_val != 255; --fade_val)
+	{
+		// Create a 256 color faded palette in the fade_pal[] array by subtracting
+		// the fade_val (7..0) from each of the RGB color components in seran_pal.
+
+		fade_to_black( seran_pal, fade_pal, 256, fade_val );
+
+		// Load the background palette from the fade_pal[] arrary.
+
+		load_palette( 0, fade_pal, 16 );
+
+		// Don't go too fast, there are only 8 steps!
+
+		vsync( 5 );
+	}
 
 	// Demo main loop.
 
@@ -255,6 +278,73 @@ test_multiblk()
 			waves_frame = (waves_frame + PALETTE_BYTES * 2) & (PALETTE_BYTES * 2 * 16 - 1);
 		}
 	}
+
+	// We could just use "seran_pal" as the reference for fading out the 
+	// screen since in contains the entire background palette, but it is
+	// useful to show how to read the existing VCE palette contents into
+	// a buffer in RAM instead.
+
+	read_palette( 0, 16, base_pal );
+
+	// Flash the screen to white, but stop before the final step (7) because that is
+	// the first step of the next fade.
+
+	for (fade_val = 0; fade_val != 7; ++fade_val)
+	{
+		// Create a 256 color faded palette in the fade_pal[] array by adding the
+		// fade_val (0..6) to each of the RGB color components in base_pal[].
+
+		fade_to_white( base_pal, fade_pal, 256, fade_val );
+
+		// Load the background palette from the fade_pal[] arrary.
+
+		load_palette( 0, fade_pal, 16 );
+
+		// Don't go too fast, there are only 8 steps!
+
+		vsync( 5 );
+	}
+
+	// Fade back down from white, but stop before the final step (0) because that is
+	// the first step of the next fade.
+
+	for (fade_val = 7; fade_val != 0; --fade_val)
+	{
+		// Create a 256 color faded palette in the fade_pal[] array by adding the
+		// fade_val (7..1) to each of the RGB color components in base_pal[].
+
+		fade_to_white( base_pal, fade_pal, 256, fade_val );
+
+		// Load the background palette from the fade_pal[] arrary.
+
+		load_palette( 0, fade_pal, 16 );
+
+		// Don't go too fast, there are only 8 steps!
+
+		vsync( 5 );
+	}
+
+	// Finally fade down from the regular palette to black.
+
+	for (fade_val = 0; fade_val != 8; ++fade_val)
+	{
+		// Create a 256 color faded palette in the fade_pal[] array by subtracting
+		// the fade_val (0..7) from each of the RGB color components in base_pal[].
+
+		fade_to_black( base_pal, fade_pal, 256, fade_val );
+
+		// Load the background palette from the fade_pal[] arrary.
+
+		load_palette( 0, fade_pal, 16 );
+
+		// Don't go too fast, there are only 8 steps!
+
+		vsync( 5 );
+	}
+
+	// Leave the screen black for 1/2 second, just to create a pause before the next demo.
+
+	vsync( 30 );
 }
 
 
