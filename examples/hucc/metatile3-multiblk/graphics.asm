@@ -18,6 +18,8 @@
 ;
 ; SYNTAX FOR PCEAS GRAPHICS CONVERSION COMMANDS:
 ;
+;   [label]  .INCBIN  "filename"  [,offset [,length]]
+;
 ;   [label]  .INCPAL  "filename"  [,which-palette [,number-of-palettes]]
 ;   [label]  .INCCHR  "filename"  [[,x, y] ,w, h] [,optimize]
 ;   [label]  .INCTILE "filename"  [[,x ,y] ,w ,h] [,optimize]
