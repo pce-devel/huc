@@ -72,9 +72,11 @@ extern void __fastcall read_palette( unsigned char palette<_al>, unsigned char n
 
 extern void __fastcall __macro fade_to_black( unsigned int __far *from<_bp_bank:_bp>, unsigned int *destination<_di>, unsigned char num_colors<_al>, unsigned char value_to_sub<_ah> );
 extern void __fastcall __macro fade_to_white( unsigned int __far *from<_bp_bank:_bp>, unsigned int *destination<_di>, unsigned char num_colors<_al>, unsigned char value_to_add<_ah> );
+extern void __fastcall __macro cross_fade_to( unsigned int __far *from<_bp_bank:_bp>, unsigned int *destination<_di>, unsigned char num_colors<_al>, unsigned char which_component<_ah> );
 
 extern void __fastcall __macro far_fade_to_black( unsigned int *destination<_di>, unsigned char num_colors<_al>, unsigned char value_to_sub<_ah> );
 extern void __fastcall __macro far_fade_to_white( unsigned int *destination<_di>, unsigned char num_colors<_al>, unsigned char value_to_add<_ah> );
+extern void __fastcall __macro far_cross_fade_to( unsigned int *destination<_di>, unsigned char num_colors<_al>, unsigned char which_component<_ah> );
 
 
 

@@ -7,7 +7,7 @@
 ;
 ; These should be located in permanently-accessible memory!
 ;
-; Copyright John Brandwood 2021.
+; Copyright John Brandwood 2021-2025.
 ;
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
@@ -15,6 +15,14 @@
 ;
 ; ***************************************************************************
 ; ***************************************************************************
+
+;
+; Configure Library ...
+;
+
+	.ifndef VCE_SPLIT_CROSS
+VCE_SPLIT_CROSS	=	1
+	.endif
 
 
 
@@ -286,7 +294,7 @@ vce_fade_funcs	.procgroup
 ; fade_to_black - Create a faded palette in RAM from a reference palette.
 ;
 ; Args: _al = Number of colors (1..256).
-; Args: _ah = Value to add (0..7) to each RGB component.
+; Args: _ah = Value to subtract (0..7) from each RGB component.
 ; Args: _di = Pointer to faded palette destination in RAM.
 ; Args: _bp = Pointer to reference palette data.
 ; Args:   Y = Bank to map into MPR3 & MPR4, or zero to leave unchanged.
@@ -506,3 +514,145 @@ fade_table_b:	db	%00000000
 		db	%00000111
 
 		.endprocgroup
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; cross_fade_to - Cross fade a palette in RAM towards a reference palette.
+;
+; Args: _al = Number of colors (1..256).
+; Args: _di = Pointer to faded palette destination in RAM.
+; Args: _bp = Pointer to reference palette data.
+; Args:   Y = Bank to map into MPR3 & MPR4, or zero to leave unchanged.
+;
+; N.B. Y==0 is only useful if the reference palette data is already mapped!
+;
+; N.B. This only updates the palette in RAM by 1 RGB step, so it will need
+;      to be called 7 times to guarantee that you've reached the target.
+;
+
+cross_fade_to	.proc
+
+		tma3				; Preserve MPR3.
+		pha
+		tma4				; Preserve MPR4.
+		pha
+
+		tya				; Is there a bank to map?
+		beq	!+
+
+		jsr	set_bp_to_mpr34		; Map data to MPR3 & MPR4.
+
+!:		lda	<_al			; # of colors (1..256).
+		beq	.next_page		; Exactly 256 colors?
+!:		asl	a
+		bcc	.page_loop
+		beq	!-			; Exactly 128 colors?
+
+.next_page:	sec				; More than 128 colors.
+		inc.h	<_bp
+		inc.h	<_di
+
+.page_loop:	php				; C is set if more than 128
+		tay				; colors left to fade.
+
+.green:		dey				; Is target green > fade green?
+	.if	VCE_SPLIT_CROSS
+		bbs0	<_ah, .red
+	.endif
+		lda	[_bp], y
+		lsr	a
+		dey
+		lda	[_bp], y
+		ror	a
+		and	#%11100000
+		sta	<__temp
+		iny
+		lda	[_di], y
+		lsr	a
+		dey
+		lda	[_di], y
+		ror	a
+		php
+		tax
+		and	#%11100000
+		sec
+		sbc	<__temp
+		sax				; Move X to A but keep Z.
+		beq	.set_green		; Don't update if equal green.
+		bcs	.dec_green
+.inc_green:	adc	#%00100000
+		bra	.set_green
+.dec_green:	sbc	#%00100000
+.set_green:	plp
+		rol	a
+	.if	VCE_SPLIT_CROSS
+		sta	[_di], y		; Save lo-byte of updated color.
+	.else
+		tax				; Save lo-byte of updated color.
+	.endif
+		cla
+		rol	a
+		iny
+		sta	[_di], y		; Save hi-byte of updated color.
+	.if	VCE_SPLIT_CROSS
+		dey
+		bra	.next_color
+	.endif
+
+.red:		dey
+		lda	[_bp], y		; Is target red > fade red?
+		and	#%00111000
+		sta	<__temp
+	.if	VCE_SPLIT_CROSS
+		lda	[_di], y
+		tax
+	.else
+		txa
+	.endif
+		and	#%00111000
+		sec
+		sbc	<__temp
+		sax				; Move X to A but keep Z.
+		beq	.set_red		; Don't update if equal red.
+		bcs	.dec_red
+.inc_red:	adc	#%00001000
+		bra	.set_red
+.dec_red:	sbc	#%00001000
+.set_red:	tax
+
+.blue:		lda	[_bp], y		; Is target blue > fade blue?
+		and	#%00000111
+		sta	<__temp
+		txa
+		and	#%00000111
+		sec
+		sbc	<__temp
+		sax				; Move X to A but keep Z.
+		beq	.set_blue		; Don't update if equal blue.
+		bcs	.dec_blue
+.inc_blue:	adc	#%00000001
+		bra	.set_blue
+.dec_blue:	sbc	#%00000001
+.set_blue:	sta	[_di], y		; Save lo-byte of updated color.
+
+.next_color:	tya				; Last color in the page?
+		bne	.green
+		plp				; Are there another 128 colors?
+		bcc	.finished
+
+		dec.h	<_bp			; Fade the 1st 128 colors if
+		dec.h	<_di			; there were more than 128.
+		clc
+		bra	.page_loop
+
+.finished:	pla				; Restore MPR4.
+		tam4
+		pla				; Restore MPR3.
+		tam3
+
+		leave				; All done, phew!
+
+		.endp
