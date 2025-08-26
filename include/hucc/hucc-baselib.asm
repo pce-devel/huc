@@ -534,9 +534,11 @@ _get_color.1	.macro
 ;
 ; void __fastcall __macro fade_to_black( unsigned int __far *from<_bp_bank:_bp>, unsigned int *destination<_di>, unsigned char num_colors<_al>, unsigned char value_to_sub<_ah> );
 ; void __fastcall __macro fade_to_white( unsigned int __far *from<_bp_bank:_bp>, unsigned int *destination<_di>, unsigned char num_colors<_al>, unsigned char value_to_add<_ah> );
+; void __fastcall __macro cross_fade_to( unsigned int __far *from<_bp_bank:_bp>, unsigned int *destination<_di>, unsigned char num_colors<_al>, unsigned char which_component<_ah );
 ;
 ; void __fastcall __macro far_fade_to_black( unsigned int *destination<_di>, unsigned char num_colors<_al>, unsigned char value_to_sub<_ah> );
 ; void __fastcall __macro far_fade_to_white( unsigned int *destination<_di>, unsigned char num_colors<_al>, unsigned char value_to_add<_ah> );
+; void __fastcall __macro far_cross_fade_to( unsigned int *destination<_di>, unsigned char num_colors<_al>, unsigned char which_component<_ah );
 
 		.macro	_fade_to_black.4
 		ldy	<_bp_bank
@@ -548,6 +550,11 @@ _get_color.1	.macro
 		call	fade_to_white
 		.endm
 
+		.macro	_cross_fade_to.4
+		ldy	<_bp_bank
+		call	cross_fade_to
+		.endm
+
 		.macro	_far_fade_to_black.3
 		ldy	<_bp_bank
 		call	fade_to_black
@@ -556,6 +563,11 @@ _get_color.1	.macro
 		.macro	_far_fade_to_white.3
 		ldy	<_bp_bank
 		call	fade_to_white
+		.endm
+
+		.macro	_far_cross_fade_to.3
+		ldy	<_bp_bank
+		call	cross_fade_to
 		.endm
 
 
