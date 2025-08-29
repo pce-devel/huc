@@ -1246,6 +1246,7 @@ void rvalue (LVALUE *lval)
 		}
 		else {
 			/* far arrays */
+			warning(W_GENERAL, "deprecated array access to __far symbol, use farpeek() or farpeekw() instead");
 			farpeek(lval->symbol2);
 		}
 	}
