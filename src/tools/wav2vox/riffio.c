@@ -259,7 +259,7 @@ long riffSeek (
 
   // All done, return current position.
 
-  return (pRIFF->pCur - pRIFF->pBuf);
+  return (long) (pRIFF->pCur - pRIFF->pBuf);
 }
 
 
@@ -301,7 +301,7 @@ long riffRead (
 
   if (iLength > (pRIFF->pMrk - pRIFF->pCur))
   {
-    iLength = (pRIFF->pMrk - pRIFF->pCur);
+    iLength = (long) (pRIFF->pMrk - pRIFF->pCur);
   }
 
   // Copy the data from memory and update the current position.
@@ -354,7 +354,7 @@ long riffWrite (
 
   if (iLength > (pRIFF->pEnd - pRIFF->pCur))
   {
-    iLength = (pRIFF->pEnd - pRIFF->pCur);
+    iLength = (long) (pRIFF->pEnd - pRIFF->pCur);
   }
 
   // Copy the data from memory and update the current position.
