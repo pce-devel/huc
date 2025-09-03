@@ -187,7 +187,7 @@ pce_pack_8x8_tile(unsigned char *buffer, void *data, int line_offset, int format
 		break;
 	}
 
-	/* default for a completely emtpy tile */
+	/* default for a completely empty tile */
 	if (palette < 0)
 		palette = 0;
 
@@ -270,7 +270,7 @@ pce_pack_16x16_tile(unsigned char *buffer, void *data, int line_offset, int form
 		break;
 	}
 
-	/* default for a completely emtpy tile */
+	/* default for a completely empty tile */
 	if (palette < 0)
 		palette = 0;
 
@@ -386,7 +386,7 @@ pce_pack_16x16_sprite(unsigned char *buffer, void *data, int line_offset, int fo
 		break;
 	}
 
-	/* default for a completely emtpy sprite */
+	/* default for a completely empty sprite */
 	if (palette < 0)
 		palette = 0;
 

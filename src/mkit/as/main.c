@@ -127,7 +127,7 @@ const int section_default_page[MAX_S] = {
 /* S_HOME  */	5,
 /* S_XDATA */	0,
 /* S_XINIT */	0,
-/* S_CONST */	0,
+/* S_CONST */	3,
 /* S_OSEG  */	0
 };
 
