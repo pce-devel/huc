@@ -260,7 +260,7 @@ core_main	.proc
 	.endif
 		tam2
 
-		lda	#CONST_BANK + _bank_base; Map HuCC's constant data.
+		lda	#CONST_BANK + _bank_base; Map HuCC's .RODATA bank.
 		tam3
 		inc	a
 		tam4

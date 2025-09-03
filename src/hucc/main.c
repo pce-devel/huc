@@ -654,8 +654,7 @@ void dumplits (void)
 	if ((litptr == 0) && (const_nb == 0))
 		return;
 
-	outstr("\t.data\n");
-	outstr("\t.bank CONST_BANK\n");
+	outstr("\t.rodata\n");
 	if (litptr) {
 		outconst(litlab);
 		col();
@@ -1017,8 +1016,7 @@ static void dumpfinal (void)
 		outstr("__heap_start:\n");
 	if (rodata_offset != 0) {
 		rodata_buffer[rodata_offset] = '\0';
-		ol(".data");
-		ol(".bank CONST_BANK");
+		ol(".rodata");
 		outstr("huc_rodata:\n");
 		outstr("__huc_rodata:\n");
 		outstr(rodata_buffer);
