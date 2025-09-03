@@ -833,7 +833,7 @@ struct tag_symbol {
 
 /* macro (define) pool */
 
-#define MACQSIZE        16384
+#define MACQSIZE        65536
 #define MACMAX  (MACQSIZE - 1)
 
 struct macro {
@@ -881,9 +881,9 @@ typedef struct {
 
 /* constant array struct */
 
-#define MAX_CONST        1024
-#define MAX_CONST_VALUE  8192
-#define MAX_CONST_DATA  65536
+#define MAX_CONST         4096
+#define MAX_CONST_VALUE  16384
+#define MAX_CONST_DATA  131072
 
 struct const_array {
 	SYMBOL *sym;

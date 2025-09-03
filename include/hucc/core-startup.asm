@@ -595,9 +595,8 @@ HUC_USER_BANK	.rs	HUC_RESERVE_BANKS
 	.endif
 
 CONST_BANK	.rs	2
-		.data
-		.bank	CONST_BANK, ".const"
-		.org	$6000
+		.rodata
+		.bank	CONST_BANK, ".rodata"
 	.endif	HUCC
 
 DATA_BANK	.rs	0
