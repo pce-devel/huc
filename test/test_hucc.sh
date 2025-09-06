@@ -23,9 +23,9 @@ do
 	fails=0
 	nocompiles=0
 	passes=0
-	test "$d" = "small" && opt="-DSTACK_SIZE=128 -DSMALL -msmall"
-	test "$d" = "norec" && opt="-DSTACK_SIZE=128 -DNORECURSE -fno-recursive"
-	test "$d" = "noopt" && opt="-DSTACK_SIZE=128 -DNOOPT -O0"
+	test "$d" = "small" && opt="-fno-far-arrays -DSTACK_SIZE=128 -DSMALL -msmall"
+	test "$d" = "norec" && opt="-fno-far-arrays -DSTACK_SIZE=128 -DNORECURSE -fno-recursive"
+	test "$d" = "noopt" && opt="-fno-far-arrays -DSTACK_SIZE=128 -DNOOPT -O0"
 	echo "testing $d"
 	echo opt="$opt"
 	for i in $tests
