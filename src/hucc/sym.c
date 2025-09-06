@@ -670,7 +670,7 @@ SYMBOL *addglb_far (char *sname, char typ)
 	SYMBOL *ptr;
 
 	ptr = addglb(sname, ARRAY, typ, 0, EXTERN, 0);
-	if (ptr)
+	if (ptr && user_far_arrays)
 		ptr->far = 1;
 	return (ptr);
 }

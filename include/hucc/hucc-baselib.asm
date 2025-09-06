@@ -114,6 +114,67 @@ _set_far_offset.3:
 		rts
 
 
+; ***************************************************************************
+; ***************************************************************************
+;
+; void __fastcall __macro reset_mpr2( void );
+; void __fastcall __macro reset_mpr34( void );
+;
+; void * __fastcall __macro set_mpr2( void __far *addr<_bp_bank:_bp> );
+; void * __fastcall __macro set_mpr34( void __far *addr<_bp_bank:_bp> );
+;
+; void * __fastcall __macro far_set_mpr2( void );
+; void * __fastcall __macro far_set_mpr34( void );
+
+_reset_mpr2	.macro
+	.if	SUPPORT_SGX
+		lda	#$F9
+	.else
+		lda	#$87
+	.endif
+		tam2
+		.endm
+
+_reset_mpr34	.macro
+		lda	#CONST_BANK + _bank_base
+		tam3
+		inc	a
+		tam4
+		.endm
+
+_set_mpr2.1	.macro
+		lda	<_bp_bank
+		tam2
+		lda.l	<_bp
+		ldy.h	<_bp
+		.endm
+
+_set_mpr34.1	.macro
+		lda	<_bp_bank
+		tam3
+		inc	a
+		tam4
+		lda.l	<_bp
+		ldy.h	<_bp
+		.endm
+
+_far_set_mpr2	.macro
+		lda	<_bp_bank
+		tam2
+		lda.l	<_bp
+		ldy.h	<_bp
+		.endm
+
+_far_set_mpr34	.macro
+		lda	<_bp_bank
+		tam3
+		inc	a
+		tam4
+		lda.l	<_bp
+		ldy.h	<_bp
+		.endm
+
+
 
 ; ***************************************************************************
 ; ***************************************************************************
@@ -510,6 +571,20 @@ _random.1:	tay				; Preserve the limit.
 		leave				; Return and copy X -> A.
 
 		.endp
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; N.B. Declared in hucc-string.h, but defined here because they're macros!
+;
+; int __fastcall __macro memcmp( unsigned char *destination<_di>, unsigned char *source<_bp>, unsigned int count<acc> );
+
+_memcmp.3	.macro
+		stz	<_bp_bank		; Map the source string.
+		call	_farmemcmp.3
+		.endm
 
 
 

@@ -1773,6 +1773,10 @@ do_fail(int *ip)
 void
 do_section(int *ip)
 {
+	/* check end of line */
+	if (!check_eol(ip))
+		return;
+
 	set_section(optype);
 
 	/* output line */

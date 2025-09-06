@@ -111,6 +111,7 @@ extern int enum_type_ptr;
 
 extern int user_short_enums;
 extern int user_signed_char;
+extern int user_far_arrays;
 
 extern int output_globdef;
 

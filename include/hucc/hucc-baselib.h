@@ -135,6 +135,15 @@ extern void __fastcall set_far_offset( unsigned int offset<_bp>, unsigned char d
 extern unsigned char __fastcall far_peek( void );
 extern unsigned int  __fastcall far_peekw( void );
 
+extern void __fastcall __macro reset_mpr2( void );
+extern void __fastcall __macro reset_mpr34( void );
+
+extern void * __fastcall __macro set_mpr2( void __far *addr<_bp_bank:_bp> );
+extern void * __fastcall __macro set_mpr34( void __far *addr<_bp_bank:_bp> );
+
+extern void * __fastcall __macro far_set_mpr2( void );
+extern void * __fastcall __macro far_set_mpr34( void );
+
 
 // *************
 // Clock Functions

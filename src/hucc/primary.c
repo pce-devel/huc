@@ -342,10 +342,9 @@ int primary (LVALUE *lval, int comma, bool *deferred)
 						immed(T_SYMBOL, (intptr_t)ptr);
 				}
 				else {
-					/* special variables */
+					/* turn __far pointer array access into a farpeek() */
 					if ((ch() != '[') && (ch() != '(')) {
 						immed(T_SYMBOL, (intptr_t)ptr);
-//						error ("can't access far array");
 					}
 				}
 				lval->indirect =

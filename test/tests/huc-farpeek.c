@@ -21,7 +21,10 @@ int main()
 
   offset = 2;
 
+#if 0
   // Read as an array of the declared type.
+  //
+  // 2025-Sep-03 This __far array syntax isn't supported in HuCC anymore!
 
   if (mypal[0] != 0111)
     abort();
@@ -37,6 +40,7 @@ int main()
 
   if (mypal[offset + 1] != 0733)
     abort();
+#endif
 
   // Read directly from a __far pointer.
 
@@ -63,6 +67,11 @@ int main()
   if (farpeek( mypal + (offset + 1) ) != 0333)
     abort();
   if (farpeekw( mypal + (offset + 1) ) != 0733)
+    abort();
+
+  if (farpeek( mypal + offset + 1 ) != 0333)
+    abort();
+  if (farpeekw( mypal + offset + 1 ) != 0733)
     abort();
 
   // Read from a calculated pointer (with a byte-offset).

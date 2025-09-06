@@ -356,7 +356,7 @@ _cd_loaddata.4	.proc
 		jsr	_add_sectors
 
 		ldy	<_bp_bank		; Map data to MPR3 & MPR4.
-		jsr	set_bp_to_mpr34
+		jsr	map_bp_to_mpr34
 
 		tii	_bp, _bx, 2		; Set destination ptr.
 

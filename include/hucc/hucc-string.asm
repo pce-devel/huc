@@ -79,9 +79,8 @@ _strlcat:	tax				; X = buffer length (1..256).
 		pha
 
 ;		ldy	<_bp_bank		; Map the source string.
-		ldy	#0			; Map the source memory.
-		beq	.no_bank
-		jsr	set_bp_to_mpr34
+;		beq	.no_bank
+;		jsr	map_bp_to_mpr34
 
 .no_bank:	cly
 
@@ -123,9 +122,8 @@ _strlcpy:	tax				; X = buffer length (1..256).
 		pha
 
 ;		ldy	<_bp_bank		; Map the source string.
-		ldy	#0			; Map the source memory.
-		beq	.no_bank
-		jsr	set_bp_to_mpr34
+;		beq	.no_bank
+;		jsr	map_bp_to_mpr34
 
 .no_bank:	cly
 
@@ -152,9 +150,8 @@ _strlen:	tma3
 		pha
 
 ;		ldy	<_bp_bank
-		ldy	#0			; Map the source memory.
-		beq	.no_bank
-		jsr	set_bp_to_mpr34
+;		beq	.no_bank
+;		jsr	map_bp_to_mpr34
 
 .no_bank:	cly
 
@@ -190,12 +187,18 @@ str_exit:	tax				; X:Y = string or buffer length.
 ; void __fastcall memcpy( unsigned char *destination<ram_tii_dst>, unsigned char  *source<ram_tii_src>, unsigned int count<acc> );
 ; unsigned char * __fastcall mempcpy( unsigned char *destination<ram_tii_dst>, unsigned char  *source<ram_tii_src>, unsigned int count<acc> );
 ;
-; NOT WORKING YET (needs compiler changes) ...
-; void __fastcall memcpy( unsigned char *destination<ram_tii_dst>, unsigned char __far *source<_bp_bank:ram_tii_src>, unsigned int count<acc> );
-; unsigned char * __fastcall mempcpy( unsigned char *destination<ram_tii_dst>, unsigned char __far *source<_bp_bank:ram_tii_src>, unsigned int count<acc> );
+; void __fastcall farmemcpy( unsigned char *destination<ram_tii_dst>, unsigned char __far *source<_bp_bank:ram_tii_src>, unsigned int count<acc> );
+; unsigned char * __fastcall farmempcpy( unsigned char *destination<ram_tii_dst>, unsigned char __far *source<_bp_bank:ram_tii_src>, unsigned int count<acc> );
+;
+; void __fastcall far_memcpy( unsigned char *destination<ram_tii_dst>, unsigned int count<acc> );
+; unsigned char * __fastcall far_mempcpy( unsigned char *destination<ram_tii_dst>, unsigned int count<acc> );
+;
 
-_memcpy:
-_mempcpy:	sty.h	ram_tii_len		; Check for zero length.
+_memcpy.3:
+_mempcpy.3:	stz	<_bp_bank		; Map the source memory.
+
+_farmemcpy.3:
+_farmempcpy.3:	sty.h	ram_tii_len		; Check for zero length.
 		sta.l	ram_tii_len
 		ora.h	ram_tii_len
 		beq	.zero_length
@@ -205,21 +208,17 @@ _mempcpy:	sty.h	ram_tii_len		; Check for zero length.
 		tma4
 		pha
 
-;		ldy	<_bp_bank		; Map the source memory.
-		ldy	#0			; Map the source memory.
+		lda	<_bp_bank		; Map the source memory.
 		beq	.no_bank
 
-		lda.h	ram_tii_src		
-		cmp	#$60
-		bcc	.no_bank
-		and	#$1F			; Remap ptr to MPR3.
-		ora	#$60
-		sta.h	ram_tii_src
+		tam3				; Put bank into MPR3.
+		inc	a
+		tam4				; Put next into MPR4.
 
-		tya				; Put bank into MPR3.
-		tam3
-		inc	a			; Put next into MPR4.
-		tam4
+;		lda.h	ram_tii_src		; Remap ptr to MPR3.
+;		and	#$1F
+;		ora	#$60
+;		sta.h	ram_tii_src
 
 .no_bank:	jsr	ram_tii			; Copy the memory.
 
@@ -238,8 +237,8 @@ _mempcpy:	sty.h	ram_tii_len		; Check for zero length.
 
 		rts
 
-		.alias	_memcpy.3		= _memcpy
-		.alias	_mempcpy.3		= _mempcpy
+		.alias	_far_memcpy.2		= _farmemcpy.3
+		.alias	_far_mempcpy.2		= _farmempcpy.3
 
 
 
@@ -280,15 +279,12 @@ _memset:	cmp	#0			; Decrement the length, check
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; int __fastcall strcmp( char *destination<_di>, char *source<_bp> );
-; int __fastcall strncmp( char *destination<_di>, char *source<_bp>, unsigned int count<_ax> );
-; int __fastcall memcmp( unsigned char *destination<_di>, unsigned char *source<_bp>, unsigned int count<_ax> );
+; int __fastcall strcmp( char *string1<_di>, char *string2<_bp> );
+; int __fastcall strncmp( char *string1<_di>, char *string2<_bp>, unsigned int count<_ax> );
 ;
-; NOT WORKING YET (needs compiler changes) ...
-;
-; int __fastcall strcmp( char *destination<_di>, char __far *source<_bp_bank:_bp> );
-; int __fastcall strncmp( char *destination<_di>, char __far *source<_bp_bank:_bp>, unsigned char count<_al> );
-; int __fastcall memcmp( unsigned char *destination<_di>, unsigned char __far *source<_bp_bank:_bp>, unsigned int count<_ax> );
+; int __fastcall __macro memcmp( unsigned char *string1<_di>, unsigned char *string2<_bp>, unsigned int count<_ax> );
+; int __fastcall farmemcmp( unsigned char *string1<_di>, unsigned char __far *string2<_bp_bank:_bp>, unsigned int count<_ax> );
+; int __fastcall far_memcmp( unsigned char *string1<_di>, unsigned int count<_ax> );
 ;
 ;  0 	if strings are equal
 ;  1 	if the first non-matching character in string1 > string2 (in ASCII).
@@ -296,20 +292,21 @@ _memset:	cmp	#0			; Decrement the length, check
 
 hucc_memcmp	.procgroup
 
-_strcmp		.proc
+_strcmp.2	.proc
 		stz.l	<_ax			; Max string length == 256!
 		lda.h	#256
 		sta.h	<_ax
-		.ref	_strncmp		; Don't strip _strncmp.3!
+		.ref	_strncmp.3		; Don't strip _strncmp.3!
 		.endp				; Fall through.
 
-_strncmp	.proc
+_strncmp.3	.proc
+		stz	<_bp_bank		; Assume strings are mapped.
 		bit	#$40			; Set the V bit for strcmp.
 		db	$50			; Turn "clv" into "bvc".
-		.ref	_memcmp			; Don't strip _memcmp.3!
+		.ref	_farmemcmp.3		; Don't strip _farmemcmp.3!
 		.endp				; Fall through.
 
-_memcmp		.proc
+_farmemcmp.3	.proc
 		clv				; Clr the V bit for memcmp.
 
 		tma3				; Preserve MPR3 and MPR4.
@@ -317,10 +314,10 @@ _memcmp		.proc
 		tma4
 		pha
 
-;		ldy	<_bp_bank		; Map the source string.
-		ldy	#0			; Map the source memory.
+		ldy	<_bp_bank		; Map string2.
 		beq	.no_bank
-		jsr	set_bp_to_mpr34
+
+		jsr	map_bp_to_mpr34
 
 .no_bank:	cly
 
@@ -338,7 +335,8 @@ _memcmp		.proc
 !:		iny
 		bne	.loop
 		inc.h	<_di
-		jsr	inc.h_bp_mpr34
+		inc.h	<_bp			; Limited to 8KB maximum!
+;		jsr	inc.h_bp_mpr34
 		bra	.loop
 
 .page:		dec.h	<_ax			; Decrement length.h 
@@ -367,6 +365,4 @@ _memcmp		.proc
 
 		.endprocgroup			; hucc_memcmp
 
-		.alias	_strcmp.2		= _strcmp
-		.alias	_strncmp.3		= _strncmp
-		.alias	_memcmp.3		= _memcmp
+		.alias	_far_memcmp.2		= _farmemcmp.3

@@ -44,6 +44,7 @@ wait_nvsync:	bsr	wait_vsync		; # of VBLANK IRQs to wait in
 
 
 
+	.ifndef	HUCC
 ; ***************************************************************************
 ; ***************************************************************************
 ;
@@ -54,6 +55,8 @@ wait_nvsync:	bsr	wait_vsync		; # of VBLANK IRQs to wait in
 ; is no way to deal with a bank-increment, so do not map that region.
 ;
 ; N.B. Library code relies on this preserving X and V!
+;
+; THESE ARE THE OLD FUNCTIONS STILL USED BY SOME OF THE ASM EXAMPLE PROJECTS.
 ;
 
 set_bp_to_mpr3:	lda.h	<_bp			; Do not remap a ptr to RAM,
@@ -76,6 +79,41 @@ set_bp_to_mpr34:lda.h	<_bp			; Do not remap a ptr to RAM,
 		tam3
 		inc	a			; Put next into MPR4.
 		tam4
+!:		rts
+	.endif
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; Map the _bp data far-pointer into MPR3 (& MPR4).
+;
+; Because the 16KB RAM region at $2000-$5FFF is composed of two separate
+; banks, with the 2nd bank having no specific relation to the 1st, there
+; is no way to deal with a bank-increment, so do not map that region.
+;
+; N.B. Library code relies on this preserving X and V!
+;
+
+map_bp_to_mpr3:	tya				; Put bank into MPR3.
+		beq	!+
+		tam3
+		lda.h	<_bp			; Do not remap a ptr to RAM,
+		and	#$1F			; Remap ptr to MPR3.
+		ora	#$60
+		sta.h	<_bp
+!:		rts
+
+map_bp_to_mpr34:tya				; Put bank into MPR3.
+		beq	!+
+		tam3
+		inc	a			; Put next into MPR4.
+		tam4
+		lda.h	<_bp			; Do not remap a ptr to RAM,
+		and	#$1F			; Remap ptr to MPR3.
+		ora	#$60
+		sta.h	<_bp
 !:		rts
 
 

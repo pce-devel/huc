@@ -94,3 +94,17 @@
 	.ifdef	HUCC_USES_ZX0			; Set in hucc_zx0.h
 		include	"unpack-zx0.asm"
 	.endif
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
+; Check that there isn't too much C "const" data in the ".RODATA" section.
+;
+
+		.rodata
+	.if	(bank(*) - _bank_base) >= (CONST_BANK + 2)
+		.fail	You cannot have more than 16KBytes of "const" data in HuCC!
+	.endif
+		.code

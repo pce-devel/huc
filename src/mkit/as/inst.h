@@ -208,7 +208,6 @@ struct t_opcode base_pseudo[] = {
 	{NULL,  "BSS",          do_section,     PSEUDO, P_BSS,     S_BSS},
 //	{NULL,  "BYTE",         do_db,          PSEUDO, P_DB,      0},
 	{NULL,  "CODE",         do_section,     PSEUDO, P_CODE,    S_CODE},
-	{NULL,  "RODATA",       do_section,     PSEUDO, P_DATA,    S_CONST},
 	{NULL,  "DATA",         do_section,     PSEUDO, P_DATA,    S_DATA},
 	{NULL,  "DB",           do_db,          PSEUDO, P_DB,      0},
 	{NULL,  "DD",           do_dd,          PSEUDO, P_DD,      0},

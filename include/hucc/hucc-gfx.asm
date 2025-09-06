@@ -380,7 +380,7 @@ load_vram_x	.proc
 		pha
 
 		ldy	<_bp_bank
-		jsr	set_bp_to_mpr34		; Map data to MPR3 & MPR4.
+		jsr	map_bp_to_mpr34		; Map data to MPR3 & MPR4.
 
 		jsr	set_di_to_mawr
 
@@ -514,7 +514,7 @@ load_bat_group	.procgroup			; These routines share code!
 		pha
 
 		ldy	<_bp_bank
-		jsr	set_bp_to_mpr3		; Map data to MPR3.
+		jsr	map_bp_to_mpr3		; Map data to MPR3.
 
 		ldy.l	<_bp
 		stz.l	<_bp
@@ -945,8 +945,6 @@ huc_monofont_x	.proc
 		.bss
 monofont_fg:	.ds	1
 monofont_bg:	.ds	1
-		.data
-font_1:		incbin	"data/font8x8-bold-short-iso646-fr.dat", 128
 		.code
 
 		ldy	vdc_bat_limit, x	; BAT limit mask hi-byte.
@@ -957,23 +955,13 @@ font_1:		incbin	"data/font8x8-bold-short-iso646-fr.dat", 128
 
 		jsr	set_font_addr		; Set xxx_font_base from addr.
 
-		lda.l	#font_1
+		lda.l	#.font
 		sta.l	<_bp
-		lda.h	#font_1
+		lda.h	#.font
 		sta.h	<_bp
-		ldy	#^font_1
-		sty	<_bp_bank
 
 		lda	#$60			; #characters.
 		sta	<_al
-
-		tma3				; Preserve MPR3.
-		pha
-		tma4				; Preserve MPR4.
-		pha
-
-		ldy	<_bp_bank
-		jsr	set_bp_to_mpr34
 
 		jsr	set_di_to_mawr
 
@@ -1043,12 +1031,9 @@ font_1:		incbin	"data/font8x8-bold-short-iso646-fr.dat", 128
 !:		dec	<_al
 		bne	.tile_loop
 
-		pla				; Restore MPR4.
-		tam4
-		pla				; Restore MPR3.
-		tam3
-
 		leave				; All done, phew!
+
+.font:		incbin	"data/font8x8-bold-short-iso646-fr.dat", 128
 
 		.endp
 

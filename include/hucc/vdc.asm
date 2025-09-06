@@ -264,7 +264,7 @@ set_mode_vdc	.proc
 		tma4				; Preserve MPR4.
 		pha
 
-		jsr	set_bp_to_mpr34		; Map data to MPR3 & MPR4.
+		jsr	map_bp_to_mpr34		; Map data to MPR3 & MPR4.
 
 		php				; Disable interrupts.
 		sei
@@ -684,7 +684,7 @@ copy_to_vdc	.proc
 		tma4				; Preserve MPR4.
 		pha
 
-		jsr	set_bp_to_mpr34		; Map data to MPR3 & MPR4.
+		jsr	map_bp_to_mpr34		; Map data to MPR3 & MPR4.
 
 	.if	!CDROM
 		lda	tia_to_vram		; Is the self-modifying code

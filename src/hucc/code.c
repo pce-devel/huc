@@ -398,17 +398,10 @@ void gen_code (INS *tmp)
 		nl();
 		break;
 
-	case I_FARPTR_GET:
-		ot("__farptr_get\t");
-		outstr(tmp->arg[0]);
-		outstr(", ");
-		outstr(tmp->arg[1]);
-		nl();
-		break;
-
 	case I_FGETW:
 		ot("__farptr_i\t");
 		outsymbol((SYMBOL *)data);
+		outstr(", _bp_bank, _bp");
 		nl();
 		ol("\tcall\t_farpeekw.1");
 		break;
@@ -416,6 +409,7 @@ void gen_code (INS *tmp)
 	case I_FGETB:
 		ot("__farptr_i\t");
 		outsymbol((SYMBOL *)data);
+		outstr(", _bp_bank, _bp");
 		nl();
 		ol("__fgetb");
 		break;
@@ -423,6 +417,7 @@ void gen_code (INS *tmp)
 	case I_FGETUB:
 		ot("__farptr_i\t");
 		outsymbol((SYMBOL *)data);
+		outstr(", _bp_bank, _bp");
 		nl();
 		ol("\tcall\t_farpeek.1");
 		break;

@@ -115,6 +115,7 @@ int enum_type_ptr = 0;
 
 int user_short_enums = 1;
 int user_signed_char = 0;
+int user_far_arrays = 1;
 
 int output_globdef;
 
