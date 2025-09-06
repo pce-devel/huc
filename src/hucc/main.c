@@ -209,6 +209,14 @@ int main (int argc, char *argv[])
 						user_signed_char = 0;
 						p += 12;
 					}
+					else if (!strcmp(p, "no-far-arrays")) {
+						user_far_arrays = 0;
+						p += 12;
+					}
+					else if (!strcmp(p, "far-arrays")) {
+						user_far_arrays = 1;
+						p += 9;
+					}
 					else
 						goto unknown_option;
 					break;
@@ -488,6 +496,7 @@ void usage (char *exename)
 	fprintf(stderr, "\nCompiler options:\n");
 	fprintf(stderr, "-Dsym[=val]       Define symbol 'sym' when compiling\n");
 	fprintf(stderr, "-O[val]           Invoke optimization (level <value>)\n");
+	fprintf(stderr, "-fno-far-arrays   Disable deprecated __far array syntax\n");
 	fprintf(stderr, "-fno-recursive    Optimize assuming non-recursive code\n");
 	fprintf(stderr, "-fno-short-enums  Always use signed int for enums\n");
 	fprintf(stderr, "-funsigned-char   Make \"char\" unsigned (the default)\n");
