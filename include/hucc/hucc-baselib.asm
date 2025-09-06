@@ -577,6 +577,20 @@ _random.1:	tay				; Preserve the limit.
 ; ***************************************************************************
 ; ***************************************************************************
 ;
+; N.B. Declared in hucc-string.h, but defined here because they're macros!
+;
+; int __fastcall __macro memcmp( unsigned char *destination<_di>, unsigned char *source<_bp>, unsigned int count<acc> );
+
+_memcmp.3	.macro
+		stz	<_bp_bank		; Map the source string.
+		call	_farmemcmp.3
+		.endm
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
 ; N.B. Declared in hucc-gfx.h, but defined here because they're macros!
 ;
 ; void __fastcall __macro get_color( unsigned int index<VCE_CTA> );

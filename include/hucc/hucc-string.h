@@ -51,8 +51,6 @@
 
 #asmdef	HUCC_USES_STRING 1
 
-#if 1
-
 extern void __fastcall strcpy( char *destination<_di>, char *source<_bp> );
 extern void __fastcall strcat( char *destination<_di>, char *source<_bp> );
 
@@ -62,36 +60,25 @@ extern unsigned int __fastcall strlcpy( char *destination<_di>, char *source<_bp
 extern unsigned int __fastcall strlcat( char *destination<_di>, char *source<_bp>, unsigned char size<acc> );
 
 extern void __fastcall memcpy( unsigned char *destination<ram_tii_dst>, unsigned char *source<ram_tii_src>, unsigned int count<acc> );
+extern void __fastcall farmemcpy( unsigned char *destination<ram_tii_dst>, unsigned char __far *source<_bp_bank:ram_tii_src>, unsigned int count<acc> );
+extern void __fastcall far_memcpy( unsigned char *destination<ram_tii_dst>, unsigned int count<acc> );
+
 extern unsigned char * __fastcall mempcpy( unsigned char *destination<ram_tii_dst>, unsigned char *source<ram_tii_src>, unsigned int count<acc> );
+extern unsigned char * __fastcall farmempcpy( unsigned char *destination<ram_tii_dst>, unsigned char __far *source<_bp_bank:ram_tii_src>, unsigned int count<acc> );
+extern unsigned char * __fastcall far_mempcpy( unsigned char *destination<ram_tii_dst>, unsigned int count<acc> );
 
 extern void __fastcall memset( unsigned char *destination<ram_tii_src>, unsigned char value<_al>, unsigned int count<acc> );
 
-extern int __fastcall strcmp( char *destination<_di>, char *source<_bp> );
-extern int __fastcall strncmp( char *destination<_di>, char *source<_bp>, unsigned int count<_ax> );
-extern int __fastcall memcmp( unsigned char *destination<_di>, unsigned char *source<_bp>, unsigned int count<acc> );
+//  0 	if strings are equal
+//  1 	if the first non-matching character in string1 > string2 (in ASCII).
+// -1 	if the first non-matching character in string1 < string2 (in ASCII).
 
-#else
+extern int __fastcall strcmp( char *string1<_di>, char *string2<_bp> );
+extern int __fastcall strncmp( char *string1<_di>, char *string2<_bp>, unsigned int count<_ax> );
 
-/* NOT WORKING YET (needs compiler changes) ... */
-
-extern void __fastcall strcpy( char *destination<_di>, char __far *source<_bp_bank:_bp> );
-extern void __fastcall strcat( char *destination<_di>, char __far *source<_bp_bank:_bp> );
-
-extern unsigned int __fastcall strlen( char __far *source<_bp_bank:_bp> );
-
-extern unsigned int __fastcall strlcpy( char *destination<_di>, char __far *source<_bp_bank:_bp>, unsigned char size<acc> );
-extern unsigned int __fastcall strlcat( char *destination<_di>, char __far *source<_bp_bank:_bp>, unsigned char size<acc> );
-
-extern void __fastcall memcpy( unsigned char *destination<ram_tii_dst>, unsigned char __far *source<_bp_bank:ram_tii_src>, unsigned int count<acc> );
-extern unsigned char * __fastcall mempcpy( unsigned char *destination<ram_tii_dst>, unsigned char __far *source<_bp_bank:ram_tii_src>, unsigned int count<acc> );
-
-extern void __fastcall memset( unsigned char *destination<ram_tii_src>, unsigned char value<_al>, unsigned int count<acc> );
-
-extern int __fastcall strcmp( char *destination<_di>, char __far *source<_bp_bank:_bp> );
-extern int __fastcall strncmp( char *destination<_di>, char __far *source<_bp_bank:_bp>, unsigned int count<_ax> );
-extern int __fastcall memcmp( unsigned char *destination<_di>, unsigned char __far *source<_bp_bank:_bp>, unsigned int count<_ax> );
-
-#endif
+extern int __fastcall __macro memcmp( unsigned char *string1<_di>, unsigned char *string2<_bp>, unsigned int count<acc> );
+extern int __fastcall farmemcmp( unsigned char *string1<_di>, unsigned char __far *string2<_bp_bank:_bp>, unsigned int count<acc> );
+extern int __fastcall far_memcmp( unsigned char *string1<_di>, unsigned int count<acc> );
 
 #endif // __HUCC__
 

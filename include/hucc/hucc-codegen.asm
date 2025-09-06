@@ -124,21 +124,35 @@ __short		.macro
 ; this is used for __far parameters to a __fastcall
 
 __farptr	.macro
+	.if	((\1) < $6000)
+		lda.l	#\1
+		sta.l	\3
+		lda.h	#\1
+		sta.h	\3
+		stz	\2
+	.else
 		lda.l	#$6000 + ($1FFF & (\1))
 		sta.l	\3
 		lda.h	#$6000 + ($1FFF & (\1))
 		sta.h	\3
 		lda	#bank(\1)
 		sta	\2
+	.endif
 		.endm
 
 ; **************
-; adds 16-bit unsigned offset in Y:A to data address in \1
-; if 1-param then A=bank, __bptr=addr, only used for reading a __far array
-; if 3-param then A=\2=bank, \3=addr
+; adds 16-bit unsigned offset in Y:A to data address in \1, then \2=bank, \3=addr
 
 __farptr_i	.macro
-	.if	(\# = 3)
+	.if	((\1) < $6000)
+		clc
+		adc.l	#\1
+		sta.l	\3
+		tya
+		adc.h	#\1
+		sta.h	\3
+		stz	\2
+	.else
 		clc
 		adc.l	#(\1) & $1FFF
 		sta.l	\3
@@ -157,41 +171,8 @@ __farptr_i	.macro
 		clc
 		adc	#bank(\1)
 		sta	\2
-	.else
-		clc
-		adc.l	#(\1) & $1FFF
-		sta.l	<__bp
-		tya
-		adc.h	#(\1) & $1FFF
-		tay
-		and	#$1F
-		ora	#$60
-		sta.h	<__bp
-		tya
-		ror	a
-		lsr	a
-		lsr	a
-		lsr	a
-		lsr	a
-		clc
-		adc	#bank(\1)
 	.endif
 		.endm
-
-; **************
-; JCB: I don't know what this is supposed to do!
-
-	.if	0
-__farptr_get	.macro
-		sta	<\1
-		ldy	#2
-		lda	[__ptr], y
-		sta.l	<\2
-		iny
-		lda	[__ptr], y
-		sta.h	<\2
-		.endm
-	.endif
 
 ; **************
 ; unsigned int __fastcall farpeekw( void __far *addr<_bp_bank:_bp> );
@@ -200,28 +181,25 @@ __farptr_get	.macro
 ; **************
 ; N.B. Preserves MPR3 unlike original HuC code.
 
-_far_peekw:	lda	<_bp_bank
-_farpeekw.1:	tay
-		tma3
+_far_peekw:
+_farpeekw.1:	tma3
 		pha
-		tya
+		tma4
+		pha
+		lda	<_bp_bank
 		tam3
-		lda	[_bp]
-		say
-		inc.l	<_bp
-		bne	!+
-		inc.h	<_bp
-		bpl	!+
 		inc	a
-		tam3
-		lda	#$60
-		sta.h	<_bp
-!:		lda	[_bp]
+		tam4
+		ldy	#1
+		lda	[_bp], y
+		tay
+		lda	[_bp]
 		sta	<__temp
 		pla
+		tam4
+		pla
 		tam3
-		tya
-		ldy	<__temp
+		lda	<__temp
 		rts
 
 ; **************
@@ -231,11 +209,10 @@ _farpeekw.1:	tay
 ; **************
 ; N.B. Preserves MPR3 unlike original HuC code.
 
-_far_peek:	lda	<_bp_bank
-_farpeek.1:	tay
-		tma3
+_far_peek:
+_farpeek.1:	tma3
 		pha
-		tya
+		lda	<_bp_bank
 		tam3
 		lda	[_bp]
 		tay

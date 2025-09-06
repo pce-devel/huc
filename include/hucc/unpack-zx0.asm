@@ -127,7 +127,7 @@ zx0_to_ram	.proc
 		tma3				; Preserve MPR3.
 		pha
 
-		jsr	set_bp_to_mpr3		; Map zx0_srcptr to MPR3.
+		jsr	map_bp_to_mpr3		; Map zx0_srcptr to MPR3.
 
 		ldx	#$40			; Initialize bit-buffer.
 
@@ -370,7 +370,7 @@ zx0_to_vdc	.proc
 		tma3				; Preserve MPR3.
 		pha
 
-		jsr	set_bp_to_mpr3		; Map zx0_srcptr to MPR3.
+		jsr	map_bp_to_mpr3		; Map zx0_srcptr to MPR3.
 
 		jsr	set_di_to_mawr		; Map zx0_dstptr to VRAM.
 
@@ -633,7 +633,7 @@ zx0_to_vdc	.proc
 		tma3				; Preserve MPR3.
 		pha
 
-		jsr	set_bp_to_mpr3		; Map zx0_srcptr to MPR3.
+		jsr	map_bp_to_mpr3		; Map zx0_srcptr to MPR3.
 
 		jsr	vdc_di_to_mawr		; Map zx0_dstptr to VRAM.
 

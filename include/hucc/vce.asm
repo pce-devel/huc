@@ -312,7 +312,7 @@ fade_to_black	.proc
 		tya				; Is there a bank to map?
 		beq	!+
 
-		jsr	set_bp_to_mpr34		; Map data to MPR3 & MPR4.
+		jsr	map_bp_to_mpr34		; Map data to MPR3 & MPR4.
 
 !:		lda	<_ah			; Value to subtract (0..7).
 		and	#7
@@ -412,7 +412,7 @@ fade_to_white	.proc
 		tya				; Is there a bank to map?
 		beq	!+
 
-		jsr	set_bp_to_mpr34		; Map data to MPR3 & MPR4.
+		jsr	map_bp_to_mpr34		; Map data to MPR3 & MPR4.
 
 !:		lda	<_ah			; Value to add (0..7).
 		and	#7
@@ -543,7 +543,7 @@ cross_fade_to	.proc
 		tya				; Is there a bank to map?
 		beq	!+
 
-		jsr	set_bp_to_mpr34		; Map data to MPR3 & MPR4.
+		jsr	map_bp_to_mpr34		; Map data to MPR3 & MPR4.
 
 !:		lda	<_al			; # of colors (1..256).
 		beq	.next_page		; Exactly 256 colors?
