@@ -217,7 +217,7 @@ vbl_init_scroll	.proc
 
 		; Bubble-sort the order of indexes in the Active List.
 
-.sort_pass:	sta	<__temp			; #regions left to sort.
+.sort_pass:	sta	active_index		; #regions left to sort.
 
 		clv				; Reset swap flag.
 
@@ -238,11 +238,11 @@ vbl_init_scroll	.proc
 		bit	#$40			; Set V flag to signal a swap.
 
 .no_swap:	iny				; Reached the end of the list?
-		cpy	<__temp			; #regions left to sort.
+		cpy	active_index		; #regions left to sort.
 		bcc	.pass_loop
 		bvc	.sort_done		; Was there a swap last pass?
 
-		lda	<__temp			; #regions left to sort.
+		lda	active_index		; #regions left to sort.
 		dec	a
 		cmp	#2			; Is there only 1 active region
 		bcs	.sort_pass		; left to sort?
