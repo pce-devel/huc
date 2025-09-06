@@ -65,7 +65,6 @@ unsigned char icode_flags[] = {
 
 	/* I_FARPTR             */	0,
 	/* I_FARPTR_I           */	0,
-	/* I_FARPTR_GET         */	0,
 	/* I_FGETW              */	0,
 	/* I_FGETB              */	0,
 	/* I_FGETUB             */	0,
@@ -692,7 +691,6 @@ enum ICODE short_icode[] = {
 
 	/* I_FARPTR             */	0,
 	/* I_FARPTR_I           */	0,
-	/* I_FARPTR_GET         */	0,
 	/* I_FGETW              */	0,
 	/* I_FGETB              */	0,
 	/* I_FGETUB             */	0,

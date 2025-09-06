@@ -981,16 +981,21 @@ void arg_to_fptr (struct fastcall *fast, int i, int arg, int adj)
 			/* allow either "function", "array", or "array+const" */
 			sym = (SYMBOL *)ins->ins_data;
 			switch (sym->identity) {
-				case FUNCTION:
+//				case FUNCTION:
 				case ARRAY:
 					if (ins->ins_code == I_LD_WI)
 						err = 0;
 					break;
-				case POINTER:
-					if (ins->ins_code == I_LD_WM)
-						err = 0;
-					break;
+//				case POINTER:
+//					if (ins->ins_code == I_LD_WM)
+//						err = 0;
+//					break;
 			}
+		} else
+		if (ins->ins_type == T_STRING) {
+			/* anonymous string constant */
+			if (ins->ins_code == I_LD_WI)
+				err = 0;
 		}
 	}
 	else if (nb > 1) {
@@ -1005,12 +1010,17 @@ void arg_to_fptr (struct fastcall *fast, int i, int arg, int adj)
 							(ins->ins_code == I_ADD_WI))
 							err = 0;
 						break;
-					/* or the first pointer */
-					case POINTER:
-						if (ins->ins_code == I_LD_WM)
-							err = 0;
-						break;
+//					/* or the first pointer */
+//					case POINTER:
+//						if (ins->ins_code == I_LD_WM)
+//							err = 0;
+//						break;
 				}
+			} else
+			if (ins->ins_type == T_STRING) {
+				/* anonymous string constant */
+				if (ins->ins_code == I_LD_WI)
+					err = 0;
 			}
 			/* break when a qualifying symbol is found */
 			if (err == 0) break;
@@ -1018,8 +1028,9 @@ void arg_to_fptr (struct fastcall *fast, int i, int arg, int adj)
 
 		/* check if last instruction is a pointer dereference */
 		switch (arg_stack[ arg_list[arg][0] + nb - 1 ].ins_code) {
-			case I_LD_UP:
 			case I_LD_WP:
+			case I_LD_BP:
+			case I_LD_UP:
 				err = 1;
 				break;
 			default:
@@ -1040,35 +1051,14 @@ void arg_to_fptr (struct fastcall *fast, int i, int arg, int adj)
 		gen_ins(ins);
 	}
 	else {
-		sym = (SYMBOL *)ins->ins_data;
-
-		/* check symbol type */
-		if (sym->far) {
-			tmp.ins_code = I_FARPTR_I;
-			tmp.ins_type = T_SYMBOL;
-			tmp.ins_data = ins->ins_data;
-			tmp.arg[0] = fast->argname[i];
-			tmp.arg[1] = fast->argname[i + 1];
-			/* this nukes the symbol from the I_LD_WI or I_ADD_WI */
-			ins->ins_type = T_VALUE;
-			ins->ins_data = 0;
-		}
-		else {
-			/* a pointer or an array of pointers */
-			if (((sym->identity == ARRAY) ||
-			     (sym->identity == POINTER)) &&
-			    (sym->sym_type == CINT || sym->sym_type == CUINT)) {
-				tmp.ins_code = I_FARPTR_GET;
-				tmp.ins_type = 0;
-				tmp.ins_data = 0;
-				tmp.arg[0] = fast->argname[i];
-				tmp.arg[1] = fast->argname[i + 1];
-			}
-			else {
-				error("can't get farptr");
-				return;
-			}
-		}
+		tmp.ins_code = I_FARPTR_I;
+		tmp.ins_type = ins->ins_type; /* T_SYMBOL or T_STRING */
+		tmp.ins_data = ins->ins_data;
+		tmp.arg[0] = fast->argname[i];
+		tmp.arg[1] = fast->argname[i + 1];
+		/* this nukes the symbol from the I_LD_WI or I_ADD_WI */
+		ins->ins_type = T_VALUE;
+		ins->ins_data = 0;
 		arg_flush(arg, adj);
 		gen_ins(&tmp);
 	}

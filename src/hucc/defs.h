@@ -32,7 +32,6 @@ enum ICODE {
 
 	I_FARPTR,
 	I_FARPTR_I,
-	I_FARPTR_GET,
 	I_FGETW,
 	I_FGETB,
 	I_FGETUB,
@@ -818,7 +817,7 @@ struct tag_symbol {
 
 /* literal pool */
 
-#define LITABSZ 8192
+#define LITABSZ 16384
 #define LITMAX  LITABSZ - 1
 
 /* input string */
