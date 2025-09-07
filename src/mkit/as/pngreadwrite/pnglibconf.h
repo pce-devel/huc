@@ -105,7 +105,7 @@
 /*#undef PNG_READ_sRGB_SUPPORTED*/
 /*#undef PNG_READ_tEXt_SUPPORTED*/
 /*#undef PNG_READ_tIME_SUPPORTED*/
-#define PNG_READ_tRNS_SUPPORTED
+/*#undef PNG_READ_tRNS_SUPPORTED*/
 /*#undef PNG_READ_zTXt_SUPPORTED*/
 /*#undef PNG_SAVE_INT_32_SUPPORTED*/
 /*#undef PNG_SAVE_UNKNOWN_CHUNKS_SUPPORTED*/
@@ -178,7 +178,7 @@
 /*#undef PNG_WRITE_sRGB_SUPPORTED*/
 /*#undef PNG_WRITE_tEXt_SUPPORTED*/
 /*#undef PNG_WRITE_tIME_SUPPORTED*/
-#define PNG_WRITE_tRNS_SUPPORTED
+/*#undef PNG_WRITE_tRNS_SUPPORTED*/
 /*#undef PNG_WRITE_zTXt_SUPPORTED*/
 /*#undef PNG_bKGD_SUPPORTED*/
 /*#undef PNG_cHRM_SUPPORTED*/
@@ -199,7 +199,7 @@
 /*#undef PNG_sRGB_SUPPORTED*/
 /*#undef PNG_tEXt_SUPPORTED*/
 /*#undef PNG_tIME_SUPPORTED*/
-#define PNG_tRNS_SUPPORTED
+/*#undef PNG_tRNS_SUPPORTED*/
 /*#undef PNG_zTXt_SUPPORTED*/
 /* end of options */
 /* settings */
