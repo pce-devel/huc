@@ -142,14 +142,14 @@ _reset_mpr34	.macro
 		tam4
 		.endm
 
-_set_mpr2.1	.macro
+_farset_mpr2.1	.macro
 		lda	<_bp_bank
 		tam2
 		lda.l	<_bp
 		ldy.h	<_bp
 		.endm
 
-_set_mpr34.1	.macro
+_farset_mpr34.1	.macro
 		lda	<_bp_bank
 		tam3
 		inc	a
