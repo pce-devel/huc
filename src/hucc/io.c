@@ -207,6 +207,7 @@ void readline (void)
 					gdata();
 					outstr("huc_globals:\n");
 					dumpglbs();
+					gdata();
 					outstr("huc_globals_end:\n");
 					gtext();
 					globals_h_in_process = 0;

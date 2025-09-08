@@ -45,7 +45,7 @@ const char * compare2str [] = {
  */
 void gdata (void)
 {
-	if (segment == 1) {
+	if (segment != 0) {
 		segment = 0;
 		ol(".bss");
 	}
@@ -53,9 +53,17 @@ void gdata (void)
 
 void gtext (void)
 {
-	if (segment == 0) {
+	if (segment != 1) {
 		segment = 1;
 		ol(".code");
+	}
+}
+
+void gzp (void)
+{
+	if (segment != 2) {
+		segment = 2;
+		ol(".zp");
 	}
 }
 

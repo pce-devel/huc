@@ -595,14 +595,20 @@ int dodcls (int stclass, TAG_SYMBOL *mtag, int is_struct)
 	int err;
 	struct type_type t;
 
+	if (amatch("__zp", 4)) {
+		if ((stclass & STORAGE) == CONST || mtag != NULL_TAG)
+			error("syntax error, __zp can only be used for variables");
+		else
+			stclass |= ZEROPAGE;
+	}
 	blanks();
 
 	if (match_type(&t, NO, YES)) {
 		if (t.type_type == CSTRUCT && t.otag == -1)
-			t.otag = define_struct(t.sname, stclass, !!(t.flags & F_STRUCT));
+			t.otag = define_struct(t.sname, stclass & ~ZEROPAGE, !!(t.flags & F_STRUCT));
 		else if (t.type_type == CENUM) {
 			if (t.otag == -1)
-				t.otag = define_enum(t.sname, stclass);
+				t.otag = define_enum(t.sname, stclass & ~ZEROPAGE);
 			t.type_type = enum_types[t.otag].base;
 		}
 		err = declglb(t.type_type, stclass, mtag, t.otag, is_struct);
@@ -870,122 +876,127 @@ void dumpglbs (void)
 {
 	int i = 1;
 	int dim, list_size, line_count;
-	int j;
+	int j, pass;
 	FILE *save = output;
+
+	if (glbflag == 0) goto finished;
 
 	/* This is done in several passes:
 	   Pass 0: Dump initialization data into const bank.
-	   Pass 1: Define space for uninitialized data.
-	   Pass 2: Define space for initialized data.
+	   Pass 1: Define space for zp data.
+	   Pass 2: Define space for uninitialized data.
+	   Pass 3: Define space for initialized data.
 	 */
-	if (glbflag) {
-		int pass = 0;
-next:
+	for (pass = 0; pass < 4; ++pass) {
 		i = 1;
 		for (cptr = (symtab + rglbsym_index); cptr < (symtab + glbsym_index); cptr++) {
-			if (cptr->identity != FUNCTION) {
-//				ppubext(cptr);
-				if ((cptr->storage & WRITTEN) == 0 &&	/* Not yet written to file */
-				    (cptr->storage & STORAGE) != EXTERN) {
-					dim = cptr->offset;
-					if (find_symbol_initials(cptr->name)) {
-						// has initials
-						/* dump initialization data */
-						if (pass == 1)	/* initialized data not handled in pass 1 */
-							continue;
-						else if (pass == 2) {
-							/* define space for initialized data */
-							current_buffer = data_buffer;
-							current_offset = data_offset;
-							if ((cptr->storage & STORAGE) != LSTATIC)
-								prefixBuffer();
-							outstrBuffer(cptr->name);
-							outstrBuffer(":\n");
-							defstorageBuffer();
-							outdecBuffer(cptr->alloc_size);
-							nlBuffer();
-							cptr->storage |= WRITTEN;
-							data_offset = current_offset;
-							current_buffer = NULL;
-							current_offset = 0;
-							continue;
-						}
-						/* output initialization data into const bank */
-						current_buffer = rodata_buffer;
-						current_offset = rodata_offset;
-						have_init_data = 1;
-						list_size = 0;
-						line_count = 0;
-						list_size = get_size(cptr->name);
-						if (cptr->sym_type == CSTRUCT)
-							list_size /= tag_table[cptr->tagidx].number_of_members;
-						if (dim == -1)
-							dim = list_size;
-						int item;
-						/* dim is an item count for non-compound types and a byte size
-						   for compound types; dump_struct() wants an item number, so
-						   we have to count both to get the right members out. */
-						for (j = item = 0; j < dim; j++, item++) {
-							if (cptr->sym_type == CSTRUCT)
-								j += dump_structBuffer(cptr, item) - 1;
-							else {
-								if (line_count % 10 == 0) {
-									nlBuffer();
-									if (cptr->sym_type == CCHAR || cptr->sym_type == CUCHAR)
-										defbyteBuffer();
-									else
-										defwordBuffer();
-								}
-								if (j < list_size) {
-									// dump data
-									int value = get_item_at(cptr->name, j, &tag_table[cptr->tagidx]);
-									outdecBuffer(value);
-								}
-								else {
-									// dump zero, no more data available
-									outdecBuffer(0);
-								}
-								line_count++;
-								if (line_count % 10 == 0)
-									line_count = 0;
-								else {
-									if (j < dim - 1)
-										outbyteBuffer(',');
-								}
-							}
-						}
-						nlBuffer();
-						rodata_offset = current_offset;
-						current_buffer = NULL;
-						current_offset = 0;
-					}
+			if (cptr->identity == FUNCTION)
+				continue;
+			if ((cptr->storage & WRITTEN) != 0 ||
+			    (cptr->storage & STORAGE) == EXTERN)
+				continue;
+
+			dim = cptr->offset;
+			if (find_symbol_initials(cptr->name)) {
+				/* symbol has initialized data */
+				if (pass == 3) {
+					/* define space for initialized data */
+					current_buffer = data_buffer;
+					current_offset = data_offset;
+					if ((cptr->storage & STORAGE) != LSTATIC)
+						prefixBuffer();
+					outstrBuffer(cptr->name);
+					outstrBuffer(":\n");
+					defstorageBuffer();
+					outdecBuffer(cptr->alloc_size);
+					nlBuffer();
+					cptr->storage |= WRITTEN;
+					data_offset = current_offset;
+					current_buffer = NULL;
+					current_offset = 0;
+					continue;
+				}
+				if (pass != 0)
+					continue;
+				/* output initialization data into const bank */
+				current_buffer = rodata_buffer;
+				current_offset = rodata_offset;
+				have_init_data = 1;
+				list_size = 0;
+				line_count = 0;
+				list_size = get_size(cptr->name);
+				if (cptr->sym_type == CSTRUCT)
+					list_size /= tag_table[cptr->tagidx].number_of_members;
+				if (dim == -1)
+					dim = list_size;
+				int item;
+				/* dim is an item count for non-compound types and a byte size
+				   for compound types; dump_struct() wants an item number, so
+				   we have to count both to get the right members out. */
+				for (j = item = 0; j < dim; j++, item++) {
+					if (cptr->sym_type == CSTRUCT)
+						j += dump_structBuffer(cptr, item) - 1;
 					else {
-						if (pass == 0)
-							continue;
-						/* define space in bss */
-						if (i) {
-							i = 0;
-							nl();
-							gdata();
+						if (line_count % 10 == 0) {
+							nlBuffer();
+							if (cptr->sym_type == CCHAR || cptr->sym_type == CUCHAR)
+								defbyteBuffer();
+							else
+								defwordBuffer();
 						}
-						if ((cptr->storage & STORAGE) != LSTATIC)
-							prefix();
-						outstr(cptr->name);
-						outstr(":\n");
-						defstorage();
-						outdec(cptr->alloc_size);
-						nl();
-						cptr->storage |= WRITTEN;
+						if (j < list_size) {
+							// dump data
+							int value = get_item_at(cptr->name, j, &tag_table[cptr->tagidx]);
+							outdecBuffer(value);
+						}
+						else {
+							// dump zero, no more data available
+							outdecBuffer(0);
+						}
+						line_count++;
+						if (line_count % 10 == 0)
+							line_count = 0;
+						else {
+							if (j < dim - 1)
+								outbyteBuffer(',');
+						}
 					}
 				}
+				nlBuffer();
+				rodata_offset = current_offset;
+				current_buffer = NULL;
+				current_offset = 0;
+				continue;
 			}
 			else {
-//				fpubext(cptr);
+				/* symbol is uninitialized */
+				if (pass == 0)
+					continue;
+				if (pass == 1 && !(cptr->storage & ZEROPAGE))
+					continue;
+				/* define space in bss */
+				if (i) {
+					i = 0;
+					nl();
+					if (pass == 1)
+						gzp();
+					else
+						gdata();
+				}
+				if ((cptr->storage & STORAGE) != LSTATIC)
+					prefix();
+				outstr(cptr->name);
+				outstr(":\n");
+				defstorage();
+				outdec(cptr->alloc_size);
+				nl();
+				cptr->storage |= WRITTEN;
+				continue;
 			}
 		}
-		if (++pass < 3)
-			goto next;
 	}
+
+finished:
 	if (i) {
 		nl();
 		gdata();

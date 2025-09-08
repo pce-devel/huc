@@ -781,7 +781,8 @@ struct tag_symbol {
 
 #define STORAGE 15 /* bitmask for the storage type */
 
-#define WASAUTO 64
+#define ZEROPAGE 32
+#define WASAUTO  64
 #define WRITTEN 128
 
 /* "do"/"for"/"while"/"switch" statement stack */
