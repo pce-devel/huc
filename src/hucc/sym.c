@@ -220,7 +220,6 @@ int declglb (char typ, char stor, TAG_SYMBOL *mtag, int otag, int is_struct)
 				}
 				if (stor & ZEROPAGE) {
 					error("syntax error, a function cannot be located in __zp");
-					return (1);
 				}
 				newfunc(sname, ptr_order, typ, otag, 0);
 				return (2);
