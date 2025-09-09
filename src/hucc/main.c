@@ -811,7 +811,7 @@ void nlBuffer (void)
  */
 void defbyteBuffer (void)
 {
-	outstrBuffer(".db\t");
+	outstrBuffer("\t\tdb\t");
 }
 
 /*
@@ -820,7 +820,7 @@ void defbyteBuffer (void)
  */
 void defstorageBuffer (void)
 {
-	outstrBuffer(".ds\t");
+	outstrBuffer("\t\tds\t");
 }
 
 /*
@@ -829,7 +829,7 @@ void defstorageBuffer (void)
  */
 void defwordBuffer (void)
 {
-	outstrBuffer(".dw\t");
+	outstrBuffer("\t\tdw\t");
 }
 
 /**
@@ -1018,34 +1018,19 @@ static void dumpfinal (void)
 			outstr("_end:\n");
 		}
 	}
-	if (rodata_offset == 0) {
-		outstr("huc_rodata:\n");
-		outstr("__huc_rodata:\n");
-		outstr("huc_rodata_end:\n");
-		outstr("__huc_rodata_end:\n");
-	}
-	outstr("huc_data:\n");
-	outstr("__huc_data:\n");
+	outstr("\n__bss_init:\n\n");
 	if (data_offset != 0) {
 		data_buffer[data_offset] = '\0';
 		outstr(data_buffer);
 	}
-	outstr("huc_data_end:\n");
-	outstr("__huc_data_end:\n");
-	if (globals_h_in_process != 1)
-		outstr("__heap_start:\n");
+	outstr("__heap_start:\n");
 	if (rodata_offset != 0) {
 		rodata_buffer[rodata_offset] = '\0';
+		nl();
 		ol(".rodata");
-		outstr("huc_rodata:\n");
-		outstr("__huc_rodata:\n");
+		outstr("__rom_init:\n");
 		outstr(rodata_buffer);
-		outstr("huc_rodata_end:\n");
-		outstr("__huc_rodata_end:\n");
 	}
-	fseek(output, output_globdef, SEEK_SET);
-	if (have_init_data)
-		outstr("HAVE_INIT = 1\n");
 }
 
 /*
