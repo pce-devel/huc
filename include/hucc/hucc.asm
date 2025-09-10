@@ -304,7 +304,7 @@ core_main	.proc
 	.endif	CDROM
 
 	.if	(__heap_start - __bss_init)	; Copy initialized BSS data.
-		tii	__bss_init, __rom_init, __heap_start - __bss_init
+		tii	__rom_init, __bss_init, __heap_start - __bss_init
 	.endif
 
 		tai	.stack_fill, __stack, HUCC_STACK_SZ
