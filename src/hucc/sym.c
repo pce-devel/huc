@@ -61,12 +61,11 @@ static int init (char *symbol_name, int type, int identity, int *dim, TAG_SYMBOL
 			}
 		}
 	}
-	else if (number(&value)) {
-		add_data_initials(symbol_name, CINT, value, tag);
-		*dim = *dim - 1;
-	}
-	else if (quoted_str(&value)) {
-		add_data_initials(symbol_name, CCHAR, value, tag);
+	else if (const_expr(&value, NULL, NULL)) {
+		/* ignore a zero initializer for non-compound variables because */
+		/* uninitialized variables in the BSS are zeroed during startup */
+		if ((value != 0) || (identity == ARRAY) || (type == CSTRUCT) || (tag != NULL))
+			add_data_initials(symbol_name, CINT, value, tag);
 		*dim = *dim - 1;
 	}
 	else
