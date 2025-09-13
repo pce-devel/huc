@@ -25,7 +25,7 @@ void out_ins_ex_arg (int code, int type, intptr_t data, int imm_type, intptr_t i
 void out_ins_sym (int code, int type, intptr_t data, SYMBOL *sym);
 void out_ins_cmp (int code, int type);
 void gen_ins (INS *tmp);
-void gen_code (INS *tmp);
+char gen_code (INS *tmp);
 
 void dump_ins (INS *tmp);
 

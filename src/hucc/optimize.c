@@ -5050,6 +5050,9 @@ lv1_loop:
 				else
 				if (icode_flags[q_ins[scan].ins_code] & IS_POPWT)
 					offset += 2;
+				else
+				if (q_ins[scan].ins_code == I_MODSP)
+					offset += q_ins[scan].ins_data;
 
 				/* check offset */
 				if (offset != 0)
@@ -5247,6 +5250,9 @@ lv1_loop:
 				else
 				if (icode_flags[q_ins[scan].ins_code] & IS_POPWT)
 					offset += 2;
+				else
+				if (q_ins[scan].ins_code == I_MODSP)
+					offset += q_ins[scan].ins_data;
 
 				/* check offset */
 				if (offset != 0)
@@ -5495,6 +5501,9 @@ lv1_loop:
 				else
 				if (icode_flags[q_ins[scan].ins_code] & IS_POPWT)
 					offset += 2;
+				else
+				if (q_ins[scan].ins_code == I_MODSP)
+					offset += q_ins[scan].ins_data;
 
 				/* check offset */
 				if (offset != 0)
