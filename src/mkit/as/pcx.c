@@ -354,6 +354,10 @@ pcx_parse_args(int i, int nb, int *a, int *b, int *c, int *d, int size)
 		h = (pcx_h - y) / size;
 
 	/* check */
+	if ((w == 0) || (h == 0)) {
+		error("XPicture size too small, min. %dx%d!", size, size);
+		return (0);
+	}
 	if (((x + w * size) > pcx_w) || ((y + h * size) > pcx_h)) {
 		error("Coordinates out of range!");
 		return (0);
@@ -422,8 +426,8 @@ pcx_load(char *name)
 		error("Picture size too big, max. 16384x4096!");
 		return (0);
 	}
-	if ((pcx_w < 16) || (pcx_h < 16)) {
-		error("Picture size too small, min. 16x16!");
+	if ((pcx_w < 8) || (pcx_h < 8)) {
+		error("Picture size too small, min. 8x8!");
 		return (0);
 	}
 
@@ -667,8 +671,8 @@ bmp_load(char *name)
 		error("Picture size too big, max. 16384x4096!");
 		goto errorCleanup;
 	}
-	if ((pcx_w < 16) || (pcx_h < 16)) {
-		error("Picture size too small, min. 16x16!");
+	if ((pcx_w < 8) || (pcx_h < 8)) {
+		error("Picture size too small, min. 8x8!");
 		goto errorCleanup;
 	}
 
@@ -833,8 +837,8 @@ png_load(char *name)
 		error("Picture size too big, max. 16384x4096!");
 		goto errorCleanup;
 	}
-	if ((pcx_w < 16) || (pcx_h < 16)) {
-		error("Picture size too small, min. 16x16!");
+	if ((pcx_w < 8) || (pcx_h < 8)) {
+		error("Picture size too small, min. 8x8!");
 		goto errorCleanup;
 	}
 
