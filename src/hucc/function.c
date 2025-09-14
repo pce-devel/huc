@@ -28,7 +28,6 @@
 
 /* locals */
 static INS arg_queue[Q_SIZE];
-static int which_queue;
 static int saved_rd;
 static int saved_wr;
 static int saved_nb;
@@ -627,7 +626,7 @@ void callfunction (SYMBOL *ptr)
 		/* switch to the alternate instruction queue so that */
 		/* the temporary stacking of arguments does not mess */
 		/* up optimizing statements that use function calls. */
-		if (which_queue++ == 0) {
+		if (arg_stack_flag++ == 0) {
 			saved_rd = q_rd;
 			saved_wr = q_wr;
 			saved_nb = q_nb;
@@ -653,7 +652,6 @@ void callfunction (SYMBOL *ptr)
 
 			new_arg_stack(arg_idx++);
 			expression(NO);
-			flush_ins();
 
 			stkp = stkp - INTSIZE;
 
@@ -678,23 +676,19 @@ void callfunction (SYMBOL *ptr)
 
 	/* fastcall func */
 	if (is_fc) {
-		/* just in case the final match() caused an I_INFO output */
-		flush_ins();
-
 		/* terminate the final stacked argument */
+		flush_ins();
 		if (argcnt) {
 			arg_list[arg_idx - 1][1] = arg_stack_idx;
 			arg_idx -= argcnt;
 		}
-		if (argcnt && arg_idx)
+		if (arg_idx)
 			arg_stack_idx = arg_list[arg_idx - 1][1];
-		else {
+		else
 			arg_stack_idx = 0;
-			arg_stack_flag = 0;
-		}
 
 		/* switch back to the normal instruction queue */
-		if (--which_queue == 0) {
+		if (--arg_stack_flag == 0) {
 			q_ins = ins_queue;
 			q_rd = saved_rd;
 			q_wr = saved_wr;
@@ -871,7 +865,8 @@ void callfunction (SYMBOL *ptr)
 		/* T_NOP stops the code-output from writing it to the .S file.  */
 		/* The function that is called is actually the one responsible  */
 		/* for removing the arguments from the stack. */
-		out_ins(I_MODSP, T_NOP, argsiz);
+		if (!is_fc)
+			out_ins(I_MODSP, T_NOP, argsiz);
 	}
 }
 
@@ -885,14 +880,14 @@ void new_arg_stack (int arg)
 		error("too many args");
 	else {
 		/* close previous stack */
+		flush_ins();
 		if (arg)
 			arg_list[arg - 1][1] = arg_stack_idx;
 
 		/* init new stack */
 		arg_stack_idx += 4;
 		arg_list[arg][0] = arg_stack_idx;
-		arg_list[arg][1] = -1;
-		arg_stack_flag = 1;
+		arg_list[arg][1] = arg_stack_idx;
 	}
 }
 
