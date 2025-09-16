@@ -207,6 +207,7 @@ void readline (void)
 					gdata();
 					outstr("huc_globals:\n");
 					dumpglbs();
+					gdata();
 					outstr("huc_globals_end:\n");
 					gtext();
 					globals_h_in_process = 0;
@@ -615,6 +616,22 @@ char outbyte (char c)
 }
 
 /*
+ * outchr
+ *
+ * Input : char c
+ * Output : nothing
+ *
+ * Send the input char to the assembler file
+ */
+void outchr (char c)
+{
+	fputc('\'', output);
+	if (c == '\\') fputc(c, output);
+	fputc(c, output);
+	fputc('\'', output);
+}
+
+/*
  * outstr
  *
  * Input : char*, ptr
@@ -627,7 +644,7 @@ void outstr (const char *ptr)
 	int k;
 
 	k = 0;
-	while (outbyte(ptr[k++])) ;
+	while (outbyte(ptr[k++])) {}
 }
 
 /*

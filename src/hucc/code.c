@@ -45,7 +45,7 @@ const char * compare2str [] = {
  */
 void gdata (void)
 {
-	if (segment == 1) {
+	if (segment != 0) {
 		segment = 0;
 		ol(".bss");
 	}
@@ -53,9 +53,17 @@ void gdata (void)
 
 void gtext (void)
 {
-	if (segment == 0) {
+	if (segment != 1) {
 		segment = 1;
 		ol(".code");
+	}
+}
+
+void gzp (void)
+{
+	if (segment != 2) {
+		segment = 2;
+		ol(".zp");
 	}
 }
 
@@ -77,9 +85,6 @@ void header (void)
 	outstr("\n");
 	outstr("HUC\t\t=\t1\n");
 	outstr("HUCC\t\t=\t1\n");
-	/* Reserve space for further global definitions. */
-	output_globdef = ftell(output);
-	outstr("                                                                           ");
 	nl();
 }
 
@@ -284,7 +289,8 @@ void dump_ins (INS *tmp)
 		copy.ins_data = 0;
 
 	output = stdout;
-	gen_code(&copy);
+	if (gen_code(&copy))
+		ol("; nop");
 	output = save;
 }
 
@@ -292,7 +298,7 @@ void dump_ins (INS *tmp)
  *	gen assembly code
  *
  */
-void gen_code (INS *tmp)
+char gen_code (INS *tmp)
 {
 	enum ICODE code;
 	int type;
@@ -307,7 +313,7 @@ void gen_code (INS *tmp)
 	imm_data = tmp->imm_data;
 
 	if (type == T_NOP)
-		return;
+		return 1;
 
 	switch (code) {
 
@@ -3325,6 +3331,8 @@ void gen_code (INS *tmp)
 
 	/* mark the instruction as invalid */
 	tmp->ins_code = I_RETIRED;
+
+	return 0;
 }
 
 /* ----

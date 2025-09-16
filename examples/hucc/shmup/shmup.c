@@ -50,15 +50,18 @@ struct ship {
 
 struct ship ships[MAX_SHIPS];
 
+/* put some of these variables into zero-page memory */
 unsigned int frames;
-unsigned int score, hiscore;
+__zp unsigned int score, hiscore;
+__zp struct ship *pship;
+static __zp struct bullet *pshot;
 
 void do_ships(void)
 {
 	unsigned int i,j;
 	unsigned char r;
-	struct ship *sp;
-	struct bullet *bp;
+	static __zp struct ship *sp;
+	static __zp struct bullet *bp;
 
         r = rand();
         if ((r & 0x7e) == 2) {
@@ -150,8 +153,6 @@ void main(void)
 	signed char bonk_dir;
 	char r;
 	unsigned char dead;
-	struct ship *sp;
-	struct bullet *bp;
 
 	hiscore = 0;
 
@@ -256,11 +257,11 @@ void main(void)
 			if (bonky < 212) bonky += SPEED_Y;
 		}
 		if ((j1 & JOY_II) && !bullet_wait) {
-			for (bp = bullets, i = 0; i < MAX_BULLETS; ++i, ++bp) {
-				if (!bp->active) {
-					bp->active = bonk_dir;
-					bp->x = bonkx + 8 + bonk_dir * 16;
-					bp->y = bonky + 10;
+			for (pshot = bullets, i = 0; i < MAX_BULLETS; ++i, ++pshot) {
+				if (!pshot->active) {
+					pshot->active = bonk_dir;
+					pshot->x = bonkx + 8 + bonk_dir * 16;
+					pshot->y = bonky + 10;
 					bullet_wait = 10;
 					sgx_spr_set(BULLET_SPRITE + i);
 					if (bonk_dir > 0)
@@ -275,36 +276,36 @@ void main(void)
 		if (bullet_wait)
 			bullet_wait--;
 
-		bp = bullets;
+		pshot = bullets;
 		for (i = 0; i < MAX_BULLETS; i++) {
-			if (bp->active) {
+			if (pshot->active) {
 				sgx_spr_set(BULLET_SPRITE + i);
-				sgx_spr_x(bp->x);
-				sgx_spr_y(bp->y);
-				bp->x += bp->active * SPEED_BULLET;
-				//put_number(bp->x, 4, 0, 0);
-				if (bp->x > 256 || bp->x < -16) {
-					bp->active = 0;
+				sgx_spr_x(pshot->x);
+				sgx_spr_y(pshot->y);
+				pshot->x += pshot->active * SPEED_BULLET;
+				//put_number(pshot->x, 4, 0, 0);
+				if (pshot->x > 256 || pshot->x < -16) {
+					pshot->active = 0;
 					sgx_spr_x(-16);
 					sgx_spr_y(0);
 				}
 			}
-			++bp;
+			++pshot;
 		}
 
 		do_ships();
 
-		sp = ships;
+		pship = ships;
 		for (i = 0; i < MAX_SHIPS; i++) {
-			if (sp->active == 1 &&
-			    ((sp->x > bonkx - 24 &&
-			    sp->x < bonkx + 24 &&
-			    sp->y > bonky - 20 &&
-			    sp->y < bonky + 9) ||
-			    (sp->x > bonkx - 18 &&
-			    sp->x < bonkx + 18 &&
-			    sp->y > bonky + 8 &&
-			    sp->y < bonky + 25))) {
+			if (pship->active == 1 &&
+			    ((pship->x > bonkx - 24 &&
+			    pship->x < bonkx + 24 &&
+			    pship->y > bonky - 20 &&
+			    pship->y < bonky + 9) ||
+			    (pship->x > bonkx - 18 &&
+			    pship->x < bonkx + 18 &&
+			    pship->y > bonky + 8 &&
+			    pship->y < bonky + 25))) {
 				put_string("GAME OVER", 11, 12);
 				for (j = 0; j < 100; j++)
 					vsync();
@@ -312,7 +313,7 @@ void main(void)
 				if (score > hiscore)
 				    hiscore = score;
 			}
-			sp++;
+			pship++;
 		}
 		sgx_spr_set(0);
 		sgx_spr_x(bonkx);

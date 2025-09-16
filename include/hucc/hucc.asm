@@ -303,9 +303,9 @@ core_main	.proc
 		tii	.rom_tia, ram_tia, 16	; Only needed on HuCARD.
 	.endif	CDROM
 
-	.ifdef	HAVE_INIT			; This method needs to be replaced!
-		tii	huc_rodata, huc_data, huc_rodata_end - huc_rodata
-	.endif	HAVE_INIT
+	.if	(__heap_start - __bss_init)	; Copy initialized BSS data.
+		tii	__rom_init, __bss_init, __heap_start - __bss_init
+	.endif
 
 		tai	.stack_fill, __stack, HUCC_STACK_SZ
 

@@ -80,15 +80,22 @@ int doldcls (int stclass)
 {
 	struct type_type t;
 
+	if (amatch("__zp", 4)) {
+		if ((stclass & STORAGE) != LSTATIC)
+			error("syntax error, __zp can only be used for static local variables");
+		else
+			stclass |= ZEROPAGE;
+	}
 	blanks();
+
 	/* we don't do optimizations that would require "volatile" */
 	if (match_type(&t, NO, YES)) {
 #if ULI_NORECURSE == 0
-		if (norecurse && stclass != LSTATIC)
+		if (norecurse && (stclass & STORAGE) != LSTATIC)
 			stclass = LSTATIC | WASAUTO;
 #endif
 		if (t.type_type == CSTRUCT && t.otag == -1)
-			t.otag = define_struct(t.sname, stclass, !!(t.flags & F_STRUCT));
+			t.otag = define_struct(t.sname, stclass & ~ZEROPAGE, !!(t.flags & F_STRUCT));
 		if (t.type_type == CVOID) {
 			blanks();
 			if (ch() != '*') {
@@ -99,7 +106,7 @@ int doldcls (int stclass)
 		}
 		if (t.type_type == CENUM) {
 			if (t.otag == -1)
-				t.otag = define_enum(t.sname, stclass);
+				t.otag = define_enum(t.sname, stclass & ~ZEROPAGE);
 			t.type_type = enum_types[t.otag].base;
 		}
 		declloc(t.type_type, stclass, t.otag);

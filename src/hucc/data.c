@@ -117,8 +117,6 @@ int user_short_enums = 1;
 int user_signed_char = 0;
 int user_far_arrays = 1;
 
-int output_globdef;
-
 char **leaf_functions = 0;
 int leaf_cnt = 0;
 int leaf_size = 0;

@@ -1063,6 +1063,7 @@ void do_inc_ex (int type)
 	int end;
 	int i;
 	int j;
+	int k;
 	int num;
 	int nb_tile;
 	char label[NAMESIZE];
@@ -1154,36 +1155,40 @@ void do_inc_ex (int type)
 		}
 	}
 
-	/* create const array to hold extra infos */
-	new_const();
-	const_val[const_val_idx++] = const_data_idx;	/* number of tile */
-	sprintf(str, "%i", nb_tile);
-	add_buffer(str, '(', 1);
-	const_data[const_data_idx++] = '\0';
-	const_val[const_val_idx++] = const_data_idx;	/* tile size */
-	sprintf(str, "%i", (int)type);
-	add_buffer(str, '(', 1);
-	const_data[const_data_idx++] = '\0';
-	const_val[const_val_idx++] = const_data_idx;	/* tile bank */
-	sprintf(str, "BANK(_%s)", label2);
-	add_buffer(str, '(', 1);
-	const_data[const_data_idx++] = '\0';
-	const_val[const_val_idx++] = const_data_idx;	/* tile addr */
-	sprintf(str, "     _%s", label2);
-	add_buffer(str, '(', 1);
-	const_data[const_data_idx++] = '\0';
-	const_val[const_val_idx++] = -(litptr + 1024);	/* pal idx table addr */
-	add_const(CINT);
+	/* create const array to hold extra information */
+	ol(".rodata");
+	prefix();
+	outstr(label);
+	outstr(":\n");
+	sprintf(str, "\t\tdw\t%i\n", nb_tile);
+	outstr(str);
+	sprintf(str, "\t\tdw\t%i\n", (int)type);
+	outstr(str);
+	sprintf(str, "\t\tdw\tBANK(_%s)\n", label2);
+	outstr(str);
+	sprintf(str, "\t\tdw\t_%s\n", label2);
+	outstr(str);
+	outstr("\t\tdw\t* + 2");
 
 	/* create pal idx table */
+	k = 0;
 	for (i = 0; i < num; i++) {
+		sprintf(str, "$%02X", tiles[i].arg[4] << 4);
 		j = tiles[i].arg[2] * tiles[i].arg[3];
 		while (j) {
-			j--;
-			if (litptr < LITMAX)
-				litq[litptr++] = (tiles[i].arg[4] << 4);
+			if (k == 0) {
+				k = 8;
+				outstr("\n\t\tdb\t");
+				outstr(str);
+			} else {
+				outstr(",");
+				outstr(str);
+			}
+			--j;
+			--k;
 		}
 	}
+	nl();
 
 	/* dump incchr/tile cmds */
 	ol(".data");

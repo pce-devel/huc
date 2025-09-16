@@ -740,7 +740,8 @@ push_val(int type)
 				val = expr_lablptr->value;
 			}
 
-			if (expr_lablptr->defthispass == 0) {
+			/* only flag notyetdef if the 2nd pass is the LAST_PASS */
+			if ((expr_lablptr->defthispass == 0) && (pass_count == 2) && (pass == LAST_PASS)) {
 				notyetdef++;
 			}
 		}

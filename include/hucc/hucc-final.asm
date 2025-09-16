@@ -100,6 +100,19 @@
 ; ***************************************************************************
 ; ***************************************************************************
 ;
+; Check that C "__zp" declarations aren't overwriting System Card variables.
+;
+
+		.zp
+	.if	(* > zpg_sys_top) || (USING_PSGDRIVER && (* > zpg_psg_top))
+		.fail	.ZP section full, reduce "__zp" variables or HUCC_STACK_SZ!
+	.endif
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
 ; Check that there isn't too much C "const" data in the ".RODATA" section.
 ;
 

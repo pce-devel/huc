@@ -52,6 +52,7 @@ void outdec (int number);
 void outhex (int number);
 void outhexfix (int number, int length);
 char outbyte (char c);
+void outchr (char c);
 void outstr (const char *ptr);
 
 #endif

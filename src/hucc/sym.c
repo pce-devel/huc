@@ -61,12 +61,11 @@ static int init (char *symbol_name, int type, int identity, int *dim, TAG_SYMBOL
 			}
 		}
 	}
-	else if (number(&value)) {
-		add_data_initials(symbol_name, CINT, value, tag);
-		*dim = *dim - 1;
-	}
-	else if (quoted_str(&value)) {
-		add_data_initials(symbol_name, CCHAR, value, tag);
+	else if (const_expr(&value, NULL, NULL)) {
+		/* ignore a zero initializer for non-compound variables because */
+		/* uninitialized variables in the BSS are zeroed during startup */
+		if ((value != 0) || (identity == ARRAY) || (type == CSTRUCT) || (tag != NULL))
+			add_data_initials(symbol_name, CINT, value, tag);
 		*dim = *dim - 1;
 	}
 	else
@@ -102,9 +101,9 @@ void struct_init (TAG_SYMBOL *tag, char *symbol_name)
  * @param type char or integer or struct
  * @param identity
  * @param dim
- * @return 1 if variable is initialized
+ * @return true if variable is initialized
  */
-int initials (char *symbol_name, int type, int identity, int dim, int otag)
+bool initials (char *symbol_name, int type, int identity, int dim, int otag)
 {
 	int dim_unknown = 0;
 
@@ -143,8 +142,9 @@ int initials (char *symbol_name, int type, int identity, int dim, int otag)
 		}
 		else
 			init(symbol_name, type, identity, &dim, 0);
+		return true;
 	}
-	return (identity);
+	return false;
 }
 
 
@@ -217,6 +217,9 @@ int declglb (char typ, char stor, TAG_SYMBOL *mtag, int otag, int is_struct)
 					error("syntax error, expected function pointer declaration");
 					return (1);
 				}
+				if (stor & ZEROPAGE) {
+					error("syntax error, a function cannot be located in __zp");
+				}
 				newfunc(sname, ptr_order, typ, otag, 0);
 				return (2);
 			}
@@ -238,7 +241,7 @@ int declglb (char typ, char stor, TAG_SYMBOL *mtag, int otag, int is_struct)
 						return (1);
 					}
 				}
-				if (stor == CONST)
+				if ((stor & STORAGE) == CONST)
 					k = array_initializer(typ_now, id, stor, k);
 				if (k == -1)
 					return (1);
@@ -247,10 +250,10 @@ int declglb (char typ, char stor, TAG_SYMBOL *mtag, int otag, int is_struct)
 				   can't think of a better place right now. */
 				if (id == POINTER && (typ_now == CCHAR || typ_now == CUCHAR || typ_now == CVOID))
 					k *= INTSIZE;
-				if (k || (stor == EXTERN))
+				if (k || ((stor & STORAGE) == EXTERN))
 					id = ARRAY;
 				else {
-					if (stor == CONST) {
+					if ((stor & STORAGE) == CONST) {
 						error("empty const array");
 						id = ARRAY;
 					}
@@ -271,7 +274,7 @@ int declglb (char typ, char stor, TAG_SYMBOL *mtag, int otag, int is_struct)
 						return (1);
 					}
 				}
-				if (stor == CONST) {
+				if ((stor & STORAGE) == CONST) {
 					/* stor  = PUBLIC; XXX: What is this for? */
 					scalar_initializer(typ_now, id, stor);
 				}
@@ -286,8 +289,13 @@ int declglb (char typ, char stor, TAG_SYMBOL *mtag, int otag, int is_struct)
 					else if (id == ARRAY)
 						k *= tag_table[otag].size;
 				}
-				if (stor != CONST) {
-					id = initials(sname, typ_now, id, k, otag);
+				if ((stor & STORAGE) != CONST) {
+					if (initials(sname, typ_now, id, k, otag)) {
+						if (stor & ZEROPAGE) {
+							error("syntax error, only uninitialized variables can be in __zp");
+							stor &= ~ZEROPAGE;
+						}
+					}
 					SYMBOL *c = addglb(sname, id, typ_now, k, stor, s);
 					if (typ_now == CSTRUCT)
 						c->tagidx = otag;
@@ -422,7 +430,7 @@ void declloc (char typ, char stclass, int otag)
 
 				/* do static initialization unless from norecurse */
 				if ((stclass & WASAUTO) == 0)
-					j = initials(lsname, typ, j, k, otag);
+					initials(lsname, typ, j, k, otag);
 
 				/* NB: addglb() expects the number of
 				   elements, not a byte size.  Unless, of

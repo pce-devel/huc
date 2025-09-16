@@ -28,7 +28,6 @@
 
 /* locals */
 static INS arg_queue[Q_SIZE];
-static int which_queue;
 static int saved_rd;
 static int saved_wr;
 static int saved_nb;
@@ -37,7 +36,7 @@ static INS arg_stack[1024];
 static int arg_stack_idx;
 static int arg_list[32][2];
 static int arg_idx;
-static int func_call_stack;
+static int call_count;
 
 /* globals */
 int arg_stack_flag;
@@ -560,13 +559,13 @@ int getarg (int t, int syntax, int otag, int is_fastcall)
  *
  */
 #define SPILLB(a) { \
-		spilled_args[sparg_idx] = (a); \
+		spilled_arg_names[sparg_idx] = (a); \
 		spilled_arg_sizes[sparg_idx++] = 1; \
 		out_ins(I_SPUSH_UR, 0, 0); \
 }
 
 #define SPILLW(a) { \
-		spilled_args[sparg_idx] = (a); \
+		spilled_arg_names[sparg_idx] = (a); \
 		spilled_arg_sizes[sparg_idx++] = 2; \
 		out_ins(I_SPUSH_WR, 0, 0); \
 }
@@ -577,22 +576,23 @@ void callfunction (SYMBOL *ptr)
 	int is_fc = 0;
 	int argcnt = 0;
 	int argsiz = 0;
-	int call_stack_ref;
+	int prev_call_count;
 	int i, j;
 	int adj;
-	int max_fc_arg = 0;	/* highest arg with a fastcall inside */
+	/* max argument to spill to the native stack */
+	int max_spill_arg = 0;
 	/* args spilled to the native stack */
-	const char *spilled_args[MAX_FASTCALL_ARGS];
+	const char *spilled_arg_names[MAX_FASTCALL_ARGS];
 	/* byte sizes of spilled args */
 	int spilled_arg_sizes[MAX_FASTCALL_ARGS];
-	int sparg_idx = 0;	/* index into spilled_args[] */
+	int sparg_idx = 0;	/* index into spilled_arg_names[] */
 	int uses_acc = 0;	/* does callee use acc? */
 	static bool using_funcptr = false;
 
-//	/* fastcall functions should not count against C is_leaf_function status */
-//	is_leaf_function = 0;
-
-	call_stack_ref = ++func_call_stack;
+	/* cumulative total of function calls within the list of arguments */
+	/* this is used to decide if previous __fastcall arguments need to */
+	/* spilled just in case a subsequent argument might corrupt them   */
+	prev_call_count = call_count++;
 
 	/* skip blanks */
 	blanks();
@@ -627,7 +627,7 @@ void callfunction (SYMBOL *ptr)
 		/* switch to the alternate instruction queue so that */
 		/* the temporary stacking of arguments does not mess */
 		/* up optimizing statements that use function calls. */
-		if (which_queue++ == 0) {
+		if (arg_stack_flag++ == 0) {
 			saved_rd = q_rd;
 			saved_wr = q_wr;
 			saved_nb = q_nb;
@@ -639,8 +639,6 @@ void callfunction (SYMBOL *ptr)
 	} else {
 		/* fastcall functions should not count against C is_leaf_function status */
 		is_leaf_function = 0;
-		/* calling regular functions in fastcall arguments is OK */
-		--func_call_stack;
 	}
 
 	/* get args */
@@ -649,19 +647,18 @@ void callfunction (SYMBOL *ptr)
 			break;
 		/* fastcall func */
 		if (is_fc) {
-			int nfc = func_call_stack;
+			int arg_call_count = call_count;
 
 			new_arg_stack(arg_idx++);
 			expression(NO);
-			flush_ins();
 
 			stkp = stkp - INTSIZE;
 
 			/* Check if we had a fastcall in our argument. */
-			if (nfc < func_call_stack) {
+			if (arg_call_count < call_count) {
 				/* Remember the last argument with an FC. */
-				if (max_fc_arg < arg_idx - 1)
-					max_fc_arg = arg_idx - 1;
+				if (max_spill_arg < (arg_idx - 1))
+					max_spill_arg = (arg_idx - 1);
 			}
 		}
 		/* standard func */
@@ -678,23 +675,19 @@ void callfunction (SYMBOL *ptr)
 
 	/* fastcall func */
 	if (is_fc) {
-		/* just in case the final match() caused an I_INFO output */
-		flush_ins();
-
 		/* terminate the final stacked argument */
+		flush_ins();
 		if (argcnt) {
 			arg_list[arg_idx - 1][1] = arg_stack_idx;
 			arg_idx -= argcnt;
 		}
-		if (argcnt && arg_idx)
+		if (arg_idx)
 			arg_stack_idx = arg_list[arg_idx - 1][1];
-		else {
+		else
 			arg_stack_idx = 0;
-			arg_stack_flag = 0;
-		}
 
 		/* switch back to the normal instruction queue */
-		if (--which_queue == 0) {
+		if (--arg_stack_flag == 0) {
 			q_ins = ins_queue;
 			q_rd = saved_rd;
 			q_wr = saved_wr;
@@ -718,7 +711,7 @@ void callfunction (SYMBOL *ptr)
 				   if there is another fastcall ahead. */
 				switch (fast->argtype[j]) {
 				case TYPE_BYTE:
-					if (i < max_fc_arg)
+					if (i < max_spill_arg)
 						SPILLB(fast->argname[j])
 					else {
 						out_ins(I_ST_UM, T_LITERAL, (intptr_t)fast->argname[j]);
@@ -726,7 +719,7 @@ void callfunction (SYMBOL *ptr)
 					}
 					break;
 				case TYPE_WORD:
-					if (i < max_fc_arg)
+					if (i < max_spill_arg)
 						SPILLW(fast->argname[j])
 					else {
 						out_ins(I_ST_WM, T_LITERAL, (intptr_t)fast->argname[j]);
@@ -735,7 +728,7 @@ void callfunction (SYMBOL *ptr)
 					break;
 				case TYPE_FARPTR:
 					arg_to_fptr(fast, j, arg_idx + i, adj);
-					if (i < max_fc_arg) {
+					if (i < max_spill_arg) {
 						out_ins(I_LD_UM, T_LITERAL, (intptr_t)fast->argname[j]);
 						SPILLB(fast->argname[j])
 						out_ins(I_LD_WM, T_LITERAL, (intptr_t)fast->argname[j + 1]);
@@ -745,7 +738,7 @@ void callfunction (SYMBOL *ptr)
 					break;
 				case TYPE_DWORD:
 					arg_to_dword(fast, j, arg_idx + i, adj);
-					if (i < max_fc_arg) {
+					if (i < max_spill_arg) {
 						out_ins(I_LD_WM, T_LITERAL, (intptr_t)fast->argname[j]);
 						SPILLW(fast->argname[j])
 						out_ins(I_LD_WM, T_LITERAL, (intptr_t)fast->argname[j + 1]);
@@ -756,12 +749,12 @@ void callfunction (SYMBOL *ptr)
 					j += 2;
 					break;
 				case TYPE_WORDACC:
-					if (i < max_fc_arg)
+					if (i < max_spill_arg)
 						SPILLW(0)
 					uses_acc = 1;
 					break;
 				case TYPE_BYTEACC:
-					if (i < max_fc_arg)
+					if (i < max_spill_arg)
 						SPILLW(0)
 					else
 						gshort();
@@ -803,9 +796,9 @@ void callfunction (SYMBOL *ptr)
 		}
 	}
 
-	/* reset func call stack */
-	if (call_stack_ref == 1)
-		func_call_stack = 0;
+	/* reset the cumulative call_count when the initial call's arguments are finished */
+	if (prev_call_count == 0)
+		call_count = 0;
 
 	/* close */
 	needbracket(")");
@@ -823,15 +816,15 @@ void callfunction (SYMBOL *ptr)
 		for (i = sparg_idx - 1; i > -1; i--) {
 			if (spilled_arg_sizes[i] == 1) {
 				out_ins(I_SPOP_UR, 0, 0);
-				if (spilled_args[i]) {
-					out_ins(I_ST_UM, T_LITERAL, (intptr_t)spilled_args[i]);
+				if (spilled_arg_names[i]) {
+					out_ins(I_ST_UM, T_LITERAL, (intptr_t)spilled_arg_names[i]);
 					gfence();
 				}
 			}
 			else {
 				out_ins(I_SPOP_WR, 0, 0);
-				if (spilled_args[i]) {
-					out_ins(I_ST_WM, T_LITERAL, (intptr_t)spilled_args[i]);
+				if (spilled_arg_names[i]) {
+					out_ins(I_ST_WM, T_LITERAL, (intptr_t)spilled_arg_names[i]);
 					gfence();
 				}
 			}
@@ -871,7 +864,8 @@ void callfunction (SYMBOL *ptr)
 		/* T_NOP stops the code-output from writing it to the .S file.  */
 		/* The function that is called is actually the one responsible  */
 		/* for removing the arguments from the stack. */
-		out_ins(I_MODSP, T_NOP, argsiz);
+		if (!is_fc)
+			out_ins(I_MODSP, T_NOP, argsiz);
 	}
 }
 
@@ -885,14 +879,14 @@ void new_arg_stack (int arg)
 		error("too many args");
 	else {
 		/* close previous stack */
+		flush_ins();
 		if (arg)
 			arg_list[arg - 1][1] = arg_stack_idx;
 
 		/* init new stack */
 		arg_stack_idx += 4;
 		arg_list[arg][0] = arg_stack_idx;
-		arg_list[arg][1] = -1;
-		arg_stack_flag = 1;
+		arg_list[arg][1] = arg_stack_idx;
 	}
 }
 
