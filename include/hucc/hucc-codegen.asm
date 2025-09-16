@@ -364,10 +364,18 @@ __pop.wr	.macro
 		ply
 		.endm
 
+
+
+; ***************************************************************************
+; ***************************************************************************
+; i-codes for spilling __fastcall arguments onto the hw stack
+; ***************************************************************************
+; ***************************************************************************
+
 ; **************
 ; use the hardware stack for the temporary storage of spilled arguments
 
-__spush.wr	.macro
+__spill.wr	.macro
 		phy
 		pha
 		.endm
@@ -375,7 +383,7 @@ __spush.wr	.macro
 ; **************
 ; use the hardware stack for the temporary storage of spilled arguments
 
-__spop.wr	.macro
+__reload.wr	.macro
 		pla
 		ply
 		.endm
@@ -383,14 +391,14 @@ __spop.wr	.macro
 ; **************
 ; use the hardware stack for the temporary storage of spilled arguments
 
-__spush.ur	.macro
+__spill.ur	.macro
 		pha
 		.endm
 
 ; **************
 ; use the hardware stack for the temporary storage of spilled arguments
 
-__spop.ur	.macro
+__reload.ur	.macro
 		pla
 		.endm
 

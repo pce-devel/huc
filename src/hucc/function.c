@@ -561,13 +561,13 @@ int getarg (int t, int syntax, int otag, int is_fastcall)
 #define SPILLB(a) { \
 		spilled_arg_names[sparg_idx] = (a); \
 		spilled_arg_sizes[sparg_idx++] = 1; \
-		out_ins(I_SPUSH_UR, 0, 0); \
+		out_ins(I_SPILL_UR, 0, 0); \
 }
 
 #define SPILLW(a) { \
 		spilled_arg_names[sparg_idx] = (a); \
 		spilled_arg_sizes[sparg_idx++] = 2; \
-		out_ins(I_SPUSH_WR, 0, 0); \
+		out_ins(I_SPILL_WR, 0, 0); \
 }
 
 void callfunction (SYMBOL *ptr)
@@ -815,14 +815,14 @@ void callfunction (SYMBOL *ptr)
 
 		for (i = sparg_idx - 1; i > -1; i--) {
 			if (spilled_arg_sizes[i] == 1) {
-				out_ins(I_SPOP_UR, 0, 0);
+				out_ins(I_RELOAD_UR, 0, 0);
 				if (spilled_arg_names[i]) {
 					out_ins(I_ST_UM, T_LITERAL, (intptr_t)spilled_arg_names[i]);
 					gfence();
 				}
 			}
 			else {
-				out_ins(I_SPOP_WR, 0, 0);
+				out_ins(I_RELOAD_WR, 0, 0);
 				if (spilled_arg_names[i]) {
 					out_ins(I_ST_WM, T_LITERAL, (intptr_t)spilled_arg_names[i]);
 					gfence();

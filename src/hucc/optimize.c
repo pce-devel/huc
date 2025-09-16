@@ -89,10 +89,13 @@ unsigned char icode_flags[] = {
 	/* I_PUSHARG_WR         */	IS_USEPR,
 	/* I_PUSH_WR            */	IS_USEPR + IS_PUSHWT,
 	/* I_POP_WR             */	IS_POPWT,
-	/* I_SPUSH_WR           */	IS_USEPR,
-	/* I_SPUSH_UR           */	IS_USEPR,
-	/* I_SPOP_WR            */	0,
-	/* I_SPOP_UR            */	0,
+
+	// i-codes for spilling __fastcall arguments onto the hw stack
+
+	/* I_SPILL_WR           */	IS_USEPR,
+	/* I_RELOAD_WR          */	0,
+	/* I_SPILL_UR           */	IS_USEPR,
+	/* I_RELOAD_UR          */	0,
 
 	// i-codes for handling boolean tests and branching
 
@@ -715,10 +718,13 @@ enum ICODE short_icode[] = {
 	/* I_PUSHARG_WR         */	0,
 	/* I_PUSH_WR            */	0,
 	/* I_POP_WR             */	0,
-	/* I_SPUSH_WR           */	0,
-	/* I_SPUSH_UR           */	0,
-	/* I_SPOP_WR            */	0,
-	/* I_SPOP_UR            */	0,
+
+	// i-codes for spilling __fastcall arguments onto the hw stack
+
+	/* I_SPILL_WR           */	0,
+	/* I_RELOAD_WR          */	0,
+	/* I_SPILL_UR           */	0,
+	/* I_RELOAD_UR          */	0,
 
 	// i-codes for handling boolean tests and branching
 
