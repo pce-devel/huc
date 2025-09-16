@@ -678,7 +678,11 @@ void dumplits (void)
 			defbyte();
 			j = 8;
 			while (j--) {
-				outdec(litq[k++] & 0xFF);
+				unsigned char c = litq[k++];
+				if ((c < 32) || (c > 126) || (c == '\\'))
+					outhexfix(c, 2);
+				else
+					outchr(c);
 				if ((j == 0) | (k >= litptr)) {
 					nl();
 					break;
