@@ -2,7 +2,7 @@
 # Makefile for examples
 #
 
-SUBDIRS = scroll sgx shmup \
+SUBDIRS = overlay scroll sgx shmup \
 	metatile1-chrblkmap metatile2-multimap metatile3-multiblk \
 	obeybrew-tutorial1 obeybrew-tutorial2 obeybrew-tutorial3 obeybrew-tutorial4 \
 	obeybrew-tutorial5 obeybrew-tutorial6 obeybrew-tutorial7
