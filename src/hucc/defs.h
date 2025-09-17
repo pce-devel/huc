@@ -333,10 +333,10 @@ enum ICODE {
 
 	/* i-codes for saving the primary register */
 
-	I_ST_WPT,
-	I_ST_UPT,
-	X_ST_WPTQ,
-	X_ST_UPTQ,
+	I_ST_WT,
+	I_ST_UT,
+	X_ST_WTQ,
+	X_ST_UTQ,
 
 	I_ST_WM,
 	I_ST_UM,

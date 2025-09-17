@@ -4153,7 +4153,7 @@ __dec.uayq	.macro
 
 ; **************
 
-__st.wpt	.macro	; __STACK
+__st.wt		.macro	; __STACK
 		plx
 		stx.l	<__ptr
 		plx
@@ -4169,7 +4169,7 @@ __st.wpt	.macro	; __STACK
 
 ; **************
 
-__st.upt	.macro	; __STACK
+__st.ut		.macro	; __STACK
 		plx
 		stx.l	<__ptr
 		plx
@@ -4179,7 +4179,7 @@ __st.upt	.macro	; __STACK
 
 ; **************
 
-__st.wptq	.macro	; __STACK
+__st.wtq	.macro	; __STACK
 		plx
 		stx.l	<__ptr
 		plx
@@ -4192,7 +4192,7 @@ __st.wptq	.macro	; __STACK
 
 ; **************
 
-__st.uptq	.macro	; __STACK
+__st.utq	.macro	; __STACK
 		plx
 		stx.l	<__ptr
 		plx

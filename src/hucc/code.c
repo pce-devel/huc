@@ -1826,20 +1826,20 @@ char gen_code (INS *tmp)
 
 	/* i-codes for saving the primary register */
 
-	case I_ST_WPT:
-		ol("__st.wpt");
+	case I_ST_WT:
+		ol("__st.wt");
 		break;
 
-	case I_ST_UPT:
-		ol("__st.upt");
+	case I_ST_UT:
+		ol("__st.ut");
 		break;
 
-	case X_ST_WPTQ:
-		ol("__st.wptq");
+	case X_ST_WTQ:
+		ol("__st.wtq");
 		break;
 
-	case X_ST_UPTQ:
-		ol("__st.uptq");
+	case X_ST_UTQ:
+		ol("__st.utq");
 		break;
 
 	case I_ST_WM:
