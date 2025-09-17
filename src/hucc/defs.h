@@ -348,8 +348,6 @@ enum ICODE {
 	X_ST_UP,
 	X_ST_WPQ,
 	X_ST_UPQ,
-	X_ST_WPI,
-	X_ST_UPI,
 	X_ST_WS,
 	X_ST_US,
 	X_ST_WSQ,

@@ -1906,18 +1906,6 @@ char gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_ST_WPI:
-		ot("__st.wpi\t");
-		outdec((int)data);
-		nl();
-		break;
-
-	case X_ST_UPI:
-		ot("__st.upi\t");
-		outdec((int)data);
-		nl();
-		break;
-
 	case X_ST_WS:
 		ot("__st.ws\t\t");
 		outdec((int)data);

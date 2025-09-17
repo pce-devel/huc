@@ -4295,50 +4295,6 @@ __st.upq	.macro
 		.endm
 
 ; **************
-
-__st.wpi	.macro
-		sta.l	__ptr
-		sty.h	__ptr
-		ldy	#1
-		lda.h	#\1
-		sta	[__ptr], y
-		tay
-		lda.l	#\1
-		sta	[__ptr]
-		.endm
-
-; **************
-
-__st.upi	.macro
-		sta.l	__ptr
-		sty.h	__ptr
-		lda.l	#\1
-		ldy.h	#\1
-		sta	[__ptr]
-		.endm
-
-; **************
-
-__st.wpiq	.macro
-		sta.l	__ptr
-		sty.h	__ptr
-		ldy	#1
-		lda.h	#\1
-		sta	[__ptr], y
-		lda.l	#\1
-		sta	[__ptr]
-		.endm
-
-; **************
-
-__st.upiq	.macro
-		sta.l	__ptr
-		sty.h	__ptr
-		lda.l	#\1
-		sta	[__ptr]
-		.endm
-
-; **************
 ; special store for when array writes are optimized
 ; the cpu stack is balanced with an __st.wat
 

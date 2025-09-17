@@ -381,8 +381,6 @@ unsigned char icode_flags[] = {
 	/* X_ST_UP              */	IS_USEPR + IS_STORE,
 	/* X_ST_WPQ             */	IS_USEPR + IS_STORE + IS_SHORT,
 	/* X_ST_UPQ             */	IS_USEPR + IS_STORE + IS_SHORT,
-	/* X_ST_WPI             */	IS_USEPR + IS_STORE,
-	/* X_ST_UPI             */	IS_USEPR + IS_STORE,
 	/* X_ST_WS              */	IS_USEPR + IS_STORE + IS_SPREL,
 	/* X_ST_US              */	IS_USEPR + IS_STORE + IS_SPREL,
 	/* X_ST_WSQ             */	IS_USEPR + IS_STORE + IS_SPREL + IS_SHORT,
@@ -1010,8 +1008,6 @@ enum ICODE short_icode[] = {
 	/* X_ST_UP              */	0,
 	/* X_ST_WPQ             */	0,
 	/* X_ST_UPQ             */	0,
-	/* X_ST_WPI             */	0,
-	/* X_ST_UPI             */	0,
 	/* X_ST_WS              */	0,
 	/* X_ST_US              */	0,
 	/* X_ST_WSQ             */	0,
@@ -5736,6 +5732,7 @@ lv1_loop:
 		 * optimization level 2b - after the instruction re-scheduler
 		 */
 
+#if 0
 lv2_loop:
 		/* remove instructions from queue but preserve comments */
 		if (remove) {
@@ -5799,7 +5796,6 @@ lv2_loop:
 				remove = 2;
 			}
 
-#if 0
 			/*
 			 *  __push.wr			-->	__st.wm		__ptr
 			 *  <load>				<load>
@@ -5824,12 +5820,12 @@ lv2_loop:
 					p[0]->ins_code = X_ST_WP;
 				q_ins[q_wr].ins_type = T_PTR;
 			}
-#endif
 
 			/* remove instructions from queue and begin again */
 			if (remove)
 				goto lv2_loop;
 		}
+#endif
 	}
 }
 
