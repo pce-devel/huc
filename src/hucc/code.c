@@ -521,20 +521,22 @@ char gen_code (INS *tmp)
 		ol("__pop.wr");
 		break;
 
-	case I_SPUSH_WR:
-		ol("__spush.wr");
+	/* i-codes for spilling __fastcall arguments onto the hw stack */
+
+	case I_SPILL_WR:
+		ol("__spill.wr");
 		break;
 
-	case I_SPOP_WR:
-		ol("__spop.wr");
+	case I_RELOAD_WR:
+		ol("__reload.wr");
 		break;
 
-	case I_SPUSH_UR:
-		ol("__spush.ur");
+	case I_SPILL_UR:
+		ol("__spill.ur");
 		break;
 
-	case I_SPOP_UR:
-		ol("__spop.ur");
+	case I_RELOAD_UR:
+		ol("__reload.ur");
 		break;
 
 	/* i-codes for handling boolean tests and branching */

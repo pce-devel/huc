@@ -56,10 +56,13 @@ enum ICODE {
 	I_PUSHARG_WR,
 	I_PUSH_WR,
 	I_POP_WR,
-	I_SPUSH_WR,	/* push and pop on the hw-stack */
-	I_SPUSH_UR,	/* to temporarily save data */
-	I_SPOP_WR,
-	I_SPOP_UR,
+
+	/* i-codes for spilling __fastcall arguments onto the hw stack */
+
+	I_SPILL_WR,
+	I_RELOAD_WR,
+	I_SPILL_UR,
+	I_RELOAD_UR,
 
 	/* i-codes for handling boolean tests and branching */
 
