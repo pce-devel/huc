@@ -654,6 +654,21 @@ void callfunction (SYMBOL *ptr)
 
 			stkp = stkp - INTSIZE;
 
+			/* horribly nasty check to warn about "vsync(0)" usage */
+			if (!strcmp(ptr->name, "vsync")) {
+				if
+				((q_ins[q_wr].ins_code == I_LD_WI) &&
+				 (q_ins[q_wr].ins_type == T_VALUE) &&
+				 (q_ins[q_wr].ins_data < 1 || q_ins[q_wr].ins_data > 255)
+				) {
+					if (q_ins[q_wr].ins_data == 0)
+						warning(W_GENERAL, "vsync(0) is invalid in HuCC, converted to vsync(1)");
+					else
+						error("vsync(n) value must be 1..255");
+					q_ins[q_wr].ins_data = 1;
+				}
+			}
+
 			/* Check if we had a fastcall in our argument. */
 			if (arg_call_count < call_count) {
 				/* Remember the last argument with an FC. */

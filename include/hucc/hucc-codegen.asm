@@ -4153,7 +4153,7 @@ __dec.uayq	.macro
 
 ; **************
 
-__st.wpt	.macro	; __STACK
+__st.wt		.macro	; __STACK
 		plx
 		stx.l	<__ptr
 		plx
@@ -4169,7 +4169,7 @@ __st.wpt	.macro	; __STACK
 
 ; **************
 
-__st.upt	.macro	; __STACK
+__st.ut		.macro	; __STACK
 		plx
 		stx.l	<__ptr
 		plx
@@ -4179,7 +4179,7 @@ __st.upt	.macro	; __STACK
 
 ; **************
 
-__st.wptq	.macro	; __STACK
+__st.wtq	.macro	; __STACK
 		plx
 		stx.l	<__ptr
 		plx
@@ -4192,7 +4192,7 @@ __st.wptq	.macro	; __STACK
 
 ; **************
 
-__st.uptq	.macro	; __STACK
+__st.utq	.macro	; __STACK
 		plx
 		stx.l	<__ptr
 		plx
@@ -4292,50 +4292,6 @@ __st.wpq	.macro
 
 __st.upq	.macro
 		sta	[\1]
-		.endm
-
-; **************
-
-__st.wpi	.macro
-		sta.l	__ptr
-		sty.h	__ptr
-		ldy	#1
-		lda.h	#\1
-		sta	[__ptr], y
-		tay
-		lda.l	#\1
-		sta	[__ptr]
-		.endm
-
-; **************
-
-__st.upi	.macro
-		sta.l	__ptr
-		sty.h	__ptr
-		lda.l	#\1
-		ldy.h	#\1
-		sta	[__ptr]
-		.endm
-
-; **************
-
-__st.wpiq	.macro
-		sta.l	__ptr
-		sty.h	__ptr
-		ldy	#1
-		lda.h	#\1
-		sta	[__ptr], y
-		lda.l	#\1
-		sta	[__ptr]
-		.endm
-
-; **************
-
-__st.upiq	.macro
-		sta.l	__ptr
-		sty.h	__ptr
-		lda.l	#\1
-		sta	[__ptr]
 		.endm
 
 ; **************

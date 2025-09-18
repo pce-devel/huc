@@ -116,9 +116,9 @@ void putmem (SYMBOL *sym)
 void putstk (char typeobj)
 {
 	if (typeobj == CCHAR || typeobj == CUCHAR)
-		out_ins(I_ST_UPT, 0, 0);
+		out_ins(I_ST_UT, 0, 0);
 	else
-		out_ins(I_ST_WPT, 0, 0);
+		out_ins(I_ST_WT, 0, 0);
 }
 
 /*

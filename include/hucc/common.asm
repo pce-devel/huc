@@ -27,6 +27,9 @@
 wait_vsync:	lda	irq_cnt			; System Card variable, changed
 .loop:		cmp	irq_cnt			; every VBLANK interrupt.
 		beq	.loop
+	.ifdef	HUCC
+		sta	old_cnt			; Remember the frame count.
+	.endif
 		rts
 
 
@@ -36,6 +39,21 @@ wait_vsync:	lda	irq_cnt			; System Card variable, changed
 ;
 ; Delay for the next Y VBLANK IRQs.
 ;
+
+	.ifdef	HUCC
+_vsync		.alias	wait_vsync
+
+_vsync.1:	lda	irq_cnt			; HuCC's vsync(n) was defined
+		sec				; as frames from the previous
+		sbc	old_cnt			; vsync() call, 1 to 255.
+		sec
+		sbc	<_al
+		bcc	!+
+		lda	#$FF
+!:		eor	#$FF
+		inc	a
+		tay
+	.endif
 
 wait_nvsync:	bsr	wait_vsync		; # of VBLANK IRQs to wait in
 		dey				; the Y register.

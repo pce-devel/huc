@@ -366,10 +366,10 @@ unsigned char icode_flags[] = {
 
 	// i-codes for saving the primary register
 
-	/* I_ST_WPT             */	IS_USEPR + IS_STORE + IS_POPWT,
-	/* I_ST_UPT             */	IS_USEPR + IS_STORE + IS_POPWT,
-	/* X_ST_WPTQ            */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
-	/* X_ST_UPTQ            */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
+	/* I_ST_WT              */	IS_USEPR + IS_STORE + IS_POPWT,
+	/* I_ST_UT              */	IS_USEPR + IS_STORE + IS_POPWT,
+	/* X_ST_WTQ             */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
+	/* X_ST_UTQ             */	IS_USEPR + IS_STORE + IS_POPWT + IS_SHORT,
 
 	/* I_ST_WM              */	IS_USEPR + IS_STORE,
 	/* I_ST_UM              */	IS_USEPR + IS_STORE,
@@ -381,8 +381,6 @@ unsigned char icode_flags[] = {
 	/* X_ST_UP              */	IS_USEPR + IS_STORE,
 	/* X_ST_WPQ             */	IS_USEPR + IS_STORE + IS_SHORT,
 	/* X_ST_UPQ             */	IS_USEPR + IS_STORE + IS_SHORT,
-	/* X_ST_WPI             */	IS_USEPR + IS_STORE,
-	/* X_ST_UPI             */	IS_USEPR + IS_STORE,
 	/* X_ST_WS              */	IS_USEPR + IS_STORE + IS_SPREL,
 	/* X_ST_US              */	IS_USEPR + IS_STORE + IS_SPREL,
 	/* X_ST_WSQ             */	IS_USEPR + IS_STORE + IS_SPREL + IS_SHORT,
@@ -995,10 +993,10 @@ enum ICODE short_icode[] = {
 
 	// i-codes for saving the primary register
 
-	/* I_ST_WPT             */	0,
-	/* I_ST_UPT             */	0,
-	/* X_ST_WPTQ            */	0,
-	/* X_ST_UPTQ            */	0,
+	/* I_ST_WT              */	0,
+	/* I_ST_UT              */	0,
+	/* X_ST_WTQ             */	0,
+	/* X_ST_UTQ             */	0,
 
 	/* I_ST_WM              */	0,
 	/* I_ST_UM              */	0,
@@ -1010,8 +1008,6 @@ enum ICODE short_icode[] = {
 	/* X_ST_UP              */	0,
 	/* X_ST_WPQ             */	0,
 	/* X_ST_UPQ             */	0,
-	/* X_ST_WPI             */	0,
-	/* X_ST_UPI             */	0,
 	/* X_ST_WS              */	0,
 	/* X_ST_US              */	0,
 	/* X_ST_WSQ             */	0,
@@ -1809,8 +1805,8 @@ lv1_loop:
 			) {
 				/* replace code */
 				switch (p[1]->ins_code) {
-				case I_ST_WPT: p[1]->ins_code = X_ST_WPTQ; break;
-				case I_ST_UPT: p[1]->ins_code = X_ST_UPTQ; break;
+				case  I_ST_WT: p[1]->ins_code =  X_ST_WTQ; break;
+				case  I_ST_UT: p[1]->ins_code =  X_ST_UTQ; break;
 				case  I_ST_WM: p[1]->ins_code =  X_ST_WMQ; break;
 				case  I_ST_UM: p[1]->ins_code =  X_ST_UMQ; break;
 				case  X_ST_WP: p[1]->ins_code =  X_ST_WPQ; break;
@@ -5042,8 +5038,8 @@ lv1_loop:
 		 */
 
 		if (q_nb > 1 &&
-		(old_code == I_ST_WPT ||
-		 old_code == I_ST_UPT)
+		(old_code == I_ST_WT ||
+		 old_code == I_ST_UT)
 		) {
 			/* scan backwards to find the matching I_PUSH_WR */
 			for (offset = 2, copy = 1, scan = q_wr; copy < q_nb; copy++) {
@@ -5064,11 +5060,11 @@ lv1_loop:
 				if (offset != 0)
 					continue;
 
-				/* there should be at least one instruction between I_PUSH_WR and I_ST_WPT */
+				/* there should be at least one instruction between I_PUSH_WR and I_ST_WT */
 				if (copy == 1)
 					break;
 
-				/* found the I_PUSH_WR that matches the I_ST_WPT */
+				/* found the I_PUSH_WR that matches the I_ST_WT */
 				from = scan + 1;  /* begin copying after the I_PUSH_WR */
 				drop = 2;  /* drop I_PUSH_WR and the i-code before it */
 
@@ -5097,7 +5093,7 @@ lv1_loop:
 				/* change __st.wpt into __st.{w/u}m */
 				if (q_ins[scan].ins_code == I_LD_WI) {
 					q_ins[q_wr] = q_ins[scan];
-					if (old_code == I_ST_WPT)
+					if (old_code == I_ST_WT)
 						q_ins[q_wr].ins_code = I_ST_WM;
 					else
 						q_ins[q_wr].ins_code = I_ST_UM;
@@ -5106,7 +5102,7 @@ lv1_loop:
 				/* change __st.wpt into __st.{w/u}s */
 				if (q_ins[scan].ins_code == I_LEA_S) {
 					q_ins[q_wr] = q_ins[scan];
-					if (old_code == I_ST_WPT)
+					if (old_code == I_ST_WT)
 						q_ins[q_wr].ins_code = X_ST_WS;
 					else
 						q_ins[q_wr].ins_code = X_ST_US;
@@ -5125,8 +5121,8 @@ lv1_loop:
 					--drop;
 					++copy;
 
-					/* make sure that an I_ST_WPT index has an I_ASL_WR */
-					if (old_code == I_ST_WPT) {
+					/* make sure that an I_ST_WT index has an I_ASL_WR */
+					if (old_code == I_ST_WT) {
 						if (copy == q_nb || q_ins[prev].ins_code != I_ASL_WR)
 							break;
 						push = X_INDEX_WR;
@@ -5736,6 +5732,7 @@ lv1_loop:
 		 * optimization level 2b - after the instruction re-scheduler
 		 */
 
+#if 0
 lv2_loop:
 		/* remove instructions from queue but preserve comments */
 		if (remove) {
@@ -5787,19 +5784,18 @@ lv2_loop:
 			 *  JCB: This is optimizing writes though a pointer variable!
 			 */
 			if
-			((p[0]->ins_code == I_ST_WPT ||
-			  p[0]->ins_code == I_ST_UPT) &&
+			((p[0]->ins_code == I_ST_WT ||
+			  p[0]->ins_code == I_ST_UT) &&
 			 (p[1]->ins_code == I_LD_WI) &&
 			 (p[1]->ins_type == T_VALUE) &&
 			 (p[2]->ins_code == I_PUSH_WR)
 			) {
 				/* replace code */
-				p[2]->ins_code = p[0]->ins_code == I_ST_WPT ? X_ST_WPI : X_ST_UPI;
+				p[2]->ins_code = p[0]->ins_code == I_ST_WT ? X_ST_WPI : X_ST_UPI;
 				p[2]->ins_data = p[1]->ins_data;
 				remove = 2;
 			}
 
-#if 0
 			/*
 			 *  __push.wr			-->	__st.wm		__ptr
 			 *  <load>				<load>
@@ -5811,25 +5807,25 @@ lv2_loop:
 			 *  THIS IS VERY RARE, REMOVE IT FOR NOW AND RETHINK IT
 			 */
 			else if
-			((p[0]->ins_code == I_ST_UPT ||
-			  p[0]->ins_code == I_ST_WPT) &&
+			((p[0]->ins_code == I_ST_UT ||
+			  p[0]->ins_code == I_ST_WT) &&
 			 (is_load(p[1])) &&
 			 (p[2]->ins_code == I_PUSH_WR)
 			) {
 				p[2]->ins_code = I_ST_WM;
 				p[2]->ins_type = T_PTR;
-				if (p[0]->ins_code == I_ST_UPT)
+				if (p[0]->ins_code == I_ST_UT)
 					p[0]->ins_code = X_ST_UP;
 				else
 					p[0]->ins_code = X_ST_WP;
 				q_ins[q_wr].ins_type = T_PTR;
 			}
-#endif
 
 			/* remove instructions from queue and begin again */
 			if (remove)
 				goto lv2_loop;
 		}
+#endif
 	}
 }
 
