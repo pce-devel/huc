@@ -211,6 +211,7 @@ mul_sqrminus_hi:ds	2
 		; a CDROM game when loading different overlays.
 
 		.bss
+old_cnt:	ds	1			; irq_cnt of previous vsync().
 clock_hh:	ds	1			; System Clock, hours	(0-11)
 clock_mm:	ds	1			; System Clock, minutes (0-59)
 clock_ss:	ds	1			; System Clock, seconds (0-59)

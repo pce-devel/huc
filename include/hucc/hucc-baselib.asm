@@ -328,23 +328,6 @@ _clock_reset	.macro
 ; ***************************************************************************
 ; ***************************************************************************
 ;
-; void __fastcall __macro vsync( void );
-; void __fastcall __macro vsync( unsigned char count<acc> );
-
-_vsync		.macro
-		jsr	wait_vsync
-		.endm
-
-_vsync.1	.macro
-		tay
-		jsr	wait_nvsync
-		.endm
-
-
-
-; ***************************************************************************
-; ***************************************************************************
-;
 ; unsigned int __fastcall __macro joy( unsigned char which<acc> );
 
 _joy.1		.macro

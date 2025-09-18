@@ -87,8 +87,8 @@ extern void __fastcall __macro far_cross_fade_to( unsigned int *destination<_di>
 extern void __fastcall init_240x208( void );
 extern void __fastcall init_256x224( void );
 
-extern void __fastcall __macro vsync( void );
-extern void __fastcall __macro vsync( unsigned char count<acc> );
+extern void __fastcall vsync( void );
+extern void __fastcall vsync( unsigned char count<_al> );
 
 extern void __fastcall disp_on( void );
 extern void __fastcall disp_off( void );
