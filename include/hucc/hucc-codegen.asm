@@ -36,6 +36,7 @@
 ;   r : HuCC primary register, made up of the Y:A cpu registers
 ;   t : top of expression stack
 ;   p : indirect pointer, usually [__ptr]
+;   f : structure field (member) offset value
 ;   i : immediate value, i.e. a decimal number
 ;   m : memory, i.e. C global, static, and "-fno-recursive" variables
 ;   s : stack, i.e. C function parameters and locals (not "-fno-recursive")
@@ -3012,6 +3013,37 @@ __ld.upq	.macro
 
 ; **************
 
+__ld.wpf	.macro
+		ldy	#\2
+		lda	[\1], y
+		tax
+		iny
+		lda	[\1], y
+		tay
+		txa
+		.endm
+
+; **************
+
+__ld.bpf	.macro
+		ldy	#\2
+		lda	[\1], y
+		cly
+		bpl	!+
+		dey
+!:
+		.endm
+
+; **************
+
+__ld.upf	.macro
+		ldy	#\2
+		lda	[\1], y
+		cly
+		.endm
+
+; **************
+
 __ld.war	.macro
 		asl	a
 		tax
@@ -4292,6 +4324,46 @@ __st.wpq	.macro
 
 __st.upq	.macro
 		sta	[\1]
+		.endm
+
+; **************
+
+__st.wpf	.macro
+		ldx	#\2
+		sxy
+		sta	[\1], y
+		iny
+		sax
+		sta	[\1], y
+		tay
+		txa
+		.endm
+
+; **************
+
+__st.upf	.macro
+		ldx	#\2
+		sxy
+		sta	[\1], y
+		sxy
+		.endm
+
+; **************
+
+__st.wpfq	.macro
+		ldx	#\2
+		sxy
+		sta	[\1], y
+		iny
+		txa
+		sta	[\1], y
+		.endm
+
+; **************
+
+__st.upfq	.macro
+		ldy	#\2
+		sta	[\1], y
 		.endm
 
 ; **************

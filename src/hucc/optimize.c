@@ -210,6 +210,10 @@ unsigned char icode_flags[] = {
 
 	/* X_LD_UPQ             */	IS_UBYTE + IS_SHORT,
 
+	/* X_LD_WPF             */	0,
+	/* X_LD_BPF             */	IS_SBYTE,
+	/* X_LD_UPF             */	IS_UBYTE,
+
 	/* X_LD_WAR             */	0,
 	/* X_LD_BAR             */	IS_SBYTE,
 	/* X_LD_UAR             */	IS_UBYTE,
@@ -381,6 +385,10 @@ unsigned char icode_flags[] = {
 	/* X_ST_UP              */	IS_USEPR + IS_STORE,
 	/* X_ST_WPQ             */	IS_USEPR + IS_STORE + IS_SHORT,
 	/* X_ST_UPQ             */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_ST_WPF             */	IS_USEPR + IS_STORE,
+	/* X_ST_UPF             */	IS_USEPR + IS_STORE,
+	/* X_ST_WPFQ            */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_ST_UPFQ            */	IS_USEPR + IS_STORE + IS_SHORT,
 	/* X_ST_WS              */	IS_USEPR + IS_STORE + IS_SPREL,
 	/* X_ST_US              */	IS_USEPR + IS_STORE + IS_SPREL,
 	/* X_ST_WSQ             */	IS_USEPR + IS_STORE + IS_SPREL + IS_SHORT,
@@ -837,6 +845,10 @@ enum ICODE short_icode[] = {
 
 	/* I_LD_UPQ             */	0,
 
+	/* X_LD_WPF             */	0,
+	/* X_LD_BPF             */	0,
+	/* X_LD_UPF             */	0,
+
 	/* X_LD_WAR             */	0,
 	/* X_LD_BAR             */	0,
 	/* X_LD_UAR             */	0,
@@ -1008,6 +1020,10 @@ enum ICODE short_icode[] = {
 	/* X_ST_UP              */	0,
 	/* X_ST_WPQ             */	0,
 	/* X_ST_UPQ             */	0,
+	/* X_ST_WPF             */	0,
+	/* X_ST_UPF             */	0,
+	/* X_ST_WPFQ            */	0,
+	/* X_ST_UPFQ            */	0,
 	/* X_ST_WS              */	0,
 	/* X_ST_US              */	0,
 	/* X_ST_WSQ             */	0,
@@ -1374,6 +1390,11 @@ inline bool is_usepr (INS *i)
 bool is_small_array (SYMBOL *sym)
 {
 	return (sym->identity == ARRAY && sym->alloc_size > 0 && sym->alloc_size <= 256);
+}
+
+bool is_zp_pointer (SYMBOL *sym)
+{
+	return (sym->identity == POINTER && (sym->storage & ZEROPAGE));
 }
 
 /* ----
@@ -1790,6 +1811,9 @@ lv1_loop:
 			 *  __st.{w/u}p		symbol	-->	__st.{w/u}pq	symbol
 			 *  __fence
 			 *
+			 *  __st.{w/u}pf	symbol	-->	__st.{w/u}pfq	symbol
+			 *  __fence
+			 *
 			 *  __st.{w/u}s		n	-->	__st.{w/u}sq	n
 			 *  __fence
 			 *
@@ -1811,6 +1835,8 @@ lv1_loop:
 				case  I_ST_UM: p[1]->ins_code =  X_ST_UMQ; break;
 				case  X_ST_WP: p[1]->ins_code =  X_ST_WPQ; break;
 				case  X_ST_UP: p[1]->ins_code =  X_ST_UPQ; break;
+				case X_ST_WPF: p[1]->ins_code = X_ST_WPFQ; break;
+				case X_ST_UPF: p[1]->ins_code = X_ST_UPFQ; break;
 				case  X_ST_WS: p[1]->ins_code =  X_ST_WSQ; break;
 				case  X_ST_US: p[1]->ins_code =  X_ST_USQ; break;
 				case X_ST_WAT: p[1]->ins_code = X_ST_WATQ; break;
@@ -3444,6 +3470,55 @@ lv1_loop:
 		}
 
 		/* ********************************************************* */
+		/* 5-instruction patterns */
+		/* ********************************************************* */
+
+		if (p_nb >= 5) {
+			/*
+			 *  __ld.wm		zp	-->	__ld.wm             zp
+			 *  __add.wi		f               __add.wi            f
+			 *  __push.wr                           __push.wr
+			 *  __st.wm		__ptr		__ld.{w/b/u}pf	zp, f
+			 *  __ld.{w/b/u}p	__ptr
+			 *
+			 *  this optimizes the load of a zero-page pointer to a
+			 *  structure with "+=", "-=", "&=", "^=", "|=".
+			 */
+			if
+			((p[0]->ins_code == I_LD_WP ||
+			  p[0]->ins_code == I_LD_BP ||
+			  p[0]->ins_code == I_LD_UP) &&
+			 (p[0]->ins_type == T_PTR) &&
+			 (p[1]->ins_code == I_ST_WM) &&
+			 (p[1]->ins_type == T_PTR) &&
+			 (p[2]->ins_code == I_PUSH_WR) &&
+			 (p[3]->ins_code == I_ADD_WI) &&
+			 (p[3]->ins_type == T_VALUE) &&
+			 (p[3]->ins_data >= 1) &&
+			 (p[3]->ins_data <= 255) &&
+			 (p[4]->ins_code == I_LD_WM) &&
+			 (p[4]->ins_type == T_SYMBOL) &&
+			 (is_zp_pointer((SYMBOL *)p[4]->ins_data))
+			) {
+				/* replace code */
+				*p[1] = *p[4];
+				switch (p[0]->ins_code) {
+				case I_LD_WP: p[1]->ins_code = X_LD_WPF; break;
+				case I_LD_BP: p[1]->ins_code = X_LD_BPF; break;
+				case I_LD_UP: p[1]->ins_code = X_LD_UPF; break;
+				default: break;
+				}
+				p[1]->imm_type = T_VALUE;
+				p[1]->imm_data = p[3]->ins_data;
+				remove = 1;
+			}
+
+			/* remove instructions from queue and begin again */
+			if (remove)
+				goto lv1_loop;
+		}
+
+		/* ********************************************************* */
 		/* 4-instruction patterns */
 		/* ********************************************************* */
 
@@ -3558,6 +3633,68 @@ lv1_loop:
 				p[3]->ins_type = T_SYMBOL;
 				p[3]->ins_data = p[2]->ins_data;
 				remove = 3;
+			}
+
+			/*
+			 *  __ld.wm		zp	-->	__ld.{w/b/u}pf	zp, f
+			 *  __add.wi		f
+			 *  __st.wm		__ptr
+			 *  __ld.{w/b/u}p	__ptr
+			 *
+			 *  Load through a zero-page pointer to a structure
+			 */
+			else if
+			((p[0]->ins_code == I_LD_WP ||
+			  p[0]->ins_code == I_LD_BP ||
+			  p[0]->ins_code == I_LD_UP) &&
+			 (p[0]->ins_type == T_PTR) &&
+			 (p[1]->ins_code == I_ST_WM) &&
+			 (p[1]->ins_type == T_PTR) &&
+			 (p[2]->ins_code == I_ADD_WI) &&
+			 (p[2]->ins_type == T_VALUE) &&
+			 (p[2]->ins_data >= 1) &&
+			 (p[2]->ins_data <= 255) &&
+			 (p[3]->ins_code == I_LD_WM) &&
+			 (p[3]->ins_type == T_SYMBOL) &&
+			 (is_zp_pointer((SYMBOL *)p[3]->ins_data))
+			) {
+				/* replace code */
+				switch (p[0]->ins_code) {
+				case I_LD_WP: p[3]->ins_code = X_LD_WPF; break;
+				case I_LD_BP: p[3]->ins_code = X_LD_BPF; break;
+				case I_LD_UP: p[3]->ins_code = X_LD_UPF; break;
+				default: break;
+				}
+				p[3]->imm_type = T_VALUE;
+				p[3]->imm_data = p[2]->ins_data;
+				remove = 3;
+			}
+
+			/*
+			 *  __ld.wm		zp	-->	__ld.wm		zp
+			 *  __push.wr                           __push.wr
+			 *  __st.wm		__ptr		__ld.{w/b/u}p	zp
+			 *  __ld.{w/b/u}p	__ptr
+			 *
+			 *  this optimizes the load of a zero-page pointer to
+			 *  memory with "+=", "-=", "&=", "^=", "|=".
+			 */
+			else if
+			((p[0]->ins_code == I_LD_WP ||
+			  p[0]->ins_code == I_LD_BP ||
+			  p[0]->ins_code == I_LD_UP) &&
+			 (p[0]->ins_type == T_PTR) &&
+			 (p[1]->ins_code == I_ST_WM) &&
+			 (p[1]->ins_type == T_PTR) &&
+			 (p[2]->ins_code == I_PUSH_WR) &&
+			 (p[3]->ins_code == I_LD_WM) &&
+			 (p[3]->ins_type == T_SYMBOL) &&
+			 (is_zp_pointer((SYMBOL *)p[3]->ins_data))
+			) {
+				/* replace code */
+				*p[1] = *p[3];
+				p[1]->ins_code = p[0]->ins_code;
+				remove = 1;
 			}
 
 			/*
@@ -3769,6 +3906,29 @@ lv1_loop:
 					p[2]->ins_code = X_LD_BS;
 				else
 					p[2]->ins_code = X_LD_US;
+				remove = 2;
+			}
+
+			/*
+			 *  __ld.wm		zp	-->	__ld.{w/b/u}p	zp
+			 *  __st.wm		__ptr
+			 *  __ld.{w/b/u}p	__ptr
+			 *
+			 *  Load through a zero-page pointer to memory
+			 */
+			else if
+			((p[0]->ins_code == I_LD_WP ||
+			  p[0]->ins_code == I_LD_BP ||
+			  p[0]->ins_code == I_LD_UP) &&
+			 (p[0]->ins_type == T_PTR) &&
+			 (p[1]->ins_code == I_ST_WM) &&
+			 (p[1]->ins_type == T_PTR) &&
+			 (p[2]->ins_code == I_LD_WM) &&
+			 (p[2]->ins_type == T_SYMBOL) &&
+			 (is_zp_pointer((SYMBOL *)p[2]->ins_data))
+			) {
+				/* replace code */
+				p[2]->ins_code = p[0]->ins_code;
 				remove = 2;
 			}
 
@@ -4985,14 +5145,29 @@ lv1_loop:
 		 *  __ld.wi			symbol	-->	...
 		 *  __push.wr					__st.{w/u}m	symbol
 		 *    ...
-		 *  __st.{w/u}pt
+		 *  __st.{w/u}t
 		 *
 		 * this covers storing to local variables ...
 		 *
 		 *  __lea.s			n	-->	...
 		 *  __push.wr					__st.{w/u}s	n
 		 *    ...
-		 *  __st.{w/u}pt
+		 *  __st.{w/u}t
+		 *
+		 * this covers storing through zero-page pointers to memory ...
+		 *
+		 *  __ld.wm			zp	-->	...
+		 *  __push.wr					__st.{w/u}p	zp
+		 *    ...
+		 *  __st.{w/u}t
+		 *
+		 * this covers storing through zero-page pointers to structures ...
+		 *
+		 *  __ld.wm			zp	-->	...
+		 *  __add.wi			f		__st.{w/u}pf	zp, f
+		 *  __push.wr
+		 *    ...
+		 *  __st.{w/u}t
 		 *
 		 * this covers storing to global and static arrays with "=" ...
 		 *
@@ -5000,24 +5175,24 @@ lv1_loop:
 		 *  __add.wi			array		...
 		 *  __push.wr					__st.wat	array
 		 *    ...
-		 *  __st.wpt
+		 *  __st.wt
 		 *
 		 *  __add.wi			array	-->	__index.ur	array
 		 *  __push.wr					...
 		 *    ...					__st.uat	array
-		 *  __st.upt
+		 *  __st.ut
 		 *
 		 *  __ld.{w/b/u}{m/s}		symbol	-->	__index.wr	array
 		 *  __asl.wr
 		 *  __add.wi			array		...
 		 *  __push.wr					__st.wat	array
 		 *    ...
-		 *  __st.wpt
+		 *  __st.wt
 		 *
 		 *  __add.wi			array	-->	__index.ur	array
 		 *  __push.wr					...
 		 *    ...					__st.uat	array
-		 *  __st.upt
+		 *  __st.ut
 		 *
 		 * this covers storing to global and static arrays with "+=", "-=", etc ...
 		 *
@@ -5027,14 +5202,14 @@ lv1_loop:
 		 *  __st.wm			__ptr
 		 *  __ld.wp			__ptr
 		 *    ...
-		 *  __st.wpt
+		 *  __st.wt
 		 *
 		 *  __add.wi			array	-->	__ldp.uar	array
 		 *  __push.wr					...
 		 *  __st.wm			__ptr		__st.uat	array
 		 *  __ld.up			__ptr
 		 *    ...
-		 *  __st.upt
+		 *  __st.ut
 		 */
 
 		if (q_nb > 1 &&
@@ -5082,15 +5257,29 @@ lv1_loop:
 
 				if ((q_ins[scan].ins_code != I_LD_WI) &&
 				    (q_ins[scan].ins_code != I_LEA_S) &&
-				    (q_ins[scan].ins_code != I_ADD_WI))
+				    (q_ins[scan].ins_code != I_ADD_WI) &&
+				    (q_ins[scan].ins_code != I_LD_WM ||
+				     q_ins[scan].ins_type != T_SYMBOL ||
+				     !is_zp_pointer((SYMBOL *)q_ins[scan].ins_data)))
 					break;
 
-				if ((q_ins[scan].ins_code == I_ADD_WI) &&
-				    (q_ins[scan].ins_type != T_SYMBOL ||
-				     !is_small_array((SYMBOL *)q_ins[scan].ins_data)))
-					break;
+				if (q_ins[scan].ins_code == I_ADD_WI) {
+					if ((q_ins[scan].ins_type == T_SYMBOL) &&
+					    (is_small_array((SYMBOL *)q_ins[scan].ins_data)))
+						{ /* small array access */ }
+					else
+					if ((q_ins[scan].ins_type == T_VALUE) &&
+					    (q_ins[scan].ins_data >= 1) &&
+					    (q_ins[scan].ins_data <= 255) &&
+					    (q_ins[prev].ins_code == I_LD_WM) &&
+					    (q_ins[prev].ins_type == T_SYMBOL) &&
+					    (is_zp_pointer((SYMBOL *)q_ins[prev].ins_data)))
+						{ /* zero-page pointer to structure */ }
+					else
+						break;
+				}
 
-				/* change __st.wpt into __st.{w/u}m */
+				/* change __st.wt into __st.{w/u}m */
 				if (q_ins[scan].ins_code == I_LD_WI) {
 					q_ins[q_wr] = q_ins[scan];
 					if (old_code == I_ST_WT)
@@ -5099,7 +5288,7 @@ lv1_loop:
 						q_ins[q_wr].ins_code = I_ST_UM;
 				} else
 
-				/* change __st.wpt into __st.{w/u}s */
+				/* change __st.wt into __st.{w/u}s */
 				if (q_ins[scan].ins_code == I_LEA_S) {
 					q_ins[q_wr] = q_ins[scan];
 					if (old_code == I_ST_WT)
@@ -5108,7 +5297,7 @@ lv1_loop:
 						q_ins[q_wr].ins_code = X_ST_US;
 				} else
 
-				/* change __st.wpt into __st.{w/u}at */
+				/* change __st.wt into __st.{w/u}at */
 				if ((q_ins[scan].ins_code == I_ADD_WI) &&
 				    (q_ins[scan].ins_type == T_SYMBOL) &&
 				    (is_small_array((SYMBOL *)q_ins[scan].ins_data))) {
@@ -5170,6 +5359,35 @@ lv1_loop:
 					q_ins[q_wr].ins_code = code;
 					q_ins[q_wr].ins_type = T_SYMBOL;
 					q_ins[q_wr].ins_data = q_ins[scan].ins_data;
+				} else
+
+				/* change __st.wt into __st.{w/u}p */
+
+				if ((q_ins[scan].ins_code == I_LD_WM) &&
+				    (q_ins[scan].ins_type == T_SYMBOL) &&
+				    (is_zp_pointer((SYMBOL *)q_ins[scan].ins_data))) {
+					q_ins[q_wr] = q_ins[scan];
+					if (old_code == I_ST_WT)
+						q_ins[q_wr].ins_code = X_ST_WP;
+					else
+						q_ins[q_wr].ins_code = X_ST_UP;
+				} else
+
+				/* change __st.wt into __st.{w/u}pf */
+
+				if ((q_ins[prev].ins_code == I_LD_WM) &&
+				    (q_ins[prev].ins_type == T_SYMBOL) &&
+				    (is_zp_pointer((SYMBOL *)q_ins[prev].ins_data))) {
+					q_ins[q_wr] = q_ins[prev];
+					q_ins[q_wr].imm_type = T_VALUE;
+					q_ins[q_wr].imm_data = q_ins[scan].ins_data;
+					if (old_code == I_ST_WT)
+						q_ins[q_wr].ins_code = X_ST_WPF;
+					else
+						q_ins[q_wr].ins_code = X_ST_UPF;
+
+					/* drop the I_LD_WM i-code */
+					drop += 1;
 				} else
 
 					/* this is something that we can't reschedule */
@@ -5776,7 +5994,7 @@ lv2_loop:
 			/*
 			 *  __push.wr			-->	__st.{w/u}pi	i
 			 *  __ld.wi		i
-			 *  __st.{w/u}pt
+			 *  __st.{w/u}t
 			 *
 			 *  This cannot be done earlier because it screws up
 			 *  the reordering optimization above.
@@ -5799,7 +6017,7 @@ lv2_loop:
 			/*
 			 *  __push.wr			-->	__st.wm		__ptr
 			 *  <load>				<load>
-			 *  __st.{w/u}pt			__st.{w/u}p	__ptr
+			 *  __st.{w/u}t				__st.{w/u}p	__ptr
 			 *
 			 *  This cannot be done earlier because it screws up
 			 *  the reordering optimization above.

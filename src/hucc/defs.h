@@ -177,6 +177,10 @@ enum ICODE {
 
 	X_LD_UPQ,
 
+	X_LD_WPF,
+	X_LD_BPF,
+	X_LD_UPF,
+
 	X_LD_WAR,
 	X_LD_BAR,
 	X_LD_UAR,
@@ -348,6 +352,10 @@ enum ICODE {
 	X_ST_UP,
 	X_ST_WPQ,
 	X_ST_UPQ,
+	X_ST_WPF,
+	X_ST_UPF,
+	X_ST_WPFQ,
+	X_ST_UPFQ,
 	X_ST_WS,
 	X_ST_US,
 	X_ST_WSQ,
