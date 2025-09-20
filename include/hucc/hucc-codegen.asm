@@ -4734,6 +4734,34 @@ __add.up	.macro
 		iny
 !:
 		.endm
+
+; **************
+
+__add.wpf	.macro
+		ldx	#\2
+		sxy
+		clc
+		adc	[\1], y
+		iny
+		sax
+		adc	[\1], y
+		tay
+		txa
+		.endm
+
+; **************
+
+__add.upf	.macro
+		phy
+		ldy	#\2
+		clc
+		adc	[\1], y
+		ply
+		bcc	!+
+		iny
+!:
+		.endm
+
 ; **************
 
 __add.ws	.macro	; __STACK
@@ -4880,6 +4908,35 @@ __sub.wp	.macro
 __sub.up	.macro
 		sec
 		sbc	[\1]
+		bcs	!+
+		dey
+!:
+		.endm
+
+; **************
+; Y:A = Y:A - memory
+
+__sub.wpf	.macro
+		ldx	#\2
+		sxy
+		sec
+		sbc	[\1], y
+		iny
+		sax
+		sbc	[\1], y
+		tay
+		txa
+		.endm
+
+; **************
+; Y:A = Y:A - memory
+
+__sub.upf	.macro
+		phy
+		ldy	#\2
+		sec
+		sbc	[\1]
+		ply
 		bcs	!+
 		dey
 !:
@@ -5035,6 +5092,38 @@ __isub.up	.macro
 		sec
 		eor	#$FF
 		adc	[\1]
+		bcc	!+
+		iny
+!:
+		.endm
+
+; **************
+; Y:A = memory - Y:A
+
+__isub.wpf	.macro
+		ldx	#\2
+		sxy
+		sec
+		eor	#$FF
+		adc	[\1], y
+		iny
+		sax
+		eor	#$FF
+		adc	[\1], y
+		tay
+		txa
+		.endm
+
+; **************
+; Y:A = memory - Y:A
+
+__isub.upf	.macro
+		phy
+		ldy	#\2
+		sec
+		eor	#$FF
+		adc	[\1], y
+		ply
 		bcc	!+
 		iny
 !:
@@ -5204,6 +5293,27 @@ __and.up	.macro
 
 ; **************
 
+__and.wpf	.macro
+		ldx	#\2
+		sxy
+		and	[\1], y
+		iny
+		sax
+		and	[\1], y
+		tay
+		txa
+		.endm
+
+; **************
+
+__and.upf	.macro
+		ldy	#\2
+		and	[\1], y
+		cly
+		.endm
+
+; **************
+
 __and.ws	.macro
 		ldx	<__sp
 		and.l	<__stack + \1, x
@@ -5305,7 +5415,6 @@ __eor.um	.macro
 		eor	\1
 		.endm
 
-
 ; **************
 
 __eor.wp	.macro
@@ -5322,6 +5431,28 @@ __eor.wp	.macro
 
 __eor.up	.macro
 		eor	[\1]
+		.endm
+
+; **************
+
+__eor.wpf	.macro
+		ldx	#\2
+		sxy
+		eor	[\1], y
+		iny
+		sax
+		eor	[\1], y
+		tay
+		txa
+		.endm
+
+; **************
+
+__eor.upf	.macro
+		phy
+		ldy	#\2
+		eor	[\1], y
+		ply
 		.endm
 
 ; **************
@@ -5440,6 +5571,28 @@ __or.wp		.macro
 
 __or.up		.macro
 		ora	[\1]
+		.endm
+
+; **************
+
+__or.wpf	.macro
+		ldx	#\2
+		sxy
+		ora	[\1], y
+		iny
+		sax
+		ora	[\1], y
+		tay
+		txa
+		.endm
+
+; **************
+
+__or.upf	.macro
+		phy
+		ldy	#\2
+		ora	[\1], y
+		ply
 		.endm
 
 ; **************

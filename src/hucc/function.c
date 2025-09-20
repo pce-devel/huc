@@ -1040,6 +1040,12 @@ void arg_to_fptr (struct fastcall *fast, int i, int arg, int adj)
 			case I_LD_WP:
 			case I_LD_BP:
 			case I_LD_UP:
+			case X_LD_WP:
+			case X_LD_BP:
+			case X_LD_UP:
+			case X_LD_WPF:
+			case X_LD_BPF:
+			case X_LD_UPF:
 				err = 1;
 				break;
 			default:
