@@ -652,6 +652,42 @@ char gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_CMP_WP:
+		ot("__");
+		outstr(compare2str[tmp->cmp_type]);
+		outstr("_w.wp\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_CMP_UP:
+		ot("__");
+		outstr(compare2str[tmp->cmp_type]);
+		outstr("_w.up\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_CMP_WPF:
+		ot("__");
+		outstr(compare2str[tmp->cmp_type]);
+		outstr("_w.wpf\t");
+		out_type(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
+		nl();
+		break;
+
+	case X_CMP_UPF:
+		ot("__");
+		outstr(compare2str[tmp->cmp_type]);
+		outstr("_w.upf\t");
+		out_type(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
+		nl();
+		break;
+
 	case X_CMP_WS:
 		ot("__");
 		outstr(compare2str[tmp->cmp_type]);
@@ -698,6 +734,22 @@ char gen_code (INS *tmp)
 		ot("__");
 		outstr(compare2str[tmp->cmp_type]);
 		outstr("_b.umq\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_CMP_UPQ:
+		ot("__");
+		outstr(compare2str[tmp->cmp_type]);
+		outstr("_b.upq\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_CMP_UPFQ:
+		ot("__");
+		outstr(compare2str[tmp->cmp_type]);
+		outstr("_b.upfq\t");
 		out_type(type, data);
 		nl();
 		break;
@@ -1100,12 +1152,6 @@ char gen_code (INS *tmp)
 		nl();
 		break;
 
-	case X_LD_UPQ:
-		ot("__ld.upq\t");
-		out_addr(type, data);
-		nl();
-		break;
-
 	case X_LD_WP:
 		ot("__ld.wp\t\t");
 		out_addr(type, data);
@@ -1120,6 +1166,12 @@ char gen_code (INS *tmp)
 
 	case X_LD_UP:
 		ot("__ld.up\t\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_LD_UPQ:
+		ot("__ld.upq\t");
 		out_addr(type, data);
 		nl();
 		break;
@@ -1142,6 +1194,14 @@ char gen_code (INS *tmp)
 
 	case X_LD_UPF:
 		ot("__ld.upf\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
+		nl();
+		break;
+
+	case X_LD_UPFQ:
+		ot("__ld.upfq\t");
 		out_addr(type, data);
 		outstr(", ");
 		outdec((int)imm_data);

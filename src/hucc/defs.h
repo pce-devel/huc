@@ -84,6 +84,10 @@ enum ICODE {
 	X_CMP_WI,
 	X_CMP_WM,
 	X_CMP_UM,
+	X_CMP_WP,
+	X_CMP_UP,
+	X_CMP_WPF,
+	X_CMP_UPF,
 	X_CMP_WS,
 	X_CMP_US,
 	X_CMP_WAX,
@@ -91,6 +95,8 @@ enum ICODE {
 
 	X_CMP_UIQ,
 	X_CMP_UMQ,
+	X_CMP_UPQ,
+	X_CMP_UPFQ,
 	X_CMP_USQ,
 	X_CMP_UAXQ,
 
@@ -175,15 +181,17 @@ enum ICODE {
 	I_LD_BP,
 	I_LD_UP,
 
-	X_LD_UPQ,
-
 	X_LD_WP,
 	X_LD_BP,
 	X_LD_UP,
 
+	X_LD_UPQ,
+
 	X_LD_WPF,
 	X_LD_BPF,
 	X_LD_UPF,
+
+	X_LD_UPFQ,
 
 	X_LD_WAR,
 	X_LD_BAR,

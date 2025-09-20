@@ -117,6 +117,10 @@ unsigned char icode_flags[] = {
 	/* X_CMP_WI             */	IS_USEPR,
 	/* X_CMP_WM             */	IS_USEPR,
 	/* X_CMP_UM             */	IS_USEPR,
+	/* X_CMP_WP             */	IS_USEPR,
+	/* X_CMP_UP             */	IS_USEPR,
+	/* X_CMP_WPF            */	IS_USEPR,
+	/* X_CMP_UPF            */	IS_USEPR,
 	/* X_CMP_WS             */	IS_USEPR + IS_SPREL,
 	/* X_CMP_US             */	IS_USEPR + IS_SPREL,
 	/* X_CMP_WAX            */	IS_USEPR,
@@ -124,6 +128,8 @@ unsigned char icode_flags[] = {
 
 	/* X_CMP_UIQ            */	IS_USEPR + IS_UBYTE,
 	/* X_CMP_UMQ            */	IS_USEPR + IS_UBYTE,
+	/* X_CMP_UPQ            */	IS_USEPR + IS_UBYTE,
+	/* X_CMP_UPFQ           */	IS_USEPR + IS_UBYTE,
 	/* X_CMP_USQ            */	IS_USEPR + IS_SPREL + IS_UBYTE,
 	/* X_CMP_UAXQ           */	IS_USEPR + IS_UBYTE,
 
@@ -208,15 +214,17 @@ unsigned char icode_flags[] = {
 	/* I_LD_BP              */	IS_SBYTE,
 	/* I_LD_UP              */	IS_UBYTE,
 
-	/* X_LD_UPQ             */	IS_UBYTE + IS_SHORT,
-
 	/* X_LD_WP              */	0,
 	/* X_LD_BP              */	IS_SBYTE,
 	/* X_LD_UP              */	IS_UBYTE,
 
+	/* X_LD_UPQ             */	IS_UBYTE + IS_SHORT,
+
 	/* X_LD_WPF             */	0,
 	/* X_LD_BPF             */	IS_SBYTE,
 	/* X_LD_UPF             */	IS_UBYTE,
+
+	/* X_LD_UPFQ            */	IS_UBYTE + IS_SHORT,
 
 	/* X_LD_WAR             */	0,
 	/* X_LD_BAR             */	IS_SBYTE,
@@ -768,6 +776,10 @@ enum ICODE short_icode[] = {
 	/* X_CMP_WI             */	0,
 	/* X_CMP_WM             */	0,
 	/* X_CMP_UM             */	0,
+	/* X_CMP_WP             */	0,
+	/* X_CMP_UP             */	0,
+	/* X_CMP_WPF            */	0,
+	/* X_CMP_UPF            */	0,
 	/* X_CMP_WS             */	0,
 	/* X_CMP_US             */	0,
 	/* X_CMP_WAX            */	0,
@@ -775,6 +787,8 @@ enum ICODE short_icode[] = {
 
 	/* X_CMP_UIQ            */	0,
 	/* X_CMP_UMQ            */	0,
+	/* X_CMP_UPQ            */	0,
+	/* X_CMP_UPFQ           */	0,
 	/* X_CMP_USQ            */	0,
 	/* X_CMP_UAXQ           */	0,
 
@@ -859,15 +873,17 @@ enum ICODE short_icode[] = {
 	/* I_LD_BP              */	0,
 	/* I_LD_UP              */	0,
 
-	/* I_LD_UPQ             */	0,
-
 	/* X_LD_WP              */	0,
 	/* X_LD_BP              */	0,
 	/* X_LD_UP              */	0,
 
+	/* X_LD_UPQ             */	0,
+
 	/* X_LD_WPF             */	0,
 	/* X_LD_BPF             */	0,
 	/* X_LD_UPF             */	0,
+
+	/* X_LD_UPFQ            */	0,
 
 	/* X_LD_WAR             */	0,
 	/* X_LD_BAR             */	0,
@@ -2646,6 +2662,16 @@ lv1_loop:
 			 *  __cmp_w.wt		type
 			 *
 			 *  is_ubyte()			-->	is_ubyte()
+			 *  __push.wr				__cmp_b.upq	type, pointer
+			 *  __ld.up		pointer
+			 *  __cmp_w.wt		type
+			 *
+			 *  is_ubyte()			-->	is_ubyte()
+			 *  __push.wr				__cmp_b.upfq	type, pointer
+			 *  __ld.upf		pointer
+			 *  __cmp_w.wt		type
+			 *
+			 *  is_ubyte()			-->	is_ubyte()
 			 *  __push.wr				__cmp_b.usq	type, n
 			 *  __ld.us		n
 			 *  __cmp_w.wt		type
@@ -2653,6 +2679,8 @@ lv1_loop:
 			if
 			((p[0]->ins_code == I_CMP_WT) &&
 			 (p[1]->ins_code == I_LD_UM ||
+			  p[1]->ins_code == X_LD_UP ||
+			  p[1]->ins_code == X_LD_UPF ||
 			  p[1]->ins_code == X_LD_US) &&
 			 (p[2]->ins_code == I_PUSH_WR) &&
 			 (is_ubyte(p[3]))
@@ -2660,15 +2688,19 @@ lv1_loop:
 				/* replace code */
 				*p[2] = *p[1];
 				switch (p[1]->ins_code) {
-				case I_LD_UM: p[2]->ins_code = X_CMP_UMQ; break;
-				case X_LD_US: p[2]->ins_code = X_CMP_USQ; break;
+				case  I_LD_UM: p[2]->ins_code =  X_CMP_UMQ; break;
+				case  X_LD_UP: p[2]->ins_code =  X_CMP_UPQ; break;
+				case X_LD_UPF: p[2]->ins_code = X_CMP_UPFQ; break;
+				case  X_LD_US: p[2]->ins_code =  X_CMP_USQ; break;
 				default:	break;
 				}
 				p[2]->cmp_type = compare2uchar[p[0]->cmp_type];
 				switch (p[3]->ins_code) {
-				case I_LD_UM:  p[3]->ins_code = X_LD_UMQ; break;
-				case I_LD_UP:  p[3]->ins_code = X_LD_UPQ; break;
-				case X_LD_US:  p[3]->ins_code = X_LD_USQ; break;
+				case  I_LD_UM: p[3]->ins_code =  X_LD_UMQ; break;
+				case  I_LD_UP: p[3]->ins_code =  X_LD_UPQ; break;
+				case  X_LD_UP: p[3]->ins_code =  X_LD_UPQ; break;
+				case X_LD_UPF: p[3]->ins_code = X_LD_UPFQ; break;
+				case  X_LD_US: p[3]->ins_code =  X_LD_USQ; break;
 				case X_LD_UAR: p[3]->ins_code = X_LD_UARQ; break;
 				case X_LD_UAX: p[3]->ins_code = X_LD_UAXQ; break;
 				default: break;
@@ -2869,6 +2901,22 @@ lv1_loop:
 			 *  __ld.um		symbol
 			 *  __cmp_w.wt		type
 			 *
+			 *  __push.wr			-->	__cmp_w.wp	type, pointer
+			 *  __ld.wp		pointer
+			 *  __cmp_w.wt		type
+			 *
+			 *  __push.wr			-->	__cmp_w.up	type, pointer
+			 *  __ld.up		pointer
+			 *  __cmp_w.wt		type
+			 *
+			 *  __push.wr			-->	__cmp_w.wpf	type, pointer
+			 *  __ld.wpf		pointer
+			 *  __cmp_w.wt		type
+			 *
+			 *  __push.wr			-->	__cmp_w.upf	type, pointer
+			 *  __ld.upf		pointer
+			 *  __cmp_w.wt		type
+			 *
 			 *  __push.wr			-->	__cmp_w.ws	type, n
 			 *  __ld.ws		n
 			 *  __cmp_w.wt		type
@@ -2882,6 +2930,10 @@ lv1_loop:
 			 (p[1]->ins_code == I_LD_WI ||
 			  p[1]->ins_code == I_LD_WM ||
 			  p[1]->ins_code == I_LD_UM ||
+			  p[1]->ins_code == X_LD_WP ||
+			  p[1]->ins_code == X_LD_UP ||
+			  p[1]->ins_code == X_LD_WPF ||
+			  p[1]->ins_code == X_LD_UPF ||
 			  p[1]->ins_code == X_LD_WS ||
 			  p[1]->ins_code == X_LD_US) &&
 			 (p[2]->ins_code == I_PUSH_WR)
@@ -2889,11 +2941,15 @@ lv1_loop:
 				/* replace code */
 				*p[2] = *p[1];
 				switch (p[1]->ins_code) {
-				case I_LD_WI: p[2]->ins_code = X_CMP_WI; break;
-				case I_LD_WM: p[2]->ins_code = X_CMP_WM; break;
-				case I_LD_UM: p[2]->ins_code = X_CMP_UM; break;
-				case X_LD_WS: p[2]->ins_code = X_CMP_WS; break;
-				case X_LD_US: p[2]->ins_code = X_CMP_US; break;
+				case  I_LD_WI: p[2]->ins_code =  X_CMP_WI; break;
+				case  I_LD_WM: p[2]->ins_code =  X_CMP_WM; break;
+				case  I_LD_UM: p[2]->ins_code =  X_CMP_UM; break;
+				case  X_LD_WP: p[2]->ins_code =  X_CMP_WP; break;
+				case  X_LD_UP: p[2]->ins_code =  X_CMP_UP; break;
+				case X_LD_WPF: p[2]->ins_code = X_CMP_WPF; break;
+				case X_LD_UPF: p[2]->ins_code = X_CMP_UPF; break;
+				case  X_LD_WS: p[2]->ins_code =  X_CMP_WS; break;
+				case  X_LD_US: p[2]->ins_code =  X_CMP_US; break;
 				default:	break;
 				}
 				p[2]->cmp_type = p[0]->cmp_type;
@@ -2914,6 +2970,22 @@ lv1_loop:
 			 *  __not.wr
 			 *
 			 *  __cmp_w.um			-->	__cmp_w.um
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __cmp_w.wp			-->	__cmp_w.wp
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __cmp_w.up			-->	__cmp_w.up
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __cmp_w.wpf			-->	__cmp_w.wpf
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __cmp_w.upf			-->	__cmp_w.upf
 			 *  __bool
 			 *  __not.wr
 			 *
@@ -2959,6 +3031,10 @@ lv1_loop:
 			  p[2]->ins_code == X_CMP_WI ||
 			  p[2]->ins_code == X_CMP_WM ||
 			  p[2]->ins_code == X_CMP_UM ||
+			  p[2]->ins_code == X_CMP_WP ||
+			  p[2]->ins_code == X_CMP_UP ||
+			  p[2]->ins_code == X_CMP_WPF ||
+			  p[2]->ins_code == X_CMP_UPF ||
 			  p[2]->ins_code == X_CMP_WS ||
 			  p[2]->ins_code == X_CMP_US ||
 			  p[2]->ins_code == X_CMP_WAX ||
@@ -3114,6 +3190,14 @@ lv1_loop:
 			 *  __bool
 			 *  __tst.wr
 			 *
+			 *  __cmp_w.{w/u}p		-->	__cmp_w.{w/u}p
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __cmp_w.{w/u}pf		-->	__cmp_w.{w/u}pf
+			 *  __bool
+			 *  __tst.wr
+			 *
 			 *  __cmp_w.{w/u}s		-->	__cmp_w.{w/u}s
 			 *  __bool
 			 *  __tst.wr
@@ -3127,6 +3211,14 @@ lv1_loop:
 			 *  __tst.wr
 			 *
 			 *  __cmp_b.umq			-->	__cmp_b.umq
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __cmp_b.upq			-->	__cmp_b.upq
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __cmp_b.upfq		-->	__cmp_b.upfq
 			 *  __bool
 			 *  __tst.wr
 			 *
@@ -3213,12 +3305,18 @@ lv1_loop:
 			  p[2]->ins_code == X_CMP_WI ||
 			  p[2]->ins_code == X_CMP_WM ||
 			  p[2]->ins_code == X_CMP_UM ||
+			  p[2]->ins_code == X_CMP_WP ||
+			  p[2]->ins_code == X_CMP_UP ||
+			  p[2]->ins_code == X_CMP_WPF ||
+			  p[2]->ins_code == X_CMP_UPF ||
 			  p[2]->ins_code == X_CMP_WS ||
 			  p[2]->ins_code == X_CMP_US ||
 			  p[2]->ins_code == X_CMP_WAX ||
 			  p[2]->ins_code == X_CMP_UAX ||
 			  p[2]->ins_code == X_CMP_UIQ ||
 			  p[2]->ins_code == X_CMP_UMQ ||
+			  p[2]->ins_code == X_CMP_UPQ ||
+			  p[2]->ins_code == X_CMP_UPFQ ||
 			  p[2]->ins_code == X_CMP_USQ ||
 			  p[2]->ins_code == X_CMP_UAXQ ||
 			  p[2]->ins_code == I_NOT_WR ||
