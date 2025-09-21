@@ -117,6 +117,10 @@ unsigned char icode_flags[] = {
 	/* X_CMP_WI             */	IS_USEPR,
 	/* X_CMP_WM             */	IS_USEPR,
 	/* X_CMP_UM             */	IS_USEPR,
+	/* X_CMP_WP             */	IS_USEPR,
+	/* X_CMP_UP             */	IS_USEPR,
+	/* X_CMP_WPF            */	IS_USEPR,
+	/* X_CMP_UPF            */	IS_USEPR,
 	/* X_CMP_WS             */	IS_USEPR + IS_SPREL,
 	/* X_CMP_US             */	IS_USEPR + IS_SPREL,
 	/* X_CMP_WAX            */	IS_USEPR,
@@ -124,16 +128,20 @@ unsigned char icode_flags[] = {
 
 	/* X_CMP_UIQ            */	IS_USEPR + IS_UBYTE,
 	/* X_CMP_UMQ            */	IS_USEPR + IS_UBYTE,
+	/* X_CMP_UPQ            */	IS_USEPR + IS_UBYTE,
+	/* X_CMP_UPFQ           */	IS_USEPR + IS_UBYTE,
 	/* X_CMP_USQ            */	IS_USEPR + IS_SPREL + IS_UBYTE,
 	/* X_CMP_UAXQ           */	IS_USEPR + IS_UBYTE,
 
 	/* I_NOT_WR             */	IS_USEPR,
 	/* X_NOT_WP             */	0,
+	/* X_NOT_WPF            */	0,
 	/* X_NOT_WM             */	0,
 	/* X_NOT_WS             */	IS_SPREL,
 	/* X_NOT_WAR            */	0,
 	/* X_NOT_WAX            */	0,
 	/* X_NOT_UP             */	0,
+	/* X_NOT_UPF            */	0,
 	/* X_NOT_UM             */	0,
 	/* X_NOT_US             */	IS_SPREL,
 	/* X_NOT_UAR            */	0,
@@ -142,11 +150,13 @@ unsigned char icode_flags[] = {
 
 	/* I_TST_WR             */	IS_USEPR,
 	/* X_TST_WP             */	0,
+	/* X_TST_WPF            */	0,
 	/* X_TST_WM             */	0,
 	/* X_TST_WS             */	IS_SPREL,
 	/* X_TST_WAR            */	0,
 	/* X_TST_WAX            */	0,
 	/* X_TST_UP             */	0,
+	/* X_TST_UPF            */	0,
 	/* X_TST_UM             */	0,
 	/* X_TST_US             */	IS_SPREL,
 	/* X_TST_UAR            */	0,
@@ -162,12 +172,14 @@ unsigned char icode_flags[] = {
 
 	/* X_BOOLNOT_WR         */	IS_USEPR,
 	/* X_BOOLNOT_WP         */	0,
+	/* X_BOOLNOT_WPF         */	0,
 	/* X_BOOLNOT_WM         */	0,
 	/* X_BOOLNOT_WS         */	IS_SPREL,
 	/* X_BOOLNOT_WAR        */	0,
 	/* X_BOOLNOT_WAX        */	0,
 
 	/* X_BOOLNOT_UP         */	0,
+	/* X_BOOLNOT_UPF        */	0,
 	/* X_BOOLNOT_UM         */	0,
 	/* X_BOOLNOT_US         */	IS_SPREL,
 	/* X_BOOLNOT_UAR        */	0,
@@ -208,7 +220,17 @@ unsigned char icode_flags[] = {
 	/* I_LD_BP              */	IS_SBYTE,
 	/* I_LD_UP              */	IS_UBYTE,
 
+	/* X_LD_WP              */	0,
+	/* X_LD_BP              */	IS_SBYTE,
+	/* X_LD_UP              */	IS_UBYTE,
+
 	/* X_LD_UPQ             */	IS_UBYTE + IS_SHORT,
+
+	/* X_LD_WPF             */	0,
+	/* X_LD_BPF             */	IS_SBYTE,
+	/* X_LD_UPF             */	IS_UBYTE,
+
+	/* X_LD_UPFQ            */	IS_UBYTE + IS_SHORT,
 
 	/* X_LD_WAR             */	0,
 	/* X_LD_BAR             */	IS_SBYTE,
@@ -381,6 +403,10 @@ unsigned char icode_flags[] = {
 	/* X_ST_UP              */	IS_USEPR + IS_STORE,
 	/* X_ST_WPQ             */	IS_USEPR + IS_STORE + IS_SHORT,
 	/* X_ST_UPQ             */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_ST_WPF             */	IS_USEPR + IS_STORE,
+	/* X_ST_UPF             */	IS_USEPR + IS_STORE,
+	/* X_ST_WPFQ            */	IS_USEPR + IS_STORE + IS_SHORT,
+	/* X_ST_UPFQ            */	IS_USEPR + IS_STORE + IS_SHORT,
 	/* X_ST_WS              */	IS_USEPR + IS_STORE + IS_SPREL,
 	/* X_ST_US              */	IS_USEPR + IS_STORE + IS_SPREL,
 	/* X_ST_WSQ             */	IS_USEPR + IS_STORE + IS_SPREL + IS_SHORT,
@@ -422,6 +448,8 @@ unsigned char icode_flags[] = {
 	/* X_ADD_UM             */	IS_USEPR,
 	/* X_ADD_WP             */	IS_USEPR,
 	/* X_ADD_UP             */	IS_USEPR,
+	/* X_ADD_WPF            */	IS_USEPR,
+	/* X_ADD_UPF            */	IS_USEPR,
 	/* X_ADD_WS             */	IS_USEPR + IS_SPREL,
 	/* X_ADD_US             */	IS_USEPR + IS_SPREL,
 	/* X_ADD_WAT            */	IS_USEPR + IS_POPWT,
@@ -436,6 +464,8 @@ unsigned char icode_flags[] = {
 	/* X_SUB_UM             */	IS_USEPR,
 	/* X_SUB_WP             */	IS_USEPR,
 	/* X_SUB_UP             */	IS_USEPR,
+	/* X_SUB_WPF            */	IS_USEPR,
+	/* X_SUB_UPF            */	IS_USEPR,
 	/* X_SUB_WS             */	IS_USEPR + IS_SPREL,
 	/* X_SUB_US             */	IS_USEPR + IS_SPREL,
 	/* X_SUB_WAT            */	IS_USEPR + IS_POPWT,
@@ -450,6 +480,8 @@ unsigned char icode_flags[] = {
 	/* X_ISUB_UM            */	IS_USEPR,
 	/* X_ISUB_WP            */	IS_USEPR,
 	/* X_ISUB_UP            */	IS_USEPR,
+	/* X_ISUB_WPF           */	IS_USEPR,
+	/* X_ISUB_UPF           */	IS_USEPR,
 	/* X_ISUB_WS            */	IS_USEPR + IS_SPREL,
 	/* X_ISUB_US            */	IS_USEPR + IS_SPREL,
 	/* X_ISUB_WAT           */	IS_USEPR + IS_POPWT,
@@ -464,6 +496,8 @@ unsigned char icode_flags[] = {
 	/* X_AND_UM             */	IS_USEPR,
 	/* X_AND_WP             */	IS_USEPR,
 	/* X_AND_UP             */	IS_USEPR,
+	/* X_AND_WPF            */	IS_USEPR,
+	/* X_AND_UPF            */	IS_USEPR,
 	/* X_AND_WS             */	IS_USEPR + IS_SPREL,
 	/* X_AND_US             */	IS_USEPR + IS_SPREL,
 	/* X_AND_WAT            */	IS_USEPR + IS_POPWT,
@@ -478,6 +512,8 @@ unsigned char icode_flags[] = {
 	/* X_EOR_UM             */	IS_USEPR,
 	/* X_EOR_WP             */	IS_USEPR,
 	/* X_EOR_UP             */	IS_USEPR,
+	/* X_EOR_WPF            */	IS_USEPR,
+	/* X_EOR_UPF            */	IS_USEPR,
 	/* X_EOR_WS             */	IS_USEPR + IS_SPREL,
 	/* X_EOR_US             */	IS_USEPR + IS_SPREL,
 	/* X_EOR_WAT            */	IS_USEPR + IS_POPWT,
@@ -492,6 +528,8 @@ unsigned char icode_flags[] = {
 	/* X_OR_UM              */	IS_USEPR,
 	/* X_OR_WP              */	IS_USEPR,
 	/* X_OR_UP              */	IS_USEPR,
+	/* X_OR_WPF             */	IS_USEPR,
+	/* X_OR_UPF             */	IS_USEPR,
 	/* X_OR_WS              */	IS_USEPR + IS_SPREL,
 	/* X_OR_US              */	IS_USEPR + IS_SPREL,
 	/* X_OR_WAT             */	IS_USEPR + IS_POPWT,
@@ -744,6 +782,10 @@ enum ICODE short_icode[] = {
 	/* X_CMP_WI             */	0,
 	/* X_CMP_WM             */	0,
 	/* X_CMP_UM             */	0,
+	/* X_CMP_WP             */	0,
+	/* X_CMP_UP             */	0,
+	/* X_CMP_WPF            */	0,
+	/* X_CMP_UPF            */	0,
 	/* X_CMP_WS             */	0,
 	/* X_CMP_US             */	0,
 	/* X_CMP_WAX            */	0,
@@ -751,16 +793,20 @@ enum ICODE short_icode[] = {
 
 	/* X_CMP_UIQ            */	0,
 	/* X_CMP_UMQ            */	0,
+	/* X_CMP_UPQ            */	0,
+	/* X_CMP_UPFQ           */	0,
 	/* X_CMP_USQ            */	0,
 	/* X_CMP_UAXQ           */	0,
 
 	/* I_NOT_WR             */	0,
 	/* X_NOT_WP             */	0,
+	/* X_NOT_WPF            */	0,
 	/* X_NOT_WM             */	0,
 	/* X_NOT_WS             */	0,
 	/* X_NOT_WAR            */	0,
 	/* X_NOT_WAX            */	0,
 	/* X_NOT_UP             */	0,
+	/* X_NOT_UPF            */	0,
 	/* X_NOT_UM             */	0,
 	/* X_NOT_US             */	0,
 	/* X_NOT_UAR            */	0,
@@ -769,11 +815,13 @@ enum ICODE short_icode[] = {
 
 	/* I_TST_WR             */	0,
 	/* X_TST_WP             */	0,
+	/* X_TST_WPF            */	0,
 	/* X_TST_WM             */	0,
 	/* X_TST_WS             */	0,
 	/* X_TST_WAR            */	0,
 	/* X_TST_WAX            */	0,
 	/* X_TST_UP             */	0,
+	/* X_TST_UPF            */	0,
 	/* X_TST_UM             */	0,
 	/* X_TST_US             */	0,
 	/* X_TST_UAR            */	0,
@@ -789,12 +837,14 @@ enum ICODE short_icode[] = {
 
 	/* X_BOOLNOT_WR         */	0,
 	/* X_BOOLNOT_WP         */	0,
+	/* X_BOOLNOT_WPF        */	0,
 	/* X_BOOLNOT_WM         */	0,
 	/* X_BOOLNOT_WS         */	0,
 	/* X_BOOLNOT_WAR        */	0,
 	/* X_BOOLNOT_WAX        */	0,
 
 	/* X_BOOLNOT_UP         */	0,
+	/* X_BOOLNOT_UPF        */	0,
 	/* X_BOOLNOT_UM         */	0,
 	/* X_BOOLNOT_US         */	0,
 	/* X_BOOLNOT_UAR        */	0,
@@ -835,7 +885,17 @@ enum ICODE short_icode[] = {
 	/* I_LD_BP              */	0,
 	/* I_LD_UP              */	0,
 
-	/* I_LD_UPQ             */	0,
+	/* X_LD_WP              */	0,
+	/* X_LD_BP              */	0,
+	/* X_LD_UP              */	0,
+
+	/* X_LD_UPQ             */	0,
+
+	/* X_LD_WPF             */	0,
+	/* X_LD_BPF             */	0,
+	/* X_LD_UPF             */	0,
+
+	/* X_LD_UPFQ            */	0,
 
 	/* X_LD_WAR             */	0,
 	/* X_LD_BAR             */	0,
@@ -1008,6 +1068,10 @@ enum ICODE short_icode[] = {
 	/* X_ST_UP              */	0,
 	/* X_ST_WPQ             */	0,
 	/* X_ST_UPQ             */	0,
+	/* X_ST_WPF             */	0,
+	/* X_ST_UPF             */	0,
+	/* X_ST_WPFQ            */	0,
+	/* X_ST_UPFQ            */	0,
 	/* X_ST_WS              */	0,
 	/* X_ST_US              */	0,
 	/* X_ST_WSQ             */	0,
@@ -1049,6 +1113,8 @@ enum ICODE short_icode[] = {
 	/* X_ADD_UM             */	0,
 	/* X_ADD_WP             */	0,
 	/* X_ADD_UP             */	0,
+	/* X_ADD_WPF            */	0,
+	/* X_ADD_UPF            */	0,
 	/* X_ADD_WS             */	0,
 	/* X_ADD_US             */	0,
 	/* X_ADD_WAT            */	0,
@@ -1063,6 +1129,8 @@ enum ICODE short_icode[] = {
 	/* X_SUB_UM             */	0,
 	/* X_SUB_WP             */	0,
 	/* X_SUB_UP             */	0,
+	/* X_SUB_WPF            */	0,
+	/* X_SUB_UPF            */	0,
 	/* X_SUB_WS             */	0,
 	/* X_SUB_US             */	0,
 	/* X_SUB_WAT            */	0,
@@ -1077,6 +1145,8 @@ enum ICODE short_icode[] = {
 	/* X_ISUB_UM            */	0,
 	/* X_ISUB_WP            */	0,
 	/* X_ISUB_UP            */	0,
+	/* X_ISUB_WPF           */	0,
+	/* X_ISUB_UPF           */	0,
 	/* X_ISUB_WS            */	0,
 	/* X_ISUB_US            */	0,
 	/* X_ISUB_WAT           */	0,
@@ -1091,6 +1161,8 @@ enum ICODE short_icode[] = {
 	/* X_AND_UM             */	0,
 	/* X_AND_WP             */	0,
 	/* X_AND_UP             */	0,
+	/* X_AND_WPF            */	0,
+	/* X_AND_UPF            */	0,
 	/* X_AND_WS             */	0,
 	/* X_AND_US             */	0,
 	/* X_AND_WAT            */	0,
@@ -1105,6 +1177,8 @@ enum ICODE short_icode[] = {
 	/* X_EOR_UM             */	0,
 	/* X_EOR_WP             */	0,
 	/* X_EOR_UP             */	0,
+	/* X_EOR_WPF            */	0,
+	/* X_EOR_UPF            */	0,
 	/* X_EOR_WS             */	0,
 	/* X_EOR_US             */	0,
 	/* X_EOR_WAT            */	0,
@@ -1118,6 +1192,8 @@ enum ICODE short_icode[] = {
 	/* X_OR_WM              */	0,
 	/* X_OR_UM              */	0,
 	/* X_OR_WP              */	0,
+	/* X_OR_UPF             */	0,
+	/* X_OR_WPF             */	0,
 	/* X_OR_UP              */	0,
 	/* X_OR_WS              */	0,
 	/* X_OR_US              */	0,
@@ -1376,6 +1452,11 @@ bool is_small_array (SYMBOL *sym)
 	return (sym->identity == ARRAY && sym->alloc_size > 0 && sym->alloc_size <= 256);
 }
 
+bool is_zp_pointer (SYMBOL *sym)
+{
+	return (sym->identity == POINTER && (sym->storage & ZEROPAGE));
+}
+
 /* ----
  * push_ins()
  * ----
@@ -1604,6 +1685,66 @@ lv1_loop:
 			}
 
 			/*
+			 *  __add.wp		symbol	-->	__add_st.wpq	symbol
+			 *  __st.wp		symbol
+			 *  __fence
+			 *
+			 *  __add.up		symbol	-->	__add_st.upq	symbol
+			 *  __st.up		symbol
+			 *  __fence
+			 *
+			 *  __isub.wp		symbol	-->	__isub_st.wpq	symbol
+			 *  __st.wp		symbol
+			 *  __fence
+			 *
+			 *  __isub.up		symbol	-->	__isub_st.upq	symbol
+			 *  __st.up		symbol
+			 *  __fence
+			 *
+			 *  etc, etc
+			 *
+			 *  this optimizes the store for a "+=", "-=", "&=", "^=", "|=".
+			 */
+			else if
+			((p_nb >= 3) &&
+			 (p[1]->ins_code == X_ST_WP ||
+			  p[1]->ins_code == X_ST_UP) &&
+			 (p[2]->ins_code == X_ADD_WP ||
+			  p[2]->ins_code == X_ADD_UP ||
+			  p[2]->ins_code == X_ISUB_WP ||
+			  p[2]->ins_code == X_ISUB_UP ||
+			  p[2]->ins_code == X_AND_WP ||
+			  p[2]->ins_code == X_AND_UP ||
+			  p[2]->ins_code == X_EOR_WP ||
+			  p[2]->ins_code == X_EOR_UP ||
+			  p[2]->ins_code == X_OR_WP ||
+			  p[2]->ins_code == X_OR_UP) &&
+			 (cmp_operands(p[1], p[2]))
+			) {
+				/* replace code */
+				remove = 2;
+				if (p[1]->ins_code == X_ST_WP) {
+					switch (p[2]->ins_code) {
+					case  X_ADD_WP: p[2]->ins_code =  X_ADD_ST_WPQ; break;
+					case X_ISUB_WP: p[2]->ins_code = X_ISUB_ST_WPQ; break;
+					case  X_AND_WP: p[2]->ins_code =  X_AND_ST_WPQ; break;
+					case  X_EOR_WP: p[2]->ins_code =  X_EOR_ST_WPQ; break;
+					case   X_OR_WP: p[2]->ins_code =   X_OR_ST_WPQ; break;
+					default: remove = 1; break; /* this should never happen! */
+					}
+				} else {
+					switch (p[2]->ins_code) {
+					case  X_ADD_UP: p[2]->ins_code =  X_ADD_ST_UPQ; break;
+					case X_ISUB_UP: p[2]->ins_code = X_ISUB_ST_UPQ; break;
+					case  X_AND_UP: p[2]->ins_code =  X_AND_ST_UPQ; break;
+					case  X_EOR_UP: p[2]->ins_code =  X_EOR_ST_UPQ; break;
+					case   X_OR_UP: p[2]->ins_code =   X_OR_ST_UPQ; break;
+					default: remove = 1; break; /* this should never happen! */
+					}
+				}
+			}
+
+			/*
 			 *  __add.ws		n	-->	__add_st.wsq	n
 			 *  __st.ws		n
 			 *  __fence
@@ -1790,6 +1931,9 @@ lv1_loop:
 			 *  __st.{w/u}p		symbol	-->	__st.{w/u}pq	symbol
 			 *  __fence
 			 *
+			 *  __st.{w/u}pf	symbol	-->	__st.{w/u}pfq	symbol
+			 *  __fence
+			 *
 			 *  __st.{w/u}s		n	-->	__st.{w/u}sq	n
 			 *  __fence
 			 *
@@ -1811,6 +1955,8 @@ lv1_loop:
 				case  I_ST_UM: p[1]->ins_code =  X_ST_UMQ; break;
 				case  X_ST_WP: p[1]->ins_code =  X_ST_WPQ; break;
 				case  X_ST_UP: p[1]->ins_code =  X_ST_UPQ; break;
+				case X_ST_WPF: p[1]->ins_code = X_ST_WPFQ; break;
+				case X_ST_UPF: p[1]->ins_code = X_ST_UPFQ; break;
 				case  X_ST_WS: p[1]->ins_code =  X_ST_WSQ; break;
 				case  X_ST_US: p[1]->ins_code =  X_ST_USQ; break;
 				case X_ST_WAT: p[1]->ins_code = X_ST_WATQ; break;
@@ -2588,6 +2734,16 @@ lv1_loop:
 			 *  __cmp_w.wt		type
 			 *
 			 *  is_ubyte()			-->	is_ubyte()
+			 *  __push.wr				__cmp_b.upq	type, pointer
+			 *  __ld.up		pointer
+			 *  __cmp_w.wt		type
+			 *
+			 *  is_ubyte()			-->	is_ubyte()
+			 *  __push.wr				__cmp_b.upfq	type, pointer
+			 *  __ld.upf		pointer
+			 *  __cmp_w.wt		type
+			 *
+			 *  is_ubyte()			-->	is_ubyte()
 			 *  __push.wr				__cmp_b.usq	type, n
 			 *  __ld.us		n
 			 *  __cmp_w.wt		type
@@ -2595,6 +2751,8 @@ lv1_loop:
 			if
 			((p[0]->ins_code == I_CMP_WT) &&
 			 (p[1]->ins_code == I_LD_UM ||
+			  p[1]->ins_code == X_LD_UP ||
+			  p[1]->ins_code == X_LD_UPF ||
 			  p[1]->ins_code == X_LD_US) &&
 			 (p[2]->ins_code == I_PUSH_WR) &&
 			 (is_ubyte(p[3]))
@@ -2602,15 +2760,19 @@ lv1_loop:
 				/* replace code */
 				*p[2] = *p[1];
 				switch (p[1]->ins_code) {
-				case I_LD_UM: p[2]->ins_code = X_CMP_UMQ; break;
-				case X_LD_US: p[2]->ins_code = X_CMP_USQ; break;
+				case  I_LD_UM: p[2]->ins_code =  X_CMP_UMQ; break;
+				case  X_LD_UP: p[2]->ins_code =  X_CMP_UPQ; break;
+				case X_LD_UPF: p[2]->ins_code = X_CMP_UPFQ; break;
+				case  X_LD_US: p[2]->ins_code =  X_CMP_USQ; break;
 				default:	break;
 				}
 				p[2]->cmp_type = compare2uchar[p[0]->cmp_type];
 				switch (p[3]->ins_code) {
-				case I_LD_UM:  p[3]->ins_code = X_LD_UMQ; break;
-				case I_LD_UP:  p[3]->ins_code = X_LD_UPQ; break;
-				case X_LD_US:  p[3]->ins_code = X_LD_USQ; break;
+				case  I_LD_UM: p[3]->ins_code =  X_LD_UMQ; break;
+				case  I_LD_UP: p[3]->ins_code =  X_LD_UPQ; break;
+				case  X_LD_UP: p[3]->ins_code =  X_LD_UPQ; break;
+				case X_LD_UPF: p[3]->ins_code = X_LD_UPFQ; break;
+				case  X_LD_US: p[3]->ins_code =  X_LD_USQ; break;
 				case X_LD_UAR: p[3]->ins_code = X_LD_UARQ; break;
 				case X_LD_UAX: p[3]->ins_code = X_LD_UAXQ; break;
 				default: break;
@@ -2811,6 +2973,22 @@ lv1_loop:
 			 *  __ld.um		symbol
 			 *  __cmp_w.wt		type
 			 *
+			 *  __push.wr			-->	__cmp_w.wp	type, pointer
+			 *  __ld.wp		pointer
+			 *  __cmp_w.wt		type
+			 *
+			 *  __push.wr			-->	__cmp_w.up	type, pointer
+			 *  __ld.up		pointer
+			 *  __cmp_w.wt		type
+			 *
+			 *  __push.wr			-->	__cmp_w.wpf	type, pointer
+			 *  __ld.wpf		pointer
+			 *  __cmp_w.wt		type
+			 *
+			 *  __push.wr			-->	__cmp_w.upf	type, pointer
+			 *  __ld.upf		pointer
+			 *  __cmp_w.wt		type
+			 *
 			 *  __push.wr			-->	__cmp_w.ws	type, n
 			 *  __ld.ws		n
 			 *  __cmp_w.wt		type
@@ -2824,6 +3002,10 @@ lv1_loop:
 			 (p[1]->ins_code == I_LD_WI ||
 			  p[1]->ins_code == I_LD_WM ||
 			  p[1]->ins_code == I_LD_UM ||
+			  p[1]->ins_code == X_LD_WP ||
+			  p[1]->ins_code == X_LD_UP ||
+			  p[1]->ins_code == X_LD_WPF ||
+			  p[1]->ins_code == X_LD_UPF ||
 			  p[1]->ins_code == X_LD_WS ||
 			  p[1]->ins_code == X_LD_US) &&
 			 (p[2]->ins_code == I_PUSH_WR)
@@ -2831,11 +3013,15 @@ lv1_loop:
 				/* replace code */
 				*p[2] = *p[1];
 				switch (p[1]->ins_code) {
-				case I_LD_WI: p[2]->ins_code = X_CMP_WI; break;
-				case I_LD_WM: p[2]->ins_code = X_CMP_WM; break;
-				case I_LD_UM: p[2]->ins_code = X_CMP_UM; break;
-				case X_LD_WS: p[2]->ins_code = X_CMP_WS; break;
-				case X_LD_US: p[2]->ins_code = X_CMP_US; break;
+				case  I_LD_WI: p[2]->ins_code =  X_CMP_WI; break;
+				case  I_LD_WM: p[2]->ins_code =  X_CMP_WM; break;
+				case  I_LD_UM: p[2]->ins_code =  X_CMP_UM; break;
+				case  X_LD_WP: p[2]->ins_code =  X_CMP_WP; break;
+				case  X_LD_UP: p[2]->ins_code =  X_CMP_UP; break;
+				case X_LD_WPF: p[2]->ins_code = X_CMP_WPF; break;
+				case X_LD_UPF: p[2]->ins_code = X_CMP_UPF; break;
+				case  X_LD_WS: p[2]->ins_code =  X_CMP_WS; break;
+				case  X_LD_US: p[2]->ins_code =  X_CMP_US; break;
 				default:	break;
 				}
 				p[2]->cmp_type = p[0]->cmp_type;
@@ -2856,6 +3042,22 @@ lv1_loop:
 			 *  __not.wr
 			 *
 			 *  __cmp_w.um			-->	__cmp_w.um
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __cmp_w.wp			-->	__cmp_w.wp
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __cmp_w.up			-->	__cmp_w.up
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __cmp_w.wpf			-->	__cmp_w.wpf
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __cmp_w.upf			-->	__cmp_w.upf
 			 *  __bool
 			 *  __not.wr
 			 *
@@ -2901,6 +3103,10 @@ lv1_loop:
 			  p[2]->ins_code == X_CMP_WI ||
 			  p[2]->ins_code == X_CMP_WM ||
 			  p[2]->ins_code == X_CMP_UM ||
+			  p[2]->ins_code == X_CMP_WP ||
+			  p[2]->ins_code == X_CMP_UP ||
+			  p[2]->ins_code == X_CMP_WPF ||
+			  p[2]->ins_code == X_CMP_UPF ||
 			  p[2]->ins_code == X_CMP_WS ||
 			  p[2]->ins_code == X_CMP_US ||
 			  p[2]->ins_code == X_CMP_WAX ||
@@ -2920,6 +3126,10 @@ lv1_loop:
 			 *  __not.wr
 			 *
 			 *  __not.{w/u}p		-->	__tst.{w/u}p
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __not.{w/u}pf		-->	__tst.{w/u}pf
 			 *  __bool
 			 *  __not.wr
 			 *
@@ -2955,6 +3165,10 @@ lv1_loop:
 			 *  __bool
 			 *  __not.wr
 			 *
+			 *  __tst.{w/u}pf		-->	__not.{w/u}pf
+			 *  __bool
+			 *  __not.wr
+			 *
 			 *  __tst.{w/u}m	symbol	-->	__not.{w/u}m	symbol
 			 *  __bool
 			 *  __not.wr
@@ -2986,11 +3200,13 @@ lv1_loop:
 			 (p[1]->ins_code == I_BOOLEAN) &&
 			 (p[2]->ins_code == I_NOT_WR ||
 			  p[2]->ins_code == X_NOT_WP ||
+			  p[2]->ins_code == X_NOT_WPF ||
 			  p[2]->ins_code == X_NOT_WM ||
 			  p[2]->ins_code == X_NOT_WS ||
 			  p[2]->ins_code == X_NOT_WAR ||
 			  p[2]->ins_code == X_NOT_WAX ||
 			  p[2]->ins_code == X_NOT_UP ||
+			  p[2]->ins_code == X_NOT_UPF ||
 			  p[2]->ins_code == X_NOT_UM ||
 			  p[2]->ins_code == X_NOT_US ||
 			  p[2]->ins_code == X_NOT_UAR ||
@@ -2999,11 +3215,13 @@ lv1_loop:
 			  p[2]->ins_code == X_NAND_WI ||
 			  p[2]->ins_code == I_TST_WR ||
 			  p[2]->ins_code == X_TST_WP ||
+			  p[2]->ins_code == X_TST_WPF ||
 			  p[2]->ins_code == X_TST_WM ||
 			  p[2]->ins_code == X_TST_WS ||
 			  p[2]->ins_code == X_TST_WAR ||
 			  p[2]->ins_code == X_TST_WAX ||
 			  p[2]->ins_code == X_TST_UP ||
+			  p[2]->ins_code == X_TST_UPF ||
 			  p[2]->ins_code == X_TST_UM ||
 			  p[2]->ins_code == X_TST_US ||
 			  p[2]->ins_code == X_TST_UAR ||
@@ -3014,11 +3232,13 @@ lv1_loop:
 				switch (p[2]->ins_code) {
 				case I_NOT_WR:   p[2]->ins_code = I_TST_WR; break;
 				case X_NOT_WP:   p[2]->ins_code = X_TST_WP; break;
+				case X_NOT_WPF:  p[2]->ins_code = X_TST_WPF; break;
 				case X_NOT_WM:   p[2]->ins_code = X_TST_WM; break;
 				case X_NOT_WS:   p[2]->ins_code = X_TST_WS; break;
 				case X_NOT_WAR:  p[2]->ins_code = X_TST_WAR; break;
 				case X_NOT_WAX:  p[2]->ins_code = X_TST_WAX; break;
 				case X_NOT_UP:   p[2]->ins_code = X_TST_UP; break;
+				case X_NOT_UPF:  p[2]->ins_code = X_TST_UPF; break;
 				case X_NOT_UM:   p[2]->ins_code = X_TST_UM; break;
 				case X_NOT_US:   p[2]->ins_code = X_TST_US; break;
 				case X_NOT_UAR:  p[2]->ins_code = X_TST_UAR; break;
@@ -3027,11 +3247,13 @@ lv1_loop:
 				case X_NAND_WI:  p[2]->ins_code = X_TAND_WI; break;
 				case I_TST_WR:   p[2]->ins_code = I_NOT_WR; break;
 				case X_TST_WP:   p[2]->ins_code = X_NOT_WP; break;
+				case X_TST_WPF:  p[2]->ins_code = X_NOT_WPF; break;
 				case X_TST_WM:   p[2]->ins_code = X_NOT_WM; break;
 				case X_TST_WS:   p[2]->ins_code = X_NOT_WS; break;
 				case X_TST_WAR:  p[2]->ins_code = X_NOT_WAR; break;
 				case X_TST_WAX:  p[2]->ins_code = X_NOT_WAX; break;
 				case X_TST_UP:   p[2]->ins_code = X_NOT_UP; break;
+				case X_TST_UPF:  p[2]->ins_code = X_NOT_UPF; break;
 				case X_TST_UM:   p[2]->ins_code = X_NOT_UM; break;
 				case X_TST_US:   p[2]->ins_code = X_NOT_US; break;
 				case X_TST_UAR:  p[2]->ins_code = X_NOT_UAR; break;
@@ -3056,6 +3278,14 @@ lv1_loop:
 			 *  __bool
 			 *  __tst.wr
 			 *
+			 *  __cmp_w.{w/u}p		-->	__cmp_w.{w/u}p
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __cmp_w.{w/u}pf		-->	__cmp_w.{w/u}pf
+			 *  __bool
+			 *  __tst.wr
+			 *
 			 *  __cmp_w.{w/u}s		-->	__cmp_w.{w/u}s
 			 *  __bool
 			 *  __tst.wr
@@ -3072,6 +3302,14 @@ lv1_loop:
 			 *  __bool
 			 *  __tst.wr
 			 *
+			 *  __cmp_b.upq			-->	__cmp_b.upq
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __cmp_b.upfq		-->	__cmp_b.upfq
+			 *  __bool
+			 *  __tst.wr
+			 *
 			 *  __cmp_b.usq			-->	__cmp_b.usq
 			 *  __bool
 			 *  __tst.wr
@@ -3085,6 +3323,10 @@ lv1_loop:
 			 *  __tst.wr
 			 *
 			 *  __not.{w/u}p		-->	__not.{w/u}p
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __not.{w/u}pf		-->	__not.{w/u}pf
 			 *  __bool
 			 *  __tst.wr
 			 *
@@ -3117,6 +3359,10 @@ lv1_loop:
 			 *  __tst.wr
 			 *
 			 *  __tst.{w/u}p		-->	__tst.{w/u}p
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __tst.{w/u}pf		-->	__tst.{w/u}pf
 			 *  __bool
 			 *  __tst.wr
 			 *
@@ -3155,21 +3401,29 @@ lv1_loop:
 			  p[2]->ins_code == X_CMP_WI ||
 			  p[2]->ins_code == X_CMP_WM ||
 			  p[2]->ins_code == X_CMP_UM ||
+			  p[2]->ins_code == X_CMP_WP ||
+			  p[2]->ins_code == X_CMP_UP ||
+			  p[2]->ins_code == X_CMP_WPF ||
+			  p[2]->ins_code == X_CMP_UPF ||
 			  p[2]->ins_code == X_CMP_WS ||
 			  p[2]->ins_code == X_CMP_US ||
 			  p[2]->ins_code == X_CMP_WAX ||
 			  p[2]->ins_code == X_CMP_UAX ||
 			  p[2]->ins_code == X_CMP_UIQ ||
 			  p[2]->ins_code == X_CMP_UMQ ||
+			  p[2]->ins_code == X_CMP_UPQ ||
+			  p[2]->ins_code == X_CMP_UPFQ ||
 			  p[2]->ins_code == X_CMP_USQ ||
 			  p[2]->ins_code == X_CMP_UAXQ ||
 			  p[2]->ins_code == I_NOT_WR ||
 			  p[2]->ins_code == X_NOT_WP ||
+			  p[2]->ins_code == X_NOT_WPF ||
 			  p[2]->ins_code == X_NOT_WM ||
 			  p[2]->ins_code == X_NOT_WS ||
 			  p[2]->ins_code == X_NOT_WAR ||
 			  p[2]->ins_code == X_NOT_WAX ||
 			  p[2]->ins_code == X_NOT_UP ||
+			  p[2]->ins_code == X_NOT_UPF ||
 			  p[2]->ins_code == X_NOT_UM ||
 			  p[2]->ins_code == X_NOT_US ||
 			  p[2]->ins_code == X_NOT_UAR ||
@@ -3178,11 +3432,13 @@ lv1_loop:
 			  p[2]->ins_code == X_NAND_WI ||
 			  p[2]->ins_code == I_TST_WR ||
 			  p[2]->ins_code == X_TST_WP ||
+			  p[2]->ins_code == X_TST_WPF ||
 			  p[2]->ins_code == X_TST_WM ||
 			  p[2]->ins_code == X_TST_WS ||
 			  p[2]->ins_code == X_TST_WAR ||
 			  p[2]->ins_code == X_TST_WAX ||
 			  p[2]->ins_code == X_TST_UP ||
+			  p[2]->ins_code == X_TST_UPF ||
 			  p[2]->ins_code == X_TST_UM ||
 			  p[2]->ins_code == X_TST_US ||
 			  p[2]->ins_code == X_TST_UAR ||
@@ -3201,6 +3457,9 @@ lv1_loop:
 		if (p_nb >= 2) {
 			/*
 			 *  __ld.{w/b/u}p		-->	__tst.{w/u}p
+			 *  __tst.wr
+			 *
+			 *  __ld.{w/b/u}pf		-->	__tst.{w/u}pf
 			 *  __tst.wr
 			 *
 			 *  __ld.{w/b/u}m	symbol	-->	__tst.{w/u}m	symbol
@@ -3222,6 +3481,9 @@ lv1_loop:
 			 *  __tst.wr
 			 *
 			 *  __ld.{w/b/u}p		-->	__not.{w/u}p
+			 *  __not.wr
+			 *
+			 *  __ld.{w/b/u}pf		-->	__not.{w/u}pf
 			 *  __not.wr
 			 *
 			 *  __ld.{w/b/u}m	symbol	-->	__not.{w/u}m	symbol
@@ -3247,17 +3509,23 @@ lv1_loop:
 			 (p[0]->ins_code == I_TST_WR ||
 			  p[0]->ins_code == I_NOT_WR) &&
 			 (p[1]->ins_code == I_LD_WP ||
+			  p[1]->ins_code == X_LD_WP ||
+			  p[1]->ins_code == X_LD_WPF ||
 			  p[1]->ins_code == I_LD_WM ||
 			  p[1]->ins_code == X_LD_WS ||
 			  p[1]->ins_code == X_LD_WAR ||
 			  p[1]->ins_code == X_LD_WAX ||
 			  p[1]->ins_code == I_LD_BP ||
+			  p[1]->ins_code == X_LD_BP ||
+			  p[1]->ins_code == X_LD_BPF ||
 			  p[1]->ins_code == I_LD_BM ||
 			  p[1]->ins_code == X_LD_BS ||
 			  p[1]->ins_code == X_LD_BAR ||
 			  p[1]->ins_code == X_LD_BAX ||
 			  p[1]->ins_code == X_LD_BAY ||
 			  p[1]->ins_code == I_LD_UP ||
+			  p[1]->ins_code == X_LD_UP ||
+			  p[1]->ins_code == X_LD_UPF ||
 			  p[1]->ins_code == I_LD_UM ||
 			  p[1]->ins_code == X_LD_US ||
 			  p[1]->ins_code == X_LD_UAR ||
@@ -3269,13 +3537,19 @@ lv1_loop:
 				/* remove code */
 				if (p[0]->ins_code == I_TST_WR) {
 					switch (p[1]->ins_code) {
-					case I_LD_WP:  p[1]->ins_code = X_TST_WP; break;
+					case I_LD_WP:
+					case X_LD_WP:  p[1]->ins_code = X_TST_WP; break;
+					case X_LD_WPF: p[1]->ins_code = X_TST_WPF; break;
 					case I_LD_WM:  p[1]->ins_code = X_TST_WM; break;
 					case X_LD_WS:  p[1]->ins_code = X_TST_WS; break;
 					case X_LD_WAR: p[1]->ins_code = X_TST_WAR; break;
 					case X_LD_WAX: p[1]->ins_code = X_TST_WAX; break;
 					case I_LD_BP:
-					case I_LD_UP:  p[1]->ins_code = X_TST_UP; break;
+					case I_LD_UP:
+					case X_LD_BP:
+					case X_LD_UP:  p[1]->ins_code = X_TST_UP; break;
+					case X_LD_BPF:
+					case X_LD_UPF: p[1]->ins_code = X_TST_UPF; break;
 					case I_LD_BM:
 					case I_LD_UM:  p[1]->ins_code = X_TST_UM; break;
 					case X_LD_BS:
@@ -3292,13 +3566,19 @@ lv1_loop:
 					}
 				} else {
 					switch (p[1]->ins_code) {
-					case I_LD_WP:  p[1]->ins_code = X_NOT_WP; break;
+					case I_LD_WP:
+					case X_LD_WP:  p[1]->ins_code = X_NOT_WP; break;
+					case X_LD_WPF: p[1]->ins_code = X_NOT_WPF; break;
 					case I_LD_WM:  p[1]->ins_code = X_NOT_WM; break;
 					case X_LD_WS:  p[1]->ins_code = X_NOT_WS; break;
 					case X_LD_WAR: p[1]->ins_code = X_NOT_WAR; break;
 					case X_LD_WAX: p[1]->ins_code = X_NOT_WAX; break;
 					case I_LD_BP:
-					case I_LD_UP:  p[1]->ins_code = X_NOT_UP; break;
+					case I_LD_UP:
+					case X_LD_BP:
+					case X_LD_UP:  p[1]->ins_code = X_NOT_UP; break;
+					case X_LD_BPF:
+					case X_LD_UPF: p[1]->ins_code = X_NOT_UPF; break;
 					case I_LD_BM:
 					case I_LD_UM:  p[1]->ins_code = X_NOT_UM; break;
 					case X_LD_BS:
@@ -3339,7 +3619,9 @@ lv1_loop:
 				p[0]->cmp_type = compare2uchar[p[0]->cmp_type];
 				switch (p[1]->ins_code) {
 				case I_LD_UM:  p[1]->ins_code = X_LD_UMQ; break;
-				case I_LD_UP:  p[1]->ins_code = X_LD_UPQ; break;
+				case I_LD_UP:
+				case X_LD_UP:  p[1]->ins_code = X_LD_UPQ; break;
+				case X_LD_UPF: p[1]->ins_code = X_LD_UPFQ; break;
 				case X_LD_US:  p[1]->ins_code = X_LD_USQ; break;
 				case X_LD_UAR: p[1]->ins_code = X_LD_UARQ; break;
 				case X_LD_UAX: p[1]->ins_code = X_LD_UAXQ; break;
@@ -3436,6 +3718,55 @@ lv1_loop:
 					if (q_ins[j].ins_code != I_INFO)
 						break;
 				}
+			}
+
+			/* remove instructions from queue and begin again */
+			if (remove)
+				goto lv1_loop;
+		}
+
+		/* ********************************************************* */
+		/* 5-instruction patterns */
+		/* ********************************************************* */
+
+		if (p_nb >= 5) {
+			/*
+			 *  __ld.wm		zp	-->	__ld.wm             zp
+			 *  __add.wi		f               __add.wi            f
+			 *  __push.wr                           __push.wr
+			 *  __st.wm		__ptr		__ld.{w/b/u}pf	zp, f
+			 *  __ld.{w/b/u}p	__ptr
+			 *
+			 *  this optimizes the load of a zero-page pointer to a
+			 *  structure with "+=", "-=", "&=", "^=", "|=".
+			 */
+			if
+			((p[0]->ins_code == I_LD_WP ||
+			  p[0]->ins_code == I_LD_BP ||
+			  p[0]->ins_code == I_LD_UP) &&
+			 (p[0]->ins_type == T_PTR) &&
+			 (p[1]->ins_code == I_ST_WM) &&
+			 (p[1]->ins_type == T_PTR) &&
+			 (p[2]->ins_code == I_PUSH_WR) &&
+			 (p[3]->ins_code == I_ADD_WI) &&
+			 (p[3]->ins_type == T_VALUE) &&
+			 (p[3]->ins_data >= 1) &&
+			 (p[3]->ins_data <= 255) &&
+			 (p[4]->ins_code == I_LD_WM) &&
+			 (p[4]->ins_type == T_SYMBOL) &&
+			 (is_zp_pointer((SYMBOL *)p[4]->ins_data))
+			) {
+				/* replace code */
+				*p[1] = *p[4];
+				switch (p[0]->ins_code) {
+				case I_LD_WP: p[1]->ins_code = X_LD_WPF; break;
+				case I_LD_BP: p[1]->ins_code = X_LD_BPF; break;
+				case I_LD_UP: p[1]->ins_code = X_LD_UPF; break;
+				default: break;
+				}
+				p[1]->imm_type = T_VALUE;
+				p[1]->imm_data = p[3]->ins_data;
+				remove = 1;
 			}
 
 			/* remove instructions from queue and begin again */
@@ -3558,6 +3889,73 @@ lv1_loop:
 				p[3]->ins_type = T_SYMBOL;
 				p[3]->ins_data = p[2]->ins_data;
 				remove = 3;
+			}
+
+			/*
+			 *  __ld.wm		zp	-->	__ld.{w/b/u}pf	zp, f
+			 *  __add.wi		f
+			 *  __st.wm		__ptr
+			 *  __ld.{w/b/u}p	__ptr
+			 *
+			 *  Load through a zero-page pointer to a structure
+			 */
+			else if
+			((p[0]->ins_code == I_LD_WP ||
+			  p[0]->ins_code == I_LD_BP ||
+			  p[0]->ins_code == I_LD_UP) &&
+			 (p[0]->ins_type == T_PTR) &&
+			 (p[1]->ins_code == I_ST_WM) &&
+			 (p[1]->ins_type == T_PTR) &&
+			 (p[2]->ins_code == I_ADD_WI) &&
+			 (p[2]->ins_type == T_VALUE) &&
+			 (p[2]->ins_data >= 1) &&
+			 (p[2]->ins_data <= 255) &&
+			 (p[3]->ins_code == I_LD_WM) &&
+			 (p[3]->ins_type == T_SYMBOL) &&
+			 (is_zp_pointer((SYMBOL *)p[3]->ins_data))
+			) {
+				/* replace code */
+				switch (p[0]->ins_code) {
+				case I_LD_WP: p[3]->ins_code = X_LD_WPF; break;
+				case I_LD_BP: p[3]->ins_code = X_LD_BPF; break;
+				case I_LD_UP: p[3]->ins_code = X_LD_UPF; break;
+				default: break;
+				}
+				p[3]->imm_type = T_VALUE;
+				p[3]->imm_data = p[2]->ins_data;
+				remove = 3;
+			}
+
+			/*
+			 *  __ld.wm		zp	-->	__ld.wm		zp
+			 *  __push.wr                           __push.wr
+			 *  __st.wm		__ptr		__ld.{w/b/u}p	zp
+			 *  __ld.{w/b/u}p	__ptr
+			 *
+			 *  this optimizes the load of a zero-page pointer to
+			 *  memory with "+=", "-=", "&=", "^=", "|=".
+			 */
+			else if
+			((p[0]->ins_code == I_LD_WP ||
+			  p[0]->ins_code == I_LD_BP ||
+			  p[0]->ins_code == I_LD_UP) &&
+			 (p[0]->ins_type == T_PTR) &&
+			 (p[1]->ins_code == I_ST_WM) &&
+			 (p[1]->ins_type == T_PTR) &&
+			 (p[2]->ins_code == I_PUSH_WR) &&
+			 (p[3]->ins_code == I_LD_WM) &&
+			 (p[3]->ins_type == T_SYMBOL) &&
+			 (is_zp_pointer((SYMBOL *)p[3]->ins_data))
+			) {
+				/* replace code */
+				*p[1] = *p[3];
+				switch (p[0]->ins_code) {
+				case I_LD_WP: p[1]->ins_code = X_LD_WP; break;
+				case I_LD_BP: p[1]->ins_code = X_LD_BP; break;
+				case I_LD_UP: p[1]->ins_code = X_LD_UP; break;
+				default: break;
+				}
+				remove = 1;
 			}
 
 			/*
@@ -3773,6 +4171,34 @@ lv1_loop:
 			}
 
 			/*
+			 *  __ld.wm		zp	-->	__ld.{w/b/u}p	zp
+			 *  __st.wm		__ptr
+			 *  __ld.{w/b/u}p	__ptr
+			 *
+			 *  Load through a zero-page pointer to memory
+			 */
+			else if
+			((p[0]->ins_code == I_LD_WP ||
+			  p[0]->ins_code == I_LD_BP ||
+			  p[0]->ins_code == I_LD_UP) &&
+			 (p[0]->ins_type == T_PTR) &&
+			 (p[1]->ins_code == I_ST_WM) &&
+			 (p[1]->ins_type == T_PTR) &&
+			 (p[2]->ins_code == I_LD_WM) &&
+			 (p[2]->ins_type == T_SYMBOL) &&
+			 (is_zp_pointer((SYMBOL *)p[2]->ins_data))
+			) {
+				/* replace code */
+				switch (p[0]->ins_code) {
+				case I_LD_WP: p[2]->ins_code = X_LD_WP; break;
+				case I_LD_BP: p[2]->ins_code = X_LD_BP; break;
+				case I_LD_UP: p[2]->ins_code = X_LD_UP; break;
+				default: break;
+				}
+				remove = 2;
+			}
+
+			/*
 			 *  __push.wr			-->	__isub.wm	symbol
 			 *  __ld.wm		symbol
 			 *  __isub.wt
@@ -3808,6 +4234,10 @@ lv1_loop:
 			  p[0]->ins_code == I_OR_WT) &&
 			 (p[1]->ins_code == I_LD_WM ||
 			  p[1]->ins_code == I_LD_UM ||
+			  p[1]->ins_code == X_LD_WP ||
+			  p[1]->ins_code == X_LD_UP ||
+			  p[1]->ins_code == X_LD_WPF ||
+			  p[1]->ins_code == X_LD_UPF ||
 			  p[1]->ins_code == X_LD_WS ||
 			  p[1]->ins_code == X_LD_US) &&
 			 (p[2]->ins_code == I_PUSH_WR)
@@ -3834,6 +4264,52 @@ lv1_loop:
 					case I_AND_WT:  p[2]->ins_code = X_AND_UM; break;
 					case I_EOR_WT:  p[2]->ins_code = X_EOR_UM; break;
 					case I_OR_WT:   p[2]->ins_code = X_OR_UM; break;
+					default: break;
+					}
+					break;
+
+				case X_LD_WP:
+					switch (p[0]->ins_code) {
+					case X_ISUB_WT: p[2]->ins_code = X_ISUB_WP; break;
+					case I_ADD_WT:  p[2]->ins_code = X_ADD_WP; break;
+					case I_SUB_WT:  p[2]->ins_code = X_SUB_WP; break;
+					case I_AND_WT:  p[2]->ins_code = X_AND_WP; break;
+					case I_EOR_WT:  p[2]->ins_code = X_EOR_WP; break;
+					case I_OR_WT:   p[2]->ins_code = X_OR_WP; break;
+					default: break;
+					}
+					break;
+				case X_LD_UP:
+					switch (p[0]->ins_code) {
+					case X_ISUB_WT: p[2]->ins_code = X_ISUB_UP; break;
+					case I_ADD_WT:  p[2]->ins_code = X_ADD_UP; break;
+					case I_SUB_WT:  p[2]->ins_code = X_SUB_UP; break;
+					case I_AND_WT:  p[2]->ins_code = X_AND_UP; break;
+					case I_EOR_WT:  p[2]->ins_code = X_EOR_UP; break;
+					case I_OR_WT:   p[2]->ins_code = X_OR_UP; break;
+					default: break;
+					}
+					break;
+
+				case X_LD_WPF:
+					switch (p[0]->ins_code) {
+					case X_ISUB_WT: p[2]->ins_code = X_ISUB_WPF; break;
+					case I_ADD_WT:  p[2]->ins_code = X_ADD_WPF; break;
+					case I_SUB_WT:  p[2]->ins_code = X_SUB_WPF; break;
+					case I_AND_WT:  p[2]->ins_code = X_AND_WPF; break;
+					case I_EOR_WT:  p[2]->ins_code = X_EOR_WPF; break;
+					case I_OR_WT:   p[2]->ins_code = X_OR_WPF; break;
+					default: break;
+					}
+					break;
+				case X_LD_UPF:
+					switch (p[0]->ins_code) {
+					case X_ISUB_WT: p[2]->ins_code = X_ISUB_UPF; break;
+					case I_ADD_WT:  p[2]->ins_code = X_ADD_UPF; break;
+					case I_SUB_WT:  p[2]->ins_code = X_SUB_UPF; break;
+					case I_AND_WT:  p[2]->ins_code = X_AND_UPF; break;
+					case I_EOR_WT:  p[2]->ins_code = X_EOR_UPF; break;
+					case I_OR_WT:   p[2]->ins_code = X_OR_UPF; break;
 					default: break;
 					}
 					break;
@@ -4030,6 +4506,10 @@ lv1_loop:
 			 *  __bool				is_usepr()
 			 *  is_usepr()
 			 *
+			 *  __not.{w/u}pf		-->	__boolnot.{w/u}pf
+			 *  __bool				is_usepr()
+			 *  is_usepr()
+			 *
 			 *  __not.{w/u}m	symbol	-->	__boolnot.{w/u}m	symbol
 			 *  __bool				is_usepr()
 			 *  is_usepr()
@@ -4060,10 +4540,12 @@ lv1_loop:
 			 (p[1]->ins_code == I_BOOLEAN) &&
 			 (p[2]->ins_code == I_NOT_WR ||
 			  p[2]->ins_code == X_NOT_WP ||
+			  p[2]->ins_code == X_NOT_WPF ||
 			  p[2]->ins_code == X_NOT_WM ||
 			  p[2]->ins_code == X_NOT_WS ||
 			  p[2]->ins_code == X_NOT_WAR ||
 			  p[2]->ins_code == X_NOT_UP ||
+			  p[2]->ins_code == X_NOT_UPF ||
 			  p[2]->ins_code == X_NOT_UM ||
 			  p[2]->ins_code == X_NOT_US ||
 			  p[2]->ins_code == X_NOT_UAR ||
@@ -4075,10 +4557,12 @@ lv1_loop:
 				switch (p[2]->ins_code) {
 				case I_NOT_WR:   p[2]->ins_code = X_BOOLNOT_WR; break;
 				case X_NOT_WP:   p[2]->ins_code = X_BOOLNOT_WP; break;
+				case X_NOT_WPF:  p[2]->ins_code = X_BOOLNOT_WPF; break;
 				case X_NOT_WM:   p[2]->ins_code = X_BOOLNOT_WM; break;
 				case X_NOT_WS:   p[2]->ins_code = X_BOOLNOT_WS; break;
 				case X_NOT_WAR:  p[2]->ins_code = X_BOOLNOT_WAR; break;
 				case X_NOT_UP:   p[2]->ins_code = X_BOOLNOT_UP; break;
+				case X_NOT_UPF:  p[2]->ins_code = X_BOOLNOT_UPF; break;
 				case X_NOT_UM:   p[2]->ins_code = X_BOOLNOT_UM; break;
 				case X_NOT_US:   p[2]->ins_code = X_BOOLNOT_US; break;
 				case X_NOT_UAR:  p[2]->ins_code = X_BOOLNOT_UAR; break;
@@ -4985,14 +5469,29 @@ lv1_loop:
 		 *  __ld.wi			symbol	-->	...
 		 *  __push.wr					__st.{w/u}m	symbol
 		 *    ...
-		 *  __st.{w/u}pt
+		 *  __st.{w/u}t
 		 *
 		 * this covers storing to local variables ...
 		 *
 		 *  __lea.s			n	-->	...
 		 *  __push.wr					__st.{w/u}s	n
 		 *    ...
-		 *  __st.{w/u}pt
+		 *  __st.{w/u}t
+		 *
+		 * this covers storing through zero-page pointers to memory ...
+		 *
+		 *  __ld.wm			zp	-->	...
+		 *  __push.wr					__st.{w/u}p	zp
+		 *    ...
+		 *  __st.{w/u}t
+		 *
+		 * this covers storing through zero-page pointers to structures ...
+		 *
+		 *  __ld.wm			zp	-->	...
+		 *  __add.wi			f		__st.{w/u}pf	zp, f
+		 *  __push.wr
+		 *    ...
+		 *  __st.{w/u}t
 		 *
 		 * this covers storing to global and static arrays with "=" ...
 		 *
@@ -5000,24 +5499,24 @@ lv1_loop:
 		 *  __add.wi			array		...
 		 *  __push.wr					__st.wat	array
 		 *    ...
-		 *  __st.wpt
+		 *  __st.wt
 		 *
 		 *  __add.wi			array	-->	__index.ur	array
 		 *  __push.wr					...
 		 *    ...					__st.uat	array
-		 *  __st.upt
+		 *  __st.ut
 		 *
 		 *  __ld.{w/b/u}{m/s}		symbol	-->	__index.wr	array
 		 *  __asl.wr
 		 *  __add.wi			array		...
 		 *  __push.wr					__st.wat	array
 		 *    ...
-		 *  __st.wpt
+		 *  __st.wt
 		 *
 		 *  __add.wi			array	-->	__index.ur	array
 		 *  __push.wr					...
 		 *    ...					__st.uat	array
-		 *  __st.upt
+		 *  __st.ut
 		 *
 		 * this covers storing to global and static arrays with "+=", "-=", etc ...
 		 *
@@ -5027,14 +5526,14 @@ lv1_loop:
 		 *  __st.wm			__ptr
 		 *  __ld.wp			__ptr
 		 *    ...
-		 *  __st.wpt
+		 *  __st.wt
 		 *
 		 *  __add.wi			array	-->	__ldp.uar	array
 		 *  __push.wr					...
 		 *  __st.wm			__ptr		__st.uat	array
 		 *  __ld.up			__ptr
 		 *    ...
-		 *  __st.upt
+		 *  __st.ut
 		 */
 
 		if (q_nb > 1 &&
@@ -5082,15 +5581,29 @@ lv1_loop:
 
 				if ((q_ins[scan].ins_code != I_LD_WI) &&
 				    (q_ins[scan].ins_code != I_LEA_S) &&
-				    (q_ins[scan].ins_code != I_ADD_WI))
+				    (q_ins[scan].ins_code != I_ADD_WI) &&
+				    (q_ins[scan].ins_code != I_LD_WM ||
+				     q_ins[scan].ins_type != T_SYMBOL ||
+				     !is_zp_pointer((SYMBOL *)q_ins[scan].ins_data)))
 					break;
 
-				if ((q_ins[scan].ins_code == I_ADD_WI) &&
-				    (q_ins[scan].ins_type != T_SYMBOL ||
-				     !is_small_array((SYMBOL *)q_ins[scan].ins_data)))
-					break;
+				if (q_ins[scan].ins_code == I_ADD_WI) {
+					if ((q_ins[scan].ins_type == T_SYMBOL) &&
+					    (is_small_array((SYMBOL *)q_ins[scan].ins_data)))
+						{ /* small array access */ }
+					else
+					if ((q_ins[scan].ins_type == T_VALUE) &&
+					    (q_ins[scan].ins_data >= 1) &&
+					    (q_ins[scan].ins_data <= 255) &&
+					    (q_ins[prev].ins_code == I_LD_WM) &&
+					    (q_ins[prev].ins_type == T_SYMBOL) &&
+					    (is_zp_pointer((SYMBOL *)q_ins[prev].ins_data)))
+						{ /* zero-page pointer to structure */ }
+					else
+						break;
+				}
 
-				/* change __st.wpt into __st.{w/u}m */
+				/* change __st.wt into __st.{w/u}m */
 				if (q_ins[scan].ins_code == I_LD_WI) {
 					q_ins[q_wr] = q_ins[scan];
 					if (old_code == I_ST_WT)
@@ -5099,7 +5612,7 @@ lv1_loop:
 						q_ins[q_wr].ins_code = I_ST_UM;
 				} else
 
-				/* change __st.wpt into __st.{w/u}s */
+				/* change __st.wt into __st.{w/u}s */
 				if (q_ins[scan].ins_code == I_LEA_S) {
 					q_ins[q_wr] = q_ins[scan];
 					if (old_code == I_ST_WT)
@@ -5108,7 +5621,7 @@ lv1_loop:
 						q_ins[q_wr].ins_code = X_ST_US;
 				} else
 
-				/* change __st.wpt into __st.{w/u}at */
+				/* change __st.wt into __st.{w/u}at */
 				if ((q_ins[scan].ins_code == I_ADD_WI) &&
 				    (q_ins[scan].ins_type == T_SYMBOL) &&
 				    (is_small_array((SYMBOL *)q_ins[scan].ins_data))) {
@@ -5172,6 +5685,35 @@ lv1_loop:
 					q_ins[q_wr].ins_data = q_ins[scan].ins_data;
 				} else
 
+				/* change __st.wt into __st.{w/u}p */
+
+				if ((q_ins[scan].ins_code == I_LD_WM) &&
+				    (q_ins[scan].ins_type == T_SYMBOL) &&
+				    (is_zp_pointer((SYMBOL *)q_ins[scan].ins_data))) {
+					q_ins[q_wr] = q_ins[scan];
+					if (old_code == I_ST_WT)
+						q_ins[q_wr].ins_code = X_ST_WP;
+					else
+						q_ins[q_wr].ins_code = X_ST_UP;
+				} else
+
+				/* change __st.wt into __st.{w/u}pf */
+
+				if ((q_ins[prev].ins_code == I_LD_WM) &&
+				    (q_ins[prev].ins_type == T_SYMBOL) &&
+				    (is_zp_pointer((SYMBOL *)q_ins[prev].ins_data))) {
+					q_ins[q_wr] = q_ins[prev];
+					q_ins[q_wr].imm_type = T_VALUE;
+					q_ins[q_wr].imm_data = q_ins[scan].ins_data;
+					if (old_code == I_ST_WT)
+						q_ins[q_wr].ins_code = X_ST_WPF;
+					else
+						q_ins[q_wr].ins_code = X_ST_UPF;
+
+					/* drop the I_LD_WM i-code */
+					drop += 1;
+				} else
+
 					/* this is something that we can't reschedule */
 					break;
 
@@ -5212,6 +5754,16 @@ lv1_loop:
 		 *
 		 *  __ld.{w/u}m			symbol	-->	...
 		 *  __push.wr					__add.{w/u}m	symbol
+		 *    ...
+		 *  __add.wt
+		 *
+		 *  __ld.{w/u}p			pointer	-->	...
+		 *  __push.wr					__add.{w/u}p	pointer
+		 *    ...
+		 *  __add.wt
+		 *
+		 *  __ld.{w/u}pf		pointer	-->	...
+		 *  __push.wr					__add.{w/u}pf	pointer
 		 *    ...
 		 *  __add.wt
 		 *
@@ -5287,6 +5839,10 @@ lv1_loop:
 				if (q_ins[scan].ins_code != I_LD_WI &&
 				    q_ins[scan].ins_code != I_LD_WM &&
 				    q_ins[scan].ins_code != I_LD_UM &&
+				    q_ins[scan].ins_code != X_LD_WP &&
+				    q_ins[scan].ins_code != X_LD_UP &&
+				    q_ins[scan].ins_code != X_LD_WPF &&
+				    q_ins[scan].ins_code != X_LD_UPF &&
 				    q_ins[scan].ins_code != X_LD_WS &&
 				    q_ins[scan].ins_code != X_LD_US &&
 				    q_ins[scan].ins_code != X_LD_WAR &&
@@ -5337,6 +5893,58 @@ lv1_loop:
 					case  I_AND_WT: q_ins[q_wr].ins_code =  X_AND_UM; break;
 					case  I_EOR_WT: q_ins[q_wr].ins_code =  X_EOR_UM; break;
 					case   I_OR_WT: q_ins[q_wr].ins_code =   X_OR_UM; break;
+					default: break;
+					}
+				} else
+
+				if (q_ins[scan].ins_code == X_LD_WP) {
+					q_ins[q_wr] = q_ins[scan];
+					switch (old_code) {
+					case X_ISUB_WT: q_ins[q_wr].ins_code =  X_SUB_WP; break;
+					case  I_ADD_WT: q_ins[q_wr].ins_code =  X_ADD_WP; break;
+					case  I_SUB_WT: q_ins[q_wr].ins_code = X_ISUB_WP; break;
+					case  I_AND_WT: q_ins[q_wr].ins_code =  X_AND_WP; break;
+					case  I_EOR_WT: q_ins[q_wr].ins_code =  X_EOR_WP; break;
+					case   I_OR_WT: q_ins[q_wr].ins_code =   X_OR_WP; break;
+					default: break;
+					}
+				} else
+
+				if (q_ins[scan].ins_code == X_LD_UP) {
+					q_ins[q_wr] = q_ins[scan];
+					switch (old_code) {
+					case X_ISUB_WT: q_ins[q_wr].ins_code =  X_SUB_UP; break;
+					case  I_ADD_WT: q_ins[q_wr].ins_code =  X_ADD_UP; break;
+					case  I_SUB_WT: q_ins[q_wr].ins_code = X_ISUB_UP; break;
+					case  I_AND_WT: q_ins[q_wr].ins_code =  X_AND_UP; break;
+					case  I_EOR_WT: q_ins[q_wr].ins_code =  X_EOR_UP; break;
+					case   I_OR_WT: q_ins[q_wr].ins_code =   X_OR_UP; break;
+					default: break;
+					}
+				} else
+
+				if (q_ins[scan].ins_code == X_LD_WPF) {
+					q_ins[q_wr] = q_ins[scan];
+					switch (old_code) {
+					case X_ISUB_WT: q_ins[q_wr].ins_code =  X_SUB_WPF; break;
+					case  I_ADD_WT: q_ins[q_wr].ins_code =  X_ADD_WPF; break;
+					case  I_SUB_WT: q_ins[q_wr].ins_code = X_ISUB_WPF; break;
+					case  I_AND_WT: q_ins[q_wr].ins_code =  X_AND_WPF; break;
+					case  I_EOR_WT: q_ins[q_wr].ins_code =  X_EOR_WPF; break;
+					case   I_OR_WT: q_ins[q_wr].ins_code =   X_OR_WPF; break;
+					default: break;
+					}
+				} else
+
+				if (q_ins[scan].ins_code == X_LD_UPF) {
+					q_ins[q_wr] = q_ins[scan];
+					switch (old_code) {
+					case X_ISUB_WT: q_ins[q_wr].ins_code =  X_SUB_UPF; break;
+					case  I_ADD_WT: q_ins[q_wr].ins_code =  X_ADD_UPF; break;
+					case  I_SUB_WT: q_ins[q_wr].ins_code = X_ISUB_UPF; break;
+					case  I_AND_WT: q_ins[q_wr].ins_code =  X_AND_UPF; break;
+					case  I_EOR_WT: q_ins[q_wr].ins_code =  X_EOR_UPF; break;
+					case   I_OR_WT: q_ins[q_wr].ins_code =   X_OR_UPF; break;
 					default: break;
 					}
 				} else
@@ -5776,7 +6384,7 @@ lv2_loop:
 			/*
 			 *  __push.wr			-->	__st.{w/u}pi	i
 			 *  __ld.wi		i
-			 *  __st.{w/u}pt
+			 *  __st.{w/u}t
 			 *
 			 *  This cannot be done earlier because it screws up
 			 *  the reordering optimization above.
@@ -5799,7 +6407,7 @@ lv2_loop:
 			/*
 			 *  __push.wr			-->	__st.wm		__ptr
 			 *  <load>				<load>
-			 *  __st.{w/u}pt			__st.{w/u}p	__ptr
+			 *  __st.{w/u}t				__st.{w/u}p	__ptr
 			 *
 			 *  This cannot be done earlier because it screws up
 			 *  the reordering optimization above.
@@ -5857,6 +6465,10 @@ void try_swap_order (int linst, int lseqn, INS *operation)
 		((q_ins[linst].ins_code == I_LD_WI) ||
 		 (q_ins[linst].ins_code == I_LD_WM) ||
 		 (q_ins[linst].ins_code == I_LD_UM) ||
+		 (q_ins[linst].ins_code == X_LD_WP) ||
+		 (q_ins[linst].ins_code == X_LD_UP) ||
+		 (q_ins[linst].ins_code == X_LD_WPF) ||
+		 (q_ins[linst].ins_code == X_LD_UPF) ||
 		 (q_ins[linst].ins_code == X_LD_WS) ||
 		 (q_ins[linst].ins_code == X_LD_US)
 		) {

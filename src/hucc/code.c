@@ -652,6 +652,42 @@ char gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_CMP_WP:
+		ot("__");
+		outstr(compare2str[tmp->cmp_type]);
+		outstr("_w.wp\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_CMP_UP:
+		ot("__");
+		outstr(compare2str[tmp->cmp_type]);
+		outstr("_w.up\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_CMP_WPF:
+		ot("__");
+		outstr(compare2str[tmp->cmp_type]);
+		outstr("_w.wpf\t");
+		out_type(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
+		nl();
+		break;
+
+	case X_CMP_UPF:
+		ot("__");
+		outstr(compare2str[tmp->cmp_type]);
+		outstr("_w.upf\t");
+		out_type(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
+		nl();
+		break;
+
 	case X_CMP_WS:
 		ot("__");
 		outstr(compare2str[tmp->cmp_type]);
@@ -702,6 +738,22 @@ char gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_CMP_UPQ:
+		ot("__");
+		outstr(compare2str[tmp->cmp_type]);
+		outstr("_b.upq\t");
+		out_type(type, data);
+		nl();
+		break;
+
+	case X_CMP_UPFQ:
+		ot("__");
+		outstr(compare2str[tmp->cmp_type]);
+		outstr("_b.upfq\t");
+		out_type(type, data);
+		nl();
+		break;
+
 	case X_CMP_USQ:
 		ot("__");
 		outstr(compare2str[tmp->cmp_type]);
@@ -726,6 +778,14 @@ char gen_code (INS *tmp)
 	case X_NOT_WP:
 		ot("__not.wp\t");
 		out_addr(type, data);
+		nl();
+		break;
+
+	case X_NOT_WPF:
+		ot("__not.wpf\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
 		nl();
 		break;
 
@@ -756,6 +816,14 @@ char gen_code (INS *tmp)
 	case X_NOT_UP:
 		ot("__not.up\t");
 		out_addr(type, data);
+		nl();
+		break;
+
+	case X_NOT_UPF:
+		ot("__not.upf\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
 		nl();
 		break;
 
@@ -800,6 +868,14 @@ char gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_TST_WPF:
+		ot("__tst.wpf\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
+		nl();
+		break;
+
 	case X_TST_WM:
 		ot("__tst.wm\t");
 		out_addr(type, data);
@@ -828,6 +904,14 @@ char gen_code (INS *tmp)
 	case X_TST_UP:
 		ot("__tst.up\t");
 		out_addr(type, data);
+		nl();
+		break;
+
+	case X_TST_UPF:
+		ot("__tst.upf\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
 		nl();
 		break;
 
@@ -892,6 +976,14 @@ char gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_BOOLNOT_WPF:
+		ot("__boolnot.wpf\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
+		nl();
+		break;
+
 	case X_BOOLNOT_WM:
 		ot("__boolnot.wm\t");
 		out_addr(type, data);
@@ -919,6 +1011,14 @@ char gen_code (INS *tmp)
 	case X_BOOLNOT_UP:
 		ot("__boolnot.up\t");
 		out_addr(type, data);
+		nl();
+		break;
+
+	case X_BOOLNOT_UPF:
+		ot("__boolnot.upf\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
 		nl();
 		break;
 
@@ -1100,9 +1200,59 @@ char gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_LD_WP:
+		ot("__ld.wp\t\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_LD_BP:
+		ot("__ld.bp\t\t");
+		out_addr(type, data);
+		nl();
+		break;
+
+	case X_LD_UP:
+		ot("__ld.up\t\t");
+		out_addr(type, data);
+		nl();
+		break;
+
 	case X_LD_UPQ:
 		ot("__ld.upq\t");
 		out_addr(type, data);
+		nl();
+		break;
+
+	case X_LD_WPF:
+		ot("__ld.wpf\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
+		nl();
+		break;
+
+	case X_LD_BPF:
+		ot("__ld.bpf\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
+		nl();
+		break;
+
+	case X_LD_UPF:
+		ot("__ld.upf\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
+		nl();
+		break;
+
+	case X_LD_UPFQ:
+		ot("__ld.upfq\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
 		nl();
 		break;
 
@@ -1906,6 +2056,38 @@ char gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_ST_WPF:
+		ot("__st.wpf\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
+		nl();
+		break;
+
+	case X_ST_UPF:
+		ot("__st.upf\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
+		nl();
+		break;
+
+	case X_ST_WPFQ:
+		ot("__st.wpfq\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
+		nl();
+		break;
+
+	case X_ST_UPFQ:
+		ot("__st.upfq\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
+		nl();
+		break;
+
 	case X_ST_WS:
 		ot("__st.ws\t\t");
 		outdec((int)data);
@@ -2098,6 +2280,22 @@ char gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_ADD_WPF:
+		ot("__add.wpf\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
+		nl();
+		break;
+
+	case X_ADD_UPF:
+		ot("__add.upf\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
+		nl();
+		break;
+
 	case X_ADD_WS:
 		ot("__add.ws\t");
 		outdec((int)data);
@@ -2167,6 +2365,22 @@ char gen_code (INS *tmp)
 	case X_SUB_UP:
 		ot("__sub.up\t");
 		out_addr(type, data);
+		nl();
+		break;
+
+	case X_SUB_WPF:
+		ot("__sub.wpf\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
+		nl();
+		break;
+
+	case X_SUB_UPF:
+		ot("__sub.upf\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
 		nl();
 		break;
 
@@ -2242,6 +2456,22 @@ char gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_ISUB_WPF:
+		ot("__isub.wpf\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
+		nl();
+		break;
+
+	case X_ISUB_UPF:
+		ot("__isub.upf\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
+		nl();
+		break;
+
 	case X_ISUB_WS:
 		ot("__isub.ws\t");
 		outdec((int)data);
@@ -2311,6 +2541,22 @@ char gen_code (INS *tmp)
 	case X_AND_UP:
 		ot("__and.up\t");
 		out_addr(type, data);
+		nl();
+		break;
+
+	case X_AND_WPF:
+		ot("__and.wpf\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
+		nl();
+		break;
+
+	case X_AND_UPF:
+		ot("__and.upf\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
 		nl();
 		break;
 
@@ -2386,6 +2632,22 @@ char gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_EOR_WPF:
+		ot("__eor.wpf\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
+		nl();
+		break;
+
+	case X_EOR_UPF:
+		ot("__eor.upf\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
+		nl();
+		break;
+
 	case X_EOR_WS:
 		ot("__eor.ws\t");
 		outdec((int)data);
@@ -2449,6 +2711,22 @@ char gen_code (INS *tmp)
 	case X_OR_WP:
 		ot("__or.wp\t\t");
 		out_addr(type, data);
+		nl();
+		break;
+
+	case X_OR_UPF:
+		ot("__or.upf\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
+		nl();
+		break;
+
+	case X_OR_WPF:
+		ot("__or.wpf\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
 		nl();
 		break;
 
