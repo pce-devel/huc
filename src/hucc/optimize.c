@@ -135,11 +135,13 @@ unsigned char icode_flags[] = {
 
 	/* I_NOT_WR             */	IS_USEPR,
 	/* X_NOT_WP             */	0,
+	/* X_NOT_WPF            */	0,
 	/* X_NOT_WM             */	0,
 	/* X_NOT_WS             */	IS_SPREL,
 	/* X_NOT_WAR            */	0,
 	/* X_NOT_WAX            */	0,
 	/* X_NOT_UP             */	0,
+	/* X_NOT_UPF            */	0,
 	/* X_NOT_UM             */	0,
 	/* X_NOT_US             */	IS_SPREL,
 	/* X_NOT_UAR            */	0,
@@ -148,11 +150,13 @@ unsigned char icode_flags[] = {
 
 	/* I_TST_WR             */	IS_USEPR,
 	/* X_TST_WP             */	0,
+	/* X_TST_WPF            */	0,
 	/* X_TST_WM             */	0,
 	/* X_TST_WS             */	IS_SPREL,
 	/* X_TST_WAR            */	0,
 	/* X_TST_WAX            */	0,
 	/* X_TST_UP             */	0,
+	/* X_TST_UPF            */	0,
 	/* X_TST_UM             */	0,
 	/* X_TST_US             */	IS_SPREL,
 	/* X_TST_UAR            */	0,
@@ -168,12 +172,14 @@ unsigned char icode_flags[] = {
 
 	/* X_BOOLNOT_WR         */	IS_USEPR,
 	/* X_BOOLNOT_WP         */	0,
+	/* X_BOOLNOT_WPF         */	0,
 	/* X_BOOLNOT_WM         */	0,
 	/* X_BOOLNOT_WS         */	IS_SPREL,
 	/* X_BOOLNOT_WAR        */	0,
 	/* X_BOOLNOT_WAX        */	0,
 
 	/* X_BOOLNOT_UP         */	0,
+	/* X_BOOLNOT_UPF        */	0,
 	/* X_BOOLNOT_UM         */	0,
 	/* X_BOOLNOT_US         */	IS_SPREL,
 	/* X_BOOLNOT_UAR        */	0,
@@ -794,11 +800,13 @@ enum ICODE short_icode[] = {
 
 	/* I_NOT_WR             */	0,
 	/* X_NOT_WP             */	0,
+	/* X_NOT_WPF            */	0,
 	/* X_NOT_WM             */	0,
 	/* X_NOT_WS             */	0,
 	/* X_NOT_WAR            */	0,
 	/* X_NOT_WAX            */	0,
 	/* X_NOT_UP             */	0,
+	/* X_NOT_UPF            */	0,
 	/* X_NOT_UM             */	0,
 	/* X_NOT_US             */	0,
 	/* X_NOT_UAR            */	0,
@@ -807,11 +815,13 @@ enum ICODE short_icode[] = {
 
 	/* I_TST_WR             */	0,
 	/* X_TST_WP             */	0,
+	/* X_TST_WPF            */	0,
 	/* X_TST_WM             */	0,
 	/* X_TST_WS             */	0,
 	/* X_TST_WAR            */	0,
 	/* X_TST_WAX            */	0,
 	/* X_TST_UP             */	0,
+	/* X_TST_UPF            */	0,
 	/* X_TST_UM             */	0,
 	/* X_TST_US             */	0,
 	/* X_TST_UAR            */	0,
@@ -827,12 +837,14 @@ enum ICODE short_icode[] = {
 
 	/* X_BOOLNOT_WR         */	0,
 	/* X_BOOLNOT_WP         */	0,
+	/* X_BOOLNOT_WPF        */	0,
 	/* X_BOOLNOT_WM         */	0,
 	/* X_BOOLNOT_WS         */	0,
 	/* X_BOOLNOT_WAR        */	0,
 	/* X_BOOLNOT_WAX        */	0,
 
 	/* X_BOOLNOT_UP         */	0,
+	/* X_BOOLNOT_UPF        */	0,
 	/* X_BOOLNOT_UM         */	0,
 	/* X_BOOLNOT_US         */	0,
 	/* X_BOOLNOT_UAR        */	0,
@@ -3057,6 +3069,10 @@ lv1_loop:
 			 *  __bool
 			 *  __not.wr
 			 *
+			 *  __not.{w/u}pf		-->	__tst.{w/u}pf
+			 *  __bool
+			 *  __not.wr
+			 *
 			 *  __not.{w/u}m	symbol	-->	__tst.{w/u}m	symbol
 			 *  __bool
 			 *  __not.wr
@@ -3086,6 +3102,10 @@ lv1_loop:
 			 *  __not.wr
 			 *
 			 *  __tst.{w/u}p		-->	__not.{w/u}p
+			 *  __bool
+			 *  __not.wr
+			 *
+			 *  __tst.{w/u}pf		-->	__not.{w/u}pf
 			 *  __bool
 			 *  __not.wr
 			 *
@@ -3120,11 +3140,13 @@ lv1_loop:
 			 (p[1]->ins_code == I_BOOLEAN) &&
 			 (p[2]->ins_code == I_NOT_WR ||
 			  p[2]->ins_code == X_NOT_WP ||
+			  p[2]->ins_code == X_NOT_WPF ||
 			  p[2]->ins_code == X_NOT_WM ||
 			  p[2]->ins_code == X_NOT_WS ||
 			  p[2]->ins_code == X_NOT_WAR ||
 			  p[2]->ins_code == X_NOT_WAX ||
 			  p[2]->ins_code == X_NOT_UP ||
+			  p[2]->ins_code == X_NOT_UPF ||
 			  p[2]->ins_code == X_NOT_UM ||
 			  p[2]->ins_code == X_NOT_US ||
 			  p[2]->ins_code == X_NOT_UAR ||
@@ -3133,11 +3155,13 @@ lv1_loop:
 			  p[2]->ins_code == X_NAND_WI ||
 			  p[2]->ins_code == I_TST_WR ||
 			  p[2]->ins_code == X_TST_WP ||
+			  p[2]->ins_code == X_TST_WPF ||
 			  p[2]->ins_code == X_TST_WM ||
 			  p[2]->ins_code == X_TST_WS ||
 			  p[2]->ins_code == X_TST_WAR ||
 			  p[2]->ins_code == X_TST_WAX ||
 			  p[2]->ins_code == X_TST_UP ||
+			  p[2]->ins_code == X_TST_UPF ||
 			  p[2]->ins_code == X_TST_UM ||
 			  p[2]->ins_code == X_TST_US ||
 			  p[2]->ins_code == X_TST_UAR ||
@@ -3148,11 +3172,13 @@ lv1_loop:
 				switch (p[2]->ins_code) {
 				case I_NOT_WR:   p[2]->ins_code = I_TST_WR; break;
 				case X_NOT_WP:   p[2]->ins_code = X_TST_WP; break;
+				case X_NOT_WPF:  p[2]->ins_code = X_TST_WPF; break;
 				case X_NOT_WM:   p[2]->ins_code = X_TST_WM; break;
 				case X_NOT_WS:   p[2]->ins_code = X_TST_WS; break;
 				case X_NOT_WAR:  p[2]->ins_code = X_TST_WAR; break;
 				case X_NOT_WAX:  p[2]->ins_code = X_TST_WAX; break;
 				case X_NOT_UP:   p[2]->ins_code = X_TST_UP; break;
+				case X_NOT_UPF:  p[2]->ins_code = X_TST_UPF; break;
 				case X_NOT_UM:   p[2]->ins_code = X_TST_UM; break;
 				case X_NOT_US:   p[2]->ins_code = X_TST_US; break;
 				case X_NOT_UAR:  p[2]->ins_code = X_TST_UAR; break;
@@ -3161,11 +3187,13 @@ lv1_loop:
 				case X_NAND_WI:  p[2]->ins_code = X_TAND_WI; break;
 				case I_TST_WR:   p[2]->ins_code = I_NOT_WR; break;
 				case X_TST_WP:   p[2]->ins_code = X_NOT_WP; break;
+				case X_TST_WPF:  p[2]->ins_code = X_NOT_WPF; break;
 				case X_TST_WM:   p[2]->ins_code = X_NOT_WM; break;
 				case X_TST_WS:   p[2]->ins_code = X_NOT_WS; break;
 				case X_TST_WAR:  p[2]->ins_code = X_NOT_WAR; break;
 				case X_TST_WAX:  p[2]->ins_code = X_NOT_WAX; break;
 				case X_TST_UP:   p[2]->ins_code = X_NOT_UP; break;
+				case X_TST_UPF:  p[2]->ins_code = X_NOT_UPF; break;
 				case X_TST_UM:   p[2]->ins_code = X_NOT_UM; break;
 				case X_TST_US:   p[2]->ins_code = X_NOT_US; break;
 				case X_TST_UAR:  p[2]->ins_code = X_NOT_UAR; break;
@@ -3238,6 +3266,10 @@ lv1_loop:
 			 *  __bool
 			 *  __tst.wr
 			 *
+			 *  __not.{w/u}pf		-->	__not.{w/u}pf
+			 *  __bool
+			 *  __tst.wr
+			 *
 			 *  __not.{w/u}m	symbol	-->	__not.{w/u}m	symbol
 			 *  __bool
 			 *  __tst.wr
@@ -3267,6 +3299,10 @@ lv1_loop:
 			 *  __tst.wr
 			 *
 			 *  __tst.{w/u}p		-->	__tst.{w/u}p
+			 *  __bool
+			 *  __tst.wr
+			 *
+			 *  __tst.{w/u}pf		-->	__tst.{w/u}pf
 			 *  __bool
 			 *  __tst.wr
 			 *
@@ -3321,11 +3357,13 @@ lv1_loop:
 			  p[2]->ins_code == X_CMP_UAXQ ||
 			  p[2]->ins_code == I_NOT_WR ||
 			  p[2]->ins_code == X_NOT_WP ||
+			  p[2]->ins_code == X_NOT_WPF ||
 			  p[2]->ins_code == X_NOT_WM ||
 			  p[2]->ins_code == X_NOT_WS ||
 			  p[2]->ins_code == X_NOT_WAR ||
 			  p[2]->ins_code == X_NOT_WAX ||
 			  p[2]->ins_code == X_NOT_UP ||
+			  p[2]->ins_code == X_NOT_UPF ||
 			  p[2]->ins_code == X_NOT_UM ||
 			  p[2]->ins_code == X_NOT_US ||
 			  p[2]->ins_code == X_NOT_UAR ||
@@ -3334,11 +3372,13 @@ lv1_loop:
 			  p[2]->ins_code == X_NAND_WI ||
 			  p[2]->ins_code == I_TST_WR ||
 			  p[2]->ins_code == X_TST_WP ||
+			  p[2]->ins_code == X_TST_WPF ||
 			  p[2]->ins_code == X_TST_WM ||
 			  p[2]->ins_code == X_TST_WS ||
 			  p[2]->ins_code == X_TST_WAR ||
 			  p[2]->ins_code == X_TST_WAX ||
 			  p[2]->ins_code == X_TST_UP ||
+			  p[2]->ins_code == X_TST_UPF ||
 			  p[2]->ins_code == X_TST_UM ||
 			  p[2]->ins_code == X_TST_US ||
 			  p[2]->ins_code == X_TST_UAR ||
@@ -3357,6 +3397,9 @@ lv1_loop:
 		if (p_nb >= 2) {
 			/*
 			 *  __ld.{w/b/u}p		-->	__tst.{w/u}p
+			 *  __tst.wr
+			 *
+			 *  __ld.{w/b/u}pf		-->	__tst.{w/u}pf
 			 *  __tst.wr
 			 *
 			 *  __ld.{w/b/u}m	symbol	-->	__tst.{w/u}m	symbol
@@ -3378,6 +3421,9 @@ lv1_loop:
 			 *  __tst.wr
 			 *
 			 *  __ld.{w/b/u}p		-->	__not.{w/u}p
+			 *  __not.wr
+			 *
+			 *  __ld.{w/b/u}pf		-->	__not.{w/u}pf
 			 *  __not.wr
 			 *
 			 *  __ld.{w/b/u}m	symbol	-->	__not.{w/u}m	symbol
@@ -3403,17 +3449,23 @@ lv1_loop:
 			 (p[0]->ins_code == I_TST_WR ||
 			  p[0]->ins_code == I_NOT_WR) &&
 			 (p[1]->ins_code == I_LD_WP ||
+			  p[1]->ins_code == X_LD_WP ||
+			  p[1]->ins_code == X_LD_WPF ||
 			  p[1]->ins_code == I_LD_WM ||
 			  p[1]->ins_code == X_LD_WS ||
 			  p[1]->ins_code == X_LD_WAR ||
 			  p[1]->ins_code == X_LD_WAX ||
 			  p[1]->ins_code == I_LD_BP ||
+			  p[1]->ins_code == X_LD_BP ||
+			  p[1]->ins_code == X_LD_BPF ||
 			  p[1]->ins_code == I_LD_BM ||
 			  p[1]->ins_code == X_LD_BS ||
 			  p[1]->ins_code == X_LD_BAR ||
 			  p[1]->ins_code == X_LD_BAX ||
 			  p[1]->ins_code == X_LD_BAY ||
 			  p[1]->ins_code == I_LD_UP ||
+			  p[1]->ins_code == X_LD_UP ||
+			  p[1]->ins_code == X_LD_UPF ||
 			  p[1]->ins_code == I_LD_UM ||
 			  p[1]->ins_code == X_LD_US ||
 			  p[1]->ins_code == X_LD_UAR ||
@@ -3425,13 +3477,19 @@ lv1_loop:
 				/* remove code */
 				if (p[0]->ins_code == I_TST_WR) {
 					switch (p[1]->ins_code) {
-					case I_LD_WP:  p[1]->ins_code = X_TST_WP; break;
+					case I_LD_WP:
+					case X_LD_WP:  p[1]->ins_code = X_TST_WP; break;
+					case X_LD_WPF: p[1]->ins_code = X_TST_WPF; break;
 					case I_LD_WM:  p[1]->ins_code = X_TST_WM; break;
 					case X_LD_WS:  p[1]->ins_code = X_TST_WS; break;
 					case X_LD_WAR: p[1]->ins_code = X_TST_WAR; break;
 					case X_LD_WAX: p[1]->ins_code = X_TST_WAX; break;
 					case I_LD_BP:
-					case I_LD_UP:  p[1]->ins_code = X_TST_UP; break;
+					case I_LD_UP:
+					case X_LD_BP:
+					case X_LD_UP:  p[1]->ins_code = X_TST_UP; break;
+					case X_LD_BPF:
+					case X_LD_UPF: p[1]->ins_code = X_TST_UPF; break;
 					case I_LD_BM:
 					case I_LD_UM:  p[1]->ins_code = X_TST_UM; break;
 					case X_LD_BS:
@@ -3448,13 +3506,19 @@ lv1_loop:
 					}
 				} else {
 					switch (p[1]->ins_code) {
-					case I_LD_WP:  p[1]->ins_code = X_NOT_WP; break;
+					case I_LD_WP:
+					case X_LD_WP:  p[1]->ins_code = X_NOT_WP; break;
+					case X_LD_WPF: p[1]->ins_code = X_NOT_WPF; break;
 					case I_LD_WM:  p[1]->ins_code = X_NOT_WM; break;
 					case X_LD_WS:  p[1]->ins_code = X_NOT_WS; break;
 					case X_LD_WAR: p[1]->ins_code = X_NOT_WAR; break;
 					case X_LD_WAX: p[1]->ins_code = X_NOT_WAX; break;
 					case I_LD_BP:
-					case I_LD_UP:  p[1]->ins_code = X_NOT_UP; break;
+					case I_LD_UP:
+					case X_LD_BP:
+					case X_LD_UP:  p[1]->ins_code = X_NOT_UP; break;
+					case X_LD_BPF:
+					case X_LD_UPF: p[1]->ins_code = X_NOT_UPF; break;
 					case I_LD_BM:
 					case I_LD_UM:  p[1]->ins_code = X_NOT_UM; break;
 					case X_LD_BS:
@@ -3495,7 +3559,9 @@ lv1_loop:
 				p[0]->cmp_type = compare2uchar[p[0]->cmp_type];
 				switch (p[1]->ins_code) {
 				case I_LD_UM:  p[1]->ins_code = X_LD_UMQ; break;
-				case I_LD_UP:  p[1]->ins_code = X_LD_UPQ; break;
+				case I_LD_UP:
+				case X_LD_UP:  p[1]->ins_code = X_LD_UPQ; break;
+				case X_LD_UPF: p[1]->ins_code = X_LD_UPFQ; break;
 				case X_LD_US:  p[1]->ins_code = X_LD_USQ; break;
 				case X_LD_UAR: p[1]->ins_code = X_LD_UARQ; break;
 				case X_LD_UAX: p[1]->ins_code = X_LD_UAXQ; break;
@@ -4380,6 +4446,10 @@ lv1_loop:
 			 *  __bool				is_usepr()
 			 *  is_usepr()
 			 *
+			 *  __not.{w/u}pf		-->	__boolnot.{w/u}pf
+			 *  __bool				is_usepr()
+			 *  is_usepr()
+			 *
 			 *  __not.{w/u}m	symbol	-->	__boolnot.{w/u}m	symbol
 			 *  __bool				is_usepr()
 			 *  is_usepr()
@@ -4410,10 +4480,12 @@ lv1_loop:
 			 (p[1]->ins_code == I_BOOLEAN) &&
 			 (p[2]->ins_code == I_NOT_WR ||
 			  p[2]->ins_code == X_NOT_WP ||
+			  p[2]->ins_code == X_NOT_WPF ||
 			  p[2]->ins_code == X_NOT_WM ||
 			  p[2]->ins_code == X_NOT_WS ||
 			  p[2]->ins_code == X_NOT_WAR ||
 			  p[2]->ins_code == X_NOT_UP ||
+			  p[2]->ins_code == X_NOT_UPF ||
 			  p[2]->ins_code == X_NOT_UM ||
 			  p[2]->ins_code == X_NOT_US ||
 			  p[2]->ins_code == X_NOT_UAR ||
@@ -4425,10 +4497,12 @@ lv1_loop:
 				switch (p[2]->ins_code) {
 				case I_NOT_WR:   p[2]->ins_code = X_BOOLNOT_WR; break;
 				case X_NOT_WP:   p[2]->ins_code = X_BOOLNOT_WP; break;
+				case X_NOT_WPF:  p[2]->ins_code = X_BOOLNOT_WPF; break;
 				case X_NOT_WM:   p[2]->ins_code = X_BOOLNOT_WM; break;
 				case X_NOT_WS:   p[2]->ins_code = X_BOOLNOT_WS; break;
 				case X_NOT_WAR:  p[2]->ins_code = X_BOOLNOT_WAR; break;
 				case X_NOT_UP:   p[2]->ins_code = X_BOOLNOT_UP; break;
+				case X_NOT_UPF:  p[2]->ins_code = X_BOOLNOT_UPF; break;
 				case X_NOT_UM:   p[2]->ins_code = X_BOOLNOT_UM; break;
 				case X_NOT_US:   p[2]->ins_code = X_BOOLNOT_US; break;
 				case X_NOT_UAR:  p[2]->ins_code = X_BOOLNOT_UAR; break;

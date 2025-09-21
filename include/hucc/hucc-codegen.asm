@@ -3190,6 +3190,22 @@ __not.wp	.macro
 ; C is true (1) if memory-value == 0, else false (0)
 ; this MUST set the C flag for the subsequent branches!
 
+__not.wpf	.macro
+		ldy	#\2
+		lda	[\1], y
+		iny
+		ora	[\1], y
+		clc
+		bne	!+
+		sec
+!:
+		.endm
+
+; **************
+; optimized boolean test
+; C is true (1) if memory-value == 0, else false (0)
+; this MUST set the C flag for the subsequent branches!
+
 __not.wm	.macro
 		lda.l	\1
 		ora.h	\1
@@ -3251,6 +3267,20 @@ __not.wax	.macro
 
 __not.up	.macro
 		lda	[\1]
+		clc
+		bne	!+
+		sec
+!:
+		.endm
+
+; **************
+; optimized boolean test
+; C is true (1) if memory-value == 0, else false (0)
+; this MUST set the C flag for the subsequent branches!
+
+__not.upf	.macro
+		ldy	#\2
+		lda	[\1], y
 		clc
 		bne	!+
 		sec
@@ -3352,6 +3382,19 @@ __tst.wp	.macro
 ; C is true (1) if memory-value != 0, else false (0)
 ; this MUST set the C flag for the subsequent branches!
 
+__tst.wpf	.macro
+		ldy	#\2
+		lda	[\1], y
+		iny
+		ora	[\1], y
+		cmp	#1
+		.endm
+
+; **************
+; optimized boolean test
+; C is true (1) if memory-value != 0, else false (0)
+; this MUST set the C flag for the subsequent branches!
+
 __tst.wm	.macro
 		lda.l	\1
 		ora.h	\1
@@ -3401,6 +3444,17 @@ __tst.wax	.macro
 
 __tst.up	.macro
 		lda	[\1]
+		cmp	#1
+		.endm
+
+; **************
+; optimized boolean test
+; C is true (1) if memory-value != 0, else false (0)
+; this MUST set the C flag for the subsequent branches!
+
+__tst.upf	.macro
+		ldy	#\2
+		lda	[\1], y
 		cmp	#1
 		.endm
 
@@ -3553,6 +3607,21 @@ __boolnot.wp	.macro
 ; optimized boolean test used before a store, not a branch
 ; Y:A is true (1) if memory-value == 0, else false (0)
 
+__boolnot.wpf	.macro
+		ldy	#\2
+		lda	[\1], y
+		iny
+		ora	[\1], y
+		cla
+		bne	!+
+		inc	a
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test used before a store, not a branch
+; Y:A is true (1) if memory-value == 0, else false (0)
+
 __boolnot.wm	.macro
 		lda.l	\1
 		ora.h	\1
@@ -3610,6 +3679,19 @@ __boolnot.wax	.macro
 
 __boolnot.up	.macro
 		lda	[\1]
+		cla
+		bne	!+
+		inc	a
+!:		cly
+		.endm
+
+; **************
+; optimized boolean test used before a store, not a branch
+; Y:A is true (1) if memory-value == 0, else false (0)
+
+__boolnot.upf	.macro
+		ldy	#\2
+		lda	[\1], y
 		cla
 		bne	!+
 		inc	a

@@ -781,6 +781,14 @@ char gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_NOT_WPF:
+		ot("__not.wpf\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
+		nl();
+		break;
+
 	case X_NOT_WM:
 		ot("__not.wm\t");
 		out_addr(type, data);
@@ -808,6 +816,14 @@ char gen_code (INS *tmp)
 	case X_NOT_UP:
 		ot("__not.up\t");
 		out_addr(type, data);
+		nl();
+		break;
+
+	case X_NOT_UPF:
+		ot("__not.upf\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
 		nl();
 		break;
 
@@ -852,6 +868,14 @@ char gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_TST_WPF:
+		ot("__tst.wpf\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
+		nl();
+		break;
+
 	case X_TST_WM:
 		ot("__tst.wm\t");
 		out_addr(type, data);
@@ -880,6 +904,14 @@ char gen_code (INS *tmp)
 	case X_TST_UP:
 		ot("__tst.up\t");
 		out_addr(type, data);
+		nl();
+		break;
+
+	case X_TST_UPF:
+		ot("__tst.upf\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
 		nl();
 		break;
 
@@ -944,6 +976,14 @@ char gen_code (INS *tmp)
 		nl();
 		break;
 
+	case X_BOOLNOT_WPF:
+		ot("__boolnot.wpf\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
+		nl();
+		break;
+
 	case X_BOOLNOT_WM:
 		ot("__boolnot.wm\t");
 		out_addr(type, data);
@@ -971,6 +1011,14 @@ char gen_code (INS *tmp)
 	case X_BOOLNOT_UP:
 		ot("__boolnot.up\t");
 		out_addr(type, data);
+		nl();
+		break;
+
+	case X_BOOLNOT_UPF:
+		ot("__boolnot.upf\t");
+		out_addr(type, data);
+		outstr(", ");
+		outdec((int)imm_data);
 		nl();
 		break;
 
