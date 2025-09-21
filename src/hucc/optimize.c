@@ -1685,6 +1685,66 @@ lv1_loop:
 			}
 
 			/*
+			 *  __add.wp		symbol	-->	__add_st.wpq	symbol
+			 *  __st.wp		symbol
+			 *  __fence
+			 *
+			 *  __add.up		symbol	-->	__add_st.upq	symbol
+			 *  __st.up		symbol
+			 *  __fence
+			 *
+			 *  __isub.wp		symbol	-->	__isub_st.wpq	symbol
+			 *  __st.wp		symbol
+			 *  __fence
+			 *
+			 *  __isub.up		symbol	-->	__isub_st.upq	symbol
+			 *  __st.up		symbol
+			 *  __fence
+			 *
+			 *  etc, etc
+			 *
+			 *  this optimizes the store for a "+=", "-=", "&=", "^=", "|=".
+			 */
+			else if
+			((p_nb >= 3) &&
+			 (p[1]->ins_code == X_ST_WP ||
+			  p[1]->ins_code == X_ST_UP) &&
+			 (p[2]->ins_code == X_ADD_WP ||
+			  p[2]->ins_code == X_ADD_UP ||
+			  p[2]->ins_code == X_ISUB_WP ||
+			  p[2]->ins_code == X_ISUB_UP ||
+			  p[2]->ins_code == X_AND_WP ||
+			  p[2]->ins_code == X_AND_UP ||
+			  p[2]->ins_code == X_EOR_WP ||
+			  p[2]->ins_code == X_EOR_UP ||
+			  p[2]->ins_code == X_OR_WP ||
+			  p[2]->ins_code == X_OR_UP) &&
+			 (cmp_operands(p[1], p[2]))
+			) {
+				/* replace code */
+				remove = 2;
+				if (p[1]->ins_code == X_ST_WP) {
+					switch (p[2]->ins_code) {
+					case  X_ADD_WP: p[2]->ins_code =  X_ADD_ST_WPQ; break;
+					case X_ISUB_WP: p[2]->ins_code = X_ISUB_ST_WPQ; break;
+					case  X_AND_WP: p[2]->ins_code =  X_AND_ST_WPQ; break;
+					case  X_EOR_WP: p[2]->ins_code =  X_EOR_ST_WPQ; break;
+					case   X_OR_WP: p[2]->ins_code =   X_OR_ST_WPQ; break;
+					default: remove = 1; break; /* this should never happen! */
+					}
+				} else {
+					switch (p[2]->ins_code) {
+					case  X_ADD_UP: p[2]->ins_code =  X_ADD_ST_UPQ; break;
+					case X_ISUB_UP: p[2]->ins_code = X_ISUB_ST_UPQ; break;
+					case  X_AND_UP: p[2]->ins_code =  X_AND_ST_UPQ; break;
+					case  X_EOR_UP: p[2]->ins_code =  X_EOR_ST_UPQ; break;
+					case   X_OR_UP: p[2]->ins_code =   X_OR_ST_UPQ; break;
+					default: remove = 1; break; /* this should never happen! */
+					}
+				}
+			}
+
+			/*
 			 *  __add.ws		n	-->	__add_st.wsq	n
 			 *  __st.ws		n
 			 *  __fence
