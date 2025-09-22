@@ -825,6 +825,7 @@ _sgx_set_font_pal.1:
 		db	$F0			; Turn "clx" into a "beq".
 	.endif
 
+_set_font_pal:					; For compatibility with HuC.
 _set_font_pal.1:
 		clx				; Offset to PCE VDC.
 		asl	a
