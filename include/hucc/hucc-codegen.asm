@@ -125,43 +125,26 @@ __short		.macro
 ; this is used for __far parameters to a __fastcall
 
 __farptr	.macro
-	.if	((\1) < $6000)
-		lda.l	#\1
-		sta.l	\3
-		lda.h	#\1
-		sta.h	\3
-		stz	\2
-	.else
 		lda.l	#$6000 + ($1FFF & (\1))
 		sta.l	\3
 		lda.h	#$6000 + ($1FFF & (\1))
 		sta.h	\3
 		lda	#bank(\1)
 		sta	\2
-	.endif
 		.endm
 
 ; **************
 ; adds 16-bit unsigned offset in Y:A to data address in \1, then \2=bank, \3=addr
 
 __farptr_i	.macro
-	.if	((\1) < $6000)
-		clc
-		adc.l	#\1
-		sta.l	\3
-		tya
-		adc.h	#\1
-		sta.h	\3
-		stz	\2
-	.else
 		clc
 		adc.l	#(\1) & $1FFF
 		sta.l	\3
 		tya
 		adc.h	#(\1) & $1FFF
 		tay
-		and	#$1F
-		ora	#$60
+		and.h	#$1FFF
+		ora.h	#$6000
 		sta.h	\3
 		tya
 		ror	a
@@ -172,7 +155,6 @@ __farptr_i	.macro
 		clc
 		adc	#bank(\1)
 		sta	\2
-	.endif
 		.endm
 
 ; **************
