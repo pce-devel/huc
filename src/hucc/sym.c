@@ -250,19 +250,9 @@ int declglb (char typ, char stor, TAG_SYMBOL *mtag, int otag, int is_struct)
 				   can't think of a better place right now. */
 				if (id == POINTER && (typ_now == CCHAR || typ_now == CUCHAR || typ_now == CVOID))
 					k *= INTSIZE;
-				if (k || ((stor & STORAGE) == EXTERN))
-					id = ARRAY;
-				else {
-					if ((stor & STORAGE) == CONST) {
-						error("empty const array");
-						id = ARRAY;
-					}
-					else if (id == POINTER)
-						id = ARRAY;
-					else {
-						id = POINTER;
-						ptr_order++;
-					}
+				id = ARRAY;
+				if ((k == 0) && ((stor & STORAGE) == CONST)) {
+					error("empty const array");
 				}
 			}
 			else {
@@ -380,19 +370,11 @@ void declloc (char typ, char stclass, int otag)
 				multidef(sname);
 			if (match("[")) {
 				elements = k = needsub();
-				if (k) {
-					if (typ == CINT || typ == CUINT || j == POINTER)
-						k = k * INTSIZE;
-					else if (typ == CSTRUCT)
-						k *= tag_table[otag].size;
-					j = ARRAY;
-				}
-				else {
-					j = POINTER;
-					ptr_order++;
-					k = INTSIZE;
-					elements = 1;
-				}
+				if (typ == CINT || typ == CUINT || j == POINTER)
+					k = k * INTSIZE;
+				else if (typ == CSTRUCT)
+					k *= tag_table[otag].size;
+				j = ARRAY;
 			}
 			else {
 				elements = 1;
