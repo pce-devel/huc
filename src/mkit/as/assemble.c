@@ -227,6 +227,10 @@ assemble(int do_label)
 				if (!colsym(&i, 1))
 					return;
 			}
+			if ((hucc_mode) && (proc_ptr) && (prlnbuf[i] == ':') && (c != '.') && (c != '@') && (c != '!')) {
+				error("You cannot create a global location label inside a C function!");
+				return;
+			}
 			if (prlnbuf[i] == ':')
 				i++;
 			if ((lablptr = stlook(SYM_DEF)) == NULL)
