@@ -2634,10 +2634,10 @@ do_alias(int *ip)
 	}
 
 	/* check symbol */
-	if (symbol[1] == '.' || symbol[1] == '@') {
-		error(".ALIAS name cannot be a local label!");
-		return;
-	}
+//	if (symbol[1] == '.' || symbol[1] == '@') {
+//		error(".ALIAS name cannot be a local label!");
+//		return;
+//	}
 	if (symbol[1] == '!') {
 		error(".ALIAS name cannot be a multi-label!");
 		return;
@@ -2687,10 +2687,10 @@ do_alias(int *ip)
 		return;
 
 	/* check symbol */
-	if (symbol[1] == '.' || symbol[1] == '@') {
-		fatal_error("Cannot create a .ALIAS to a local label!");
-		return;
-	}
+//	if (symbol[1] == '.' || symbol[1] == '@') {
+//		fatal_error("Cannot create a .ALIAS to a local label!");
+//		return;
+//	}
 	if (symbol[1] == '!') {
 		fatal_error("Cannot create a .ALIAS to a multi-label!");
 		return;

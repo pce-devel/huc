@@ -36,7 +36,6 @@ int ch (void);
 
 void pl (char *str);
 void gnlabel (int nlab);
-void olprfix (void);
 void col (void);
 void comment (void);
 void prefix (void);

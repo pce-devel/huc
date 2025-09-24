@@ -361,14 +361,6 @@ void gnlabel (int nlab)
 }
 
 /*
- * Output internal generated label prefix
- */
-void olprfix (void)
-{
-	outstr("LL");
-}
-
-/*
  * Output a label definition terminator
  */
 void col (void)
@@ -485,7 +477,7 @@ void outconst (int label)
  */
 void outlabel (int label)
 {
-	olprfix();
+	outstr(".LL");
 	outdec(label);
 }
 

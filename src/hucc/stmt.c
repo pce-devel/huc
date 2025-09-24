@@ -549,7 +549,7 @@ void dolabel (char *name)
 			   We have to create a stack pointer offset EQU
 			   that describes the stack pointer difference from
 			   the goto to here. */
-			sprintf(name, "LL%d_stkp", clabels[i].label);
+			sprintf(name, ".LL%d_stkp", clabels[i].label);
 			/* XXX: memleak */
 			out_ins_ex(I_DEF, T_LITERAL, (intptr_t)strdup(name),
 				   T_VALUE, stkp - clabels[i].stkp);
@@ -603,7 +603,7 @@ void dogoto (void)
 	   to the label's relative SP at the time of definition. */
 	clabels[i].stkp = stkp;
 	clabels[i].label = getlabel();
-	sprintf(sname, "LL%d_stkp", clabels[i].label);
+	sprintf(sname, ".LL%d_stkp", clabels[i].label);
 	/* XXX: memleak */
 	out_ins(I_MODSP, T_LITERAL, (intptr_t)strdup(sname));
 	jump(clabels[i].label);
