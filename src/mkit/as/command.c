@@ -2061,6 +2061,8 @@ do_opt(int *ip)
 			asm_opt[OPT_DATAPAGE] = i;
 		else if (!strcasecmp(name, "f"))
 			asm_opt[OPT_FORWARD] = i;
+		else if (!strcasecmp(name, "@"))
+			asm_opt[OPT_STATIC] = i;
 		else {
 			error("Unknown option!");
 			return;

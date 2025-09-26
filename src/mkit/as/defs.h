@@ -109,7 +109,8 @@
 #define OPT_LBRANCH	7
 #define OPT_DATAPAGE	8
 #define OPT_FORWARD	9
-#define MAX_OPTS	10
+#define OPT_STATIC	10
+#define MAX_OPTS	11
 
 /* assembler directives */
 /* update pseudo_allowed when adding or changing! */

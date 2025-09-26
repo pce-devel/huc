@@ -788,6 +788,7 @@ main(int argc, char **argv)
 		asm_opt[OPT_LBRANCH] = 0;
 		asm_opt[OPT_DATAPAGE] = 0;
 		asm_opt[OPT_FORWARD] = 1;
+		asm_opt[OPT_STATIC] = 0;
 
 		/* reset bank arrays */
 		for (i = 0; i < MAX_S; i++) {

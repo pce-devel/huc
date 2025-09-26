@@ -882,6 +882,17 @@ getsym(struct t_symbol * curscope)
 		if (i == 0 && isdigit(c))
 			break;
 		if (isalnum(c) || (c == '_') || (c == '.') || (i == 0 && c == '@') || (i == 0 && c == '!')) {
+			if (c == '@' && asm_opt[OPT_STATIC]) {
+				char prefix[32];
+				int index = 0;
+				if (snprintf(prefix, 8, "__%04d_", input_file[infile_num].file->number) >= 8)
+					error("Too many different file-scopes!");
+				while (i < (SBOLSZ - 1)) {
+					if ((c = prefix[index++]) == '\0') break;
+					symbol[++i] = c;
+				}
+			}
+			else
 			if (i < (SBOLSZ - 1)) { symbol[++i] = c; }
 			expr++;
 		} else {
