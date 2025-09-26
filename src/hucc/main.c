@@ -386,7 +386,6 @@ unknown_option:
 			enum_ptr = 0;
 			enum_type_ptr = 0;
 			memset(fastcall_tbl, 0, sizeof(fastcall_tbl));
-			defpragma();
 
 			/* Macros and globals have to be reset for each
 			   file, so we have to define the defaults all over
