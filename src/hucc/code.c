@@ -99,9 +99,8 @@ void inc_startup (void)
 		startup_incl = 1;
 
 		nl();
-		outstr("\t\tinclude\t\"hucc.asm\"\n");
-		outstr("\t\t.data\n");
-		outstr("\t\t.bank\tDATA_BANK\n\n");
+		outstr("\t.include\t\"hucc.asm\"\n");
+		outstr("\t.opt\t\t@+\n");
 		gtext();
 		nl();
 	}
