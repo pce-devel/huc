@@ -17,7 +17,6 @@
 
 #define HUC_VERSION     "HuCC (" GIT_VERSION ", " GIT_DATE ")"
 
-void FEvers (void);
 void usage (char *exename);
 void parse (void);
 int dodcls (int stclass, TAG_SYMBOL *mtag, int is_struct);

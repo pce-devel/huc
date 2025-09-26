@@ -483,11 +483,6 @@ unknown_option:
 	exit(errs != 0);
 }
 
-void FEvers (void)
-{
-	outstr("\tFront End (2.7,84/11/28)");
-}
-
 void usage (char *exename)
 {
 	fprintf(stderr, HUC_VERSION);
