@@ -275,8 +275,8 @@ __return	.macro
 ; main C stack for local variables and arguments
 
 __modsp		.macro	; __STACK
-	.if	((\1 >= 0) && (\1 < 65536))
-	.if	(\1 == 2)
+	.if	(((\1) >= 0) && ((\1) < 65536))
+	.if	((\1) == 2)
 		inc	<__sp
 		inc	<__sp
 	.else
@@ -288,7 +288,7 @@ __modsp		.macro	; __STACK
 		txa
 	.endif
 	.else
-	.if	(\1 == -2)
+	.if	((\1) == -2)
 		dec	<__sp
 		dec	<__sp
 	.else
@@ -308,7 +308,7 @@ __modsp		.macro	; __STACK
 ; this is used to adjust the stack in a C "goto"
 
 __modsp_goto	.macro	; __STACK
-	.if	(\1 != 0)
+	.if	((\1) != 0)
 		lda.l	<__sp
 		clc
 		adc	#\1
@@ -398,7 +398,7 @@ __reload.ur	.macro
 ; \1 is the number of numeric cases to test for (3 in this example)
 
 __switch_c.wr	.macro
-		ldx	#<(\1 * 2 + 2)
+		ldx	#<((\1) * 2 + 2)
 !loop:		dex
 		dex
 		beq	!found+
@@ -408,7 +408,7 @@ __switch_c.wr	.macro
 		cmp.h	!table+ - 2, x
 		say
 		bne	!loop-
-!found:		jmp	[!table+ + \1 * 2, x]
+!found:		jmp	[!table+ + (\1) * 2, x]
 		.endm
 
 ; !table:	dw	val3		; +01 x=2
@@ -449,8 +449,8 @@ __switch_c.ur	.macro
 ; \2 is the max case value in the table (must be <= min+126)
 
 __switch_r.wr	.macro
-	.if	(\1 >= 0) && (\1 <= 65535)
-	.if	(\1 != 0)
+	.if	((\1) >= 0) && ((\1) <= 65535)
+	.if	((\1) != 0)
 		sec
 		sbc.l	#\1
 		say
@@ -493,8 +493,8 @@ __switch_r.wr	.macro
 ; \2 is the max case value in the table (must be <= min+126)
 
 __switch_r.ur	.macro
-	.if	(\1 >= 0) && (\1 <= 255)
-	.if	(\1 != 0)
+	.if	((\1) >= 0) && ((\1) <= 255)
+	.if	((\1) != 0)
 		sec
 		sbc	#\1
 		bcc	!default+
@@ -3499,10 +3499,10 @@ __tst.uay	.macro
 
 __nand.wi	.macro
 		clc
-	.if	((\1 & $FF00) == 0)
+	.if	(((\1) & $FF00) == 0)
 		and	#\1
 	.else
-	.if	((\1 & $00FF) == 0)
+	.if	(((\1) & $00FF) == 0)
 		tya
 		and.h	#\1
 	.else
@@ -3523,10 +3523,10 @@ __nand.wi	.macro
 ; this MUST set the C flag for the subsequent branches!
 
 __tand.wi	.macro
-	.if	((\1 & $FF00) == 0)
+	.if	(((\1) & $FF00) == 0)
 		and	#\1
 	.else
-	.if	((\1 & $00FF) == 0)
+	.if	(((\1) & $00FF) == 0)
 		tya
 		and.h	#\1
 	.else
@@ -3757,12 +3757,12 @@ __ld.wi		.macro
 		lda.l	#\1
 		ldy.h	#\1
 	.else
-	.if	(\1 & $00FF)
+	.if	((\1) & $00FF)
 		lda.l	#\1
 	.else
 		cla
 	.endif
-	.if	(\1 & $FF00)
+	.if	((\1) & $FF00)
 		ldy.h	#\1
 	.else
 		cly
@@ -3776,7 +3776,7 @@ __ld.uiq	.macro
 	.if	(\?1 != ARG_ABS)
 		lda.l	#\1
 	.else
-	.if	(\1 & $00FF)
+	.if	((\1) & $00FF)
 		lda	#\1
 	.else
 		cla
@@ -5217,13 +5217,13 @@ __st.wmiq	.macro
 		lda.h	#\1
 		sta.h	\2
 	.else
-	.if	(\1 & $00FF)
+	.if	((\1) & $00FF)
 		lda.l	#\1
 		sta.l	\2
 	.else
 		stz.l	\2
 	.endif
-	.if	(\1 & $FF00)
+	.if	((\1) & $FF00)
 		lda.h	#\1
 		sta.h	\2
 	.else
@@ -5235,7 +5235,7 @@ __st.wmiq	.macro
 ; **************
 
 __st.umiq	.macro
-	.if	(\1 != 0)
+	.if	((\1) != 0)
 		lda.l	#\1
 		sta	\2
 	.else
@@ -5384,13 +5384,13 @@ __st.watiq	.macro
 		lda.h	#\1
 		sta.h	\2, x
 	.else
-	.if	(\1 & $00FF)
+	.if	((\1) & $00FF)
 		lda.l	#\1
 		sta.l	\2, x
 	.else
 		stz.l	\2, x
 	.endif
-	.if	(\1 & $FF00)
+	.if	((\1) & $FF00)
 		lda.h	#\1
 		sta.h	\2, x
 	.else
@@ -5403,7 +5403,7 @@ __st.watiq	.macro
 
 __st.uatiq	.macro
 		plx
-	.if	(\1 != 0)
+	.if	((\1) != 0)
 		lda.l	#\1
 		sta	\2, x
 	.else
@@ -5457,13 +5457,13 @@ __st.waxiq	.macro
 		lda.h	#\1
 		sta.h	\2, x
 	.else
-	.if	(\1 & $00FF)
+	.if	((\1) & $00FF)
 		lda.l	#\1
 		sta.l	\2, x
 	.else
 		stz.l	\2, x
 	.endif
-	.if	(\1 & $FF00)
+	.if	((\1) & $FF00)
 		lda.h	#\1
 		sta.h	\2, x
 	.else
@@ -5475,7 +5475,7 @@ __st.waxiq	.macro
 ; **************
 
 __st.uaxiq	.macro
-	.if	(\1 != 0)
+	.if	((\1) != 0)
 		lda.l	#\1
 		sta	\2, x
 	.else
@@ -5493,13 +5493,13 @@ __st.wsiq	.macro
 		lda.h	#\1
 		sta.h	<__stack + \2, x
 	.else
-	.if	(\1 & $00FF)
+	.if	((\1) & $00FF)
 		lda.l	#\1
 		sta.l	<__stack + \2, x
 	.else
 		stz.l	<__stack + \2, x
 	.endif
-	.if	(\1 & $FF00)
+	.if	((\1) & $FF00)
 		lda.h	#\1
 		sta.h	<__stack + \2, x
 	.else
@@ -5512,7 +5512,7 @@ __st.wsiq	.macro
 
 __st.usiq	.macro
 		ldx	<__sp
-	.if	(\1 != 0)
+	.if	((\1) != 0)
 		lda.l	#\1
 		sta	<__stack + \2, x
 	.else
@@ -6187,11 +6187,11 @@ __and.wi	.macro
 		and.h	#\1
 		say
 	.else
-	.if	((\1 >= 0) && (\1 < 256))
+	.if	(((\1) >= 0) && ((\1) < 256))
 		and	#\1
 		cly
 	.else
-	.if	(\1 & 255)
+	.if	((\1) & 255)
 		and.l	#\1
 		say
 		and.h	#\1
@@ -6334,10 +6334,10 @@ __eor.wt	.macro	; __STACK
 ; **************
 
 __eor.wi	.macro
-	.if	((\1 >= 0) && (\1 < 256))
+	.if	(((\1) >= 0) && ((\1) < 256))
 		eor	#\1
 	.else
-	.if	(\1 & 255)
+	.if	((\1) & 255)
 		eor.l	#\1
 		say
 		eor.h	#\1
@@ -6474,10 +6474,10 @@ __or.wt		.macro	; __STACK
 ; **************
 
 __or.wi		.macro
-	.if	((\1 >= 0) && (\1 < 256))
+	.if	(((\1) >= 0) && ((\1) < 256))
 		ora	#\1
 	.else
-	.if	(\1 & 255)
+	.if	((\1) & 255)
 		ora.l	#\1
 		say
 		ora.h	#\1
@@ -6619,13 +6619,13 @@ __asl.wt	.macro
 ; **************
 
 __asl.wi	.macro
-	.if (\1 = 1)
+	.if ((\1) = 1)
 		asl	a
 		say
 		rol	a
 		say
 	.else
-	.if (\1 = 2)
+	.if ((\1) = 2)
 		asl	a
 		say
 		rol	a
@@ -6635,18 +6635,18 @@ __asl.wi	.macro
 		rol	a
 		say
 	.else
-	.if (\1 < 5)
+	.if ((\1) < 5)
 		sty	__temp
 		jsr	aslw\1
 	.else
-	.if (\1 < 7)
+	.if ((\1) < 7)
 		sta	__temp
 		tya
 		lsr	a
 		jsr	aslw\1
 		and.l	#$FF << \1
 	.else
-	.if (\1 = 7)
+	.if ((\1) = 7)
 		say
 		lsr	a
 		say
@@ -6655,11 +6655,11 @@ __asl.wi	.macro
 		ror	a
 		and	#$80
 	.else
-	.if (\1 = 8)
+	.if ((\1) = 8)
 		tay
 		cla
 	.else
-	.if (\1 < 16)
+	.if ((\1) < 16)
 		jsr	aslw\1
 	.else
 		cla
@@ -6694,14 +6694,14 @@ __asr.wt	.macro
 ; **************
 
 __asr.wi	.macro
-	.if (\1 = 1)
+	.if ((\1) = 1)
 		cpy	#$80
 		say
 		ror	a
 		say
 		ror	a
 	.else
-	.if (\1 = 2)
+	.if ((\1) = 2)
 		cpy	#$80
 		say
 		ror	a
@@ -6713,18 +6713,18 @@ __asr.wi	.macro
 		say
 		ror	a
 	.else
-	.if (\1 < 8)
+	.if ((\1) < 8)
 		sty	__temp
 		jsr	asrw\1
 	.else
-	.if (\1 = 8)
+	.if ((\1) = 8)
 		tya
 		cly
 		bpl	!+
 		dey
 !:
 	.else
-	.if (\1 < 16)
+	.if ((\1) < 16)
 		tya
 		jsr	asrw\1
 	.else
@@ -6752,13 +6752,13 @@ __lsr.wt	.macro
 ; **************
 
 __lsr.wi	.macro
-	.if (\1 = 1)
+	.if ((\1) = 1)
 		say
 		lsr	a
 		say
 		ror	a
 	.else
-	.if (\1 = 2)
+	.if ((\1) = 2)
 		say
 		lsr	a
 		say
@@ -6768,18 +6768,18 @@ __lsr.wi	.macro
 		say
 		ror	a
 	.else
-	.if (\1 < 8)
+	.if ((\1) < 8)
 		sty	__temp
 		jsr	lsrw\1
 	.else
-	.if (\1 = 8)
+	.if ((\1) = 8)
 		tya
 		cly
 		bmi	!+
 		dey
 !:
 	.else
-	.if (\1 < 16)
+	.if ((\1) < 16)
 		tya
 		jsr	lsrw\1
 	.else
@@ -6810,34 +6810,34 @@ __mul.wt	.macro
 ; **************
 
 __mul.wi	.macro
-	.if (\1 = 2)
+	.if ((\1) = 2)
 	__asl.wr
 	.else
-	.if (\1 = 3)
+	.if ((\1) = 3)
 		sta.l	__temp
 		sty.h	__temp
 	__asl.wr
 	__add.wm	__temp
 	.else
-	.if (\1 = 4)
+	.if ((\1) = 4)
 	__asl.wr
 	__asl.wr
 	.else
-	.if (\1 = 5)
+	.if ((\1) = 5)
 		sta.l	__temp
 		sty.h	__temp
 	__asl.wr
 	__asl.wr
 	__add.wm	__temp
 	.else
-	.if (\1 = 6)
+	.if ((\1) = 6)
 	__asl.wr
 		sta.l	__temp
 		sty.h	__temp
 	__asl.wr
 	__add.wm	__temp
 	.else
-	.if (\1 = 7)
+	.if ((\1) = 7)
 		sta.l	__temp
 		sty.h	__temp
 	__asl.wr
@@ -6845,12 +6845,12 @@ __mul.wi	.macro
 	__asl.wr
 	__sub.wm	__temp
 	.else
-	.if (\1 = 8)
+	.if ((\1) = 8)
 	__asl.wr
 	__asl.wr
 	__asl.wr
 	.else
-	.if (\1 = 9)
+	.if ((\1) = 9)
 		sta.l	__temp
 		sty.h	__temp
 	__asl.wr
@@ -6858,7 +6858,7 @@ __mul.wi	.macro
 	__asl.wr
 	__add.wm	__temp
 	.else
-	.if (\1 = 10)
+	.if ((\1) = 10)
 	__asl.wr
 		sta.l	__temp
 		sty.h	__temp
@@ -7273,28 +7273,28 @@ __or.uaxq	.macro
 ; **************
 
 __asl.uiq	.macro
-	.if (\1 == 8)
+	.if ((\1) == 8)
 		asl	a
 	.endif
-	.if (\1 >= 7)
+	.if ((\1) >= 7)
 		asl	a
 	.endif
-	.if (\1 >= 6)
+	.if ((\1) >= 6)
 		asl	a
 	.endif
-	.if (\1 >= 5)
+	.if ((\1) >= 5)
 		asl	a
 	.endif
-	.if (\1 >= 4)
+	.if ((\1) >= 4)
 		asl	a
 	.endif
-	.if (\1 >= 3)
+	.if ((\1) >= 3)
 		asl	a
 	.endif
-	.if (\1 >= 2)
+	.if ((\1) >= 2)
 		asl	a
 	.endif
-	.if (\1 >= 1)
+	.if ((\1) >= 1)
 		asl	a
 	.endif
 		.endm
@@ -7302,26 +7302,26 @@ __asl.uiq	.macro
 ; **************
 
 __lsr.uiq	.macro
-	.if (\1 < 8)
-	.if (\1 >= 1)
+	.if ((\1) < 8)
+	.if ((\1) >= 1)
 		lsr	a
 	.endif
-	.if (\1 >= 2)
+	.if ((\1) >= 2)
 		lsr	a
 	.endif
-	.if (\1 >= 3)
+	.if ((\1) >= 3)
 		lsr	a
 	.endif
-	.if (\1 >= 4)
+	.if ((\1) >= 4)
 		lsr	a
 	.endif
-	.if (\1 >= 5)
+	.if ((\1) >= 5)
 		lsr	a
 	.endif
-	.if (\1 >= 6)
+	.if ((\1) >= 6)
 		lsr	a
 	.endif
-	.if (\1 >= 7)
+	.if ((\1) >= 7)
 		lsr	a
 	.endif
 	.else
@@ -7332,31 +7332,31 @@ __lsr.uiq	.macro
 ; **************
 
 __mul.uiq	.macro
-	.if (\1 == 2)
+	.if ((\1) == 2)
 		asl	a
 	.endif
-	.if (\1 == 3)
+	.if ((\1) == 3)
 		sta	__temp
 		asl	a
 		adc	__temp
 	.endif
-	.if (\1 == 4)
+	.if ((\1) == 4)
 		asl	a
 		asl	a
 	.endif
-	.if (\1 == 5)
+	.if ((\1) == 5)
 		sta	__temp
 		asl	a
 		asl	a
 		adc	__temp
 	.endif
-	.if (\1 == 6)
+	.if ((\1) == 6)
 		asl	a
 		sta	__temp
 		asl	a
 		adc	__temp
 	.endif
-	.if (\1 == 7)
+	.if ((\1) == 7)
 		sta	__temp
 		asl	a
 		asl	a
@@ -7364,26 +7364,26 @@ __mul.uiq	.macro
 		sec
 		sbc	__temp
 	.endif
-	.if (\1 == 8)
+	.if ((\1) == 8)
 		asl	a
 		asl	a
 		asl	a
 	.endif
-	.if (\1 == 9)
+	.if ((\1) == 9)
 		sta	__temp
 		asl	a
 		asl	a
 		asl	a
 		adc	__temp
 	.endif
-	.if (\1 == 10)
+	.if ((\1) == 10)
 		asl	a
 		sta	__temp
 		asl	a
 		asl	a
 		adc	__temp
 	.endif
-	.if (\1 == 11)
+	.if ((\1) == 11)
 		sta.l	__temp
 		asl	a
 		sta.h	__temp
@@ -7392,14 +7392,14 @@ __mul.uiq	.macro
 		adc.l	__temp
 		adc.h	__temp
 	.endif
-	.if (\1 == 12)
+	.if ((\1) == 12)
 		asl	a
 		asl	a
 		sta	__temp
 		asl	a
 		adc	__temp
 	.endif
-	.if (\1 == 13)
+	.if ((\1) == 13)
 		sta.l	__temp
 		asl	a
 		asl	a
@@ -7408,7 +7408,7 @@ __mul.uiq	.macro
 		adc.l	__temp
 		adc.h	__temp
 	.endif
-	.if (\1 == 14)
+	.if ((\1) == 14)
 		asl	a
 		sta	__temp
 		asl	a
@@ -7417,7 +7417,7 @@ __mul.uiq	.macro
 		sec
 		sbc	__temp
 	.endif
-	.if (\1 == 15)
+	.if ((\1) == 15)
 		sta	__temp
 		asl	a
 		asl	a
@@ -7426,13 +7426,13 @@ __mul.uiq	.macro
 		sec
 		sbc	__temp
 	.endif
-	.if (\1 == 16)
+	.if ((\1) == 16)
 		asl	a
 		asl	a
 		asl	a
 		asl	a
 	.endif
-	.if (\1 >= 17)
+	.if ((\1) >= 17)
 		ldy	#\1
 		jsr	__muluchar
 	.endif
