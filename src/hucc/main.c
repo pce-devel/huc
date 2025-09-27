@@ -330,6 +330,7 @@ unknown_option:
 	}
 
 	smacptr = macptr;
+
 	if (!infiles)
 		usage(oldargv[0]);
 	printf(HUC_VERSION);
@@ -351,6 +352,7 @@ unknown_option:
 	   are still defined because we compile everything into one
 	   assembly file. */
 	asmdefs_global_end = asmdefs + strlen(asmdefs);
+
 	while (p) {
 		errfile = 0;
 		/* Truncate asm defines to the point where global
@@ -427,7 +429,6 @@ unknown_option:
 			if (ted2flag)
 				defmac("_TED2\t1");
 
-//			initmac();
 			/*
 			 *	compiler body
 			 */
@@ -446,7 +447,6 @@ unknown_option:
 			dumplits();
 			dumpglbs();
 			errorsummary();
-//			trailer ();
 			pl("");
 			errs = errs || errfile;
 		}
