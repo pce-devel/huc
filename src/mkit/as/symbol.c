@@ -283,9 +283,12 @@ stinstall(int hash, int type)
 	sym->proc = NULL;
 	sym->tags = NULL;
 	sym->name = remember_string(symbol, (size_t)symbol[0] + 2);
+	sym->fileinfo = NULL;
+	sym->fileline = 0;
+	sym->filecolumn = 0;
 	sym->deflastpass = 0;
-	sym->reflastpass = 1; /* so that .ifref triggers in 1st pass */
 	sym->defthispass = 0;
+	sym->reflastpass = 1; /* so that .ifref triggers in 1st pass */
 	sym->refthispass = 0;
 	sym->rombank = UNDEFINED_BANK;
 	sym->mprbank = UNDEFINED_BANK;
@@ -528,6 +531,7 @@ lablset(char *name, int val)
 		lablptr = stlook(SYM_DEF);
 
 		if (lablptr) {
+			lablptr->reason  = CONSTANT;
 			lablptr->type = DEFABS;
 			lablptr->value = val;
 			lablptr->defthispass = 1;
@@ -864,7 +868,7 @@ debugdump(FILE *fp)
 	for (i = 0; i < HASH_COUNT; i++) {
 		for (sym = hash_tbl[i]; sym != NULL; sym = sym->next) {
 			/* skip undefined symbols and stripped symbols */
-			if (sym->mprbank < 0 || sym->mprbank >= UNDEFINED_BANK)
+			if (sym->fileinfo == NULL || sym->mprbank < 0 || sym->mprbank >= UNDEFINED_BANK)
 				continue;
 
 			/* dump the label */

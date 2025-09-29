@@ -302,6 +302,9 @@ struct t_opcode base_pseudo[] = {
 	{NULL, ".STRUCT",       do_struct,      PSEUDO, P_STRUCT,  0},
 	{NULL, ".ENDS",         do_ends,        PSEUDO, P_ENDS,    0},
 	{NULL, ".WORD",         do_dw,          PSEUDO, P_DW,      0},
+	{NULL, ".XDATA",        do_section,     PSEUDO, P_BSS,     S_XDATA},
+	{NULL, ".XINIT",        do_section,     PSEUDO, P_DATA,    S_XINIT},
+	{NULL, ".XSTRZ",        do_section,     PSEUDO, P_DATA,    S_XSTRZ},
 	{NULL, ".ZP",           do_section,     PSEUDO, P_ZP,      S_ZP},
 
 	{NULL, ".ZEROPAGE",     do_section,     PSEUDO, P_ZP,      S_ZP},

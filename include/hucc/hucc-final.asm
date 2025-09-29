@@ -116,8 +116,17 @@
 ; Check that there isn't too much C "const" data in the ".RODATA" section.
 ;
 
-		.rodata
-	.if	(bank(*) - _bank_base) >= (CONST_BANK + 2)
+		.xdata
+_xdata_end:					; End of initialized vars in BSS.
+
+		.xinit
+_xinit_end:					; End of initialized data in ROM.
+
+		.xstrz
+_xstrz_end:					; End of anonymous C strings.
+_rodata_end:					; End of .RODATA section.
+		.code
+
+	.if	_rodata_end >= 0xA000
 		.fail	You cannot have more than 16KBytes of "const" data in HuCC!
 	.endif
-		.code

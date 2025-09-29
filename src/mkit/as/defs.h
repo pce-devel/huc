@@ -83,13 +83,14 @@
 #define S_BSS		2
 #define S_CODE		3
 #define S_DATA		4
-#define S_HOME		5 /* SDCC: permanently-mapped code */
-#define S_XDATA		6 /* SDCC: BSS copy of initialized variables */
-#define S_XINIT		7 /* SDCC: ROM copy of initialized variables */
-#define S_CONST		8 /* SDCC: permanent const data */
-#define S_OSEG		9 /* SDCC: overlayed variables in ZP */
-#define MAX_S		10 /* selectable section types */
-#define S_PROC		10 /* info only, thunks for .proc */
+#define S_HOME		5  /* SDCC: permanently-mapped code */
+#define S_XDATA		6  /* SDCC: BSS copy of initialized variables */
+#define S_XINIT		7  /* SDCC: ROM copy of initialized variables */
+#define S_XSTRZ		8  /* ROM copy of anonymous C strings */
+#define S_CONST		9  /* SDCC: permanent const data */
+#define S_OSEG		10 /* SDCC: overlayed variables in ZP */
+#define MAX_S		11 /* selectable section types */
+#define S_PROC		11 /* info only, thunks for .proc */
 
 /* section flag mask */
 #define S_IS_RAM	1
