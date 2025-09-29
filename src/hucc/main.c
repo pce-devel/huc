@@ -1016,17 +1016,17 @@ static void dumpfinal (void)
 			outstr("_end:\n");
 		}
 	}
-	outstr("\n__bss_init:\n\n");
+
 	if (data_offset != 0) {
 		data_buffer[data_offset] = '\0';
+		nl();
+		ol(".xdata");
 		outstr(data_buffer);
 	}
-	outstr("__heap_start:\n");
 	if (rodata_offset != 0) {
 		rodata_buffer[rodata_offset] = '\0';
 		nl();
-		ol(".rodata");
-		outstr("__rom_init:\n");
+		ol(".xinit");
 		outstr(rodata_buffer);
 	}
 }
