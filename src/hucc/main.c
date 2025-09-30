@@ -443,7 +443,7 @@ unknown_option:
 			parse();
 			fclose(input);
 			ol(".dbg\tclear");
-//			gdata ();
+//			gbss ();
 			dumplits();
 			dumpglbs();
 			errorsummary();
@@ -663,7 +663,7 @@ void dumplits (void)
 	if ((litptr == 0) && (const_nb == 0))
 		return;
 
-	outstr("\t.rodata\n");
+	gconst();
 	if (litptr) {
 		outconst(litlab);
 		col();
@@ -739,10 +739,10 @@ void dumpglbs (void)
 	if (glbflag == 0) goto finished;
 
 	/* This is done in several passes:
-	   Pass 0: Dump initialization data into const bank.
-	   Pass 1: Define space for zp data.
-	   Pass 2: Define space for uninitialized data.
-	   Pass 3: Define space for initialized data.
+	   Pass 0: Define space for zp data.
+	   Pass 1: Define space for uninitialized data.
+	   Pass 2: Define space for initialized data.
+	   Pass 3: Dump initialization data into const bank.
 	 */
 	for (pass = 0; pass < 4; ++pass) {
 		i = 1;
@@ -756,12 +756,12 @@ void dumpglbs (void)
 			dim = cptr->offset;
 			if (find_symbol_initials(cptr->name)) {
 				/* symbol has initialized data */
-				if (pass == 3) {
+				if (pass == 2) {
 					/* define space for initialized data */
 					if (i) {
 						i = 0;
 						nl();
-						ol(".xdata");
+						gxdata();
 					}
 					if ((cptr->storage & STORAGE) != LSTATIC)
 						prefix();
@@ -770,15 +770,14 @@ void dumpglbs (void)
 					defstorage();
 					outdec(cptr->alloc_size);
 					nl();
-					cptr->storage |= WRITTEN;
 					continue;
 				}
-				if (pass != 0)
+				if (pass != 3)
 					continue;
 				if (i) {
 					i = 0;
 					nl();
-					ol(".xinit");
+					gxinit();
 				}
 				/* output initialization data into const bank */
 				list_size = 0;
@@ -822,22 +821,21 @@ void dumpglbs (void)
 					}
 				}
 				nl();
+				cptr->storage |= WRITTEN;
 				continue;
 			}
 			else {
 				/* symbol is uninitialized */
-				if (pass == 0)
-					continue;
-				if (pass == 1 && !(cptr->storage & ZEROPAGE))
+				if (pass == 0 && !(cptr->storage & ZEROPAGE))
 					continue;
 				/* define space in bss */
 				if (i) {
 					i = 0;
 					nl();
-					if (pass == 1)
+					if (pass == 0)
 						gzp();
 					else
-						gdata();
+						gbss();
 				}
 				if ((cptr->storage & STORAGE) != LSTATIC)
 					prefix();
@@ -855,7 +853,7 @@ void dumpglbs (void)
 finished:
 	if (i) {
 		nl();
-		gdata();
+		gbss();
 	}
 	output = save;
 }
@@ -865,6 +863,7 @@ static void dumpfinal (void)
 	int i;
 
 	if (leaf_cnt) {
+		gbss();
 		outstr("leaf_loc:\n\t\tds\t");
 		outdec(leaf_size);
 		nl();

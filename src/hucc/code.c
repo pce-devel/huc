@@ -43,7 +43,7 @@ const char * compare2str [] = {
  *	print all assembler info before any code is generated
  *
  */
-void gdata (void)
+void gbss (void)
 {
 	if (segment != 0) {
 		segment = 0;
@@ -64,6 +64,30 @@ void gzp (void)
 	if (segment != 2) {
 		segment = 2;
 		ol(".zp");
+	}
+}
+
+void gconst (void)
+{
+	if (segment != 3) {
+		segment = 3;
+		ol(".rodata");
+	}
+}
+
+void gxdata (void)
+{
+	if (segment != 4) {
+		segment = 4;
+		ol(".xdata");
+	}
+}
+
+void gxinit (void)
+{
+	if (segment != 5) {
+		segment = 5;
+		ol(".xinit");
 	}
 }
 

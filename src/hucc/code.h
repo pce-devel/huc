@@ -10,9 +10,12 @@
 
 extern int segment;
 
-void gdata (void);
+void gbss (void);
 void gtext (void);
 void gzp (void);
+void gconst (void);
+void gxdata (void);
+void gxinit (void);
 void header (void);
 void inc_startup (void);
 void asmdefines (void);
