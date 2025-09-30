@@ -228,6 +228,13 @@ clock_ss:	ds	1			; System Clock, seconds (0-59)
 clock_tt:	ds	1			; System Clock, ticks	(0-59)
 		.code
 
+		; Reset the stack size needed for leaf functions.
+		;
+		; This is a variable that compiled HuCC code updates at the end
+		; of each source file to store the largest leaf stack size.
+
+leaf_needs	.set	0
+
 		; Critical HuCC libraries that the compiler depends upon.
 		;
 		; These include various macros that must be defined before

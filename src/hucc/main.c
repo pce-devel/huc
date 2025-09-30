@@ -362,6 +362,7 @@ unknown_option:
 			glbsym_index = STARTGLB;
 			locsym_index = STARTLOC;
 			wsptr = ws;
+			leaf_size =
 			inclsp =
 			iflevel =
 			skiplevel =
@@ -446,6 +447,7 @@ unknown_option:
 //			gbss ();
 			dumplits();
 			dumpglbs();
+			dumpfinal();
 			errorsummary();
 			pl("");
 			errs = errs || errfile;
@@ -471,7 +473,6 @@ unknown_option:
 			infile_ptr++;
 		first = 0;
 	}
-	dumpfinal();
 	fclose(output);
 	if (!errs && !sflag) {
 		if (user_outfile[0])
@@ -860,18 +861,15 @@ finished:
 
 static void dumpfinal (void)
 {
-	int i;
-
-	if (leaf_cnt) {
-		gbss();
-		outstr("leaf_loc:\n\t\tds\t");
+	if (leaf_size) {
+		gtext();
+		ot(".if\t\tleaf_needs < ");
 		outdec(leaf_size);
 		nl();
-		for (i = 0; i < leaf_cnt; i++) {
-			outstr("__");
-			outstr(leaf_functions[i]);
-			outstr("_end:\n");
-		}
+		outstr("leaf_needs\t.set\t");
+		outdec(leaf_size);
+		nl();
+		ol(".endif");
 	}
 }
 

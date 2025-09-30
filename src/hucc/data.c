@@ -117,8 +117,6 @@ int user_short_enums = 1;
 int user_signed_char = 0;
 int user_far_arrays = 1;
 
-char **leaf_functions = 0;
-int leaf_cnt = 0;
 int leaf_size = 0;
 
 INITIALS initials_table[NUMGLBS];

@@ -100,6 +100,20 @@
 ; ***************************************************************************
 ; ***************************************************************************
 ;
+; Allocate space for the "-fnon-recursive" leaf function stack if needed.
+;
+
+	.if		leaf_needs
+		.bss
+		ds	leaf_needs
+leaf_stack:
+	.endif
+
+
+
+; ***************************************************************************
+; ***************************************************************************
+;
 ; Check that C "__zp" declarations aren't overwriting System Card variables.
 ;
 
