@@ -726,147 +726,6 @@ int dump_struct (SYMBOL *symbol, int position)
 	return (dumped_bytes);
 }
 
-static int have_init_data = 0;
-/* Initialized data must be kept in one contiguous block; pceas does not
-   provide segments for that, so we keep the definitions and data in
-   separate buffers and dump them all together after the last input file.
- */
-#define DATABUFSIZE 65536
-char data_buffer[DATABUFSIZE+256];
-int  data_offset = 0;
-char rodata_buffer[DATABUFSIZE+256];
-int  rodata_offset = 0;
-
-char *current_buffer = NULL;
-int   current_offset = 0;
-
-/*
- *	buffered print symbol prefix character
- *
- */
-void prefixBuffer(void)
-{
-	current_buffer[current_offset++] = '_';
-}
-
-/*
- *	buffered print string
- *
- */
-void outstrBuffer (char *ptr)
-{
-	int i = 0;
-
-	if (current_offset >=	DATABUFSIZE) {
-		printf("HuC compiler overrun detected, DATABUFSIZE is too small!\n");
-		exit(-1);
-	}
-
-	while (ptr[i])
-		current_buffer[current_offset++] = ptr[i++];
-}
-
-/*
- *	buffered print character
- *
- */
-char outbyteBuffer (char c)
-{
-	if (c == 0)
-		return (0);
-
-	current_buffer[current_offset++] = c;
-
-	return (c);
-}
-
-/*
- *	buffered print decimal number
- *
- */
-void outdecBuffer (int number)
-{
-	if (current_offset >=	DATABUFSIZE) {
-		printf("HuC compiler overrun detected, DATABUFSIZE is too small!\n");
-		exit(-1);
-	}
-
-	current_offset += sprintf(current_buffer + current_offset, "%ld", (long) number);
-}
-
-/*
- *	buffered print pseudo-op to define a byte
- *
- */
-void nlBuffer (void)
-{
-	current_buffer[current_offset++] = EOL;
-}
-
-/*
- *	buffered print pseudo-op to define a byte
- *
- */
-void defbyteBuffer (void)
-{
-	outstrBuffer("\t\tdb\t");
-}
-
-/*
- *	buffered print pseudo-op to define storage
- *
- */
-void defstorageBuffer (void)
-{
-	outstrBuffer("\t\tds\t");
-}
-
-/*
- *	buffered print pseudo-op to define a word
- *
- */
-void defwordBuffer (void)
-{
-	outstrBuffer("\t\tdw\t");
-}
-
-/**
- * buffered dump struct data
- * @param symbol struct variable
- * @param position position of the struct in the array, or zero
- */
-int dump_structBuffer (SYMBOL *symbol, int position)
-{
-	int dumped_bytes = 0;
-	int i, number_of_members, value;
-
-	number_of_members = tag_table[symbol->tagidx].number_of_members;
-	for (i = 0; i < number_of_members; i++) {
-		// i is the index of current member, get type
-		int member_type = member_table[tag_table[symbol->tagidx].member_idx + i].sym_type;
-		if (member_type == CCHAR || member_type == CUCHAR) {
-			defbyteBuffer();
-			dumped_bytes += 1;
-		}
-		else {
-			/* XXX: compound types? */
-			defwordBuffer();
-			dumped_bytes += 2;
-		}
-		if (position < get_size(symbol->name)) {
-			// dump data
-			value = get_item_at(symbol->name, position * number_of_members + i, &tag_table[symbol->tagidx]);
-			outdecBuffer(value);
-		}
-		else {
-			// dump zero, no more data available
-			outdecBuffer(0);
-		}
-		nlBuffer();
-	}
-	return (dumped_bytes);
-}
-
 /*
  *	dump all static variables
  */
@@ -899,27 +758,29 @@ void dumpglbs (void)
 				/* symbol has initialized data */
 				if (pass == 3) {
 					/* define space for initialized data */
-					current_buffer = data_buffer;
-					current_offset = data_offset;
+					if (i) {
+						i = 0;
+						nl();
+						ol(".xdata");
+					}
 					if ((cptr->storage & STORAGE) != LSTATIC)
-						prefixBuffer();
-					outstrBuffer(cptr->name);
-					outstrBuffer(":\n");
-					defstorageBuffer();
-					outdecBuffer(cptr->alloc_size);
-					nlBuffer();
+						prefix();
+					outstr(cptr->name);
+					outstr(":\n");
+					defstorage();
+					outdec(cptr->alloc_size);
+					nl();
 					cptr->storage |= WRITTEN;
-					data_offset = current_offset;
-					current_buffer = NULL;
-					current_offset = 0;
 					continue;
 				}
 				if (pass != 0)
 					continue;
+				if (i) {
+					i = 0;
+					nl();
+					ol(".xinit");
+				}
 				/* output initialization data into const bank */
-				current_buffer = rodata_buffer;
-				current_offset = rodata_offset;
-				have_init_data = 1;
 				list_size = 0;
 				line_count = 0;
 				list_size = get_size(cptr->name);
@@ -933,37 +794,34 @@ void dumpglbs (void)
 				   we have to count both to get the right members out. */
 				for (j = item = 0; j < dim; j++, item++) {
 					if (cptr->sym_type == CSTRUCT)
-						j += dump_structBuffer(cptr, item) - 1;
+						j += dump_struct(cptr, item) - 1;
 					else {
 						if (line_count % 10 == 0) {
-							nlBuffer();
+							nl();
 							if (cptr->sym_type == CCHAR || cptr->sym_type == CUCHAR)
-								defbyteBuffer();
+								defbyte();
 							else
-								defwordBuffer();
+								defword();
 						}
 						if (j < list_size) {
 							// dump data
 							int value = get_item_at(cptr->name, j, &tag_table[cptr->tagidx]);
-							outdecBuffer(value);
+							outdec(value);
 						}
 						else {
 							// dump zero, no more data available
-							outdecBuffer(0);
+							outdec(0);
 						}
 						line_count++;
 						if (line_count % 10 == 0)
 							line_count = 0;
 						else {
 							if (j < dim - 1)
-								outbyteBuffer(',');
+								outbyte(',');
 						}
 					}
 				}
-				nlBuffer();
-				rodata_offset = current_offset;
-				current_buffer = NULL;
-				current_offset = 0;
+				nl();
 				continue;
 			}
 			else {
@@ -1015,19 +873,6 @@ static void dumpfinal (void)
 			outstr(leaf_functions[i]);
 			outstr("_end:\n");
 		}
-	}
-
-	if (data_offset != 0) {
-		data_buffer[data_offset] = '\0';
-		nl();
-		ol(".xdata");
-		outstr(data_buffer);
-	}
-	if (rodata_offset != 0) {
-		rodata_buffer[rodata_offset] = '\0';
-		nl();
-		ol(".xinit");
-		outstr(rodata_buffer);
 	}
 }
 
