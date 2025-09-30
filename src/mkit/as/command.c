@@ -1658,8 +1658,6 @@ do_ds(int *ip)
 		/* ram page */
 		if (addr > max_bss)
 			max_bss = addr;
-		if (addr >= 0x595)
-			warning("WTF is going on!");
 		break;
 	}
 
