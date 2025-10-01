@@ -1,3 +1,5 @@
+#include <huc.h>
+
 int main()
 {
 	unsigned char i;

@@ -4,7 +4,8 @@
 /* Verify that the scheduler correctly computes the dependencies
    in the presence of conditional instructions.  */
 
-int strcmp (const char *, const char *);
+#include <string.h>
+
 int ap_standalone;
 
 const char *ap_check_cmd_context (void *a, int b)

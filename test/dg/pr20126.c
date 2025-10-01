@@ -6,6 +6,8 @@
    replacement might fail, such as when you attempt to replace a REG
    with a PLUS in one of the register_operands of cmpstrqi_rex_1.  */
 
+#include <string.h>
+
 extern void abort (void);
 
 /*typedef*/ struct S_s { int a; char b[3]; };// S;

@@ -1,7 +1,8 @@
 /* PR target/21297 */
 //typedef __SIZE_TYPE__ size_t;
+
+#include <string.h>
 #define size_t unsigned int
-extern int memcmp (const char *, const char *, size_t);
 extern void abort ();
 
 void

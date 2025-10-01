@@ -3,6 +3,8 @@
 /* { dg-do run } */
 /* { dg-options "-O2" } */
 
+#include <string.h>
+
 extern void abort (void);
 extern void exit (int);
 

@@ -1,3 +1,5 @@
+#include <string.h>
+
 char a[6];// = "12345";
 char b[6];// = "12345";
 

@@ -1,5 +1,7 @@
 /* PR opt/8165.  */
 
+#include <string.h>
+
 #define __builtin_strcpy strcpy
 #define __builtin_strcmp strcmp
 

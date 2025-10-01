@@ -1,3 +1,4 @@
+#include <string.h>
 
 struct tag {
   int m1;

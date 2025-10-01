@@ -1,7 +1,7 @@
+#include <string.h>
+
 //typedef __SIZE_TYPE__ size_t;
 #define size_t unsigned int
-
-extern size_t strlen (const char *s);
 
 /*typedef*/ struct A_s {
   int a, b;

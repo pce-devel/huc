@@ -1,3 +1,4 @@
+#include <string.h>
 void abort(void);
 void exit(int);
 struct baz 

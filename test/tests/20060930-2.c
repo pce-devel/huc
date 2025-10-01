@@ -1,5 +1,6 @@
 /* PR middle-end/29272 */
 
+#include <string.h>
 #define __builtin_memcpy memcpy
 
 extern void abort (void);

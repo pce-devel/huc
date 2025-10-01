@@ -1,11 +1,10 @@
 /* Test whether store motion recognizes pure functions as potentially reading
    any memory.  */
 
+#include <string.h>
+
 //typedef __SIZE_TYPE__ size_t;
 #define size_t unsigned int
-extern void *memcpy (void *dest, const void *src, size_t n);
-extern size_t strlen (const char *s);
-//extern int strcmp (const char *s1, const char *s2) __attribute__((pure));
 
 char buf[50];
 

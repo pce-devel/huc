@@ -1,3 +1,5 @@
+#include <string.h>
+
 char **p;
 const char *a = "Huhu";
 const char *b = "Hallo";

@@ -1,4 +1,6 @@
-extern int abs (int);
+#include <stdlib.h>
+#include <string.h>
+
 extern void abort (void);
 
 void

@@ -1,7 +1,8 @@
 /* PR middle-end/27260 */
 
+#include <string.h>
+
 extern void abort (void);
-extern void *memset (void *, int, __SIZE_TYPE__);
 
 char buf[65];
 

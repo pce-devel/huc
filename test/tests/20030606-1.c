@@ -1,3 +1,4 @@
+#include <string.h>
 
 int * foo (int *x, int b)
 {

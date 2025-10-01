@@ -2,6 +2,8 @@
 /* { dg-do run } */
 /* { dg-options "-O2 -ftrapv" } */
 
+#include <string.h>
+
 extern void abort (void);
 struct S { struct S *s; };
 struct T { struct S *t[25]; };
