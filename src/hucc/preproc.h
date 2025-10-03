@@ -5,8 +5,6 @@ void doinclude (void);
 
 void incl_globals_h (void);
 
-void incl_huc_h (void);
-
 FILE *open_include (void);
 
 int init_path (void);

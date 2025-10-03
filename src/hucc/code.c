@@ -106,28 +106,18 @@ void header (void)
 	time(&today);
 	outstr(ctime(&today));
 	outstr(";\n");
-	outstr("\n");
+	nl();
 	outstr("HUC\t\t=\t1\n");
 	outstr("HUCC\t\t=\t1\n");
-	nl();
-}
-
-void asmdefines (void)
-{
-	outstr(asmdefs);
-}
-
-void inc_startup (void)
-{
-	if (startup_incl == 0) {
-		startup_incl = 1;
-
+	if (asmdefs[0]) {
 		nl();
-		outstr("\t.include\t\"hucc.asm\"\n");
-		outstr("\t.opt\t\t@+\n");
-		gtext();
-		nl();
+		outstr(asmdefs);
 	}
+	nl();
+	outstr("\t.include\t\"hucc.asm\"\n");
+	outstr("\t.opt\t\t@+\n");
+	gtext();
+	nl();
 }
 
 /*

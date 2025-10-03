@@ -393,19 +393,12 @@ unknown_option:
 			/* Macros and globals have to be reset for each
 			   file, so we have to define the defaults all over
 			   each time. */
-			defmac("__end\t__memory");
-			addglb("__memory", ARRAY, CCHAR, 0, EXTERN, 0);
-			addglb("stack", ARRAY, CCHAR, 0, EXTERN, 0);
 			rglbsym_index = glbsym_index;
-			addglb("etext", ARRAY, CCHAR, 0, EXTERN, 0);
-			addglb("edata", ARRAY, CCHAR, 0, EXTERN, 0);
-			/* PCE specific externs */
-			addglb("font_base", VARIABLE, CINT, 0, EXTERN, 0);
-			/* end specific externs */
 
-			/* deprecated ident macros */
-			defmac("huc6280\t1");
-			defmac("huc\t1");
+//			/* deprecated ident macros */
+//			defmac("huc6280\t1");
+//			defmac("huc\t1");
+
 			/* modern ident macros */
 			defmac("__HUC__\t1");
 			defmac("__HUCC__\t1");
@@ -430,6 +423,10 @@ unknown_option:
 			if (ted2flag)
 				defmac("_TED2\t1");
 
+			/* the testsuite uses these functions without declaring them */
+			add_fastcall("abort()");
+			add_fastcall("exit(word acc)");
+
 			/*
 			 *	compiler body
 			 */
@@ -437,9 +434,11 @@ unknown_option:
 				exit(1);
 			if (first && !openout())
 				exit(1);
-			if (first)
+			if (first) {
 				header();
-			asmdefines();
+				incl_globals_h();
+			}
+
 //			gtext ();
 			parse();
 			fclose(input);
@@ -526,12 +525,6 @@ void usage (char *exename)
  */
 void parse (void)
 {
-	if (!startup_incl) {
-		inc_startup();
-		incl_huc_h();
-		incl_globals_h();
-	}
-
 	while (1) {
 		blanks();
 		if (feof(input))

@@ -218,35 +218,6 @@ void incl_globals_h (void)
 }
 
 /*
- *	open auto-include file "huc.h"
- */
-void incl_huc_h (void)
-{
-	FILE *inp2;
-
-	/* open the huc.h file to include those variables */
-	/* but if we can't open it, it's no problem */
-
-	inp2 = file_open("huc.h", 0);
-
-	if (inp2) {
-		if (inclsp < INCLSIZ) {
-#ifdef DEBUG_PREPROC
-			printf("HuCC opened \"huc.h\".\n");
-#endif
-			inclstk_line[inclsp] = line_number;
-			line_number = 0;
-			inclstk[inclsp++] = input2;
-			input2 = inp2;
-		}
-		else {
-			fclose(inp2);
-			error("too many nested includes");
-		}
-	}
-}
-
-/*
  *	open_include - remove "brackets" around include file name
  */
 FILE *open_include (void)

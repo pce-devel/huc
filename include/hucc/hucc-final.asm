@@ -40,6 +40,7 @@
 		include	"vdc.asm"		; Useful VDC routines.
 
 		include	"hucc-math.asm"		; HuCC multiply and divide.
+		include	"hucc-gfx.asm"		; Used by HuCC's core_main.
 
 		; Define in hucc-config.inc to remove this.
 
@@ -55,10 +56,6 @@
 		; is automatically included, which then includes a list
 		; of specific headers corresponding to HuC's library.
 
-	.ifdef	HUCC_USES_GFX
-		include	"hucc-gfx.asm"		; Set in hucc_gfx.h
-	.endif
-
 	.ifdef	HUCC_USES_STRING		; Set in hucc_string.h
 		include	"hucc-string.asm"
 	.endif
@@ -66,9 +63,9 @@
 	.ifdef	HUCC_USES_NEW_SCROLL		; Set in hucc_scroll.h
 		include	"hucc-scroll.asm"
 	.else
-	.ifdef	HUCC_USES_OLD_SCROLL		; Set in hucc_old_scroll.h
-		include	"hucc-old-scroll.asm"
-	.endif	HUCC_USES_OLD_SCROLL
+	.ifndef	HUCC_NO_DEFAULT_SCROLL
+		include	"hucc-old-scroll.asm"	; Used by HuCC's core_main.
+	.endif
 	.endif	HUCC_USES_NEW_SCROLL
 
 	.ifdef	HUCC_USES_OLD_SPR		; Set in hucc_old_spr.h

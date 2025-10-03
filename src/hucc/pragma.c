@@ -21,7 +21,7 @@
 struct fastcall ftemp;
 struct fastcall *fastcall_tbl[256];
 static char cmd[LINESIZE];
-static char *cmdptr;
+static const char *cmdptr;
 
 /* protos */
 int fastcall_look (const char *fname, int nargs, struct fastcall **p);
@@ -79,6 +79,21 @@ void parse_pragma (void)
 	/* others */
 	else
 		error("unknown pragma");
+}
+
+
+/* ----
+ * add_fastcall()
+ * ----
+ * setup a new fastcall from a string
+ *
+ * ie. "func(word __dx, byte __al, byte __ah)"
+ *
+ */
+void add_fastcall (const char *ident)
+{
+	cmdptr = ident;
+	new_fastcall();
 }
 
 
