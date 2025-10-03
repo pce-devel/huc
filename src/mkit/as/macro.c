@@ -416,7 +416,7 @@ macro_getargtype(char *arg)
 		arg++;
 
 	/* get type */
-	switch (toupper(*arg++)) {
+	switch (toupper(*arg)) {
 	case '\0':
 		return (NO_ARG);
 
@@ -432,16 +432,19 @@ macro_getargtype(char *arg)
 	case 'A':
 	case 'X':
 	case 'Y':
-		if (*arg == '\0')
+		if (arg[1] == '\0')
 			return (ARG_REG);
 
 	default:
-		/* symbol */
+		/* constant or expression */
+		/* returns ARG_ABS when the argument starts with a number or the */
+		/* first symbol is both defined and has no bank value, otherwise */
+		/* return ARG_LABEL (i.e. the argument is a location) */
 		for (i = 0;;) {
 			c = arg[i];
 			if (i == 0 && isdigit(c))
 				break;
-			if (isalnum(c) || (c == '_') || (c == '.') || (i == 0 && c == '@')) {
+			if (isalnum(c) || (c == '_') || (c == '.') || (i == 0 && c == '@') || (i == 0 && c == '!')) {
 				i++;
 			} else {
 				break;
@@ -451,24 +454,18 @@ macro_getargtype(char *arg)
 		if (i == 0)
 			return (ARG_ABS);
 		else {
-			if (c != '\0')
-				return (ARG_ABS);
-			else {
-				memcpy(&symbol[1], arg, i);
-				symbol[0] = i;
-				symbol[i + 1] = '\0';
+			memcpy(&symbol[1], arg, i);
+			symbol[0] = i;
+			symbol[i + 1] = '\0';
 
-				if ((sym = stlook(SYM_REF)) == NULL)
-					return (ARG_LABEL);
-				else {
-					if ((sym->type == UNDEF) || (sym->type == IFUNDEF))
-						return (ARG_LABEL);
-					if (sym->mprbank == UNDEFINED_BANK)
-						return (ARG_ABS);
-					else
-						return (ARG_LABEL);
-				}
-			}
+			if ((sym = stlook(SYM_REF)) == NULL)
+				return (ARG_LABEL);
+			if (sym->type == UNDEF || sym->type == IFUNDEF)
+				return (ARG_LABEL);
+			if (sym->mprbank == UNDEFINED_BANK)
+				return (ARG_ABS);
+
+			return (ARG_LABEL);
 		}
 	}
 }
