@@ -712,11 +712,12 @@ main(int argc, char **argv)
 	bank_base  = 0x00;
 	bank_limit = 0x7F;
 
-	xdata_bank = UNDEFINED_BANK;
+	/* init relocatable sections outside the UNDEFINED_BANK */
+	xdata_bank = PROC_BANK;
 	xdata_addr = 0x0000;
-	xinit_bank = UNDEFINED_BANK;
+	xinit_bank = PROC_BANK;
 	xinit_addr = 0x0000;
-	xstrz_bank = UNDEFINED_BANK;
+	xstrz_bank = PROC_BANK;
 	xstrz_addr = 0x0000;
 
 	/* fixme: these should be exclusive! */
