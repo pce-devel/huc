@@ -67,7 +67,7 @@ extern int complex_expr;                        /* NZ if an expression contains 
 extern int mopt;
 extern int in_macro;
 extern int expand_macro;
-extern char marg[8][10][256];
+extern char marg[8][10][MARGSZ];
 extern int midx;
 extern int mcounter, mcntmax;
 extern int mcntstack[8];

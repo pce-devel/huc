@@ -64,6 +64,9 @@
 /* file name size, including the '\0' */
 #define PATHSZ		260
 
+/* macro argument length */
+#define MARGSZ		512
+
 /* macro argument types */
 #define NO_ARG		0
 #define ARG_REG		1

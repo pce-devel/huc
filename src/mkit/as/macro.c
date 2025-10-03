@@ -10,7 +10,7 @@
 int mopt;
 int in_macro;
 int expand_macro;
-char marg[8][10][256];
+char marg[8][10][MARGSZ];
 int midx;
 int mcounter, mcntmax;
 int mcntstack[8];
@@ -200,13 +200,13 @@ macro_getargs(int ip)
 					error("Unterminated string!");
 					return (0);
 				}
-				if (i == 256) {
-					error("String too long, max. 255 characters!");
-					return (0);
-				}
 				if (t == c) {
-					if ((c != '\"') || (ptr[i - 1] != '\\'))
+					if ((c != '\"') || (i == 0) || (ptr[i - 1] != '\\'))
 						break;
+				}
+				if (i == (MARGSZ - 1)) {
+					error("String too long, max. %d characters!", (MARGSZ - 1));
+					return (0);
 				}
 				ptr[i++] = t;
 			}
@@ -310,8 +310,8 @@ macro_getargs(int ip)
 				else {
 					ptr[i++] = c;
 				}
-				if (i == 255) {
-					error("Macro argument string too long, max. 255 characters!");
+				if (i == (MARGSZ - 1)) {
+					error("Macro argument string too long, max. %d characters!", (MARGSZ - 1));
 					return (0);
 				}
 				j++;
@@ -334,8 +334,8 @@ macro_getargs(int ip)
 						arg--;
 
 						/* check string length */
-						if (strlen(marg[midx][arg]) > 255-4) {
-							error("Macro argument string too long, max. 255 characters!");
+						if (strlen(marg[midx][arg]) > (MARGSZ - 5)) {
+							error("Macro argument string too long, max. %d characters!", (MARGSZ - 1));
 							return (0);
 						} else {
 							strcat(marg[midx][arg], suffix);
