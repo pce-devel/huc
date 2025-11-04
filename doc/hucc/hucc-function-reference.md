@@ -13,11 +13,11 @@ Extracts one or more **character** patterns (tiles of 8x8 pixels) from a picture
 `#inctile( identifier_name, "filename", begin_x, begin_y, col, row );`
 Extracts one or more **block** patterns (metatiles of 16x16 pixels) from a picture file. Extracts '*col*' columns and '*row*' rows of metatiles (in block units), starting at position '*begin_x*' and '*begin_y*' (in pixels). This is a legacy directive for the older Tile and Map Functions.
 
-`#incblk( identifier_name, "filename", chr_set_vaddr, chr_set );`
-Extracts all possible **block** patterns (metatiles of 16x16 pixels) from a picture file, using the optimized character set '*chr_set*' previously defined by `#incchr`. Maximum number of blocks is 256. The character set will be stored at VRAM address '*chr_set_vaddr*' of your choice (usually 0x1000).
+`#incblk( identifier_name, "filename", chr_set_vram, chr_set );`
+Extracts all possible **block** patterns (metatiles of 16x16 pixels) from a picture file, using the optimized character set '*chr_set*' previously defined by `#incchr`. Maximum number of blocks is 256. The character set will be stored at VRAM address '*chr_set_vram*' of your choice (usually 0x1000).
 
-`#incbat( identifier_name, "filename", chr_set_vaddr, col, row, chr_set );`
-Extracts a **map** in character ("BAT") format. Maximum map size is 256 '*col*' columns and 32 '*row*' rows, or 128 '*col*' columns and 64 '*row*' rows (in character units). This format is best used for logo screens, title screens, reward screens and status bars, but can also be used for limited scrolling backgrounds. '*chr_set*' is the character set previously defined by `#incchr`. The character set will be stored at VRAM address '*chr_set_vaddr*' of your choice (usually 0x1000).
+`#incbat( identifier_name, "filename", chr_set_vram, col, row, chr_set );`
+Extracts a **map** in character ("BAT") format. Maximum map size is 256 '*col*' columns and 32 '*row*' rows, or 128 '*col*' columns and 64 '*row*' rows (in character units). This format is best used for logo screens, title screens, reward screens and status bars, but can also be used for limited scrolling backgrounds. '*chr_set*' is the character set previously defined by `#incchr`. The character set will be stored at VRAM address '*chr_set_vram*' of your choice (usually 0x1000).
 
 `#incmap( identifier_name, "filename", blk_set );`
 Extracts a **map** in block format. Maximum map size is 128x128 blocks (i.e. 256x256 characters). This format is used for medium-sized scrolling backgrounds, and is also the format for the individual screens in a huge multi-screen background. '*blk_set*' is the block set previously defined by `#incblk`.
@@ -133,7 +133,7 @@ Generic function to load data (BAT, tiles, sprites) in VRAM, at address '*vram*'
 Loads VRAM data from far memory. The data source must be set up using `set_far_base()` before calling this function.
 
 `load_bat( unsigned int vram, unsigned char __far *data, unsigned char tiles_w, unsigned char tiles_h );`
-Loads a rectangular character attribute table (BAT) of width '*w*' and of height '*h*' in VRAM at address '*vram*'.
+Loads a rectangular Character Attribute Table (BAT) of width '*w*' and of height '*h*' in VRAM at address '*vram*'.
 
 `far_load_bat( unsigned int vram, unsigned char tiles_w, unsigned char tiles_h );`
 Loads BAT data from far memory. The data source must be set up using `set_far_base()` before calling this function.
