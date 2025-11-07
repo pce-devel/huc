@@ -84,7 +84,7 @@ Further details are available in **huc-farpeek.c** (test folder of HuCC).
 The PC Engine has one Video Display Controller (VDC1). The SuperGrafx provides a second one (VDC2).
 
 `disp_on( void );`
-Enables display output. Controls both Video Display Controllers (VDC1 and VDC2).
+Enables display output. Controls both VDC1 and VDC2.
 
 `disp_off( void );`
 Blanks/turns off the display output. Controls both VDC1 and VDC2.
