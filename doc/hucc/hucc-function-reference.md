@@ -37,7 +37,7 @@ Creates a palette lookup table for legacy HuC maps, directly from a block (metat
 `#incsprpal( identifier_name, "filename" );`
 Creates a palette lookup table for legacy HuC maps, directly from a sprite picture file. This is a legacy directive for the older Tile and Map Functions.
 
-**Note**: For more information on legacy or deprecated directives, see the ancient **huc_doc.htm** and **usage.txt** files.
+**Note:** For more information on legacy or deprecated directives, see the ancient **huc_doc.htm** and **usage.txt** files.
 
 ## **Memory Access Functions**
 
@@ -54,10 +54,16 @@ This function can be used to access the hardware I/O ports located at 0x0000 to 
 `farpeekw( void __far *addr );`
 Reads the contents of far memory location '*addr*'. `farpeek()` is char-sized access, whereas `farpeekw()` is word-sized.
 
-**Note**: This legacy function has been superseded by the newer `set_far_base()` function.
+**Note:** This legacy function has been superseded by the newer `set_far_base()` function.
 
 `set_far_base( unsigned char data_bank, unsigned char *data_addr );`
-Sets the base '*bank*' and '*addr*' for far memory operations. Used in conjunction with far memory functions like `far_load_vram()`, `far_load_bat()`, etc.
+Sets the base '*bank*' and '*addr*' for far memory operations. Used in conjunction with far memory functions like `far_load_vram()`, `far_load_bat()`, etc. The `BANK` parameter allows you to read the bank of your data.
+
+**Example:**
+```c
+// Set up a far memory pointer to "my_data"
+set_far_base( BANK(my_data), my_data );
+```
 
 `set_far_offset( unsigned int offset, unsigned char data_bank, unsigned char *data_addr );`
 Sets the offset for far memory operations. Allows fine-tuning of the far memory pointer.
@@ -82,19 +88,19 @@ Blanks/turns off the display output. Controls both VDC1 and VDC2.
 `vsync( unsigned char count );`
 Synchronizes the program to the video Vertical Blanking Signal (VBL), which is around 1/60th of a second. Controls both VDC1 and VDC2.
 
-- **Overload 1**: Without parameters, returns as soon as a VBL signal has been received.
-- **Overload 2**: With '*count*' parameter, synchronizes to the number of frames requested (e.g. `vsync(3)` for 20fps).
+- **Overload 1:** Without parameters, returns as soon as a VBL signal has been received.
+- **Overload 2:** With '*count*' parameter, synchronizes to the number of frames requested (e.g. `vsync(3)` for 20fps).
 
 `cls( void );`
 `cls( unsigned int tile );`
 Clears the entire screen.
-- **Overload 1**: Without parameters, the screen is filled with a space character.
-- **Overload 2**: With '*tile*' parameter, the screen is filled with the specified BAT value.
+- **Overload 1:** Without parameters, the screen is filled with a space character.
+- **Overload 2:** With '*tile*' parameter, the screen is filled with the specified BAT value.
 
 `init_240x208( void );`
 Initializes the screen to 240x208 resolution (30 characters wide by 26 characters tall). This is a useful resolution for games that need to scroll their map on a virtual screen restricted to 256x256 pixels (32x32 characters). Controls both VDC1 and VDC2.
 
-**Note**: Because of a hardware limitation, a screen with a horizontal resolution of 240 pixels can not display more than 62 sprites. The last two sprites (numbers 62 & 63) will not be visible.
+**Note:** Because of a hardware limitation, a screen with a horizontal resolution of 240 pixels can not display more than 62 sprites. The last two sprites (numbers 62 & 63) will not be visible.
 
 `init_256x224( void );`
 Initializes the screen to a standard 256x224 resolution (32 characters wide by 28 characters tall). Controls both VDC1 and VDC2.
@@ -103,14 +109,14 @@ Initializes the screen to a standard 256x224 resolution (32 characters wide by 2
 `set_xres( unsigned int x_pixels, unsigned char blur_flag );`
 Sets the horizontal resolution to a custom '*x_pixels*' value (in pixels). This changes the VDC's registers to display more pixels on the screen; it does not affect any virtual calculations.
 
-- **Overload 1**: Uses default blur setting `XRES_SOFT`.
-- **Overload 2**: With '*blur_flag*' parameter, specifies smoothing type `XRES_SHARP` or `XRES_SOFT` (default).
+- **Overload 1:** Uses default blur setting `XRES_SOFT`.
+- **Overload 2:** With '*blur_flag*' parameter, specifies smoothing type `XRES_SHARP` or `XRES_SOFT` (default).
 
-**Note 1**: The three regular (non-overscan) horizontal resolutions are 256 pixels (5MHz), 336 pixels (7MHz) and 512 pixels (10MHz). The 5MHz dot clock will be used up to a horizontal resolution of 296 pixels. The 7MHz dot clock will be used up to 384 pixels and the 10MHz dot clock will be used beyond this. The maximum usable (overscan) resolution seems to be around 528 pixels.
+**Note 1:** The three regular (non-overscan) horizontal resolutions are 256 pixels (5MHz), 336 pixels (7MHz) and 512 pixels (10MHz). The 5MHz dot clock will be used up to a horizontal resolution of 296 pixels. The 7MHz dot clock will be used up to 384 pixels and the 10MHz dot clock will be used beyond this. The maximum usable (overscan) resolution seems to be around 528 pixels.
 
-**Note 2**: The '*blur_flag*' parameter only works with a composite output.
+**Note 2:** The '*blur_flag*' parameter only works with a composite output.
 
-**Note 3**: Because of a hardware limitation, a screen with a horizontal resolution of 240 pixels can not display more than 62 sprites. The last two sprites (numbers 62 & 63) will not be visible.
+**Note 3:** Because of a hardware limitation, a screen with a horizontal resolution of 240 pixels can not display more than 62 sprites. The last two sprites (numbers 62 & 63) will not be visible.
 
 `set_screen_size( unsigned char value );`
 Changes the virtual screen size. By default the startup code initializes a virtual screen of 64 characters wide and 32 characters tall, but other values are possible, namely: 32x32, 128x32, 32x64, 64x64, or 128x64. The larger the virtual screen is, the less VRAM you will have for your graphics (fonts, tiles, sprites).
@@ -219,7 +225,7 @@ Disables all active split screen windows.
 `scroll( unsigned char num, unsigned int x, unsigned int y, unsigned char top, unsigned char bottom, unsigned char disp );`
 Defines screen window '*num*'. Up to 4 windows can be defined. '*top*' and '*bottom*' are the screen top and bottom limits of the window (limits are included in the window area). '*disp*' controls the type of the window. If bit 7 is set, background graphics will be displayed in this window; and if bit 6 is set, sprites will also be displayed. If none of these bits are set, the window will stay blank. '*x*' and '*y*' are the top-left coordinates of the area in the virtual screen that will be displayed in the window.
 
-**Note**: This legacy function has been superseded by the superior `scroll_split()` function.
+**Note:** This legacy function has been superseded by the superior `scroll_split()` function.
 
 `scroll_disable( unsigned char num );`
 Disables scrolling for the screen window '*num*'. Only use it with the legacy `scroll()` function!
@@ -531,7 +537,7 @@ Modifies the map data (sets a map element to a new tile ID), but works only when
 `load_background( unsigned char __far *tiles, unsigned char __far *palettes, unsigned char __far *bat, unsigned char w, unsigned char h );`
 This legacy all-in-one function is used to display an entire background image on the screen, like a game title image. It will load background character data, it will load the palette, and finally it will load the BAT. Use it with directives *#incchr*, *#incbat* and *#incpal* to manage the different types of data. The character data will be stored at fixed address 0x1000 to 0x5000 in VRAM.
 
-**Note**: This basic function is hardcoded for a resolution of 256x224 pixels. The tileset (character data) is **not** optimized for duplicates! Each tile occupies its own VRAM space.
+**Note:** This basic function is hardcoded for a resolution of 256x224 pixels. The tileset (character data) is **not** optimized for duplicates! Each tile occupies its own VRAM space.
 
 #### **SuperGrafx Legacy Tile and Map Functions**
 
@@ -582,9 +588,9 @@ Loads a custom font in VRAM. When used together with the *#incchr* directive, it
 `far_load_font( unsigned char count, unsigned int vram );`
 Loads font data from far memory. The data source must be set up using `set_far_base()` before calling this function.
 
-**Note 1**: Custom fonts are "*hard-colored*" fonts (i.e. colors come from your picture file), so they won't be affected by any previous call to `set_font_color()`. The number of characters to load ranges from 0 to 224; ASCII characters 0 to 31 are never used and can't be defined, so you must start your font at the space character which is ASCII code 32.
+**Note 1:** Custom fonts are "*hard-colored*" fonts (i.e. colors come from your picture file), so they won't be affected by any previous call to `set_font_color()`. The number of characters to load ranges from 0 to 224; ASCII characters 0 to 31 are never used and can't be defined, so you must start your font at the space character which is ASCII code 32.
 
-**Note 2**: If you don't explicitely give a VRAM address, the function will load your font just above the BAT (usually it's address 0x0800).
+**Note 2:** If you don't explicitely give a VRAM address, the function will load your font just above the BAT (usually it's address 0x0800).
 
 #### **SuperGrafx Font Functions**
 
@@ -610,12 +616,12 @@ Outputs a null-terminated string to the current cursor position.
 
 `printf( unsigned char *format, unsigned int vararg1, unsigned int vararg2, unsigned int vararg3, unsigned int vararg4 );`
 Formats and outputs a string to the current cursor position. Supports 0-4 variable arguments.
-- **Warning**: Width, precision, and escape sequence numbers must be ≤ 127.
+- **Warning:** Width, precision, and escape sequence numbers must be ≤ 127.
 
 `sprintf( unsigned char *string, unsigned char *format, unsigned int vararg1, unsigned int vararg2, unsigned int vararg3, unsigned int vararg4 );`
 Formats a string and store it in the destination buffer. Supports 0-4 variable arguments.
-- **Warning**: Output must be less than 256 characters.
-- **Warning**: Width, precision, and escape sequence numbers must be ≤ 127.
+- **Warning:** Output must be less than 256 characters.
+- **Warning:** Width, precision, and escape sequence numbers must be ≤ 127.
 
 **Example:**
 ```c
@@ -655,7 +661,7 @@ printf("Position: \eX%d\eY%d", 10, 5);  // Set cursor position
 
 All these legacy text output functions have two forms: one where you directly specify the VRAM address, and another one where you specify '*x*' and '*y*' coordinates (in character units). The second form is a bit slower but more user-friendly.
 
-**Note**: These text functions only work on VDC1.
+**Note:** These text functions only work on VDC1.
 
 `put_digit( unsigned char digit, unsigned char bat_x, unsigned char bat_y );`
 Outputs a digit character '0'-'9' given its numeric value. Hexa digits ('A'-'F') are also supported, a value of 10 will output 'A', a value of 11 will output 'B', and so on.
@@ -702,44 +708,44 @@ Standard string manipulation functions with support for both regular and far mem
 `strcpy( char *destination, char *source );`
 `strcpy( char *destination, char __far *source );`
 Copies the source string to the destination area.
-- **Overload 1**: Regular memory source.
-- **Overload 2**: Far memory source (crosses memory banks).
+- **Overload 1:** Regular memory source.
+- **Overload 2:** Far memory source (crosses memory banks).
 
 `strcat( char *destination, char *source );`
 `strcat( char *destination, char __far *source );`
 Concatenates source string onto the end of destination string.
-- **Overload 1**: Regular memory source.
-- **Overload 2**: Far memory source (crosses memory banks).
+- **Overload 1:** Regular memory source.
+- **Overload 2:** Far memory source (crosses memory banks).
 
 `strlen( char *source );`
 `strlen( char __far *source );`
 Computes the length of the specified string, up to but not including the terminating null character.
-- **Overload 1**: Regular memory source.
-- **Overload 2**: Far memory source (crosses memory banks).
+- **Overload 1:** Regular memory source.
+- **Overload 2:** Far memory source (crosses memory banks).
 
 `strlcpy( char *destination, char *source, unsigned char size );`
 `strlcpy( char *destination, char __far *source, unsigned char size );`
 Copies the source string to the destination area with size limit (POSIX compliant).
-- **Overload 1**: Regular memory source.
-- **Overload 2**: Far memory source (crosses memory banks).
+- **Overload 1:** Regular memory source.
+- **Overload 2:** Far memory source (crosses memory banks).
 
 `strlcat( char *destination, char *source, unsigned char size );`
 `strlcat( char *destination, char __far *source, unsigned char size );`
 Concatenates source string to destination with size limit (POSIX compliant).
-- **Overload 1**: Regular memory source.
-- **Overload 2**: Far memory source (crosses memory banks).
+- **Overload 1:** Regular memory source.
+- **Overload 2:** Far memory source (crosses memory banks).
 
 `memcpy( unsigned char *destination, unsigned char *source, unsigned int count );`
 `memcpy( unsigned char *destination, unsigned char __far *source, unsigned int count );`
 Copies memory from source to destination.
-- **Overload 1**: Regular memory source.
-- **Overload 2**: Far memory source (crosses memory banks).
+- **Overload 1:** Regular memory source.
+- **Overload 2:** Far memory source (crosses memory banks).
 
 `mempcpy( unsigned char *destination, unsigned char *source, unsigned int count );`
 `mempcpy( unsigned char *destination, unsigned char __far *source, unsigned int count );`
 Copies memory from source to destination and returns pointer to end of destination.
-- **Overload 1**: Regular memory source.
-- **Overload 2**: Far memory source (crosses memory banks).
+- **Overload 1:** Regular memory source.
+- **Overload 2:** Far memory source (crosses memory banks).
 
 `memset( unsigned char *destination, unsigned char value, unsigned int count );`
 Sets memory area to specified value.
@@ -747,20 +753,20 @@ Sets memory area to specified value.
 `strcmp( char *destination, char *source );`
 `strcmp( char *destination, char __far *source );`
 Compares strings.
-- **Overload 1**: Regular memory source.
-- **Overload 2**: Far memory source (crosses memory banks).
+- **Overload 1:** Regular memory source.
+- **Overload 2:** Far memory source (crosses memory banks).
 
 `strncmp( char *destination, char *source, unsigned int count );`
 `strncmp( char *destination, char __far *source, unsigned int count );`
 Compares strings with limited count.
-- **Overload 1**: Regular memory source.
-- **Overload 2**: Far memory source (crosses memory banks).
+- **Overload 1:** Regular memory source.
+- **Overload 2:** Far memory source (crosses memory banks).
 
 `memcmp( unsigned char *destination, unsigned char *source, unsigned int count );`
 `memcmp( unsigned char *destination, unsigned char __far *source, unsigned int count );`
 Compares memory areas.
-- **Overload 1**: Regular memory source.
-- **Overload 2**: Far memory source (crosses memory banks).
+- **Overload 1:** Regular memory source.
+- **Overload 2:** Far memory source (crosses memory banks).
 
 ## **ZX0 Compression Functions**
 
@@ -807,7 +813,7 @@ Clears joypad events specified by '*mask*'. This function is only available if c
 `clock_tt( void );`
 Returns the number of *hours, minutes, seconds*, or *ticks* (one VSync interval, or 1/60th of a second) since the last `clock_reset()`.
 
-**Note**: The accuracy of this clock will be "off" by about 2 seconds per whole hour. This is due to the fact that NTSC VSync frequency is actually 59.94Hz, rather than 60Hz (whilst the VCE "refreshes" at around 59.82Hz).
+**Note:** The accuracy of this clock will be "off" by about 2 seconds per whole hour. This is due to the fact that NTSC VSync frequency is actually 59.94Hz, rather than 60Hz (whilst the VCE "refreshes" at around 59.82Hz).
 
 `clock_reset( void );`
 Resets the clock timer.
@@ -857,7 +863,7 @@ Plays one or more CD-ROM audio tracks in a few different modes. This will not pl
 `cd_playmsf( unsigned char start_minute,  unsigned char start_second,  unsigned char start_frame, unsigned char end_minute,  unsigned char end_second,  unsigned char end_frame,  unsigned char mode );`
 Plays CD-ROM audio in a few different modes, as above. M/S/F = minute/second/frame indexing technique (there are 75 frames per second).
 
-**Note**: See `cd_playtrk()` for valid values of '*mode*'.
+**Note:** See `cd_playtrk()` for valid values of '*mode*'.
 
 `cd_loadvram( unsigned char ovl_index, unsigned int sect_offset, unsigned int vramaddr, unsigned int bytes );`
 Reads data from the CD-ROM directly into VRAM at address specified by '*vramaddr*', for a length of '*bytes*'. Note that 2 bytes are required to fill one VRAM word. Reads it from the overlay segment specified by '*ovl_index*', with sector offset (i.e. multiples of 2048 bytes) of '*sect_offset*'. Non-zero return values indicate errors.
@@ -943,7 +949,7 @@ Writes into the file named '*name*'. Data to write are in the buffer '*buf*' and
 
 ## **Debug and Test Functions**
 
-**Important note**: These functions are primarily for debugging and testing purposes!
+**Important note:** These functions are primarily for debugging and testing purposes!
 
 `dump_screen( void );`
 Dumps screen contents for testing purposes. Only available in TGemu emulator.
@@ -961,7 +967,7 @@ Exits program with specified exit code. Only available in TGemu emulator.
 
 These functions are provided for compatibility with existing applications, but **should not be used in new code**.
 
-***Note**: No deprecated functions are currently documented here.*
+***Note:** No deprecated functions are currently documented here.*
 
 ## **HuC3/4 functions currently NOT supported in HuCC (as of 2025/09/04)**
 
