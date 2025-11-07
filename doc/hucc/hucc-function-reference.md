@@ -57,7 +57,7 @@ Reads the contents of far memory location '*addr*'. `farpeek()` is char-sized ac
 **Note:** This legacy function has been superseded by the newer `set_far_base()` function.
 
 `set_far_base( unsigned char data_bank, unsigned char *data_addr );`
-Sets the base '*bank*' and '*addr*' for far memory operations. Used in conjunction with far memory functions like `far_load_vram()`, `far_load_bat()`, etc. The `BANK` parameter allows you to read the bank of your data.
+Sets the base '*bank*' and '*addr*' for far memory operations. Used in conjunction with far memory functions like `far_load_vram()`, `far_load_bat()`, etc. The `BANK` parameter allows you to read the memory bank of your data.
 
 `set_far_offset( unsigned int offset, unsigned char data_bank, unsigned char *data_addr );`
 Sets the offset for far memory operations. Allows fine-tuning of the far memory pointer.
@@ -81,7 +81,7 @@ Further details are available in **huc-farpeek.c** (test folder of HuCC).
 
 ## **Video Functions**
 
-The PC Engine has one Video Display Controller (VDC1). The SuperGrafx provides a second one (VDC2).
+The PC Engine (CoreGrafx/TurboGrafx) has one Video Display Controller (VDC1). The SuperGrafx provides a second one (VDC2).
 
 `disp_on( void );`
 Enables display output. Controls both VDC1 and VDC2.
@@ -807,7 +807,7 @@ Gets joypad events for joypad '*which*'. This function is only available if conf
 Clears joypad events specified by '*mask*'. This function is only available if configured in hucc-config.inc.
 
 ## **Clock Functions**
-***
+
 `clock_hh( void );`
 `clock_mm( void );`
 `clock_ss( void );`
@@ -964,13 +964,13 @@ Exits program with specified exit code. Only available in TGemu emulator.
 `__builtin_ffs( unsigned int value );`
 "Find First Set Bit". Counts the number of bits in an int until it finds one that is set.
 
-## **Special cases, for compatibility with existing apps ONLY**
+## **Legacy functions, ONLY for compatibility with existing projects**
 
-These functions are provided for compatibility with existing applications, but **should not be used in new code**.
+These functions are only provided for compatibility with existing projects, but should be avoided in new code.
 
 ***Note:** No deprecated functions are currently documented here.*
 
-## **HuC3/4 functions currently NOT supported in HuCC (as of 2025/09/04)**
+## **HuC3/4 functions abandoned or currently not supported in HuCC (as of 2025/09/04)**
 
 `spr_get_pattern`
 `spr_get_pal`
