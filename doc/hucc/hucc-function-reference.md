@@ -161,7 +161,7 @@ Copies data from one VRAM location to another using Direct Memory Access. Useful
 ### **SuperGrafx Video Functions**
 
 `sgx_detect( void );`
-Checks for SuperGrafx hardware. Returns **TRUE (1)** if exists; **FALSE(0)** if not.
+Checks for SuperGrafx hardware. Returns **TRUE (1)** if exists; **FALSE (0)** if not.
 
 `sgx_cls( void );`
 `sgx_cls( unsigned int tile );`
