@@ -158,7 +158,7 @@ Loads sprite data from far memory. The data source must be set up using `set_far
 `vram2vram( unsigned int vram_dst, unsigned int vram_src, unsigned int word_len );`
 Copies data from one VRAM location to another using Direct Memory Access. Useful for fast sprite animations and tile updates. '*vram_dst*' is the destination address, '*vram_src*' is the source address, and '*word_len*' is the number of 16-bit words to copy.
 
-#### **SuperGrafx Video Functions**
+### **SuperGrafx Video Functions**
 
 `sgx_detect( void );`
 Checks for SuperGrafx hardware. Returns **TRUE (1)** if exists; **FALSE(0)** if not.
@@ -233,7 +233,7 @@ Defines screen window '*num*'. Up to 4 windows can be defined. '*top*' and '*bot
 `scroll_disable( unsigned char num );`
 Disables scrolling for the screen window '*num*'. Only use it with the legacy `scroll()` function!
 
-#### **SuperGrafx Split Screen Functions**
+### **SuperGrafx Split Screen Functions**
 
 `sgx_scroll_split( unsigned char index, unsigned char screen_line, unsigned int bat_x, unsigned int bat_y, unsigned char display_flags );`
 Up to 128 windows can be defined for VDC2.
@@ -310,7 +310,7 @@ Returns the '*x*' coordinate of the current sprite.
 `spr_get_y( void );`
 Returns the '*y*' coordinate of the current sprite.
 
-#### **SuperGrafx Sprite Functions**
+### **SuperGrafx Sprite Functions**
 
 `sgx_init_satb( void );`
 
@@ -417,7 +417,7 @@ Updates the character map display based on the current scroll position. Call thi
 `blit_bat( unsigned char tile_x, unsigned char tile_y, unsigned char tile_w, unsigned char tile_h );`
 Draws a specific rectangular area of the character map to the screen. Parameters specify the tile coordinates and dimensions.
 
-#### **SuperGrafx Character Map Functions**
+### **SuperGrafx Character Map Functions**
 
 `sgx_set_chrmap( unsigned char __far *chrmap, unsigned char tiles_w );`
 
@@ -465,7 +465,7 @@ if (map_blk_flag & COLLISION_MASK) {
 }
 ```
 
-#### **SuperGrafx Block Map Functions**
+### **SuperGrafx Block Map Functions**
 
 `sgx_set_blocks( unsigned char __far *blk_def, unsigned char __far *flg_def, unsigned char number_of_blocks );`
 
@@ -540,7 +540,7 @@ This legacy all-in-one function is used to display an entire background image on
 
 **Note:** This basic function is hardcoded for a resolution of 256x224 pixels. The tileset (character data) is **not** optimized for duplicates! Each tile occupies its own VRAM space.
 
-#### **SuperGrafx Legacy Tile and Map Functions**
+### **SuperGrafx Legacy Tile and Map Functions**
 
 `sgx_set_tile_address( unsigned int vram );`
 
@@ -593,7 +593,7 @@ Loads font data from far memory. The data source must be set up using `set_far_b
 
 **Note 2:** If you don't explicitely give a VRAM address, the function will load your font just above the BAT (usually it's address 0x0800).
 
-#### **SuperGrafx Font Functions**
+### **SuperGrafx Font Functions**
 
 `sgx_load_default_font( void );`
 
@@ -650,7 +650,7 @@ printf("Position: \eX%d\eY%d", 10, 5);  // Set cursor position
 - `\eT<num>` - Set minimum Y coordinate
 - `\eP<num>` - Set current palette
 
-#### **SuperGrafx Printf and Formatted Output Functions**
+### **SuperGrafx Printf and Formatted Output Functions**
 
 `sgx_putchar( unsigned char ascii );`
 
