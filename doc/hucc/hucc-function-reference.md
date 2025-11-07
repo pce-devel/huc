@@ -378,7 +378,7 @@ Loads palette data from far memory. The data source must be set up using `set_fa
 This legacy function is exactly the same as `load_palette()`, but it is limited to character sub-palette numbers 0 to 15. Without the third argument, the function loads only one sub-palette.
 
 `set_sprpal( unsigned char palette, unsigned char __far *data, unsigned int num_palettes );`
-This legacy function is exactly the same as `load_palette()`, except it offers direct access to sprite sub-palettes. They are standard sub-palette numbers 16 to 31, but with this function you can simply access them with indices 0 to 15. This can make sprite palette manipulation easier, since you don't have to remember the real sprite sub-palette indices. Without the third argument, the function loads only one block.
+This legacy function is exactly the same as `load_palette()`, except it offers direct access to sprite sub-palettes. They are standard sub-palette numbers 16 to 31, but with this function you can simply access them with indices 0 to 15. This can make sprite palette manipulation easier, since you don't have to remember the real sprite sub-palette indices. Without the third argument, the function loads only one sub-palette.
 
 `read_palette( unsigned char palette, unsigned char num_palettes, unsigned int *destination );`
 Reads palette data back from the Video Color Encoder (VCE) into the specified destination buffer.
