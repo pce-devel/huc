@@ -81,6 +81,8 @@ Further details are available in **huc-farpeek.c** (test folder of HuCC).
 
 ## **Video Functions**
 
+The PC Engine has one Video Display Controller (VDC1). The SuperGrafx provides a second one (VDC2).
+
 `disp_on( void );`
 Enables display output. Controls both Video Display Controllers (VDC1 and VDC2).
 
@@ -157,8 +159,6 @@ Loads sprite data from far memory. The data source must be set up using `set_far
 Copies data from one VRAM location to another using Direct Memory Access. Useful for fast sprite animations and tile updates. '*vram_dst*' is the destination address, '*vram_src*' is the source address, and '*word_len*' is the number of 16-bit words to copy.
 
 #### **SuperGrafx Video Functions**
-
-These functions control the second Video Display Controller (VDC2) provided by the SuperGrafx.
 
 `sgx_detect( void );`
 Checks for SuperGrafx hardware. Returns **TRUE (1)** if exists; **FALSE(0)** if not.
