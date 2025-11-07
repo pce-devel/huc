@@ -59,14 +59,15 @@ Reads the contents of far memory location '*addr*'. `farpeek()` is char-sized ac
 `set_far_base( unsigned char data_bank, unsigned char *data_addr );`
 Sets the base '*bank*' and '*addr*' for far memory operations. Used in conjunction with far memory functions like `far_load_vram()`, `far_load_bat()`, etc. The `BANK` parameter allows you to read the bank of your data.
 
+`set_far_offset( unsigned int offset, unsigned char data_bank, unsigned char *data_addr );`
+Sets the offset for far memory operations. Allows fine-tuning of the far memory pointer.
+
 **Example:**
 ```c
 // Set up a far memory pointer to "my_data"
 set_far_base( BANK(my_data), my_data );
+set_far_offset( 1 * 2, BANK(my_data), my_data );
 ```
-
-`set_far_offset( unsigned int offset, unsigned char data_bank, unsigned char *data_addr );`
-Sets the offset for far memory operations. Allows fine-tuning of the far memory pointer.
 
 `far_peek( void );`
 Reads a byte from the current far memory location set by `set_far_base()`.
@@ -75,6 +76,8 @@ Reads a byte from the current far memory location set by `set_far_base()`.
 Reads a word from the current far memory location set by `set_far_base()`.
 
 **Related functions:** `far_load_vram()`, `far_load_bat()`, `far_load_sprites()`, `far_load_palette()`, `far_load_font()`
+
+Further details are available in **huc-farpeek.c** (test folder of HuCC).
 
 ## **Video Functions**
 
