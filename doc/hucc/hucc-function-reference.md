@@ -37,7 +37,7 @@ Creates a palette lookup table for legacy HuC maps, directly from a block (metat
 `#incsprpal( identifier_name, "filename" );`
 Creates a palette lookup table for legacy HuC maps, directly from a sprite picture file. This is a legacy directive for the older Tile and Map Functions.
 
-**Note**: For more information on legacy or deprecated directives, see the ancient **huc.doc** and **usage.txt** files.
+**Note**: For more information on legacy or deprecated directives, see the ancient **huc_doc.htm** and **usage.txt** files.
 
 ## **Memory Access Functions**
 
@@ -149,7 +149,7 @@ Copies data from one VRAM location to another using Direct Memory Access. Useful
 
 #### **SuperGrafx Video Functions**
 
-These functions control the additional VDC (VDC2) provided by the SuperGrafx.
+These functions control the second Video Display Controller (VDC2) provided by the SuperGrafx.
 
 `sgx_detect( void );`
 Checks for SuperGrafx hardware. Returns **TRUE (1)** if exists; **FALSE(0)** if not.
@@ -374,7 +374,7 @@ This legacy function is exactly the same as `load_palette()`, but it is limited 
 This legacy function is exactly the same as `load_palette()`, except it offers direct access to sprite sub-palettes. They are standard sub-palette numbers 16 to 31, but with this function you can simply access them with indices 0 to 15. This can make sprite palette manipulation easier, since you don't have to remember the real sprite sub-palette indices. Without the third argument, the function loads only one block.
 
 `read_palette( unsigned char palette, unsigned char num_palettes, unsigned int *destination );`
-Reads palette data back from the VCE into the specified destination buffer.
+Reads palette data back from the Video Color Encoder (VCE) into the specified destination buffer.
 
 `fade_to_black( unsigned int __far *from, unsigned int *destination, unsigned char num_colors, unsigned char value_to_sub );`
 Fades palette colors towards black by subtracting the specified value from each color component.
