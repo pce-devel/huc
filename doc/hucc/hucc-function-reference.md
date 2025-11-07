@@ -406,7 +406,7 @@ Far memory version of `cross_fade_to()`. Uses the current far memory source set 
 Character map functions provide a simple map system based on 8x8 characters (tiles) in BAT format. This is useful for small maps or when you need granular control.
 
 `set_chrmap( unsigned char __far *chrmap, unsigned char tiles_w );`
-Sets the character map data. '*chrmap*' contains the map data using character indices, and '*tiles_w*' specifies the width of the map in tiles.
+Sets the character map data. '*chrmap*' contains the map data using character indices, and '*tiles_w*' specifies the width of the map in characters.
 
 `draw_bat( void );`
 Draws the current character map to the screen based on the current scroll position.
