@@ -374,11 +374,9 @@ Loads one or more 16-color sub-palettes at once. '*palette*' is the index of the
 `far_load_palette( unsigned char palette, unsigned char num_palettes );`
 Loads palette data from far memory. The data source must be set up using `set_far_base()` before calling this function.
 
-`set_bgpal( unsigned char palette, unsigned char __far *data );`
 `set_bgpal( unsigned char palette, unsigned char __far *data, unsigned int num_palettes );`
 This legacy function is exactly the same as `load_palette()`, but it is limited to character sub-palette numbers 0 to 15. Without the third argument, the function loads only one sub-palette.
 
-`set_sprpal( unsigned char palette, unsigned char __far *data );`
 `set_sprpal( unsigned char palette, unsigned char __far *data, unsigned int num_palettes );`
 This legacy function is exactly the same as `load_palette()`, except it offers direct access to sprite sub-palettes. They are standard sub-palette numbers 16 to 31, but with this function you can simply access them with indices 0 to 15. This can make sprite palette manipulation easier, since you don't have to remember the real sprite sub-palette indices. Without the third argument, the function loads only one block.
 
