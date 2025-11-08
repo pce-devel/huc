@@ -110,16 +110,12 @@ Initializes the screen to 240x208 resolution (30 characters wide by 26 character
 `init_256x224( void );`
 Initializes the screen to a standard 256x224 resolution (32 characters wide by 28 characters tall). Controls both VDC1 and VDC2.
 
-`set_xres( unsigned int x_pixels );`
 `set_xres( unsigned int x_pixels, unsigned char blur_flag );`
-Sets the horizontal resolution to a custom '*x_pixels*' value (in pixels). This changes the VDC's registers to display more pixels on the screen; it does not affect any virtual calculations.
-
-- **Overload 1:** Uses default blur setting `XRES_SOFT`.
-- **Overload 2:** With '*blur_flag*' parameter, specifies smoothing type `XRES_SHARP` or `XRES_SOFT` (default).
+Sets the horizontal resolution to a custom '*x_pixels*' value (in pixels). This changes the VDC's registers to display more pixels on the screen; it does not affect any virtual calculations. With the optional '*blur_flag*' parameter, specifies smoothing type `XRES_SHARP` or `XRES_SOFT` (default).
 
 **Note 1:** The three regular (non-overscan) horizontal resolutions are 256 pixels (5MHz), 336 pixels (7MHz) and 512 pixels (10MHz). The 5MHz dot clock will be used up to a horizontal resolution of 296 pixels. The 7MHz dot clock will be used up to 384 pixels and the 10MHz dot clock will be used beyond this. The maximum usable (overscan) resolution seems to be around 528 pixels.
 
-**Note 2:** The '*blur_flag*' parameter only works with a composite output.
+**Note 2:** The optional '*blur_flag*' parameter only works with a composite output.
 
 **Note 3:** Because of a hardware limitation, a screen with a horizontal resolution of 240 pixels can not display more than 62 sprites. The last two sprites (numbers 62 & 63) will not be visible.
 
