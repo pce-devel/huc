@@ -863,9 +863,6 @@ Plays CD-ROM audio in a few different modes, as above. M/S/F = minute/second/fra
 
 **Note:** See `cd_playtrk()` for valid values of '*mode*'.
 
-`cd_execoverlay( unsigned char ovl_index );`
-Loads a program overlay specified by '*ovl_index*', and executes it. If an error occurs during loading, the previous context (i.e. the overlay running until that moment) is reloaded and an error value is returned to the program.
-
 `cd_loadbank( unsigned char ovl_index, unsigned int sect_offset, unsigned char bank, unsigned int sectors );`
 
 `cd_loaddata( unsigned char ovl_index, unsigned int sect_offset, unsigned char __far *buffer, unsigned int bytes );`
@@ -876,6 +873,9 @@ Reads data from the CD-ROM directly into VRAM at address specified by '*vramaddr
 
 `cd_fastvram( unsigned char ovl_index, unsigned int sect_offset, unsigned int vramaddr, unsigned int sectors );`
 Fast VRAM loading from CD-ROM. Loads the specified number of sectors directly to VRAM.
+
+`cd_execoverlay( unsigned char ovl_index );`
+Loads a program overlay specified by '*ovl_index*', and executes it. If an error occurs during loading, the previous context (i.e. the overlay running until that moment) is reloaded and an error value is returned to the program.
 
 ## **ADPCM Functions**
 
