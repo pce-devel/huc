@@ -814,11 +814,6 @@ Returns the number of *hours, minutes, seconds*, or *ticks* (one VSync interval,
 `clock_reset( void );`
 Resets the clock timer.
 
-## **CD-ROM Overlay Functions**
-
-`cd_execoverlay( unsigned char ovl_index );`
-Loads a program overlay specified by '*ovl_index*', and executes it. If an error occurs during loading, the previous context (i.e. the overlay running until that moment) is reloaded and an error value is returned to the program.
-
 ## **CD-ROM Functions**
 
 `ac_exists( void );`
@@ -826,6 +821,16 @@ Checks for Arcade System Card. Returns **TRUE (1)** if exists; **FALSE (0)** if 
 
 `cd_boot( void );`
 Boots the CD-ROM drive.
+
+`cd_status( unsigned char mode );`
+Checks the status of the CD-ROM drive. Non-zero return values indicate errors.
+
+    Valid Mode   Meaning           Return value & meaning
+    ----------   -------           ----------------------
+       0         Drive Busy Check   0     = Drive Not Busy
+                                    other = Drive Busy
+       other     Drive Ready Check  0     = Drive Ready
+                                    other = Sub Error Code
 
 `cd_getver( void );`
 Returns CD-ROM System Card version number in BCD (i.e. Japanese Super System Card = 0x0300, American Duo = 0x301).
@@ -841,9 +846,6 @@ Continues the CD-ROM audio track after pause.
 
 `cd_fade( unsigned char type );`
 Fades CD-ROM audio with the specified fade type.
-
-`cd_fastvram( unsigned char ovl_index, unsigned int sect_offset, unsigned int vramaddr, unsigned int sectors );`
-Fast VRAM loading from CD-ROM. Loads the specified number of sectors directly to VRAM.
 
 `cd_playtrk( unsigned char start_track, unsigned char end_track, unsigned char mode );`
 Plays one or more CD-ROM audio tracks in a few different modes. This will not play '*end*' track, so '*end*' >= '*start*' +1. If you wish to play until end of disc (or if '*start*' track is the final track), then set '*end*' to value `CDPLAY_ENDOFDISC`.
@@ -861,23 +863,19 @@ Plays CD-ROM audio in a few different modes, as above. M/S/F = minute/second/fra
 
 **Note:** See `cd_playtrk()` for valid values of '*mode*'.
 
-`cd_loadvram( unsigned char ovl_index, unsigned int sect_offset, unsigned int vramaddr, unsigned int bytes );`
-Reads data from the CD-ROM directly into VRAM at address specified by '*vramaddr*', for a length of '*bytes*'. Note that 2 bytes are required to fill one VRAM word. Reads it from the overlay segment specified by '*ovl_index*', with sector offset (i.e. multiples of 2048 bytes) of '*sect_offset*'. Non-zero return values indicate errors.
+`cd_execoverlay( unsigned char ovl_index );`
+Loads a program overlay specified by '*ovl_index*', and executes it. If an error occurs during loading, the previous context (i.e. the overlay running until that moment) is reloaded and an error value is returned to the program.
+
+`cd_loadbank( unsigned char ovl_index, unsigned int sect_offset, unsigned char bank, unsigned int sectors );`
 
 `cd_loaddata( unsigned char ovl_index, unsigned int sect_offset, unsigned char __far *buffer, unsigned int bytes );`
 Reads data from the CD-ROM into area (or overlay 'const' or other data) specified by '*destaddr*', for a length of '*bytes*'. Reads it from the overlay segment specified by '*ovl_index*', with sector offset (i.e. multiples of 2048 bytes) of '*sect_offset*'. Non-zero return values indicate errors.
 
-`cd_loadbank( unsigned char ovl_index, unsigned int sect_offset, unsigned char bank, unsigned int sectors );`
+`cd_loadvram( unsigned char ovl_index, unsigned int sect_offset, unsigned int vramaddr, unsigned int bytes );`
+Reads data from the CD-ROM directly into VRAM at address specified by '*vramaddr*', for a length of '*bytes*'. Note that 2 bytes are required to fill one VRAM word. Reads it from the overlay segment specified by '*ovl_index*', with sector offset (i.e. multiples of 2048 bytes) of '*sect_offset*'. Non-zero return values indicate errors.
 
-`cd_status( unsigned char mode );`
-Checks the status of the CD-ROM drive. Non-zero return values indicate errors.
-
-    Valid Mode   Meaning           Return value & meaning
-    ----------   -------           ----------------------
-       0         Drive Busy Check   0     = Drive Not Busy
-                                    other = Drive Busy
-       other     Drive Ready Check  0     = Drive Ready
-                                    other = Sub Error Code
+`cd_fastvram( unsigned char ovl_index, unsigned int sect_offset, unsigned int vramaddr, unsigned int sectors );`
+Fast VRAM loading from CD-ROM. Loads the specified number of sectors directly to VRAM.
 
 ## **ADPCM Functions**
 
