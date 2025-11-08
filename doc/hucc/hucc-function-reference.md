@@ -584,9 +584,9 @@ Loads a custom font in VRAM. When used together with the *#incchr* directive, it
 `far_load_font( unsigned char count, unsigned int vram );`
 Loads font data from far memory. The data source must be set up using `set_far_base()` before calling this function.
 
-**Note 1:** Custom fonts are "*hard-colored*" fonts (i.e. colors come from your picture file), so they won't be affected by any previous call to `set_font_color()`. The number of characters to load ranges from 0 to 224; ASCII characters 0 to 31 are never used and can't be defined, so you must start your font at the space character which is ASCII code 32.
+**Note 1:** If you don't explicitely give a VRAM address, the function will load your font just above the BAT (usually it's address 0x0800).
 
-**Note 2:** If you don't explicitely give a VRAM address, the function will load your font just above the BAT (usually it's address 0x0800).
+**Note 2:** Custom fonts are "*hard-colored*" fonts (i.e. colors come from your picture file), so they won't be affected by any previous call to `set_font_color()`. The number of characters to load ranges from 0 to 224; ASCII characters 0 to 31 are never used and can't be defined, so you must start your font at the space character which is ASCII code 32.
 
 ### **SuperGrafx Font Functions**
 
