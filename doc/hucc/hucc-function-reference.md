@@ -57,7 +57,7 @@ Reads the contents of far memory location '*addr*'. `farpeek()` is char-sized ac
 **Note:** This legacy function has been superseded by the newer `set_far_base()` function.
 
 `set_far_base( unsigned char data_bank, unsigned char *data_addr );`
-Sets the base '*bank*' and '*addr*' for far memory operations. Used in conjunction with far memory functions like `far_load_vram()`, `far_load_bat()`, etc. The `BANK` parameter allows you to read the memory bank of your data.
+Sets the base '*bank*' and '*addr*' for far memory operations. Used in conjunction with far memory functions like `far_load_vram()`, `far_load_bat()`, etc. The `BANK` operator allows you to read the memory bank of your data.
 
 `set_far_offset( unsigned int offset, unsigned char data_bank, unsigned char *data_addr );`
 Sets the offset for far memory operations. Allows fine-tuning of the far memory pointer.
