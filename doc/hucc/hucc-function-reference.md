@@ -578,7 +578,6 @@ Sets the default font foreground and background colors (colors range from 0 to 1
 `set_font_addr( unsigned int vram );`
 Sets the font address in VRAM. Use this function to change the current font, to use several fonts on the same screen, or when you load a custom font and need to tell the library where it is.
 
-`load_font( char __far *font, unsigned char count );`
 `load_font( char __far *font, unsigned char count, unsigned int vram );`
 Loads a custom font in VRAM. When used together with the *#incchr* directive, it will allow you to load a font from a picture file.
 
