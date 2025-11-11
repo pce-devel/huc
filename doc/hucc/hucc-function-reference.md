@@ -863,13 +863,18 @@ Plays CD-ROM audio in a few different modes, as above. M/S/F = minute/second/fra
 
 **Note:** See `cd_playtrk()` for valid values of '*mode*'.
 
-`cd_loadbank( unsigned char ovl_index, unsigned int sect_offset, unsigned char bank, unsigned int sectors );`
-
 `cd_loaddata( unsigned char ovl_index, unsigned int sect_offset, unsigned char __far *buffer, unsigned int bytes );`
 Reads data from the CD-ROM into area (or overlay 'const' or other data) specified by '*destaddr*', for a length of '*bytes*'. Reads it from the overlay segment specified by '*ovl_index*', with sector offset (i.e. multiples of 2048 bytes) of '*sect_offset*'. Non-zero return values indicate errors.
 
+**Note:** This legacy function has been superseded by the much faster `cd_loadbank()` function.
+
+`cd_loadbank( unsigned char ovl_index, unsigned int sect_offset, unsigned char bank, unsigned int sectors );`
+Fast RAM loading from CD-ROM. Loads the specified number of sectors directly to RAM.
+
 `cd_loadvram( unsigned char ovl_index, unsigned int sect_offset, unsigned int vramaddr, unsigned int bytes );`
 Reads data from the CD-ROM directly into VRAM at address specified by '*vramaddr*', for a length of '*bytes*'. Note that 2 bytes are required to fill one VRAM word. Reads it from the overlay segment specified by '*ovl_index*', with sector offset (i.e. multiples of 2048 bytes) of '*sect_offset*'. Non-zero return values indicate errors.
+
+**Note:** This legacy function has been superseded by the much faster `cd_fastvram()` function.
 
 `cd_fastvram( unsigned char ovl_index, unsigned int sect_offset, unsigned int vramaddr, unsigned int sectors );`
 Fast VRAM loading from CD-ROM. Loads the specified number of sectors directly to VRAM.
