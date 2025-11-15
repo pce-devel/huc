@@ -861,7 +861,7 @@ Plays CD-ROM audio in a few different modes, as above. M/S/F = minute/second/fra
 **Note:** See `cd_playtrk()` for valid values of '*mode*'.
 
 `cd_loaddata( unsigned char ovl_index, unsigned int sect_offset, unsigned char __far *buffer, unsigned int bytes );`
-Reads data from the CD-ROM into area (or overlay 'const' or other data) specified by '*destaddr*', for a length of '*bytes*'. Reads it from the overlay segment specified by '*ovl_index*', with sector offset (i.e. multiples of 2048 bytes) of '*sect_offset*'. Non-zero return values indicate errors.
+Reads data from the CD-ROM into an area (or overlay 'const' or other data) specified by '*destaddr*', for a length of '*bytes*'. Reads it from the overlay segment specified by '*ovl_index*', with sector offset (i.e. multiples of 2048 bytes) of '*sect_offset*'. Non-zero return values indicate errors.
 
 **Note:** This legacy function has been superseded by the much faster `cd_loadbank()` function.
 
