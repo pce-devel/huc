@@ -25,7 +25,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-22.04, macos-14, macos-15, windows-2022]
+        os: [ubuntu-22.04, macos-14-large, macos-15, windows-2022]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Check out code from the repository
@@ -67,7 +67,7 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [ubuntu-22.04, macos-14, macos-15, windows-2022]
+        os: [ubuntu-22.04, macos-14-large, macos-15, windows-2022]
     runs-on: ${{ matrix.os }}
     needs: build
     steps:
@@ -112,7 +112,7 @@ jobs:
   package:
     strategy:
       matrix:
-        os: [ubuntu-22.04, macos-14, windows-2022]
+        os: [ubuntu-22.04, macos-14-large, windows-2022]
     runs-on: ${{ matrix.os }}
     needs: build
     steps:
@@ -160,7 +160,7 @@ jobs:
       - name: Get previously built artifacts macos
         uses: actions/download-artifact@v4
         with:
-          name: package-macos-14
+          name: package-macos-14-large
       - name: Get previously built artifacts linux
         uses: actions/download-artifact@v4
         with:
