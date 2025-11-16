@@ -333,7 +333,7 @@ do_db(int *ip)
 					case 'x':
 						c = prlnbuf[++(*ip)];
 
-						if ((c >= '0') && (c <= '8'))
+						if ((c >= '0') && (c <= '9'))
 							h = (c - '0');
 						else
 						if ((c >= 'A') && (c <= 'F'))
@@ -346,21 +346,18 @@ do_db(int *ip)
 							return;
 						}
 
-						for (;;) {
-							c = prlnbuf[++(*ip)];
+						c = prlnbuf[++(*ip)];
 
-							if ((c >= '0') && (c <= '8'))
-								h = (h << 4) + (c - '0');
-							else
-							if ((c >= 'A') && (c <= 'F'))
-								h = (h << 4) + (c + 10 - 'A');
-							else
-							if ((c >= 'a') && (c <= 'f'))
-								h = (h << 4) + (c + 10 - 'a');
-							else {
-								--(*ip);
-								break;
-							}
+						if ((c >= '0') && (c <= '9'))
+							h = (h << 4) + (c - '0');
+						else
+						if ((c >= 'A') && (c <= 'F'))
+							h = (h << 4) + (c + 10 - 'A');
+						else
+						if ((c >= 'a') && (c <= 'f'))
+							h = (h << 4) + (c + 10 - 'a');
+						else {
+							--(*ip);
 						}
 
 						c = h;
