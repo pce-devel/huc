@@ -110,9 +110,9 @@ Initializes the screen to a standard 256x224 resolution (32 characters wide by 2
 `set_xres( unsigned int x_pixels, unsigned char blur_flag );`
 Sets the horizontal resolution to a custom '*x_pixels*' value (in pixels). This changes the VDC's registers to display more pixels on the screen; it does not affect any virtual calculations. With the optional '*blur_flag*' parameter, specifies smoothing type `XRES_SHARP` or `XRES_SOFT` (default).
 
-**Note 1:** The three regular (non-overscan) horizontal resolutions are 256 pixels (5MHz), 336 pixels (7MHz) and 512 pixels (10MHz). The 5MHz dot clock will be used up to a horizontal resolution of 296 pixels. The 7MHz dot clock will be used up to 384 pixels and the 10MHz dot clock will be used beyond this. The maximum usable (overscan) resolution seems to be around 528 pixels.
+**Note 1:** The optional '*blur_flag*' parameter only works with a composite output.
 
-**Note 2:** The optional '*blur_flag*' parameter only works with a composite output.
+**Note 2:** The three regular (non-overscan) horizontal resolutions are 256 pixels (5MHz), 336 pixels (7MHz) and 512 pixels (10MHz). The 5MHz dot clock will be used up to a horizontal resolution of 296 pixels. The 7MHz dot clock will be used up to 384 pixels and the 10MHz dot clock will be used beyond this. The maximum usable (overscan) resolution seems to be around 528 pixels.
 
 **Note 3:** Because of a hardware limitation, a screen with a horizontal resolution of 240 pixels can not display more than 62 sprites. The last two sprites (numbers 62 & 63) will not be visible.
 
@@ -201,7 +201,7 @@ Sets VPC window 2 width for split screen effects. Default '*width*' is 0x0000.
 ## **Split Screen and Scrolling Functions**
 
 `scroll_split( unsigned char index, unsigned char screen_line, unsigned int bat_x, unsigned int bat_y, unsigned char display_flags );`
-Creates a split screen window at the specified screen line. Up to 128 windows can be defined for VDC1. '*index*' is the split index (0-127), '*screen_line*' is where the split occurs, '*bat_x*' and '*bat_y*' are the background position, and the '*display_flags*' control what is displayed (BKG_ON, SPR_ON, BKG_OFF, SPR_OFF).
+Creates a split screen window at the specified screen line. Up to 128 windows can be defined for VDC1. '*index*' is the split index (0-127), '*screen_line*' is where the split occurs, '*bat_x*' and '*bat_y*' are the top-left coordinates of the area in the virtual screen that will be displayed in the window, and the '*display_flags*' control what is displayed (`BKG_ON`, `SPR_ON`, `BKG_OFF`, `SPR_OFF`).
 
 **Example:**
 ```c
@@ -209,6 +209,7 @@ Creates a split screen window at the specified screen line. Up to 128 windows ca
 scroll_split(0, 20, 0, 0, BKG_ON);
 
 // Create a split at line 100 showing both background and sprites
+// Top-left coordinates of the background displayed in the window are x32 and y16 pixels
 scroll_split(1, 100, 32, 16, BKG_ON | SPR_ON);
 ```
 
