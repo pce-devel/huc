@@ -43,16 +43,16 @@ Creates a palette lookup table for legacy HuC maps, directly from a sprite pictu
 
 `peek( unsigned int addr );`
 `peekw( unsigned int addr );`
-Reads the contents of memory location '*addr*'. `peek()` is char-sized access, whereas `peekw()` is word-sized.
+Reads the contents of memory location '*addr*'. `peek()` is byte-sized access, whereas `peekw()` is word-sized.
 
 `poke( unsigned int addr, unsigned char with );`
 `pokew( unsigned int addr, unsigned int with );`
-Writes '*val*' value at memory location '*addr*'. `poke()` is char-sized access, whereas `pokew()` is word-sized. 
+Writes '*val*' value at memory location '*addr*'. `poke()` is byte-sized access, whereas `pokew()` is word-sized. 
 This function can be used to access the hardware I/O ports located at 0x0000 to 0x1FFF.
 
 `farpeek( void __far *addr );`
 `farpeekw( void __far *addr );`
-Reads the contents of far memory location '*addr*'. `farpeek()` is char-sized access, whereas `farpeekw()` is word-sized.
+Reads the contents of far memory location '*addr*'. `farpeek()` is byte-sized access, whereas `farpeekw()` is word-sized.
 
 **Note:** This legacy function has been superseded by the newer `set_far_base()` function.
 
