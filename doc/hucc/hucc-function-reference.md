@@ -100,7 +100,7 @@ Clears the entire screen.
 - **Overload 2:** With '*tile*' parameter, the screen is filled with the specified BAT value.
 
 `init_240x208( void );`
-Initializes the screen to 240x208 resolution (30 characters wide by 26 characters tall). This is a useful resolution for games that need to scroll their map on a virtual screen restricted to 256x256 pixels (32x32 characters). Controls both VDC1 and VDC2.
+Initializes the screen to 240x208 resolution (30 characters wide by 26 characters tall). This is a useful resolution for games that need to scroll their map on a small virtual screen restricted to 256x256 pixels (32x32 characters). Controls both VDC1 and VDC2.
 
 **Note:** Because of a hardware limitation, a screen with a horizontal resolution of 240 pixels can not display more than 62 sprites. The last two sprites (numbers 62 & 63) will not be visible.
 
