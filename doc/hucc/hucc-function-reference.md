@@ -799,13 +799,13 @@ Returns the current status of joypad number '*which*'. This function is 6 button
 Returns informations about newly pressed buttons and directions of joypad number '*which*'. But beware of this function: these informations are only refreshed every frame, so if your game loop is not fast enough you could miss some keypresses.
 
 `joybuf( unsigned int which );`
-Gets joypad buffer for joypad '*which*'. This function is only available if configured in hucc-config.inc.
+Gets joypad buffer for joypad '*which*'. This function is only available if configured in **hucc-config.inc**.
 
 `get_joy_events( unsigned int which );`
-Gets joypad events for joypad '*which*'. This function is only available if configured in hucc-config.inc.
+Gets joypad events for joypad '*which*'. This function is only available if configured in **hucc-config.inc**.
 
 `clear_joy_events( unsigned char mask );`
-Clears joypad events specified by '*mask*'. This function is only available if configured in hucc-config.inc.
+Clears joypad events specified by '*mask*'. This function is only available if configured in **hucc-config.inc**.
 
 ## **Clock Functions**
 
