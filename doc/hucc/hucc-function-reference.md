@@ -359,6 +359,14 @@ Sets the specified color '*index*' (0-511) to a given color number from the 9-bi
 `get_color( unsigned int index );`
 Retrieves the **blue** RGB value of the specified color '*index*'. That means each 3-bit RGB component must be read separately, via bitshifting (blue -> red -> green).
 
+**Example:**
+```c
+// Get all RGB component values from a specified color index
+color_b = (get_color(color_index)     ) & 7;	// Blue
+color_r = (get_color(color_index) >> 3) & 7;	// Red
+color_g = (get_color(color_index) >> 6) & 7;	// Green
+```
+
 `set_color_rgb( unsigned int index, unsigned char r, unsigned char g, unsigned char b );`
 Sets the specified color to the given RGB component values (brightness ranges from 0 to 7). This function is much easier to use than `set_color()`, but it is noticeably slower.
 
