@@ -100,12 +100,14 @@ Clears the entire screen.
 - **Overload 2:** With '*tile*' parameter, the screen is filled with the specified BAT value.
 
 `init_240x208( void );`
-Initializes the screen to 240x208 resolution (30 characters wide by 26 characters tall). This is a useful resolution for games that need to scroll their map on a small virtual screen restricted to 256x256 pixels (32x32 characters). Controls both VDC1 and VDC2.
+Initializes the screen to 240x208 resolution (30 characters wide by 26 characters tall). This also resets the palettes, clears the VRAM and disables the display. Controls both VDC1 and VDC2.
 
-**Note:** Because of a hardware limitation, a screen with a horizontal resolution of 240 pixels can not display more than 62 sprites. The last two sprites (numbers 62 & 63) will not be visible.
+**Note 1:** This is a useful resolution for games that need to save VRAM and scroll their map on a small virtual screen restricted to 256x256 pixels (32x32 characters).
+
+**Note 2:** Because of a hardware limitation, a screen with a horizontal resolution of 240 pixels can not display more than 62 sprites. The last two sprites (numbers 62 & 63) will not be visible.
 
 `init_256x224( void );`
-Initializes the screen to a standard 256x224 resolution (32 characters wide by 28 characters tall). Controls both VDC1 and VDC2.
+Initializes the screen to a standard 256x224 resolution (32 characters wide by 28 characters tall). This also resets the palettes, clears the VRAM and disables the display. Controls both VDC1 and VDC2.
 
 `set_xres( unsigned int x_pixels, unsigned char blur_flag );`
 Sets the horizontal resolution to a custom '*x_pixels*' value (in pixels). This changes the VDC's registers to display more pixels on the screen; it does not affect any virtual calculations. With the optional '*blur_flag*' parameter, specifies smoothing type `XRES_SHARP` or `XRES_SOFT` (default).
