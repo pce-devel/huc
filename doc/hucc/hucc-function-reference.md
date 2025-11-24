@@ -407,16 +407,34 @@ Far memory version of `cross_fade_to()`. Uses the current far memory source set 
 
 ## **Character Map Functions**
 
-Character map functions provide a simple map system based on 8x8 characters (tiles) in BAT format. This is useful for small maps or when you need granular control.
+Character map functions provide a simple map system based on 8x8 characters (tiles) in BAT format. This is useful for individual screens, small maps or when you need granular control.
 
 `set_chrmap( unsigned char __far *chrmap, unsigned char tiles_w );`
-Sets the character map data. '*chrmap*' contains the map data using character indices, and '*tiles_w*' specifies the width of the map in characters.
+Sets the character map data. '*chrmap*' contains the optimized map data defined by the `#incchr` directive, and '*tiles_w*' specifies the size ("width") of the map in characters. The map library uses the hardcoded HuCC variables '*vdc_map_pxl_x*' and '*vdc_map_pxl_y*' (in pixels) to move the camera around with the `scroll_split()` function.
 
 `draw_bat( void );`
-Draws the current character map to the screen based on the current scroll position.
+Draws the current character map to the screen, based on the current scroll position. That function implicitely relies on the hardcoded HuCC variables '*vdc_map_draw_w*' and '*vdc_map_draw_h*' (in characters). You *must* set these variables, or the function will display garbage!
+
+**Example:**
+```c
+// Set up a character map, with the help of the COUNTOF operator
+set_chrmap(map_data, COUNTOF(map_data));
+
+// Define the HuCC variables for the scroll (camera) top-left position
+vdc_map_pxl_x = 0;
+vdc_map_pxl_y = 0;
+
+// Define the width and height of the map (in characters) to be drawn on screen
+// 256 and 224 are the horizontal and vertical resolution of your choice
+vdc_map_draw_w = (256 / 8) + 1;		// + 1 to preload a column of tiles for scrolling
+vdc_map_draw_h = (224 / 8) + 1;		// + 1 to preload a row of tiles for scrolling
+
+draw_bat();
+scroll_split(0, 0, vdc_map_pxl_x, vdc_map_pxl_y, BKG_ON | SPR_ON);
+```
 
 `scroll_bat( void );`
-Updates the character map display based on the current scroll position. Call this when the map position changes.
+Updates the character map display, based on the current scroll position. You should only call this when the map position changes.
 
 `blit_bat( unsigned char tile_x, unsigned char tile_y, unsigned char tile_w, unsigned char tile_h );`
 Draws a specific rectangular area of the character map to the screen. Parameters specify the tile coordinates and dimensions.
@@ -424,8 +442,10 @@ Draws a specific rectangular area of the character map to the screen. Parameters
 ### **SuperGrafx Character Map Functions**
 
 `sgx_set_chrmap( unsigned char __far *chrmap, unsigned char tiles_w );`
+The map library uses the hardcoded HuCC variables '*sgx_map_pxl_x*' and '*sgx_map_pxl_y*' (in pixels) to move the camera around with the `sgx_scroll_split()` function.
 
 `sgx_draw_bat( void );`
+That function implicitely relies on the hardcoded HuCC variables '*sgx_map_draw_w*' and '*sgx_map_draw_h*' (in characters). You *must* set these variables, or the function will display garbage!
 
 `sgx_scroll_bat( void );`
 
@@ -445,10 +465,10 @@ Sets the block map data. '*blk_map*' contains the map data using block indices, 
 Sets up a multi-screen map system. '*multi_map*' contains screen indices for large maps, and '*screens_w*' specifies the width in screens.
 
 `draw_map( void );`
-Draws the current block map to the screen based on the current scroll position.
+Draws the current block map to the screen, based on the current scroll position.
 
 `scroll_map( void );`
-Updates the block map display based on the current scroll position. Call this when the map position changes.
+Updates the block map display, based on the current scroll position. You should only call this when the map position changes.
 
 `blit_map( unsigned char tile_x, unsigned char tile_y, unsigned char tile_w, unsigned char tile_h );`
 Draws a specific rectangular area of the block map to the screen. Parameters specify the tile coordinates and dimensions.
