@@ -410,10 +410,10 @@ Far memory version of `cross_fade_to()`. Uses the current far memory source set 
 Character map functions provide a simple map system based on 8x8 characters (tiles) in BAT format. This is useful for individual screens, small maps or when you need granular control.
 
 `set_chrmap( unsigned char __far *chrmap, unsigned char tiles_w );`
-Sets the character map data. '*chrmap*' contains the optimized map data defined by the `#incchr` directive, and '*tiles_w*' specifies the size ("width") of the map in characters. The map library uses the hardcoded HuCC variables '*vdc_map_pxl_x*' and '*vdc_map_pxl_y*' (in pixels) to move the camera around with the `scroll_split()` function.
+Sets the character map data. '*chrmap*' contains the optimized map data defined by the `#incchr` directive, and '*tiles_w*' specifies the size ("width") of the map in characters. The map library uses the hard-coded HuCC variables '*vdc_map_pxl_x*' and '*vdc_map_pxl_y*' (in pixels) to move the camera around with the `scroll_split()` function.
 
 `draw_bat( void );`
-Draws the current character map to the screen, based on the current scroll position. That function implicitely relies on the hardcoded HuCC variables '*vdc_map_draw_w*' and '*vdc_map_draw_h*' (in characters). You *must* set these variables, or the function will display garbage!
+Draws the current character map to the screen, based on the current scroll position. That function implicitely relies on the hard-coded HuCC variables '*vdc_map_draw_w*' and '*vdc_map_draw_h*' (in characters). You *must* set these variables, or the function will display garbage!
 
 **Example:**
 ```c
@@ -442,10 +442,10 @@ Draws a specific rectangular area of the character map to the screen. Parameters
 ### **SuperGrafx Character Map Functions**
 
 `sgx_set_chrmap( unsigned char __far *chrmap, unsigned char tiles_w );`
-The map library uses the hardcoded HuCC variables '*sgx_map_pxl_x*' and '*sgx_map_pxl_y*' (in pixels) to move the camera around with the `sgx_scroll_split()` function.
+The map library uses the hard-coded HuCC variables '*sgx_map_pxl_x*' and '*sgx_map_pxl_y*' (in pixels) to move the camera around with the `sgx_scroll_split()` function.
 
 `sgx_draw_bat( void );`
-That function implicitely relies on the hardcoded HuCC variables '*sgx_map_draw_w*' and '*sgx_map_draw_h*' (in characters). You *must* set these variables, or the function will display garbage!
+That function implicitely relies on the hard-coded HuCC variables '*sgx_map_draw_w*' and '*sgx_map_draw_h*' (in characters). You *must* set these variables, or the function will display garbage!
 
 `sgx_scroll_bat( void );`
 
@@ -562,7 +562,7 @@ Modifies the map data (sets a map element to a new tile ID), but works only when
 `load_background( unsigned char __far *tiles, unsigned char __far *palettes, unsigned char __far *bat, unsigned char w, unsigned char h );`
 This legacy all-in-one function is used to display an entire background image on the screen, like a game title image. It will load background character data, it will load the palette, and finally it will load the BAT. Use it with directives *#incchr*, *#incbat* and *#incpal* to manage the different types of data. The character data will be stored at fixed address 0x1000 to 0x5000 in VRAM.
 
-**Note:** This basic function is hardcoded for a resolution of 256x224 pixels. The tileset (character data) is **not** optimized for duplicates! Each tile occupies its own VRAM space.
+**Note:** This basic function is hard-coded for a resolution of 256x224 pixels. The tileset (character data) is **not** optimized for duplicates! Each tile occupies its own VRAM space.
 
 ### **SuperGrafx Legacy Tile and Map Functions**
 
