@@ -410,7 +410,7 @@ Far memory version of `cross_fade_to()`. Uses the current far memory source set 
 Character map functions provide a simple map system based on 8x8 characters (tiles) in BAT format. This is useful for individual screens, small maps or when you need granular control.
 
 `set_chrmap( unsigned char __far *chrmap, unsigned char tiles_w );`
-Sets the character map data. '*chrmap*' contains the optimized map data defined by the `#incchr` directive, and '*tiles_w*' specifies the size ("width") of the map in characters. The map library uses the hard-coded HuCC variables '*vdc_map_pxl_x*' and '*vdc_map_pxl_y*' (in pixels) to move the camera around with the `scroll_split()` function.
+Sets the character map data. '*chrmap*' contains the map data defined by the `#incbat` directive, and '*tiles_w*' specifies the size ("width") of the map in characters. The map library uses the hard-coded HuCC variables '*vdc_map_pxl_x*' and '*vdc_map_pxl_y*' (in pixels) to move the camera around with the `scroll_split()` function.
 
 `draw_bat( void );`
 Draws the current character map to the screen, based on the current scroll position. That function implicitely relies on the hard-coded HuCC variables '*vdc_map_draw_w*' and '*vdc_map_draw_h*' (in characters). You *must* set these variables, or the function will display garbage!
