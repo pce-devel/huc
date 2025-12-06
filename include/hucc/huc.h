@@ -33,10 +33,12 @@
 #include "hucc-systemcard.h"
 #include "hucc-baselib.h"
 #include "hucc-gfx.h"
-#include "hucc-string.h"
 #include "hucc-old-scroll.h"
 #include "hucc-old-spr.h"
 #include "hucc-old-map.h"
 #include "hucc-old-line.h"
+
+#include <stdlib.h>
+#include <string.h>
 
 #endif // _hucc_legacy_h

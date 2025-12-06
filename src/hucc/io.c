@@ -204,10 +204,10 @@ void readline (void)
 				if (globals_h_in_process) {
 					/* Add special treatment to ensure globals.h stuff appears at the beginning */
 					ol(".dbg\tclear");
-					gdata();
+					gbss();
 					outstr("huc_globals:\n");
 					dumpglbs();
-					gdata();
+					gbss();
 					outstr("huc_globals_end:\n");
 					gtext();
 					globals_h_in_process = 0;

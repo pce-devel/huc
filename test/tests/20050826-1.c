@@ -1,5 +1,7 @@
 /* PR rtl-optimization/23561 */
 
+#include <string.h>
+
 struct A
 {
   char a1[1];
@@ -10,9 +12,6 @@ struct A
 
 //typedef __SIZE_TYPE__ size_t;
 #define size_t unsigned int
-extern void *memset (void *, int, size_t);
-extern void *memcpy (void *, const void *, size_t);
-extern int memcmp (const void *, const void *, size_t);
 extern void abort (void);
 
 void

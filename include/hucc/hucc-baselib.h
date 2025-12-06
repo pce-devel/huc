@@ -168,8 +168,6 @@ extern unsigned int __fastcall __macro joytrg( unsigned char which<acc> );
 // Number Functions
 // *************
 
-extern int __fastcall abs( int value<acc> );
-
 extern void __fastcall __macro srand( unsigned char seed<acc> );
 extern unsigned int __fastcall rand( void );
 extern unsigned char __fastcall rand8( void );
@@ -203,10 +201,6 @@ extern void __fastcall __macro clear_joy_events( unsigned char mask<acc> );
 // *************
 
 extern void __fastcall dump_screen( void );
-extern void __fastcall abort( void );
-extern void __fastcall exit( int value<acc> );
-
-extern unsigned char __fastcall __builtin_ffs( unsigned int value<__temp> );
 
 #endif // __HUCC__
 

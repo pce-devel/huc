@@ -1,3 +1,4 @@
+#include <string.h>
 char *f() {
 #ifdef __HUCC__
   // HuC can't handle this ...

@@ -1,3 +1,5 @@
+#include <string.h>
+
 int v;
 
 char *

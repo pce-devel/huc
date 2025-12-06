@@ -72,6 +72,7 @@ char *section_name[MAX_S + 1] = {
 	"HOME",
 	"XDATA",
 	"XINIT",
+	"XSTRZ",
 	"CONST",
 	"OSEG",
 	"PROC"
@@ -113,6 +114,7 @@ int section_flags[MAX_S] = {
 /* S_HOME  */	S_IS_ROM + S_IS_CODE,
 /* S_XDATA */	S_IS_RAM + S_NO_DATA,
 /* S_XINIT */	S_IS_ROM,
+/* S_XSTRZ */	S_IS_ROM,
 /* S_CONST */	S_IS_ROM,
 /* S_OSEG  */	S_IS_RAM
 };
@@ -127,6 +129,7 @@ const int section_default_page[MAX_S] = {
 /* S_HOME  */	5,
 /* S_XDATA */	0,
 /* S_XINIT */	0,
+/* S_XSTRZ */	0,
 /* S_CONST */	3,
 /* S_OSEG  */	0
 };
@@ -142,6 +145,7 @@ int section_limit[MAX_S] = {
 /* S_HOME  */	0x2000,
 /* S_XDATA */	0x2000,
 /* S_XINIT */	0x2000,
+/* S_XSTRZ */	0x2000,
 /* S_CONST */	0x2000,
 /* S_OSEG  */	0x0100
 };
@@ -708,6 +712,14 @@ main(int argc, char **argv)
 	bank_base  = 0x00;
 	bank_limit = 0x7F;
 
+	/* init relocatable sections outside the UNDEFINED_BANK */
+	xdata_bank = PROC_BANK;
+	xdata_addr = 0x0000;
+	xinit_bank = PROC_BANK;
+	xinit_addr = 0x0000;
+	xstrz_bank = PROC_BANK;
+	xstrz_addr = 0x0000;
+
 	/* fixme: these should be exclusive! */
 	/* process -sf2 first, because overlays are incompatible with the other modes */
 	if (sf2_opt) {
@@ -777,6 +789,7 @@ main(int argc, char **argv)
 		kickc_final = 0;
 		hucc_final = 0;
 		in_final = 0;
+		max_bss = 0;
 
 		/* reset assembler options */
 		asm_opt[OPT_LIST] = 0;
@@ -788,6 +801,7 @@ main(int argc, char **argv)
 		asm_opt[OPT_LBRANCH] = 0;
 		asm_opt[OPT_DATAPAGE] = 0;
 		asm_opt[OPT_FORWARD] = 1;
+		asm_opt[OPT_STATIC] = 0;
 
 		/* reset bank arrays */
 		for (i = 0; i < MAX_S; i++) {
@@ -807,30 +821,42 @@ main(int argc, char **argv)
 		section = S_CODE;
 		page = 7;
 
+		/* for old asm code ... */
+		if (!newproc_opt) {
+			/* .code */
+			bank_page[S_CODE][0x00] = 0x07;
+
+			/* .home */
+			bank_page[S_HOME][0x00] = 0x05;
+
+			/* .data */
+			bank_page[S_DATA][0x00] = 0x03;
+		}
+
 		/* .zp */
 		section_bank[S_ZP] = ram_bank;
 		bank_page[S_ZP][ram_bank] = machine->ram_page;
-		bank_loccnt[S_ZP][ram_bank] = 0x0000;
+		bank_loccnt[S_BSS][ram_bank] = 0x0000;
 
 		/* .bss */
 		section_bank[S_BSS] = ram_bank;
 		bank_page[S_BSS][ram_bank] = machine->ram_page;
 		bank_loccnt[S_BSS][ram_bank] = 0x0200;
 
-		/* .code */
-		section_bank[S_CODE] = 0x00;
-		bank_page[S_CODE][0x00] = 0x07;
-		bank_loccnt[S_CODE][0x00] = 0x0000;
+		/* .xdata */
+		section_bank[S_XDATA] = xdata_bank;
+		bank_page[S_XDATA][xdata_bank] = xdata_addr / 0x2000;
+		bank_loccnt[S_XDATA][xdata_bank] = xdata_addr & 0x1FFF;
 
-		/* .home */
-		section_bank[S_HOME] = 0x00;
-		bank_page[S_HOME][0x00] = 0x05;
-		bank_loccnt[S_HOME][0x00] = 0x0000;
+		/* .xinit */
+		section_bank[S_XINIT] = xinit_bank;
+		bank_page[S_XINIT][xinit_bank] = xinit_addr / 0x2000;
+		bank_loccnt[S_XINIT][xinit_bank] = xinit_addr & 0x1FFF;
 
-		/* .data */
-		section_bank[S_DATA] = 0x00;
-		bank_page[S_DATA][0x00] = 0x03;
-		bank_loccnt[S_DATA][0x00] = 0x0000;
+		/* .xstrz */
+		section_bank[S_XSTRZ] = xstrz_bank;
+		bank_page[S_XSTRZ][xstrz_bank] = xstrz_addr / 0x2000;
+		bank_loccnt[S_XSTRZ][xstrz_bank] = xstrz_addr & 0x1FFF;
 
 		/* reset symbol table and include files */
 		if (pass != FIRST_PASS) {
@@ -938,6 +964,9 @@ main(int argc, char **argv)
 				fprintf(lst_fp, "#[1]   \"%s\"\n", input_file[1].file->name);
 				++lst_line;
 			}
+
+			/* relocate data */
+			data_reloc();
 
 			/* relocate procs */
 			proc_reloc();
@@ -1423,4 +1452,144 @@ show_seg_usage(FILE *fp)
 	fprintf(fp, "%36c -----  -----\n", ' ');
 	fprintf(fp, "%36c %4iK  %4iK\n", ' ', rom_used, rom_free);
 	fprintf(fp, "\n%24c TOTAL SIZE =       %4iK\n\n", ' ', (rom_used + rom_free));
+}
+
+
+/* ----
+ * data_reloc()
+ * ----
+ *
+ */
+
+void
+data_reloc(void)
+{
+	struct t_symbol *sym;
+	struct t_symbol *local;
+	int i;
+	int old_bank;
+	int new_bank;
+	int new_base;
+	int xdata_size;
+	int xinit_size;
+	int xstrz_size;
+
+	/* switch to the .RODATA section */
+	set_section(S_CONST);
+
+	/* N.B. $2000 is a legal loccnt that says that the bank is full! */
+	old_bank = bank;
+	if (loccnt >= 0x2000) {
+		loccnt &= 0x1FFF;
+		bank = (bank + 1);
+		if (bank > max_bank) {
+			max_bank = bank;
+		}
+		page = (page + 1) & 7;
+	}
+	while (old_bank != bank) {
+		bank_maxloc[old_bank++] = 0x2000;
+	}
+	if (bank_maxloc[bank] < loccnt) {
+		bank_maxloc[bank] = loccnt;
+	}
+
+	/* find the size of the .XDATA, .XINIT and .XSTRZ sections */
+	xdata_size = (bank_page[S_XDATA][section_bank[S_XDATA]] << 13) + bank_loccnt[S_XDATA][section_bank[S_XDATA]];
+	xinit_size = (bank_page[S_XINIT][section_bank[S_XINIT]] << 13) + bank_loccnt[S_XINIT][section_bank[S_XINIT]];
+	xstrz_size = (bank_page[S_XSTRZ][section_bank[S_XSTRZ]] << 13) + bank_loccnt[S_XSTRZ][section_bank[S_XSTRZ]];
+
+	/* sanity check */
+	if (xdata_size != xinit_size) {
+		fprintf(ERROUT, ".XDATA and .XINIT section sizes are different, aborting!\n");
+		errcnt++;
+		return;
+	}
+	if (xinit_size >= 0x2000) {
+		fprintf(ERROUT, ".XINIT section must be <= 8192 bytes long!\n");
+		errcnt++;
+		return;
+	}
+
+	/* relocate the .XINIT and .XSTRZ sections */
+	xinit_bank =
+	xstrz_bank = bank;
+	xinit_addr = (page << 13) + loccnt;
+	xstrz_addr = xinit_addr + xinit_size;
+
+	/* fix .XSTRZ if the .XINIT section crossed a bank */
+	if ((xstrz_addr ^ xinit_addr) & ~0x1FFF)
+		++xstrz_bank;
+
+	/* expand the .RODATA section */
+	loccnt += xinit_size + xstrz_size;
+
+	while (loccnt >= 0x2000) {
+		loccnt -= 0x2000;
+		bank = (bank + 1);
+		if (bank > max_bank) {
+			max_bank = bank;
+		}
+		page = (page + 1) & 7;
+	}
+	while (old_bank != bank) {
+		bank_maxloc[old_bank++] = 0x2000;
+	}
+	if (bank_maxloc[bank] < loccnt) {
+		bank_maxloc[bank] = loccnt;
+	}
+
+	/* relocate the .XDATA section */
+	xdata_bank = machine->ram_bank;
+	xdata_addr = machine->ram_base + max_bss;
+
+	/* expand the .BSS section */
+	max_bss += xdata_size;
+
+	/* switch back to the .CODE section */
+	set_section(S_CODE);
+
+	/* remap symbols in the .XDATA, .XINIT and .XSTRZ sections */
+	for (i = 0; i < HASH_COUNT; i++) {
+		sym = hash_tbl[i];
+
+		while (sym) {
+			switch (sym->section) {
+				default:
+					sym = sym->next;
+					continue;
+				case S_XDATA:
+					new_bank = xdata_bank;
+					new_base = xdata_addr;
+					break;
+				case S_XINIT:
+					new_bank = xinit_bank;
+					new_base = xinit_addr;
+					break;
+				case S_XSTRZ:
+					new_bank = xstrz_bank;
+					new_base = xstrz_addr;
+					break;
+			}
+
+			sym->value += new_base;
+			sym->rombank = new_bank + (sym->value >> 13) - (new_base >> 13);
+			sym->mprbank = bank2mprbank(sym->rombank, sym->section);
+
+			/* local symbols */
+			if (sym->local) {
+				local = sym->local;
+
+				while (local) {
+					local->value += new_base;
+					local->rombank = new_bank + (local->value >> 13) - (new_base >> 13);
+					local->mprbank = bank2mprbank(local->rombank, local->section);
+
+					local = local->next;
+				}
+			}
+
+			sym = sym->next;
+		}
+	}
 }

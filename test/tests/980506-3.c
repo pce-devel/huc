@@ -1,3 +1,5 @@
+#include <string.h>
+
 unsigned char lookup_table [257];
 
 static int 

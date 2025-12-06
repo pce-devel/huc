@@ -137,6 +137,16 @@ NEED_HOME_BANK	=	1
 		.code
 	.endif
 
+		; Mark the start of the .XDATA, .XINIT and .XSTRZ sections
+
+		.xdata
+_xdata_start:
+		.xinit
+_xinit_start:
+		.xstrz
+_xstrz_start:
+		.code
+
 		;
 
 		.list
@@ -217,6 +227,13 @@ clock_mm:	ds	1			; System Clock, minutes (0-59)
 clock_ss:	ds	1			; System Clock, seconds (0-59)
 clock_tt:	ds	1			; System Clock, ticks	(0-59)
 		.code
+
+		; Reset the stack size needed for leaf functions.
+		;
+		; This is a variable that compiled HuCC code updates at the end
+		; of each source file to store the largest leaf stack size.
+
+leaf_needs	.set	0
 
 		; Critical HuCC libraries that the compiler depends upon.
 		;
@@ -304,8 +321,8 @@ core_main	.proc
 		tii	.rom_tia, ram_tia, 16	; Only needed on HuCARD.
 	.endif	CDROM
 
-	.if	(__heap_start - __bss_init)	; Copy initialized BSS data.
-		tii	__rom_init, __bss_init, __heap_start - __bss_init
+	.if	(_xinit_end - _xinit_start)	; Copy initialized BSS data.
+		tii	_xinit_start, _xdata_start, _xinit_end - _xinit_start
 	.endif
 
 		tai	.stack_fill, __stack, HUCC_STACK_SZ

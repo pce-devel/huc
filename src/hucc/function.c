@@ -425,20 +425,19 @@ void newfunc (const char *sname, int ret_ptr_order, int ret_type, int ret_otag, 
 #if ULI_NORECURSE
 	/* Add space for fixed-address locals to .bss section. */
 	if (norecurse && local_offset < 0) {
+		gbss();
 		if (is_leaf_function) {
-			leaf_functions = realloc(leaf_functions, (leaf_cnt + 1) * sizeof(*leaf_functions));
-			leaf_functions[leaf_cnt++] = strdup(current_fn);
 			if (-local_offset > leaf_size)
 				leaf_size = -local_offset;
+			outstr("__"); outstr(current_fn); outstr("_end\t.alias\tleaf_stack\n");
 		}
 		else {
-			ot(".data"); nl();
-			ot(".bss"); nl();
-			outstr("__"); outstr(current_fn); outstr("_loc:\n\t\tds\t");
-			outdec(-local_offset); nl();
-			outstr("__"); outstr(current_fn); outstr("_end:"); nl();
-			ot(".code"); nl();
+			defstorage();
+			outdec(-local_offset);
+			nl();
+			outstr("__"); outstr(current_fn); outstr("_end:\n");
 		}
+		gtext();
 	}
 #endif
 

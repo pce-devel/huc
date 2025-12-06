@@ -3,8 +3,9 @@
 /* { dg-do run } */
 /* { dg-options "-std=iso9899:1999 -pedantic-errors" } */
 
+#include <string.h>
+
 extern void abort (void);
-extern int strcmp (const char *, const char *);
 extern void exit (int);
 
 int

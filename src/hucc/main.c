@@ -330,6 +330,7 @@ unknown_option:
 	}
 
 	smacptr = macptr;
+
 	if (!infiles)
 		usage(oldargv[0]);
 	printf(HUC_VERSION);
@@ -351,6 +352,7 @@ unknown_option:
 	   are still defined because we compile everything into one
 	   assembly file. */
 	asmdefs_global_end = asmdefs + strlen(asmdefs);
+
 	while (p) {
 		errfile = 0;
 		/* Truncate asm defines to the point where global
@@ -360,6 +362,7 @@ unknown_option:
 			glbsym_index = STARTGLB;
 			locsym_index = STARTLOC;
 			wsptr = ws;
+			leaf_size =
 			inclsp =
 			iflevel =
 			skiplevel =
@@ -386,24 +389,16 @@ unknown_option:
 			enum_ptr = 0;
 			enum_type_ptr = 0;
 			memset(fastcall_tbl, 0, sizeof(fastcall_tbl));
-			defpragma();
 
 			/* Macros and globals have to be reset for each
 			   file, so we have to define the defaults all over
 			   each time. */
-			defmac("__end\t__memory");
-			addglb("__memory", ARRAY, CCHAR, 0, EXTERN, 0);
-			addglb("stack", ARRAY, CCHAR, 0, EXTERN, 0);
 			rglbsym_index = glbsym_index;
-			addglb("etext", ARRAY, CCHAR, 0, EXTERN, 0);
-			addglb("edata", ARRAY, CCHAR, 0, EXTERN, 0);
-			/* PCE specific externs */
-			addglb("font_base", VARIABLE, CINT, 0, EXTERN, 0);
-			/* end specific externs */
 
-			/* deprecated ident macros */
-			defmac("huc6280\t1");
-			defmac("huc\t1");
+//			/* deprecated ident macros */
+//			defmac("huc6280\t1");
+//			defmac("huc\t1");
+
 			/* modern ident macros */
 			defmac("__HUC__\t1");
 			defmac("__HUCC__\t1");
@@ -428,7 +423,10 @@ unknown_option:
 			if (ted2flag)
 				defmac("_TED2\t1");
 
-//			initmac();
+			/* the testsuite uses these functions without declaring them */
+			add_fastcall("abort()");
+			add_fastcall("exit(word acc)");
+
 			/*
 			 *	compiler body
 			 */
@@ -436,18 +434,20 @@ unknown_option:
 				exit(1);
 			if (first && !openout())
 				exit(1);
-			if (first)
+			if (first) {
 				header();
-			asmdefines();
+				incl_globals_h();
+			}
+
 //			gtext ();
 			parse();
 			fclose(input);
 			ol(".dbg\tclear");
-//			gdata ();
+//			gbss ();
 			dumplits();
 			dumpglbs();
+			dumpfinal();
 			errorsummary();
-//			trailer ();
 			pl("");
 			errs = errs || errfile;
 		}
@@ -472,7 +472,6 @@ unknown_option:
 			infile_ptr++;
 		first = 0;
 	}
-	dumpfinal();
 	fclose(output);
 	if (!errs && !sflag) {
 		if (user_outfile[0])
@@ -481,11 +480,6 @@ unknown_option:
 			errs = errs || assemble(pp);
 	}
 	exit(errs != 0);
-}
-
-void FEvers (void)
-{
-	outstr("\tFront End (2.7,84/11/28)");
 }
 
 void usage (char *exename)
@@ -531,12 +525,6 @@ void usage (char *exename)
  */
 void parse (void)
 {
-	if (!startup_incl) {
-		inc_startup();
-		incl_huc_h();
-		incl_globals_h();
-	}
-
 	while (1) {
 		blanks();
 		if (feof(input))
@@ -669,7 +657,7 @@ void dumplits (void)
 	if ((litptr == 0) && (const_nb == 0))
 		return;
 
-	outstr("\t.rodata\n");
+	gconst();
 	if (litptr) {
 		outconst(litlab);
 		col();
@@ -732,147 +720,6 @@ int dump_struct (SYMBOL *symbol, int position)
 	return (dumped_bytes);
 }
 
-static int have_init_data = 0;
-/* Initialized data must be kept in one contiguous block; pceas does not
-   provide segments for that, so we keep the definitions and data in
-   separate buffers and dump them all together after the last input file.
- */
-#define DATABUFSIZE 65536
-char data_buffer[DATABUFSIZE+256];
-int  data_offset = 0;
-char rodata_buffer[DATABUFSIZE+256];
-int  rodata_offset = 0;
-
-char *current_buffer = NULL;
-int   current_offset = 0;
-
-/*
- *	buffered print symbol prefix character
- *
- */
-void prefixBuffer(void)
-{
-	current_buffer[current_offset++] = '_';
-}
-
-/*
- *	buffered print string
- *
- */
-void outstrBuffer (char *ptr)
-{
-	int i = 0;
-
-	if (current_offset >=	DATABUFSIZE) {
-		printf("HuC compiler overrun detected, DATABUFSIZE is too small!\n");
-		exit(-1);
-	}
-
-	while (ptr[i])
-		current_buffer[current_offset++] = ptr[i++];
-}
-
-/*
- *	buffered print character
- *
- */
-char outbyteBuffer (char c)
-{
-	if (c == 0)
-		return (0);
-
-	current_buffer[current_offset++] = c;
-
-	return (c);
-}
-
-/*
- *	buffered print decimal number
- *
- */
-void outdecBuffer (int number)
-{
-	if (current_offset >=	DATABUFSIZE) {
-		printf("HuC compiler overrun detected, DATABUFSIZE is too small!\n");
-		exit(-1);
-	}
-
-	current_offset += sprintf(current_buffer + current_offset, "%ld", (long) number);
-}
-
-/*
- *	buffered print pseudo-op to define a byte
- *
- */
-void nlBuffer (void)
-{
-	current_buffer[current_offset++] = EOL;
-}
-
-/*
- *	buffered print pseudo-op to define a byte
- *
- */
-void defbyteBuffer (void)
-{
-	outstrBuffer("\t\tdb\t");
-}
-
-/*
- *	buffered print pseudo-op to define storage
- *
- */
-void defstorageBuffer (void)
-{
-	outstrBuffer("\t\tds\t");
-}
-
-/*
- *	buffered print pseudo-op to define a word
- *
- */
-void defwordBuffer (void)
-{
-	outstrBuffer("\t\tdw\t");
-}
-
-/**
- * buffered dump struct data
- * @param symbol struct variable
- * @param position position of the struct in the array, or zero
- */
-int dump_structBuffer (SYMBOL *symbol, int position)
-{
-	int dumped_bytes = 0;
-	int i, number_of_members, value;
-
-	number_of_members = tag_table[symbol->tagidx].number_of_members;
-	for (i = 0; i < number_of_members; i++) {
-		// i is the index of current member, get type
-		int member_type = member_table[tag_table[symbol->tagidx].member_idx + i].sym_type;
-		if (member_type == CCHAR || member_type == CUCHAR) {
-			defbyteBuffer();
-			dumped_bytes += 1;
-		}
-		else {
-			/* XXX: compound types? */
-			defwordBuffer();
-			dumped_bytes += 2;
-		}
-		if (position < get_size(symbol->name)) {
-			// dump data
-			value = get_item_at(symbol->name, position * number_of_members + i, &tag_table[symbol->tagidx]);
-			outdecBuffer(value);
-		}
-		else {
-			// dump zero, no more data available
-			outdecBuffer(0);
-		}
-		nlBuffer();
-	}
-	return (dumped_bytes);
-}
-
 /*
  *	dump all static variables
  */
@@ -886,10 +733,10 @@ void dumpglbs (void)
 	if (glbflag == 0) goto finished;
 
 	/* This is done in several passes:
-	   Pass 0: Dump initialization data into const bank.
-	   Pass 1: Define space for zp data.
-	   Pass 2: Define space for uninitialized data.
-	   Pass 3: Define space for initialized data.
+	   Pass 0: Define space for zp data.
+	   Pass 1: Define space for uninitialized data.
+	   Pass 2: Define space for initialized data.
+	   Pass 3: Dump initialization data into const bank.
 	 */
 	for (pass = 0; pass < 4; ++pass) {
 		i = 1;
@@ -903,29 +750,30 @@ void dumpglbs (void)
 			dim = cptr->offset;
 			if (find_symbol_initials(cptr->name)) {
 				/* symbol has initialized data */
-				if (pass == 3) {
+				if (pass == 2) {
 					/* define space for initialized data */
-					current_buffer = data_buffer;
-					current_offset = data_offset;
+					if (i) {
+						i = 0;
+						nl();
+						gxdata();
+					}
 					if ((cptr->storage & STORAGE) != LSTATIC)
-						prefixBuffer();
-					outstrBuffer(cptr->name);
-					outstrBuffer(":\n");
-					defstorageBuffer();
-					outdecBuffer(cptr->alloc_size);
-					nlBuffer();
-					cptr->storage |= WRITTEN;
-					data_offset = current_offset;
-					current_buffer = NULL;
-					current_offset = 0;
+						prefix();
+					outstr(cptr->name);
+					outstr(":\n");
+					defstorage();
+					outdec(cptr->alloc_size);
+					nl();
 					continue;
 				}
-				if (pass != 0)
+				if (pass != 3)
 					continue;
+				if (i) {
+					i = 0;
+					nl();
+					gxinit();
+				}
 				/* output initialization data into const bank */
-				current_buffer = rodata_buffer;
-				current_offset = rodata_offset;
-				have_init_data = 1;
 				list_size = 0;
 				line_count = 0;
 				list_size = get_size(cptr->name);
@@ -939,53 +787,49 @@ void dumpglbs (void)
 				   we have to count both to get the right members out. */
 				for (j = item = 0; j < dim; j++, item++) {
 					if (cptr->sym_type == CSTRUCT)
-						j += dump_structBuffer(cptr, item) - 1;
+						j += dump_struct(cptr, item) - 1;
 					else {
 						if (line_count % 10 == 0) {
-							nlBuffer();
+							nl();
 							if (cptr->sym_type == CCHAR || cptr->sym_type == CUCHAR)
-								defbyteBuffer();
+								defbyte();
 							else
-								defwordBuffer();
+								defword();
 						}
 						if (j < list_size) {
 							// dump data
 							int value = get_item_at(cptr->name, j, &tag_table[cptr->tagidx]);
-							outdecBuffer(value);
+							outdec(value);
 						}
 						else {
 							// dump zero, no more data available
-							outdecBuffer(0);
+							outdec(0);
 						}
 						line_count++;
 						if (line_count % 10 == 0)
 							line_count = 0;
 						else {
 							if (j < dim - 1)
-								outbyteBuffer(',');
+								outbyte(',');
 						}
 					}
 				}
-				nlBuffer();
-				rodata_offset = current_offset;
-				current_buffer = NULL;
-				current_offset = 0;
+				nl();
+				cptr->storage |= WRITTEN;
 				continue;
 			}
 			else {
 				/* symbol is uninitialized */
-				if (pass == 0)
-					continue;
-				if (pass == 1 && !(cptr->storage & ZEROPAGE))
+				if (pass == 0 && !(cptr->storage & ZEROPAGE))
 					continue;
 				/* define space in bss */
 				if (i) {
 					i = 0;
 					nl();
-					if (pass == 1)
+					if (pass == 0)
 						gzp();
 					else
-						gdata();
+						gbss();
 				}
 				if ((cptr->storage & STORAGE) != LSTATIC)
 					prefix();
@@ -1003,37 +847,22 @@ void dumpglbs (void)
 finished:
 	if (i) {
 		nl();
-		gdata();
+		gbss();
 	}
 	output = save;
 }
 
 static void dumpfinal (void)
 {
-	int i;
-
-	if (leaf_cnt) {
-		outstr("leaf_loc:\n\t\tds\t");
+	if (leaf_size) {
+		gtext();
+		ot(".if\t\tleaf_needs < ");
 		outdec(leaf_size);
 		nl();
-		for (i = 0; i < leaf_cnt; i++) {
-			outstr("__");
-			outstr(leaf_functions[i]);
-			outstr("_end:\n");
-		}
-	}
-	outstr("\n__bss_init:\n\n");
-	if (data_offset != 0) {
-		data_buffer[data_offset] = '\0';
-		outstr(data_buffer);
-	}
-	outstr("__heap_start:\n");
-	if (rodata_offset != 0) {
-		rodata_buffer[rodata_offset] = '\0';
+		outstr("leaf_needs\t.set\t");
+		outdec(leaf_size);
 		nl();
-		ol(".rodata");
-		outstr("__rom_init:\n");
-		outstr(rodata_buffer);
+		ol(".endif");
 	}
 }
 

@@ -17,6 +17,7 @@
 #define IN_HOME		(1 << S_HOME)
 #define IN_XDATA	(1 << S_XDATA)
 #define IN_XINIT	(1 << S_XINIT)
+#define IN_XSTRZ	(1 << S_XSTRZ)
 #define IN_CONST	(1 << S_CONST)
 #define IN_OSEG		(1 << S_OSEG)
 #define ANYWHERE	(0xFFFF)
@@ -49,10 +50,10 @@ unsigned short pseudo_allowed[] = {
 /* P_ELSE        */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS + IN_CONST,
 /* P_ENDIF       */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS + IN_CONST,
 /* P_FAIL        */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS + IN_CONST,
-/* P_ZP          */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS + IN_CONST,
-/* P_BSS         */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS + IN_CONST,
-/* P_CODE        */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS + IN_CONST,
-/* P_DATA        */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS + IN_CONST,
+/* P_ZP          */	ANYWHERE,
+/* P_BSS         */	ANYWHERE,
+/* P_CODE        */	ANYWHERE,
+/* P_DATA        */	ANYWHERE,
 /* P_DEFCHR      */	IN_CODE + IN_HOME + IN_DATA,
 /* P_FUNC        */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS + IN_CONST,
 /* P_IFDEF       */	IN_CODE + IN_HOME + IN_DATA + IN_ZP + IN_BSS + IN_CONST,
@@ -332,7 +333,7 @@ do_db(int *ip)
 					case 'x':
 						c = prlnbuf[++(*ip)];
 
-						if ((c >= '0') && (c <= '8'))
+						if ((c >= '0') && (c <= '9'))
 							h = (c - '0');
 						else
 						if ((c >= 'A') && (c <= 'F'))
@@ -345,21 +346,18 @@ do_db(int *ip)
 							return;
 						}
 
-						for (;;) {
-							c = prlnbuf[++(*ip)];
+						c = prlnbuf[++(*ip)];
 
-							if ((c >= '0') && (c <= '8'))
-								h = (h << 4) + (c - '0');
-							else
-							if ((c >= 'A') && (c <= 'F'))
-								h = (h << 4) + (c + 10 - 'A');
-							else
-							if ((c >= 'a') && (c <= 'f'))
-								h = (h << 4) + (c + 10 - 'a');
-							else {
-								--(*ip);
-								break;
-							}
+						if ((c >= '0') && (c <= '9'))
+							h = (h << 4) + (c - '0');
+						else
+						if ((c >= 'A') && (c <= 'F'))
+							h = (h << 4) + (c + 10 - 'A');
+						else
+						if ((c >= 'a') && (c <= 'f'))
+							h = (h << 4) + (c + 10 - 'a');
+						else {
+							--(*ip);
 						}
 
 						c = h;
@@ -2061,6 +2059,8 @@ do_opt(int *ip)
 			asm_opt[OPT_DATAPAGE] = i;
 		else if (!strcasecmp(name, "f"))
 			asm_opt[OPT_FORWARD] = i;
+		else if (!strcasecmp(name, "@"))
+			asm_opt[OPT_STATIC] = i;
 		else {
 			error("Unknown option!");
 			return;

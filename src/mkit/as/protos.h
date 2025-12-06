@@ -120,6 +120,7 @@ int  main(int argc, char **argv);
 void help(void);
 void show_bank_usage(FILE *fp, int which_bank);
 void show_seg_usage(FILE *fp);
+void data_reloc(void);
 
 /* MAP.C */
 int pce_load_map(char *fname, int mode);

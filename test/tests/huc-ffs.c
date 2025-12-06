@@ -1,3 +1,7 @@
+#ifdef __HUCC__
+extern unsigned char __fastcall __builtin_ffs( unsigned int value<__temp> );
+#endif
+
 main()
 {
   int i;

@@ -3,6 +3,8 @@
    -O2 -fomit-frame-pointer        
    Testcase by David B. Trout     */
 
+#include <string.h>
+
 #undef STACK_SIZE
 #define STACK_SIZE 128
 
@@ -16,7 +18,6 @@
 //#define STRLEN     13371
 //#endif
 
-extern void *memset (void *, int, __SIZE_TYPE__);
 extern void abort (void);
 
 static void foo ()

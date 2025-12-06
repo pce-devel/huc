@@ -4,11 +4,11 @@
       
    Written by Jakub Jelinek, June 23, 2003.  */
 
+#include <string.h>
+
 //typedef __SIZE_TYPE__ size_t;
 #define size_t unsigned int
 
-extern char *strcpy (char *, const char *);
-extern int memcmp (const void *, const void *, size_t);
 extern void abort (void);
 extern void exit (int);
 

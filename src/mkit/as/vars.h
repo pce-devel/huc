@@ -28,6 +28,14 @@ int rs_overlay;                                 /* .rs counter */
 unsigned char section;                          /* current section: S_ZP, S_BSS, S_CODE or S_DATA */
 int section_bank[MAX_S];                        /* current bank for each section */
 int section_phase[MAX_S];                       /* current phase offset for each section */
+
+int xdata_bank;                                 /* initial bank for .XDATA, relocated before LAST_PASS */
+int xdata_addr;                                 /* initial addr for .XDATA, relocated before LAST_PASS */
+int xinit_bank;                                 /* initial bank for .XINIT, relocated before LAST_PASS */
+int xinit_addr;                                 /* initial addr for .XINIT, relocated before LAST_PASS */
+int xstrz_bank;                                 /* initial bank for .XSTRZ, relocated before LAST_PASS */
+int xstrz_addr;                                 /* initial addr for .XSTRZ, relocated before LAST_PASS */
+
 int stop_pass;                                  /* stop the program; set by fatal_error() */
 int errcnt;                                     /* error counter */
 int no_rom_file;                                /* NZ if only assembling data file(s) */

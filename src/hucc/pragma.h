@@ -7,8 +7,8 @@
 #define _PRAGMA_H
 
 void dopragma (void);
-void defpragma (void);
 void parse_pragma (void);
+void add_fastcall (const char *func);
 void new_fastcall (void);
 int fastcall_look (const char *fname, int nargs, struct fastcall **p);
 int symhash (const char *sym);

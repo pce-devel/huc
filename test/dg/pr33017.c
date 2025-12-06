@@ -2,9 +2,10 @@
 /* { dg-do run } */
 /* { dg-options "-O2 -ftree-vectorize" } */
 
+#include <string.h>
+
 #define __SIZE_TYPE__ unsigned int
 
-extern __SIZE_TYPE__ strlen (const char *);
 extern void abort (void);
 
 char *

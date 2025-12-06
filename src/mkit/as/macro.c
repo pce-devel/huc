@@ -10,7 +10,7 @@
 int mopt;
 int in_macro;
 int expand_macro;
-char marg[8][10][256];
+char marg[8][10][MARGSZ];
 int midx;
 int mcounter, mcntmax;
 int mcntstack[8];
@@ -200,13 +200,13 @@ macro_getargs(int ip)
 					error("Unterminated string!");
 					return (0);
 				}
-				if (i == 256) {
-					error("String too long, max. 255 characters!");
-					return (0);
-				}
 				if (t == c) {
-					if ((c != '\"') || (ptr[i - 1] != '\\'))
+					if ((c != '\"') || (i == 0) || (ptr[i - 1] != '\\'))
 						break;
+				}
+				if (i == (MARGSZ - 1)) {
+					error("String too long, max. %d characters!", (MARGSZ - 1));
+					return (0);
 				}
 				ptr[i++] = t;
 			}
@@ -310,8 +310,8 @@ macro_getargs(int ip)
 				else {
 					ptr[i++] = c;
 				}
-				if (i == 255) {
-					error("Macro argument string too long, max. 255 characters!");
+				if (i == (MARGSZ - 1)) {
+					error("Macro argument string too long, max. %d characters!", (MARGSZ - 1));
 					return (0);
 				}
 				j++;
@@ -334,8 +334,8 @@ macro_getargs(int ip)
 						arg--;
 
 						/* check string length */
-						if (strlen(marg[midx][arg]) > 255-4) {
-							error("Macro argument string too long, max. 255 characters!");
+						if (strlen(marg[midx][arg]) > (MARGSZ - 5)) {
+							error("Macro argument string too long, max. %d characters!", (MARGSZ - 1));
 							return (0);
 						} else {
 							strcat(marg[midx][arg], suffix);
@@ -416,7 +416,7 @@ macro_getargtype(char *arg)
 		arg++;
 
 	/* get type */
-	switch (toupper(*arg++)) {
+	switch (toupper(*arg)) {
 	case '\0':
 		return (NO_ARG);
 
@@ -432,16 +432,19 @@ macro_getargtype(char *arg)
 	case 'A':
 	case 'X':
 	case 'Y':
-		if (*arg == '\0')
+		if (arg[1] == '\0')
 			return (ARG_REG);
 
 	default:
-		/* symbol */
+		/* constant or expression */
+		/* returns ARG_ABS when the argument starts with a number or the */
+		/* first symbol is both defined and has no bank value, otherwise */
+		/* return ARG_LABEL (i.e. the argument is a location) */
 		for (i = 0;;) {
 			c = arg[i];
 			if (i == 0 && isdigit(c))
 				break;
-			if (isalnum(c) || (c == '_') || (c == '.') || (i == 0 && c == '@')) {
+			if (isalnum(c) || (c == '_') || (c == '.') || (i == 0 && c == '@') || (i == 0 && c == '!')) {
 				i++;
 			} else {
 				break;
@@ -451,24 +454,18 @@ macro_getargtype(char *arg)
 		if (i == 0)
 			return (ARG_ABS);
 		else {
-			if (c != '\0')
-				return (ARG_ABS);
-			else {
-				memcpy(&symbol[1], arg, i);
-				symbol[0] = i;
-				symbol[i + 1] = '\0';
+			memcpy(&symbol[1], arg, i);
+			symbol[0] = i;
+			symbol[i + 1] = '\0';
 
-				if ((sym = stlook(SYM_REF)) == NULL)
-					return (ARG_LABEL);
-				else {
-					if ((sym->type == UNDEF) || (sym->type == IFUNDEF))
-						return (ARG_LABEL);
-					if (sym->mprbank == UNDEFINED_BANK)
-						return (ARG_ABS);
-					else
-						return (ARG_LABEL);
-				}
-			}
+			if ((sym = stlook(SYM_REF)) == NULL)
+				return (ARG_LABEL);
+			if (sym->type == UNDEF || sym->type == IFUNDEF)
+				return (ARG_LABEL);
+			if (sym->mprbank == UNDEFINED_BANK)
+				return (ARG_ABS);
+
+			return (ARG_LABEL);
 		}
 	}
 }

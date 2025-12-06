@@ -1,8 +1,9 @@
 /* PR tree-optimization/19828 */
 //typedef __SIZE_TYPE__ size_t;
+
+#include <string.h>
+
 #define size_t unsigned int
-extern size_t strlen (const char *s);
-extern int strncmp (const char *s1, const char *s2, size_t n);
 extern void abort (void);
 
 const char *a[16] = { "a", "bc", "de", "fgh" };

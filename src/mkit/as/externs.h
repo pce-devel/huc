@@ -33,6 +33,12 @@ extern int section_bank[MAX_S];                 /* current bank for each section
 extern int section_phase[MAX_S];                /* current phase offset for each section */
 extern int section_flags[MAX_S];                /* current flags for each section */
 extern int section_limit[MAX_S];                /* current loccnt limit for each section */
+extern int xdata_bank;                          /* initial bank for .XDATA, relocated before LAST_PASS */
+extern int xdata_addr;                          /* initial addr for .XDATA, relocated before LAST_PASS */
+extern int xinit_bank;                          /* initial bank for .XINIT, relocated before LAST_PASS */
+extern int xinit_addr;                          /* initial addr for .XINIT, relocated before LAST_PASS */
+extern int xstrz_bank;                          /* initial bank for .XSTRZ, relocated before LAST_PASS */
+extern int xstrz_addr;                          /* initial addr for .XSTRZ, relocated before LAST_PASS */
 extern int in_if;                               /* true if in a '.if' statement */
 extern int if_expr;                             /* set when parsing an .if expression */
 extern int if_level;                            /* level of nested .if's */
@@ -61,7 +67,7 @@ extern int complex_expr;                        /* NZ if an expression contains 
 extern int mopt;
 extern int in_macro;
 extern int expand_macro;
-extern char marg[8][10][256];
+extern char marg[8][10][MARGSZ];
 extern int midx;
 extern int mcounter, mcntmax;
 extern int mcntstack[8];

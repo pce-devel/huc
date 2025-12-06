@@ -43,7 +43,7 @@ const char * compare2str [] = {
  *	print all assembler info before any code is generated
  *
  */
-void gdata (void)
+void gbss (void)
 {
 	if (segment != 0) {
 		segment = 0;
@@ -67,6 +67,30 @@ void gzp (void)
 	}
 }
 
+void gconst (void)
+{
+	if (segment != 3) {
+		segment = 3;
+		ol(".rodata");
+	}
+}
+
+void gxdata (void)
+{
+	if (segment != 4) {
+		segment = 4;
+		ol(".xdata");
+	}
+}
+
+void gxinit (void)
+{
+	if (segment != 5) {
+		segment = 5;
+		ol(".xinit");
+	}
+}
+
 void header (void)
 {
 	time_t today;
@@ -82,29 +106,18 @@ void header (void)
 	time(&today);
 	outstr(ctime(&today));
 	outstr(";\n");
-	outstr("\n");
+	nl();
 	outstr("HUC\t\t=\t1\n");
 	outstr("HUCC\t\t=\t1\n");
-	nl();
-}
-
-void asmdefines (void)
-{
-	outstr(asmdefs);
-}
-
-void inc_startup (void)
-{
-	if (startup_incl == 0) {
-		startup_incl = 1;
-
+	if (asmdefs[0]) {
 		nl();
-		outstr("\t\tinclude\t\"hucc.asm\"\n");
-		outstr("\t\t.data\n");
-		outstr("\t\t.bank\tDATA_BANK\n\n");
-		gtext();
-		nl();
+		outstr(asmdefs);
 	}
+	nl();
+	outstr("\t.include\t\"hucc.asm\"\n");
+	outstr("\t.opt\t\t@+\n");
+	gtext();
+	nl();
 }
 
 /*

@@ -955,9 +955,9 @@ pce_incspr(int *ip)
 			int palette = pcx_pack_16x16_sprite(spr_data, sx, sy);
 
 			/* warning not error because PCEAS hasn't previously cared about this */
-			if (palette < 0)
-				warning("Multiple palettes used in SPR at image (%d, %d)!", sx, sy);
-			else
+//			if (palette < 0)
+//				warning("Multiple palettes used in SPR at image (%d, %d)!", sx, sy);
+//			else
 			if (lastlabl)
 				lastlabl->tags->metadata[nb_sprite] = palette;
 

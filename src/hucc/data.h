@@ -113,8 +113,6 @@ extern int user_short_enums;
 extern int user_signed_char;
 extern int user_far_arrays;
 
-extern char **leaf_functions;
-extern int leaf_cnt;
 extern int leaf_size;
 
 extern INITIALS initials_table[NUMGLBS];
