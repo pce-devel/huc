@@ -267,47 +267,52 @@ _pokew.2	.macro
 ; ***************************************************************************
 ;
 ; unsigned char __fastcall __macro clock_hh( void );
+; unsigned char __fastcall __macro clock_mm( void );
+; unsigned char __fastcall __macro clock_ss( void );
+; unsigned char __fastcall __macro clock_tt( void );
+;
+; N.B. HuC stores the clock as binary, HuCC stores it as BCD.
 
 _clock_hh	.macro
-		lda	clock_hh
-		cly
+		lda	__clock_hh
+		jsr	bcd_byte_to_bin
 		.endm
-
-
-
-; ***************************************************************************
-; ***************************************************************************
-;
-; unsigned char __fastcall __macro clock_mm( void );
 
 _clock_mm	.macro
-		lda	clock_mm
-		cly
+		lda	__clock_mm
+		jsr	bcd_byte_to_bin
 		.endm
-
-
-
-; ***************************************************************************
-; ***************************************************************************
-;
-; unsigned char __fastcall __macro clock_ss( void );
 
 _clock_ss	.macro
-		lda	clock_ss
-		cly
+		lda	__clock_ss
+		jsr	bcd_byte_to_bin
 		.endm
-
-
-
-; ***************************************************************************
-; ***************************************************************************
-;
-; unsigned char __fastcall __macro clock_tt( void );
 
 _clock_tt	.macro
-		lda	clock_tt
-		cly
+		lda	__clock_tt
+		jsr	bcd_byte_to_bin
 		.endm
+
+		; HuC returns binary values for these clock functions.
+
+bcd_byte_to_bin:tay
+		lsr	a
+		lsr	a
+		lsr	a
+		lsr	a
+		say
+		clc
+		and	#$0F
+		adc	.table, y
+		cly
+		rts
+
+.table:		db	0
+		db	10
+		db	20
+		db	30
+		db	40
+		db	50
 
 
 
@@ -317,11 +322,12 @@ _clock_tt	.macro
 ; void __fastcall __macro clock_reset( void );
 
 _clock_reset	.macro
-		stz	clock_hh
-		stz	clock_mm
-		stz	clock_ss
-		stz	clock_tt
+		stz	__clock_tt
+		stz	__clock_ss
+		stz	__clock_mm
+		stz	__clock_hh
 		.endm
+
 
 
 
