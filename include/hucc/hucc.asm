@@ -222,10 +222,10 @@ mul_sqrminus_hi:ds	2
 
 		.bss
 old_cnt:	ds	1			; irq_cnt of previous vsync().
-clock_hh:	ds	1			; System Clock, hours	(0-11)
-clock_mm:	ds	1			; System Clock, minutes (0-59)
-clock_ss:	ds	1			; System Clock, seconds (0-59)
-clock_tt:	ds	1			; System Clock, ticks	(0-59)
+__clock_tt:	ds	1			; System Clock, ticks	(0-59).
+__clock_ss:	ds	1			; System Clock, seconds (0-59).
+__clock_mm:	ds	1			; System Clock, minutes (0-59).
+__clock_hh:	ds	1			; System Clock, hours	(0-11).
 		.code
 
 		; Reset the stack size needed for leaf functions.
@@ -446,30 +446,30 @@ hucc_vbl:	call	vbl_init_scroll		; Prepare for the next frame.
 
 		sed				; Update the HuC system clock
 		sec				; which is in BCD here rather
-		lda	clock_tt		; than the binary one in HuC.
+		lda	__clock_tt		; than the binary one in HuC.
 		adc	#0			; BCD add ...
 		cmp	#$60			; ... but binary comparison.
 		bcc	.ticks
-		lda	clock_ss
+		lda	__clock_ss
 		adc	#0			; BCD add ...
 		cmp	#$60			; ... but binary comparison.
 		bcc	.seconds
-		lda	clock_mm
+		lda	__clock_mm
 		adc	#0			; BCD add ...
 		cmp	#$60			; ... but binary comparison.
 		bcc	.minutes
-		lda	clock_hh
+		lda	__clock_hh
 		adc	#0			; BCD add ...
 		cmp	#$12			; ... but binary comparison.
 		bcc	.hours
 		cla
-.hours:		sta	clock_hh
+.hours:		sta	__clock_hh
 		cla
-.minutes:	sta	clock_mm
+.minutes:	sta	__clock_mm
 		cla
-.seconds:	sta	clock_ss
+.seconds:	sta	__clock_ss
 		cla
-.ticks:		sta	clock_tt
+.ticks:		sta	__clock_tt
 		cld
 
 		jmp	xfer_palettes		; Upload any palette changes.
