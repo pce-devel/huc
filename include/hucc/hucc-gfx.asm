@@ -1071,7 +1071,7 @@ put_char_vdc	.proc
 
 		clx				; Offset to PCE VDC.
 
-		jsr	set_di_xy_mawr
+		jsr	put_di_xy_wrap		; Comply with HuC's wrapping.
 
 		cla				; Push EOL marker.
 		pha
@@ -1106,7 +1106,7 @@ put_digit_vdc	.proc
 
 		clx				; Offset to PCE VDC.
 
-		jsr	set_di_xy_mawr
+		jsr	put_di_xy_wrap		; Comply with HuC's wrapping.
 
 		cla				; Push EOL marker.
 		pha
@@ -1145,7 +1145,7 @@ put_hex_vdc	.proc
 
 		clx				; Offset to PCE VDC.
 
-		jsr	set_di_xy_mawr
+		jsr	put_di_xy_wrap		; Comply with HuC's wrapping.
 
 		ldy	<_cl			; Total #characters to print,
 		beq	!exit+			; NOT minimum #characters!
@@ -1220,7 +1220,7 @@ put_number_vdc	.proc
 
 		clx				; Offset to PCE VDC.
 
-		jsr	set_di_xy_mawr
+		jsr	put_di_xy_wrap		; Comply with HuC's wrapping.
 
 		ldy	<_cl			; Total #characters to print,
 		beq	!exit-			; NOT minimum #characters!
@@ -1306,7 +1306,7 @@ put_raw_vdc	.proc
 
 		clx				; Offset to PCE VDC.
 
-		jsr	set_di_xy_mawr
+		jsr	put_di_xy_wrap		; Comply with HuC's wrapping.
 
 		lda.l	<_bx
 		sta	VDC_DL, x
@@ -1318,6 +1318,20 @@ put_raw_vdc	.proc
 		.endp
 
 		.alias	_put_raw.3		= put_raw_vdc
+
+		;
+		; Ugly hack to wrap the X & Y coordinates like HuC.
+		;
+
+put_di_xy_wrap:	lda.l	<_di			; Sanitize X coordinate.
+		and	vdc_bat_x_mask, x
+		sta.l	<_di
+
+		lda.h	<_di			; Sanitize Y coordinate.
+		and	vdc_bat_y_mask, x
+		sta.h	<_di
+
+		jmp	set_di_xy_mawr		; In "common.asm".
 
 		.endprocgroup			; vdc_tty_out
 
