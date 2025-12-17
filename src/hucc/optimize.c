@@ -4056,9 +4056,6 @@ lv1_loop:
 					break;
 				case X_LD_UAX:
 					switch (p[3]->ins_code) {
-					case X_LDX_WMQ: p[3]->ins_code = X_LDX_WMQ; break;
-					case X_LDX_BMQ: p[3]->ins_code = X_LDX_BMQ; break;
-					case X_LDX_UMQ: p[3]->ins_code = X_LDX_UMQ; break;
 					case X_LDX_WSQ: p[3]->ins_code = X_LDX_WS; break;
 					case X_LDX_BSQ: p[3]->ins_code = X_LDX_BS; break;
 					case X_LDX_USQ: p[3]->ins_code = X_LDX_US; break;
@@ -6033,6 +6030,12 @@ lv1_loop:
 					q_ins[q_wr] = q_ins[prev];
 					parked = q_ins[scan];
 					++drop;  /* drop the X_LDX_{W/B/U}{M/S} as well */
+					switch (q_ins[q_wr].ins_code) {
+					case X_LDX_WSQ: q_ins[q_wr].ins_code = X_LDX_WS; break;
+					case X_LDX_BSQ: q_ins[q_wr].ins_code = X_LDX_BS; break;
+					case X_LDX_USQ: q_ins[q_wr].ins_code = X_LDX_US; break;
+					default: break;
+					}
 					switch (old_code) {
 					case X_ISUB_WT: parked.ins_code =  X_SUB_UAX; break;
 					case  I_ADD_WT: parked.ins_code =  X_ADD_UAX; break;
