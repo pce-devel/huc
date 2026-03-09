@@ -119,7 +119,7 @@ Sets the horizontal resolution to a custom '*x_pixels*' value (in pixels). This 
 **Note 3:** Because of a hardware limitation, a screen with a horizontal resolution of 240 pixels can not display more than 62 sprites. The last two sprites (numbers 62 & 63) will not be visible.
 
 `set_screen_size( unsigned char value );`
-Changes the **virtual screen** size. By default the startup code initializes a virtual screen of 64 characters wide and 32 characters tall, but other values are possible, namely: 32x32, 128x32, 32x64, 64x64, or 128x64. The larger the virtual screen is, the less VRAM you will have for your graphics (fonts, tiles, sprites).
+Changes the **virtual screen** size. By default the startup code initializes a virtual screen of 64 characters wide and 32 characters tall, but several values are possible: `32x32`, `32x64`, `64x32`, `64x64`, `128x32`, `128x64`. The larger the virtual screen is, the less VRAM you will have for your graphics (fonts, tiles, sprites).
 
 `vram_addr( unsigned char bat_x, unsigned char bat_y );`     
 Returns the VRAM address for the character at position ('*bat_x*', '*bat_y*').
@@ -190,9 +190,9 @@ Be careful to use the same resolution as `set_xres()`, or the VDC2 layer will be
 Sets the control register of the SuperGrafx VPC (Video Priority Controller). Controls sprite and background priority settings between VDC1 and VDC2. The '*bits*' value can take one of the 3 parameters below.
 
 **Priority Modes:**
-- `VPC_SPR1_BKG1_SPR2_BKG2` - Mode 1
-- `VPC_SPR1_SPR2_BKG1_BKG2` - Mode 2 (default)
-- `VPC_BKG1_BKG2_SPR1_SPR2` - Mode 3
+- `VPC_SPR1_BKG1_SPR2_BKG2` - VPC Mode 1
+- `VPC_SPR1_SPR2_BKG1_BKG2` - VPC Mode 2 (default)
+- `VPC_BKG1_BKG2_SPR1_SPR2` - VPC Mode 3
 
 `vpc_set_win1( unsigned int width );`
 Sets VPC window 1 width for split screen effects. Default '*width*' is 0x0000.
@@ -237,6 +237,86 @@ Up to 128 windows can be defined for VDC2.
 `sgx_disable_split( unsigned char index );`
 
 `sgx_disable_all_splits( void );`
+
+## **Color and Palette Functions**
+
+`clear_palette( void );`
+Clears all palette entries to black.
+
+`set_color( unsigned int index, unsigned int value );`
+Sets the specified color '*index*' (0-511) to a given color number from the global 9-bit hard-coded palette. Requires an appropriate PC Engine color chart to be useful!
+
+`set_color_rgb( unsigned int index, unsigned char r, unsigned char g, unsigned char b );`
+Sets the specified color '*index*' to the given RGB component values (brightness ranges from 0 to 7). This function is much easier to use than `set_color()`, but it is noticeably slower.
+
+`get_color( unsigned int index );`
+Retrieves the **blue** RGB value of the specified color '*index*'. That means each 3-bit RGB component must be read separately, via bitshifting (blue -> red -> green).
+
+**Example:**
+```c
+// Get all RGB component values from a specified color index
+color_b = (get_color(color_index)     ) & 7;    // Blue
+color_r = (get_color(color_index) >> 3) & 7;    // Red
+color_g = (get_color(color_index) >> 6) & 7;    // Green
+```
+
+`load_palette( unsigned char palette, unsigned char __far *data, unsigned int num_palettes );`
+Loads one or more 16-color sub-palettes at once. '*palette*' is the index of the first sub-palette (0-31) to load, and '*num_palettes*' the number of sub-palettes. This function can be used to load palettes defined using `#defpal` or included with `#incpal` directives.
+
+`far_load_palette( unsigned char palette, unsigned char num_palettes );`
+Loads palette data from far memory. The data source must be set up using `set_far_base()` before calling this function.
+
+`set_bgpal( unsigned char palette, unsigned char __far *data, unsigned int num_palettes );`
+This legacy function is exactly the same as `load_palette()`, but it is limited to character sub-palette numbers 0 to 15. Without the third argument, the function loads only one sub-palette.
+
+`set_sprpal( unsigned char palette, unsigned char __far *data, unsigned int num_palettes );`
+This legacy function is exactly the same as `load_palette()`, except it offers direct access to sprite sub-palettes. They are standard sub-palette numbers 16 to 31, but with this function you can simply access them with indices 0 to 15. This can make sprite palette manipulation easier, since you don't have to remember the real sprite sub-palette indices. Without the third argument, the function loads only one sub-palette.
+
+`read_palette( unsigned char palette, unsigned char num_palettes, unsigned int *destination );`
+Reads palette data back from the Video Color Encoder (VCE) into the specified destination buffer.
+
+`fade_to_black( unsigned int __far *from, unsigned int *destination, unsigned char num_colors, unsigned char value_to_sub );`
+Fades palette colors towards black by subtracting the specified value from each color component.
+
+`fade_to_white( unsigned int __far *from, unsigned int *destination, unsigned char num_colors, unsigned char value_to_add );`
+Fades palette colors towards white by adding the specified value to each color component.
+
+**Note:** For an example of fadein/fadeout effects, see HuCC's **metatile3** demo.
+
+`cross_fade_to( unsigned int __far *target_pal, unsigned int *current_pal, unsigned char num_colors, unsigned char which_component );`
+Crossfades between the current palette and a reference ("target") palette, modifying only the specified RGB component (0=green, 1=red&blue) one brightness step at a time. The '*which_component*' parameter can actually take any 8-bit value, but only the bottom bit is taken into account by the function. It means an even value returns 0 (green), and an odd value returns 1 (red&blue).
+
+**Note:** Green is the brightest component. By handling green and red/blue components separately, 14 brightness steps (instead of 7) are required to completely crossfade the palette. This allows for smoother color transitions. In that regard, '*which_component*' can also be used as a loop counter.
+
+**Example:**
+```c
+// Read the current 16 background sub-palettes from the VCE and store them in an array
+read_palette(0, 16, current_pal);
+
+// Up to 14 steps are needed to completely crossfade the colors
+for (fade_value = 0; fade_value != 14; ++fade_value) {
+
+    // Crossfade all 256 colors of the current palette towards the target palette
+    // Even-numbered loops will step the green component
+    // Odd-numbered loops will step the red and blue components
+    cross_fade_to(target_pal, current_pal, 256, fade_value);
+
+    // Load the modified 16 background sub-palettes from the "current_pal" array
+    load_palette(0, current_pal, 16);
+
+    // Don't refresh too slowly, because the partial fade can produce color artifacts
+    vsync(4);
+}
+```
+
+`far_fade_to_black( unsigned int *destination, unsigned char num_colors, unsigned char value_to_sub );`
+Far memory version of `fade_to_black()`. Uses the current far memory source set by `set_far_base()`.
+
+`far_fade_to_white( unsigned int *destination, unsigned char num_colors, unsigned char value_to_add );`
+Far memory version of `fade_to_white()`. Uses the current far memory source set by `set_far_base()`.
+
+`far_cross_fade_to( unsigned int *current_pal, unsigned char num_colors, unsigned char which_component );`
+Far memory version of `cross_fade_to()`. Uses the current far memory source set by `set_far_base()`.
 
 ## **Sprite Functions**
 
@@ -350,83 +430,7 @@ Sets a pixel at ('*x*', '*y*') to color listed. '*color*' should be a value betw
 `gfx_line( unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2, unsigned char color );`
 Draws a line from ('*x1*', '*y1*') to ('*x2*', '*y2*') in color listed. '*color*' should be a value between 0 and 15.
 
-## **Color and Palette Functions**
-
-`clear_palette( void );`
-Clears all palette entries to black.
-
-`set_color( unsigned int index, unsigned int value );`
-Sets the specified color '*index*' (0-511) to a given color number from the global 9-bit hard-coded palette. Requires an appropriate PC Engine color chart to be useful!
-
-`set_color_rgb( unsigned int index, unsigned char r, unsigned char g, unsigned char b );`
-Sets the specified color '*index*' to the given RGB component values (brightness ranges from 0 to 7). This function is much easier to use than `set_color()`, but it is noticeably slower.
-
-`get_color( unsigned int index );`
-Retrieves the **blue** RGB value of the specified color '*index*'. That means each 3-bit RGB component must be read separately, via bitshifting (blue -> red -> green).
-
-**Example:**
-```c
-// Get all RGB component values from a specified color index
-color_b = (get_color(color_index)     ) & 7;    // Blue
-color_r = (get_color(color_index) >> 3) & 7;    // Red
-color_g = (get_color(color_index) >> 6) & 7;    // Green
-```
-
-`load_palette( unsigned char palette, unsigned char __far *data, unsigned int num_palettes );`
-Loads one or more 16-color sub-palettes at once. '*palette*' is the index of the first sub-palette (0-31) to load, and '*num_palettes*' the number of sub-palettes. This function can be used to load palettes defined using `#defpal` or included with `#incpal` directives.
-
-`far_load_palette( unsigned char palette, unsigned char num_palettes );`
-Loads palette data from far memory. The data source must be set up using `set_far_base()` before calling this function.
-
-`set_bgpal( unsigned char palette, unsigned char __far *data, unsigned int num_palettes );`
-This legacy function is exactly the same as `load_palette()`, but it is limited to character sub-palette numbers 0 to 15. Without the third argument, the function loads only one sub-palette.
-
-`set_sprpal( unsigned char palette, unsigned char __far *data, unsigned int num_palettes );`
-This legacy function is exactly the same as `load_palette()`, except it offers direct access to sprite sub-palettes. They are standard sub-palette numbers 16 to 31, but with this function you can simply access them with indices 0 to 15. This can make sprite palette manipulation easier, since you don't have to remember the real sprite sub-palette indices. Without the third argument, the function loads only one sub-palette.
-
-`read_palette( unsigned char palette, unsigned char num_palettes, unsigned int *destination );`
-Reads palette data back from the Video Color Encoder (VCE) into the specified destination buffer.
-
-`fade_to_black( unsigned int __far *from, unsigned int *destination, unsigned char num_colors, unsigned char value_to_sub );`
-Fades palette colors towards black by subtracting the specified value from each color component.
-
-`fade_to_white( unsigned int __far *from, unsigned int *destination, unsigned char num_colors, unsigned char value_to_add );`
-Fades palette colors towards white by adding the specified value to each color component.
-
-`cross_fade_to( unsigned int __far *target_pal, unsigned int *current_pal, unsigned char num_colors, unsigned char which_component );`
-Crossfades between the current palette and a reference ("target") palette, modifying only the specified RGB component (0=green, 1=red&blue) one brightness step at a time. The '*which_component*' parameter can actually take any 8-bit value, but only the bottom bit is taken into account by the function. It means an even value returns 0 (green), and an odd value returns 1 (red&blue).
-
-**Note:** Green is the brightest component. By handling green and red/blue components separately, 14 brightness steps (instead of 7) are required to completely crossfade the palette. This allows for smoother color transitions. In that regard, '*which_component*' can also be used as a loop counter.
-
-**Example:**
-```c
-// Read the current 16 background sub-palettes from the VCE and store them in an array
-read_palette(0, 16, current_pal);
-
-// Up to 14 steps are needed to completely crossfade the colors
-for (fade_value = 0; fade_value != 14; ++fade_value) {
-
-    // Crossfade all 256 colors of the current palette towards the target palette
-    // Even-numbered loops will step the green component
-    // Odd-numbered loops will step the red and blue components
-    cross_fade_to(target_pal, current_pal, 256, fade_value);
-
-    // Load the modified 16 background sub-palettes from the "current_pal" array
-    load_palette(0, current_pal, 16);
-
-    // Don't refresh too slowly, because the partial fade can produce color artifacts
-    vsync(4);
-}
-```
-
-`far_fade_to_black( unsigned int *destination, unsigned char num_colors, unsigned char value_to_sub );`
-Far memory version of `fade_to_black()`. Uses the current far memory source set by `set_far_base()`.
-
-`far_fade_to_white( unsigned int *destination, unsigned char num_colors, unsigned char value_to_add );`
-Far memory version of `fade_to_white()`. Uses the current far memory source set by `set_far_base()`.
-
-`far_cross_fade_to( unsigned int *current_pal, unsigned char num_colors, unsigned char which_component );`
-Far memory version of `cross_fade_to()`. Uses the current far memory source set by `set_far_base()`.
+**Note:** These legacy functions only work on VDC1.
 
 ## **Character Map Functions**
 
@@ -729,26 +733,6 @@ Outputs a null terminated ASCII string.
 `put_raw( unsigned int data, unsigned char bat_x, unsigned char bat_y );`
 Outputs raw data directly to the screen at the specified position.
 
-## **Number Functions**
-
-`abs( int value );`
-Returns the absolute value of the input.
-
-`srand( unsigned char seed );`
-Changes the random seed. You can use this function to improve randomness by giving a value based on when the player presses `RUN` for the first time, for example.
-
-`rand( void );`
-Returns a 16-bit random number.
-
-`rand8( void );`
-Returns an 8-bit random number.
-
-`random8( unsigned char limit );`
-Returns a random value between 0 and '*limit*' -1. Note: '*limit*' is 0...255.
-
-`random( unsigned char limit );`
-Returns a random value between 0 and '*limit*' -1. Note: '*limit*' is 0...128, values 129...255 are treated as 128. This legacy function is basically a 7-bit random number generator.
-
 ## **String Manipulation Functions**
 
 Standard string manipulation functions with support for both regular and far memory sources.
@@ -815,6 +799,26 @@ Compares strings with limited count.
 Compares memory areas.
 - **Overload 1:** Regular memory source.
 - **Overload 2:** Far memory source (crosses memory banks).
+
+## **Number Functions**
+
+`abs( int value );`
+Returns the absolute value of the input.
+
+`srand( unsigned char seed );`
+Changes the random seed. You can use this function to improve randomness by giving a value based on when the player presses `RUN` for the first time, for example.
+
+`rand( void );`
+Returns a 16-bit random number.
+
+`rand8( void );`
+Returns an 8-bit random number.
+
+`random8( unsigned char limit );`
+Returns a random value between 0 and '*limit*' -1. Note: '*limit*' is 0...255.
+
+`random( unsigned char limit );`
+Returns a random value between 0 and '*limit*' -1. Note: '*limit*' is 0...128, values 129...255 are treated as 128. This legacy function is basically a 7-bit random number generator.
 
 ## **ZX0 Compression Functions**
 
