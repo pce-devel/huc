@@ -119,10 +119,10 @@ Sets the horizontal resolution to a custom '*x_pixels*' value (in pixels). This 
 **Note 3:** Because of a hardware limitation, a screen with a horizontal resolution of 240 pixels can not display more than 62 sprites. The last two sprites (numbers 62 & 63) will not be visible.
 
 `set_screen_size( unsigned char value );`
-Changes the **virtual screen** size. By default the startup code initializes a virtual screen of 64 characters wide and 32 characters tall, but several values are possible: `32x32`, `32x64`, `64x32`, `64x64`, `128x32`, `128x64`. The larger the virtual screen is, the less VRAM you will have for your graphics (fonts, tiles, sprites).
+Changes the size of the **virtual screen** (a.k.a. Background Attribute Table, or BAT). By default the startup code initializes a BAT of 64 characters wide and 32 characters tall, but several values are possible: `32x32`, `32x64`, `64x32`, `64x64`, `128x32`, `128x64`. The larger the virtual screen is, the less VRAM you will have for your graphics (fonts, tiles, sprites).
 
 `vram_addr( unsigned char bat_x, unsigned char bat_y );`     
-Returns the VRAM address for the character at position ('*bat_x*', '*bat_y*').
+Returns the VRAM address for the character at BAT position ('*bat_x*', '*bat_y*').
 
 `get_vram( unsigned int address );`
 Reads a 16-bit word from VRAM at the specified address.
@@ -139,7 +139,7 @@ Generic function to load data (BAT, tiles, sprites) in VRAM, at address '*vram*'
 Loads VRAM data from far memory. The data source must be set up using `set_far_base()` before calling this function.
 
 `load_bat( unsigned int vram, unsigned char __far *data, unsigned char tiles_w, unsigned char tiles_h );`
-Loads a rectangular Background Attribute Table (BAT) of width '*w*' characters and of height '*h*' characters in VRAM at address '*vram*'.
+Loads a rectangular BAT section of width '*w*' characters and of height '*h*' characters in VRAM at address '*vram*'.
 
 `far_load_bat( unsigned int vram, unsigned char tiles_w, unsigned char tiles_h );`
 Loads BAT data from far memory. The data source must be set up using `set_far_base()` before calling this function.
@@ -255,13 +255,15 @@ Retrieves the **blue** RGB value of the specified color '*index*'. That means ea
 **Example:**
 ```c
 // Get all RGB component values from a specified color index
-color_b = (get_color(color_index)     ) & 7;    // Blue
-color_r = (get_color(color_index) >> 3) & 7;    // Red
-color_g = (get_color(color_index) >> 6) & 7;    // Green
+color_b = (get_color(color_index)     ) &7;    // Blue
+color_r = (get_color(color_index) >> 3) &7;    // Red
+color_g = (get_color(color_index) >> 6) &7;    // Green
 ```
 
+- **Warning:** The following color functions can only handle 16 palettes (256 colors) at once!
+
 `load_palette( unsigned char palette, unsigned char __far *data, unsigned int num_palettes );`
-Loads one or more 16-color sub-palettes at once. '*palette*' is the index of the first sub-palette (0-31) to load, and '*num_palettes*' the number of sub-palettes. This function can be used to load palettes defined using `#defpal` or included with `#incpal` directives.
+Loads one or more 16-color sub-palettes at once. '*palette*' is the index of the first sub-palette (0-31) to load, and '*num_palettes*' the number of contiguous sub-palettes. This function can be used to load palettes defined using `#defpal` or included with `#incpal` directives.
 
 `far_load_palette( unsigned char palette, unsigned char num_palettes );`
 Loads palette data from far memory. The data source must be set up using `set_far_base()` before calling this function.
@@ -273,7 +275,7 @@ This legacy function is exactly the same as `load_palette()`, but it is limited 
 This legacy function is exactly the same as `load_palette()`, except it offers direct access to sprite sub-palettes. They are standard sub-palette numbers 16 to 31, but with this function you can simply access them with indices 0 to 15. This can make sprite palette manipulation easier, since you don't have to remember the real sprite sub-palette indices. Without the third argument, the function loads only one sub-palette.
 
 `read_palette( unsigned char palette, unsigned char num_palettes, unsigned int *destination );`
-Reads palette data back from the Video Color Encoder (VCE) into the specified destination buffer.
+Reads palette data back from the Video Color Encoder (VCE) and save it into the specified '*destination*' buffer. '*palette*' is the index of the first sub-palette (0-31) to read, and '*num_palettes*' the number of contiguous sub-palettes.
 
 `fade_to_black( unsigned int __far *from, unsigned int *destination, unsigned char num_colors, unsigned char value_to_sub );`
 Fades palette colors towards black by subtracting the specified value from each color component.
@@ -511,7 +513,7 @@ set_blkmap(map_data, 32);  // 32 blocks wide
 
 // Check collision at player position
 unsigned char block = get_map_block(player_x, player_y);
-if (map_blk_flag & COLLISION_MASK) {
+if (map_blk_flag &COLLISION_MASK) {
 
     // Handle collision
 }
