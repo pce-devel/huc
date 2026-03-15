@@ -26,7 +26,7 @@ This is a legacy directive for the older Tile and Map Functions from HuC3/4. Ext
 Extracts one or more **sprite** patterns (16x16 pixels) from a picture file. Extracts '*col*' columns and '*row*' rows of sprites (in sprite units), starting at position '*begin_x*' and '*begin_y*' (in pixels).
 
 `#incpal( identifier_name, "filename", start_pal, number_pal );`
-Extracts one or more **sub-palettes** (groups of 16 consecutive colors) from a picture file. Up to 32 sub-palettes can be imported: 16 for tiles (0-15), 16 for sprites (16-31).
+Extracts one or more **sub-palettes** (groups of 16 contiguous colors) from a picture file. Up to 32 sub-palettes can be imported: 16 for tiles (0-15), 16 for sprites (16-31).
 
 `#incchrpal( identifier_name, "filename" );`
 Creates a palette lookup table for legacy HuC maps, directly from a character (tile) picture file. This is a legacy directive for the older Tile and Map Functions.
@@ -139,7 +139,7 @@ Generic function to load data (BAT, tiles, sprites) in VRAM, at address '*vram*'
 Loads VRAM data from far memory. The data source must be set up using `set_far_base()` before calling this function.
 
 `load_bat( unsigned int vram, unsigned char __far *data, unsigned char tiles_w, unsigned char tiles_h );`
-Loads a rectangular BAT section of width '*w*' characters and of height '*h*' characters in VRAM at address '*vram*'.
+Loads a rectangular BAT area of width '*w*' characters and of height '*h*' characters in VRAM at address '*vram*'.
 
 `far_load_bat( unsigned int vram, unsigned char tiles_w, unsigned char tiles_h );`
 Loads BAT data from far memory. The data source must be set up using `set_far_base()` before calling this function.
@@ -275,20 +275,24 @@ This legacy function is exactly the same as `load_palette()`, but it is limited 
 This legacy function is exactly the same as `load_palette()`, except it offers direct access to sprite sub-palettes. They are standard sub-palette numbers 16 to 31, but with this function you can simply access them with indices 0 to 15. This can make sprite palette manipulation easier, since you don't have to remember the real sprite sub-palette indices. Without the third argument, the function loads only one sub-palette.
 
 `read_palette( unsigned char palette, unsigned char num_palettes, unsigned int *destination );`
-Reads palette data back from the Video Color Encoder (VCE) and save it into the specified '*destination*' buffer. '*palette*' is the index of the first sub-palette (0-31) to read, and '*num_palettes*' the number of contiguous sub-palettes.
+Reads palette data back from the Video Color Encoder (VCE) and saves it into the specified '*destination*' buffer. '*palette*' is the index of the first sub-palette (0-31) to read, and '*num_palettes*' the number of contiguous sub-palettes.
 
-`fade_to_black( unsigned int __far *from, unsigned int *destination, unsigned char num_colors, unsigned char value_to_sub );`
-Fades palette colors towards black by subtracting the specified value from each color component.
+`fade_to_black( unsigned int __far *source_pal, unsigned int *current_pal, unsigned char num_colors, unsigned char value_to_sub );`
+Fades a source palette towards black by **subtracting** the specified '*value_to_sub*' from each RGB component of the source palette. The result is stored in the '*current_pal*' buffer. Up to 7 brightness steps (i.e. loops) are required to completely fade out the palette.
 
-`fade_to_white( unsigned int __far *from, unsigned int *destination, unsigned char num_colors, unsigned char value_to_add );`
-Fades palette colors towards white by adding the specified value to each color component.
+`fade_to_white( unsigned int __far *source_pal, unsigned int *current_pal, unsigned char num_colors, unsigned char value_to_add );`
+Fades a source palette towards white by **adding** the specified '*value_to_add*' to each RGB component of the source palette. The result is stored in the '*current_pal*' buffer. Up to 7 brightness steps (i.e. loops) are required to completely fade out the palette.
 
-**Note:** For an example of fadein/fadeout effects, see HuCC's **metatile3** demo.
+**Note:** Fading *from* black or white *towards* the source palette (i.e. fadein effect) can be achieved by simply inverting the loop direction. For a practical example of fadeout/fadein effects, see HuCC's **metatile3** demo.
 
 `cross_fade_to( unsigned int __far *target_pal, unsigned int *current_pal, unsigned char num_colors, unsigned char which_component );`
-Crossfades between the current palette and a reference ("target") palette, modifying only the specified RGB component (0=green, 1=red&blue) one brightness step at a time. The '*which_component*' parameter can actually take any 8-bit value, but only the bottom bit is taken into account by the function. It means an even value returns 0 (green), and an odd value returns 1 (red&blue).
+Crossfades between the current palette and a target palette, one brightness step at a time, modifying **only** the specified RGB component (0=green, 1=red&blue). The '*which_component*' parameter can actually take any 8-bit value, but only the bottom bit is taken into account by the function. This means an even parameter value will return 0 (green), and an odd parameter value will return 1 (red&blue). Since the higher bits are not discarded, '*which_component*' can also be used as a loop counter.
 
-**Note:** Green is the brightest component. By handling green and red/blue components separately, 14 brightness steps (instead of 7) are required to completely crossfade the palette. This allows for smoother color transitions. In that regard, '*which_component*' can also be used as a loop counter.
+**Note 1:** Green is the brightest component. By stepping green and red/blue components separately, up to 14 brightness "half-steps" (instead of 7 full steps) are required to completely crossfade the palette. This allows for smoother color transitions.
+
+**Note 2:** This function is useful for real-time color transitions; for example, a crossfade from a "day" palette to a "night" palette (or sunset, sepia, black & white, etc).
+
+**Note 3:** `cross_fade_to()` may be used as an alternative to the `fade_to()` functions, with the benefit of more brightness steps and better versatility (i.e. fading to any given solid color). However, color artifacts can become noticeable if the fading speed is too slow.
 
 **Example:**
 ```c
@@ -300,7 +304,7 @@ for (fade_value = 0; fade_value != 14; ++fade_value) {
 
     // Crossfade all 256 colors of the current palette towards the target palette
     // Even-numbered loops will step the green component
-    // Odd-numbered loops will step the red and blue components
+    // Odd-numbered loops will step the red & blue components
     cross_fade_to(target_pal, current_pal, 256, fade_value);
 
     // Load the modified 16 background sub-palettes from the "current_pal" array
@@ -311,10 +315,10 @@ for (fade_value = 0; fade_value != 14; ++fade_value) {
 }
 ```
 
-`far_fade_to_black( unsigned int *destination, unsigned char num_colors, unsigned char value_to_sub );`
+`far_fade_to_black( unsigned int *current_pal, unsigned char num_colors, unsigned char value_to_sub );`
 Far memory version of `fade_to_black()`. Uses the current far memory source set by `set_far_base()`.
 
-`far_fade_to_white( unsigned int *destination, unsigned char num_colors, unsigned char value_to_add );`
+`far_fade_to_white( unsigned int *current_pal, unsigned char num_colors, unsigned char value_to_add );`
 Far memory version of `fade_to_white()`. Uses the current far memory source set by `set_far_base()`.
 
 `far_cross_fade_to( unsigned int *current_pal, unsigned char num_colors, unsigned char which_component );`
@@ -509,7 +513,7 @@ Gets the block index at the specified pixel coordinates. Returns the block index
 ```c
 // Set up a simple block map
 set_blocks(block_definitions, collision_flags, 16);
-set_blkmap(map_data, 32);  // 32 blocks wide
+set_blkmap(map_data, 32);    // 32 blocks wide
 
 // Check collision at player position
 unsigned char block = get_map_block(player_x, player_y);
@@ -682,7 +686,7 @@ Formats a string and store it in the destination buffer. Supports 0-4 variable a
 int score = 1234;
 int lives = 3;
 printf("Score: %d Lives: %d\n", score, lives);
-printf("Position: \eX%d\eY%d", 10, 5);  // Set cursor position
+printf("Position: \eX%d\eY%d", 10, 5);    // Set cursor position
 ```
 
 **Format Specifiers:**
