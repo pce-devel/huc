@@ -560,7 +560,7 @@ ERRORCODE PngDumpPxlmap (
 
     if (bImageHasAlpha)
     {
-      png_set_tRNS(pPngStruct, pPngInfo, aPngALPHA, iPngRGB, NULL);
+//      png_set_tRNS(pPngStruct, pPngInfo, aPngALPHA, iPngRGB, NULL);
     }
   }
 
