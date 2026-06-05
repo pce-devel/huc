@@ -34,7 +34,7 @@ jobs:
         with:
           msystem: UCRT64
           update: true
-          install: coreutils binutils make git
+          install: coreutils binutils base-devel git mingw-w64-ucrt-x86_64-gcc
       - name: Check out code from the repository
         uses: actions/checkout@v4
         with:
@@ -84,7 +84,7 @@ jobs:
         with:
           msystem: MINGW64
           update: true
-          install: coreutils make git
+          install: coreutils binutils base-devel git mingw-w64-ucrt-x86_64-gcc
       - name: Check out code from the repository
         uses: actions/checkout@v4
       - name: Get previoulsy built artifacts
@@ -129,7 +129,7 @@ jobs:
         with:
           msystem: UCRT64
           update: true
-          install: coreutils binutils make git
+          install: coreutils binutils base-devel git mingw-w64-ucrt-x86_64-gcc
       - name: Check out code from the repository
         uses: actions/checkout@v4
       - name: Get previously built artifacts
