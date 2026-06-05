@@ -17,17 +17,24 @@ on:
   # activating dispatch to allow manual runs
   # workflow_dispatch:
 
-env:
-  MSYS2_INSTALL_FOLDER: C:\msys64\ # provided by GitHub Actions VMs
+# env:
+#   MSYS2_INSTALL_FOLDER: C:\msys64\ # provided by GitHub Actions VMs
 
 
 jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-22.04, macos-14, macos-15-intel, windows-2022]
+        os: [ubuntu-22.04, macos-15-intel, macos-26, windows-2022]
     runs-on: ${{ matrix.os }}
     steps:
+      - name: Setup MSYS2
+        if: startsWith(matrix.os, 'windows')
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: coreutils binutils make git
       - name: Check out code from the repository
         uses: actions/checkout@v4
         with:
@@ -39,17 +46,17 @@ jobs:
           echo Build Complete
       - name: Build on Windows
         if: startsWith(matrix.os, 'windows')
-        run: |
-          ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -c "pacman -S binutils make mingw-w64-x86_64-gcc git --noconfirm"
-          ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -where %CD% -c "make"
-          echo Build Complete
-      - name: Build on MacOs-14
-        if: startsWith(matrix.os, 'macos-14')
+        shell: msys2 {0}
         run: |
           make
           echo Build Complete
       - name: Build on MacOs-15
         if: startsWith(matrix.os, 'macos-15')
+        run: |
+          make
+          echo Build Complete
+      - name: Build on MacOs-26
+        if: startsWith(matrix.os, 'macos-26')
         run: |
           make
           echo Build Complete
@@ -67,10 +74,17 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [ubuntu-22.04, macos-14, macos-15-intel, windows-2022]
+        os: [ubuntu-22.04, macos-15-intel, macos-26, windows-2022]
     runs-on: ${{ matrix.os }}
     needs: build
     steps:
+      - name: Setup MSYS2
+        if: startsWith(matrix.os, 'windows')
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: coreutils make git
       - name: Check out code from the repository
         uses: actions/checkout@v4
       - name: Get previoulsy built artifacts
@@ -88,13 +102,6 @@ jobs:
           make check
           make test
           echo Test Complete
-      - name: Setup Msys2
-        if: startsWith(matrix.os, 'windows')
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: MINGW64
-          update: true
-          install: coreutils make git
       - name: Run tests on Windows
         if: startsWith(matrix.os, 'windows')
         shell: msys2 {0}
@@ -112,10 +119,17 @@ jobs:
   package:
     strategy:
       matrix:
-        os: [ubuntu-22.04, macos-14, windows-2022]
+        os: [ubuntu-22.04, macos-26, windows-2022]
     runs-on: ${{ matrix.os }}
     needs: build
     steps:
+      - name: Setup MSYS2
+        if: startsWith(matrix.os, 'windows')
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: coreutils binutils make git
       - name: Check out code from the repository
         uses: actions/checkout@v4
       - name: Get previously built artifacts
@@ -129,9 +143,9 @@ jobs:
           echo Package Complete
       - name: Package ${{ matrix.os }}
         if: startsWith(matrix.os, 'windows')
+        shell: msys2 {0}
         run: |
-          ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -c "pacman -S  binutils make mingw-w64-x86_64-make git zip --noconfirm"
-          ${{ env.MSYS2_INSTALL_FOLDER }}\msys2_shell.cmd -mingw64 -no-start -defterm -where %CD% -c "make package"
+          make package
           echo Package Complete
       - name: Package ${{ matrix.os }}
         if: startsWith(matrix.os, 'macos')
@@ -153,14 +167,14 @@ jobs:
     steps:
       - name: Check out code from the repository
         uses: actions/checkout@v4
-      - name: Get previoulsy built artifacts win64
+      - name: Get previously built artifacts win64
         uses: actions/download-artifact@v4
         with:
           name: package-windows-2022
       - name: Get previously built artifacts macos
         uses: actions/download-artifact@v4
         with:
-          name: package-macos-14
+          name: package-macos-26
       - name: Get previously built artifacts linux
         uses: actions/download-artifact@v4
         with:
