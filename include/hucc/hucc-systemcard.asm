@@ -424,7 +424,8 @@ _cd_loaddata.4	.proc
 ;
 ; unsigned char __fastcall cd_loadbank( unsigned char ovl_index<_cl>, unsigned int sect_offset<_si>, unsigned char bank<_bl>, unsigned int sectors<_al> );
 
-_cd_loadbank.4	.macro
+_cd_loadbank.4	.proc
+
 		ldx	<_cl			; Get file address and length.
 		jsr	get_file_info
 
@@ -436,21 +437,24 @@ _cd_loadbank.4	.macro
 		beq	!+
 		sta	<_al
 
-!:		lda	#4			; Use MPR4.
+!:		lda	#3			; Use MPR3.
 		sta	<_dh
 
-		tma4				; Preserve MPR4.
+		tma3				; Preserve MPR3.
 		pha
 
 		system	cd_read
 
-		tax				; Restore MPR4 because the
+		tax				; Restore MPR3 because the
 		pla				; System Card function has
-		tam4				; a bug which destroys the
+		tam3				; a bug which destroys the
 		txa				; value on a CD error.
 
-		cly
-		.endm
+		cly				; Return code in Y:X, X -> A.
+
+		leave				; Return and copy X -> A.
+
+		.endp
 
 
 
