@@ -180,6 +180,25 @@ test_multiblk()
 	put_string( " Use 2 sets of blocks in a map. ", 0, 0 );
 	put_string( " LRUD to scroll.  RUN for next. ", 0, 1 );
 
+#ifdef _OVERLAY // Defined by HuCC when building a CD overlay file.
+
+	// This bit shows how to load a data file into memory from the CD. It really
+	// has nothing to do with the multiblk example, but it was convenient to add
+	// it here. Sorry if this is confusing! ;-)
+	//
+	// Load 1 sector (i.e. 2048 bytes) of CD file 2 into bank $87 which is known
+	// to be unused because this example is so short!
+
+	cd_loadbank( 2, 0, 0x87, 1 );
+
+	// Bank $87 is automatically mapped into MPR2 (address $4000-$5FFF) at start
+	// and this just prints that memory as a string.
+
+	set_font_pal( 8 );
+	put_string( 0x4000, 1, 3 );
+
+#endif
+
 	scroll_split( 0, 0, vdc_map_pxl_x & (BAT_W - 1), vdc_map_pxl_y & (BAT_H - 1), BKG_ON | SPR_ON );
 
 	vsync();
