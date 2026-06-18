@@ -751,9 +751,9 @@ enum ICOMPARE {
 /* symbol table entry format */
 /* N.B. nasty hack to allow space beyond NAMEMAX (see "copysym") */
 
-#define NAMESIZE	48
-#define NAMEMAX		47
-#define NAMEALLOC	64
+#define NAMESIZE	80
+#define NAMEMAX		79
+#define NAMEALLOC	96
 
 typedef struct symbol {
 	char name[NAMEALLOC];	/* symbol name */

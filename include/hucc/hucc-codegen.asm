@@ -5885,7 +5885,7 @@ __sub.upf	.macro
 		phy
 		ldy	#\2
 		sec
-		sbc	[\1]
+		sbc	[\1], y
 		ply
 		bcs	!+
 		dey

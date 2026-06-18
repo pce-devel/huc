@@ -52,7 +52,11 @@ package:
 	mv tmp/* bin/
 	rm -d tmp
 ifeq ($(OS),Windows_NT)
-	cp /mingw64/bin/mingw32-make bin/
+	wget https://mirror.msys2.org/mingw/ucrt64/mingw-w64-ucrt-x86_64-make-4.4.1-3-any.pkg.tar.zst
+	tar --zstd -xf mingw-w64-ucrt-x86_64-make-4.4.1-3-any.pkg.tar.zst ucrt64/bin/mingw32-make.exe
+	cp ucrt64/bin/mingw32-make.exe bin/
+	rm -f mingw-w64-ucrt-x86_64-make-4.4.1-3-any.pkg.tar.zst
+	rm -fr ucrt64
 endif
 	rm -f huc-$(DATE)-$(PLATFORMSUFFIX).zip
 	cd .. ; zip -r huc/huc-$(DATE)-$(PLATFORMSUFFIX).zip huc/* -x *.zip -x .*

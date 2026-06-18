@@ -1,8 +1,8 @@
 /* pnglibconf.h - library build configuration */
 
-/* libpng version 1.6.47 */
+/* libpng version 1.6.58 */
 
-/* Copyright (c) 2018-2025 Cosmin Truta */
+/* Copyright (c) 2018-2026 Cosmin Truta */
 /* Copyright (c) 1998-2002,2004,2006-2018 Glenn Randers-Pehrson */
 
 /* This code is released under the libpng license. */
@@ -133,7 +133,7 @@
 /*#undef PNG_USER_TRANSFORM_PTR_SUPPORTED*/
 /*#undef PNG_WARNINGS_SUPPORTED*/
 /*#undef PNG_WRITE_16BIT_SUPPORTED*/
-#define PNG_WRITE_ANCILLARY_CHUNKS_SUPPORTED
+/*#undef PNG_WRITE_ANCILLARY_CHUNKS_SUPPORTED*/
 #define PNG_WRITE_BGR_SUPPORTED
 /*#undef PNG_WRITE_CHECK_FOR_INVALID_INDEX_SUPPORTED*/
 /*#undef PNG_WRITE_COMPRESSED_TEXT_SUPPORTED*/
@@ -178,7 +178,7 @@
 /*#undef PNG_WRITE_sRGB_SUPPORTED*/
 /*#undef PNG_WRITE_tEXt_SUPPORTED*/
 /*#undef PNG_WRITE_tIME_SUPPORTED*/
-#define PNG_WRITE_tRNS_SUPPORTED
+/*#undef PNG_WRITE_tRNS_SUPPORTED*/
 /*#undef PNG_WRITE_zTXt_SUPPORTED*/
 /*#undef PNG_bKGD_SUPPORTED*/
 /*#undef PNG_cHRM_SUPPORTED*/
@@ -199,7 +199,7 @@
 /*#undef PNG_sRGB_SUPPORTED*/
 /*#undef PNG_tEXt_SUPPORTED*/
 /*#undef PNG_tIME_SUPPORTED*/
-#define PNG_tRNS_SUPPORTED
+/*#undef PNG_tRNS_SUPPORTED*/
 /*#undef PNG_zTXt_SUPPORTED*/
 /* end of options */
 /* settings */
@@ -224,7 +224,7 @@
 #define PNG_USER_HEIGHT_MAX 1000000
 #define PNG_USER_WIDTH_MAX 1000000
 #define PNG_ZBUF_SIZE 8192
-#define PNG_ZLIB_VERNUM 0x1310
+#define PNG_ZLIB_VERNUM 0x1320
 #define PNG_Z_DEFAULT_COMPRESSION (-1)
 #define PNG_Z_DEFAULT_NOFILTER_STRATEGY 0
 #define PNG_Z_DEFAULT_STRATEGY 1
