@@ -439,14 +439,13 @@ unknown_option:
 				incl_globals_h();
 			}
 
-//			gtext ();
 			parse();
 			fclose(input);
 			ol(".dbg\tclear");
-//			gbss ();
 			dumplits();
 			dumpglbs();
 			dumpfinal();
+			gtext();
 			errorsummary();
 			pl("");
 			errs = errs || errfile;
