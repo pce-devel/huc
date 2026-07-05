@@ -24,7 +24,7 @@ Extracts all possible **block** patterns (metatiles of 16x16 pixels) from a pict
 Extracts a **map** in block format. Maximum map size is 128x128 blocks (i.e. 256x256 characters). This format is used for medium-sized scrolling backgrounds, and is also the format for the individual screens in a huge multi-screen background. '*blk_set*' is the block set previously defined by `#incblk`.
 
 `#inctile( identifier_name, "filename", begin_x, begin_y, col, row );`
-This is a legacy directive for the older Tile and Map Functions from HuC3/4. Extracts one or more **block** patterns (metatiles of 16x16 pixels) from a picture file. Extracts '*col*' columns and '*row*' rows of metatiles (in blocks), starting at position '*begin_x*' and '*begin_y*' (in pixels). This old directive is only useful for maps built with editors like Mappy (FMP format) or Pro Motion (STM format).
+This is a legacy directive for the older Tile and Map Functions from HuC3/4. Extracts one or more **block** patterns (metatiles of 16x16 pixels) from a **map** file. Extracts '*col*' columns and '*row*' rows of metatiles (in blocks), starting at position '*begin_x*' and '*begin_y*' (in pixels). This old directive is only useful for maps built with editors like Mappy (FMP format) or Pro Motion (STM format).
 
 `#incspr( identifier_name, "filename", begin_x, begin_y, col, row );`
 Extracts one or more **sprite** patterns (16x16 pixels) from a picture file. Extracts '*col*' columns and '*row*' rows of sprites (in sprite units), starting at position '*begin_x*' and '*begin_y*' (in pixels).
@@ -41,7 +41,7 @@ Creates a palette lookup table for legacy HuC maps, directly from a block (metat
 `#incsprpal( identifier_name, "filename" );`
 Creates a palette lookup table for legacy HuC maps, directly from a sprite picture file. This is a legacy directive for the older Tile and Map Functions.
 
-**Note:** For more information on legacy or deprecated directives, see the ancient **huc_doc.htm** and **usage.txt** files.
+**Note:** For more information on legacy directives (`#defchr`, `#defspr`, `#defpal`...), see the old **huc_doc.htm** and **usage.txt** files.
 
 ## **Memory Access Functions**
 
@@ -229,7 +229,7 @@ Disables all active split screen windows.
 `scroll( unsigned char num, unsigned int x, unsigned int y, unsigned char top, unsigned char bottom, unsigned char disp );`
 Defines screen window '*num*'. Up to 4 windows can be defined. '*top*' and '*bottom*' are the screen top and bottom limits of the window (limits are included in the window area). '*disp*' controls the type of the window. If bit 7 is set, background graphics will be displayed in this window; and if bit 6 is set, sprites will also be displayed. If none of these bits are set, the window will stay blank. '*x*' and '*y*' are the top-left coordinates of the area in the virtual screen that will be displayed in the window.
 
-**Note:** This legacy function has been superseded by the superior `scroll_split()` function.
+**Note:** This legacy HuC3/4 function has been superseded by the superior HuCC `scroll_split()` function.
 
 `scroll_disable( unsigned char num );`
 Disables scrolling for the screen window '*num*'. Only use it with the legacy `scroll()` function!
@@ -245,14 +245,25 @@ Up to 128 windows can be defined for VDC2.
 
 ## **Color and Palette Functions**
 
+The PC Engine 512 colors are encoded in 9-bit **GRB** (3 bits per component). Each component brightness ranges from 0 to 7.
+
 `clear_palette( void );`
 Clears all palette entries to black.
 
 `set_color( unsigned int index, unsigned int value );`
-Sets the specified color '*index*' (0-511) to a given color number from the global 9-bit hard-coded palette. Requires an appropriate PC Engine color chart to be useful!
+Sets the specified color '*index*' (0-511) to a given color number '*value*' from the global 9-bit hard-coded palette. Requires an appropriate PC Engine color chart to be useful! The easy alternative is to define a look-up table macro:
+
+**Example:**
+```c
+// Define an RGB LUT macro
+#define rgb_lut(r, g, b) ((g << 6 | r << 3 | b))
+
+// Set color index 511 to orange
+set_color(511, rgb_lut(7, 4, 0));
+```
 
 `set_color_rgb( unsigned int index, unsigned char r, unsigned char g, unsigned char b );`
-Sets the specified color '*index*' to the given RGB component values (brightness ranges from 0 to 7). This function is much easier to use than `set_color()`, but it is noticeably slower.
+Sets the specified color '*index*' to the given RGB component values. This real-time function is much easier to use than `set_color()`, but it is noticeably slower and can produce visual artifacts when called repeatedly.
 
 `get_color( unsigned int index );`
 Retrieves the **blue** RGB value of the specified color '*index*'. That means each 3-bit RGB component must be read separately, via bitshifting (blue -> red -> green).
