@@ -3,7 +3,7 @@
 What is HuC?
 ------------
 
-HuC is a C compiler for the NEC PC Engine consoles (CoreGrafx/TurboGrafx), initially developed by David Michel around 1999. HuC was an upgraded version of Ron Cain's SmallC, and as such it inherited most of SmallC's limitations.
+HuC is a C compiler for the NEC PC Engine consoles (CoreGrafx/TurboGrafx), initially developed by David Michel around 1999. HuC was an upgraded version of Ron Cain's [Small-C](https://en.wikipedia.org/wiki/Small-C), and as such it inherited most of Small-C's limitations.
 
 
 What is HuCC?
