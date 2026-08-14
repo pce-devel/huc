@@ -5,7 +5,6 @@ What is HuC?
 
 HuC is a C compiler for the NEC PC Engine consoles (CoreGrafx/TurboGrafx), initially developed by David Michel around 1999. HuC was an upgraded version of Ron Cain's [Small-C](https://en.wikipedia.org/wiki/Small-C), and as such it inherited most of Small-C's limitations.
 
-
 What is HuCC?
 -------------
 
@@ -31,14 +30,13 @@ From a C language point-of-view, the big new "feature" is that function-pointers
 
 You can also now create C const arrays that contain the *bank* of data labels (such as sprites), to complement the existing ability to create C const arrays that contain the 16-bit *address* of data labels (such as sprites). This finally allows developers to create arrays of C `far` pointers to data in their HuCARD or CD overlay.
 
-C's structures were added to HuC4 by Ulrich Hecht around 2015, taken from the `struct` support added to Small-C back in the late 1980s, though it is a somewhat limited implementation. In particular, you can't statically initialize structures; you can only initialize individual variables and single-dimension arrays.
+C structures were added to HuC4 by Ulrich Hecht around 2015, taken from the `struct` support added to Small-C back in the late 1980s, though it is a somewhat limited implementation. In particular, you can't statically initialize structures; you can only initialize individual variables and single-dimension arrays.
 
 Individual global, static and "-fno-recursive" structs were fairly fast in HuC4, thanks to some cunning but slightly naughty tricks that Uli implemented. But both arrays of structs and pointers to structs are pretty slow.
 
 HuCC is really only going to give you decent results if you use arrays of values (chars, ints or pointers). This is the classic 6502 recommendation to use "structs made of arrays" instead of "arrays made of structs".
 
-The main thing to remember is that you really want to keep array sizes <= 256-bytes, and structure sizes <= 256-bytes if you're going to use pointers. Pointers themselves should be put in zero-page. Try as hard as you can to avoid using the stack (i.e. parameters to functions and local variables). In HuCC, the stack goes in zero-page and is very small.
-
+The main thing to remember is that you really want to keep array and structure sizes <= 256 bytes. If you're going to use pointers, then declare/define them in zero-page with `__zp`. Try as hard as you can to avoid using the stack (i.e. parameters to functions and local variables). In HuCC, the stack goes in zero-page and is very small.
 
 What is the focus of HuCC?
 --------------------------
@@ -60,3 +58,17 @@ Help can be found on the [PC Engine Forum](https://pcengine.proboards.com/) as w
 If you prefer the Discord interface, here is an invite to the [HuCC Development](https://discord.gg/Pv85Tv5ft2) channel.
 
 For an exhaustive list of functions supported by HuCC, check the [HuCC Function Reference](https://github.com/pce-devel/huc/blob/master/doc/hucc/hucc-function-reference.md) document.
+
+
+Main contributors over the years
+--------------------------------
+
+- David Michel
+- Dave Shadoff
+- Paul Clifford
+- Olivier Jolly
+- Xavier Carmona
+- Rick Leverton
+- Ulrich Hecht
+- Artemio Urbina
+- John Brandwood
