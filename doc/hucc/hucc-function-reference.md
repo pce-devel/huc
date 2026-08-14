@@ -22,7 +22,7 @@ Extracts a **map** in block format. Maximum map size is 128x128 blocks (i.e. 256
 `#inctile( identifier_name, "filename", begin_x, begin_y, col, row );`
 This is a legacy directive for the older Tile and Map Functions from HuC3/4. Extracts one or more **16x16 tile** patterns from a map file. Extracts '*col*' columns and '*row*' rows of 16x16 tiles, starting at position '*begin_x*' and '*begin_y*' (in pixels). This legacy tile format is limited to one palette of 16 colors per tile. This old directive is mostly useful for maps built with editors like Mappy (FMP format) or Pro Motion (STM format), although you can use it with the `#incmap` directive as well.
 
-- **Warning:** 16x16 tiles must not be confused with the newer metatiles (aka. blocks).
+- **Warning:** 16x16 tiles must not be confused with the newer metatiles (a.k.a. blocks).
 
 `#incspr( identifier_name, "filename", begin_x, begin_y, col, row );`
 Extracts one or more **sprite** patterns (16x16 pixels) from a picture file. Extracts '*col*' columns and '*row*' rows of sprites (in sprite units), starting at position '*begin_x*' and '*begin_y*' (in pixels).
@@ -31,10 +31,10 @@ Extracts one or more **sprite** patterns (16x16 pixels) from a picture file. Ext
 Extracts one or more **sub-palettes** (groups of 16 contiguous colors) from a picture file. Up to 32 sub-palettes can be imported: 16 for tiles (0-15), 16 for sprites (16-31).
 
 `#incchrpal( identifier_name, "filename" );`
-Creates a palette lookup table for legacy HuC maps, directly from a character (tile) picture file. This is a legacy directive for the older Tile and Map Functions.
+Creates a palette lookup table for legacy HuC maps, directly from a tile picture file (8x8 format). This is a legacy directive for the older Tile and Map Functions.
 
 `#inctilepal( identifier_name, "filename" );`
-Creates a palette lookup table for legacy HuC maps, directly from a block (metatile) picture file. This is a legacy directive for the older Tile and Map Functions.
+Creates a palette lookup table for legacy HuC maps, directly from a tile picture file (16x16 format). This is a legacy directive for the older Tile and Map Functions.
 
 `#incsprpal( identifier_name, "filename" );`
 Creates a palette lookup table for legacy HuC maps, directly from a sprite picture file. This is a legacy directive for the older Tile and Map Functions.
