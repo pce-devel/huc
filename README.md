@@ -31,7 +31,7 @@ From a C language point-of-view, the big new "feature" is that function-pointers
 
 You can also now create C const arrays that contain the *bank* of data labels (such as sprites), to complement the existing ability to create C const arrays that contain the 16-bit *address* of data labels (such as sprites). This finally allows developers to create arrays of C `far` pointers to data in their HuCARD or CD overlay.
 
-C's structures were added to HuC4 by Ulrich Hecht around 2015, taken from the `struct` support added to SmallC back in the late 1980s, though it is a somewhat limited implementation. In particular, you can't statically initialize structures; you can only initialize individual variables and single-dimension arrays.
+C's structures were added to HuC4 by Ulrich Hecht around 2015, taken from the `struct` support added to Small-C back in the late 1980s, though it is a somewhat limited implementation. In particular, you can't statically initialize structures; you can only initialize individual variables and single-dimension arrays.
 
 Individual global, static and "-fno-recursive" structs were fairly fast in HuC4, thanks to some cunning but slightly naughty tricks that Uli implemented. But both arrays of structs and pointers to structs are pretty slow.
 
