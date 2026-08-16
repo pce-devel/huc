@@ -24,6 +24,8 @@ HuCC natively supports the SuperGrafx.
 
 HuC's legacy `scroll()` function has been superseded by a new optional `scroll_split()` function that is much faster, supports more scrolling regions, and supports both background layers on the SuperGrafx.
 
+![demonblazon.sgx](/pic/demonblazon.apng "SuperGrafx slideshow of Demon's Blazon")
+
 HuCC also implements color fading routines, as well as a brand new tilemapping library that massively improves upon HuC's legacy `#inctile` macro. Animated tiles are possible thanks to a fast VRAM to VRAM (DMA) copy function.
 
 ![multiblk.pce](/pic/multiblk.webp "multiblk.pce demo based on The Legend of Xanadu 2")
