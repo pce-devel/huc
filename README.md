@@ -1,3 +1,4 @@
+![Badgen commits](https://flat.badgen.net/github/commits/pce-devel/huc) ![Badgen last commit](https://flat.badgen.net/github/last-commit/pce-devel/huc/?color=10A050)
 
 
 What is HuC?
