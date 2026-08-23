@@ -13,7 +13,7 @@ HuCC is a replacement for HuC that leverages the improvements made in the toolch
 
 At its core, HuCC is still the same HuC compiler, and is 90+% compatible with existing HuC projects, but it uses a rewritten library, and a very different underlying code-generation scheme to provide a 20%-40% reduction in the size of the generated code, with a significant boost in performance (which will depend upon the type of C code that is used in the project).
 
-The latest automated builds of HuCC for Windows, Linux and MacOS are available [here](/releases/). For backward compatibility purposes, HuCC's distribution also includes the last version of HuC4 published in 2024.
+The latest automated builds of HuCC for Windows, Linux and MacOS are available [here](https://github.com/pce-devel/huc/releases). For backward compatibility purposes, HuCC's distribution also includes the last version of HuC4 published in 2024.
 
 
 What are the new features in HuCC?
@@ -64,7 +64,7 @@ Help can be found on the [PC Engine Forum](https://pcengine.proboards.com/) as w
 
 If you prefer the Discord interface, here is an invite to the [HuCC Development](https://discord.gg/Pv85Tv5ft2) channel.
 
-For an exhaustive list of functions supported by HuCC, check the [HuCC Function Reference](/doc/hucc/hucc-function-reference.md) document.
+For an exhaustive list of functions supported by HuCC, check the [HuCC Function Reference](https://github.com/pce-devel/huc/blob/master/doc/hucc/hucc-function-reference.md) document.
 
 
 Main contributors over the years
