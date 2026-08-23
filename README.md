@@ -13,7 +13,7 @@ HuCC is a replacement for HuC that leverages the improvements made in the toolch
 
 At its core, HuCC is still the same HuC compiler, and is 90+% compatible with existing HuC projects, but it uses a rewritten library, and a very different underlying code-generation scheme to provide a 20%-40% reduction in the size of the generated code, with a significant boost in performance (which will depend upon the type of C code that is used in the project).
 
-The latest automated builds of HuCC for Windows, Linux and MacOS are available [here](/releases/). HuCC's archive also includes the last published version of HuC4.
+The latest automated builds of HuCC for Windows, Linux and MacOS are available [here](/releases/). For backward compatibility purposes, HuCC's distribution also includes the last version of HuC4 published in 2024.
 
 
 What are the new features in HuCC?
@@ -25,7 +25,7 @@ HuCC natively supports the SuperGrafx.
 
 HuC's legacy `scroll()` function has been superseded by a new optional `scroll_split()` function that is much faster, supports more scrolling regions, and supports both background layers on the SuperGrafx.
 
-![demonblazon.sgx](/pic/demonblazon.apng "SuperGrafx slideshow of Demon's Blazon")
+![demonblazon.sgx](/pic/demonblazon.png "SuperGrafx slideshow of Demon's Blazon")
 
 HuCC also implements color fading routines, as well as a brand new tilemapping library that massively improves upon HuC's legacy `#inctile` macro. Animated tiles are possible thanks to a fast VRAM to VRAM (DMA) copy function.
 
