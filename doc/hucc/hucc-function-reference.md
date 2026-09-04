@@ -611,7 +611,7 @@ Returns the tile index as defined in the tile array used in the most recent call
 Modifies the map data (sets a map element to a new tile ID), but works only when the map is stored in RAM (i.e. a Super CD-ROM game which is loaded into System Card RAM, and executes there). '*x*' and '*y*' are specified in pixels, not tiles.
 
 `load_background( unsigned char __far *tiles, unsigned char __far *palettes, unsigned char __far *bat, unsigned char w, unsigned char h );`
-This legacy all-in-one function is used to display an entire background image on the screen, like a game title image. It will load background character data, it will load the palette, and finally it will load the BAT. Use it with directives *#incchr*, *#incbat* and *#incpal* to manage the different types of data. The character data will be stored at fixed address 0x1000 to 0x5000 in VRAM.
+This legacy all-in-one function is used to display an entire background image on the screen, like a game title image. It will load background character data, it will load the palette, and finally it will load the BAT. Use it with directives `#incchr`, `#incbat` and `#incpal` to manage the different types of data. The character data will be stored at fixed address 0x1000 to 0x5000 in VRAM.
 
 **Note:** This basic function is hard-coded for a resolution of 256x224 pixels and only works on VDC1. The tileset (character data) is **not** optimized for duplicates! Each tile (empty or not) occupies its own VRAM space.
 
@@ -646,26 +646,30 @@ This legacy all-in-one function is used to display an entire background image on
 ## **Font Functions**
 
 `load_default_font( void );`
-Loads a default font in VRAM. Without parameters, the first default font is loaded just above the BAT in VRAM; usually it's address 0x0800. Otherwise you can select the font number, and eventually the address in VRAM. In its current implementation the library supports only one default font, but in the future more fonts could be made available.
+Loads the default system font in VRAM, just above the BAT. The font VRAM address is automatically configured, depending on the virtual screen defined with `set_screen_size()`. Usually, it's address 0x0800 for a virtual screen of 64x32 characters. Since the default font address can not be manually configured, your tileset should be stored no lower than 0x1000, otherwise the default font will be overwritten by your picture/map.
+
+**Note:** This function must be called *after* the font color functions.
 
 `set_font_pal( unsigned char palette );`
-Selects the tile sub-palette index (0-15) to use for the font foreground and background colors.
+Selects the tile sub-palette index (0-15) to use for the default font. Without this function, palette 0 is used.
 
 `set_font_color( unsigned char foreground, unsigned char background );`
-Sets the default font foreground and background colors (colors range from 0 to 15). Changes won't take effect immediately, you must re-load the font by calling `load_default_font()`.
+Selects the default font's foreground ("ink") and background ("paper") color index (0-15) from the sub-palette previously defined with `set_font_pal()`. Without this function, foreground is color 1 and background is color 0.
 
-`set_font_addr( unsigned int vram );`
-Sets the font address in VRAM. Use this function to change the current font, to use several fonts on the same screen, or when you load a custom font and need to tell the library where it is.
+**Note:** Font color functions must be called after `load_palette()`. Font color changes won't take effect immediately, you must reload the font by calling `load_default_font()` after using `set_font_pal()` and `set_font_color()`.
 
 `load_font( char __far *font, unsigned char count, unsigned int vram );`
-Loads a custom font in VRAM. When used together with the *#incchr* directive, it will allow you to load a font from a picture file.
+Loads a **custom** font at VRAM address '*vram*' of your choice. When used together with the `#incchr` directive, it will allow you to load a font from a picture file. '*count*' is the number of characters to load (typically 96 for a standard English ASCII table). The number of characters to load ranges from 0 to 224. ASCII characters 0 to 31 are never used and can't be defined; so you must start your font at the space character, which is ASCII code 32.
 
 `far_load_font( unsigned char count, unsigned int vram );`
-Loads font data from far memory. The data source must be set up using `set_far_base()` before calling this function.
+Loads a custom font from far memory. The data source must be set up using `set_far_base()` before calling this function.
 
-**Note 1:** If you don't explicitely give a VRAM address, the function will load your font just above the BAT (usually it's address 0x0800).
+**Note 1:** If you don't explicitely give a VRAM address, `load_font()` will load your custom font just above the BAT, like the default font. The font VRAM address is automatically configured, depending on the virtual screen defined with `set_screen_size()`. Usually, it's address 0x0800 for a virtual screen of 64x32 characters.
 
-**Note 2:** Custom fonts are "*hard-colored*" fonts (i.e. colors come from your picture file), so they won't be affected by any previous call to `set_font_color()`. The number of characters to load ranges from 0 to 224; ASCII characters 0 to 31 are never used and can't be defined, so you must start your font at the space character which is ASCII code 32.
+**Note 2:** Custom fonts are "hard-colored" bitmap fonts; it means the foreground and background colors of the characters are bound to the two color indices which were used to draw them. Your font palette must provide these color numbers in the same order. As such, the custom fonts aren't affected by any call to `set_font_color()`. However the two color *values* can still be changed with `set_color_rgb()` or a palette swap.
+
+`set_font_addr( unsigned int vram );`
+Selects the VRAM address of the font you want to use. This function basically works as a font selector. Use it to change the current font between any font (default or custom) that has been loaded in VRAM at a given address.
 
 ### **SuperGrafx Font Functions**
 
@@ -673,11 +677,11 @@ Loads font data from far memory. The data source must be set up using `set_far_b
 
 `sgx_set_font_pal( unsigned char palette );`
 
-`sgx_set_font_addr( unsigned int vram );`
-
 `sgx_load_font( char __far *font, unsigned char count, unsigned int vram );`
 
 `sgx_far_load_font( unsigned char count, unsigned int vram );`
+
+`sgx_set_font_addr( unsigned int vram );`
 
 ## **Printf and Formatted Output Functions**
 

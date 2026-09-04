@@ -1,3 +1,4 @@
+![Badgen commits](https://flat.badgen.net/github/commits/pce-devel/huc) ![Badgen last commit](https://flat.badgen.net/github/last-commit/pce-devel/huc/?color=10A050)
 
 
 What is HuC?
@@ -12,7 +13,7 @@ HuCC is a replacement for HuC that leverages the improvements made in the toolch
 
 At its core, HuCC is still the same HuC compiler, and is 90+% compatible with existing HuC projects, but it uses a rewritten library, and a very different underlying code-generation scheme to provide a 20%-40% reduction in the size of the generated code, with a significant boost in performance (which will depend upon the type of C code that is used in the project).
 
-The latest automated builds of HuCC for Windows, Linux and MacOS are available [here](https://github.com/pce-devel/huc/releases/). HuCC's archive also includes the last published version of HuC4.
+The latest automated builds of HuCC for Windows, Linux and MacOS are available [here](https://github.com/pce-devel/huc/releases). For backward compatibility purposes, HuCC's distribution also includes the last version of HuC4 published in 2024.
 
 
 What are the new features in HuCC?
@@ -20,9 +21,15 @@ What are the new features in HuCC?
 
 HuCC natively supports the SuperGrafx.
 
+![magicianlord.sgx](/pic/magicianlord.gif "SuperGrafx proof-of-concept of Magician Lord")
+
 HuC's legacy `scroll()` function has been superseded by a new optional `scroll_split()` function that is much faster, supports more scrolling regions, and supports both background layers on the SuperGrafx.
 
-HuCC also implements color fading functions, as well as a brand new tilemapping function that massively improves upon HuC's legacy `#inctile` macro.
+![demonblazon.sgx](/pic/demonblazon.png "SuperGrafx slideshow of Demon's Blazon")
+
+HuCC also implements color fading routines, as well as a brand new tilemapping library that massively improves upon HuC's legacy `#inctile` macro. Animated tiles are possible thanks to a fast VRAM to VRAM (DMA) copy function.
+
+![multiblk.pce](/pic/multiblk.webp "multiblk.pce demo based on The Legend of Xanadu 2")
 
 From a C language point-of-view, the big new "feature" is that function-pointers are now working again after being broken for 20+ years. That will allow C developers to implement game-entity behaviors in a faster and much more sensible way than the `switch()` statements, which HuC developers have traditionally had to use.
 
@@ -65,6 +72,7 @@ Main contributors over the years
 
 - David Michel
 - Dave Shadoff
+- Brent Garner
 - Paul Clifford
 - Olivier Jolly
 - Xavier Carmona
