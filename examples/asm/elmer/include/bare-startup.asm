@@ -145,6 +145,8 @@ bare_hw_reset:	sei				; Disable interrupts.
 		lda	#$F8
 		tam1
 
+		stz	IFU_IRQ_MSK		; Disable IFU interrupts.
+
 		stz	TIMER_CR		; HW reset already does these,
 		stz	IRQ_ACK			; but this may be a reset from
 		stz	IRQ_MSK			; software (i.e. joypad).
