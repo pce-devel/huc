@@ -19,3 +19,8 @@ The ad_play call was easier. We had to specify the number of bytes for the vox f
 and the frequency of our file, which was 16k.
 
 ad_play(0, 6144, ADPLAY_FREQ_16KHZ, ADPLAY_AUTOSTOP);
+
+The sound effect is provided by kronbits. The original file can be found at the 
+following location:
+
+https://kronbits.itch.io/freesfx
