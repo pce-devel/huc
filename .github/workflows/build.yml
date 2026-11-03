@@ -36,7 +36,7 @@ jobs:
           update: true
           install: coreutils binutils base-devel git mingw-w64-ucrt-x86_64-gcc
       - name: Check out code from the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Build on Linux
@@ -61,7 +61,7 @@ jobs:
           make
           echo Build Complete
       - name: Archive toolchain
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: toolchain-${{ matrix.os }}
           path: |
@@ -86,9 +86,9 @@ jobs:
           update: true
           install: coreutils binutils base-devel git mingw-w64-ucrt-x86_64-gcc
       - name: Check out code from the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Get previoulsy built artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: toolchain-${{ matrix.os }}
       - name: Restore Execute Flags
@@ -131,9 +131,9 @@ jobs:
           update: true
           install: coreutils binutils base-devel git zip
       - name: Check out code from the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Get previously built artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: toolchain-${{ matrix.os }}
       - name: Package ${{ matrix.os }}
@@ -153,7 +153,7 @@ jobs:
           make package
           echo Package Complete
       - name: Archive package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: package-${{ matrix.os }}
           path: |
@@ -166,24 +166,24 @@ jobs:
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
     steps:
       - name: Check out code from the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Get previously built artifacts win64
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: package-windows-2022
       - name: Get previously built artifacts macos
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: package-macos-26
       - name: Get previously built artifacts linux
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: package-ubuntu-22.04
         # https://github.com/pyTooling/Actions/tree/main/releaser
         # need to use composite on windows, since docker isn't available
       - name: publish release package
         if: ${{ github.event_name == 'release' }}
-        uses: pyTooling/Actions/releaser@r0
+        uses: pyTooling/Actions/releaser@r8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref_name }}
@@ -192,7 +192,7 @@ jobs:
             *.zip
       - name: publish current package
         if: ${{ github.event_name != 'release' }}
-        uses: pyTooling/Actions/releaser@r0
+        uses: pyTooling/Actions/releaser@r8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: "current"
