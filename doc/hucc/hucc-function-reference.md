@@ -707,7 +707,7 @@ Formats a string and store it in the destination buffer. Supports 0-4 variable a
 int score = 1234;
 int lives = 3;
 printf("Score: %d Lives: %d\n", score, lives);
-printf("Position: \eX%d\eY%d", 10, 5);    // Set cursor position
+printf("Position: \e%dX\e%dY", 10, 5);    // Set cursor position
 ```
 
 **Format Specifiers:**
@@ -722,11 +722,11 @@ printf("Position: \eX%d\eY%d", 10, 5);    // Set cursor position
 - `\n` - Newline (move to next line)
 - `\r` - Carriage return (move to start of line)
 - `\f` - Form feed (clear screen and home cursor)
-- `\eX<num>` - Set X coordinate
-- `\eY<num>` - Set Y coordinate
-- `\eL<num>` - Set minimum X coordinate
-- `\eT<num>` - Set minimum Y coordinate
-- `\eP<num>` - Set current palette
+- `\e<num>X` - Set X coordinate
+- `\e<num>Y` - Set Y coordinate
+- `\e<num>L` - Set minimum X coordinate
+- `\e<num>T` - Set minimum Y coordinate
+- `\e<num>P` - Set current palette
 
 ### **SuperGrafx Printf and Formatted Output Functions**
 
