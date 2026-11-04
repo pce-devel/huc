@@ -183,7 +183,7 @@ jobs:
         # need to use composite on windows, since docker isn't available
       - name: publish release package
         if: ${{ github.event_name == 'release' }}
-        uses: pyTooling/Actions/releaser
+        uses: pyTooling/Actions/releaser@r0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref_name }}
@@ -192,7 +192,7 @@ jobs:
             *.zip
       - name: publish current package
         if: ${{ github.event_name != 'release' }}
-        uses: pyTooling/Actions/releaser
+        uses: pyTooling/Actions/releaser@r0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: "current"
