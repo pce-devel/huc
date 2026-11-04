@@ -44,7 +44,7 @@ extern void __fastcall __nop set_chrmap( unsigned char __far *chrmap<vdc_map_ban
 extern void __fastcall draw_bat( void );
 extern void __fastcall scroll_bat( void );
 
-extern void __fastcall blit_bat( unsigned char tile_x<map_bat_x>, unsigned char tile_y<map_bat_y>, unsigned char tile_w<map_draw_x>, unsigned char tile_h<map_draw_y> );
+extern void __fastcall blit_bat( unsigned char tile_x<map_bat_x>, unsigned char tile_y<map_bat_y>, unsigned char tile_w<map_draw_w>, unsigned char tile_h<map_draw_h> );
 
 #ifdef _SGX
 
@@ -53,7 +53,7 @@ extern void __fastcall __nop sgx_set_chrmap( unsigned char __far *chrmap<sgx_map
 extern void __fastcall sgx_draw_bat( void );
 extern void __fastcall sgx_scroll_bat( void );
 
-extern void __fastcall sgx_blit_bat( unsigned char tile_x<map_bat_x>, unsigned char tile_y<map_bat_y>, unsigned char tile_w<map_draw_x>, unsigned char tile_h<map_draw_y> );
+extern void __fastcall sgx_blit_bat( unsigned char tile_x<map_bat_x>, unsigned char tile_y<map_bat_y>, unsigned char tile_w<map_draw_w>, unsigned char tile_h<map_draw_h> );
 
 #endif
 

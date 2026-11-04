@@ -78,7 +78,7 @@ extern void __fastcall __macro set_multimap( unsigned char __far *multi_map<vdc_
 extern void __fastcall draw_map( void );
 extern void __fastcall scroll_map( void );
 
-extern void __fastcall blit_map( unsigned char tile_x<map_bat_x>, unsigned char tile_y<map_bat_y>, unsigned char tile_w<map_draw_x>, unsigned char tile_h<map_draw_y> );
+extern void __fastcall blit_map( unsigned char tile_x<map_bat_x>, unsigned char tile_y<map_bat_y>, unsigned char tile_w<map_draw_w>, unsigned char tile_h<map_draw_h> );
 
 extern unsigned char __fastcall get_map_block( unsigned int x<map_pxl_x>, unsigned int y<map_pxl_y> );
 
@@ -136,7 +136,7 @@ extern void __fastcall __macro sgx_set_multimap( unsigned char __far *multi_map<
 extern void __fastcall sgx_draw_map( void );
 extern void __fastcall sgx_scroll_map( void );
 
-extern void __fastcall sgx_blit_map( unsigned char tile_x<map_bat_x>, unsigned char tile_y<map_bat_y>, unsigned char tile_w<map_draw_x>, unsigned char tile_h<map_draw_y> );
+extern void __fastcall sgx_blit_map( unsigned char tile_x<map_bat_x>, unsigned char tile_y<map_bat_y>, unsigned char tile_w<map_draw_w>, unsigned char tile_h<map_draw_h> );
 
 extern unsigned char __fastcall sgx_get_map_block( unsigned int x<map_pxl_x>, unsigned int y<map_pxl_y> );
 

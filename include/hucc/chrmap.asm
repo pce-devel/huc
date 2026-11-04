@@ -182,8 +182,8 @@ _scroll_bat	.proc
 ; _blit_bat - Draw a map rectangle to specific BAT coordinates.
 ; _sgx_blit_bat - Draw a map rectangle to specific BAT coordinates.
 ;
-; void __fastcall blit_bat( unsigned char tile_x<map_bat_x>, unsigned char tile_y<map_bat_y>, unsigned char tile_w<map_draw_x>, unsigned char tile_h<map_draw_y> );
-; void __fastcall sgx_blit_bat( unsigned char tile_x<map_bat_x>, unsigned char tile_y<map_bat_y>, unsigned char tile_w<map_draw_x>, unsigned char tile_h<map_draw_y> );
+; void __fastcall blit_bat( unsigned char tile_x<map_bat_x>, unsigned char tile_y<map_bat_y>, unsigned char tile_w<map_draw_w>, unsigned char tile_h<map_draw_h> );
+; void __fastcall sgx_blit_bat( unsigned char tile_x<map_bat_x>, unsigned char tile_y<map_bat_y>, unsigned char tile_w<map_draw_w>, unsigned char tile_h<map_draw_h> );
 ;
 ; Normally you'd just use _draw_bat() and _scroll_bat(), but for those folks
 ; who really wish to take manual control, you can use this.
